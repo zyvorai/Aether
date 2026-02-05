@@ -1,0 +1,61 @@
+apiVersion: orchestr8/v1
+kind: Workload
+
+metadata:
+  name: web-app
+  owner: ssahani
+  project: kubernetes-demo
+  labels:
+    app: web-app
+    env: production
+    tier: frontend
+  annotations:
+    description: "Example Kubernetes workload with full features"
+    team: "platform-engineering"
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/yourorg/orchestr8
+  buildArgs:
+    VERSION: "2.0.0"
+    BUILD_DATE: "2024-02-06"
+
+requirements:
+  cpu: "1"
+  memory: 2Gi
+  storage: 10Gi
+
+runtime:
+  preferred: kube
+  allow:
+    - kube
+    - container
+
+network:
+  service: true
+  serviceType: LoadBalancer  # ClusterIP | NodePort | LoadBalancer
+  ports:
+    - containerPort: 80
+      servicePort: 80
+      protocol: TCP
+
+persistence:
+  enabled: true
+  size: 5Gi
+  accessMode: ReadWriteOnce
+  storageClass: standard  # Or fast-ssd, gp3, etc.
+
+health:
+  liveness:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /ready
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 5
