@@ -1,9 +1,10 @@
 //! Orchestr8 - Universal Runtime Control Plane
 //!
-//! One spec. Three runtimes. One tool.
+//! One spec. Four runtimes. One tool.
 
 pub mod adapters;
 pub mod engine;
+pub mod migration;
 pub mod runtime;
 pub mod spec;
 pub mod state;

@@ -83,6 +83,18 @@ enum Commands {
 
         /// Target runtime
         target: String,
+
+        /// Migration strategy
+        #[arg(short, long, default_value = "blue-green")]
+        strategy: String,
+
+        /// Skip validation delay
+        #[arg(long)]
+        no_validation: bool,
+
+        /// Disable rollback on failure
+        #[arg(long)]
+        no_rollback: bool,
     },
 
     /// Launch interactive TUI dashboard
@@ -117,7 +129,13 @@ async fn main() -> Result<()> {
         Commands::Logs { name, follow } => logs_command(&name, follow).await,
         Commands::Delete { name } => delete_command(&name).await,
         Commands::List => list_command().await,
-        Commands::Migrate { name, target } => migrate_command(&name, &target).await,
+        Commands::Migrate {
+            name,
+            target,
+            strategy,
+            no_validation,
+            no_rollback,
+        } => migrate_command(&name, &target, &strategy, no_validation, no_rollback).await,
         Commands::Tui => tui_command().await,
     }
 }
@@ -410,8 +428,87 @@ async fn list_command() -> Result<()> {
     Ok(())
 }
 
-async fn migrate_command(_name: &str, _target: &str) -> Result<()> {
-    println!("🔄 Migration not yet implemented");
+async fn migrate_command(
+    name: &str,
+    target: &str,
+    strategy_str: &str,
+    no_validation: bool,
+    no_rollback: bool,
+) -> Result<()> {
+    use orchestr8::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
+    use std::time::Duration;
+
+    println!("🔄 Migrating workload '{}'...", name);
+
+    // Load current state
+    let state = StateStore::load(&StateStore::default_path())?;
+    let workload_state = state
+        .get(name)
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+
+    let source_runtime = workload_state.runtime;
+
+    // Parse target runtime
+    let target_runtime = match target {
+        "podman" | "container" => RuntimeKind::Podman,
+        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
+        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
+        "metal" | "metal3" => RuntimeKind::Metal3,
+        _ => anyhow::bail!("Unknown runtime: {}", target),
+    };
+
+    // Parse strategy
+    let strategy = match strategy_str {
+        "immediate" => MigrationStrategy::Immediate,
+        "blue-green" => MigrationStrategy::BlueGreen,
+        "rolling" => MigrationStrategy::Rolling,
+        _ => anyhow::bail!("Unknown strategy: {}", strategy_str),
+    };
+
+    println!("📊 Migration Plan:");
+    println!("  Workload: {}", name);
+    println!("  Source: {}", source_runtime);
+    println!("  Target: {}", target_runtime);
+    println!("  Strategy: {:?}", strategy);
+
+    // Create migration plan
+    let plan = MigrationPlan {
+        workload_name: name.to_string(),
+        source_runtime,
+        target_runtime,
+        strategy,
+        validation_delay: if no_validation {
+            Duration::from_secs(5)
+        } else {
+            Duration::from_secs(30)
+        },
+        rollback_on_failure: !no_rollback,
+    };
+
+    // Execute migration
+    let engine = MigrationEngine::new(StateStore::default_path());
+    let result = engine.migrate(plan).await?;
+
+    if result.success {
+        println!("✅ Migration completed successfully!");
+        if let Some(instance) = result.target_instance {
+            println!("  New instance: {} ({})", instance.name, instance.id);
+            println!("  Runtime: {}", target_runtime);
+        }
+    } else {
+        println!("❌ Migration failed!");
+        if let Some(error) = result.error {
+            println!("  Error: {}", error);
+        }
+        if result.rollback_performed {
+            println!("  Rollback: Performed successfully");
+            if let Some(instance) = result.source_instance {
+                println!("  Restored instance: {} ({})", instance.name, instance.id);
+            }
+        }
+        anyhow::bail!("Migration failed");
+    }
+
     Ok(())
 }
 
