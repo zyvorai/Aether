@@ -1,0 +1,66 @@
+apiVersion: orchestr8/v1
+kind: Workload
+
+metadata:
+  name: ubuntu-vm
+  owner: ops-team
+  project: infrastructure
+  labels:
+    env: production
+    tier: compute
+  annotations:
+    description: "Ubuntu VM for general purpose compute"
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+  target: runtime
+
+requirements:
+  cpu: "4"           # 4 CPU cores
+  memory: "8Gi"      # 8GB RAM
+  storage: "50Gi"    # 50GB disk
+  gpu:
+    vendor: "nvidia"
+    model: "Tesla T4"
+    count: 1
+
+runtime:
+  preferred: kubevirt  # Force KubeVirt runtime
+  allow:
+    - kubevirt
+  deny: []
+
+network:
+  service: true
+  ports:
+    - name: ssh
+      port: 22
+      protocol: TCP
+    - name: http
+      port: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      protocol: TCP
+  type: LoadBalancer
+
+persistence:
+  enabled: true
+  size: "50Gi"
+  storage_class: "local-path"
+  access_mode: ReadWriteOnce
+  mount_path: "/data"
+
+health:
+  liveness:
+    type: tcp
+    port: 22
+    initial_delay: 60
+    period: 10
+  readiness:
+    type: tcp
+    port: 22
+    initial_delay: 30
+    period: 5
