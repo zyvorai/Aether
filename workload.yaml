@@ -1,0 +1,62 @@
+apiVersion: orchestr8/v1
+kind: Workload
+
+metadata:
+  name: my-app
+  owner: ssahani
+  project: demo
+  labels:
+    app: my-app
+    env: dev
+  annotations:
+    description: "Example workload specification"
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: ghcr.io/yourorg/orchestr8
+  buildArgs:
+    VERSION: "1.0.0"
+
+requirements:
+  cpu: "2"
+  memory: 4Gi
+  storage: 20Gi
+  # gpu:
+  #   count: 1
+  #   vendor: nvidia
+
+runtime:
+  preferred: auto        # auto | container | kube | kubevirt | metal
+  allow:
+    - container
+    - kube
+    - kubevirt
+
+network:
+  service: true
+  serviceType: ClusterIP  # ClusterIP | NodePort | LoadBalancer
+  ports:
+    - containerPort: 80
+      servicePort: 8080
+      protocol: TCP
+
+persistence:
+  enabled: true
+  size: 10Gi
+  accessMode: ReadWriteOnce  # ReadWriteOnce | ReadOnlyMany | ReadWriteMany
+  # storageClass: fast-ssd
+
+health:
+  liveness:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /ready
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5
