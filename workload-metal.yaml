@@ -1,0 +1,70 @@
+apiVersion: orchestr8/v1
+kind: Workload
+
+metadata:
+  name: edge-server
+  owner: infrastructure-team
+  project: edge-computing
+  labels:
+    env: production
+    tier: hardware
+    location: datacenter-01
+  annotations:
+    description: "Bare metal server for edge computing workloads"
+    contact: "ops@example.com"
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: image-server.local
+  target: runtime
+
+requirements:
+  cpu: "32"          # 32 CPU cores
+  memory: "128Gi"    # 128GB RAM
+  storage: "2000Gi"  # 2TB disk
+  gpu:
+    vendor: "nvidia"
+    count: 4
+
+runtime:
+  preferred: metal  # Force Metal3 runtime
+  allow:
+    - metal
+  deny: []
+
+network:
+  service: true
+  ports:
+    - name: ssh
+      port: 22
+      protocol: TCP
+    - name: http
+      port: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      protocol: TCP
+    - name: k8s-api
+      port: 6443
+      protocol: TCP
+  type: LoadBalancer
+
+persistence:
+  enabled: true
+  size: "2000Gi"
+  storage_class: "local"
+  access_mode: ReadWriteOnce
+  mount_path: "/data"
+
+health:
+  liveness:
+    type: tcp
+    port: 22
+    initial_delay: 120
+    period: 30
+  readiness:
+    type: tcp
+    port: 22
+    initial_delay: 60
+    period: 10
