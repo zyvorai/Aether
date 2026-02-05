@@ -206,7 +206,7 @@ async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> R
             (image, instance)
         }
         _ => {
-            anyhow::bail!("Runtime not yet implemented: {}", runtime_kind);
+            anyhow::bail!("Runtime not yet fully implemented: {}", runtime_kind);
         }
     };
 
