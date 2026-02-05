@@ -3,7 +3,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use orchestr8::{
-    adapters::{KubeVirtRuntime, KubernetesRuntime, PodmanRuntime},
+    adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime},
     engine::Engine,
     runtime::RuntimeKind,
     spec::Workload,
@@ -162,8 +162,9 @@ async fn build_command(spec_path: &PathBuf) -> Result<()> {
             let runtime = KubeVirtRuntime::new().await?;
             runtime.build(&workload).await?
         }
-        _ => {
-            anyhow::bail!("Build not yet implemented for runtime: {}", runtime_kind);
+        RuntimeKind::Metal3 => {
+            let runtime = Metal3Runtime::new().await?;
+            runtime.build(&workload).await?
         }
     };
 
@@ -216,8 +217,12 @@ async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> R
             let instance = runtime.run(&image, &workload).await?;
             (image, instance)
         }
-        _ => {
-            anyhow::bail!("Runtime not yet fully implemented: {}", runtime_kind);
+        RuntimeKind::Metal3 => {
+            let runtime = Metal3Runtime::new().await?;
+            let image = runtime.build(&workload).await?;
+            println!("✅ Bare metal image reference: {}", image.full_name());
+            let instance = runtime.run(&image, &workload).await?;
+            (image, instance)
         }
     };
 
@@ -263,8 +268,9 @@ async fn stop_command(name: &str) -> Result<()> {
             let runtime = KubeVirtRuntime::new().await?;
             runtime.stop(&workload_state.instance).await?;
         }
-        _ => {
-            anyhow::bail!("Stop not yet implemented for runtime: {}", workload_state.runtime);
+        RuntimeKind::Metal3 => {
+            let runtime = Metal3Runtime::new().await?;
+            runtime.stop(&workload_state.instance).await?;
         }
     }
 
@@ -293,8 +299,9 @@ async fn status_command(name: &str) -> Result<()> {
             let runtime = KubeVirtRuntime::new().await?;
             runtime.status(&workload_state.instance).await?
         }
-        _ => {
-            anyhow::bail!("Status not yet implemented for runtime: {}", workload_state.runtime);
+        RuntimeKind::Metal3 => {
+            let runtime = Metal3Runtime::new().await?;
+            runtime.status(&workload_state.instance).await?
         }
     };
 
@@ -332,8 +339,9 @@ async fn logs_command(name: &str, follow: bool) -> Result<()> {
             let runtime = KubeVirtRuntime::new().await?;
             runtime.logs(&workload_state.instance, follow).await?
         }
-        _ => {
-            anyhow::bail!("Logs not yet implemented for runtime: {}", workload_state.runtime);
+        RuntimeKind::Metal3 => {
+            let runtime = Metal3Runtime::new().await?;
+            runtime.logs(&workload_state.instance, follow).await?
         }
     };
 
@@ -365,8 +373,9 @@ async fn delete_command(name: &str) -> Result<()> {
             let runtime = KubeVirtRuntime::new().await?;
             runtime.delete(&workload_state.instance).await?;
         }
-        _ => {
-            anyhow::bail!("Delete not yet implemented for runtime: {}", workload_state.runtime);
+        RuntimeKind::Metal3 => {
+            let runtime = Metal3Runtime::new().await?;
+            runtime.delete(&workload_state.instance).await?;
         }
     }
 
