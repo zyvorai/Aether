@@ -1,0 +1,47 @@
+# Multi-stage build for Orchestr8 CLI
+FROM rust:1.75-slim as builder
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Copy source
+COPY src ./src
+
+# Build release binary
+RUN cargo build --release
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy binary from builder
+COPY --from=builder /app/target/release/orchestr8 /usr/local/bin/orchestr8
+
+# Create state directory
+RUN mkdir -p /root/.orchestr8
+
+# Set entrypoint
+ENTRYPOINT ["orchestr8"]
+
+# Default command
+CMD ["--help"]
+
+# Labels
+LABEL org.opencontainers.image.title="Orchestr8"
+LABEL org.opencontainers.image.description="Universal Runtime Control Plane"
+LABEL org.opencontainers.image.source="https://github.com/ssahani/orchestr8"
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
