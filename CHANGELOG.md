@@ -5,20 +5,154 @@ All notable changes to Orchestr8 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-02-06
 
 ### Added
-- CI/CD workflows (GitHub Actions)
-- Container image for Orchestr8 CLI
-- Integration tests (8 new tests)
-- Makefile for common development tasks
-- CONTRIBUTING.md guide
-- Security audit in CI
-- Code coverage reporting
+- **Backup and Restore:**
+  - Complete backup system for workload state
+  - Create named backups with descriptions
+  - List and inspect available backups
+  - Full restore or merge modes
+  - Automatic backup cleanup utilities
+  - JSON-based backup format
+  - CLI commands: `backup`, `restore`, `list-backups`
+- **Cost Estimation:**
+  - Multi-provider cost comparison (AWS, Azure, GCP, DigitalOcean, Linode)
+  - Resource-based pricing (CPU, memory, storage)
+  - Monthly and hourly cost projections
+  - Savings analysis across providers
+  - CLI command: `cost --provider <provider>`
+  - Detailed cost breakdown per resource type
+- **WebUI and REST API:**
+  - Modern web dashboard for workload management
+  - Real-time statistics and monitoring
+  - REST API with 11 endpoints
+  - Workload operations (list, create, delete, logs, stop)
+  - Cost estimation via API
+  - Backup management via API
+  - Auto-refreshing dashboard (5-second intervals)
+  - Modal log viewer
+  - CLI command: `serve --host <host> --port <port>`
+  - Embedded dashboard HTML (zero-dependency deployment)
+- **Production Workload Templates:**
+  - 6 production-ready templates for common use cases
+  - Web Application template with auto-scaling and ingress
+  - Database template (PostgreSQL) with persistence and backups
+  - ML Training template with GPU support and distributed training
+  - Redis Cache template with LRU eviction and monitoring
+  - Batch Job template with retry mechanism and cleanup
+  - Microservice template with service mesh integration
+  - Comprehensive template documentation and customization guides
+  - Best practices for security, scaling, and resource management
+- **CI/CD Integration:**
+  - Complete GitHub Actions workflow with multi-stage pipeline
+  - GitLab CI pipeline with review apps and scheduled jobs
+  - Jenkins declarative pipeline with parallel stages
+  - Automated cost analysis on pull requests
+  - Pre-deployment backup and automatic rollback
+  - Blue-green and rolling deployment strategies
+  - Integration test automation
+  - Performance benchmarking pipelines
+  - Comprehensive CI/CD documentation (800+ lines)
+- **Production Examples & Runbooks:**
+  - Complete microservices e-commerce application example
+  - ML training pipeline with GPU orchestration
+  - Production runbook with incident response procedures
+  - Deployment workflows and automation scripts
+  - Performance tuning and optimization guides
+  - Disaster recovery procedures
+  - Security incident response playbooks
+  - Comprehensive troubleshooting guides
+- **Advanced Kubernetes Features:**
+  - ConfigMaps and Secrets support
+  - Ingress with TLS configuration
+  - Horizontal Pod Autoscaling (HPA)
+  - Environment variables from ConfigMaps/Secrets
+- **Shell Completions:**
+  - bash, zsh, fish, powershell, and elvish support
+  - New `completions` command
+- **Prometheus Metrics:**
+  - Comprehensive metrics for workload operations
+  - Migration tracking (success rate, duration, rollbacks)
+  - Runtime distribution and availability
+  - CLI command execution metrics
+  - New `metrics` command for Prometheus export
+  - Integration examples for Grafana and alerting
+- **Developer Experience:**
+  - JSON Schema for workload YAML validation
+  - IDE autocomplete support (VS Code, JetBrains, Neovim)
+  - SCHEMA.md documentation with examples
+  - VS Code settings for automatic schema association
+- **Infrastructure:**
+  - CI/CD workflows (GitHub Actions)
+  - Container image publishing to GHCR
+  - Multi-platform container builds (amd64, arm64)
+  - Enhanced Docker metadata and caching
+  - Integration tests (8 new tests)
+  - Makefile for common development tasks
+  - CONTRIBUTING.md guide
+  - Security audit in CI
+  - Code coverage reporting
+- **Documentation:**
+  - METRICS.md - Prometheus metrics guide (340 lines)
+  - SCHEMA.md - JSON Schema usage guide (220 lines)
+  - BACKUP.md - Backup and restore guide (500 lines)
+  - COST.md - Cost estimation guide (480 lines)
+  - DEPLOYMENT.md - Complete deployment guide (350 lines)
+  - WEBUI.md - WebUI and REST API guide (800 lines)
+  - TEMPLATES.md - Template usage and customization guide (650 lines)
+  - CICD.md - CI/CD integration guide (800 lines)
+  - templates/README.md - Quick reference for all templates (300 lines)
+  - Full-featured workload example
+  - Grafana dashboard documentation (260 lines)
+  - Helm chart README with deployment examples (420 lines)
+  - Packaging guide for DEB/RPM (200 lines)
+- **Deployment & Distribution:**
+  - **Grafana Dashboard**: Pre-built dashboard JSON with 14 panels
+    - Overview stats and KPIs
+    - Runtime distribution visualization
+    - Migration metrics and performance tracking
+    - Failure tracking and alerts
+    - Import-ready for Grafana 8.0+
+  - **Helm Chart**: Complete Kubernetes deployment solution
+    - RBAC with ClusterRole and ServiceAccount
+    - Configurable persistence (PVC)
+    - ServiceMonitor for Prometheus Operator
+    - HPA and Ingress support
+    - Production-ready defaults
+    - Comprehensive values.yaml with 60+ options
+  - **Package Distribution**:
+    - DEB packages for Debian/Ubuntu (amd64, arm64)
+    - RPM packages for Fedora/RHEL/openSUSE (x86_64, aarch64)
+    - Automated package building in CI/CD
+    - Shell completions auto-installed
+    - Repository setup instructions (APT, YUM/DNF)
+    - Package verification and testing
 
 ### Changed
-- Enhanced test suite (11 → 19 tests)
-- Improved documentation
+- Enhanced test suite (11 → 32 tests total)
+  - Unit tests: 24 (including backup, cost modules)
+  - Integration tests: 8
+- Updated Kubernetes adapter to support new features
+- Improved documentation with advanced features guide
+- CLI tagline updated to "four runtimes"
+- README with multiple installation options:
+  - Container (Docker/Podman) - recommended
+  - Binary download from GitHub Releases
+  - Build from source
+  - Package managers (DEB/RPM)
+  - Helm chart (Kubernetes)
+- Release workflow with enhanced container publishing
+- Added 5,300+ lines of new documentation
+- Code metrics: 5,800+ lines total (Rust)
+- Templates: 6 production-ready workload templates
+- CI/CD Examples: 3 complete pipeline configurations
+- New CLI commands: backup, restore, list-backups, cost, serve
+- State management with snapshot capabilities
+- REST API with comprehensive workload management
+- Embedded web dashboard for browser-based management
+- Template library with best practices and customization guides
+- Production-ready CI/CD pipelines for major platforms
 
 ## [0.1.0] - 2024-01-15
 
@@ -122,5 +256,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory usage: 5-15MB
 - TUI refresh: 450ms for 10 workloads
 
-[Unreleased]: https://github.com/ssahani/orchestr8/compare/v0.1.0...HEAD
+[0.2.0]: https://github.com/ssahani/orchestr8/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ssahani/orchestr8/releases/tag/v0.1.0

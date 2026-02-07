@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestr8 Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .tagline {
+            text-align: center;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .workloads {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .workloads h2 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #334155;
+        }
+
+        .workload-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .workload-table th {
+            text-align: left;
+            padding: 12px;
+            background: #334155;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        .workload-table td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .workload-table tr:hover {
+            background: #2d3748;
+        }
+
+        .runtime-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .runtime-podman {
+            background: #3b82f6;
+        }
+
+        .runtime-kubernetes {
+            background: #10b981;
+        }
+
+        .runtime-kubevirt {
+            background: #f59e0b;
+        }
+
+        .runtime-metal3 {
+            background: #ef4444;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-running {
+            background: #10b981;
+        }
+
+        .status-stopped {
+            background: #ef4444;
+        }
+
+        .actions button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+
+        .actions button:hover {
+            background: #5a67d8;
+        }
+
+        .actions button.danger {
+            background: #ef4444;
+        }
+
+        .actions button.danger:hover {
+            background: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            opacity: 0.6;
+        }
+
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.6;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+        }
+
+        .modal-content pre {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+
+        .close-btn {
+            float: right;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Orchestr8</h1>
+            <p class="tagline">One spec. Four runtimes. One dashboard.</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Workloads</h3>
+                <div class="value" id="total-workloads">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Running</h3>
+                <div class="value" id="running-workloads">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Runtimes</h3>
+                <div class="value" id="runtimes-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Backups</h3>
+                <div class="value" id="backups-count">0</div>
+            </div>
+        </div>
+
+        <div class="workloads">
+            <h2>Workloads</h2>
+            <div id="workload-list">
+                <div class="loading">Loading workloads...</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+
+    <div class="modal" id="logs-modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">Close</button>
+            <h3>Workload Logs</h3>
+            <pre id="logs-content"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        async function fetchWorkloads() {
+            try {
+                const response = await fetch(`${API_BASE}/workloads`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    displayWorkloads(result.data);
+                    updateStats(result.data);
+                } else {
+                    showError('Failed to load workloads');
+                }
+            } catch (error) {
+                console.error('Error fetching workloads:', error);
+                showError('Connection error. Is the API server running?');
+            }
+        }
+
+        async function fetchBackups() {
+            try {
+                const response = await fetch(`${API_BASE}/backups`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    document.getElementById('backups-count').textContent = result.data.length;
+                }
+            } catch (error) {
+                console.error('Error fetching backups:', error);
+            }
+        }
+
+        function displayWorkloads(workloads) {
+            const container = document.getElementById('workload-list');
+
+            if (workloads.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📦</div>
+                        <h3>No workloads deployed</h3>
+                        <p>Use the CLI to deploy your first workload</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const table = `
+                <table class="workload-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Runtime</th>
+                            <th>Image</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${workloads.map(w => `
+                            <tr>
+                                <td><strong>${w.name}</strong></td>
+                                <td><span class="runtime-badge runtime-${w.runtime.toLowerCase()}">${w.runtime}</span></td>
+                                <td><code>${w.image}</code></td>
+                                <td><span class="status-badge status-${w.status}">${w.status}</span></td>
+                                <td>${new Date(w.created_at).toLocaleString()}</td>
+                                <td class="actions">
+                                    <button onclick="viewLogs('${w.name}')">📋 Logs</button>
+                                    <button onclick="stopWorkload('${w.name}')">⏸️ Stop</button>
+                                    <button class="danger" onclick="deleteWorkload('${w.name}')">🗑️ Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = table;
+        }
+
+        function updateStats(workloads) {
+            document.getElementById('total-workloads').textContent = workloads.length;
+            document.getElementById('running-workloads').textContent =
+                workloads.filter(w => w.status === 'running').length;
+
+            const uniqueRuntimes = new Set(workloads.map(w => w.runtime));
+            document.getElementById('runtimes-count').textContent = uniqueRuntimes.size;
+        }
+
+        async function viewLogs(name) {
+            try {
+                const response = await fetch(`${API_BASE}/workloads/${name}/logs`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    document.getElementById('logs-content').textContent = result.data;
+                    document.getElementById('logs-modal').classList.add('active');
+                } else {
+                    alert('Failed to fetch logs');
+                }
+            } catch (error) {
+                alert('Error fetching logs: ' + error.message);
+            }
+        }
+
+        async function stopWorkload(name) {
+            if (!confirm(`Stop workload "${name}"?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/workloads/${name}/stop`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Workload "${name}" stopped`);
+                    refreshData();
+                } else {
+                    alert('Failed to stop workload: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error stopping workload: ' + error.message);
+            }
+        }
+
+        async function deleteWorkload(name) {
+            if (!confirm(`Delete workload "${name}"? This action cannot be undone.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/workloads/${name}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Workload "${name}" deleted`);
+                    refreshData();
+                } else {
+                    alert('Failed to delete workload: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error deleting workload: ' + error.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('logs-modal').classList.remove('active');
+        }
+
+        function showError(message) {
+            const container = document.getElementById('workload-list');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">⚠️</div>
+                    <h3>Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function refreshData() {
+            fetchWorkloads();
+            fetchBackups();
+        }
+
+        // Initial load
+        refreshData();
+
+        // Auto-refresh every 5 seconds
+        setInterval(refreshData, 5000);
+    </script>
+</body>
+</html>

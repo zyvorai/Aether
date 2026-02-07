@@ -1,0 +1,26 @@
+Source: orchestr8
+Section: admin
+Priority: optional
+Maintainer: Susant Sahani <ssahani@gmail.com>
+Build-Depends: debhelper (>= 11), cargo, rustc
+Standards-Version: 4.5.0
+Homepage: https://github.com/ssahani/orchestr8
+Vcs-Git: https://github.com/ssahani/orchestr8.git
+Vcs-Browser: https://github.com/ssahani/orchestr8
+
+Package: orchestr8
+Architecture: amd64 arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: podman, kubectl
+Suggests: kubevirt-virtctl
+Description: Universal runtime control plane
+ Orchestr8 is a universal runtime control plane that deploys workloads
+ across multiple runtimes: Podman, Kubernetes, KubeVirt, and Metal3.
+ .
+ Features:
+  - Single workload specification (YAML)
+  - Automatic runtime selection
+  - Zero-downtime migrations between runtimes
+  - Interactive TUI dashboard
+  - Prometheus metrics export
+  - ConfigMaps, Secrets, Ingress, and HPA support

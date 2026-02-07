@@ -10,14 +10,14 @@ use orchestr8::{
     state::StateStore,
     Runtime,
 };
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser)]
 #[command(name = "orchestr8")]
-#[command(about = "Universal runtime control plane - One spec, three runtimes", long_about = None)]
+#[command(about = "Universal runtime control plane - One spec, four runtimes", long_about = None)]
 #[command(version)]
-struct Cli {
+pub struct Cli {
     #[command(subcommand)]
     command: Commands,
 
@@ -99,6 +99,57 @@ enum Commands {
 
     /// Launch interactive TUI dashboard
     Tui,
+
+    /// Generate shell completions
+    Completions {
+        /// Shell type (bash, zsh, fish, powershell, elvish)
+        shell: String,
+    },
+
+    /// Export Prometheus metrics
+    Metrics,
+
+    /// Backup workload state
+    Backup {
+        /// Backup name (optional, auto-generated if not provided)
+        #[arg(short, long)]
+        name: Option<String>,
+
+        /// Backup description
+        #[arg(short, long)]
+        description: Option<String>,
+    },
+
+    /// Restore workload state from backup
+    Restore {
+        /// Path to backup file
+        backup: PathBuf,
+
+        /// Merge with existing state instead of replacing
+        #[arg(short, long)]
+        merge: bool,
+    },
+
+    /// List available backups
+    ListBackups,
+
+    /// Estimate workload costs
+    Cost {
+        /// Cloud provider (aws, azure, gcp, digitalocean, linode, or "all")
+        #[arg(short, long, default_value = "all")]
+        provider: String,
+    },
+
+    /// Start API server and web dashboard
+    Serve {
+        /// Server host
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
+
+        /// Server port
+        #[arg(short, long, default_value = "8080")]
+        port: u16,
+    },
 }
 
 #[tokio::main]
@@ -117,10 +168,35 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    // Initialize metrics
+    orchestr8::metrics::init();
+
     // Ensure state directory exists
     StateStore::ensure_state_dir()?;
 
-    match cli.command {
+    // Record command start time
+    let start = std::time::Instant::now();
+    let command_name = match &cli.command {
+        Commands::Validate => "validate",
+        Commands::Build => "build",
+        Commands::Run { .. } => "run",
+        Commands::Stop { .. } => "stop",
+        Commands::Status { .. } => "status",
+        Commands::Logs { .. } => "logs",
+        Commands::Delete { .. } => "delete",
+        Commands::List => "list",
+        Commands::Migrate { .. } => "migrate",
+        Commands::Tui => "tui",
+        Commands::Completions { .. } => "completions",
+        Commands::Metrics => "metrics",
+        Commands::Backup { .. } => "backup",
+        Commands::Restore { .. } => "restore",
+        Commands::ListBackups => "list-backups",
+        Commands::Cost { .. } => "cost",
+        Commands::Serve { .. } => "serve",
+    };
+
+    let result = match cli.command {
         Commands::Validate => validate_command(&cli.spec).await,
         Commands::Build => build_command(&cli.spec).await,
         Commands::Run { runtime } => run_command(&cli.spec, runtime).await,
@@ -137,7 +213,36 @@ async fn main() -> Result<()> {
             no_rollback,
         } => migrate_command(&name, &target, &strategy, no_validation, no_rollback).await,
         Commands::Tui => tui_command().await,
-    }
+        Commands::Completions { shell } => {
+            completions_command(&shell);
+            Ok(())
+        }
+        Commands::Metrics => {
+            metrics_command().await;
+            Ok(())
+        }
+        Commands::Backup { name, description } => {
+            backup_command(name.clone(), description.clone()).await
+        }
+        Commands::Restore { backup, merge } => {
+            restore_command(&backup, merge).await
+        }
+        Commands::ListBackups => {
+            list_backups_command().await
+        }
+        Commands::Cost { provider } => {
+            cost_command(&cli.spec, &provider).await
+        }
+        Commands::Serve { host, port } => {
+            serve_command(host, port).await
+        }
+    };
+
+    // Record command execution time
+    let duration = start.elapsed().as_secs_f64();
+    orchestr8::metrics::record_command(command_name, duration);
+
+    result
 }
 
 async fn validate_command(spec_path: &PathBuf) -> Result<()> {
@@ -167,28 +272,36 @@ async fn build_command(spec_path: &PathBuf) -> Result<()> {
     println!("📦 Selected runtime: {}", runtime_kind);
 
     // Build based on runtime
-    let image = match runtime_kind {
+    let result = match runtime_kind {
         RuntimeKind::Podman => {
             let runtime = PodmanRuntime::new()?;
-            runtime.build(&workload).await?
+            runtime.build(&workload).await
         }
         RuntimeKind::Kubernetes => {
             let runtime = KubernetesRuntime::new().await?;
-            runtime.build(&workload).await?
+            runtime.build(&workload).await
         }
         RuntimeKind::KubeVirt => {
             let runtime = KubeVirtRuntime::new().await?;
-            runtime.build(&workload).await?
+            runtime.build(&workload).await
         }
         RuntimeKind::Metal3 => {
             let runtime = Metal3Runtime::new().await?;
-            runtime.build(&workload).await?
+            runtime.build(&workload).await
         }
     };
 
-    println!("✅ Built image: {}", image.full_name());
-
-    Ok(())
+    match result {
+        Ok(image) => {
+            println!("✅ Built image: {}", image.full_name());
+            orchestr8::metrics::record_build(&runtime_kind.to_string(), true);
+            Ok(())
+        }
+        Err(e) => {
+            orchestr8::metrics::record_build(&runtime_kind.to_string(), false);
+            Err(e)
+        }
+    }
 }
 
 async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> Result<()> {
@@ -260,6 +373,9 @@ async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> R
         },
     );
     state.save(&StateStore::default_path())?;
+
+    // Record metrics
+    orchestr8::metrics::record_deployment(&runtime_kind.to_string(), true);
 
     Ok(())
 }
@@ -401,6 +517,9 @@ async fn delete_command(name: &str) -> Result<()> {
     state.remove(name);
     state.save(&StateStore::default_path())?;
 
+    // Record metrics
+    orchestr8::metrics::record_deletion(&workload_state.runtime.to_string());
+
     println!("✅ Deleted instance: {}", name);
 
     Ok(())
@@ -486,8 +605,20 @@ async fn migrate_command(
     };
 
     // Execute migration
+    let migration_start = std::time::Instant::now();
     let engine = MigrationEngine::new(StateStore::default_path());
     let result = engine.migrate(plan).await?;
+    let migration_duration = migration_start.elapsed().as_secs_f64();
+
+    // Record metrics
+    orchestr8::metrics::record_migration(
+        &source_runtime.to_string(),
+        &target_runtime.to_string(),
+        strategy_str,
+        migration_duration,
+        result.success,
+        result.rollback_performed,
+    );
 
     if result.success {
         println!("✅ Migration completed successfully!");
@@ -572,4 +703,227 @@ async fn run_tui<B: ratatui::backend::Backend>(
     }
 
     Ok(())
+}
+
+fn completions_command(shell_str: &str) {
+    use clap::CommandFactory;
+    use clap_complete::Shell;
+
+    let shell = match shell_str.to_lowercase().as_str() {
+        "bash" => Shell::Bash,
+        "zsh" => Shell::Zsh,
+        "fish" => Shell::Fish,
+        "powershell" | "ps1" => Shell::PowerShell,
+        "elvish" => Shell::Elvish,
+        _ => {
+            eprintln!("Unknown shell: {}", shell_str);
+            eprintln!();
+            orchestr8::completions::list_shells();
+            std::process::exit(1);
+        }
+    };
+
+    let mut cmd = Cli::command();
+    orchestr8::completions::generate_completions(shell, &mut cmd);
+}
+
+async fn metrics_command() {
+    println!("# Orchestr8 Metrics");
+    println!("# Updated: {}", chrono::Utc::now().to_rfc3339());
+    println!();
+
+    // Update workload state metrics from state store
+    if let Ok(state) = StateStore::load(&StateStore::default_path()) {
+        let workloads = state.list();
+        let states: Vec<(String, String)> = workloads
+            .iter()
+            .map(|w| (w.runtime.to_string(), "running".to_string()))
+            .collect();
+        orchestr8::metrics::update_workload_states(&states);
+
+        // Update running workload count
+        let mut runtime_counts = std::collections::HashMap::new();
+        for w in workloads {
+            *runtime_counts.entry(w.runtime.to_string()).or_insert(0) += 1;
+        }
+    }
+
+    // Gather and print metrics
+    print!("{}", orchestr8::metrics::gather());
+}
+
+async fn backup_command(name: Option<String>, description: Option<String>) -> Result<()> {
+    use orchestr8::backup::BackupManager;
+
+    println!("💾 Creating backup...");
+
+    // Load current state
+    let state = StateStore::load(&StateStore::default_path())?;
+    let workload_count = state.list().len();
+
+    if workload_count == 0 {
+        println!("⚠️  No workloads to backup");
+        return Ok(());
+    }
+
+    // Create backup
+    let manager = BackupManager::new(BackupManager::default_dir());
+    let backup_path = manager.create_backup(&state, name.clone(), description.clone())?;
+
+    println!("✅ Backup created: {}", backup_path.display());
+    println!("   Workloads: {}", workload_count);
+    if let Some(desc) = description {
+        println!("   Description: {}", desc);
+    }
+
+    Ok(())
+}
+
+async fn restore_command(backup_path: &Path, merge: bool) -> Result<()> {
+    use orchestr8::backup::Backup;
+
+    println!("📦 Restoring from backup...");
+
+    // Load backup
+    let backup = Backup::load(&backup_path)?;
+
+    println!("   Backup created: {}", backup.metadata.created_at);
+    println!("   Workloads: {}", backup.metadata.workload_count);
+    println!("   Version: {}", backup.metadata.orchestr8_version);
+
+    if let Some(desc) = &backup.metadata.description {
+        println!("   Description: {}", desc);
+    }
+
+    // Restore or merge
+    let state_path = StateStore::default_path();
+
+    if merge {
+        println!("\n🔀 Merging backup with existing state...");
+        backup.merge(&state_path)?;
+        println!("✅ Backup merged successfully");
+    } else {
+        println!("\n⚠️  This will replace your current state!");
+        println!("   Press Enter to continue, or Ctrl+C to cancel...");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+
+        backup.restore(&state_path)?;
+        println!("✅ Backup restored successfully");
+    }
+
+    Ok(())
+}
+
+async fn list_backups_command() -> Result<()> {
+    use orchestr8::backup::BackupManager;
+
+    let manager = BackupManager::new(BackupManager::default_dir());
+    let backups = manager.list_backups()?;
+
+    if backups.is_empty() {
+        println!("No backups found");
+        println!("Backup directory: {}", BackupManager::default_dir().display());
+        return Ok(());
+    }
+
+    println!("📋 Available backups:\n");
+
+    for backup_path in backups {
+        match manager.get_backup_info(&backup_path) {
+            Ok(info) => {
+                println!("  📄 {}", backup_path.file_name().unwrap().to_string_lossy());
+                println!("     Created: {}", info.created_at);
+                println!("     Workloads: {}", info.workload_count);
+                println!("     Version: {}", info.orchestr8_version);
+                if let Some(desc) = info.description {
+                    println!("     Description: {}", desc);
+                }
+                println!();
+            }
+            Err(e) => {
+                println!("  ⚠️  {} (error: {})", backup_path.display(), e);
+                println!();
+            }
+        }
+    }
+
+    println!("Backup directory: {}", BackupManager::default_dir().display());
+
+    Ok(())
+}
+
+async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<()> {
+    use orchestr8::cost::{estimate_cost, CloudProvider, CostComparison};
+
+    println!("💰 Estimating costs...\n");
+
+    let workload = Workload::from_file(spec_path)?;
+
+    if provider == "all" {
+        // Show comparison across all providers
+        let comparison = CostComparison::for_workload(&workload)?;
+        print!("{}", comparison.display());
+    } else {
+        // Show estimate for specific provider
+        let cloud_provider = match provider.to_lowercase().as_str() {
+            "aws" => CloudProvider::AWS,
+            "azure" => CloudProvider::Azure,
+            "gcp" => CloudProvider::GCP,
+            "digitalocean" | "do" => CloudProvider::DigitalOcean,
+            "linode" => CloudProvider::Linode,
+            _ => {
+                eprintln!("Unknown provider: {}", provider);
+                eprintln!("Available: aws, azure, gcp, digitalocean, linode");
+                std::process::exit(1);
+            }
+        };
+
+        let estimate = estimate_cost(&workload, cloud_provider)?;
+
+        println!("Workload: {}", workload.metadata.name);
+        println!("Resources: {} CPU | {} RAM | {} Storage",
+            workload.requirements.cpu,
+            workload.requirements.memory,
+            workload.requirements.storage);
+        println!();
+        println!("{}", estimate.display());
+    }
+
+    println!("\n💡 Note: Estimates are based on baseline pricing and may vary based on:");
+    println!("   - Region selection");
+    println!("   - Reserved vs. on-demand instances");
+    println!("   - Volume discounts");
+    println!("   - Additional services (load balancers, networking, etc.)");
+
+    Ok(())
+}
+
+async fn serve_command(host: String, port: u16) -> Result<()> {
+    use orchestr8::api::{ApiConfig, start_server};
+
+    println!("🚀 Starting Orchestr8 API Server\n");
+
+    let config = ApiConfig {
+        host,
+        port,
+        state_path: StateStore::default_path(),
+    };
+
+    println!("📊 Dashboard URL: http://{}:{}", config.host, config.port);
+    println!("🔌 API Endpoints:");
+    println!("   GET  /health");
+    println!("   GET  /api/workloads");
+    println!("   POST /api/workloads");
+    println!("   GET  /api/workloads/:name");
+    println!("   DELETE /api/workloads/:name");
+    println!("   GET  /api/workloads/:name/logs");
+    println!("   POST /api/workloads/:name/stop");
+    println!("   POST /api/cost");
+    println!("   GET  /api/backups");
+    println!("   POST /api/backups");
+    println!();
+    println!("Press Ctrl+C to stop the server\n");
+
+    start_server(config).await
 }

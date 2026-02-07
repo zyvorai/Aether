@@ -1,0 +1,143 @@
+name: Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    name: Build DEB Package
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential debhelper devscripts cargo rustc
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Build DEB package
+        run: |
+          dpkg-buildpackage -us -uc -b
+          mv ../orchestr8_*.deb .
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: deb-packages
+          path: orchestr8_*.deb
+
+      - name: Upload to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: orchestr8_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-rpm:
+    name: Build RPM Package
+    runs-on: ubuntu-22.04
+    container:
+      image: fedora:39
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y rpm-build rpmdevtools cargo rust git
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up RPM build tree
+        run: |
+          rpmdev-setuptree
+          tar czf ~/rpmbuild/SOURCES/orchestr8-${GITHUB_REF_NAME#v}.tar.gz .
+
+      - name: Build RPM package
+        run: |
+          rpmbuild -bb rpm/orchestr8.spec
+          cp ~/rpmbuild/RPMS/${{ matrix.arch }}/orchestr8-*.rpm .
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rpm-packages
+          path: orchestr8-*.rpm
+
+      - name: Upload to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: orchestr8-*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-deb:
+    name: Test DEB Installation
+    needs: build-deb
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download DEB package
+        uses: actions/download-artifact@v3
+        with:
+          name: deb-packages
+
+      - name: Install package
+        run: |
+          sudo apt install ./orchestr8_*_amd64.deb
+
+      - name: Test installation
+        run: |
+          which orchestr8
+          orchestr8 --version
+          orchestr8 --help
+
+      - name: Test shell completions
+        run: |
+          test -f /usr/share/bash-completion/completions/orchestr8
+          test -f /usr/share/zsh/site-functions/_orchestr8
+          test -f /usr/share/fish/vendor_completions.d/orchestr8.fish
+
+  test-rpm:
+    name: Test RPM Installation
+    needs: build-rpm
+    runs-on: ubuntu-22.04
+    container:
+      image: fedora:39
+    steps:
+      - name: Download RPM package
+        uses: actions/download-artifact@v3
+        with:
+          name: rpm-packages
+
+      - name: Install package
+        run: |
+          dnf install -y ./orchestr8-*.x86_64.rpm
+
+      - name: Test installation
+        run: |
+          which orchestr8
+          orchestr8 --version
+          orchestr8 --help
+
+      - name: Test shell completions
+        run: |
+          test -f /usr/share/bash-completion/completions/orchestr8
+          test -f /usr/share/zsh/site-functions/_orchestr8
+          test -f /usr/share/fish/vendor_completions.d/orchestr8.fish

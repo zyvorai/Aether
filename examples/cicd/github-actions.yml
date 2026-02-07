@@ -1,0 +1,338 @@
+# GitHub Actions CI/CD Pipeline for Orchestr8
+# Demonstrates build, test, deploy, and cost estimation workflows
+
+name: Orchestr8 Deployment Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  ORCHESTR8_VERSION: 0.1.0
+  WORKLOAD_SPEC: workloads/app.yaml
+
+jobs:
+  # Job 1: Validate workload specification
+  validate:
+    name: Validate Workload Spec
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Orchestr8
+        run: |
+          curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+          chmod +x orchestr8-linux-amd64
+          sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+
+      - name: Validate workload specification
+        run: |
+          orchestr8 -s $WORKLOAD_SPEC validate
+
+      - name: Check workload syntax
+        run: |
+          yq eval $WORKLOAD_SPEC > /dev/null
+          echo "✅ YAML syntax valid"
+
+  # Job 2: Estimate costs
+  cost-analysis:
+    name: Cost Estimation
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Orchestr8
+        run: |
+          curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+          chmod +x orchestr8-linux-amd64
+          sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+
+      - name: Estimate deployment costs
+        id: cost
+        run: |
+          orchestr8 -s $WORKLOAD_SPEC cost --provider all | tee cost-report.txt
+
+          # Extract cost for PR comment
+          echo "cost_report<<EOF" >> $GITHUB_OUTPUT
+          cat cost-report.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment cost on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## 💰 Cost Estimation\n\n```\n${{ steps.cost.outputs.cost_report }}\n```'
+            })
+
+      - name: Upload cost report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-report
+          path: cost-report.txt
+          retention-days: 30
+
+  # Job 3: Build container image
+  build:
+    name: Build Container Image
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # Job 4: Create backup before deployment
+  backup:
+    name: Create Pre-Deployment Backup
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [validate, build]
+    steps:
+      - name: Install Orchestr8
+        run: |
+          curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+          chmod +x orchestr8-linux-amd64
+          sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+
+      - name: Create backup
+        run: |
+          orchestr8 backup \
+            -n "pre-deploy-$(date +%Y%m%d-%H%M%S)" \
+            -d "Automated backup before deployment from commit ${{ github.sha }}"
+
+      - name: List backups
+        run: |
+          orchestr8 list-backups
+
+  # Job 5: Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, cost-analysis]
+    if: github.ref == 'refs/heads/develop' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Orchestr8
+        run: |
+          curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+          chmod +x orchestr8-linux-amd64
+          sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+
+      - name: Configure Kubernetes access
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+
+      - name: Update image tag in workload spec
+        run: |
+          yq eval '.image.tag = "${{ needs.build.outputs.image_tag }}"' -i $WORKLOAD_SPEC
+
+      - name: Deploy workload
+        run: |
+          orchestr8 -s $WORKLOAD_SPEC run --runtime kubernetes
+
+      - name: Wait for deployment
+        run: |
+          kubectl wait --for=condition=ready pod -l app=myapp --timeout=300s
+
+      - name: Check deployment status
+        run: |
+          orchestr8 status myapp
+
+      - name: Run health checks
+        run: |
+          curl -f https://staging.example.com/health || exit 1
+
+  # Job 6: Run integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run integration tests
+        run: |
+          npm install
+          npm run test:integration
+        env:
+          TEST_URL: https://staging.example.com
+          API_KEY: ${{ secrets.STAGING_API_KEY }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: test-results/
+
+  # Job 7: Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, backup, integration-tests]
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://app.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Orchestr8
+        run: |
+          curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+          chmod +x orchestr8-linux-amd64
+          sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+
+      - name: Configure Kubernetes access
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+
+      - name: Update image tag in workload spec
+        run: |
+          yq eval '.image.tag = "${{ needs.build.outputs.image_tag }}"' -i $WORKLOAD_SPEC
+
+      - name: Deploy with blue-green strategy
+        run: |
+          orchestr8 migrate myapp kubernetes --strategy blue-green
+
+      - name: Verify production deployment
+        run: |
+          orchestr8 status myapp
+          kubectl get pods -l app=myapp
+
+      - name: Run smoke tests
+        run: |
+          curl -f https://app.example.com/health || exit 1
+          curl -f https://app.example.com/api/version || exit 1
+
+      - name: Notify deployment success
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              context: 'Production Deployment',
+              description: 'Deployed successfully to production'
+            })
+
+  # Job 8: Rollback on failure
+  rollback:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: failure()
+    steps:
+      - name: Install Orchestr8
+        run: |
+          curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+          chmod +x orchestr8-linux-amd64
+          sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+
+      - name: Restore from backup
+        run: |
+          LATEST_BACKUP=$(orchestr8 list-backups | grep pre-deploy | head -1 | awk '{print $2}')
+          orchestr8 restore $LATEST_BACKUP
+
+      - name: Notify rollback
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'failure',
+              context: 'Production Deployment',
+              description: 'Deployment failed - rolled back to previous version'
+            })
+
+  # Job 9: Cleanup old resources
+  cleanup:
+    name: Cleanup Old Resources
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: success()
+    steps:
+      - name: Install Orchestr8
+        run: |
+          curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+          chmod +x orchestr8-linux-amd64
+          sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+
+      - name: Cleanup old backups (keep last 7 days)
+        run: |
+          find ~/.orchestr8/backups -name "*.json" -mtime +7 -delete
+
+      - name: Cleanup old container images
+        run: |
+          # Delete untagged images older than 30 days
+          # This is platform-specific (GitHub Packages, etc.)
+          echo "Image cleanup would run here"
