@@ -1,0 +1,21 @@
+apiVersion: v2
+name: orchestr8
+description: Universal runtime control plane - One spec, four runtimes
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - orchestration
+  - kubernetes
+  - container
+  - kubevirt
+  - metal3
+  - runtime
+  - workload
+home: https://github.com/ssahani/orchestr8
+sources:
+  - https://github.com/ssahani/orchestr8
+maintainers:
+  - name: Susant Sahani
+    email: ssahani@gmail.com
+icon: https://raw.githubusercontent.com/ssahani/orchestr8/main/docs/logo.png

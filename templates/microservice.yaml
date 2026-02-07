@@ -1,0 +1,182 @@
+# Microservice Template
+# Cloud-native microservice with service mesh integration
+
+metadata:
+  name: payment-service
+  owner: payments-team
+  project: ecommerce
+  description: "Payment processing microservice with circuit breaker and rate limiting"
+  labels:
+    app: payment-service
+    tier: backend
+    service-type: microservice
+    environment: production
+    version: v2
+
+image:
+  registry: ghcr.io
+  repository: myorg/payment-service
+  tag: "2.3.1"
+  pullPolicy: IfNotPresent
+
+requirements:
+  cpu: "1"
+  memory: "2Gi"
+  storage: "10Gi"
+  gpu: null
+
+runtime:
+  preferred: Kube
+  allowed:
+    - Kube
+  disallowed:
+    - Container
+    - Kubevirt
+    - Metal
+
+scaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPU: 75
+  targetMemory: 80
+
+network:
+  service: true
+  serviceType: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+    - name: metrics
+      port: 9091
+      targetPort: 9091
+      protocol: TCP
+
+  ingress:
+    enabled: false
+
+persistence:
+  enabled: false
+
+health:
+  liveness:
+    enabled: true
+    path: /health/live
+    port: 8080
+    initialDelay: 30
+    period: 10
+    timeout: 5
+    failureThreshold: 3
+
+  readiness:
+    enabled: true
+    path: /health/ready
+    port: 8080
+    initialDelay: 10
+    period: 5
+    timeout: 3
+    failureThreshold: 3
+
+env:
+  - name: SERVICE_NAME
+    value: payment-service
+  - name: SERVICE_VERSION
+    value: "2.3.1"
+  - name: PORT
+    value: "8080"
+  - name: GRPC_PORT
+    value: "9090"
+  - name: LOG_LEVEL
+    value: info
+  - name: LOG_FORMAT
+    value: json
+  - name: ENABLE_PROFILING
+    value: "true"
+  - name: TRACE_ENABLED
+    value: "true"
+  - name: JAEGER_ENDPOINT
+    value: http://jaeger-collector:14268/api/traces
+  - name: KAFKA_BROKERS
+    valueFrom:
+      configMapRef:
+        name: kafka-config
+        key: brokers
+  - name: REDIS_URL
+    valueFrom:
+      configMapRef:
+        name: redis-config
+        key: url
+  - name: STRIPE_API_KEY
+    valueFrom:
+      secretRef:
+        name: payment-secrets
+        key: stripe-api-key
+  - name: DATABASE_PASSWORD
+    valueFrom:
+      secretRef:
+        name: db-credentials
+        key: password
+
+configMaps:
+  - name: service-config
+    mountPath: /etc/config
+    items:
+      - key: config.yaml
+        path: config.yaml
+      - key: circuit-breaker.yaml
+        path: circuit-breaker.yaml
+      - key: rate-limits.yaml
+        path: rate-limits.yaml
+
+secrets:
+  - name: payment-secrets
+    mountPath: /etc/secrets
+    items:
+      - key: stripe-api-key
+        path: stripe.key
+      - key: paypal-credentials
+        path: paypal.json
+      - key: jwt-private-key
+        path: jwt.key
+
+resources:
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+  requests:
+    cpu: "1"
+    memory: "2Gi"
+
+security:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
+
+monitoring:
+  enabled: true
+  path: /metrics
+  port: 9091
+  interval: 15s
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9091"
+  prometheus.io/path: "/metrics"
+  sidecar.istio.io/inject: "true"
+  traffic.sidecar.istio.io/includeInboundPorts: "8080,9090"
+  proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": true}'
+  config.linkerd.io/proxy-cpu-request: "100m"
+  config.linkerd.io/proxy-memory-request: "128Mi"

@@ -199,6 +199,9 @@ mod tests {
             network: NetworkSpec::default(),
             persistence: PersistenceSpec::default(),
             health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
         }
     }
 }

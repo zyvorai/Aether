@@ -1,0 +1,302 @@
+# AlertManager Deployment for Orchestr8
+# Alert routing, grouping, silencing, and notification management
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: observability
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      # Slack webhook URL (set via secret in production)
+      slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+
+    # Template files
+    templates:
+    - '/etc/alertmanager/templates/*.tmpl'
+
+    # Main routing tree
+    route:
+      receiver: 'default'
+      group_by: ['alertname', 'cluster', 'service', 'namespace']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+
+      routes:
+      # Critical alerts - PagerDuty and Slack
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+        continue: false
+        group_wait: 0s
+        repeat_interval: 5m
+
+      # Warning alerts - Slack only
+      - match:
+          severity: warning
+        receiver: 'warning-alerts'
+        group_wait: 30s
+        repeat_interval: 1h
+
+      # Orchestr8-specific alerts
+      - match_re:
+          component: orchestr8
+        receiver: 'orchestr8-team'
+        routes:
+        # Migration failures need immediate attention
+        - match:
+            alertname: MigrationFailed
+          receiver: 'critical-alerts'
+          continue: true
+
+      # Database alerts
+      - match_re:
+          service: ^(postgres|mysql|mongodb)$
+        receiver: 'database-team'
+        routes:
+        - match:
+            severity: critical
+          receiver: 'database-oncall'
+
+      # Kubernetes infrastructure alerts
+      - match_re:
+          alertname: ^Kube.*
+        receiver: 'platform-team'
+
+    # Inhibition rules - suppress alerts based on other alerts
+    inhibit_rules:
+    # Suppress warnings if critical is firing for same alert
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['alertname', 'cluster', 'service', 'namespace']
+
+    # Suppress pod alerts if node is down
+    - source_match:
+        alertname: 'KubeNodeNotReady'
+      target_match_re:
+        alertname: '^KubePod.*'
+      equal: ['node']
+
+    # Receivers (notification destinations)
+    receivers:
+    # Default receiver
+    - name: 'default'
+      slack_configs:
+      - channel: '#general-alerts'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+    # Critical alerts
+    - name: 'critical-alerts'
+      pagerduty_configs:
+      - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+        description: '{{ .GroupLabels.alertname }}'
+        severity: '{{ .CommonLabels.severity }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+      slack_configs:
+      - channel: '#critical-alerts'
+        color: 'danger'
+        title: ':fire: Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          {{ if .CommonAnnotations.runbook_url }}*Runbook:* {{ .CommonAnnotations.runbook_url }}{{ end }}
+          *Firing:* {{ .Alerts.Firing | len }} | *Resolved:* {{ .Alerts.Resolved | len }}
+        send_resolved: true
+        actions:
+        - type: button
+          text: 'View in Grafana'
+          url: 'http://grafana:3000/explore'
+
+    # Warning alerts
+    - name: 'warning-alerts'
+      slack_configs:
+      - channel: '#warnings'
+        color: 'warning'
+        title: 'Warning: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.description }}'
+        send_resolved: true
+
+    # Orchestr8 team
+    - name: 'orchestr8-team'
+      slack_configs:
+      - channel: '#orchestr8-alerts'
+        color: '{{ if eq .CommonLabels.severity "critical" }}danger{{ else }}warning{{ end }}'
+        title: 'Orchestr8: {{ .GroupLabels.alertname }}'
+        text: |
+          *Component:* {{ .CommonLabels.component }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Description:* {{ .CommonAnnotations.description }}
+          {{ if .CommonLabels.workload }}*Workload:* {{ .CommonLabels.workload }}{{ end }}
+          {{ if .CommonLabels.runtime }}*Runtime:* {{ .CommonLabels.runtime }}{{ end }}
+        send_resolved: true
+
+    # Database team
+    - name: 'database-team'
+      slack_configs:
+      - channel: '#database-team'
+        title: 'Database Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          *Service:* {{ .CommonLabels.service }}
+          *Namespace:* {{ .CommonLabels.namespace }}
+          *Description:* {{ .CommonAnnotations.description }}
+
+    # Database on-call (critical)
+    - name: 'database-oncall'
+      pagerduty_configs:
+      - service_key: 'DATABASE_ONCALL_KEY'
+
+    # Platform team
+    - name: 'platform-team'
+      slack_configs:
+      - channel: '#platform-team'
+        title: 'Infrastructure: {{ .GroupLabels.alertname }}'
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-templates
+  namespace: observability
+data:
+  default.tmpl: |
+    {{ define "slack.default.title" }}
+    [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }}
+    {{ end }}
+
+    {{ define "slack.default.text" }}
+    {{ range .Alerts }}
+    *Alert:* {{ .Labels.alertname }}
+    *Severity:* {{ .Labels.severity }}
+    {{ if .Annotations.summary }}*Summary:* {{ .Annotations.summary }}{{ end }}
+    *Description:* {{ .Annotations.description }}
+    {{ if .Labels.namespace }}*Namespace:* {{ .Labels.namespace }}{{ end }}
+    {{ if .Labels.pod }}*Pod:* {{ .Labels.pod }}{{ end }}
+    {{ if .Labels.container }}*Container:* {{ .Labels.container }}{{ end }}
+    {{ if .Annotations.runbook_url }}*Runbook:* <{{ .Annotations.runbook_url }}|View Runbook>{{ end }}
+    {{ end }}
+    {{ end }}
+
+    {{ define "slack.default.footer" }}
+    {{ range .Alerts }}
+    Started: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+    {{ if .EndsAt }}Ended: {{ .EndsAt.Format "2006-01-02 15:04:05 MST" }}{{ end }}
+    {{ end }}
+    {{ end }}
+
+    {{ define "pagerduty.default.description" }}
+    {{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}
+    {{ end }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alertmanager-storage
+  namespace: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: observability
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:v0.26.0
+        args:
+          - '--config.file=/etc/alertmanager/alertmanager.yml'
+          - '--storage.path=/alertmanager'
+          - '--web.external-url=http://alertmanager:9093'
+          - '--cluster.listen-address='
+        ports:
+        - name: web
+          containerPort: 9093
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: web
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: web
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: config
+          mountPath: /etc/alertmanager/alertmanager.yml
+          subPath: alertmanager.yml
+        - name: templates
+          mountPath: /etc/alertmanager/templates
+        - name: storage
+          mountPath: /alertmanager
+      volumes:
+      - name: config
+        configMap:
+          name: alertmanager-config
+      - name: templates
+        configMap:
+          name: alertmanager-templates
+      - name: storage
+        persistentVolumeClaim:
+          claimName: alertmanager-storage
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: observability
+  labels:
+    app: alertmanager
+spec:
+  type: ClusterIP
+  ports:
+  - name: web
+    port: 9093
+    targetPort: web
+    protocol: TCP
+  selector:
+    app: alertmanager

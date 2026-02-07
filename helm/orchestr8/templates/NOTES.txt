@@ -1,0 +1,67 @@
+🔷 Orchestr8 has been installed!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+{{- if .Values.ingress.enabled }}
+
+🌐 Ingress is enabled. Access Orchestr8 at:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else }}
+
+📡 Get the application URL by running these commands:
+{{- if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "orchestr8.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        Watch the status with: kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "orchestr8.fullname" . }}
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "orchestr8.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "orchestr8.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use Orchestr8"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+{{- end }}
+
+{{- if .Values.metrics.enabled }}
+
+📊 Metrics are enabled at port {{ .Values.metrics.port }}{{ .Values.metrics.path }}
+{{- if .Values.metrics.serviceMonitor.enabled }}
+   ServiceMonitor created for Prometheus Operator
+{{- end }}
+{{- end }}
+
+{{- if .Values.persistence.enabled }}
+
+💾 Persistent storage is enabled ({{ .Values.persistence.size }})
+{{- end }}
+
+✨ Next steps:
+
+1. Deploy a workload:
+   kubectl exec -it deployment/{{ include "orchestr8.fullname" . }} -- \
+     orchestr8 -s /tmp/workload.yaml run
+
+2. View workloads:
+   kubectl exec deployment/{{ include "orchestr8.fullname" . }} -- orchestr8 list
+
+3. Check metrics:
+   kubectl port-forward service/{{ include "orchestr8.fullname" . }} {{ .Values.metrics.port }}:{{ .Values.metrics.port }}
+   curl http://localhost:{{ .Values.metrics.port }}{{ .Values.metrics.path }}
+
+4. View logs:
+   kubectl logs -f deployment/{{ include "orchestr8.fullname" . }}
+
+📚 Documentation: https://github.com/ssahani/orchestr8
+🐛 Report issues: https://github.com/ssahani/orchestr8/issues

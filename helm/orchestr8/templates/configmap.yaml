@@ -1,0 +1,10 @@
+{{- if .Values.config.files }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "orchestr8.fullname" . }}-config
+  labels:
+    {{- include "orchestr8.labels" . | nindent 4 }}
+data:
+  {{- toYaml .Values.config.files | nindent 2 }}
+{{- end }}

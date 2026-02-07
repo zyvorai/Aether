@@ -1,0 +1,334 @@
+// Jenkins Pipeline for Orchestr8 Deployment
+// Demonstrates declarative pipeline with parallel stages and deployment strategies
+
+pipeline {
+    agent any
+
+    environment {
+        ORCHESTR8_VERSION = '0.1.0'
+        WORKLOAD_SPEC = 'workloads/app.yaml'
+        DOCKER_REGISTRY = 'ghcr.io'
+        IMAGE_NAME = "${DOCKER_REGISTRY}/${env.GIT_OWNER}/${env.JOB_NAME}"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        timestamps()
+        timeout(time: 1, unit: 'HOURS')
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['staging', 'production'],
+            description: 'Deployment environment'
+        )
+        choice(
+            name: 'DEPLOYMENT_STRATEGY',
+            choices: ['blue-green', 'rolling', 'immediate'],
+            description: 'Deployment strategy'
+        )
+        booleanParam(
+            name: 'RUN_TESTS',
+            defaultValue: true,
+            description: 'Run integration tests'
+        )
+        booleanParam(
+            name: 'COST_ANALYSIS',
+            defaultValue: true,
+            description: 'Run cost analysis'
+        )
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                script {
+                    echo "🚀 Starting deployment pipeline"
+                    echo "Environment: ${params.ENVIRONMENT}"
+                    echo "Strategy: ${params.DEPLOYMENT_STRATEGY}"
+                    echo "Commit: ${env.GIT_COMMIT}"
+                }
+            }
+        }
+
+        stage('Install Orchestr8') {
+            steps {
+                script {
+                    sh '''
+                        if ! command -v orchestr8 &> /dev/null; then
+                            curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+                            chmod +x orchestr8-linux-amd64
+                            sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+                        fi
+                        orchestr8 --version
+                    '''
+                }
+            }
+        }
+
+        stage('Validate & Analyze') {
+            parallel {
+                stage('Validate Workload Spec') {
+                    steps {
+                        script {
+                            echo "📋 Validating workload specification..."
+                            sh '''
+                                orchestr8 -s ${WORKLOAD_SPEC} validate
+                                yq eval ${WORKLOAD_SPEC} > /dev/null
+                            '''
+                            echo "✅ Validation successful"
+                        }
+                    }
+                }
+
+                stage('Cost Estimation') {
+                    when {
+                        expression { params.COST_ANALYSIS == true }
+                    }
+                    steps {
+                        script {
+                            echo "💰 Estimating deployment costs..."
+                            sh '''
+                                orchestr8 -s ${WORKLOAD_SPEC} cost --provider all | tee cost-report.txt
+                            '''
+                            archiveArtifacts artifacts: 'cost-report.txt', fingerprint: true
+                        }
+                    }
+                }
+
+                stage('Security Scan') {
+                    steps {
+                        script {
+                            echo "🔒 Running security scan..."
+                            // Placeholder for security scanning
+                            sh 'echo "Security scan would run here"'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Container Image') {
+            steps {
+                script {
+                    echo "🏗️ Building container image..."
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", 'docker-credentials') {
+                        def customImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                        customImage.push()
+                        customImage.push('latest')
+                    }
+                    echo "✅ Image built and pushed: ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Create Backup') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
+            steps {
+                script {
+                    echo "💾 Creating pre-deployment backup..."
+                    sh '''
+                        orchestr8 backup \\
+                            -n "prod-pre-deploy-${BUILD_NUMBER}" \\
+                            -d "Automated backup before deployment from build ${BUILD_NUMBER}"
+                    '''
+                    sh 'orchestr8 list-backups | head -5'
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            when {
+                expression { params.ENVIRONMENT == 'staging' || env.BRANCH_NAME == 'develop' }
+            }
+            environment {
+                KUBE_CONFIG = credentials('kube-config-staging')
+            }
+            steps {
+                script {
+                    echo "🚀 Deploying to staging environment..."
+                    sh '''
+                        mkdir -p $HOME/.kube
+                        cp ${KUBE_CONFIG} $HOME/.kube/config
+
+                        # Update image tag in workload spec
+                        yq eval ".image.tag = \\"${IMAGE_TAG}\\"" -i ${WORKLOAD_SPEC}
+
+                        # Deploy workload
+                        orchestr8 -s ${WORKLOAD_SPEC} run --runtime kubernetes
+
+                        # Wait for deployment
+                        kubectl wait --for=condition=ready pod -l app=myapp --timeout=300s
+
+                        # Check status
+                        orchestr8 status myapp
+                    '''
+                }
+            }
+        }
+
+        stage('Integration Tests') {
+            when {
+                allOf {
+                    expression { params.RUN_TESTS == true }
+                    expression { params.ENVIRONMENT == 'staging' }
+                }
+            }
+            steps {
+                script {
+                    echo "🧪 Running integration tests..."
+                    sh '''
+                        npm ci
+                        npm run test:integration
+                    '''
+                    junit 'test-results/junit.xml'
+                }
+            }
+        }
+
+        stage('Deploy to Production') {
+            when {
+                allOf {
+                    expression { params.ENVIRONMENT == 'production' }
+                    branch 'main'
+                }
+            }
+            environment {
+                KUBE_CONFIG = credentials('kube-config-production')
+            }
+            steps {
+                script {
+                    echo "🚀 Deploying to production environment..."
+
+                    // Manual approval for production
+                    input message: 'Deploy to production?', ok: 'Deploy', submitter: 'admin,devops'
+
+                    sh '''
+                        mkdir -p $HOME/.kube
+                        cp ${KUBE_CONFIG} $HOME/.kube/config
+
+                        # Update image tag
+                        yq eval ".image.tag = \\"${IMAGE_TAG}\\"" -i ${WORKLOAD_SPEC}
+
+                        # Deploy with selected strategy
+                        if [ "${DEPLOYMENT_STRATEGY}" = "blue-green" ] || [ "${DEPLOYMENT_STRATEGY}" = "rolling" ]; then
+                            orchestr8 migrate myapp kubernetes --strategy ${DEPLOYMENT_STRATEGY}
+                        else
+                            orchestr8 -s ${WORKLOAD_SPEC} run --runtime kubernetes
+                        fi
+
+                        # Verify deployment
+                        orchestr8 status myapp
+                        kubectl get pods -l app=myapp
+                    '''
+                }
+            }
+        }
+
+        stage('Smoke Tests') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
+            steps {
+                script {
+                    echo "☁️ Running smoke tests..."
+                    sh '''
+                        curl -f https://app.example.com/health || exit 1
+                        curl -f https://app.example.com/api/version || exit 1
+                    '''
+                    echo "✅ Smoke tests passed"
+                }
+            }
+        }
+
+        stage('Performance Tests') {
+            when {
+                expression { params.ENVIRONMENT == 'staging' }
+            }
+            steps {
+                script {
+                    echo "⚡ Running performance tests..."
+                    sh '''
+                        ab -n 10000 -c 100 https://staging.example.com/ > performance-report.txt
+                    '''
+                    archiveArtifacts artifacts: 'performance-report.txt'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                echo "✅ Pipeline completed successfully!"
+                slackSend(
+                    color: 'good',
+                    message: "Deployment successful: ${env.JOB_NAME} #${env.BUILD_NUMBER} to ${params.ENVIRONMENT}\nCommit: ${env.GIT_COMMIT}"
+                )
+            }
+        }
+
+        failure {
+            script {
+                echo "❌ Pipeline failed!"
+
+                // Automatic rollback for production failures
+                if (params.ENVIRONMENT == 'production') {
+                    echo "🔄 Initiating automatic rollback..."
+                    sh '''
+                        LATEST_BACKUP=$(orchestr8 list-backups | grep prod-pre-deploy | head -1 | awk '{print $2}')
+                        if [ -n "$LATEST_BACKUP" ]; then
+                            orchestr8 restore $LATEST_BACKUP
+                            echo "✅ Rollback completed"
+                        else
+                            echo "⚠️ No backup found for rollback"
+                        fi
+                    '''
+                }
+
+                slackSend(
+                    color: 'danger',
+                    message: "Deployment failed: ${env.JOB_NAME} #${env.BUILD_NUMBER} to ${params.ENVIRONMENT}\nCommit: ${env.GIT_COMMIT}"
+                )
+            }
+        }
+
+        always {
+            script {
+                // Cleanup
+                echo "🧹 Cleaning up..."
+                sh '''
+                    # Clean old backups (keep last 7 days)
+                    find ~/.orchestr8/backups -name "*.json" -mtime +7 -delete || true
+                '''
+
+                // Archive logs
+                archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+
+                // Clean workspace
+                cleanWs()
+            }
+        }
+    }
+}
+
+// Multi-branch pipeline configuration
+properties([
+    pipelineTriggers([
+        // Poll SCM every 5 minutes
+        pollSCM('H/5 * * * *'),
+        // Webhook trigger
+        githubPush()
+    ]),
+    buildDiscarder(
+        logRotator(
+            numToKeepStr: '30',
+            artifactNumToKeepStr: '10'
+        )
+    )
+])

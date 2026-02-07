@@ -138,38 +138,50 @@ impl Metal3Runtime {
 
     /// Parse memory string to MB
     fn parse_memory_to_mb(&self, memory: &str) -> i64 {
-        if memory.ends_with("Gi") {
-            let val = memory.trim_end_matches("Gi").parse::<i64>().unwrap_or(1);
-            val * 1024
-        } else if memory.ends_with("Mi") {
-            memory.trim_end_matches("Mi").parse::<i64>().unwrap_or(1024)
-        } else if memory.ends_with("G") {
-            let val = memory.trim_end_matches('G').parse::<i64>().unwrap_or(1);
-            val * 1024
-        } else if memory.ends_with('M') {
-            memory.trim_end_matches('M').parse::<i64>().unwrap_or(1024)
-        } else {
-            1024
-        }
+        parse_memory_to_mb(memory)
     }
 
     /// Parse storage string to GB
     fn parse_storage_to_gb(&self, storage: &str) -> i64 {
-        if storage.ends_with("Gi") {
-            storage.trim_end_matches("Gi").parse::<i64>().unwrap_or(10)
-        } else if storage.ends_with("Mi") {
-            let val = storage.trim_end_matches("Mi").parse::<i64>().unwrap_or(10240);
-            (val / 1024).max(1)
-        } else if storage.ends_with('G') {
-            storage.trim_end_matches('G').parse::<i64>().unwrap_or(10)
-        } else if storage.ends_with('M') {
-            let val = storage.trim_end_matches('M').parse::<i64>().unwrap_or(10240);
-            (val / 1024).max(1)
-        } else {
-            10
-        }
+        parse_storage_to_gb(storage)
     }
+}
 
+/// Parse memory string (e.g., "64Gi", "512Mi") to megabytes
+fn parse_memory_to_mb(memory: &str) -> i64 {
+    if memory.ends_with("Gi") {
+        let val = memory.trim_end_matches("Gi").parse::<i64>().unwrap_or(1);
+        val * 1024
+    } else if memory.ends_with("Mi") {
+        memory.trim_end_matches("Mi").parse::<i64>().unwrap_or(1024)
+    } else if memory.ends_with("G") {
+        let val = memory.trim_end_matches('G').parse::<i64>().unwrap_or(1);
+        val * 1024
+    } else if memory.ends_with('M') {
+        memory.trim_end_matches('M').parse::<i64>().unwrap_or(1024)
+    } else {
+        1024
+    }
+}
+
+/// Parse storage string (e.g., "500Gi", "10240Mi") to gigabytes
+fn parse_storage_to_gb(storage: &str) -> i64 {
+    if storage.ends_with("Gi") {
+        storage.trim_end_matches("Gi").parse::<i64>().unwrap_or(10)
+    } else if storage.ends_with("Mi") {
+        let val = storage.trim_end_matches("Mi").parse::<i64>().unwrap_or(10240);
+        (val / 1024).max(1)
+    } else if storage.ends_with('G') {
+        storage.trim_end_matches('G').parse::<i64>().unwrap_or(10)
+    } else if storage.ends_with('M') {
+        let val = storage.trim_end_matches('M').parse::<i64>().unwrap_or(10240);
+        (val / 1024).max(1)
+    } else {
+        10
+    }
+}
+
+impl Metal3Runtime {
     /// Get API for BareMetalHost CRD
     async fn get_baremetalhost_api(&self) -> anyhow::Result<Api<DynamicObject>> {
         let gvk = GroupVersionKind::gvk("metal3.io", "v1alpha1", "BareMetalHost");
@@ -463,5 +475,54 @@ impl Runtime for Metal3Runtime {
             .collect();
 
         Ok(instances)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_memory_to_mb_gi() {
+        assert_eq!(parse_memory_to_mb("64Gi"), 65536);
+        assert_eq!(parse_memory_to_mb("1Gi"), 1024);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_mi() {
+        assert_eq!(parse_memory_to_mb("512Mi"), 512);
+        assert_eq!(parse_memory_to_mb("2048Mi"), 2048);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_g() {
+        assert_eq!(parse_memory_to_mb("4G"), 4096);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_m() {
+        assert_eq!(parse_memory_to_mb("256M"), 256);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_default() {
+        assert_eq!(parse_memory_to_mb("unknown"), 1024);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_gi() {
+        assert_eq!(parse_storage_to_gb("500Gi"), 500);
+        assert_eq!(parse_storage_to_gb("1Gi"), 1);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_mi() {
+        assert_eq!(parse_storage_to_gb("10240Mi"), 10);
+        assert_eq!(parse_storage_to_gb("512Mi"), 1); // rounds up to min 1
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_default() {
+        assert_eq!(parse_storage_to_gb("unknown"), 10);
     }
 }

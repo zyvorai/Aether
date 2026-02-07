@@ -3,10 +3,19 @@
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::{AccessMode, Workload};
 use async_trait::async_trait;
+use k8s_openapi::api::autoscaling::v2::{
+    HorizontalPodAutoscaler, HorizontalPodAutoscalerSpec, MetricSpec, MetricTarget,
+    ResourceMetricSource,
+};
 use k8s_openapi::api::core::v1::{
-    Container, ContainerPort, HTTPGetAction, PersistentVolumeClaim, PersistentVolumeClaimSpec,
-    Pod, PodSpec, Probe, ResourceRequirements as K8sResourceRequirements, Service, ServicePort,
-    ServiceSpec, VolumeResourceRequirements,
+    ConfigMap, Container, ContainerPort, EnvFromSource as K8sEnvFromSource, HTTPGetAction,
+    PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, PodSpec, Probe,
+    ResourceRequirements as K8sResourceRequirements, Secret, Service, ServicePort, ServiceSpec,
+    VolumeResourceRequirements, ConfigMapEnvSource, SecretEnvSource,
+};
+use k8s_openapi::api::networking::v1::{
+    HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
+    IngressServiceBackend, IngressSpec, IngressTLS, ServiceBackendPort,
 };
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
@@ -118,6 +127,33 @@ impl KubernetesRuntime {
             })
         });
 
+        // Environment variables from ConfigMaps and Secrets
+        let env_from: Vec<K8sEnvFromSource> = spec
+            .config
+            .as_ref()
+            .map(|c| {
+                c.env_from
+                    .iter()
+                    .map(|e| match e.source_type {
+                        crate::spec::EnvSourceType::ConfigMap => K8sEnvFromSource {
+                            config_map_ref: Some(ConfigMapEnvSource {
+                                name: e.name.clone(),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        },
+                        crate::spec::EnvSourceType::Secret => K8sEnvFromSource {
+                            secret_ref: Some(SecretEnvSource {
+                                name: e.name.clone(),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        },
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
         // Container spec
         let container = Container {
             name: spec.metadata.name.clone(),
@@ -126,6 +162,11 @@ impl KubernetesRuntime {
             resources: Some(resources),
             liveness_probe,
             readiness_probe,
+            env_from: if env_from.is_empty() {
+                None
+            } else {
+                Some(env_from)
+            },
             ..Default::default()
         };
 
@@ -232,6 +273,211 @@ impl KubernetesRuntime {
         })
     }
 
+    /// Generate ConfigMaps from workload spec
+    fn generate_configmaps(&self, spec: &Workload) -> Vec<ConfigMap> {
+        let config = match &spec.config {
+            Some(c) => c,
+            None => return vec![],
+        };
+
+        let mut labels = BTreeMap::new();
+        labels.insert("app".to_string(), spec.metadata.name.clone());
+        labels.insert("managed-by".to_string(), "orchestr8".to_string());
+
+        config
+            .config_maps
+            .iter()
+            .map(|cm| ConfigMap {
+                metadata: ObjectMeta {
+                    name: Some(cm.name.clone()),
+                    namespace: Some(self.namespace.clone()),
+                    labels: Some(labels.clone()),
+                    ..Default::default()
+                },
+                data: Some(cm.data.clone().into_iter().collect()),
+                ..Default::default()
+            })
+            .collect()
+    }
+
+    /// Generate Secrets from workload spec
+    fn generate_secrets(&self, spec: &Workload) -> Vec<Secret> {
+        let config = match &spec.config {
+            Some(c) => c,
+            None => return vec![],
+        };
+
+        let mut labels = BTreeMap::new();
+        labels.insert("app".to_string(), spec.metadata.name.clone());
+        labels.insert("managed-by".to_string(), "orchestr8".to_string());
+
+        config
+            .secrets
+            .iter()
+            .map(|s| {
+                // Convert string values to base64-encoded bytes for k8s secrets
+                let string_data: BTreeMap<String, String> =
+                    s.data.clone().into_iter().collect();
+
+                Secret {
+                    metadata: ObjectMeta {
+                        name: Some(s.name.clone()),
+                        namespace: Some(self.namespace.clone()),
+                        labels: Some(labels.clone()),
+                        ..Default::default()
+                    },
+                    string_data: Some(string_data),
+                    type_: Some("Opaque".to_string()),
+                    ..Default::default()
+                }
+            })
+            .collect()
+    }
+
+    /// Generate Ingress from workload spec
+    fn generate_ingress(&self, spec: &Workload) -> Option<Ingress> {
+        let ingress_spec = match &spec.ingress {
+            Some(i) if i.enabled => i,
+            _ => return None,
+        };
+
+        let mut labels = BTreeMap::new();
+        labels.insert("app".to_string(), spec.metadata.name.clone());
+        labels.insert("managed-by".to_string(), "orchestr8".to_string());
+
+        let annotations: BTreeMap<String, String> =
+            ingress_spec.annotations.clone().into_iter().collect();
+
+        // Build HTTP paths
+        let paths: Vec<HTTPIngressPath> = ingress_spec
+            .paths
+            .iter()
+            .map(|p| HTTPIngressPath {
+                path: Some(p.path.clone()),
+                path_type: p.path_type.clone(),
+                backend: IngressBackend {
+                    service: Some(IngressServiceBackend {
+                        name: format!("{}-service", spec.metadata.name),
+                        port: Some(ServiceBackendPort {
+                            number: Some(p.port as i32),
+                            ..Default::default()
+                        }),
+                    }),
+                    ..Default::default()
+                },
+            })
+            .collect();
+
+        let rule = IngressRule {
+            host: Some(ingress_spec.host.clone()),
+            http: Some(HTTPIngressRuleValue { paths }),
+        };
+
+        // TLS configuration
+        let tls = if ingress_spec.tls {
+            Some(vec![IngressTLS {
+                hosts: Some(vec![ingress_spec.host.clone()]),
+                secret_name: Some(format!("{}-tls", spec.metadata.name)),
+            }])
+        } else {
+            None
+        };
+
+        Some(Ingress {
+            metadata: ObjectMeta {
+                name: Some(format!("{}-ingress", spec.metadata.name)),
+                namespace: Some(self.namespace.clone()),
+                labels: Some(labels),
+                annotations: Some(annotations),
+                ..Default::default()
+            },
+            spec: Some(IngressSpec {
+                rules: Some(vec![rule]),
+                tls,
+                ..Default::default()
+            }),
+            ..Default::default()
+        })
+    }
+
+    /// Generate HorizontalPodAutoscaler from workload spec
+    fn generate_hpa(&self, spec: &Workload) -> Option<HorizontalPodAutoscaler> {
+        let scaling_spec = match &spec.scaling {
+            Some(s) if s.enabled => s,
+            _ => return None,
+        };
+
+        let mut labels = BTreeMap::new();
+        labels.insert("app".to_string(), spec.metadata.name.clone());
+        labels.insert("managed-by".to_string(), "orchestr8".to_string());
+
+        // Build metrics
+        let metrics: Vec<MetricSpec> = scaling_spec
+            .metrics
+            .iter()
+            .filter_map(|m| match m.metric_type {
+                crate::spec::MetricType::CPU => {
+                    // Parse target value (e.g., "80" for 80%)
+                    let target_value: i32 = m.target_value.trim_end_matches('%').parse().ok()?;
+
+                    Some(MetricSpec {
+                        type_: "Resource".to_string(),
+                        resource: Some(ResourceMetricSource {
+                            name: "cpu".to_string(),
+                            target: MetricTarget {
+                                type_: "Utilization".to_string(),
+                                average_utilization: Some(target_value),
+                                ..Default::default()
+                            },
+                        }),
+                        ..Default::default()
+                    })
+                }
+                crate::spec::MetricType::Memory => {
+                    let target_value: i32 = m.target_value.trim_end_matches('%').parse().ok()?;
+
+                    Some(MetricSpec {
+                        type_: "Resource".to_string(),
+                        resource: Some(ResourceMetricSource {
+                            name: "memory".to_string(),
+                            target: MetricTarget {
+                                type_: "Utilization".to_string(),
+                                average_utilization: Some(target_value),
+                                ..Default::default()
+                            },
+                        }),
+                        ..Default::default()
+                    })
+                }
+                crate::spec::MetricType::Custom => None, // Custom metrics not implemented yet
+            })
+            .collect();
+
+        let mut match_labels = BTreeMap::new();
+        match_labels.insert("app".to_string(), spec.metadata.name.clone());
+
+        Some(HorizontalPodAutoscaler {
+            metadata: ObjectMeta {
+                name: Some(format!("{}-hpa", spec.metadata.name)),
+                namespace: Some(self.namespace.clone()),
+                labels: Some(labels),
+                ..Default::default()
+            },
+            spec: Some(HorizontalPodAutoscalerSpec {
+                scale_target_ref: k8s_openapi::api::autoscaling::v2::CrossVersionObjectReference {
+                    api_version: Some("v1".to_string()),
+                    kind: "Pod".to_string(),
+                    name: spec.metadata.name.clone(),
+                },
+                min_replicas: Some(scaling_spec.min_replicas as i32),
+                max_replicas: scaling_spec.max_replicas as i32,
+                metrics: Some(metrics),
+                ..Default::default()
+            }),
+            ..Default::default()
+        })
+    }
+
     /// Get pod status
     async fn get_pod_status(&self, name: &str) -> anyhow::Result<Status> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -321,6 +567,37 @@ impl Runtime for KubernetesRuntime {
             spec.metadata.name
         );
 
+        // Create ConfigMaps
+        for configmap in self.generate_configmaps(spec) {
+            let configmaps: Api<ConfigMap> =
+                Api::namespaced(self.client.clone(), &self.namespace);
+
+            match configmaps.create(&PostParams::default(), &configmap).await {
+                Ok(_) => {
+                    tracing::info!(
+                        "Created ConfigMap: {}",
+                        configmap.metadata.name.unwrap_or_default()
+                    )
+                }
+                Err(e) => tracing::warn!("ConfigMap creation failed (may already exist): {}", e),
+            }
+        }
+
+        // Create Secrets
+        for secret in self.generate_secrets(spec) {
+            let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
+
+            match secrets.create(&PostParams::default(), &secret).await {
+                Ok(_) => {
+                    tracing::info!(
+                        "Created Secret: {}",
+                        secret.metadata.name.unwrap_or_default()
+                    )
+                }
+                Err(e) => tracing::warn!("Secret creation failed (may already exist): {}", e),
+            }
+        }
+
         // Create PVC if needed
         if let Some(pvc) = self.generate_pvc(spec) {
             let pvcs: Api<PersistentVolumeClaim> =
@@ -342,6 +619,16 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
+        // Create Ingress if needed
+        if let Some(ingress) = self.generate_ingress(spec) {
+            let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
+
+            match ingresses.create(&PostParams::default(), &ingress).await {
+                Ok(_) => tracing::info!("Created Ingress: {}-ingress", spec.metadata.name),
+                Err(e) => tracing::warn!("Ingress creation failed (may already exist): {}", e),
+            }
+        }
+
         // Create Pod
         let pod = self.generate_pod(image, spec);
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -359,6 +646,17 @@ impl Runtime for KubernetesRuntime {
             .unwrap_or_else(|| "unknown".to_string());
 
         tracing::info!("Created Pod: {}", pod_name);
+
+        // Create HPA if needed
+        if let Some(hpa) = self.generate_hpa(spec) {
+            let hpas: Api<HorizontalPodAutoscaler> =
+                Api::namespaced(self.client.clone(), &self.namespace);
+
+            match hpas.create(&PostParams::default(), &hpa).await {
+                Ok(_) => tracing::info!("Created HPA: {}-hpa", spec.metadata.name),
+                Err(e) => tracing::warn!("HPA creation failed (may already exist): {}", e),
+            }
+        }
 
         Ok(Instance {
             id: uid,
@@ -396,11 +694,31 @@ impl Runtime for KubernetesRuntime {
     async fn delete(&self, instance: &Instance) -> crate::Result<()> {
         tracing::info!("Deleting Kubernetes resources for: {}", instance.name);
 
+        // Delete HPA
+        let hpas: Api<HorizontalPodAutoscaler> =
+            Api::namespaced(self.client.clone(), &self.namespace);
+        let hpa_name = format!("{}-hpa", instance.name);
+        match hpas.delete(&hpa_name, &DeleteParams::default()).await {
+            Ok(_) => tracing::info!("Deleted HPA: {}", hpa_name),
+            Err(e) => tracing::debug!("HPA deletion failed (may not exist): {}", e),
+        }
+
         // Delete Pod
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
         match pods.delete(&instance.name, &DeleteParams::default()).await {
             Ok(_) => tracing::info!("Deleted Pod: {}", instance.name),
             Err(e) => tracing::warn!("Pod deletion failed: {}", e),
+        }
+
+        // Delete Ingress
+        let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
+        let ingress_name = format!("{}-ingress", instance.name);
+        match ingresses
+            .delete(&ingress_name, &DeleteParams::default())
+            .await
+        {
+            Ok(_) => tracing::info!("Deleted Ingress: {}", ingress_name),
+            Err(e) => tracing::debug!("Ingress deletion failed (may not exist): {}", e),
         }
 
         // Delete Service
@@ -418,6 +736,43 @@ impl Runtime for KubernetesRuntime {
         match pvcs.delete(&pvc_name, &DeleteParams::default()).await {
             Ok(_) => tracing::info!("Deleted PVC: {}", pvc_name),
             Err(e) => tracing::debug!("PVC deletion failed (may not exist): {}", e),
+        }
+
+        // Delete ConfigMaps and Secrets managed by orchestr8
+        // We'll use label selectors to find and delete them
+        let lp = ListParams::default().labels(&format!(
+            "app={},managed-by=orchestr8",
+            instance.name
+        ));
+
+        let configmaps: Api<ConfigMap> = Api::namespaced(self.client.clone(), &self.namespace);
+        match configmaps.list(&lp).await {
+            Ok(cm_list) => {
+                for cm in cm_list.items {
+                    if let Some(name) = cm.metadata.name {
+                        match configmaps.delete(&name, &DeleteParams::default()).await {
+                            Ok(_) => tracing::info!("Deleted ConfigMap: {}", name),
+                            Err(e) => tracing::debug!("ConfigMap deletion failed: {}", e),
+                        }
+                    }
+                }
+            }
+            Err(e) => tracing::debug!("ConfigMap list failed: {}", e),
+        }
+
+        let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
+        match secrets.list(&lp).await {
+            Ok(secret_list) => {
+                for secret in secret_list.items {
+                    if let Some(name) = secret.metadata.name {
+                        match secrets.delete(&name, &DeleteParams::default()).await {
+                            Ok(_) => tracing::info!("Deleted Secret: {}", name),
+                            Err(e) => tracing::debug!("Secret deletion failed: {}", e),
+                        }
+                    }
+                }
+            }
+            Err(e) => tracing::debug!("Secret list failed: {}", e),
         }
 
         Ok(())
@@ -675,6 +1030,9 @@ mod tests {
                 storage_class: None,
             },
             health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
         }
     }
 }

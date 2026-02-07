@@ -23,6 +23,12 @@ pub struct Workload {
     pub persistence: PersistenceSpec,
     #[serde(default)]
     pub health: Option<HealthSpec>,
+    #[serde(default)]
+    pub config: Option<ConfigSpec>,
+    #[serde(default)]
+    pub ingress: Option<IngressSpec>,
+    #[serde(default)]
+    pub scaling: Option<ScalingSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -237,6 +243,96 @@ impl Workload {
     }
 }
 
+/// Configuration specification (ConfigMaps and Secrets)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ConfigSpec {
+    #[serde(default)]
+    pub config_maps: Vec<ConfigMapSpec>,
+    #[serde(default)]
+    pub secrets: Vec<SecretSpec>,
+    #[serde(default)]
+    pub env_from: Vec<EnvFromSource>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ConfigMapSpec {
+    pub name: String,
+    pub data: HashMap<String, String>,
+    #[serde(default)]
+    pub mount_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SecretSpec {
+    pub name: String,
+    pub data: HashMap<String, String>,
+    #[serde(default)]
+    pub mount_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct EnvFromSource {
+    pub source_type: EnvSourceType,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum EnvSourceType {
+    ConfigMap,
+    Secret,
+}
+
+/// Ingress specification
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct IngressSpec {
+    pub enabled: bool,
+    pub host: String,
+    #[serde(default)]
+    pub paths: Vec<IngressPath>,
+    #[serde(default)]
+    pub tls: bool,
+    #[serde(default)]
+    pub annotations: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct IngressPath {
+    pub path: String,
+    #[serde(default = "default_path_type")]
+    pub path_type: String,
+    pub port: u16,
+}
+
+fn default_path_type() -> String {
+    "Prefix".to_string()
+}
+
+/// Scaling specification
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScalingSpec {
+    pub enabled: bool,
+    pub min_replicas: u32,
+    pub max_replicas: u32,
+    #[serde(default)]
+    pub metrics: Vec<ScalingMetric>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScalingMetric {
+    pub metric_type: MetricType,
+    pub target_value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum MetricType {
+    CPU,
+    Memory,
+    Custom,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,6 +368,9 @@ mod tests {
             network: NetworkSpec::default(),
             persistence: PersistenceSpec::default(),
             health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
         };
 
         assert!(workload.validate().is_ok());
@@ -308,8 +407,175 @@ mod tests {
             network: NetworkSpec::default(),
             persistence: PersistenceSpec::default(),
             health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
         };
 
         assert_eq!(workload.image_name(), "ghcr.io/yourorg/my-app:latest");
+    }
+
+    #[test]
+    fn test_invalid_api_version() {
+        let workload = Workload {
+            api_version: "orchestr8/v2".to_string(),
+            kind: "Workload".to_string(),
+            metadata: Metadata {
+                name: "test-app".to_string(),
+                owner: "test".to_string(),
+                project: "demo".to_string(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "ghcr.io/test".to_string(),
+                build_args: HashMap::new(),
+            },
+            requirements: ResourceRequirements {
+                cpu: "2".to_string(),
+                memory: "4Gi".to_string(),
+                storage: "20Gi".to_string(),
+                gpu: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Auto,
+                allow: vec![RuntimeType::Container],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+        };
+
+        let result = workload.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("apiVersion"));
+    }
+
+    #[test]
+    fn test_invalid_kind() {
+        let workload = Workload {
+            api_version: "orchestr8/v1".to_string(),
+            kind: "Service".to_string(),
+            metadata: Metadata {
+                name: "test-app".to_string(),
+                owner: "test".to_string(),
+                project: "demo".to_string(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "ghcr.io/test".to_string(),
+                build_args: HashMap::new(),
+            },
+            requirements: ResourceRequirements {
+                cpu: "2".to_string(),
+                memory: "4Gi".to_string(),
+                storage: "20Gi".to_string(),
+                gpu: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Auto,
+                allow: vec![RuntimeType::Container],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+        };
+
+        let result = workload.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("kind"));
+    }
+
+    #[test]
+    fn test_empty_name() {
+        let workload = Workload {
+            api_version: "orchestr8/v1".to_string(),
+            kind: "Workload".to_string(),
+            metadata: Metadata {
+                name: "".to_string(),
+                owner: "test".to_string(),
+                project: "demo".to_string(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "ghcr.io/test".to_string(),
+                build_args: HashMap::new(),
+            },
+            requirements: ResourceRequirements {
+                cpu: "2".to_string(),
+                memory: "4Gi".to_string(),
+                storage: "20Gi".to_string(),
+                gpu: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Auto,
+                allow: vec![RuntimeType::Container],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+        };
+
+        let result = workload.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("name"));
+    }
+
+    #[test]
+    fn test_preferred_not_in_allow() {
+        let workload = Workload {
+            api_version: "orchestr8/v1".to_string(),
+            kind: "Workload".to_string(),
+            metadata: Metadata {
+                name: "test-app".to_string(),
+                owner: "test".to_string(),
+                project: "demo".to_string(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "ghcr.io/test".to_string(),
+                build_args: HashMap::new(),
+            },
+            requirements: ResourceRequirements {
+                cpu: "2".to_string(),
+                memory: "4Gi".to_string(),
+                storage: "20Gi".to_string(),
+                gpu: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Kube,
+                allow: vec![RuntimeType::Container],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+        };
+
+        let result = workload.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not in allowed"));
     }
 }

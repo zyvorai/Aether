@@ -83,18 +83,7 @@ impl KubeVirtRuntime {
             labels.insert(k.clone(), v.clone());
         }
 
-        // CPU cores (convert from string like "2" or "2000m")
-        let cpu_cores = if spec.requirements.cpu.ends_with('m') {
-            let milli = spec
-                .requirements
-                .cpu
-                .trim_end_matches('m')
-                .parse::<i32>()
-                .unwrap_or(1000);
-            (milli / 1000).max(1)
-        } else {
-            spec.requirements.cpu.parse::<i32>().unwrap_or(1)
-        };
+        let cpu_cores = parse_cpu_cores(&spec.requirements.cpu);
 
         let mut vm_spec = json!({
             "apiVersion": "kubevirt.io/v1",
@@ -253,6 +242,16 @@ impl KubeVirtRuntime {
                 restart_count: 0,
             }),
         }
+    }
+}
+
+/// Parse CPU string (e.g., "4" or "2000m") to core count
+fn parse_cpu_cores(cpu: &str) -> i32 {
+    if cpu.ends_with('m') {
+        let milli = cpu.trim_end_matches('m').parse::<i32>().unwrap_or(1000);
+        (milli / 1000).max(1)
+    } else {
+        cpu.parse::<i32>().unwrap_or(1)
     }
 }
 
@@ -439,5 +438,30 @@ impl Runtime for KubeVirtRuntime {
             .collect();
 
         Ok(instances)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_cpu_cores_whole() {
+        assert_eq!(parse_cpu_cores("4"), 4);
+        assert_eq!(parse_cpu_cores("1"), 1);
+        assert_eq!(parse_cpu_cores("16"), 16);
+    }
+
+    #[test]
+    fn test_parse_cpu_cores_millicore() {
+        assert_eq!(parse_cpu_cores("2000m"), 2);
+        assert_eq!(parse_cpu_cores("4000m"), 4);
+        assert_eq!(parse_cpu_cores("500m"), 1); // min 1 core
+    }
+
+    #[test]
+    fn test_parse_cpu_cores_invalid() {
+        assert_eq!(parse_cpu_cores("invalid"), 1); // defaults to 1
+        assert_eq!(parse_cpu_cores("xm"), 1); // invalid millicore defaults
     }
 }
