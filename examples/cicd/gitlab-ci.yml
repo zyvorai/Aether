@@ -1,0 +1,337 @@
+# GitLab CI/CD Pipeline for Orchestr8
+# Demonstrates multi-stage deployment with cost analysis and automated rollback
+
+variables:
+  ORCHESTR8_VERSION: "0.1.0"
+  WORKLOAD_SPEC: "workloads/app.yaml"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+stages:
+  - validate
+  - build
+  - test
+  - deploy-staging
+  - deploy-production
+  - cleanup
+
+# Reusable configuration
+.install_orchestr8: &install_orchestr8
+  - curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
+  - chmod +x orchestr8-linux-amd64
+  - mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+  - orchestr8 --version
+
+# Stage 1: Validate workload specification
+validate:spec:
+  stage: validate
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl yq
+    - *install_orchestr8
+  script:
+    - echo "Validating workload specification..."
+    - orchestr8 -s $WORKLOAD_SPEC validate
+    - yq eval $WORKLOAD_SPEC > /dev/null
+    - echo "✅ Validation successful"
+  only:
+    - branches
+    - merge_requests
+
+# Stage 1: Cost estimation
+cost:estimate:
+  stage: validate
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+    - *install_orchestr8
+  script:
+    - echo "Estimating deployment costs..."
+    - orchestr8 -s $WORKLOAD_SPEC cost --provider all | tee cost-report.txt
+    - echo "Cost estimation completed"
+  artifacts:
+    reports:
+      dotenv: cost-report.txt
+    paths:
+      - cost-report.txt
+    expire_in: 30 days
+  only:
+    - branches
+    - merge_requests
+
+# Stage 2: Build container image
+build:image:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $IMAGE_TAG .
+    - docker tag $IMAGE_TAG $CI_REGISTRY_IMAGE:latest
+    - docker push $IMAGE_TAG
+    - docker push $CI_REGISTRY_IMAGE:latest
+    - echo "IMAGE_TAG=$IMAGE_TAG" > build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+  only:
+    - main
+    - develop
+
+# Stage 3: Unit tests
+test:unit:
+  stage: test
+  image: node:20-alpine
+  script:
+    - npm ci
+    - npm run test:unit
+  coverage: '/Statements\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    reports:
+      junit: test-results/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+  only:
+    - branches
+    - merge_requests
+
+# Stage 3: Security scan
+test:security:
+  stage: test
+  image: aquasec/trivy:latest
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  script:
+    - trivy image --severity HIGH,CRITICAL $IMAGE_TAG
+  allow_failure: true
+  only:
+    - main
+    - develop
+
+# Stage 4: Deploy to staging
+deploy:staging:
+  stage: deploy-staging
+  image: alpine:latest
+  environment:
+    name: staging
+    url: https://staging.example.com
+    on_stop: stop:staging
+  before_script:
+    - apk add --no-cache curl kubectl yq
+    - *install_orchestr8
+    - mkdir -p $HOME/.kube
+    - echo "$KUBE_CONFIG_STAGING" | base64 -d > $HOME/.kube/config
+  script:
+    - echo "Creating pre-deployment backup..."
+    - orchestr8 backup -n "staging-pre-deploy-$(date +%Y%m%d-%H%M%S)"
+
+    - echo "Updating workload spec with new image..."
+    - yq eval ".image.tag = \"$CI_COMMIT_SHORT_SHA\"" -i $WORKLOAD_SPEC
+
+    - echo "Deploying to staging..."
+    - orchestr8 -s $WORKLOAD_SPEC run --runtime kubernetes
+
+    - echo "Waiting for deployment..."
+    - kubectl wait --for=condition=ready pod -l app=myapp --timeout=300s
+
+    - echo "Checking deployment status..."
+    - orchestr8 status myapp
+
+    - echo "Running health checks..."
+    - apk add --no-cache curl
+    - curl -f https://staging.example.com/health || exit 1
+
+    - echo "✅ Staging deployment successful"
+  only:
+    - develop
+  when: manual
+
+# Stop staging environment
+stop:staging:
+  stage: deploy-staging
+  image: alpine:latest
+  environment:
+    name: staging
+    action: stop
+  before_script:
+    - apk add --no-cache curl
+    - *install_orchestr8
+  script:
+    - orchestr8 delete myapp
+  when: manual
+  only:
+    - develop
+
+# Stage 4: Integration tests on staging
+test:integration:
+  stage: deploy-staging
+  image: node:20-alpine
+  needs:
+    - deploy:staging
+  variables:
+    TEST_URL: https://staging.example.com
+  script:
+    - npm ci
+    - npm run test:integration
+  artifacts:
+    reports:
+      junit: test-results/integration-junit.xml
+    paths:
+      - test-results/
+    expire_in: 7 days
+  only:
+    - develop
+
+# Stage 5: Deploy to production
+deploy:production:
+  stage: deploy-production
+  image: alpine:latest
+  environment:
+    name: production
+    url: https://app.example.com
+    on_stop: rollback:production
+  before_script:
+    - apk add --no-cache curl kubectl yq
+    - *install_orchestr8
+    - mkdir -p $HOME/.kube
+    - echo "$KUBE_CONFIG_PRODUCTION" | base64 -d > $HOME/.kube/config
+  script:
+    - echo "Creating production backup..."
+    - orchestr8 backup -n "prod-pre-deploy-$(date +%Y%m%d-%H%M%S)" -d "Pre-deployment backup for commit $CI_COMMIT_SHORT_SHA"
+
+    - echo "Updating workload spec..."
+    - yq eval ".image.tag = \"$CI_COMMIT_SHORT_SHA\"" -i $WORKLOAD_SPEC
+
+    - echo "Deploying to production with blue-green strategy..."
+    - orchestr8 migrate myapp kubernetes --strategy blue-green
+
+    - echo "Verifying production deployment..."
+    - orchestr8 status myapp
+    - kubectl get pods -l app=myapp
+
+    - echo "Running smoke tests..."
+    - curl -f https://app.example.com/health || exit 1
+    - curl -f https://app.example.com/api/version || exit 1
+
+    - echo "✅ Production deployment successful"
+  only:
+    - main
+  when: manual
+
+# Rollback production
+rollback:production:
+  stage: deploy-production
+  image: alpine:latest
+  environment:
+    name: production
+    action: rollback
+  before_script:
+    - apk add --no-cache curl
+    - *install_orchestr8
+  script:
+    - echo "Rolling back production deployment..."
+    - LATEST_BACKUP=$(orchestr8 list-backups | grep prod-pre-deploy | head -1 | awk '{print $2}')
+    - orchestr8 restore $LATEST_BACKUP
+    - echo "✅ Rollback completed"
+  when: manual
+  only:
+    - main
+
+# Stage 6: Cleanup
+cleanup:backups:
+  stage: cleanup
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl findutils
+    - *install_orchestr8
+  script:
+    - echo "Cleaning up old backups (keeping last 7 days)..."
+    - find ~/.orchestr8/backups -name "*.json" -mtime +7 -delete
+    - orchestr8 list-backups
+  only:
+    - schedules
+  when: always
+
+cleanup:images:
+  stage: cleanup
+  image: alpine:latest
+  script:
+    - echo "Cleaning up old container images..."
+    - apk add --no-cache curl jq
+    # GitLab API to delete old images
+    - |
+      IMAGES=$(curl --header "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories" | jq -r '.[].id')
+
+      for image_id in $IMAGES; do
+        TAGS=$(curl --header "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/$image_id/tags" | \
+          jq -r '.[] | select(.created_at | . < (now - 2592000 | todate)) | .name')
+
+        for tag in $TAGS; do
+          echo "Deleting old tag: $tag"
+          curl --request DELETE --header "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
+            "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/$image_id/tags/$tag"
+        done
+      done
+  only:
+    - schedules
+
+# Scheduled jobs
+performance:benchmark:
+  stage: test
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl apache2-utils
+    - *install_orchestr8
+  script:
+    - echo "Running performance benchmarks..."
+    - ab -n 10000 -c 100 https://staging.example.com/ > benchmark.txt
+    - cat benchmark.txt
+  artifacts:
+    paths:
+      - benchmark.txt
+    expire_in: 30 days
+  only:
+    - schedules
+  when: manual
+
+# Review apps for merge requests
+review:start:
+  stage: deploy-staging
+  image: alpine:latest
+  environment:
+    name: review/$CI_COMMIT_REF_SLUG
+    url: https://$CI_COMMIT_REF_SLUG.review.example.com
+    on_stop: review:stop
+    auto_stop_in: 1 week
+  before_script:
+    - apk add --no-cache curl kubectl yq
+    - *install_orchestr8
+  script:
+    - yq eval ".metadata.name = \"app-$CI_COMMIT_REF_SLUG\"" -i $WORKLOAD_SPEC
+    - yq eval ".image.tag = \"$CI_COMMIT_SHORT_SHA\"" -i $WORKLOAD_SPEC
+    - orchestr8 -s $WORKLOAD_SPEC run --runtime kubernetes
+  only:
+    - merge_requests
+  when: manual
+
+review:stop:
+  stage: deploy-staging
+  image: alpine:latest
+  environment:
+    name: review/$CI_COMMIT_REF_SLUG
+    action: stop
+  before_script:
+    - apk add --no-cache curl
+    - *install_orchestr8
+  script:
+    - orchestr8 delete app-$CI_COMMIT_REF_SLUG
+  only:
+    - merge_requests
+  when: manual

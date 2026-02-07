@@ -3,7 +3,7 @@ name = "orchestr8"
 version = "0.1.0"
 edition = "2021"
 authors = ["Susant Sahani <ssahani@gmail.com>"]
-description = "Universal runtime control plane - One spec, three runtimes (Container, Kubernetes, KubeVirt, Metal3)"
+description = "Universal runtime control plane - One spec, four runtimes (Container, Kubernetes, KubeVirt, Metal3)"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
@@ -13,6 +13,7 @@ futures = "0.3"
 
 # CLI framework
 clap = { version = "4.5", features = ["derive", "cargo"] }
+clap_complete = "4.5"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -30,6 +31,11 @@ k8s-openapi = { version = "0.23", features = ["latest"] }
 # HTTP client for Metal3/APIs
 reqwest = { version = "0.12", features = ["json"] }
 
+# API Server
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+
 # Error handling
 anyhow = "1.0"
 thiserror = "2.0"
@@ -46,6 +52,13 @@ async-trait = "0.1"
 
 # Date/time
 chrono = "0.4"
+
+# Metrics
+prometheus = "0.13"
+lazy_static = "1.4"
+
+# Utilities
+dirs = "5.0"
 
 [dev-dependencies]
 tempfile = "3.15"

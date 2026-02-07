@@ -15,6 +15,7 @@ COPY Cargo.toml Cargo.lock ./
 
 # Copy source
 COPY src ./src
+COPY web ./web
 
 # Build release binary
 RUN cargo build --release

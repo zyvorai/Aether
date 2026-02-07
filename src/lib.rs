@@ -3,7 +3,12 @@
 //! One spec. Four runtimes. One tool.
 
 pub mod adapters;
+pub mod api;
+pub mod backup;
+pub mod completions;
+pub mod cost;
 pub mod engine;
+pub mod metrics;
 pub mod migration;
 pub mod runtime;
 pub mod spec;

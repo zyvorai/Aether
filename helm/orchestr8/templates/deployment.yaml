@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "orchestr8.fullname" . }}
+  labels:
+    {{- include "orchestr8.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "orchestr8.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "orchestr8.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "orchestr8.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - /bin/sh
+          - -c
+          - |
+            # Keep container running (operator mode)
+            tail -f /dev/null
+        env:
+        - name: ORCHESTR8_NAMESPACE
+          value: {{ .Values.orchestr8.namespace | quote }}
+        - name: RUST_LOG
+          value: {{ .Values.orchestr8.logging.level | quote }}
+        {{- if .Values.orchestr8.metrics.enabled }}
+        - name: ORCHESTR8_METRICS_ENABLED
+          value: "true"
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.targetPort }}
+          protocol: TCP
+        {{- if .Values.metrics.enabled }}
+        - name: metrics
+          containerPort: {{ .Values.metrics.port }}
+          protocol: TCP
+        {{- end }}
+        livenessProbe:
+          exec:
+            command:
+            - /usr/local/bin/orchestr8
+            - --help
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - /usr/local/bin/orchestr8
+            - --help
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name: state
+          mountPath: {{ .Values.orchestr8.stateStorage.mountPath }}
+        {{- if .Values.config.files }}
+        - name: config
+          mountPath: /etc/orchestr8/config
+          readOnly: true
+        {{- end }}
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: state
+        {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "orchestr8.fullname" . }}-state
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- if .Values.config.files }}
+      - name: config
+        configMap:
+          name: {{ include "orchestr8.fullname" . }}-config
+      {{- end }}
+      - name: tmp
+        emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

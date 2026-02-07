@@ -1,0 +1,473 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://orchestr8.io/schema/workload.schema.json",
+  "title": "Orchestr8 Workload Specification",
+  "description": "Universal workload specification for Orchestr8 - One spec, four runtimes",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "build", "requirements", "runtime"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "orchestr8/v1",
+      "description": "API version of the workload specification"
+    },
+    "kind": {
+      "type": "string",
+      "const": "Workload",
+      "description": "Resource kind"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Workload metadata",
+      "required": ["name", "owner", "project"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Workload name (must be DNS-compatible)",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+        },
+        "owner": {
+          "type": "string",
+          "description": "Owner or team responsible for this workload"
+        },
+        "project": {
+          "type": "string",
+          "description": "Project or application name"
+        },
+        "labels": {
+          "type": "object",
+          "description": "Key-value labels for organization",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Key-value annotations for metadata",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "description": "Build configuration",
+      "required": ["context", "dockerfile", "registry"],
+      "properties": {
+        "context": {
+          "type": "string",
+          "description": "Build context path"
+        },
+        "dockerfile": {
+          "type": "string",
+          "description": "Path to Dockerfile"
+        },
+        "registry": {
+          "type": "string",
+          "description": "Container registry URL (e.g., ghcr.io/yourorg)"
+        },
+        "buildArgs": {
+          "type": "object",
+          "description": "Build-time arguments",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "description": "Resource requirements",
+      "required": ["cpu", "memory", "storage"],
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "description": "CPU requirement (e.g., '2' or '2000m')",
+          "examples": ["2", "2000m", "0.5"]
+        },
+        "memory": {
+          "type": "string",
+          "description": "Memory requirement (e.g., '4Gi', '2048Mi')",
+          "examples": ["4Gi", "2048Mi", "512Mi"]
+        },
+        "storage": {
+          "type": "string",
+          "description": "Storage requirement (e.g., '20Gi', '10Gi')",
+          "examples": ["20Gi", "10Gi", "100Mi"]
+        },
+        "gpu": {
+          "type": "object",
+          "description": "GPU requirements",
+          "required": ["count", "vendor"],
+          "properties": {
+            "count": {
+              "type": "integer",
+              "description": "Number of GPUs required",
+              "minimum": 1
+            },
+            "vendor": {
+              "type": "string",
+              "description": "GPU vendor",
+              "enum": ["nvidia", "amd", "intel"]
+            }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "description": "Runtime selection configuration",
+      "required": ["preferred", "allow"],
+      "properties": {
+        "preferred": {
+          "type": "string",
+          "description": "Preferred runtime",
+          "enum": ["auto", "container", "kube", "kubevirt", "metal"]
+        },
+        "allow": {
+          "type": "array",
+          "description": "Allowed runtimes for this workload",
+          "items": {
+            "type": "string",
+            "enum": ["container", "kube", "kubevirt", "metal"]
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "description": "Network configuration",
+      "properties": {
+        "service": {
+          "type": "boolean",
+          "description": "Create a Kubernetes Service",
+          "default": false
+        },
+        "serviceType": {
+          "type": "string",
+          "description": "Kubernetes Service type",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+          "default": "ClusterIP"
+        },
+        "ports": {
+          "type": "array",
+          "description": "Port mappings",
+          "items": {
+            "type": "object",
+            "required": ["containerPort", "servicePort"],
+            "properties": {
+              "containerPort": {
+                "type": "integer",
+                "description": "Container port",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "servicePort": {
+                "type": "integer",
+                "description": "Service port",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "protocol": {
+                "type": "string",
+                "description": "Protocol",
+                "enum": ["TCP", "UDP"],
+                "default": "TCP"
+              }
+            }
+          }
+        }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "description": "Persistent storage configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable persistent storage",
+          "default": false
+        },
+        "size": {
+          "type": "string",
+          "description": "Storage size (e.g., '10Gi')"
+        },
+        "accessMode": {
+          "type": "string",
+          "description": "Access mode",
+          "enum": ["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"],
+          "default": "ReadWriteOnce"
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "Storage class name"
+        }
+      }
+    },
+    "health": {
+      "type": "object",
+      "description": "Health check configuration",
+      "properties": {
+        "liveness": {
+          "$ref": "#/definitions/healthProbe",
+          "description": "Liveness probe configuration"
+        },
+        "readiness": {
+          "$ref": "#/definitions/healthProbe",
+          "description": "Readiness probe configuration"
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "Configuration management",
+      "properties": {
+        "configMaps": {
+          "type": "array",
+          "description": "ConfigMap definitions",
+          "items": {
+            "type": "object",
+            "required": ["name", "data"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "ConfigMap name"
+              },
+              "data": {
+                "type": "object",
+                "description": "ConfigMap data",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "mountPath": {
+                "type": "string",
+                "description": "Mount path for ConfigMap"
+              }
+            }
+          }
+        },
+        "secrets": {
+          "type": "array",
+          "description": "Secret definitions",
+          "items": {
+            "type": "object",
+            "required": ["name", "data"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Secret name"
+              },
+              "data": {
+                "type": "object",
+                "description": "Secret data",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "mountPath": {
+                "type": "string",
+                "description": "Mount path for Secret"
+              }
+            }
+          }
+        },
+        "envFrom": {
+          "type": "array",
+          "description": "Environment variable sources",
+          "items": {
+            "type": "object",
+            "required": ["sourceType", "name"],
+            "properties": {
+              "sourceType": {
+                "type": "string",
+                "description": "Source type",
+                "enum": ["ConfigMap", "Secret"]
+              },
+              "name": {
+                "type": "string",
+                "description": "Source name"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "description": "Ingress configuration",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable ingress"
+        },
+        "host": {
+          "type": "string",
+          "description": "Ingress hostname",
+          "format": "hostname"
+        },
+        "tls": {
+          "type": "boolean",
+          "description": "Enable TLS",
+          "default": false
+        },
+        "paths": {
+          "type": "array",
+          "description": "Ingress paths",
+          "items": {
+            "type": "object",
+            "required": ["path", "port"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "URL path"
+              },
+              "pathType": {
+                "type": "string",
+                "description": "Path type",
+                "enum": ["Prefix", "Exact", "ImplementationSpecific"],
+                "default": "Prefix"
+              },
+              "port": {
+                "type": "integer",
+                "description": "Backend service port",
+                "minimum": 1,
+                "maximum": 65535
+              }
+            }
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Ingress annotations",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scaling": {
+      "type": "object",
+      "description": "Horizontal Pod Autoscaling configuration",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable autoscaling"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "description": "Minimum number of replicas",
+          "minimum": 1
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "description": "Maximum number of replicas",
+          "minimum": 1
+        },
+        "metrics": {
+          "type": "array",
+          "description": "Scaling metrics",
+          "items": {
+            "type": "object",
+            "required": ["metricType", "targetValue"],
+            "properties": {
+              "metricType": {
+                "type": "string",
+                "description": "Metric type",
+                "enum": ["CPU", "Memory", "Custom"]
+              },
+              "targetValue": {
+                "type": "string",
+                "description": "Target value (e.g., '80%')",
+                "pattern": "^\\d+%?$"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "healthProbe": {
+      "type": "object",
+      "description": "Health probe configuration",
+      "oneOf": [
+        {
+          "required": ["httpGet"],
+          "properties": {
+            "httpGet": {
+              "type": "object",
+              "required": ["path", "port"],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "HTTP path"
+                },
+                "port": {
+                  "type": "integer",
+                  "description": "HTTP port",
+                  "minimum": 1,
+                  "maximum": 65535
+                }
+              }
+            }
+          }
+        },
+        {
+          "required": ["tcpSocket"],
+          "properties": {
+            "tcpSocket": {
+              "type": "object",
+              "required": ["port"],
+              "properties": {
+                "port": {
+                  "type": "integer",
+                  "description": "TCP port",
+                  "minimum": 1,
+                  "maximum": 65535
+                }
+              }
+            }
+          }
+        },
+        {
+          "required": ["exec"],
+          "properties": {
+            "exec": {
+              "type": "object",
+              "required": ["command"],
+              "properties": {
+                "command": {
+                  "type": "array",
+                  "description": "Command to execute",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "initialDelaySeconds": {
+          "type": "integer",
+          "description": "Initial delay before probe starts",
+          "minimum": 0,
+          "default": 10
+        },
+        "periodSeconds": {
+          "type": "integer",
+          "description": "Probe frequency",
+          "minimum": 1,
+          "default": 10
+        }
+      }
+    }
+  }
+}

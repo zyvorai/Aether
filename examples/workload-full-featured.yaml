@@ -1,0 +1,105 @@
+apiVersion: orchestr8/v1
+kind: Workload
+
+metadata:
+  name: myapp
+  owner: devteam
+  project: production
+  labels:
+    environment: prod
+    tier: frontend
+  annotations:
+    version: "1.0.0"
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: ghcr.io/yourorg
+  buildArgs:
+    NODE_ENV: production
+
+requirements:
+  cpu: "2"
+  memory: 4Gi
+  storage: 20Gi
+
+runtime:
+  preferred: auto
+  allow:
+    - container
+    - kube
+    - kubevirt
+
+network:
+  service: true
+  serviceType: LoadBalancer
+  ports:
+    - containerPort: 8080
+      servicePort: 80
+      protocol: TCP
+
+persistence:
+  enabled: true
+  size: 10Gi
+  accessMode: ReadWriteOnce
+  storageClass: fast-ssd
+
+health:
+  liveness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+config:
+  configMaps:
+    - name: myapp-config
+      data:
+        app.properties: |
+          server.port=8080
+          app.name=MyApp
+        logging.level: INFO
+
+  secrets:
+    - name: myapp-secrets
+      data:
+        database.password: super-secret-password
+        api.key: my-api-key
+
+  envFrom:
+    - sourceType: ConfigMap
+      name: myapp-config
+    - sourceType: Secret
+      name: myapp-secrets
+
+ingress:
+  enabled: true
+  host: myapp.example.com
+  tls: true
+  paths:
+    - path: /
+      pathType: Prefix
+      port: 80
+    - path: /api
+      pathType: Prefix
+      port: 80
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+scaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - metricType: CPU
+      targetValue: "80%"
+    - metricType: Memory
+      targetValue: "85%"

@@ -1,0 +1,137 @@
+# Batch Job Template
+# One-time or scheduled batch processing job
+
+metadata:
+  name: data-processor
+  owner: data-team
+  project: analytics
+  description: "Batch data processing job with retry and monitoring"
+  labels:
+    app: batch-processor
+    tier: backend
+    workload-type: batch
+    environment: production
+
+image:
+  registry: ghcr.io
+  repository: myorg/data-processor
+  tag: "2.1.0"
+  pullPolicy: IfNotPresent
+
+requirements:
+  cpu: "8"
+  memory: "32Gi"
+  storage: "200Gi"
+  gpu: null
+
+runtime:
+  preferred: Kube
+  allowed:
+    - Kube
+    - Container
+  disallowed: []
+
+scaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
+
+network:
+  service: false
+  serviceType: ClusterIP
+  ports: []
+
+persistence:
+  enabled: true
+  storageClass: standard
+  accessMode: ReadWriteMany
+  mountPath: /workspace
+  subPath: batch-processing
+
+health:
+  liveness:
+    enabled: false
+  readiness:
+    enabled: false
+
+env:
+  - name: JOB_TYPE
+    value: batch
+  - name: BATCH_SIZE
+    value: "10000"
+  - name: PARALLEL_WORKERS
+    value: "16"
+  - name: MAX_RETRIES
+    value: "3"
+  - name: OUTPUT_FORMAT
+    value: parquet
+  - name: COMPRESSION
+    value: snappy
+  - name: AWS_REGION
+    value: us-east-1
+  - name: S3_BUCKET
+    valueFrom:
+      configMapRef:
+        name: batch-config
+        key: s3-bucket
+  - name: DATABASE_URL
+    valueFrom:
+      secretRef:
+        name: db-credentials
+        key: url
+  - name: API_KEY
+    valueFrom:
+      secretRef:
+        name: api-credentials
+        key: key
+
+configMaps:
+  - name: batch-config
+    mountPath: /config
+    items:
+      - key: processing-rules.yaml
+        path: rules.yaml
+      - key: schema.json
+        path: schema.json
+
+secrets:
+  - name: api-credentials
+    mountPath: /secrets
+    items:
+      - key: key
+        path: api.key
+      - key: aws-access-key
+        path: aws.key
+
+resources:
+  limits:
+    cpu: "16"
+    memory: "64Gi"
+  requests:
+    cpu: "8"
+    memory: "32Gi"
+
+security:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+monitoring:
+  enabled: true
+  path: /metrics
+  port: 9090
+  interval: 60s
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  batch.kubernetes.io/restart-policy: "OnFailure"
+  batch.kubernetes.io/completions: "1"
+  batch.kubernetes.io/parallelism: "1"
+  batch.kubernetes.io/backoff-limit: "3"
+  batch.kubernetes.io/ttl-after-finished: "3600"

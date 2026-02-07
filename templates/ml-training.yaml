@@ -1,0 +1,172 @@
+# ML Training Job Template
+# GPU-accelerated machine learning training workload
+
+metadata:
+  name: ml-training-job
+  owner: ml-team
+  project: ai-research
+  description: "GPU-accelerated ML training with distributed training support"
+  labels:
+    app: ml-training
+    tier: compute
+    workload-type: batch
+    environment: research
+
+image:
+  registry: ghcr.io
+  repository: myorg/ml-trainer
+  tag: "gpu-1.0.0"
+  pullPolicy: Always
+
+requirements:
+  cpu: "16"
+  memory: "128Gi"
+  storage: "1Ti"
+  gpu:
+    count: 4
+    type: nvidia-tesla-v100
+    driver: "535.104.05"
+
+runtime:
+  preferred: Kubevirt
+  allowed:
+    - Kubevirt
+    - Metal
+  disallowed:
+    - Container
+    - Kube
+
+scaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
+
+network:
+  service: true
+  serviceType: ClusterIP
+  ports:
+    - name: tensorboard
+      port: 6006
+      targetPort: 6006
+      protocol: TCP
+    - name: metrics
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: tensorboard.ml.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    annotations:
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: ml-basic-auth
+
+persistence:
+  enabled: true
+  storageClass: fast-nvme
+  accessMode: ReadWriteMany
+  mountPath: /workspace
+  subPath: ml-experiments
+
+health:
+  liveness:
+    enabled: true
+    path: /health
+    port: 8000
+    initialDelay: 120
+    period: 30
+    timeout: 10
+    failureThreshold: 5
+
+  readiness:
+    enabled: true
+    path: /ready
+    port: 8000
+    initialDelay: 60
+    period: 10
+    timeout: 5
+    failureThreshold: 3
+
+env:
+  - name: CUDA_VISIBLE_DEVICES
+    value: "0,1,2,3"
+  - name: NCCL_DEBUG
+    value: INFO
+  - name: TRAINING_MODE
+    value: distributed
+  - name: WORLD_SIZE
+    value: "4"
+  - name: MASTER_PORT
+    value: "29500"
+  - name: PYTORCH_CUDA_ALLOC_CONF
+    value: "max_split_size_mb:512"
+  - name: WANDB_API_KEY
+    valueFrom:
+      secretRef:
+        name: ml-secrets
+        key: wandb-api-key
+  - name: HF_TOKEN
+    valueFrom:
+      secretRef:
+        name: ml-secrets
+        key: huggingface-token
+
+configMaps:
+  - name: training-config
+    mountPath: /config
+    items:
+      - key: model-config.yaml
+        path: model.yaml
+      - key: training-params.yaml
+        path: params.yaml
+      - key: data-config.yaml
+        path: data.yaml
+
+secrets:
+  - name: ml-secrets
+    mountPath: /secrets
+    items:
+      - key: wandb-api-key
+        path: wandb.key
+      - key: huggingface-token
+        path: hf.token
+      - key: s3-credentials
+        path: s3.json
+
+resources:
+  limits:
+    cpu: "32"
+    memory: "256Gi"
+    nvidia.com/gpu: "4"
+  requests:
+    cpu: "16"
+    memory: "128Gi"
+    nvidia.com/gpu: "4"
+
+security:
+  runAsNonRoot: false
+  runAsUser: 0
+  fsGroup: 0
+  allowPrivilegeEscalation: true
+  capabilities:
+    add:
+      - SYS_ADMIN
+  readOnlyRootFilesystem: false
+
+monitoring:
+  enabled: true
+  path: /metrics
+  port: 8000
+  interval: 15s
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8000"
+  gpu.scheduling.priority: "high"
+  training.framework: "pytorch"
+  training.distributed: "true"
