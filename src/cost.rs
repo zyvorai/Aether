@@ -330,7 +330,7 @@ pub fn estimate_all_providers(workload: &Workload) -> Result<Vec<CostEstimate>> 
     }
 
     // Sort by total monthly cost
-    estimates.sort_by(|a, b| a.total_monthly.partial_cmp(&b.total_monthly).unwrap());
+    estimates.sort_by(|a, b| a.total_monthly.partial_cmp(&b.total_monthly).unwrap_or(std::cmp::Ordering::Equal));
 
     Ok(estimates)
 }
@@ -353,11 +353,11 @@ impl CostComparison {
     pub fn for_workload(workload: &Workload) -> Result<Self> {
         let estimates = estimate_all_providers(workload)?;
 
-        let cheapest = estimates.first().unwrap().provider;
-        let most_expensive = estimates.last().unwrap().provider;
+        let cheapest = estimates.first().map(|e| e.provider).unwrap_or(CloudProvider::AWS);
+        let most_expensive = estimates.last().map(|e| e.provider).unwrap_or(CloudProvider::AWS);
 
-        let cheapest_cost = estimates.first().unwrap().total_monthly;
-        let expensive_cost = estimates.last().unwrap().total_monthly;
+        let cheapest_cost = estimates.first().map(|e| e.total_monthly).unwrap_or(0.0);
+        let expensive_cost = estimates.last().map(|e| e.total_monthly).unwrap_or(0.0);
 
         let savings = ((expensive_cost - cheapest_cost) / expensive_cost) * 100.0;
 

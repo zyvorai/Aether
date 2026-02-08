@@ -80,6 +80,20 @@ struct CreateWorkloadRequest {
     runtime: Option<String>,
 }
 
+/// Migrate workload request
+#[derive(Debug, Deserialize)]
+struct MigrateWorkloadRequest {
+    /// Target runtime (podman, kubernetes, kubevirt, metal3)
+    target_runtime: String,
+    /// Migration strategy (immediate, blue-green, rolling)
+    #[serde(default = "default_strategy")]
+    strategy: String,
+}
+
+fn default_strategy() -> String {
+    "blue-green".to_string()
+}
+
 /// Workload response
 #[derive(Debug, Serialize)]
 struct WorkloadResponse {
@@ -119,6 +133,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/workloads/:name/logs", get(get_logs))
         .route("/api/workloads/:name/start", post(start_workload))
         .route("/api/workloads/:name/stop", post(stop_workload))
+        .route("/api/workloads/:name/migrate", post(migrate_workload))
         .route("/api/cost", post(estimate_cost))
         .route("/api/backups", get(list_backups))
         .route("/api/backups", post(create_backup))
@@ -1520,6 +1535,143 @@ async fn api_affinity_recommend(Path(class): Path<String>) -> impl IntoResponse 
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
         ),
+    }
+}
+
+/// POST /api/workloads/:name/migrate - Migrate a workload to a different runtime
+async fn migrate_workload(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+    Json(request): Json<MigrateWorkloadRequest>,
+) -> impl IntoResponse {
+    use crate::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
+
+    let state = app_state.state.read().await;
+
+    let workload_state = match state.get(&name) {
+        Some(w) => w.clone(),
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::<String>::error(format!(
+                    "Workload {} not found",
+                    name
+                ))),
+            )
+        }
+    };
+    drop(state);
+
+    let source_runtime = workload_state.runtime;
+
+    let target_runtime = match request.target_runtime.to_lowercase().as_str() {
+        "podman" | "container" => RuntimeKind::Podman,
+        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
+        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
+        "metal" | "metal3" => RuntimeKind::Metal3,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<String>::error(format!(
+                    "Unknown target runtime: {}",
+                    request.target_runtime
+                ))),
+            )
+        }
+    };
+
+    let strategy = match request.strategy.to_lowercase().as_str() {
+        "immediate" => MigrationStrategy::Immediate,
+        "blue-green" => MigrationStrategy::BlueGreen,
+        "rolling" => MigrationStrategy::Rolling,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<String>::error(format!(
+                    "Unknown strategy: {}. Use immediate, blue-green, or rolling.",
+                    request.strategy
+                ))),
+            )
+        }
+    };
+
+    let plan = MigrationPlan {
+        workload_name: name.clone(),
+        source_runtime,
+        target_runtime,
+        strategy,
+        validation_delay: std::time::Duration::from_secs(30),
+        rollback_on_failure: true,
+    };
+
+    let migration_start = std::time::Instant::now();
+    let engine = MigrationEngine::new(StateStore::default_path());
+    let result = match engine.migrate(plan).await {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(format!(
+                    "Migration failed: {}",
+                    e
+                ))),
+            )
+        }
+    };
+    let duration = migration_start.elapsed().as_secs_f64();
+
+    crate::metrics::record_migration(
+        &source_runtime.to_string(),
+        &target_runtime.to_string(),
+        &request.strategy,
+        duration,
+        result.success,
+        result.rollback_performed,
+    );
+
+    if result.success {
+        // Reload state after migration engine updated it
+        let new_state = match StateStore::load(&StateStore::default_path()) {
+            Ok(s) => s,
+            Err(_) => {
+                return (
+                    StatusCode::OK,
+                    Json(ApiResponse::success(format!(
+                        "Workload {} migrated to {}",
+                        name, target_runtime
+                    ))),
+                )
+            }
+        };
+        let mut state = app_state.state.write().await;
+        // Sync our in-memory state with what migration engine wrote
+        if let Some(updated) = new_state.get(&name) {
+            state.upsert(name.clone(), updated.clone());
+        }
+
+        (
+            StatusCode::OK,
+            Json(ApiResponse::success(format!(
+                "Workload {} migrated from {} to {} (strategy: {}, duration: {:.1}s)",
+                name, source_runtime, target_runtime, request.strategy, duration
+            ))),
+        )
+    } else {
+        let error_msg = result
+            .error
+            .unwrap_or_else(|| "Unknown error".to_string());
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<String>::error(format!(
+                "Migration failed: {}{}",
+                error_msg,
+                if result.rollback_performed {
+                    " (rollback performed)"
+                } else {
+                    ""
+                }
+            ))),
+        )
     }
 }
 
