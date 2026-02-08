@@ -1,5 +1,6 @@
 //! Local state store for tracking workload instances
 
+use anyhow::Context;
 use crate::runtime::{Instance, RuntimeKind};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -35,15 +36,19 @@ impl StateStore {
             return Ok(Self::new());
         }
 
-        let content = std::fs::read_to_string(path)?;
-        let store: StateStore = serde_json::from_str(&content)?;
+        let content = std::fs::read_to_string(path)
+            .with_context(|| format!("failed to read state file: {}", path.display()))?;
+        let store: StateStore = serde_json::from_str(&content)
+            .with_context(|| format!("failed to parse state file: {}", path.display()))?;
         Ok(store)
     }
 
     /// Save state to disk
     pub fn save(&self, path: &PathBuf) -> anyhow::Result<()> {
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
+        let content = serde_json::to_string_pretty(self)
+            .context("failed to serialize state")?;
+        std::fs::write(path, &content)
+            .with_context(|| format!("failed to write state file: {}", path.display()))?;
         Ok(())
     }
 

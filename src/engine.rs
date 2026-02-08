@@ -76,24 +76,38 @@ impl Engine {
 
     /// Parse CPU string (e.g., "2", "2000m")
     fn parse_cpu(&self, cpu: &str) -> f64 {
-        if let Some(stripped) = cpu.strip_suffix('m') {
-            stripped.parse::<f64>().unwrap_or(0.0) / 1000.0
+        let result = if let Some(stripped) = cpu.strip_suffix('m') {
+            stripped.parse::<f64>().ok().map(|v| v / 1000.0)
         } else {
-            cpu.parse::<f64>().unwrap_or(0.0)
+            cpu.parse::<f64>().ok()
+        };
+        match result {
+            Some(v) if v > 0.0 => v,
+            _ => {
+                tracing::warn!(value = cpu, "invalid CPU resource value, defaulting to 1.0");
+                1.0
+            }
         }
     }
 
     /// Parse memory string (e.g., "4Gi", "4096Mi")
     fn parse_memory(&self, memory: &str) -> f64 {
         let memory = memory.trim();
-        if let Some(stripped) = memory.strip_suffix("Gi") {
-            stripped.parse::<f64>().unwrap_or(0.0) * 1024.0 * 1024.0 * 1024.0
+        let result = if let Some(stripped) = memory.strip_suffix("Gi") {
+            stripped.parse::<f64>().ok().map(|v| v * 1024.0 * 1024.0 * 1024.0)
         } else if let Some(stripped) = memory.strip_suffix("Mi") {
-            stripped.parse::<f64>().unwrap_or(0.0) * 1024.0 * 1024.0
+            stripped.parse::<f64>().ok().map(|v| v * 1024.0 * 1024.0)
         } else if let Some(stripped) = memory.strip_suffix("Ki") {
-            stripped.parse::<f64>().unwrap_or(0.0) * 1024.0
+            stripped.parse::<f64>().ok().map(|v| v * 1024.0)
         } else {
-            memory.parse::<f64>().unwrap_or(0.0)
+            memory.parse::<f64>().ok()
+        };
+        match result {
+            Some(v) if v > 0.0 => v,
+            _ => {
+                tracing::warn!(value = memory, "invalid memory resource value, defaulting to 1Gi");
+                1024.0 * 1024.0 * 1024.0
+            }
         }
     }
 
@@ -745,18 +759,18 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_cpu_zero() {
+    fn test_parse_cpu_zero_defaults_to_one() {
         let engine = Engine::new();
-        assert!((engine.parse_cpu("0") - 0.0).abs() < f64::EPSILON);
-        assert!((engine.parse_cpu("0m") - 0.0).abs() < f64::EPSILON);
+        assert!((engine.parse_cpu("0") - 1.0).abs() < f64::EPSILON);
+        assert!((engine.parse_cpu("0m") - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
-    fn test_parse_cpu_invalid_returns_zero() {
+    fn test_parse_cpu_invalid_defaults_to_one() {
         let engine = Engine::new();
-        assert!((engine.parse_cpu("") - 0.0).abs() < f64::EPSILON);
-        assert!((engine.parse_cpu("abc") - 0.0).abs() < f64::EPSILON);
-        assert!((engine.parse_cpu("abcm") - 0.0).abs() < f64::EPSILON);
+        assert!((engine.parse_cpu("") - 1.0).abs() < f64::EPSILON);
+        assert!((engine.parse_cpu("abc") - 1.0).abs() < f64::EPSILON);
+        assert!((engine.parse_cpu("abcm") - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -801,15 +815,18 @@ mod tests {
     fn test_parse_memory_plain_bytes() {
         let engine = Engine::new();
         assert!((engine.parse_memory("1048576") - 1048576.0).abs() < 1.0);
-        assert!((engine.parse_memory("0") - 0.0).abs() < f64::EPSILON);
+        // "0" is invalid (not > 0), so defaults to 1Gi
+        let one_gi = 1024.0 * 1024.0 * 1024.0;
+        assert!((engine.parse_memory("0") - one_gi).abs() < 1.0);
     }
 
     #[test]
-    fn test_parse_memory_invalid_returns_zero() {
+    fn test_parse_memory_invalid_defaults_to_1gi() {
         let engine = Engine::new();
-        assert!((engine.parse_memory("") - 0.0).abs() < f64::EPSILON);
-        assert!((engine.parse_memory("abc") - 0.0).abs() < f64::EPSILON);
-        assert!((engine.parse_memory("abcGi") - 0.0).abs() < f64::EPSILON);
+        let one_gi = 1024.0 * 1024.0 * 1024.0;
+        assert!((engine.parse_memory("") - one_gi).abs() < 1.0);
+        assert!((engine.parse_memory("abc") - one_gi).abs() < 1.0);
+        assert!((engine.parse_memory("abcGi") - one_gi).abs() < 1.0);
     }
 
     #[test]
