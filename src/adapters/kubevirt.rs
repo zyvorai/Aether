@@ -255,11 +255,6 @@ fn parse_cpu_cores(cpu: &str) -> i32 {
     }
 }
 
-impl Default for KubeVirtRuntime {
-    fn default() -> Self {
-        futures::executor::block_on(Self::new()).expect("Failed to initialize KubeVirt runtime")
-    }
-}
 
 #[async_trait]
 impl Runtime for KubeVirtRuntime {

@@ -99,10 +99,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Affinity learning and recommendation test
   - Scheduler and orchestrator persistence tests
 
+- **New API Endpoints:**
+  - `POST /api/workloads/:name/build` - Trigger workload builds via REST
+  - `POST /api/validate` - Validate workload YAML via REST
+  - `GET /api/secrets/:name` - Get secret metadata (no raw values exposed)
+  - `DELETE /api/secrets/:name` - Delete a secret via REST
+  - `GET /api/metrics` - Prometheus metrics export endpoint
+
+- **Safety Improvements:**
+  - Removed dangerous `block_on()` Default impls from Kubernetes, KubeVirt, Metal3 adapters
+  - Replaced `partial_cmp().unwrap()` with safe fallbacks in affinity scoring
+  - Fixed unsafe `file_name().unwrap()` in backup listing
+  - Fixed `SystemTime` unwrap in scaling advisor
+  - Replaced JSON `as_object_mut().unwrap()` with `if let` guards in Metal3 adapter
+
 ### Changed
 - Version bumped to 0.3.0
-- API serve command now lists 30+ endpoints organized by category
-- Test suite expanded: 173 unit tests + 19 integration tests (192 total)
+- API serve command now lists 38 endpoints organized by category
+- Test suite expanded: 387 unit tests + 19 integration tests (406 total)
 - 0 clippy warnings
 
 ## [0.2.1] - 2026-02-06
