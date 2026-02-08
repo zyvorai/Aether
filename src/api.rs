@@ -133,6 +133,15 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/templates", get(api_template_list))
         .route("/api/templates/:name", post(api_template_generate))
         .route("/api/sla/:workload", get(api_sla_check))
+        .route("/api/secrets", get(api_secrets_list))
+        .route("/api/events", get(api_events_list))
+        .route("/api/events/summary", get(api_events_summary))
+        .route("/api/environments", get(api_env_list))
+        .route("/api/scheduler/utilization", get(api_scheduler_utilization))
+        .route("/api/scheduler/optimize", get(api_scheduler_optimize))
+        .route("/api/orchestrator/status", get(api_orchestrator_status))
+        .route("/api/orchestrator/summary", get(api_orchestrator_summary))
+        .route("/api/affinity/:class", get(api_affinity_recommend))
         .with_state(app_state);
 
     // Start server
@@ -1292,6 +1301,224 @@ async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResponse {
                 "No SLA target for workload: {}",
                 workload
             ))),
+        ),
+    }
+}
+
+/// GET /api/secrets - List secrets
+async fn api_secrets_list() -> impl IntoResponse {
+    use crate::secrets::SecretStore;
+
+    let path = SecretStore::default_path();
+    match SecretStore::load(&path) {
+        Ok(store) => {
+            let summaries = store.list();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(summaries).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/events - List recent events
+async fn api_events_list() -> impl IntoResponse {
+    use crate::events::EventBus;
+
+    let path = EventBus::default_path();
+    match EventBus::load(&path) {
+        Ok(bus) => {
+            let events = bus.last_n(50);
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(events).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/events/summary - Event summary
+async fn api_events_summary() -> impl IntoResponse {
+    use crate::events::EventBus;
+
+    let path = EventBus::default_path();
+    match EventBus::load(&path) {
+        Ok(bus) => {
+            let summary = bus.summary();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(summary).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/environments - List environments
+async fn api_env_list() -> impl IntoResponse {
+    use crate::environments::EnvironmentManager;
+
+    let path = EnvironmentManager::default_path();
+    match EnvironmentManager::load(&path) {
+        Ok(manager) => {
+            let envs = manager.list_envs();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(envs).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/scheduler/utilization - Runtime utilization
+async fn api_scheduler_utilization() -> impl IntoResponse {
+    use crate::scheduler::Scheduler;
+
+    let path = Scheduler::default_path();
+    match Scheduler::load(&path) {
+        Ok(scheduler) => {
+            let utils = scheduler.utilization_summary();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(utils).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/scheduler/optimize - Optimization suggestions
+async fn api_scheduler_optimize() -> impl IntoResponse {
+    use crate::scheduler::Scheduler;
+
+    let path = Scheduler::default_path();
+    match Scheduler::load(&path) {
+        Ok(scheduler) => {
+            let suggestions = scheduler.optimize();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(suggestions).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/orchestrator/status - Managed workload statuses
+async fn api_orchestrator_status() -> impl IntoResponse {
+    use crate::orchestrator::Orchestrator;
+
+    let path = Orchestrator::default_path();
+    match Orchestrator::load(&path) {
+        Ok(orch) => {
+            let list = orch.list_workloads();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(list).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/orchestrator/summary - Health summary
+async fn api_orchestrator_summary() -> impl IntoResponse {
+    use crate::orchestrator::Orchestrator;
+
+    let path = Orchestrator::default_path();
+    match Orchestrator::load(&path) {
+        Ok(orch) => {
+            let summary = orch.health_summary();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(summary).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/affinity/:class - Runtime affinity recommendation
+async fn api_affinity_recommend(Path(class): Path<String>) -> impl IntoResponse {
+    use crate::ai::affinity::{AffinityEngine, WorkloadClass};
+
+    let wl_class = match class.as_str() {
+        "web-service" => WorkloadClass::WebService,
+        "api-backend" => WorkloadClass::ApiBackend,
+        "database" => WorkloadClass::Database,
+        "cache" => WorkloadClass::Cache,
+        "batch-job" => WorkloadClass::BatchJob,
+        "ml-training" => WorkloadClass::MlTraining,
+        "worker" => WorkloadClass::Worker,
+        "microservice" => WorkloadClass::Microservice,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<serde_json::Value>::error(format!(
+                    "Unknown workload class: {}",
+                    class
+                ))),
+            )
+        }
+    };
+
+    let path = AffinityEngine::default_path();
+    match AffinityEngine::load(&path) {
+        Ok(engine) => {
+            let scores = engine.recommend(&wl_class);
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(scores).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
         ),
     }
 }

@@ -267,6 +267,51 @@ enum Commands {
         #[command(subcommand)]
         action: SlaAction,
     },
+
+    /// Manage secrets
+    Secrets {
+        #[command(subcommand)]
+        action: SecretsAction,
+    },
+
+    /// View and manage events
+    Events {
+        /// Show last N events
+        #[arg(short, long, default_value = "20")]
+        last: usize,
+
+        /// Filter by severity (info, warning, error, critical)
+        #[arg(long)]
+        severity: Option<String>,
+
+        /// Show summary only
+        #[arg(long)]
+        summary: bool,
+    },
+
+    /// Manage deployment environments
+    Env {
+        #[command(subcommand)]
+        action: EnvAction,
+    },
+
+    /// Workload scheduling and optimization
+    Schedule {
+        #[command(subcommand)]
+        action: ScheduleAction,
+    },
+
+    /// Health-aware orchestration
+    Orchestrate {
+        #[command(subcommand)]
+        action: OrchestrateAction,
+    },
+
+    /// Runtime affinity learning
+    Affinity {
+        #[command(subcommand)]
+        action: AffinityAction,
+    },
 }
 
 #[derive(Subcommand)]
@@ -327,6 +372,137 @@ enum SlaAction {
     List,
 }
 
+#[derive(Subcommand)]
+enum SecretsAction {
+    /// Create a new secret
+    Create {
+        /// Secret name
+        name: String,
+        /// Namespace
+        #[arg(long, default_value = "default")]
+        namespace: String,
+    },
+    /// Set a key-value pair in a secret
+    Set {
+        /// Secret name
+        secret: String,
+        /// Key name
+        key: String,
+        /// Value
+        value: String,
+    },
+    /// Get a value from a secret
+    Get {
+        /// Secret name
+        secret: String,
+        /// Key name
+        key: String,
+    },
+    /// List all secrets
+    List,
+    /// Check rotation status
+    Audit,
+}
+
+#[derive(Subcommand)]
+enum EnvAction {
+    /// Create a new environment
+    Create {
+        /// Environment name
+        name: String,
+        /// Tier: development, staging, production
+        #[arg(long, default_value = "development")]
+        tier: String,
+    },
+    /// List environments
+    List,
+    /// Promote a workload between environments
+    Promote {
+        /// Workload name
+        workload: String,
+        /// Source environment
+        from: String,
+        /// Target environment
+        to: String,
+    },
+    /// Check parity between environments
+    Parity {
+        /// First environment
+        env1: String,
+        /// Second environment
+        env2: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ScheduleAction {
+    /// Schedule a workload
+    Place {
+        /// Workload name
+        name: String,
+        /// CPU required (cores)
+        #[arg(long, default_value = "2")]
+        cpu: f64,
+        /// Memory required (MB)
+        #[arg(long, default_value = "2048")]
+        memory: u64,
+        /// Scheduling strategy: balanced, cost, performance, bin-packing
+        #[arg(long, default_value = "balanced")]
+        strategy: String,
+        /// Preferred runtime
+        #[arg(long)]
+        prefer: Option<String>,
+    },
+    /// Show runtime utilization
+    Utilization,
+    /// Get optimization suggestions
+    Optimize,
+    /// Show current placements
+    Placements,
+}
+
+#[derive(Subcommand)]
+enum OrchestrateAction {
+    /// Register a workload for health monitoring
+    Register {
+        /// Workload name
+        name: String,
+        /// Runtime
+        #[arg(long, default_value = "kubernetes")]
+        runtime: String,
+    },
+    /// Show health status of all workloads
+    Status,
+    /// Show health summary
+    Summary,
+    /// Simulate a rolling update
+    RollingUpdate {
+        /// Workload name
+        name: String,
+        /// Number of replicas
+        #[arg(long, default_value = "3")]
+        replicas: u32,
+    },
+    /// Reset circuit breaker for a workload
+    ResetCircuit {
+        /// Workload name
+        name: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum AffinityAction {
+    /// Show runtime recommendations for a workload class
+    Recommend {
+        /// Workload class: web-service, api-backend, database, cache, batch-job, ml-training, worker, microservice
+        class: String,
+    },
+    /// Show compatibility matrix
+    Matrix,
+    /// Show learning statistics
+    Stats,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -381,6 +557,12 @@ async fn main() -> Result<()> {
         Commands::Audit { .. } => "audit",
         Commands::Template { .. } => "template",
         Commands::Sla { .. } => "sla",
+        Commands::Secrets { .. } => "secrets",
+        Commands::Events { .. } => "events",
+        Commands::Env { .. } => "env",
+        Commands::Schedule { .. } => "schedule",
+        Commands::Orchestrate { .. } => "orchestrate",
+        Commands::Affinity { .. } => "affinity",
     };
 
     let result = match cli.command {
@@ -458,6 +640,24 @@ async fn main() -> Result<()> {
         }
         Commands::Sla { action } => {
             sla_command(action).await
+        }
+        Commands::Secrets { action } => {
+            secrets_command(action).await
+        }
+        Commands::Events { last, severity, summary } => {
+            events_command(last, severity, summary).await
+        }
+        Commands::Env { action } => {
+            env_command(action).await
+        }
+        Commands::Schedule { action } => {
+            schedule_command(action).await
+        }
+        Commands::Orchestrate { action } => {
+            orchestrate_command(action).await
+        }
+        Commands::Affinity { action } => {
+            affinity_command(action).await
         }
     };
 
@@ -1683,6 +1883,365 @@ async fn sla_command(action: SlaAction) -> Result<()> {
                         println!("    Max restarts/day: {}", restarts);
                     }
                     println!();
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn secrets_command(action: SecretsAction) -> Result<()> {
+    use orchestr8::secrets::{format_secrets_list, SecretStore};
+
+    let path = SecretStore::default_path();
+    let mut store = SecretStore::load(&path)?;
+
+    match action {
+        SecretsAction::Create { name, namespace } => {
+            store.create_secret(&name, &namespace);
+            store.save(&path)?;
+            println!("✅ Created secret '{}' in namespace '{}'", name, namespace);
+        }
+        SecretsAction::Set { secret, key, value } => {
+            store.set(&secret, &key, &value)?;
+            store.save(&path)?;
+            println!("✅ Set key '{}' in secret '{}'", key, secret);
+        }
+        SecretsAction::Get { secret, key } => {
+            let value = store.get(&secret, &key)?;
+            println!("{}", value);
+        }
+        SecretsAction::List => {
+            let summaries = store.list();
+            print!("{}", format_secrets_list(&summaries));
+        }
+        SecretsAction::Audit => {
+            let alerts = store.audit_rotation();
+            if alerts.is_empty() {
+                println!("✅ All secrets are within rotation policy limits.");
+            } else {
+                println!("⚠️  Rotation Alerts:\n");
+                for alert in &alerts {
+                    println!("  [{}] {}", alert.severity, alert.message);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn events_command(last: usize, severity: Option<String>, summary: bool) -> Result<()> {
+    use orchestr8::events::{format_event_list, format_event_summary, EventBus, EventSeverity};
+
+    let path = EventBus::default_path();
+    let bus = EventBus::load(&path)?;
+
+    if summary {
+        let s = bus.summary();
+        print!("{}", format_event_summary(&s));
+        return Ok(());
+    }
+
+    let events = if let Some(sev) = severity {
+        let min_severity = match sev.to_lowercase().as_str() {
+            "info" => EventSeverity::Info,
+            "warning" | "warn" => EventSeverity::Warning,
+            "error" => EventSeverity::Error,
+            "critical" => EventSeverity::Critical,
+            _ => anyhow::bail!("Unknown severity: {}. Use info, warning, error, or critical.", sev),
+        };
+        bus.events_by_severity(&min_severity)
+    } else {
+        bus.last_n(last)
+    };
+
+    print!("{}", format_event_list(&events, last));
+
+    Ok(())
+}
+
+async fn env_command(action: EnvAction) -> Result<()> {
+    use orchestr8::environments::{EnvTier, EnvironmentManager, PromotionRequest, PromotionStrategy, format_env_list};
+
+    let path = EnvironmentManager::default_path();
+    let mut manager = EnvironmentManager::load(&path)?;
+
+    match action {
+        EnvAction::Create { name, tier } => {
+            let env_tier = match tier.as_str() {
+                "development" | "dev" => EnvTier::Development,
+                "staging" | "stg" => EnvTier::Staging,
+                "production" | "prod" => EnvTier::Production,
+                _ => EnvTier::Custom(tier.clone()),
+            };
+            manager.create_env(&name, env_tier);
+            manager.save(&path)?;
+            println!("✅ Created environment '{}' ({})", name, tier);
+        }
+        EnvAction::List => {
+            let envs = manager.list_envs();
+            print!("{}", format_env_list(&envs));
+        }
+        EnvAction::Promote { workload, from, to } => {
+            let request = PromotionRequest {
+                workload: workload.clone(),
+                from_env: from.clone(),
+                to_env: to.clone(),
+                strategy: PromotionStrategy::TierAdjusted,
+                require_approval: false,
+            };
+            let result = manager.promote(&request)?;
+            manager.save(&path)?;
+            println!("✅ Promoted '{}' from '{}' to '{}'", workload, from, to);
+            if !result.changes.is_empty() {
+                println!("   Changes:");
+                for change in &result.changes {
+                    println!("     - {}: {} -> {} ({})", change.field, change.from_value, change.to_value, change.reason);
+                }
+            }
+            if !result.warnings.is_empty() {
+                println!("   Warnings:");
+                for warn in &result.warnings {
+                    println!("     - {}", warn);
+                }
+            }
+        }
+        EnvAction::Parity { env1, env2 } => {
+            // Parity needs a workload name - check all workloads in env1
+            let env = manager.get_env(&env1)
+                .ok_or_else(|| anyhow::anyhow!("Environment '{}' not found", env1))?;
+            let workload_names: Vec<String> = env.workloads.keys().cloned().collect();
+
+            if workload_names.is_empty() {
+                println!("No workloads in environment '{}' to compare.", env1);
+                return Ok(());
+            }
+
+            println!("Environment Parity: {} vs {}\n", env1, env2);
+            for wl_name in &workload_names {
+                match manager.check_parity(&env1, &env2, wl_name) {
+                    Ok(report) => {
+                        if report.in_sync {
+                            println!("  ✅ '{}': In parity", wl_name);
+                        } else {
+                            println!("  ⚠️  '{}': Differences found", wl_name);
+                            for diff in &report.diffs {
+                                println!("      [{}] {}: {} vs {}", diff.severity, diff.field, diff.env_a_value, diff.env_b_value);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("  ❌ '{}': {}", wl_name, e);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn schedule_command(action: ScheduleAction) -> Result<()> {
+    use orchestr8::scheduler::{
+        format_schedule_decision, format_utilization, ScheduleRequest, ScheduleStrategy,
+        Scheduler, Priority,
+    };
+
+    let path = Scheduler::default_path();
+    let mut scheduler = Scheduler::load(&path)?;
+
+    match action {
+        ScheduleAction::Place {
+            name,
+            cpu,
+            memory,
+            strategy,
+            prefer,
+        } => {
+            let sched_strategy = match strategy.as_str() {
+                "balanced" => ScheduleStrategy::Balanced,
+                "cost" => ScheduleStrategy::CostOptimized,
+                "performance" => ScheduleStrategy::PerformanceOptimized,
+                "bin-packing" => ScheduleStrategy::BinPacking,
+                _ => anyhow::bail!("Unknown strategy: {}. Use balanced, cost, performance, or bin-packing.", strategy),
+            };
+            scheduler.set_strategy(sched_strategy);
+
+            let preferred_runtime = prefer.as_deref().and_then(|p| match p {
+                "podman" => Some(RuntimeKind::Podman),
+                "kubernetes" | "kube" => Some(RuntimeKind::Kubernetes),
+                "kubevirt" => Some(RuntimeKind::KubeVirt),
+                "metal3" | "metal" => Some(RuntimeKind::Metal3),
+                _ => None,
+            });
+
+            let request = ScheduleRequest {
+                workload_name: name,
+                cpu_required: cpu,
+                memory_required_mb: memory,
+                storage_required_mb: 10240,
+                gpu_required: 0,
+                preferred_runtime,
+                constraints: vec![],
+                priority: Priority::Normal,
+            };
+
+            match scheduler.schedule(&request) {
+                Ok(decision) => {
+                    print!("{}", format_schedule_decision(&decision));
+                    scheduler.save(&path)?;
+                }
+                Err(e) => {
+                    println!("❌ {}", e);
+                }
+            }
+        }
+        ScheduleAction::Utilization => {
+            let utils = scheduler.utilization_summary();
+            print!("{}", format_utilization(&utils));
+        }
+        ScheduleAction::Optimize => {
+            let suggestions = scheduler.optimize();
+            if suggestions.is_empty() {
+                println!("✅ No optimization suggestions. All runtimes look good.");
+            } else {
+                println!("Optimization Suggestions:\n");
+                for s in &suggestions {
+                    print!("  [{}] {}", s.category, s.message);
+                    if let Some(saving) = s.potential_saving {
+                        print!(" (potential saving: ${:.2}/day)", saving);
+                    }
+                    println!();
+                }
+            }
+        }
+        ScheduleAction::Placements => {
+            let placements = scheduler.placements();
+            if placements.is_empty() {
+                println!("No workloads placed.");
+            } else {
+                println!("Current Placements:\n");
+                for p in placements {
+                    println!(
+                        "  {} -> {} ({:.0} CPU, {} MB)",
+                        p.workload_name, p.runtime, p.cpu_reserved, p.memory_reserved_mb
+                    );
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn orchestrate_command(action: OrchestrateAction) -> Result<()> {
+    use orchestr8::orchestrator::{
+        format_health_summary, format_rolling_update, format_workload_list, Orchestrator,
+    };
+
+    let path = Orchestrator::default_path();
+    let mut orch = Orchestrator::load(&path)?;
+
+    match action {
+        OrchestrateAction::Register { name, runtime } => {
+            let rt = match runtime.as_str() {
+                "podman" => RuntimeKind::Podman,
+                "kubernetes" | "kube" => RuntimeKind::Kubernetes,
+                "kubevirt" => RuntimeKind::KubeVirt,
+                "metal3" | "metal" => RuntimeKind::Metal3,
+                _ => anyhow::bail!("Unknown runtime: {}", runtime),
+            };
+            orch.register(&name, rt, None);
+            orch.save(&path)?;
+            println!("✅ Registered '{}' for health monitoring ({})", name, runtime);
+        }
+        OrchestrateAction::Status => {
+            let list = orch.list_workloads();
+            print!("{}", format_workload_list(&list));
+        }
+        OrchestrateAction::Summary => {
+            let summary = orch.health_summary();
+            print!("{}", format_health_summary(&summary));
+        }
+        OrchestrateAction::RollingUpdate { name, replicas } => {
+            let statuses = orch.rolling_update(&name, replicas, None);
+            print!("{}", format_rolling_update(&statuses));
+        }
+        OrchestrateAction::ResetCircuit { name } => {
+            if orch.reset_circuit(&name) {
+                orch.save(&path)?;
+                println!("✅ Circuit breaker reset for '{}'", name);
+            } else {
+                println!("❌ Workload '{}' not found", name);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn affinity_command(action: AffinityAction) -> Result<()> {
+    use orchestr8::ai::affinity::{format_affinity_report, AffinityEngine, WorkloadClass};
+
+    let path = AffinityEngine::default_path();
+    let engine = AffinityEngine::load(&path)?;
+
+    match action {
+        AffinityAction::Recommend { class } => {
+            let wl_class = match class.as_str() {
+                "web-service" => WorkloadClass::WebService,
+                "api-backend" => WorkloadClass::ApiBackend,
+                "database" => WorkloadClass::Database,
+                "cache" => WorkloadClass::Cache,
+                "batch-job" => WorkloadClass::BatchJob,
+                "ml-training" => WorkloadClass::MlTraining,
+                "worker" => WorkloadClass::Worker,
+                "microservice" => WorkloadClass::Microservice,
+                _ => anyhow::bail!(
+                    "Unknown class: {}. Use web-service, api-backend, database, cache, batch-job, ml-training, worker, or microservice.",
+                    class
+                ),
+            };
+            let scores = engine.recommend(&wl_class);
+            print!("{}", format_affinity_report(&wl_class, &scores));
+        }
+        AffinityAction::Matrix => {
+            let matrix = engine.compatibility_matrix();
+            println!("Compatibility Matrix:\n");
+            let mut entries: Vec<_> = matrix.iter().collect();
+            entries.sort_by_key(|((class, rt), _)| (format!("{}", class), format!("{}", rt)));
+            for ((class, rt), entry) in &entries {
+                let compat = if entry.compatible { "✓" } else { "✗" };
+                println!(
+                    "  {} {} + {} (score: {:.0}%, deployments: {})",
+                    compat,
+                    class,
+                    rt,
+                    entry.score * 100.0,
+                    entry.deployments,
+                );
+            }
+        }
+        AffinityAction::Stats => {
+            let stats = engine.stats();
+            println!("Affinity Learning Stats:\n");
+            println!("  Total outcomes: {}", stats.total_outcomes);
+            println!("  Successes: {}", stats.successes);
+            println!("  Failures: {}", stats.failures);
+            println!("  Known incompatibilities: {}", stats.incompatibilities);
+
+            if !stats.by_runtime.is_empty() {
+                println!("\n  By Runtime:");
+                for (rt, count) in &stats.by_runtime {
+                    println!("    {}: {}", rt, count);
+                }
+            }
+            if !stats.by_class.is_empty() {
+                println!("\n  By Workload Class:");
+                for (class, count) in &stats.by_class {
+                    println!("    {}: {}", class, count);
                 }
             }
         }
