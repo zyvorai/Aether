@@ -5,6 +5,18 @@ All notable changes to Orchestr8 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-02-06
+
+### Fixed
+- Cargo.toml version now matches git tag (0.1.0 → 0.2.0)
+- Collapsed nested `if` statements in decision engine (clippy warnings)
+- Fixed `LogParams` field reassignment after `Default` in Kubernetes adapter
+- Removed useless `format!` call in cost estimation display
+- Derived `Default` for `ServiceType`, `AccessMode`, and `Screen` enums
+- Removed needless borrow in backup restore command
+- Implemented `/api/workloads/:name/start` endpoint (was returning 501)
+- Replaced hardcoded `"running"` status in API responses with actual runtime state
+
 ## [0.2.0] - 2026-02-06
 
 ### Added
@@ -256,5 +268,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory usage: 5-15MB
 - TUI refresh: 450ms for 10 workloads
 
+[0.2.1]: https://github.com/ssahani/orchestr8/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ssahani/orchestr8/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ssahani/orchestr8/releases/tag/v0.1.0

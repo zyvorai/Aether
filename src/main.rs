@@ -785,7 +785,7 @@ async fn restore_command(backup_path: &Path, merge: bool) -> Result<()> {
     println!("📦 Restoring from backup...");
 
     // Load backup
-    let backup = Backup::load(&backup_path)?;
+    let backup = Backup::load(backup_path)?;
 
     println!("   Backup created: {}", backup.metadata.created_at);
     println!("   Workloads: {}", backup.metadata.workload_count);

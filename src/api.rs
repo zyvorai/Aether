@@ -163,7 +163,7 @@ async fn list_workloads(
             name: w.name.clone(),
             runtime: format!("{:?}", w.runtime),
             image: w.instance.image.clone(),
-            status: "running".to_string(), // TODO: Get actual status
+            status: format!("deployed ({})", w.runtime),
             created_at: w.created_at.clone(),
         })
         .collect();
@@ -367,7 +367,7 @@ async fn get_workload(
                 name: workload.name.clone(),
                 runtime: format!("{:?}", workload.runtime),
                 image: workload.instance.image.clone(),
-                status: "running".to_string(),
+                status: format!("deployed ({})", workload.runtime),
                 created_at: workload.created_at.clone(),
             };
             (StatusCode::OK, Json(ApiResponse::success(response)))
@@ -517,16 +517,179 @@ async fn get_logs(
 
 /// POST /api/workloads/:name/start - Start a workload
 async fn start_workload(
-    AxumState(_app_state): AxumState<AppState>,
+    AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    // TODO: Implement start functionality
+    let state = app_state.state.read().await;
+
+    let workload_state = match state.get(&name) {
+        Some(w) => w.clone(),
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::<String>::error(format!(
+                    "Workload {} not found",
+                    name
+                ))),
+            )
+        }
+    };
+
+    // Load workload spec from the stored path
+    let spec = match Workload::from_file(&workload_state.spec_path) {
+        Ok(s) => s,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(format!(
+                    "Failed to load workload spec: {}",
+                    e
+                ))),
+            )
+        }
+    };
+
+    // Build and run on the same runtime
+    let instance = match workload_state.runtime {
+        RuntimeKind::Podman => {
+            let runtime = match PodmanRuntime::new() {
+                Ok(r) => r,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            };
+            match runtime.build(&spec).await {
+                Ok(image) => match runtime.run(&image, &spec).await {
+                    Ok(inst) => inst,
+                    Err(e) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ApiResponse::<String>::error(e.to_string())),
+                        )
+                    }
+                },
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            }
+        }
+        RuntimeKind::Kubernetes => {
+            let runtime = match KubernetesRuntime::new().await {
+                Ok(r) => r,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            };
+            match runtime.build(&spec).await {
+                Ok(image) => match runtime.run(&image, &spec).await {
+                    Ok(inst) => inst,
+                    Err(e) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ApiResponse::<String>::error(e.to_string())),
+                        )
+                    }
+                },
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            }
+        }
+        RuntimeKind::KubeVirt => {
+            let runtime = match KubeVirtRuntime::new().await {
+                Ok(r) => r,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            };
+            match runtime.build(&spec).await {
+                Ok(image) => match runtime.run(&image, &spec).await {
+                    Ok(inst) => inst,
+                    Err(e) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ApiResponse::<String>::error(e.to_string())),
+                        )
+                    }
+                },
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            }
+        }
+        RuntimeKind::Metal3 => {
+            let runtime = match Metal3Runtime::new().await {
+                Ok(r) => r,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            };
+            match runtime.build(&spec).await {
+                Ok(image) => match runtime.run(&image, &spec).await {
+                    Ok(inst) => inst,
+                    Err(e) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ApiResponse::<String>::error(e.to_string())),
+                        )
+                    }
+                },
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
+                }
+            }
+        }
+    };
+
+    // Update state with the new instance
+    drop(state);
+    let mut state = app_state.state.write().await;
+    state.upsert(
+        name.clone(),
+        WorkloadState {
+            name: name.clone(),
+            runtime: workload_state.runtime,
+            instance,
+            spec_path: workload_state.spec_path,
+            created_at: workload_state.created_at,
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        },
+    );
+
+    if let Err(e) = state.save(&StateStore::default_path()) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<String>::error(e.to_string())),
+        );
+    }
+
     (
-        StatusCode::NOT_IMPLEMENTED,
-        Json(ApiResponse::<()>::error(format!(
-            "Start not yet implemented for {}",
-            name
-        ))),
+        StatusCode::OK,
+        Json(ApiResponse::success(format!("Workload {} started", name))),
     )
 }
 
