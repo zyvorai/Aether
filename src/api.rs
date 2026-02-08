@@ -156,6 +156,70 @@ struct HealthResponse {
     version: String,
 }
 
+/// Migration advice response
+#[derive(Debug, Serialize)]
+struct MigrationAdviceResponse {
+    workload_name: String,
+    source_runtime: String,
+    target_runtime: String,
+    recommended_strategy: String,
+    estimated_downtime_secs: u64,
+    risk_level: String,
+    reasons: Vec<String>,
+    warnings: Vec<String>,
+    timing: TimingAdviceResponse,
+    canary_config: CanaryConfigResponse,
+}
+
+/// Timing advice in migration response
+#[derive(Debug, Serialize)]
+struct TimingAdviceResponse {
+    recommendation: String,
+    preferred_window: String,
+    avoid_times: Vec<String>,
+}
+
+/// Canary config in migration response
+#[derive(Debug, Serialize)]
+struct CanaryConfigResponse {
+    steps: Vec<u32>,
+    step_interval_secs: u64,
+    error_threshold: f64,
+    latency_threshold_pct: f64,
+    min_observation_secs: u64,
+}
+
+/// Scaling advice response
+#[derive(Debug, Serialize)]
+struct ScalingAdviceResponse {
+    action: String,
+    current_replicas: u32,
+    recommended_replicas: u32,
+    reason: String,
+    confidence: f64,
+    forecast: ForecastResponse,
+    cost_impact: CostImpactResponse,
+}
+
+/// Forecast in scaling response
+#[derive(Debug, Serialize)]
+struct ForecastResponse {
+    trend: String,
+    predicted_value: f64,
+    lower_bound: f64,
+    upper_bound: f64,
+    horizon_minutes: u64,
+}
+
+/// Cost impact in scaling response
+#[derive(Debug, Serialize)]
+struct CostImpactResponse {
+    current_hourly: f64,
+    projected_hourly: f64,
+    delta_hourly: f64,
+    delta_monthly: f64,
+}
+
 /// Embedded dashboard HTML
 const DASHBOARD_HTML: &str = include_str!("../web/index.html");
 
@@ -190,6 +254,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/recommend", post(ai_recommend))
         .route("/api/ai/profile/:name", get(ai_profile))
         .route("/api/ai/analyze/:name", get(ai_analyze_logs))
+        .route("/api/ai/migration-advice/:name/:target", get(ai_migration_advice))
+        .route("/api/ai/scaling-advice", get(ai_scaling_advice))
         .route("/api/drift/:name", get(api_drift_check))
         .route("/api/policy/check", post(api_policy_check))
         .route("/api/dependencies", get(api_deps_show))
@@ -1077,6 +1143,137 @@ async fn ai_analyze_logs(
             ))),
         ),
     }
+}
+
+/// GET /api/ai/migration-advice/:name/:target - Migration path recommendations
+async fn ai_migration_advice(
+    AxumState(app_state): AxumState<AppState>,
+    Path((name, target)): Path<(String, String)>,
+) -> impl IntoResponse {
+    use crate::ai::migration::MigrationAdvisor;
+
+    let state = app_state.state.read().await;
+
+    let workload_state = match state.get(&name) {
+        Some(w) => w.clone(),
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::<MigrationAdviceResponse>::error(format!(
+                    "Workload {} not found",
+                    name
+                ))),
+            )
+        }
+    };
+
+    let target_runtime = match target.to_lowercase().as_str() {
+        "podman" | "container" => RuntimeKind::Podman,
+        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
+        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
+        "metal" | "metal3" => RuntimeKind::Metal3,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<MigrationAdviceResponse>::error(format!(
+                    "Unknown target runtime: {}",
+                    target
+                ))),
+            )
+        }
+    };
+
+    let spec = match Workload::from_file(&workload_state.spec_path) {
+        Ok(s) => s,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<MigrationAdviceResponse>::error(format!(
+                    "Failed to load workload spec: {}",
+                    e
+                ))),
+            )
+        }
+    };
+
+    let config = Config::load();
+    let advisor = MigrationAdvisor::new(config.migration);
+    let advice = advisor.advise(&spec, workload_state.runtime, target_runtime);
+
+    let response = MigrationAdviceResponse {
+        workload_name: name,
+        source_runtime: format!("{}", workload_state.runtime),
+        target_runtime: format!("{}", target_runtime),
+        recommended_strategy: format!("{:?}", advice.recommended_strategy),
+        estimated_downtime_secs: advice.estimated_downtime_secs,
+        risk_level: format!("{}", advice.risk_level),
+        reasons: advice.reasons,
+        warnings: advice.warnings,
+        timing: TimingAdviceResponse {
+            recommendation: advice.suggested_timing.recommendation,
+            preferred_window: advice.suggested_timing.preferred_window,
+            avoid_times: advice.suggested_timing.avoid_times,
+        },
+        canary_config: CanaryConfigResponse {
+            steps: advice.canary_config.steps,
+            step_interval_secs: advice.canary_config.step_interval_secs,
+            error_threshold: advice.canary_config.error_threshold,
+            latency_threshold_pct: advice.canary_config.latency_threshold_pct,
+            min_observation_secs: advice.canary_config.min_observation_secs,
+        },
+    };
+
+    (StatusCode::OK, Json(ApiResponse::success(response)))
+}
+
+/// GET /api/ai/scaling-advice - Predictive scaling recommendations
+async fn ai_scaling_advice() -> impl IntoResponse {
+    use crate::ai::scaling::{ScalingEngine, TimeSeries};
+
+    let config = Config::load();
+    let engine = ScalingEngine::new(config.scaling);
+
+    // Generate simulated metrics (same as CLI scaling_advice_command)
+    let mut cpu_series = TimeSeries::new("cpu_utilization", "ratio");
+    let mut mem_series = TimeSeries::new("memory_utilization", "ratio");
+
+    let base_time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64()
+        - 3600.0;
+
+    // Simulate metrics from last hour
+    for i in 0..60 {
+        let t = base_time + (i as f64 * 60.0);
+        cpu_series.add(t, 0.45 + (i as f64 * 0.005) + ((i as f64 * 0.1).sin() * 0.05));
+        mem_series.add(t, 0.55 + (i as f64 * 0.002));
+    }
+
+    let rec = engine.recommend(&cpu_series, &mem_series, 3, 1, 10, 0.05);
+
+    let response = ScalingAdviceResponse {
+        action: format!("{}", rec.action),
+        current_replicas: rec.current_replicas,
+        recommended_replicas: rec.recommended_replicas,
+        reason: rec.reason,
+        confidence: rec.confidence,
+        forecast: ForecastResponse {
+            trend: format!("{}", rec.forecast.trend),
+            predicted_value: rec.forecast.predicted_value,
+            lower_bound: rec.forecast.lower_bound,
+            upper_bound: rec.forecast.upper_bound,
+            horizon_minutes: rec.forecast.horizon_minutes,
+        },
+        cost_impact: CostImpactResponse {
+            current_hourly: rec.cost_impact.current_hourly,
+            projected_hourly: rec.cost_impact.projected_hourly,
+            delta_hourly: rec.cost_impact.delta_hourly,
+            delta_monthly: rec.cost_impact.delta_monthly,
+        },
+    };
+
+    (StatusCode::OK, Json(ApiResponse::success(response)))
 }
 
 /// GET /api/drift/:name - Check drift for a workload
@@ -2916,5 +3113,461 @@ mod tests {
         assert_eq!(json["data"]["valid"], true);
         assert_eq!(json["data"]["workload_name"], "good-app");
         assert_eq!(json["data"]["errors"].as_array().unwrap().len(), 0);
+    }
+
+    // ---------------------------------------------------------------
+    // MigrationAdviceResponse serialization
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_migration_advice_response_serialization() {
+        let response = MigrationAdviceResponse {
+            workload_name: "my-app".to_string(),
+            source_runtime: "Podman".to_string(),
+            target_runtime: "Kubernetes".to_string(),
+            recommended_strategy: "BlueGreen".to_string(),
+            estimated_downtime_secs: 30,
+            risk_level: "Medium".to_string(),
+            reasons: vec!["Better scaling".to_string()],
+            warnings: vec!["Requires PVC migration".to_string()],
+            timing: TimingAdviceResponse {
+                recommendation: "Off-peak hours".to_string(),
+                preferred_window: "02:00-06:00 UTC".to_string(),
+                avoid_times: vec!["Peak hours".to_string()],
+            },
+            canary_config: CanaryConfigResponse {
+                steps: vec![10, 25, 50, 100],
+                step_interval_secs: 300,
+                error_threshold: 0.05,
+                latency_threshold_pct: 10.0,
+                min_observation_secs: 120,
+            },
+        };
+        let value = serde_json::to_value(&response).unwrap();
+
+        assert_eq!(value["workload_name"], "my-app");
+        assert_eq!(value["source_runtime"], "Podman");
+        assert_eq!(value["target_runtime"], "Kubernetes");
+        assert_eq!(value["recommended_strategy"], "BlueGreen");
+        assert_eq!(value["estimated_downtime_secs"], 30);
+        assert_eq!(value["risk_level"], "Medium");
+        assert_eq!(value["reasons"].as_array().unwrap().len(), 1);
+        assert_eq!(value["warnings"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_migration_advice_response_has_all_fields() {
+        let response = MigrationAdviceResponse {
+            workload_name: "svc".to_string(),
+            source_runtime: "Podman".to_string(),
+            target_runtime: "Kubernetes".to_string(),
+            recommended_strategy: "Immediate".to_string(),
+            estimated_downtime_secs: 0,
+            risk_level: "Low".to_string(),
+            reasons: vec![],
+            warnings: vec![],
+            timing: TimingAdviceResponse {
+                recommendation: "Anytime".to_string(),
+                preferred_window: "any".to_string(),
+                avoid_times: vec![],
+            },
+            canary_config: CanaryConfigResponse {
+                steps: vec![100],
+                step_interval_secs: 60,
+                error_threshold: 0.01,
+                latency_threshold_pct: 5.0,
+                min_observation_secs: 60,
+            },
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        let obj = value.as_object().unwrap();
+
+        assert!(obj.contains_key("workload_name"));
+        assert!(obj.contains_key("source_runtime"));
+        assert!(obj.contains_key("target_runtime"));
+        assert!(obj.contains_key("recommended_strategy"));
+        assert!(obj.contains_key("estimated_downtime_secs"));
+        assert!(obj.contains_key("risk_level"));
+        assert!(obj.contains_key("reasons"));
+        assert!(obj.contains_key("warnings"));
+        assert!(obj.contains_key("timing"));
+        assert!(obj.contains_key("canary_config"));
+        assert_eq!(obj.len(), 10);
+    }
+
+    #[test]
+    fn test_migration_advice_response_empty_reasons_and_warnings() {
+        let response = MigrationAdviceResponse {
+            workload_name: "test".to_string(),
+            source_runtime: "Kubernetes".to_string(),
+            target_runtime: "KubeVirt".to_string(),
+            recommended_strategy: "Rolling".to_string(),
+            estimated_downtime_secs: 60,
+            risk_level: "High".to_string(),
+            reasons: vec![],
+            warnings: vec![],
+            timing: TimingAdviceResponse {
+                recommendation: "Maintenance window".to_string(),
+                preferred_window: "Sunday 02:00".to_string(),
+                avoid_times: vec![],
+            },
+            canary_config: CanaryConfigResponse {
+                steps: vec![10, 50, 100],
+                step_interval_secs: 600,
+                error_threshold: 0.02,
+                latency_threshold_pct: 15.0,
+                min_observation_secs: 180,
+            },
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        assert_eq!(value["reasons"].as_array().unwrap().len(), 0);
+        assert_eq!(value["warnings"].as_array().unwrap().len(), 0);
+    }
+
+    // ---------------------------------------------------------------
+    // TimingAdviceResponse serialization
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_timing_advice_response_serialization() {
+        let response = TimingAdviceResponse {
+            recommendation: "Off-peak hours recommended".to_string(),
+            preferred_window: "02:00-06:00 UTC".to_string(),
+            avoid_times: vec!["Monday 09:00-12:00".to_string(), "Friday 15:00-18:00".to_string()],
+        };
+        let value = serde_json::to_value(&response).unwrap();
+
+        assert_eq!(value["recommendation"], "Off-peak hours recommended");
+        assert_eq!(value["preferred_window"], "02:00-06:00 UTC");
+        let avoid = value["avoid_times"].as_array().unwrap();
+        assert_eq!(avoid.len(), 2);
+        assert_eq!(avoid[0], "Monday 09:00-12:00");
+    }
+
+    #[test]
+    fn test_timing_advice_response_has_three_fields() {
+        let response = TimingAdviceResponse {
+            recommendation: "Now".to_string(),
+            preferred_window: "anytime".to_string(),
+            avoid_times: vec![],
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        let obj = value.as_object().unwrap();
+        assert_eq!(obj.len(), 3);
+    }
+
+    // ---------------------------------------------------------------
+    // CanaryConfigResponse serialization
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_canary_config_response_serialization() {
+        let response = CanaryConfigResponse {
+            steps: vec![10, 25, 50, 75, 100],
+            step_interval_secs: 300,
+            error_threshold: 0.05,
+            latency_threshold_pct: 10.0,
+            min_observation_secs: 120,
+        };
+        let value = serde_json::to_value(&response).unwrap();
+
+        let steps = value["steps"].as_array().unwrap();
+        assert_eq!(steps.len(), 5);
+        assert_eq!(steps[0], 10);
+        assert_eq!(steps[4], 100);
+        assert_eq!(value["step_interval_secs"], 300);
+        assert_eq!(value["error_threshold"], 0.05);
+        assert_eq!(value["latency_threshold_pct"], 10.0);
+        assert_eq!(value["min_observation_secs"], 120);
+    }
+
+    #[test]
+    fn test_canary_config_response_has_five_fields() {
+        let response = CanaryConfigResponse {
+            steps: vec![100],
+            step_interval_secs: 60,
+            error_threshold: 0.01,
+            latency_threshold_pct: 5.0,
+            min_observation_secs: 30,
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        let obj = value.as_object().unwrap();
+        assert_eq!(obj.len(), 5);
+    }
+
+    // ---------------------------------------------------------------
+    // ScalingAdviceResponse serialization
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_scaling_advice_response_serialization() {
+        let response = ScalingAdviceResponse {
+            action: "ScaleUp".to_string(),
+            current_replicas: 3,
+            recommended_replicas: 5,
+            reason: "CPU utilization trending upward".to_string(),
+            confidence: 0.85,
+            forecast: ForecastResponse {
+                trend: "Increasing".to_string(),
+                predicted_value: 0.78,
+                lower_bound: 0.65,
+                upper_bound: 0.92,
+                horizon_minutes: 30,
+            },
+            cost_impact: CostImpactResponse {
+                current_hourly: 1.50,
+                projected_hourly: 2.50,
+                delta_hourly: 1.00,
+                delta_monthly: 720.0,
+            },
+        };
+        let value = serde_json::to_value(&response).unwrap();
+
+        assert_eq!(value["action"], "ScaleUp");
+        assert_eq!(value["current_replicas"], 3);
+        assert_eq!(value["recommended_replicas"], 5);
+        assert_eq!(value["reason"], "CPU utilization trending upward");
+        assert_eq!(value["confidence"], 0.85);
+    }
+
+    #[test]
+    fn test_scaling_advice_response_has_all_fields() {
+        let response = ScalingAdviceResponse {
+            action: "NoOp".to_string(),
+            current_replicas: 2,
+            recommended_replicas: 2,
+            reason: "Stable".to_string(),
+            confidence: 0.95,
+            forecast: ForecastResponse {
+                trend: "Stable".to_string(),
+                predicted_value: 0.45,
+                lower_bound: 0.40,
+                upper_bound: 0.50,
+                horizon_minutes: 15,
+            },
+            cost_impact: CostImpactResponse {
+                current_hourly: 1.0,
+                projected_hourly: 1.0,
+                delta_hourly: 0.0,
+                delta_monthly: 0.0,
+            },
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        let obj = value.as_object().unwrap();
+
+        assert!(obj.contains_key("action"));
+        assert!(obj.contains_key("current_replicas"));
+        assert!(obj.contains_key("recommended_replicas"));
+        assert!(obj.contains_key("reason"));
+        assert!(obj.contains_key("confidence"));
+        assert!(obj.contains_key("forecast"));
+        assert!(obj.contains_key("cost_impact"));
+        assert_eq!(obj.len(), 7);
+    }
+
+    #[test]
+    fn test_scaling_advice_response_scale_down() {
+        let response = ScalingAdviceResponse {
+            action: "ScaleDown".to_string(),
+            current_replicas: 10,
+            recommended_replicas: 5,
+            reason: "Low utilization detected".to_string(),
+            confidence: 0.72,
+            forecast: ForecastResponse {
+                trend: "Decreasing".to_string(),
+                predicted_value: 0.20,
+                lower_bound: 0.10,
+                upper_bound: 0.30,
+                horizon_minutes: 60,
+            },
+            cost_impact: CostImpactResponse {
+                current_hourly: 5.0,
+                projected_hourly: 2.5,
+                delta_hourly: -2.5,
+                delta_monthly: -1800.0,
+            },
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        assert_eq!(value["action"], "ScaleDown");
+        assert_eq!(value["cost_impact"]["delta_hourly"], -2.5);
+        assert_eq!(value["cost_impact"]["delta_monthly"], -1800.0);
+    }
+
+    // ---------------------------------------------------------------
+    // ForecastResponse serialization
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_forecast_response_serialization() {
+        let response = ForecastResponse {
+            trend: "Increasing".to_string(),
+            predicted_value: 0.82,
+            lower_bound: 0.70,
+            upper_bound: 0.95,
+            horizon_minutes: 30,
+        };
+        let value = serde_json::to_value(&response).unwrap();
+
+        assert_eq!(value["trend"], "Increasing");
+        assert_eq!(value["predicted_value"], 0.82);
+        assert_eq!(value["lower_bound"], 0.70);
+        assert_eq!(value["upper_bound"], 0.95);
+        assert_eq!(value["horizon_minutes"], 30);
+    }
+
+    #[test]
+    fn test_forecast_response_has_five_fields() {
+        let response = ForecastResponse {
+            trend: "Stable".to_string(),
+            predicted_value: 0.5,
+            lower_bound: 0.4,
+            upper_bound: 0.6,
+            horizon_minutes: 15,
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        let obj = value.as_object().unwrap();
+        assert_eq!(obj.len(), 5);
+    }
+
+    // ---------------------------------------------------------------
+    // CostImpactResponse serialization
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_cost_impact_response_serialization() {
+        let response = CostImpactResponse {
+            current_hourly: 2.50,
+            projected_hourly: 3.75,
+            delta_hourly: 1.25,
+            delta_monthly: 900.0,
+        };
+        let value = serde_json::to_value(&response).unwrap();
+
+        assert_eq!(value["current_hourly"], 2.50);
+        assert_eq!(value["projected_hourly"], 3.75);
+        assert_eq!(value["delta_hourly"], 1.25);
+        assert_eq!(value["delta_monthly"], 900.0);
+    }
+
+    #[test]
+    fn test_cost_impact_response_has_four_fields() {
+        let response = CostImpactResponse {
+            current_hourly: 1.0,
+            projected_hourly: 1.0,
+            delta_hourly: 0.0,
+            delta_monthly: 0.0,
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        let obj = value.as_object().unwrap();
+        assert_eq!(obj.len(), 4);
+    }
+
+    #[test]
+    fn test_cost_impact_response_negative_delta() {
+        let response = CostImpactResponse {
+            current_hourly: 5.0,
+            projected_hourly: 2.0,
+            delta_hourly: -3.0,
+            delta_monthly: -2160.0,
+        };
+        let value = serde_json::to_value(&response).unwrap();
+        assert_eq!(value["delta_hourly"], -3.0);
+        assert_eq!(value["delta_monthly"], -2160.0);
+    }
+
+    // ---------------------------------------------------------------
+    // Full ApiResponse wrapping MigrationAdviceResponse
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_api_response_wrapping_migration_advice_json() {
+        let advice = MigrationAdviceResponse {
+            workload_name: "api-svc".to_string(),
+            source_runtime: "Podman".to_string(),
+            target_runtime: "Kubernetes".to_string(),
+            recommended_strategy: "BlueGreen".to_string(),
+            estimated_downtime_secs: 15,
+            risk_level: "Low".to_string(),
+            reasons: vec!["Scaling needs".to_string()],
+            warnings: vec![],
+            timing: TimingAdviceResponse {
+                recommendation: "Anytime".to_string(),
+                preferred_window: "any".to_string(),
+                avoid_times: vec![],
+            },
+            canary_config: CanaryConfigResponse {
+                steps: vec![50, 100],
+                step_interval_secs: 120,
+                error_threshold: 0.03,
+                latency_threshold_pct: 8.0,
+                min_observation_secs: 90,
+            },
+        };
+        let api_resp = ApiResponse::success(advice);
+        let json = serde_json::to_value(&api_resp).unwrap();
+
+        assert_eq!(json["success"], true);
+        assert_eq!(json["data"]["workload_name"], "api-svc");
+        assert_eq!(json["data"]["timing"]["recommendation"], "Anytime");
+        assert_eq!(json["data"]["canary_config"]["steps"].as_array().unwrap().len(), 2);
+    }
+
+    // ---------------------------------------------------------------
+    // Full ApiResponse wrapping ScalingAdviceResponse
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_api_response_wrapping_scaling_advice_json() {
+        let scaling = ScalingAdviceResponse {
+            action: "ScaleUp".to_string(),
+            current_replicas: 2,
+            recommended_replicas: 4,
+            reason: "High CPU".to_string(),
+            confidence: 0.90,
+            forecast: ForecastResponse {
+                trend: "Increasing".to_string(),
+                predicted_value: 0.85,
+                lower_bound: 0.70,
+                upper_bound: 0.95,
+                horizon_minutes: 30,
+            },
+            cost_impact: CostImpactResponse {
+                current_hourly: 1.0,
+                projected_hourly: 2.0,
+                delta_hourly: 1.0,
+                delta_monthly: 720.0,
+            },
+        };
+        let api_resp = ApiResponse::success(scaling);
+        let json = serde_json::to_value(&api_resp).unwrap();
+
+        assert_eq!(json["success"], true);
+        assert_eq!(json["data"]["action"], "ScaleUp");
+        assert_eq!(json["data"]["forecast"]["trend"], "Increasing");
+        assert_eq!(json["data"]["cost_impact"]["delta_monthly"], 720.0);
+    }
+
+    // ---------------------------------------------------------------
+    // ApiResponse error wrapping for new types
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_api_response_error_typed_migration_advice() {
+        let response = ApiResponse::<MigrationAdviceResponse>::error("not found".to_string());
+        let json = serde_json::to_value(&response).unwrap();
+
+        assert_eq!(json["success"], false);
+        assert!(json["data"].is_null());
+        assert_eq!(json["error"], "not found");
+    }
+
+    #[test]
+    fn test_api_response_error_typed_scaling_advice() {
+        let response = ApiResponse::<ScalingAdviceResponse>::error("unavailable".to_string());
+        let json = serde_json::to_value(&response).unwrap();
+
+        assert_eq!(json["success"], false);
+        assert!(json["data"].is_null());
+        assert_eq!(json["error"], "unavailable");
     }
 }

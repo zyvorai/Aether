@@ -35,105 +35,7 @@ impl Metal3Runtime {
 
     /// Generate BareMetalHost JSON from workload spec
     fn generate_baremetalhost_json(&self, spec: &Workload) -> serde_json::Value {
-        let mut labels = BTreeMap::new();
-        labels.insert("app".to_string(), spec.metadata.name.clone());
-        labels.insert("managed-by".to_string(), "orchestr8".to_string());
-
-        // Add user labels
-        for (k, v) in &spec.metadata.labels {
-            labels.insert(k.clone(), v.clone());
-        }
-
-        // Parse CPU cores
-        let cpu_cores = if spec.requirements.cpu.ends_with('m') {
-            let milli = spec
-                .requirements
-                .cpu
-                .trim_end_matches('m')
-                .parse::<i32>()
-                .unwrap_or(1000);
-            (milli / 1000).max(1)
-        } else {
-            spec.requirements.cpu.parse::<i32>().unwrap_or(1)
-        };
-
-        // Parse memory (convert to MB)
-        let memory_mb = self.parse_memory_to_mb(&spec.requirements.memory);
-
-        // Parse storage (convert to GB)
-        let storage_gb = self.parse_storage_to_gb(&spec.requirements.storage);
-
-        let mut bmh = json!({
-            "apiVersion": "metal3.io/v1alpha1",
-            "kind": "BareMetalHost",
-            "metadata": {
-                "name": spec.metadata.name,
-                "namespace": self.namespace,
-                "labels": labels,
-                "annotations": spec.metadata.annotations,
-            },
-            "spec": {
-                "online": true,
-                "bootMACAddress": "00:00:00:00:00:00", // Placeholder - should be discovered
-                "bootMode": "UEFI",
-                "image": {
-                    "url": format!("http://image-server/{}.img", spec.image_name()),
-                    "checksum": "http://image-server/{}.img.sha256sum".to_string(),
-                },
-                "userData": {
-                    "name": format!("{}-userdata", spec.metadata.name),
-                    "namespace": self.namespace,
-                },
-                "networkData": {
-                    "name": format!("{}-networkdata", spec.metadata.name),
-                    "namespace": self.namespace,
-                },
-                "customDeploy": {
-                    "method": "install_coreos"
-                },
-                "rootDeviceHints": {
-                    "deviceName": "/dev/sda",
-                    "minSizeGigabytes": storage_gb,
-                },
-                "hardwareProfile": "unknown",
-            }
-        });
-
-        // Add hardware requirements as annotations for matching
-        if let Some(annotations) = bmh["metadata"]["annotations"].as_object_mut() {
-            annotations.insert(
-                "orchestr8.io/cpu-cores".to_string(),
-                json!(cpu_cores.to_string()),
-            );
-            annotations.insert(
-                "orchestr8.io/memory-mb".to_string(),
-                json!(memory_mb.to_string()),
-            );
-
-            // Add GPU requirements if specified
-            if let Some(ref gpu_req) = spec.requirements.gpu {
-                annotations.insert(
-                    "orchestr8.io/gpu-vendor".to_string(),
-                    json!(gpu_req.vendor.clone()),
-                );
-                annotations.insert(
-                    "orchestr8.io/gpu-count".to_string(),
-                    json!(gpu_req.count.to_string()),
-                );
-            }
-        }
-
-        bmh
-    }
-
-    /// Parse memory string to MB
-    fn parse_memory_to_mb(&self, memory: &str) -> i64 {
-        parse_memory_to_mb(memory)
-    }
-
-    /// Parse storage string to GB
-    fn parse_storage_to_gb(&self, storage: &str) -> i64 {
-        parse_storage_to_gb(storage)
+        build_baremetalhost_json(&self.namespace, spec)
     }
 }
 
@@ -169,6 +71,99 @@ fn parse_storage_to_gb(storage: &str) -> i64 {
     } else {
         10
     }
+}
+
+/// Build BareMetalHost JSON (standalone, testable without kube::Client)
+fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Value {
+    let mut labels = BTreeMap::new();
+    labels.insert("app".to_string(), spec.metadata.name.clone());
+    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+
+    // Add user labels
+    for (k, v) in &spec.metadata.labels {
+        labels.insert(k.clone(), v.clone());
+    }
+
+    // Parse CPU cores
+    let cpu_cores = if spec.requirements.cpu.ends_with('m') {
+        let milli = spec
+            .requirements
+            .cpu
+            .trim_end_matches('m')
+            .parse::<i32>()
+            .unwrap_or(1000);
+        (milli / 1000).max(1)
+    } else {
+        spec.requirements.cpu.parse::<i32>().unwrap_or(1)
+    };
+
+    // Parse memory (convert to MB)
+    let memory_mb = parse_memory_to_mb(&spec.requirements.memory);
+
+    // Parse storage (convert to GB)
+    let storage_gb = parse_storage_to_gb(&spec.requirements.storage);
+
+    let mut bmh = json!({
+        "apiVersion": "metal3.io/v1alpha1",
+        "kind": "BareMetalHost",
+        "metadata": {
+            "name": spec.metadata.name,
+            "namespace": namespace,
+            "labels": labels,
+            "annotations": spec.metadata.annotations,
+        },
+        "spec": {
+            "online": true,
+            "bootMACAddress": "00:00:00:00:00:00",
+            "bootMode": "UEFI",
+            "image": {
+                "url": format!("http://image-server/{}.img", spec.image_name()),
+                "checksum": "http://image-server/{}.img.sha256sum".to_string(),
+            },
+            "userData": {
+                "name": format!("{}-userdata", spec.metadata.name),
+                "namespace": namespace,
+            },
+            "networkData": {
+                "name": format!("{}-networkdata", spec.metadata.name),
+                "namespace": namespace,
+            },
+            "customDeploy": {
+                "method": "install_coreos"
+            },
+            "rootDeviceHints": {
+                "deviceName": "/dev/sda",
+                "minSizeGigabytes": storage_gb,
+            },
+            "hardwareProfile": "unknown",
+        }
+    });
+
+    // Add hardware requirements as annotations for matching
+    if let Some(annotations) = bmh["metadata"]["annotations"].as_object_mut() {
+        annotations.insert(
+            "orchestr8.io/cpu-cores".to_string(),
+            json!(cpu_cores.to_string()),
+        );
+        annotations.insert(
+            "orchestr8.io/memory-mb".to_string(),
+            json!(memory_mb.to_string()),
+        );
+
+        // Add GPU requirements if specified
+        if let Some(ref gpu_req) = spec.requirements.gpu {
+            annotations.insert(
+                "orchestr8.io/gpu-vendor".to_string(),
+                json!(gpu_req.vendor.clone()),
+            );
+            annotations.insert(
+                "orchestr8.io/gpu-count".to_string(),
+                json!(gpu_req.count.to_string()),
+            );
+        }
+    }
+
+    bmh
 }
 
 impl Metal3Runtime {
@@ -466,7 +461,52 @@ impl Runtime for Metal3Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::spec::*;
+    use std::collections::HashMap;
+    use std::path::PathBuf;
 
+    // ---------------------------------------------------------------
+    // Helper: build a minimal Workload for test purposes
+    // ---------------------------------------------------------------
+    fn make_workload(name: &str, cpu: &str, memory: &str, storage: &str) -> Workload {
+        Workload {
+            api_version: "orchestr8/v1".to_string(),
+            kind: "Workload".to_string(),
+            metadata: Metadata {
+                name: name.to_string(),
+                owner: "test-owner".to_string(),
+                project: "test-project".to_string(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "ghcr.io/testorg".to_string(),
+                build_args: HashMap::new(),
+            },
+            requirements: ResourceRequirements {
+                cpu: cpu.to_string(),
+                memory: memory.to_string(),
+                storage: storage.to_string(),
+                gpu: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Metal,
+                allow: vec![RuntimeType::Metal],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+        }
+    }
+
+    // ===============================================================
+    // parse_memory_to_mb tests (original tests kept, new ones added)
+    // ===============================================================
     #[test]
     fn test_parse_memory_to_mb_gi() {
         assert_eq!(parse_memory_to_mb("64Gi"), 65536);
@@ -495,6 +535,54 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_memory_to_mb_large_gi() {
+        assert_eq!(parse_memory_to_mb("128Gi"), 131072);
+        assert_eq!(parse_memory_to_mb("256Gi"), 262144);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_small_mi() {
+        assert_eq!(parse_memory_to_mb("64Mi"), 64);
+        assert_eq!(parse_memory_to_mb("128Mi"), 128);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_large_g() {
+        assert_eq!(parse_memory_to_mb("16G"), 16384);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_large_m() {
+        assert_eq!(parse_memory_to_mb("4096M"), 4096);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_invalid_gi_value() {
+        // Non-numeric value before Gi defaults to 1
+        assert_eq!(parse_memory_to_mb("xGi"), 1024); // 1 * 1024
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_invalid_mi_value() {
+        // Non-numeric value before Mi defaults to 1024
+        assert_eq!(parse_memory_to_mb("abcMi"), 1024);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_empty_string() {
+        assert_eq!(parse_memory_to_mb(""), 1024);
+    }
+
+    #[test]
+    fn test_parse_memory_to_mb_plain_number() {
+        // A plain number without suffix falls to default
+        assert_eq!(parse_memory_to_mb("8192"), 1024);
+    }
+
+    // ===============================================================
+    // parse_storage_to_gb tests (original tests kept, new ones added)
+    // ===============================================================
+    #[test]
     fn test_parse_storage_to_gb_gi() {
         assert_eq!(parse_storage_to_gb("500Gi"), 500);
         assert_eq!(parse_storage_to_gb("1Gi"), 1);
@@ -503,11 +591,367 @@ mod tests {
     #[test]
     fn test_parse_storage_to_gb_mi() {
         assert_eq!(parse_storage_to_gb("10240Mi"), 10);
-        assert_eq!(parse_storage_to_gb("512Mi"), 1); // rounds up to min 1
+        assert_eq!(parse_storage_to_gb("512Mi"), 1); // min 1
     }
 
     #[test]
     fn test_parse_storage_to_gb_default() {
         assert_eq!(parse_storage_to_gb("unknown"), 10);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_large_gi() {
+        assert_eq!(parse_storage_to_gb("2000Gi"), 2000);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_g_suffix() {
+        assert_eq!(parse_storage_to_gb("100G"), 100);
+        assert_eq!(parse_storage_to_gb("1G"), 1);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_m_suffix() {
+        assert_eq!(parse_storage_to_gb("10240M"), 10);
+        assert_eq!(parse_storage_to_gb("2048M"), 2);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_small_m_clamps_to_one() {
+        assert_eq!(parse_storage_to_gb("100M"), 1);
+        assert_eq!(parse_storage_to_gb("512M"), 1);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_small_mi_clamps_to_one() {
+        assert_eq!(parse_storage_to_gb("100Mi"), 1);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_invalid_gi_value() {
+        assert_eq!(parse_storage_to_gb("abcGi"), 10);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_invalid_mi_value() {
+        // Non-numeric before Mi defaults to 10240, then 10240 / 1024 = 10
+        assert_eq!(parse_storage_to_gb("xyzMi"), 10);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_empty_string() {
+        assert_eq!(parse_storage_to_gb(""), 10);
+    }
+
+    #[test]
+    fn test_parse_storage_to_gb_plain_number() {
+        // No recognized suffix -> default
+        assert_eq!(parse_storage_to_gb("500"), 10);
+    }
+
+    // ===============================================================
+    // BareMetalHost CRD JSON generation
+    // ===============================================================
+    #[test]
+    fn test_bmh_json_api_version_and_kind() {
+        let spec = make_workload("bare-host", "8", "64Gi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["apiVersion"], "metal3.io/v1alpha1");
+        assert_eq!(bmh["kind"], "BareMetalHost");
+    }
+
+    #[test]
+    fn test_bmh_json_metadata_name_and_namespace() {
+        let spec = make_workload("worker-01", "16", "128Gi", "1000Gi");
+        let bmh = build_baremetalhost_json("infra-ns", &spec);
+
+        assert_eq!(bmh["metadata"]["name"], "worker-01");
+        assert_eq!(bmh["metadata"]["namespace"], "infra-ns");
+    }
+
+    #[test]
+    fn test_bmh_json_labels_contain_managed_by() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["metadata"]["labels"]["app"], "my-host");
+        assert_eq!(bmh["metadata"]["labels"]["managed-by"], "orchestr8");
+    }
+
+    #[test]
+    fn test_bmh_json_user_labels_propagated() {
+        let mut spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        spec.metadata.labels.insert("rack".to_string(), "rack-a".to_string());
+        spec.metadata.labels.insert("dc".to_string(), "us-east-1".to_string());
+
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["metadata"]["labels"]["rack"], "rack-a");
+        assert_eq!(bmh["metadata"]["labels"]["dc"], "us-east-1");
+    }
+
+    #[test]
+    fn test_bmh_json_online_true() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["online"], true);
+    }
+
+    #[test]
+    fn test_bmh_json_boot_mode_uefi() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["bootMode"], "UEFI");
+    }
+
+    #[test]
+    fn test_bmh_json_placeholder_mac_address() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["bootMACAddress"], "00:00:00:00:00:00");
+    }
+
+    // ---------------------------------------------------------------
+    // BMC configuration in manifest
+    // ---------------------------------------------------------------
+    #[test]
+    fn test_bmh_json_image_url() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        let url = bmh["spec"]["image"]["url"].as_str().unwrap();
+        assert!(url.starts_with("http://image-server/"));
+        assert!(url.ends_with(".img"));
+        assert!(url.contains("my-host"));
+    }
+
+    #[test]
+    fn test_bmh_json_userdata_reference() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["userData"]["name"], "my-host-userdata");
+        assert_eq!(bmh["spec"]["userData"]["namespace"], "metal3-system");
+    }
+
+    #[test]
+    fn test_bmh_json_networkdata_reference() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["networkData"]["name"], "my-host-networkdata");
+        assert_eq!(bmh["spec"]["networkData"]["namespace"], "metal3-system");
+    }
+
+    #[test]
+    fn test_bmh_json_custom_deploy_method() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["customDeploy"]["method"], "install_coreos");
+    }
+
+    #[test]
+    fn test_bmh_json_root_device_hints() {
+        let spec = make_workload("my-host", "4", "32Gi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["rootDeviceHints"]["deviceName"], "/dev/sda");
+        assert_eq!(bmh["spec"]["rootDeviceHints"]["minSizeGigabytes"], 500);
+    }
+
+    #[test]
+    fn test_bmh_json_root_device_hints_storage_conversion() {
+        let spec = make_workload("my-host", "4", "32Gi", "10240Mi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        // 10240Mi = 10 GB
+        assert_eq!(bmh["spec"]["rootDeviceHints"]["minSizeGigabytes"], 10);
+    }
+
+    #[test]
+    fn test_bmh_json_hardware_profile() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["hardwareProfile"], "unknown");
+    }
+
+    // ---------------------------------------------------------------
+    // Hardware matching via annotations
+    // ---------------------------------------------------------------
+    #[test]
+    fn test_bmh_json_cpu_annotation() {
+        let spec = make_workload("my-host", "8", "64Gi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "8");
+    }
+
+    #[test]
+    fn test_bmh_json_cpu_annotation_millicore() {
+        let spec = make_workload("my-host", "4000m", "64Gi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "4");
+    }
+
+    #[test]
+    fn test_bmh_json_cpu_annotation_small_millicore_clamps() {
+        let spec = make_workload("my-host", "500m", "64Gi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        // 500m / 1000 = 0, clamped to 1
+        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "1");
+    }
+
+    #[test]
+    fn test_bmh_json_memory_annotation() {
+        let spec = make_workload("my-host", "8", "64Gi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        // 64 Gi = 65536 MB
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/memory-mb"],
+            "65536"
+        );
+    }
+
+    #[test]
+    fn test_bmh_json_memory_annotation_mi() {
+        let spec = make_workload("my-host", "8", "2048Mi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/memory-mb"],
+            "2048"
+        );
+    }
+
+    // ---------------------------------------------------------------
+    // GPU annotation insertion
+    // ---------------------------------------------------------------
+    #[test]
+    fn test_bmh_json_no_gpu_annotations_by_default() {
+        let spec = make_workload("my-host", "8", "64Gi", "500Gi");
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert!(bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"].is_null());
+        assert!(bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"].is_null());
+    }
+
+    #[test]
+    fn test_bmh_json_gpu_vendor_annotation() {
+        let mut spec = make_workload("gpu-host", "16", "128Gi", "1000Gi");
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 2,
+            vendor: "nvidia".to_string(),
+        });
+
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"],
+            "nvidia"
+        );
+    }
+
+    #[test]
+    fn test_bmh_json_gpu_count_annotation() {
+        let mut spec = make_workload("gpu-host", "16", "128Gi", "1000Gi");
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 4,
+            vendor: "nvidia".to_string(),
+        });
+
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"],
+            "4"
+        );
+    }
+
+    #[test]
+    fn test_bmh_json_amd_gpu_annotation() {
+        let mut spec = make_workload("amd-host", "8", "64Gi", "500Gi");
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "amd".to_string(),
+        });
+
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"],
+            "amd"
+        );
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"],
+            "1"
+        );
+    }
+
+    #[test]
+    fn test_bmh_json_intel_gpu_annotation() {
+        let mut spec = make_workload("intel-host", "8", "64Gi", "500Gi");
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 3,
+            vendor: "intel".to_string(),
+        });
+
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"],
+            "intel"
+        );
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"],
+            "3"
+        );
+    }
+
+    // ---------------------------------------------------------------
+    // User annotations co-exist with hardware annotations
+    // ---------------------------------------------------------------
+    #[test]
+    fn test_bmh_json_user_annotations_preserved_with_hardware() {
+        let mut spec = make_workload("annotated-host", "4", "32Gi", "200Gi");
+        spec.metadata.annotations.insert(
+            "description".to_string(),
+            "production bare metal worker".to_string(),
+        );
+
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        // User annotation should be present
+        assert_eq!(
+            bmh["metadata"]["annotations"]["description"],
+            "production bare metal worker"
+        );
+        // Hardware annotations should also be present
+        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "4");
+        assert_eq!(
+            bmh["metadata"]["annotations"]["orchestr8.io/memory-mb"],
+            "32768"
+        );
+    }
+
+    // ---------------------------------------------------------------
+    // Namespace propagation in sub-resources
+    // ---------------------------------------------------------------
+    #[test]
+    fn test_bmh_json_namespace_propagates_to_subreferences() {
+        let spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        let bmh = build_baremetalhost_json("custom-ns", &spec);
+
+        assert_eq!(bmh["metadata"]["namespace"], "custom-ns");
+        assert_eq!(bmh["spec"]["userData"]["namespace"], "custom-ns");
+        assert_eq!(bmh["spec"]["networkData"]["namespace"], "custom-ns");
     }
 }
