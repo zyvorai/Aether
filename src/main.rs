@@ -193,6 +193,138 @@ enum Commands {
         #[arg(long)]
         init: bool,
     },
+
+    /// Detect configuration drift from spec
+    Drift {
+        /// Workload name
+        name: String,
+
+        /// Auto-reconcile detected drift
+        #[arg(long)]
+        reconcile: bool,
+    },
+
+    /// Check workload against policies
+    PolicyCheck {
+        /// Policy set: production, development, or custom file path
+        #[arg(short, long, default_value = "production")]
+        policy: String,
+    },
+
+    /// Manage workload dependencies
+    Deps {
+        #[command(subcommand)]
+        action: DepsAction,
+    },
+
+    /// View or manage audit trail
+    Audit {
+        /// Show last N events
+        #[arg(short, long, default_value = "20")]
+        last: usize,
+
+        /// Filter by workload name
+        #[arg(short, long)]
+        workload: Option<String>,
+
+        /// Show summary only
+        #[arg(long)]
+        summary: bool,
+    },
+
+    /// Generate workload from template
+    Template {
+        /// Template name (web-app, rest-api, database, cache, worker, cron-job, ml-training, microservice)
+        name: String,
+
+        /// Workload name
+        #[arg(long)]
+        workload_name: Option<String>,
+
+        /// Owner
+        #[arg(long, default_value = "team")]
+        owner: String,
+
+        /// Project
+        #[arg(long, default_value = "default")]
+        project: String,
+
+        /// Container registry
+        #[arg(long, default_value = "ghcr.io/org")]
+        registry: String,
+
+        /// Output file (default: stdout as YAML)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+
+        /// List available templates
+        #[arg(long)]
+        list: bool,
+    },
+
+    /// SLA compliance monitoring
+    Sla {
+        #[command(subcommand)]
+        action: SlaAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum DepsAction {
+    /// Add a dependency
+    Add {
+        /// Workload that has the dependency
+        workload: String,
+        /// Workload it depends on
+        dependency: String,
+    },
+    /// Remove a dependency
+    Remove {
+        /// Workload
+        workload: String,
+        /// Dependency to remove
+        dependency: String,
+    },
+    /// Show dependency graph
+    Show,
+    /// Show impact of stopping a workload
+    Impact {
+        /// Workload name
+        workload: String,
+    },
+    /// Show startup order
+    Order,
+}
+
+#[derive(Subcommand)]
+enum SlaAction {
+    /// Add an SLA target for a workload
+    Add {
+        /// Workload name
+        workload: String,
+        /// SLA tier: standard, high-availability, best-effort
+        #[arg(long, default_value = "standard")]
+        tier: String,
+    },
+    /// Check SLA compliance
+    Check {
+        /// Workload name
+        workload: String,
+        /// Uptime percentage observed
+        #[arg(long)]
+        uptime: f64,
+        /// Average latency in ms
+        #[arg(long, default_value = "100")]
+        latency: f64,
+        /// Error rate percentage
+        #[arg(long, default_value = "0.1")]
+        error_rate: f64,
+        /// Number of restarts
+        #[arg(long, default_value = "0")]
+        restarts: u32,
+    },
+    /// List all SLA targets
+    List,
 }
 
 #[tokio::main]
@@ -243,6 +375,12 @@ async fn main() -> Result<()> {
         Commands::MigrationAdvice { .. } => "migration-advice",
         Commands::ScalingAdvice => "scaling-advice",
         Commands::Config { .. } => "config",
+        Commands::Drift { .. } => "drift",
+        Commands::PolicyCheck { .. } => "policy-check",
+        Commands::Deps { .. } => "deps",
+        Commands::Audit { .. } => "audit",
+        Commands::Template { .. } => "template",
+        Commands::Sla { .. } => "sla",
     };
 
     let result = match cli.command {
@@ -302,6 +440,24 @@ async fn main() -> Result<()> {
         }
         Commands::Config { show, init } => {
             config_command(show, init).await
+        }
+        Commands::Drift { name, reconcile } => {
+            drift_command(&name, reconcile).await
+        }
+        Commands::PolicyCheck { policy } => {
+            policy_check_command(&cli.spec, &policy).await
+        }
+        Commands::Deps { action } => {
+            deps_command(action).await
+        }
+        Commands::Audit { last, workload, summary } => {
+            audit_command(last, workload, summary).await
+        }
+        Commands::Template { name, workload_name, owner, project, registry, output, list } => {
+            template_command(&name, workload_name, &owner, &project, &registry, output, list).await
+        }
+        Commands::Sla { action } => {
+            sla_command(action).await
         }
     };
 
@@ -1200,6 +1356,336 @@ async fn config_command(show: bool, init: bool) -> Result<()> {
 
     if !exists {
         println!("\n💡 Run 'orchestr8 config --init' to create a config file");
+    }
+
+    Ok(())
+}
+
+async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
+    use orchestr8::drift::{format_drift_report, DriftDetector};
+
+    println!("🔍 Checking drift for '{}'\n", name);
+
+    let state = StateStore::load(&StateStore::default_path())?;
+    let workload_state = state
+        .get(name)
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+
+    let spec = Workload::from_file(&workload_state.spec_path)?;
+    let detector = DriftDetector::new();
+    let report = detector.detect(&spec, workload_state);
+
+    print!("{}", format_drift_report(&report));
+
+    if reconcile && report.has_drift {
+        println!("\n🔧 Reconciliation Actions:");
+        for action in &report.reconciliation_plan {
+            println!("  - [{}] {} {}", action.action_type, action.description,
+                if action.requires_restart { "(requires restart)" } else { "" });
+        }
+        println!("\n💡 To apply these changes, re-run the workload with: orchestr8 run");
+    }
+
+    Ok(())
+}
+
+async fn policy_check_command(spec_path: &PathBuf, policy_name: &str) -> Result<()> {
+    use orchestr8::policy::{format_policy_report, PolicyEngine};
+
+    println!("📋 Policy Check\n");
+
+    let workload = Workload::from_file(spec_path)?;
+
+    let engine = match policy_name {
+        "production" => PolicyEngine::production(),
+        "development" => PolicyEngine::development(),
+        _ => {
+            // Try loading from file
+            let path = std::path::Path::new(policy_name);
+            if path.exists() {
+                PolicyEngine::load(path)?
+            } else {
+                anyhow::bail!("Unknown policy set: {}. Use 'production', 'development', or a file path.", policy_name);
+            }
+        }
+    };
+
+    let result = engine.evaluate(&workload);
+    print!("{}", format_policy_report(&result));
+
+    if !result.passed {
+        std::process::exit(1);
+    }
+
+    Ok(())
+}
+
+async fn deps_command(action: DepsAction) -> Result<()> {
+    use orchestr8::dependencies::{format_dependency_report, DependencyGraph};
+
+    let graph_path = DependencyGraph::default_path();
+    let mut graph = DependencyGraph::load(&graph_path)?;
+
+    match action {
+        DepsAction::Add { workload, dependency } => {
+            graph.add_dependency(&workload, &dependency);
+            graph.save(&graph_path)?;
+            println!("✅ Added dependency: {} -> {}", workload, dependency);
+
+            let issues = graph.validate();
+            if !issues.is_empty() {
+                println!("\n⚠️  Warnings:");
+                for issue in &issues {
+                    println!("  - {}", issue);
+                }
+            }
+        }
+        DepsAction::Remove { workload, dependency } => {
+            graph.remove_dependency(&workload, &dependency);
+            graph.save(&graph_path)?;
+            println!("✅ Removed dependency: {} -> {}", workload, dependency);
+        }
+        DepsAction::Show => {
+            print!("{}", format_dependency_report(&graph));
+        }
+        DepsAction::Impact { workload } => {
+            let impact = graph.impact_analysis(&workload);
+            println!("Impact Analysis for '{}':\n", workload);
+            println!("  Severity: {}", impact.severity);
+            println!("  Affected workloads: {}", impact.cascade_count);
+            if !impact.affected_workloads.is_empty() {
+                println!("\n  Cascade:");
+                for affected in &impact.affected_workloads {
+                    println!("    - {}", affected);
+                }
+            }
+        }
+        DepsAction::Order => {
+            match graph.startup_order() {
+                Ok(order) => {
+                    println!("Startup Order:\n");
+                    for (i, name) in order.iter().enumerate() {
+                        println!("  {}. {}", i + 1, name);
+                    }
+                }
+                Err(e) => {
+                    println!("❌ {}", e);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn audit_command(last: usize, workload: Option<String>, summary: bool) -> Result<()> {
+    use orchestr8::audit::{format_audit_report, AuditLog};
+
+    let audit_path = AuditLog::default_path();
+    let log = AuditLog::load(&audit_path)?;
+
+    if summary {
+        let s = log.summary();
+        println!("📊 Audit Summary\n");
+        println!("Total events: {}", s.total_events);
+        println!("Successes: {}", s.successes);
+        println!("Failures: {}", s.failures);
+        println!("Unique workloads: {}", s.unique_workloads);
+
+        if !s.events_by_action.is_empty() {
+            println!("\nBy Action:");
+            let mut actions: Vec<_> = s.events_by_action.iter().collect();
+            actions.sort_by(|a, b| b.1.cmp(a.1));
+            for (action, count) in actions {
+                println!("  {}: {}", action, count);
+            }
+        }
+        return Ok(());
+    }
+
+    if let Some(ref name) = workload {
+        let events = log.events_for(name);
+        if events.is_empty() {
+            println!("No audit events for '{}'", name);
+        } else {
+            println!("📋 Audit Events for '{}'\n", name);
+            for event in events {
+                println!(
+                    "  [{}] {} {} - {}",
+                    event.timestamp.chars().take(19).collect::<String>(),
+                    event.result,
+                    event.action,
+                    event.message,
+                );
+            }
+        }
+        return Ok(());
+    }
+
+    print!("{}", format_audit_report(&log, last));
+
+    Ok(())
+}
+
+async fn template_command(
+    name: &str,
+    workload_name: Option<String>,
+    owner: &str,
+    project: &str,
+    registry: &str,
+    output: Option<PathBuf>,
+    list: bool,
+) -> Result<()> {
+    use orchestr8::templates::{self, TemplateKind, TemplateParams};
+
+    if list || name == "list" {
+        print!("{}", templates::format_template_list());
+        return Ok(());
+    }
+
+    let kind = match name {
+        "web-app" => TemplateKind::WebApp,
+        "rest-api" => TemplateKind::RestApi,
+        "database" => TemplateKind::Database,
+        "cache" => TemplateKind::Cache,
+        "worker" => TemplateKind::Worker,
+        "cron-job" => TemplateKind::CronJob,
+        "ml-training" => TemplateKind::MlTraining,
+        "microservice" => TemplateKind::Microservice,
+        _ => {
+            anyhow::bail!(
+                "Unknown template: {}. Run 'orchestr8 template list' to see available templates.",
+                name
+            );
+        }
+    };
+
+    let wl_name = workload_name.unwrap_or_else(|| format!("my-{}", name));
+
+    let params = TemplateParams {
+        name: wl_name.clone(),
+        owner: owner.to_string(),
+        project: project.to_string(),
+        registry: registry.to_string(),
+        ..Default::default()
+    };
+
+    let spec = templates::generate(&kind, &params);
+    let yaml = serde_yaml::to_string(&spec)?;
+
+    if let Some(path) = output {
+        std::fs::write(&path, &yaml)?;
+        println!("✅ Generated {} template: {}", name, path.display());
+        println!("   Workload name: {}", wl_name);
+    } else {
+        println!("# Generated from '{}' template\n", name);
+        println!("{}", yaml);
+    }
+
+    Ok(())
+}
+
+async fn sla_command(action: SlaAction) -> Result<()> {
+    use orchestr8::sla::{format_sla_report, SlaEngine, SlaObservation, SlaTarget};
+
+    // Persist SLA targets via a simple JSON file
+    let sla_path = {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        std::path::PathBuf::from(home).join(".orchestr8/sla.json")
+    };
+
+    let load_engine = || -> Result<SlaEngine> {
+        if sla_path.exists() {
+            let content = std::fs::read_to_string(&sla_path)?;
+            let targets: Vec<SlaTarget> = serde_json::from_str(&content)?;
+            let mut engine = SlaEngine::new();
+            for target in targets {
+                engine.add_target(target);
+            }
+            Ok(engine)
+        } else {
+            Ok(SlaEngine::new())
+        }
+    };
+
+    let save_engine = |engine: &SlaEngine| -> Result<()> {
+        if let Some(parent) = sla_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let targets = engine.list_targets();
+        let content = serde_json::to_string_pretty(&targets)?;
+        std::fs::write(&sla_path, content)?;
+        Ok(())
+    };
+
+    match action {
+        SlaAction::Add { workload, tier } => {
+            let mut engine = load_engine()?;
+            let target = match tier.as_str() {
+                "standard" => SlaTarget::standard(&workload),
+                "high-availability" | "ha" => SlaTarget::high_availability(&workload),
+                "best-effort" | "be" => SlaTarget::best_effort(&workload),
+                _ => anyhow::bail!("Unknown SLA tier: {}. Use standard, high-availability, or best-effort.", tier),
+            };
+            println!("✅ Added SLA target for '{}' ({})", workload, tier);
+            println!("   Uptime target: {:.2}%", target.uptime_target_pct);
+            if let Some(lat) = target.max_latency_ms {
+                println!("   Max latency: {:.0}ms", lat);
+            }
+            if let Some(err) = target.max_error_rate_pct {
+                println!("   Max error rate: {:.2}%", err);
+            }
+            engine.add_target(target);
+            save_engine(&engine)?;
+        }
+        SlaAction::Check {
+            workload,
+            uptime,
+            latency,
+            error_rate,
+            restarts,
+        } => {
+            let engine = load_engine()?;
+            let observation = SlaObservation {
+                uptime_pct: uptime,
+                avg_latency_ms: latency,
+                error_rate_pct: error_rate,
+                restarts,
+                observation_period: "24h".to_string(),
+            };
+
+            match engine.evaluate(&workload, &observation) {
+                Some(report) => {
+                    print!("{}", format_sla_report(&report));
+                }
+                None => {
+                    println!("❌ No SLA target found for '{}'. Add one with: orchestr8 sla add {}", workload, workload);
+                }
+            }
+        }
+        SlaAction::List => {
+            let engine = load_engine()?;
+            let targets = engine.list_targets();
+            if targets.is_empty() {
+                println!("No SLA targets defined.");
+                println!("Add one with: orchestr8 sla add <workload> --tier standard");
+            } else {
+                println!("📋 SLA Targets\n");
+                for target in targets {
+                    println!("  {} - {:.2}% uptime", target.workload, target.uptime_target_pct);
+                    if let Some(lat) = target.max_latency_ms {
+                        println!("    Max latency: {:.0}ms", lat);
+                    }
+                    if let Some(err) = target.max_error_rate_pct {
+                        println!("    Max error rate: {:.2}%", err);
+                    }
+                    if let Some(restarts) = target.max_restarts_per_day {
+                        println!("    Max restarts/day: {}", restarts);
+                    }
+                    println!();
+                }
+            }
+        }
     }
 
     Ok(())
