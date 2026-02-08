@@ -1317,7 +1317,8 @@ async fn list_backups_command() -> Result<()> {
     for backup_path in backups {
         match manager.get_backup_info(&backup_path) {
             Ok(info) => {
-                println!("  📄 {}", backup_path.file_name().unwrap().to_string_lossy());
+                let fname = backup_path.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| backup_path.display().to_string());
+                println!("  📄 {}", fname);
                 println!("     Created: {}", info.created_at);
                 println!("     Workloads: {}", info.workload_count);
                 println!("     Version: {}", info.orchestr8_version);
@@ -1574,7 +1575,7 @@ async fn scaling_advice_command() -> Result<()> {
 
     let base_time = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .unwrap_or_default()
         .as_secs_f64()
         - 3600.0;
 
