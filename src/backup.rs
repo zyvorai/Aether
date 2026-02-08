@@ -127,7 +127,7 @@ impl BackupManager {
 
     /// Get default backup directory
     pub fn default_dir() -> PathBuf {
-        let mut path = dirs::home_dir().expect("Failed to get home directory");
+        let mut path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         path.push(".orchestr8");
         path.push("backups");
         path

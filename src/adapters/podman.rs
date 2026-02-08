@@ -21,7 +21,10 @@ impl PodmanRuntime {
 
 impl Default for PodmanRuntime {
     fn default() -> Self {
-        Self::new().expect("Failed to initialize Podman runtime")
+        match Self::new() {
+            Ok(rt) => rt,
+            Err(_) => Self,
+        }
     }
 }
 

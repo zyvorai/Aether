@@ -166,7 +166,7 @@ impl EnvironmentManager {
             updated_at: now,
         };
         self.environments.insert(name.to_string(), env);
-        self.environments.get(name).unwrap()
+        self.environments.get(name).expect("just inserted")
     }
 
     /// Get an environment
@@ -271,7 +271,7 @@ impl EnvironmentManager {
         }
 
         // Insert into target
-        let target = self.environments.get_mut(&request.to_env).unwrap();
+        let target = self.environments.get_mut(&request.to_env).expect("target env validated above");
         target.workloads.insert(request.workload.clone(), promoted);
         target.updated_at = chrono::Utc::now().to_rfc3339();
 

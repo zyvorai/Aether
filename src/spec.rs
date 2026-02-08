@@ -199,9 +199,56 @@ impl Workload {
             anyhow::bail!("Unsupported kind: {}", self.kind);
         }
 
-        // Validate name
-        if self.metadata.name.is_empty() {
-            anyhow::bail!("metadata.name cannot be empty");
+        // Validate name is a valid DNS label (RFC 1123)
+        Self::validate_dns_label(&self.metadata.name, "metadata.name")?;
+
+        // Validate resource requirements
+        Self::validate_cpu(&self.requirements.cpu)?;
+        Self::validate_memory(&self.requirements.memory)?;
+        Self::validate_storage(&self.requirements.storage)?;
+
+        // Validate GPU if present
+        if let Some(ref gpu) = self.requirements.gpu {
+            if gpu.count == 0 {
+                anyhow::bail!("requirements.gpu.count must be > 0");
+            }
+            if gpu.vendor.is_empty() {
+                anyhow::bail!("requirements.gpu.vendor cannot be empty");
+            }
+        }
+
+        // Validate network ports
+        for (i, port) in self.network.ports.iter().enumerate() {
+            if port.container_port == 0 {
+                anyhow::bail!("network.ports[{}].containerPort must be > 0", i);
+            }
+            if port.service_port == 0 {
+                anyhow::bail!("network.ports[{}].servicePort must be > 0", i);
+            }
+        }
+
+        // Validate scaling spec
+        if let Some(ref scaling) = self.scaling {
+            if scaling.min_replicas == 0 {
+                anyhow::bail!("scaling.minReplicas must be > 0");
+            }
+            if scaling.max_replicas == 0 {
+                anyhow::bail!("scaling.maxReplicas must be > 0");
+            }
+            if scaling.min_replicas > scaling.max_replicas {
+                anyhow::bail!(
+                    "scaling.minReplicas ({}) must be <= scaling.maxReplicas ({})",
+                    scaling.min_replicas,
+                    scaling.max_replicas
+                );
+            }
+        }
+
+        // Validate ingress host
+        if let Some(ref ingress) = self.ingress {
+            if ingress.enabled && ingress.host.is_empty() {
+                anyhow::bail!("ingress.host cannot be empty when ingress is enabled");
+            }
         }
 
         // Validate runtime preference is in allowed list
@@ -225,6 +272,94 @@ impl Workload {
         }
 
         Ok(())
+    }
+
+    /// Validate a string as a DNS label (RFC 1123):
+    /// - 1-63 characters
+    /// - lowercase alphanumeric and hyphens only
+    /// - must start and end with alphanumeric
+    fn validate_dns_label(name: &str, field: &str) -> anyhow::Result<()> {
+        if name.is_empty() {
+            anyhow::bail!("{} cannot be empty", field);
+        }
+        if name.len() > 63 {
+            anyhow::bail!("{} must be at most 63 characters, got {}", field, name.len());
+        }
+        if !name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        {
+            anyhow::bail!(
+                "{} must contain only lowercase alphanumeric characters or '-', got '{}'",
+                field,
+                name
+            );
+        }
+        if name.starts_with('-') || name.ends_with('-') {
+            anyhow::bail!(
+                "{} must start and end with an alphanumeric character, got '{}'",
+                field,
+                name
+            );
+        }
+        Ok(())
+    }
+
+    /// Validate CPU resource string (e.g., "2", "500m", "0.5")
+    fn validate_cpu(cpu: &str) -> anyhow::Result<()> {
+        if cpu.is_empty() {
+            anyhow::bail!("requirements.cpu cannot be empty");
+        }
+        if let Some(milli) = cpu.strip_suffix('m') {
+            let val = milli
+                .parse::<u64>()
+                .map_err(|_| anyhow::anyhow!("requirements.cpu: invalid millicore value '{}'", cpu))?;
+            if val == 0 {
+                anyhow::bail!("requirements.cpu must be > 0");
+            }
+        } else {
+            let val = cpu
+                .parse::<f64>()
+                .map_err(|_| anyhow::anyhow!("requirements.cpu: invalid value '{}', expected number or millicore (e.g., '2' or '500m')", cpu))?;
+            if val <= 0.0 {
+                anyhow::bail!("requirements.cpu must be > 0");
+            }
+        }
+        Ok(())
+    }
+
+    /// Validate memory resource string (e.g., "4Gi", "512Mi")
+    fn validate_memory(memory: &str) -> anyhow::Result<()> {
+        Self::validate_byte_quantity(memory, "requirements.memory")
+    }
+
+    /// Validate storage resource string (e.g., "20Gi", "100Mi")
+    fn validate_storage(storage: &str) -> anyhow::Result<()> {
+        Self::validate_byte_quantity(storage, "requirements.storage")
+    }
+
+    /// Validate a Kubernetes-style byte quantity (e.g., "4Gi", "512Mi", "100G", "256M")
+    fn validate_byte_quantity(value: &str, field: &str) -> anyhow::Result<()> {
+        if value.is_empty() {
+            anyhow::bail!("{} cannot be empty", field);
+        }
+        let suffixes = ["Gi", "Mi", "Ti", "G", "M", "T"];
+        for suffix in &suffixes {
+            if let Some(num) = value.strip_suffix(suffix) {
+                let val = num.parse::<u64>().map_err(|_| {
+                    anyhow::anyhow!("{}: invalid numeric value in '{}'", field, value)
+                })?;
+                if val == 0 {
+                    anyhow::bail!("{} must be > 0", field);
+                }
+                return Ok(());
+            }
+        }
+        anyhow::bail!(
+            "{}: invalid format '{}', expected value with suffix (e.g., '4Gi', '512Mi')",
+            field,
+            value
+        );
     }
 
     /// Get full image name with registry
@@ -567,5 +702,495 @@ mod tests {
         let result = workload.validate();
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("not in allowed"));
+    }
+
+    // ---------------------------------------------------------------
+    // Helper for new validation tests
+    // ---------------------------------------------------------------
+
+    fn make_valid_workload() -> Workload {
+        Workload {
+            api_version: "orchestr8/v1".to_string(),
+            kind: "Workload".to_string(),
+            metadata: Metadata {
+                name: "test-app".to_string(),
+                owner: "test".to_string(),
+                project: "demo".to_string(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "ghcr.io/test".to_string(),
+                build_args: HashMap::new(),
+            },
+            requirements: ResourceRequirements {
+                cpu: "2".to_string(),
+                memory: "4Gi".to_string(),
+                storage: "20Gi".to_string(),
+                gpu: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Auto,
+                allow: vec![RuntimeType::Container, RuntimeType::Kube],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // DNS label validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_name_valid_dns_labels() {
+        for name in &["a", "abc", "my-app", "app-123", "a1b2c3"] {
+            let mut w = make_valid_workload();
+            w.metadata.name = name.to_string();
+            assert!(w.validate().is_ok(), "expected '{}' to be valid", name);
+        }
+    }
+
+    #[test]
+    fn test_name_uppercase_rejected() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "MyApp".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("lowercase"), "{}", err);
+    }
+
+    #[test]
+    fn test_name_underscore_rejected() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "my_app".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("lowercase"), "{}", err);
+    }
+
+    #[test]
+    fn test_name_starts_with_hyphen_rejected() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "-app".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("start and end"), "{}", err);
+    }
+
+    #[test]
+    fn test_name_ends_with_hyphen_rejected() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "app-".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("start and end"), "{}", err);
+    }
+
+    #[test]
+    fn test_name_too_long_rejected() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "a".repeat(64);
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("63"), "{}", err);
+    }
+
+    #[test]
+    fn test_name_exactly_63_chars_valid() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "a".repeat(63);
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_name_with_space_rejected() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "my app".to_string();
+        assert!(w.validate().is_err());
+    }
+
+    #[test]
+    fn test_name_with_dot_rejected() {
+        let mut w = make_valid_workload();
+        w.metadata.name = "my.app".to_string();
+        assert!(w.validate().is_err());
+    }
+
+    // ---------------------------------------------------------------
+    // CPU validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_cpu_valid_whole_number() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "4".to_string();
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_cpu_valid_millicore() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "500m".to_string();
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_cpu_valid_fractional() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "0.5".to_string();
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_cpu_empty_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("cpu"), "{}", err);
+    }
+
+    #[test]
+    fn test_cpu_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "0".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("cpu"), "{}", err);
+    }
+
+    #[test]
+    fn test_cpu_zero_millicore_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "0m".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("cpu"), "{}", err);
+    }
+
+    #[test]
+    fn test_cpu_negative_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "-1".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("cpu"), "{}", err);
+    }
+
+    #[test]
+    fn test_cpu_garbage_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu = "abc".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("cpu"), "{}", err);
+    }
+
+    // ---------------------------------------------------------------
+    // Memory validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_memory_valid_gi() {
+        let mut w = make_valid_workload();
+        w.requirements.memory = "8Gi".to_string();
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_memory_valid_mi() {
+        let mut w = make_valid_workload();
+        w.requirements.memory = "512Mi".to_string();
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_memory_empty_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.memory = "".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("memory"), "{}", err);
+    }
+
+    #[test]
+    fn test_memory_no_suffix_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.memory = "4096".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("memory"), "{}", err);
+    }
+
+    #[test]
+    fn test_memory_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.memory = "0Gi".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("memory"), "{}", err);
+    }
+
+    #[test]
+    fn test_memory_invalid_number_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.memory = "abcGi".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("memory"), "{}", err);
+    }
+
+    // ---------------------------------------------------------------
+    // Storage validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_storage_valid_gi() {
+        let mut w = make_valid_workload();
+        w.requirements.storage = "100Gi".to_string();
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_storage_empty_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.storage = "".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("storage"), "{}", err);
+    }
+
+    #[test]
+    fn test_storage_no_suffix_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.storage = "500".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("storage"), "{}", err);
+    }
+
+    #[test]
+    fn test_storage_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.storage = "0Gi".to_string();
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("storage"), "{}", err);
+    }
+
+    // ---------------------------------------------------------------
+    // GPU validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_gpu_valid() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 2,
+            vendor: "nvidia".to_string(),
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_gpu_zero_count_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 0,
+            vendor: "nvidia".to_string(),
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("gpu.count"), "{}", err);
+    }
+
+    #[test]
+    fn test_gpu_empty_vendor_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "".to_string(),
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("gpu.vendor"), "{}", err);
+    }
+
+    // ---------------------------------------------------------------
+    // Port validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_ports_valid() {
+        let mut w = make_valid_workload();
+        w.network.ports = vec![PortMapping {
+            container_port: 8080,
+            service_port: 80,
+            protocol: "TCP".to_string(),
+        }];
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_port_zero_container_port_rejected() {
+        let mut w = make_valid_workload();
+        w.network.ports = vec![PortMapping {
+            container_port: 0,
+            service_port: 80,
+            protocol: "TCP".to_string(),
+        }];
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("containerPort"), "{}", err);
+    }
+
+    #[test]
+    fn test_port_zero_service_port_rejected() {
+        let mut w = make_valid_workload();
+        w.network.ports = vec![PortMapping {
+            container_port: 8080,
+            service_port: 0,
+            protocol: "TCP".to_string(),
+        }];
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("servicePort"), "{}", err);
+    }
+
+    // ---------------------------------------------------------------
+    // Scaling validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_scaling_valid() {
+        let mut w = make_valid_workload();
+        w.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 2,
+            max_replicas: 10,
+            metrics: vec![],
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_scaling_min_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 0,
+            max_replicas: 5,
+            metrics: vec![],
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("minReplicas"), "{}", err);
+    }
+
+    #[test]
+    fn test_scaling_max_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 1,
+            max_replicas: 0,
+            metrics: vec![],
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("maxReplicas"), "{}", err);
+    }
+
+    #[test]
+    fn test_scaling_min_greater_than_max_rejected() {
+        let mut w = make_valid_workload();
+        w.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 10,
+            max_replicas: 5,
+            metrics: vec![],
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("minReplicas"), "{}", err);
+        assert!(err.contains("maxReplicas"), "{}", err);
+    }
+
+    #[test]
+    fn test_scaling_min_equals_max_valid() {
+        let mut w = make_valid_workload();
+        w.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 3,
+            max_replicas: 3,
+            metrics: vec![],
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    // ---------------------------------------------------------------
+    // Ingress validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_ingress_enabled_with_host_valid() {
+        let mut w = make_valid_workload();
+        w.ingress = Some(IngressSpec {
+            enabled: true,
+            host: "app.example.com".to_string(),
+            paths: vec![],
+            tls: false,
+            annotations: HashMap::new(),
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_ingress_enabled_empty_host_rejected() {
+        let mut w = make_valid_workload();
+        w.ingress = Some(IngressSpec {
+            enabled: true,
+            host: "".to_string(),
+            paths: vec![],
+            tls: false,
+            annotations: HashMap::new(),
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("ingress.host"), "{}", err);
+    }
+
+    #[test]
+    fn test_ingress_disabled_empty_host_allowed() {
+        let mut w = make_valid_workload();
+        w.ingress = Some(IngressSpec {
+            enabled: false,
+            host: "".to_string(),
+            paths: vec![],
+            tls: false,
+            annotations: HashMap::new(),
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    // ---------------------------------------------------------------
+    // validate_dns_label unit tests
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_dns_label_single_char() {
+        assert!(Workload::validate_dns_label("a", "test").is_ok());
+    }
+
+    #[test]
+    fn test_dns_label_digit_only() {
+        assert!(Workload::validate_dns_label("123", "test").is_ok());
+    }
+
+    #[test]
+    fn test_dns_label_hyphen_in_middle() {
+        assert!(Workload::validate_dns_label("a-b", "test").is_ok());
+    }
+
+    #[test]
+    fn test_validate_byte_quantity_ti_suffix() {
+        assert!(Workload::validate_byte_quantity("1Ti", "test").is_ok());
+    }
+
+    #[test]
+    fn test_validate_byte_quantity_g_suffix() {
+        assert!(Workload::validate_byte_quantity("100G", "test").is_ok());
+    }
+
+    #[test]
+    fn test_validate_byte_quantity_m_suffix() {
+        assert!(Workload::validate_byte_quantity("512M", "test").is_ok());
+    }
+
+    #[test]
+    fn test_validate_byte_quantity_t_suffix() {
+        assert!(Workload::validate_byte_quantity("2T", "test").is_ok());
     }
 }

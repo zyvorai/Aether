@@ -141,7 +141,7 @@ impl SecretStore {
             access_log: Vec::new(),
         };
         self.secrets.insert(name.to_string(), secret);
-        self.secrets.get_mut(name).unwrap()
+        self.secrets.get_mut(name).expect("just inserted")
     }
 
     /// Set a key-value pair in a secret

@@ -248,7 +248,7 @@ impl Orchestrator {
             }],
         };
         self.workloads.insert(name.to_string(), workload);
-        self.workloads.get(name).unwrap()
+        self.workloads.get(name).expect("just inserted")
     }
 
     /// Unregister a workload
