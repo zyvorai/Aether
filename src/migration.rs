@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 /// Migration strategy
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum MigrationStrategy {
     /// Immediate migration (stops source, starts target)
     Immediate,

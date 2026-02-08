@@ -3,6 +3,7 @@
 //! Provides HTTP endpoints for workload management
 
 use crate::adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
+use crate::config::Config;
 use crate::engine::Engine;
 use crate::runtime::RuntimeKind;
 use crate::spec::Workload;
@@ -121,6 +122,9 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/cost", post(estimate_cost))
         .route("/api/backups", get(list_backups))
         .route("/api/backups", post(create_backup))
+        .route("/api/ai/recommend", post(ai_recommend))
+        .route("/api/ai/profile/:name", get(ai_profile))
+        .route("/api/ai/analyze/:name", get(ai_analyze_logs))
         .with_state(app_state);
 
     // Start server
@@ -820,6 +824,175 @@ async fn create_backup(
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::<String>::error(e.to_string())),
+        ),
+    }
+}
+
+/// POST /api/ai/recommend - AI-powered runtime recommendation
+async fn ai_recommend(Json(spec): Json<Workload>) -> impl IntoResponse {
+    use crate::ai::scoring::ScoringEngine;
+    use crate::config::Config;
+
+    let config = Config::load();
+    let engine = ScoringEngine::new(config.engine);
+    let result = engine.score(&spec);
+
+    (StatusCode::OK, Json(ApiResponse::success(result)))
+}
+
+/// GET /api/ai/profile/:name - Profile a deployed workload
+async fn ai_profile(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    use crate::ai::profiler::Profiler;
+
+    let state = app_state.state.read().await;
+
+    match state.get(&name) {
+        Some(workload_state) => {
+            let spec = match Workload::from_file(&workload_state.spec_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<serde_json::Value>::error(format!(
+                            "Failed to load spec: {}",
+                            e
+                        ))),
+                    )
+                }
+            };
+
+            let config = Config::load();
+            let profiler = Profiler::new(config.profiler.waste_threshold);
+            let profile = profiler.profile(&spec, Some(workload_state.runtime));
+
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(serde_json::to_value(profile).unwrap_or_default())),
+            )
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<serde_json::Value>::error(format!(
+                "Workload {} not found",
+                name
+            ))),
+        ),
+    }
+}
+
+/// GET /api/ai/analyze/:name - Analyze workload logs
+async fn ai_analyze_logs(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    use crate::ai::analyzer::LogAnalyzer;
+
+    let state = app_state.state.read().await;
+
+    match state.get(&name) {
+        Some(workload) => {
+            // Fetch logs
+            let logs = match workload.runtime {
+                RuntimeKind::Podman => {
+                    let runtime = match PodmanRuntime::new() {
+                        Ok(r) => r,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    };
+                    match runtime.logs(&workload.instance, false).await {
+                        Ok(l) => l,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    }
+                }
+                RuntimeKind::Kubernetes => {
+                    let runtime = match KubernetesRuntime::new().await {
+                        Ok(r) => r,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    };
+                    match runtime.logs(&workload.instance, false).await {
+                        Ok(l) => l,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    }
+                }
+                RuntimeKind::KubeVirt => {
+                    let runtime = match KubeVirtRuntime::new().await {
+                        Ok(r) => r,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    };
+                    match runtime.logs(&workload.instance, false).await {
+                        Ok(l) => l,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    }
+                }
+                RuntimeKind::Metal3 => {
+                    let runtime = match Metal3Runtime::new().await {
+                        Ok(r) => r,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    };
+                    match runtime.logs(&workload.instance, false).await {
+                        Ok(l) => l,
+                        Err(e) => {
+                            return (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                            )
+                        }
+                    }
+                }
+            };
+
+            let config = Config::load();
+            let analyzer = LogAnalyzer::new(config.analyzer);
+            let analysis = analyzer.analyze(&logs);
+
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(serde_json::to_value(analysis).unwrap_or_default())),
+            )
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<serde_json::Value>::error(format!(
+                "Workload {} not found",
+                name
+            ))),
         ),
     }
 }

@@ -60,6 +60,9 @@ struct ProviderPricing {
     cpu_per_core_monthly: f64,      // $ per vCPU per month
     memory_per_gb_monthly: f64,     // $ per GB RAM per month
     storage_per_gb_monthly: f64,    // $ per GB storage per month
+    gpu_per_unit_monthly: f64,      // $ per GPU per month
+    egress_per_gb: f64,             // $ per GB network egress
+    load_balancer_monthly: f64,     // $ per load balancer per month
 }
 
 impl ProviderPricing {
@@ -67,37 +70,167 @@ impl ProviderPricing {
     fn for_provider(provider: CloudProvider) -> Self {
         match provider {
             CloudProvider::AWS => Self {
-                // AWS EC2 t3.medium baseline pricing (us-east-1)
                 cpu_per_core_monthly: 15.0,
                 memory_per_gb_monthly: 4.0,
-                storage_per_gb_monthly: 0.10, // EBS gp3
+                storage_per_gb_monthly: 0.10,
+                gpu_per_unit_monthly: 350.0,  // p3.2xlarge equivalent
+                egress_per_gb: 0.09,
+                load_balancer_monthly: 22.50, // ALB
             },
             CloudProvider::Azure => Self {
-                // Azure B2s baseline pricing (East US)
                 cpu_per_core_monthly: 14.0,
                 memory_per_gb_monthly: 3.5,
-                storage_per_gb_monthly: 0.12, // Standard SSD
+                storage_per_gb_monthly: 0.12,
+                gpu_per_unit_monthly: 320.0,  // NC-series equivalent
+                egress_per_gb: 0.087,
+                load_balancer_monthly: 25.00,
             },
             CloudProvider::GCP => Self {
-                // GCP e2-medium baseline pricing (us-central1)
                 cpu_per_core_monthly: 13.0,
                 memory_per_gb_monthly: 3.75,
-                storage_per_gb_monthly: 0.17, // SSD persistent disk
+                storage_per_gb_monthly: 0.17,
+                gpu_per_unit_monthly: 300.0,  // T4 equivalent
+                egress_per_gb: 0.12,
+                load_balancer_monthly: 18.00,
             },
             CloudProvider::DigitalOcean => Self {
-                // DigitalOcean basic droplet pricing
                 cpu_per_core_monthly: 6.0,
                 memory_per_gb_monthly: 6.0,
-                storage_per_gb_monthly: 0.15, // Block storage
+                storage_per_gb_monthly: 0.15,
+                gpu_per_unit_monthly: 500.0,  // GPU droplet
+                egress_per_gb: 0.01,
+                load_balancer_monthly: 12.00,
             },
             CloudProvider::Linode => Self {
-                // Linode shared CPU pricing
                 cpu_per_core_monthly: 5.0,
                 memory_per_gb_monthly: 5.0,
-                storage_per_gb_monthly: 0.10, // Block storage
+                storage_per_gb_monthly: 0.10,
+                gpu_per_unit_monthly: 450.0,  // GPU instance
+                egress_per_gb: 0.01,
+                load_balancer_monthly: 10.00,
             },
         }
     }
+}
+
+/// Extended cost estimate with GPU, network, and load balancer
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtendedCostEstimate {
+    pub base: CostEstimate,
+    pub gpu_cost_monthly: f64,
+    pub network_cost_monthly: f64,
+    pub load_balancer_cost_monthly: f64,
+    pub total_monthly: f64,
+    pub total_hourly: f64,
+    pub recommendations: Vec<CostRecommendation>,
+}
+
+/// Cost optimization recommendation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostRecommendation {
+    pub category: String,
+    pub title: String,
+    pub description: String,
+    pub estimated_savings_monthly: f64,
+    pub estimated_savings_pct: f64,
+}
+
+/// Estimate extended costs including GPU, network, and load balancer
+pub fn estimate_extended_cost(
+    workload: &Workload,
+    provider: CloudProvider,
+    egress_gb: f64,
+    include_lb: bool,
+) -> Result<ExtendedCostEstimate> {
+    let pricing = ProviderPricing::for_provider(provider);
+    let base = estimate_cost(workload, provider)?;
+
+    // GPU costs
+    let gpu_cost = workload
+        .requirements
+        .gpu
+        .as_ref()
+        .map(|g| g.count as f64 * pricing.gpu_per_unit_monthly)
+        .unwrap_or(0.0);
+
+    // Network egress
+    let network_cost = egress_gb * pricing.egress_per_gb;
+
+    // Load balancer
+    let lb_cost = if include_lb {
+        pricing.load_balancer_monthly
+    } else {
+        0.0
+    };
+
+    let total_monthly = base.total_monthly + gpu_cost + network_cost + lb_cost;
+    let total_hourly = total_monthly / 730.0;
+
+    // Generate recommendations
+    let recommendations = generate_cost_recommendations(
+        workload, &base, gpu_cost, network_cost, lb_cost, &pricing,
+    );
+
+    Ok(ExtendedCostEstimate {
+        base,
+        gpu_cost_monthly: gpu_cost,
+        network_cost_monthly: network_cost,
+        load_balancer_cost_monthly: lb_cost,
+        total_monthly,
+        total_hourly,
+        recommendations,
+    })
+}
+
+/// Generate cost optimization recommendations
+fn generate_cost_recommendations(
+    workload: &Workload,
+    base: &CostEstimate,
+    gpu_cost: f64,
+    _network_cost: f64,
+    _lb_cost: f64,
+    _pricing: &ProviderPricing,
+) -> Vec<CostRecommendation> {
+    let mut recs = Vec::new();
+
+    // Reserved instance recommendation for stable workloads
+    if base.total_monthly > 50.0 {
+        recs.push(CostRecommendation {
+            category: "Reserved Instances".to_string(),
+            title: "Consider reserved instances".to_string(),
+            description: "1-year commitment can save 30-40% on compute costs".to_string(),
+            estimated_savings_monthly: base.total_monthly * 0.35,
+            estimated_savings_pct: 35.0,
+        });
+    }
+
+    // GPU optimization
+    if gpu_cost > 0.0 {
+        recs.push(CostRecommendation {
+            category: "GPU".to_string(),
+            title: "GPU spot instances".to_string(),
+            description: "Use preemptible/spot GPU instances for non-critical workloads".to_string(),
+            estimated_savings_monthly: gpu_cost * 0.60,
+            estimated_savings_pct: 60.0,
+        });
+    }
+
+    // Right-sizing
+    let cpu = parse_cpu(&workload.requirements.cpu).unwrap_or(0.0);
+    if cpu >= 8.0 {
+        recs.push(CostRecommendation {
+            category: "Right-Sizing".to_string(),
+            title: "Evaluate CPU allocation".to_string(),
+            description: format!(
+                "{:.0} cores requested — monitor actual usage to avoid over-provisioning",
+                cpu
+            ),
+            estimated_savings_monthly: base.cpu_cost_monthly * 0.20,
+            estimated_savings_pct: 20.0,
+        });
+    }
+
+    recs
 }
 
 /// Parse CPU requirement to cores
