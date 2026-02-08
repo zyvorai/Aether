@@ -1,7 +1,6 @@
-//! REST API Server for Orchestr8
-//!
-//! Provides HTTP endpoints for workload management
+//! API handler functions
 
+use super::types::*;
 use crate::adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
 use crate::config::Config;
 use crate::engine::Engine;
@@ -13,289 +12,21 @@ use axum::{
     extract::{Path, State as AxumState},
     http::StatusCode,
     response::{Html, IntoResponse, Json},
-    routing::{delete, get, post},
-    Router,
 };
 use axum::http::header;
-use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use chrono;
 
-/// API Server configuration
-#[derive(Debug, Clone)]
-pub struct ApiConfig {
-    pub host: String,
-    pub port: u16,
-    pub state_path: PathBuf,
-}
-
-impl Default for ApiConfig {
-    fn default() -> Self {
-        Self {
-            host: "127.0.0.1".to_string(),
-            port: 8080,
-            state_path: StateStore::default_path(),
-        }
-    }
-}
-
-/// Shared application state
-#[derive(Clone)]
-struct AppState {
-    state: Arc<RwLock<StateStore>>,
-}
-
-/// API Response wrapper
-#[derive(Debug, Serialize)]
-struct ApiResponse<T> {
-    success: bool,
-    data: Option<T>,
-    error: Option<String>,
-}
-
-impl<T> ApiResponse<T> {
-    fn success(data: T) -> Self {
-        Self {
-            success: true,
-            data: Some(data),
-            error: None,
-        }
-    }
-
-    fn error(message: String) -> Self {
-        Self {
-            success: false,
-            data: None,
-            error: Some(message),
-        }
-    }
-}
-
-/// Workload creation request
-#[derive(Debug, Deserialize)]
-struct CreateWorkloadRequest {
-    spec: Workload,
-    runtime: Option<String>,
-}
-
-/// Migrate workload request
-#[derive(Debug, Deserialize)]
-struct MigrateWorkloadRequest {
-    /// Target runtime (podman, kubernetes, kubevirt, metal3)
-    target_runtime: String,
-    /// Migration strategy (immediate, blue-green, rolling)
-    #[serde(default = "default_strategy")]
-    strategy: String,
-}
-
-fn default_strategy() -> String {
-    "blue-green".to_string()
-}
-
-/// Validate workload request
-#[derive(Debug, Deserialize)]
-struct ValidateRequest {
-    yaml: String,
-}
-
-/// Validation response
-#[derive(Debug, Serialize)]
-struct ValidateResponse {
-    valid: bool,
-    workload_name: Option<String>,
-    errors: Vec<String>,
-}
-
-/// Build response
-#[derive(Debug, Serialize)]
-struct BuildResponse {
-    image_name: String,
-    image_tag: String,
-    full_name: String,
-    runtime: String,
-}
-
-/// Secret metadata response (no raw values exposed)
-#[derive(Debug, Serialize)]
-struct SecretMetadataResponse {
-    name: String,
-    namespace: String,
-    key_count: usize,
-    keys: Vec<String>,
-    created_at: String,
-    updated_at: String,
-    needs_rotation: bool,
-    rotation_policy: Option<SecretRotationInfo>,
-}
-
-/// Rotation info for API response
-#[derive(Debug, Serialize)]
-struct SecretRotationInfo {
-    interval_days: u32,
-    max_age_days: u32,
-    notify_before_days: u32,
-}
-
-/// Workload response
-#[derive(Debug, Serialize)]
-struct WorkloadResponse {
-    name: String,
-    runtime: String,
-    image: String,
-    status: String,
-    created_at: String,
-}
-
-/// Health check response
-#[derive(Debug, Serialize)]
-struct HealthResponse {
-    status: String,
-    version: String,
-}
-
-/// Migration advice response
-#[derive(Debug, Serialize)]
-struct MigrationAdviceResponse {
-    workload_name: String,
-    source_runtime: String,
-    target_runtime: String,
-    recommended_strategy: String,
-    estimated_downtime_secs: u64,
-    risk_level: String,
-    reasons: Vec<String>,
-    warnings: Vec<String>,
-    timing: TimingAdviceResponse,
-    canary_config: CanaryConfigResponse,
-}
-
-/// Timing advice in migration response
-#[derive(Debug, Serialize)]
-struct TimingAdviceResponse {
-    recommendation: String,
-    preferred_window: String,
-    avoid_times: Vec<String>,
-}
-
-/// Canary config in migration response
-#[derive(Debug, Serialize)]
-struct CanaryConfigResponse {
-    steps: Vec<u32>,
-    step_interval_secs: u64,
-    error_threshold: f64,
-    latency_threshold_pct: f64,
-    min_observation_secs: u64,
-}
-
-/// Scaling advice response
-#[derive(Debug, Serialize)]
-struct ScalingAdviceResponse {
-    action: String,
-    current_replicas: u32,
-    recommended_replicas: u32,
-    reason: String,
-    confidence: f64,
-    forecast: ForecastResponse,
-    cost_impact: CostImpactResponse,
-}
-
-/// Forecast in scaling response
-#[derive(Debug, Serialize)]
-struct ForecastResponse {
-    trend: String,
-    predicted_value: f64,
-    lower_bound: f64,
-    upper_bound: f64,
-    horizon_minutes: u64,
-}
-
-/// Cost impact in scaling response
-#[derive(Debug, Serialize)]
-struct CostImpactResponse {
-    current_hourly: f64,
-    projected_hourly: f64,
-    delta_hourly: f64,
-    delta_monthly: f64,
-}
-
 /// Embedded dashboard HTML
-const DASHBOARD_HTML: &str = include_str!("../web/index.html");
-
-/// Start the API server
-pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
-    // Load state
-    let state_store = StateStore::load(&config.state_path)?;
-    let app_state = AppState {
-        state: Arc::new(RwLock::new(state_store)),
-    };
-
-    // Build router
-    let app = Router::new()
-        .route("/", get(serve_dashboard))
-        .route("/health", get(health_check))
-        .route("/api/workloads", get(list_workloads))
-        .route("/api/workloads", post(create_workload))
-        .route("/api/workloads/:name", get(get_workload))
-        .route("/api/workloads/:name", delete(delete_workload))
-        .route("/api/workloads/:name/logs", get(get_logs))
-        .route("/api/workloads/:name/start", post(start_workload))
-        .route("/api/workloads/:name/stop", post(stop_workload))
-        .route("/api/workloads/:name/migrate", post(migrate_workload))
-        .route("/api/workloads/:name/build", post(build_workload))
-        .route("/api/validate", post(validate_workload))
-        .route("/api/secrets/:name", get(get_secret))
-        .route("/api/secrets/:name", delete(delete_secret))
-        .route("/api/metrics", get(get_metrics))
-        .route("/api/cost", post(estimate_cost))
-        .route("/api/backups", get(list_backups))
-        .route("/api/backups", post(create_backup))
-        .route("/api/ai/recommend", post(ai_recommend))
-        .route("/api/ai/profile/:name", get(ai_profile))
-        .route("/api/ai/analyze/:name", get(ai_analyze_logs))
-        .route("/api/ai/migration-advice/:name/:target", get(ai_migration_advice))
-        .route("/api/ai/scaling-advice", get(ai_scaling_advice))
-        .route("/api/drift/:name", get(api_drift_check))
-        .route("/api/policy/check", post(api_policy_check))
-        .route("/api/dependencies", get(api_deps_show))
-        .route("/api/dependencies", post(api_deps_add))
-        .route("/api/audit", get(api_audit_list))
-        .route("/api/templates", get(api_template_list))
-        .route("/api/templates/:name", post(api_template_generate))
-        .route("/api/sla/:workload", get(api_sla_check))
-        .route("/api/secrets", get(api_secrets_list))
-        .route("/api/events", get(api_events_list))
-        .route("/api/events/summary", get(api_events_summary))
-        .route("/api/environments", get(api_env_list))
-        .route("/api/scheduler/utilization", get(api_scheduler_utilization))
-        .route("/api/scheduler/optimize", get(api_scheduler_optimize))
-        .route("/api/orchestrator/status", get(api_orchestrator_status))
-        .route("/api/orchestrator/summary", get(api_orchestrator_summary))
-        .route("/api/affinity/:class", get(api_affinity_recommend))
-        .with_state(app_state);
-
-    // Start server
-    let addr = format!("{}:{}", config.host, config.port)
-        .parse::<SocketAddr>()?;
-
-    println!("🌐 Starting API server on http://{}", addr);
-    println!("📊 Dashboard: http://{}", addr);
-    println!("📋 API Health: http://{}/health", addr);
-
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    axum::serve(listener, app).await?;
-
-    Ok(())
-}
+pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/index.html");
 
 /// GET / - Serve the web dashboard
-async fn serve_dashboard() -> impl IntoResponse {
+pub(crate) async fn serve_dashboard() -> impl IntoResponse {
     Html(DASHBOARD_HTML)
 }
 
 /// GET /health - Health check endpoint
-async fn health_check() -> impl IntoResponse {
+pub(crate) async fn health_check() -> impl IntoResponse {
     let response = HealthResponse {
         status: "ok".to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
@@ -304,7 +35,7 @@ async fn health_check() -> impl IntoResponse {
 }
 
 /// GET /api/workloads - List all workloads
-async fn list_workloads(
+pub(crate) async fn list_workloads(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl IntoResponse {
     let state = app_state.state.read().await;
@@ -324,7 +55,7 @@ async fn list_workloads(
 }
 
 /// POST /api/workloads - Create and deploy a workload
-async fn create_workload(
+pub(crate) async fn create_workload(
     AxumState(app_state): AxumState<AppState>,
     Json(request): Json<CreateWorkloadRequest>,
 ) -> impl IntoResponse {
@@ -507,7 +238,7 @@ async fn create_workload(
 }
 
 /// GET /api/workloads/:name - Get workload details
-async fn get_workload(
+pub(crate) async fn get_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -535,7 +266,7 @@ async fn get_workload(
 }
 
 /// DELETE /api/workloads/:name - Delete a workload
-async fn delete_workload(
+pub(crate) async fn delete_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -564,7 +295,7 @@ async fn delete_workload(
 }
 
 /// GET /api/workloads/:name/logs - Get workload logs
-async fn get_logs(
+pub(crate) async fn get_logs(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -668,7 +399,7 @@ async fn get_logs(
 }
 
 /// POST /api/workloads/:name/start - Start a workload
-async fn start_workload(
+pub(crate) async fn start_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -846,7 +577,7 @@ async fn start_workload(
 }
 
 /// POST /api/workloads/:name/stop - Stop a workload
-async fn stop_workload(
+pub(crate) async fn stop_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -927,7 +658,7 @@ async fn stop_workload(
 }
 
 /// POST /api/cost - Estimate costs for a workload
-async fn estimate_cost(Json(spec): Json<Workload>) -> impl IntoResponse {
+pub(crate) async fn estimate_cost(Json(spec): Json<Workload>) -> impl IntoResponse {
     match cost::estimate_all_providers(&spec) {
         Ok(estimates) => (StatusCode::OK, Json(ApiResponse::success(estimates))),
         Err(e) => (
@@ -938,7 +669,7 @@ async fn estimate_cost(Json(spec): Json<Workload>) -> impl IntoResponse {
 }
 
 /// GET /api/backups - List all backups
-async fn list_backups() -> impl IntoResponse {
+pub(crate) async fn list_backups() -> impl IntoResponse {
     let manager = backup::BackupManager::new(backup::BackupManager::default_dir());
 
     match manager.list_backups() {
@@ -951,13 +682,7 @@ async fn list_backups() -> impl IntoResponse {
 }
 
 /// POST /api/backups - Create a new backup
-#[derive(Debug, Deserialize)]
-struct CreateBackupRequest {
-    name: Option<String>,
-    description: Option<String>,
-}
-
-async fn create_backup(
+pub(crate) async fn create_backup(
     AxumState(app_state): AxumState<AppState>,
     Json(request): Json<CreateBackupRequest>,
 ) -> impl IntoResponse {
@@ -977,7 +702,7 @@ async fn create_backup(
 }
 
 /// POST /api/ai/recommend - AI-powered runtime recommendation
-async fn ai_recommend(Json(spec): Json<Workload>) -> impl IntoResponse {
+pub(crate) async fn ai_recommend(Json(spec): Json<Workload>) -> impl IntoResponse {
     use crate::ai::scoring::ScoringEngine;
     use crate::config::Config;
 
@@ -989,7 +714,7 @@ async fn ai_recommend(Json(spec): Json<Workload>) -> impl IntoResponse {
 }
 
 /// GET /api/ai/profile/:name - Profile a deployed workload
-async fn ai_profile(
+pub(crate) async fn ai_profile(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -1032,7 +757,7 @@ async fn ai_profile(
 }
 
 /// GET /api/ai/analyze/:name - Analyze workload logs
-async fn ai_analyze_logs(
+pub(crate) async fn ai_analyze_logs(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -1146,7 +871,7 @@ async fn ai_analyze_logs(
 }
 
 /// GET /api/ai/migration-advice/:name/:target - Migration path recommendations
-async fn ai_migration_advice(
+pub(crate) async fn ai_migration_advice(
     AxumState(app_state): AxumState<AppState>,
     Path((name, target)): Path<(String, String)>,
 ) -> impl IntoResponse {
@@ -1227,7 +952,7 @@ async fn ai_migration_advice(
 }
 
 /// GET /api/ai/scaling-advice - Predictive scaling recommendations
-async fn ai_scaling_advice() -> impl IntoResponse {
+pub(crate) async fn ai_scaling_advice() -> impl IntoResponse {
     use crate::ai::scaling::{ScalingEngine, TimeSeries};
 
     let config = Config::load();
@@ -1277,7 +1002,7 @@ async fn ai_scaling_advice() -> impl IntoResponse {
 }
 
 /// GET /api/drift/:name - Check drift for a workload
-async fn api_drift_check(
+pub(crate) async fn api_drift_check(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -1321,13 +1046,7 @@ async fn api_drift_check(
 }
 
 /// POST /api/policy/check - Check workload against policies
-#[derive(Debug, Deserialize)]
-struct PolicyCheckRequest {
-    spec: Workload,
-    policy_set: Option<String>,
-}
-
-async fn api_policy_check(Json(request): Json<PolicyCheckRequest>) -> impl IntoResponse {
+pub(crate) async fn api_policy_check(Json(request): Json<PolicyCheckRequest>) -> impl IntoResponse {
     use crate::policy::PolicyEngine;
 
     let engine = match request.policy_set.as_deref() {
@@ -1346,7 +1065,7 @@ async fn api_policy_check(Json(request): Json<PolicyCheckRequest>) -> impl IntoR
 }
 
 /// GET /api/dependencies - Show dependency graph
-async fn api_deps_show() -> impl IntoResponse {
+pub(crate) async fn api_deps_show() -> impl IntoResponse {
     use crate::dependencies::DependencyGraph;
 
     let graph_path = DependencyGraph::default_path();
@@ -1369,13 +1088,7 @@ async fn api_deps_show() -> impl IntoResponse {
 }
 
 /// POST /api/dependencies - Add a dependency
-#[derive(Debug, Deserialize)]
-struct AddDependencyRequest {
-    workload: String,
-    dependency: String,
-}
-
-async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> impl IntoResponse {
+pub(crate) async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> impl IntoResponse {
     use crate::dependencies::DependencyGraph;
 
     let graph_path = DependencyGraph::default_path();
@@ -1404,7 +1117,7 @@ async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> impl IntoRes
 }
 
 /// GET /api/audit - List audit events
-async fn api_audit_list() -> impl IntoResponse {
+pub(crate) async fn api_audit_list() -> impl IntoResponse {
     use crate::audit::AuditLog;
 
     let audit_path = AuditLog::default_path();
@@ -1429,7 +1142,7 @@ async fn api_audit_list() -> impl IntoResponse {
 }
 
 /// GET /api/templates - List available templates
-async fn api_template_list() -> impl IntoResponse {
+pub(crate) async fn api_template_list() -> impl IntoResponse {
     use crate::templates;
 
     let templates = templates::list_templates();
@@ -1442,19 +1155,7 @@ async fn api_template_list() -> impl IntoResponse {
 }
 
 /// POST /api/templates/:name - Generate a workload from template
-#[derive(Debug, Deserialize)]
-struct TemplateRequest {
-    workload_name: Option<String>,
-    owner: Option<String>,
-    project: Option<String>,
-    registry: Option<String>,
-    cpu: Option<String>,
-    memory: Option<String>,
-    port: Option<u16>,
-    replicas: Option<u32>,
-}
-
-async fn api_template_generate(
+pub(crate) async fn api_template_generate(
     Path(name): Path<String>,
     Json(request): Json<TemplateRequest>,
 ) -> impl IntoResponse {
@@ -1508,7 +1209,7 @@ async fn api_template_generate(
 }
 
 /// GET /api/sla/:workload - Check SLA compliance
-async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResponse {
+pub(crate) async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResponse {
     use crate::sla::{SlaEngine, SlaTarget};
 
     let sla_path = {
@@ -1568,7 +1269,7 @@ async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResponse {
 }
 
 /// GET /api/secrets - List secrets
-async fn api_secrets_list() -> impl IntoResponse {
+pub(crate) async fn api_secrets_list() -> impl IntoResponse {
     use crate::secrets::SecretStore;
 
     let path = SecretStore::default_path();
@@ -1590,7 +1291,7 @@ async fn api_secrets_list() -> impl IntoResponse {
 }
 
 /// GET /api/events - List recent events
-async fn api_events_list() -> impl IntoResponse {
+pub(crate) async fn api_events_list() -> impl IntoResponse {
     use crate::events::EventBus;
 
     let path = EventBus::default_path();
@@ -1612,7 +1313,7 @@ async fn api_events_list() -> impl IntoResponse {
 }
 
 /// GET /api/events/summary - Event summary
-async fn api_events_summary() -> impl IntoResponse {
+pub(crate) async fn api_events_summary() -> impl IntoResponse {
     use crate::events::EventBus;
 
     let path = EventBus::default_path();
@@ -1634,7 +1335,7 @@ async fn api_events_summary() -> impl IntoResponse {
 }
 
 /// GET /api/environments - List environments
-async fn api_env_list() -> impl IntoResponse {
+pub(crate) async fn api_env_list() -> impl IntoResponse {
     use crate::environments::EnvironmentManager;
 
     let path = EnvironmentManager::default_path();
@@ -1656,7 +1357,7 @@ async fn api_env_list() -> impl IntoResponse {
 }
 
 /// GET /api/scheduler/utilization - Runtime utilization
-async fn api_scheduler_utilization() -> impl IntoResponse {
+pub(crate) async fn api_scheduler_utilization() -> impl IntoResponse {
     use crate::scheduler::Scheduler;
 
     let path = Scheduler::default_path();
@@ -1678,7 +1379,7 @@ async fn api_scheduler_utilization() -> impl IntoResponse {
 }
 
 /// GET /api/scheduler/optimize - Optimization suggestions
-async fn api_scheduler_optimize() -> impl IntoResponse {
+pub(crate) async fn api_scheduler_optimize() -> impl IntoResponse {
     use crate::scheduler::Scheduler;
 
     let path = Scheduler::default_path();
@@ -1700,7 +1401,7 @@ async fn api_scheduler_optimize() -> impl IntoResponse {
 }
 
 /// GET /api/orchestrator/status - Managed workload statuses
-async fn api_orchestrator_status() -> impl IntoResponse {
+pub(crate) async fn api_orchestrator_status() -> impl IntoResponse {
     use crate::orchestrator::Orchestrator;
 
     let path = Orchestrator::default_path();
@@ -1722,7 +1423,7 @@ async fn api_orchestrator_status() -> impl IntoResponse {
 }
 
 /// GET /api/orchestrator/summary - Health summary
-async fn api_orchestrator_summary() -> impl IntoResponse {
+pub(crate) async fn api_orchestrator_summary() -> impl IntoResponse {
     use crate::orchestrator::Orchestrator;
 
     let path = Orchestrator::default_path();
@@ -1744,7 +1445,7 @@ async fn api_orchestrator_summary() -> impl IntoResponse {
 }
 
 /// GET /api/affinity/:class - Runtime affinity recommendation
-async fn api_affinity_recommend(Path(class): Path<String>) -> impl IntoResponse {
+pub(crate) async fn api_affinity_recommend(Path(class): Path<String>) -> impl IntoResponse {
     use crate::ai::affinity::{AffinityEngine, WorkloadClass};
 
     let wl_class = match class.as_str() {
@@ -1786,7 +1487,7 @@ async fn api_affinity_recommend(Path(class): Path<String>) -> impl IntoResponse 
 }
 
 /// POST /api/workloads/:name/migrate - Migrate a workload to a different runtime
-async fn migrate_workload(
+pub(crate) async fn migrate_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
     Json(request): Json<MigrateWorkloadRequest>,
@@ -1923,7 +1624,7 @@ async fn migrate_workload(
 }
 
 /// POST /api/workloads/:name/build - Trigger a build for a workload
-async fn build_workload(
+pub(crate) async fn build_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
@@ -2029,7 +1730,7 @@ async fn build_workload(
 }
 
 /// POST /api/validate - Validate a workload YAML specification
-async fn validate_workload(
+pub(crate) async fn validate_workload(
     Json(request): Json<ValidateRequest>,
 ) -> impl IntoResponse {
     // Try to parse the YAML as a Workload spec
@@ -2069,7 +1770,7 @@ async fn validate_workload(
 }
 
 /// GET /api/secrets/:name - Get a specific secret's metadata (not raw values)
-async fn get_secret(
+pub(crate) async fn get_secret(
     Path(name): Path<String>,
 ) -> impl IntoResponse {
     use crate::secrets::SecretStore;
@@ -2121,7 +1822,7 @@ async fn get_secret(
 }
 
 /// DELETE /api/secrets/:name - Delete a specific secret
-async fn delete_secret(
+pub(crate) async fn delete_secret(
     Path(name): Path<String>,
 ) -> impl IntoResponse {
     use crate::secrets::SecretStore;
@@ -2163,7 +1864,7 @@ async fn delete_secret(
 }
 
 /// GET /api/metrics - Export Prometheus metrics as text/plain
-async fn get_metrics() -> impl IntoResponse {
+pub(crate) async fn get_metrics() -> impl IntoResponse {
     let metrics_output = crate::metrics::gather();
     (
         StatusCode::OK,
@@ -2175,726 +1876,6 @@ async fn get_metrics() -> impl IntoResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json;
-
-    // ---------------------------------------------------------------
-    // ApiConfig defaults
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_config_default() {
-        let config = ApiConfig::default();
-        assert_eq!(config.host, "127.0.0.1");
-        assert_eq!(config.port, 8080);
-    }
-
-    #[test]
-    fn test_api_config_default_state_path() {
-        let config = ApiConfig::default();
-        assert_eq!(config.state_path, StateStore::default_path());
-    }
-
-    #[test]
-    fn test_api_config_custom_values() {
-        let config = ApiConfig {
-            host: "0.0.0.0".to_string(),
-            port: 3000,
-            state_path: PathBuf::from("/tmp/test-state.json"),
-        };
-        assert_eq!(config.host, "0.0.0.0");
-        assert_eq!(config.port, 3000);
-        assert_eq!(config.state_path, PathBuf::from("/tmp/test-state.json"));
-    }
-
-    // ---------------------------------------------------------------
-    // ApiResponse construction
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_success() {
-        let response = ApiResponse::success("hello".to_string());
-        assert!(response.success);
-        assert_eq!(response.data, Some("hello".to_string()));
-        assert!(response.error.is_none());
-    }
-
-    #[test]
-    fn test_api_response_error() {
-        let response = ApiResponse::<String>::error("something went wrong".to_string());
-        assert!(!response.success);
-        assert!(response.data.is_none());
-        assert_eq!(response.error, Some("something went wrong".to_string()));
-    }
-
-    #[test]
-    fn test_api_response_success_with_integer() {
-        let response = ApiResponse::success(42u64);
-        assert!(response.success);
-        assert_eq!(response.data, Some(42u64));
-        assert!(response.error.is_none());
-    }
-
-    #[test]
-    fn test_api_response_success_with_vec() {
-        let data = vec!["a".to_string(), "b".to_string()];
-        let response = ApiResponse::success(data.clone());
-        assert!(response.success);
-        assert_eq!(response.data, Some(data));
-        assert!(response.error.is_none());
-    }
-
-    #[test]
-    fn test_api_response_error_with_empty_message() {
-        let response = ApiResponse::<String>::error(String::new());
-        assert!(!response.success);
-        assert!(response.data.is_none());
-        assert_eq!(response.error, Some(String::new()));
-    }
-
-    // ---------------------------------------------------------------
-    // ApiResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_success_serialization() {
-        let response = ApiResponse::success("data here".to_string());
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert_eq!(json["data"], "data here");
-        assert!(json["error"].is_null());
-    }
-
-    #[test]
-    fn test_api_response_error_serialization() {
-        let response = ApiResponse::<String>::error("bad request".to_string());
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], false);
-        assert!(json["data"].is_null());
-        assert_eq!(json["error"], "bad request");
-    }
-
-    #[test]
-    fn test_api_response_success_serialization_has_all_fields() {
-        let response = ApiResponse::success("ok".to_string());
-        let json_str = serde_json::to_string(&response).unwrap();
-
-        assert!(json_str.contains("\"success\""));
-        assert!(json_str.contains("\"data\""));
-        assert!(json_str.contains("\"error\""));
-    }
-
-    #[test]
-    fn test_api_response_nested_struct_serialization() {
-        let health = HealthResponse {
-            status: "ok".to_string(),
-            version: "1.0.0".to_string(),
-        };
-        let response = ApiResponse::success(health);
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert_eq!(json["data"]["status"], "ok");
-        assert_eq!(json["data"]["version"], "1.0.0");
-        assert!(json["error"].is_null());
-    }
-
-    // ---------------------------------------------------------------
-    // HealthResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_health_response_serialization() {
-        let response = HealthResponse {
-            status: "ok".to_string(),
-            version: "0.2.0".to_string(),
-        };
-        let json = serde_json::to_string(&response).unwrap();
-        assert!(json.contains("\"status\":\"ok\""));
-        assert!(json.contains("\"version\":\"0.2.0\""));
-    }
-
-    #[test]
-    fn test_health_response_serialization_roundtrip_via_value() {
-        let response = HealthResponse {
-            status: "healthy".to_string(),
-            version: "3.1.4".to_string(),
-        };
-        let value = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(value["status"], "healthy");
-        assert_eq!(value["version"], "3.1.4");
-    }
-
-    #[test]
-    fn test_health_response_contains_exactly_two_fields() {
-        let response = HealthResponse {
-            status: "ok".to_string(),
-            version: "1.0.0".to_string(),
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 2);
-        assert!(obj.contains_key("status"));
-        assert!(obj.contains_key("version"));
-    }
-
-    // ---------------------------------------------------------------
-    // WorkloadResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_workload_response_serialization() {
-        let response = WorkloadResponse {
-            name: "my-app".to_string(),
-            runtime: "Podman".to_string(),
-            image: "my-app:latest".to_string(),
-            status: "running".to_string(),
-            created_at: "2026-01-01T00:00:00Z".to_string(),
-        };
-        let json = serde_json::to_string(&response).unwrap();
-        assert!(json.contains("my-app"));
-        assert!(json.contains("Podman"));
-    }
-
-    #[test]
-    fn test_workload_response_all_fields_present() {
-        let response = WorkloadResponse {
-            name: "web-server".to_string(),
-            runtime: "Kubernetes".to_string(),
-            image: "registry.io/web:v2".to_string(),
-            status: "deployed (kubernetes)".to_string(),
-            created_at: "2026-06-15T12:30:00Z".to_string(),
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-
-        assert_eq!(obj.len(), 5);
-        assert_eq!(value["name"], "web-server");
-        assert_eq!(value["runtime"], "Kubernetes");
-        assert_eq!(value["image"], "registry.io/web:v2");
-        assert_eq!(value["status"], "deployed (kubernetes)");
-        assert_eq!(value["created_at"], "2026-06-15T12:30:00Z");
-    }
-
-    #[test]
-    fn test_workload_response_serialization_produces_valid_json() {
-        let response = WorkloadResponse {
-            name: "test".to_string(),
-            runtime: "Metal3".to_string(),
-            image: "img:latest".to_string(),
-            status: "deployed".to_string(),
-            created_at: "2026-01-01T00:00:00Z".to_string(),
-        };
-        let json_str = serde_json::to_string(&response).unwrap();
-        let reparsed: serde_json::Value = serde_json::from_str(&json_str).unwrap();
-        assert_eq!(reparsed["name"], "test");
-    }
-
-    // ---------------------------------------------------------------
-    // BuildResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_build_response_serialization() {
-        let response = BuildResponse {
-            image_name: "my-app".to_string(),
-            image_tag: "v1.0".to_string(),
-            full_name: "my-app:v1.0".to_string(),
-            runtime: "podman".to_string(),
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["image_name"], "my-app");
-        assert_eq!(value["image_tag"], "v1.0");
-        assert_eq!(value["full_name"], "my-app:v1.0");
-        assert_eq!(value["runtime"], "podman");
-    }
-
-    #[test]
-    fn test_build_response_has_four_fields() {
-        let response = BuildResponse {
-            image_name: "svc".to_string(),
-            image_tag: "latest".to_string(),
-            full_name: "svc:latest".to_string(),
-            runtime: "kubernetes".to_string(),
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 4);
-    }
-
-    // ---------------------------------------------------------------
-    // ValidateRequest deserialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_validate_request_deserialize() {
-        let json = serde_json::json!({
-            "yaml": "apiVersion: orchestr8/v1\nkind: Workload\n"
-        });
-        let request: ValidateRequest = serde_json::from_value(json).unwrap();
-        assert!(request.yaml.contains("orchestr8/v1"));
-    }
-
-    #[test]
-    fn test_validate_request_missing_yaml_fails() {
-        let json = serde_json::json!({});
-        let result = serde_json::from_value::<ValidateRequest>(json);
-        assert!(result.is_err());
-    }
-
-    // ---------------------------------------------------------------
-    // ValidateResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_validate_response_valid_serialization() {
-        let response = ValidateResponse {
-            valid: true,
-            workload_name: Some("my-app".to_string()),
-            errors: vec![],
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["valid"], true);
-        assert_eq!(value["workload_name"], "my-app");
-        assert_eq!(value["errors"].as_array().unwrap().len(), 0);
-    }
-
-    #[test]
-    fn test_validate_response_invalid_serialization() {
-        let response = ValidateResponse {
-            valid: false,
-            workload_name: None,
-            errors: vec!["YAML parse error: unexpected token".to_string()],
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["valid"], false);
-        assert!(value["workload_name"].is_null());
-        let errors = value["errors"].as_array().unwrap();
-        assert_eq!(errors.len(), 1);
-        assert!(errors[0].as_str().unwrap().contains("YAML parse error"));
-    }
-
-    #[test]
-    fn test_validate_response_multiple_errors() {
-        let response = ValidateResponse {
-            valid: false,
-            workload_name: Some("bad-spec".to_string()),
-            errors: vec![
-                "Invalid apiVersion".to_string(),
-                "Missing metadata.name".to_string(),
-            ],
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let errors = value["errors"].as_array().unwrap();
-        assert_eq!(errors.len(), 2);
-    }
-
-    // ---------------------------------------------------------------
-    // SecretMetadataResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_secret_metadata_response_serialization() {
-        let response = SecretMetadataResponse {
-            name: "db-credentials".to_string(),
-            namespace: "production".to_string(),
-            key_count: 2,
-            keys: vec!["username".to_string(), "password".to_string()],
-            created_at: "2026-01-01T00:00:00Z".to_string(),
-            updated_at: "2026-01-15T00:00:00Z".to_string(),
-            needs_rotation: false,
-            rotation_policy: None,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["name"], "db-credentials");
-        assert_eq!(value["namespace"], "production");
-        assert_eq!(value["key_count"], 2);
-        assert_eq!(value["keys"].as_array().unwrap().len(), 2);
-        assert_eq!(value["needs_rotation"], false);
-        assert!(value["rotation_policy"].is_null());
-    }
-
-    #[test]
-    fn test_secret_metadata_response_with_rotation_policy() {
-        let response = SecretMetadataResponse {
-            name: "api-key".to_string(),
-            namespace: "default".to_string(),
-            key_count: 1,
-            keys: vec!["token".to_string()],
-            created_at: "2026-01-01T00:00:00Z".to_string(),
-            updated_at: "2026-01-01T00:00:00Z".to_string(),
-            needs_rotation: true,
-            rotation_policy: Some(SecretRotationInfo {
-                interval_days: 30,
-                max_age_days: 90,
-                notify_before_days: 7,
-            }),
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["needs_rotation"], true);
-        assert_eq!(value["rotation_policy"]["interval_days"], 30);
-        assert_eq!(value["rotation_policy"]["max_age_days"], 90);
-        assert_eq!(value["rotation_policy"]["notify_before_days"], 7);
-    }
-
-    // ---------------------------------------------------------------
-    // SecretRotationInfo serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_secret_rotation_info_serialization() {
-        let info = SecretRotationInfo {
-            interval_days: 60,
-            max_age_days: 180,
-            notify_before_days: 14,
-        };
-        let value = serde_json::to_value(&info).unwrap();
-        let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 3);
-        assert_eq!(value["interval_days"], 60);
-        assert_eq!(value["max_age_days"], 180);
-        assert_eq!(value["notify_before_days"], 14);
-    }
-
-    // ---------------------------------------------------------------
-    // CreateWorkloadRequest deserialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_create_workload_request_deserialize_with_runtime() {
-        let json = serde_json::json!({
-            "spec": {
-                "apiVersion": "orchestr8/v1",
-                "kind": "Workload",
-                "metadata": {
-                    "name": "test-app",
-                    "owner": "dev",
-                    "project": "demo"
-                },
-                "build": {
-                    "context": ".",
-                    "dockerfile": "Dockerfile",
-                    "registry": "ghcr.io/test"
-                },
-                "requirements": {
-                    "cpu": "1",
-                    "memory": "512Mi",
-                    "storage": "1Gi"
-                },
-                "runtime": {
-                    "preferred": "auto",
-                    "allow": ["container"]
-                }
-            },
-            "runtime": "podman"
-        });
-
-        let request: CreateWorkloadRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.runtime, Some("podman".to_string()));
-        assert_eq!(request.spec.metadata.name, "test-app");
-    }
-
-    #[test]
-    fn test_create_workload_request_deserialize_without_runtime() {
-        let json = serde_json::json!({
-            "spec": {
-                "apiVersion": "orchestr8/v1",
-                "kind": "Workload",
-                "metadata": {
-                    "name": "auto-app",
-                    "owner": "dev",
-                    "project": "demo"
-                },
-                "build": {
-                    "context": ".",
-                    "dockerfile": "Dockerfile",
-                    "registry": "ghcr.io/test"
-                },
-                "requirements": {
-                    "cpu": "2",
-                    "memory": "4Gi",
-                    "storage": "10Gi"
-                },
-                "runtime": {
-                    "preferred": "auto",
-                    "allow": ["container", "kube"]
-                }
-            }
-        });
-
-        let request: CreateWorkloadRequest = serde_json::from_value(json).unwrap();
-        assert!(request.runtime.is_none());
-        assert_eq!(request.spec.metadata.name, "auto-app");
-    }
-
-    // ---------------------------------------------------------------
-    // MigrateWorkloadRequest deserialization and default_strategy
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_default_strategy_value() {
-        assert_eq!(default_strategy(), "blue-green");
-    }
-
-    #[test]
-    fn test_migrate_workload_request_deserialize_with_strategy() {
-        let json = serde_json::json!({
-            "target_runtime": "kubernetes",
-            "strategy": "rolling"
-        });
-
-        let request: MigrateWorkloadRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.target_runtime, "kubernetes");
-        assert_eq!(request.strategy, "rolling");
-    }
-
-    #[test]
-    fn test_migrate_workload_request_deserialize_default_strategy() {
-        let json = serde_json::json!({
-            "target_runtime": "podman"
-        });
-
-        let request: MigrateWorkloadRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.target_runtime, "podman");
-        assert_eq!(request.strategy, "blue-green");
-    }
-
-    #[test]
-    fn test_migrate_workload_request_all_strategy_values() {
-        for strategy in &["immediate", "blue-green", "rolling"] {
-            let json = serde_json::json!({
-                "target_runtime": "kubernetes",
-                "strategy": strategy
-            });
-            let request: MigrateWorkloadRequest = serde_json::from_value(json).unwrap();
-            assert_eq!(request.strategy, *strategy);
-        }
-    }
-
-    #[test]
-    fn test_migrate_workload_request_missing_target_runtime_fails() {
-        let json = serde_json::json!({
-            "strategy": "rolling"
-        });
-
-        let result = serde_json::from_value::<MigrateWorkloadRequest>(json);
-        assert!(result.is_err());
-    }
-
-    // ---------------------------------------------------------------
-    // CreateBackupRequest deserialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_create_backup_request_all_fields() {
-        let json = serde_json::json!({
-            "name": "my-backup",
-            "description": "Pre-migration backup"
-        });
-
-        let request: CreateBackupRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.name, Some("my-backup".to_string()));
-        assert_eq!(request.description, Some("Pre-migration backup".to_string()));
-    }
-
-    #[test]
-    fn test_create_backup_request_empty_object() {
-        let json = serde_json::json!({});
-
-        let request: CreateBackupRequest = serde_json::from_value(json).unwrap();
-        assert!(request.name.is_none());
-        assert!(request.description.is_none());
-    }
-
-    #[test]
-    fn test_create_backup_request_name_only() {
-        let json = serde_json::json!({
-            "name": "quick-backup"
-        });
-
-        let request: CreateBackupRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.name, Some("quick-backup".to_string()));
-        assert!(request.description.is_none());
-    }
-
-    // ---------------------------------------------------------------
-    // PolicyCheckRequest deserialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_policy_check_request_with_policy_set() {
-        let json = serde_json::json!({
-            "spec": {
-                "apiVersion": "orchestr8/v1",
-                "kind": "Workload",
-                "metadata": {
-                    "name": "policy-test",
-                    "owner": "dev",
-                    "project": "demo"
-                },
-                "build": {
-                    "context": ".",
-                    "dockerfile": "Dockerfile",
-                    "registry": "ghcr.io/test"
-                },
-                "requirements": {
-                    "cpu": "1",
-                    "memory": "1Gi",
-                    "storage": "5Gi"
-                },
-                "runtime": {
-                    "preferred": "auto",
-                    "allow": ["container"]
-                }
-            },
-            "policy_set": "development"
-        });
-
-        let request: PolicyCheckRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.policy_set, Some("development".to_string()));
-        assert_eq!(request.spec.metadata.name, "policy-test");
-    }
-
-    #[test]
-    fn test_policy_check_request_without_policy_set() {
-        let json = serde_json::json!({
-            "spec": {
-                "apiVersion": "orchestr8/v1",
-                "kind": "Workload",
-                "metadata": {
-                    "name": "policy-test",
-                    "owner": "dev",
-                    "project": "demo"
-                },
-                "build": {
-                    "context": ".",
-                    "dockerfile": "Dockerfile",
-                    "registry": "ghcr.io/test"
-                },
-                "requirements": {
-                    "cpu": "1",
-                    "memory": "1Gi",
-                    "storage": "5Gi"
-                },
-                "runtime": {
-                    "preferred": "auto",
-                    "allow": ["container"]
-                }
-            }
-        });
-
-        let request: PolicyCheckRequest = serde_json::from_value(json).unwrap();
-        assert!(request.policy_set.is_none());
-    }
-
-    // ---------------------------------------------------------------
-    // AddDependencyRequest deserialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_add_dependency_request_deserialize() {
-        let json = serde_json::json!({
-            "workload": "frontend",
-            "dependency": "backend-api"
-        });
-
-        let request: AddDependencyRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.workload, "frontend");
-        assert_eq!(request.dependency, "backend-api");
-    }
-
-    #[test]
-    fn test_add_dependency_request_missing_workload_fails() {
-        let json = serde_json::json!({
-            "dependency": "backend"
-        });
-        assert!(serde_json::from_value::<AddDependencyRequest>(json).is_err());
-    }
-
-    #[test]
-    fn test_add_dependency_request_missing_dependency_fails() {
-        let json = serde_json::json!({
-            "workload": "frontend"
-        });
-        assert!(serde_json::from_value::<AddDependencyRequest>(json).is_err());
-    }
-
-    // ---------------------------------------------------------------
-    // TemplateRequest deserialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_template_request_all_fields() {
-        let json = serde_json::json!({
-            "workload_name": "my-web-app",
-            "owner": "platform-team",
-            "project": "main-site",
-            "registry": "docker.io/myorg",
-            "cpu": "4",
-            "memory": "8Gi",
-            "port": 8080,
-            "replicas": 3
-        });
-
-        let request: TemplateRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.workload_name, Some("my-web-app".to_string()));
-        assert_eq!(request.owner, Some("platform-team".to_string()));
-        assert_eq!(request.project, Some("main-site".to_string()));
-        assert_eq!(request.registry, Some("docker.io/myorg".to_string()));
-        assert_eq!(request.cpu, Some("4".to_string()));
-        assert_eq!(request.memory, Some("8Gi".to_string()));
-        assert_eq!(request.port, Some(8080));
-        assert_eq!(request.replicas, Some(3));
-    }
-
-    #[test]
-    fn test_template_request_empty_object() {
-        let json = serde_json::json!({});
-
-        let request: TemplateRequest = serde_json::from_value(json).unwrap();
-        assert!(request.workload_name.is_none());
-        assert!(request.owner.is_none());
-        assert!(request.project.is_none());
-        assert!(request.registry.is_none());
-        assert!(request.cpu.is_none());
-        assert!(request.memory.is_none());
-        assert!(request.port.is_none());
-        assert!(request.replicas.is_none());
-    }
-
-    #[test]
-    fn test_template_request_partial_fields() {
-        let json = serde_json::json!({
-            "workload_name": "svc",
-            "port": 3000
-        });
-
-        let request: TemplateRequest = serde_json::from_value(json).unwrap();
-        assert_eq!(request.workload_name, Some("svc".to_string()));
-        assert_eq!(request.port, Some(3000));
-        assert!(request.owner.is_none());
-        assert!(request.replicas.is_none());
-    }
-
-    #[test]
-    fn test_template_request_invalid_port_type_fails() {
-        let json = serde_json::json!({
-            "port": "not-a-number"
-        });
-        let result = serde_json::from_value::<TemplateRequest>(json);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_template_request_invalid_replicas_type_fails() {
-        let json = serde_json::json!({
-            "replicas": -1
-        });
-        let result = serde_json::from_value::<TemplateRequest>(json);
-        assert!(result.is_err());
-    }
 
     // ---------------------------------------------------------------
     // Dashboard HTML content
@@ -2933,641 +1914,5 @@ mod tests {
     #[test]
     fn test_dashboard_html_has_viewport_meta() {
         assert!(DASHBOARD_HTML.contains("viewport"));
-    }
-
-    // ---------------------------------------------------------------
-    // Full round-trip: ApiResponse wrapping HealthResponse
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_wrapping_health_response_json() {
-        let health = HealthResponse {
-            status: "ok".to_string(),
-            version: "0.3.0".to_string(),
-        };
-        let api_resp = ApiResponse::success(health);
-        let json = serde_json::to_value(&api_resp).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert!(json["error"].is_null());
-        assert_eq!(json["data"]["status"], "ok");
-        assert_eq!(json["data"]["version"], "0.3.0");
-    }
-
-    // ---------------------------------------------------------------
-    // Full round-trip: ApiResponse wrapping WorkloadResponse
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_wrapping_workload_response_json() {
-        let workload = WorkloadResponse {
-            name: "api-svc".to_string(),
-            runtime: "KubeVirt".to_string(),
-            image: "registry.io/api-svc:v1".to_string(),
-            status: "deployed (kubevirt)".to_string(),
-            created_at: "2026-03-10T08:00:00Z".to_string(),
-        };
-        let api_resp = ApiResponse::success(workload);
-        let json = serde_json::to_value(&api_resp).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert_eq!(json["data"]["name"], "api-svc");
-        assert_eq!(json["data"]["runtime"], "KubeVirt");
-        assert_eq!(json["data"]["image"], "registry.io/api-svc:v1");
-        assert_eq!(json["data"]["status"], "deployed (kubevirt)");
-        assert_eq!(json["data"]["created_at"], "2026-03-10T08:00:00Z");
-    }
-
-    // ---------------------------------------------------------------
-    // Full round-trip: ApiResponse wrapping Vec<WorkloadResponse>
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_wrapping_workload_list_json() {
-        let workloads = vec![
-            WorkloadResponse {
-                name: "app-a".to_string(),
-                runtime: "Podman".to_string(),
-                image: "app-a:latest".to_string(),
-                status: "running".to_string(),
-                created_at: "2026-01-01T00:00:00Z".to_string(),
-            },
-            WorkloadResponse {
-                name: "app-b".to_string(),
-                runtime: "Kubernetes".to_string(),
-                image: "app-b:v2".to_string(),
-                status: "deployed".to_string(),
-                created_at: "2026-02-01T00:00:00Z".to_string(),
-            },
-        ];
-        let api_resp = ApiResponse::success(workloads);
-        let json = serde_json::to_value(&api_resp).unwrap();
-
-        assert_eq!(json["success"], true);
-        let data = json["data"].as_array().unwrap();
-        assert_eq!(data.len(), 2);
-        assert_eq!(data[0]["name"], "app-a");
-        assert_eq!(data[1]["name"], "app-b");
-    }
-
-    // ---------------------------------------------------------------
-    // ApiResponse error wrapping for various types
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_error_typed_workload_response() {
-        let response = ApiResponse::<WorkloadResponse>::error("not found".to_string());
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], false);
-        assert!(json["data"].is_null());
-        assert_eq!(json["error"], "not found");
-    }
-
-    #[test]
-    fn test_api_response_error_typed_vec() {
-        let response = ApiResponse::<Vec<String>>::error("internal error".to_string());
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], false);
-        assert!(json["data"].is_null());
-        assert_eq!(json["error"], "internal error");
-    }
-
-    #[test]
-    fn test_api_response_error_typed_build_response() {
-        let response = ApiResponse::<BuildResponse>::error("build failed".to_string());
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], false);
-        assert!(json["data"].is_null());
-        assert_eq!(json["error"], "build failed");
-    }
-
-    // ---------------------------------------------------------------
-    // Edge cases for deserialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_migrate_workload_request_extra_fields_ignored() {
-        let json = serde_json::json!({
-            "target_runtime": "metal3",
-            "strategy": "immediate",
-            "unknown_field": "should be ignored"
-        });
-        let result = serde_json::from_value::<MigrateWorkloadRequest>(json);
-        assert!(result.is_ok());
-        let request = result.unwrap();
-        assert_eq!(request.target_runtime, "metal3");
-        assert_eq!(request.strategy, "immediate");
-    }
-
-    #[test]
-    fn test_create_backup_request_null_fields() {
-        let json = serde_json::json!({
-            "name": null,
-            "description": null
-        });
-        let request: CreateBackupRequest = serde_json::from_value(json).unwrap();
-        assert!(request.name.is_none());
-        assert!(request.description.is_none());
-    }
-
-    // ---------------------------------------------------------------
-    // Full ApiResponse wrapping BuildResponse
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_wrapping_build_response_json() {
-        let build = BuildResponse {
-            image_name: "my-svc".to_string(),
-            image_tag: "abc123".to_string(),
-            full_name: "my-svc:abc123".to_string(),
-            runtime: "podman".to_string(),
-        };
-        let api_resp = ApiResponse::success(build);
-        let json = serde_json::to_value(&api_resp).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert_eq!(json["data"]["image_name"], "my-svc");
-        assert_eq!(json["data"]["image_tag"], "abc123");
-        assert_eq!(json["data"]["full_name"], "my-svc:abc123");
-        assert_eq!(json["data"]["runtime"], "podman");
-    }
-
-    // ---------------------------------------------------------------
-    // Full ApiResponse wrapping ValidateResponse
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_wrapping_validate_response_json() {
-        let validate = ValidateResponse {
-            valid: true,
-            workload_name: Some("good-app".to_string()),
-            errors: vec![],
-        };
-        let api_resp = ApiResponse::success(validate);
-        let json = serde_json::to_value(&api_resp).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert_eq!(json["data"]["valid"], true);
-        assert_eq!(json["data"]["workload_name"], "good-app");
-        assert_eq!(json["data"]["errors"].as_array().unwrap().len(), 0);
-    }
-
-    // ---------------------------------------------------------------
-    // MigrationAdviceResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_migration_advice_response_serialization() {
-        let response = MigrationAdviceResponse {
-            workload_name: "my-app".to_string(),
-            source_runtime: "Podman".to_string(),
-            target_runtime: "Kubernetes".to_string(),
-            recommended_strategy: "BlueGreen".to_string(),
-            estimated_downtime_secs: 30,
-            risk_level: "Medium".to_string(),
-            reasons: vec!["Better scaling".to_string()],
-            warnings: vec!["Requires PVC migration".to_string()],
-            timing: TimingAdviceResponse {
-                recommendation: "Off-peak hours".to_string(),
-                preferred_window: "02:00-06:00 UTC".to_string(),
-                avoid_times: vec!["Peak hours".to_string()],
-            },
-            canary_config: CanaryConfigResponse {
-                steps: vec![10, 25, 50, 100],
-                step_interval_secs: 300,
-                error_threshold: 0.05,
-                latency_threshold_pct: 10.0,
-                min_observation_secs: 120,
-            },
-        };
-        let value = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(value["workload_name"], "my-app");
-        assert_eq!(value["source_runtime"], "Podman");
-        assert_eq!(value["target_runtime"], "Kubernetes");
-        assert_eq!(value["recommended_strategy"], "BlueGreen");
-        assert_eq!(value["estimated_downtime_secs"], 30);
-        assert_eq!(value["risk_level"], "Medium");
-        assert_eq!(value["reasons"].as_array().unwrap().len(), 1);
-        assert_eq!(value["warnings"].as_array().unwrap().len(), 1);
-    }
-
-    #[test]
-    fn test_migration_advice_response_has_all_fields() {
-        let response = MigrationAdviceResponse {
-            workload_name: "svc".to_string(),
-            source_runtime: "Podman".to_string(),
-            target_runtime: "Kubernetes".to_string(),
-            recommended_strategy: "Immediate".to_string(),
-            estimated_downtime_secs: 0,
-            risk_level: "Low".to_string(),
-            reasons: vec![],
-            warnings: vec![],
-            timing: TimingAdviceResponse {
-                recommendation: "Anytime".to_string(),
-                preferred_window: "any".to_string(),
-                avoid_times: vec![],
-            },
-            canary_config: CanaryConfigResponse {
-                steps: vec![100],
-                step_interval_secs: 60,
-                error_threshold: 0.01,
-                latency_threshold_pct: 5.0,
-                min_observation_secs: 60,
-            },
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-
-        assert!(obj.contains_key("workload_name"));
-        assert!(obj.contains_key("source_runtime"));
-        assert!(obj.contains_key("target_runtime"));
-        assert!(obj.contains_key("recommended_strategy"));
-        assert!(obj.contains_key("estimated_downtime_secs"));
-        assert!(obj.contains_key("risk_level"));
-        assert!(obj.contains_key("reasons"));
-        assert!(obj.contains_key("warnings"));
-        assert!(obj.contains_key("timing"));
-        assert!(obj.contains_key("canary_config"));
-        assert_eq!(obj.len(), 10);
-    }
-
-    #[test]
-    fn test_migration_advice_response_empty_reasons_and_warnings() {
-        let response = MigrationAdviceResponse {
-            workload_name: "test".to_string(),
-            source_runtime: "Kubernetes".to_string(),
-            target_runtime: "KubeVirt".to_string(),
-            recommended_strategy: "Rolling".to_string(),
-            estimated_downtime_secs: 60,
-            risk_level: "High".to_string(),
-            reasons: vec![],
-            warnings: vec![],
-            timing: TimingAdviceResponse {
-                recommendation: "Maintenance window".to_string(),
-                preferred_window: "Sunday 02:00".to_string(),
-                avoid_times: vec![],
-            },
-            canary_config: CanaryConfigResponse {
-                steps: vec![10, 50, 100],
-                step_interval_secs: 600,
-                error_threshold: 0.02,
-                latency_threshold_pct: 15.0,
-                min_observation_secs: 180,
-            },
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["reasons"].as_array().unwrap().len(), 0);
-        assert_eq!(value["warnings"].as_array().unwrap().len(), 0);
-    }
-
-    // ---------------------------------------------------------------
-    // TimingAdviceResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_timing_advice_response_serialization() {
-        let response = TimingAdviceResponse {
-            recommendation: "Off-peak hours recommended".to_string(),
-            preferred_window: "02:00-06:00 UTC".to_string(),
-            avoid_times: vec!["Monday 09:00-12:00".to_string(), "Friday 15:00-18:00".to_string()],
-        };
-        let value = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(value["recommendation"], "Off-peak hours recommended");
-        assert_eq!(value["preferred_window"], "02:00-06:00 UTC");
-        let avoid = value["avoid_times"].as_array().unwrap();
-        assert_eq!(avoid.len(), 2);
-        assert_eq!(avoid[0], "Monday 09:00-12:00");
-    }
-
-    #[test]
-    fn test_timing_advice_response_has_three_fields() {
-        let response = TimingAdviceResponse {
-            recommendation: "Now".to_string(),
-            preferred_window: "anytime".to_string(),
-            avoid_times: vec![],
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 3);
-    }
-
-    // ---------------------------------------------------------------
-    // CanaryConfigResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_canary_config_response_serialization() {
-        let response = CanaryConfigResponse {
-            steps: vec![10, 25, 50, 75, 100],
-            step_interval_secs: 300,
-            error_threshold: 0.05,
-            latency_threshold_pct: 10.0,
-            min_observation_secs: 120,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-
-        let steps = value["steps"].as_array().unwrap();
-        assert_eq!(steps.len(), 5);
-        assert_eq!(steps[0], 10);
-        assert_eq!(steps[4], 100);
-        assert_eq!(value["step_interval_secs"], 300);
-        assert_eq!(value["error_threshold"], 0.05);
-        assert_eq!(value["latency_threshold_pct"], 10.0);
-        assert_eq!(value["min_observation_secs"], 120);
-    }
-
-    #[test]
-    fn test_canary_config_response_has_five_fields() {
-        let response = CanaryConfigResponse {
-            steps: vec![100],
-            step_interval_secs: 60,
-            error_threshold: 0.01,
-            latency_threshold_pct: 5.0,
-            min_observation_secs: 30,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 5);
-    }
-
-    // ---------------------------------------------------------------
-    // ScalingAdviceResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_scaling_advice_response_serialization() {
-        let response = ScalingAdviceResponse {
-            action: "ScaleUp".to_string(),
-            current_replicas: 3,
-            recommended_replicas: 5,
-            reason: "CPU utilization trending upward".to_string(),
-            confidence: 0.85,
-            forecast: ForecastResponse {
-                trend: "Increasing".to_string(),
-                predicted_value: 0.78,
-                lower_bound: 0.65,
-                upper_bound: 0.92,
-                horizon_minutes: 30,
-            },
-            cost_impact: CostImpactResponse {
-                current_hourly: 1.50,
-                projected_hourly: 2.50,
-                delta_hourly: 1.00,
-                delta_monthly: 720.0,
-            },
-        };
-        let value = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(value["action"], "ScaleUp");
-        assert_eq!(value["current_replicas"], 3);
-        assert_eq!(value["recommended_replicas"], 5);
-        assert_eq!(value["reason"], "CPU utilization trending upward");
-        assert_eq!(value["confidence"], 0.85);
-    }
-
-    #[test]
-    fn test_scaling_advice_response_has_all_fields() {
-        let response = ScalingAdviceResponse {
-            action: "NoOp".to_string(),
-            current_replicas: 2,
-            recommended_replicas: 2,
-            reason: "Stable".to_string(),
-            confidence: 0.95,
-            forecast: ForecastResponse {
-                trend: "Stable".to_string(),
-                predicted_value: 0.45,
-                lower_bound: 0.40,
-                upper_bound: 0.50,
-                horizon_minutes: 15,
-            },
-            cost_impact: CostImpactResponse {
-                current_hourly: 1.0,
-                projected_hourly: 1.0,
-                delta_hourly: 0.0,
-                delta_monthly: 0.0,
-            },
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-
-        assert!(obj.contains_key("action"));
-        assert!(obj.contains_key("current_replicas"));
-        assert!(obj.contains_key("recommended_replicas"));
-        assert!(obj.contains_key("reason"));
-        assert!(obj.contains_key("confidence"));
-        assert!(obj.contains_key("forecast"));
-        assert!(obj.contains_key("cost_impact"));
-        assert_eq!(obj.len(), 7);
-    }
-
-    #[test]
-    fn test_scaling_advice_response_scale_down() {
-        let response = ScalingAdviceResponse {
-            action: "ScaleDown".to_string(),
-            current_replicas: 10,
-            recommended_replicas: 5,
-            reason: "Low utilization detected".to_string(),
-            confidence: 0.72,
-            forecast: ForecastResponse {
-                trend: "Decreasing".to_string(),
-                predicted_value: 0.20,
-                lower_bound: 0.10,
-                upper_bound: 0.30,
-                horizon_minutes: 60,
-            },
-            cost_impact: CostImpactResponse {
-                current_hourly: 5.0,
-                projected_hourly: 2.5,
-                delta_hourly: -2.5,
-                delta_monthly: -1800.0,
-            },
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["action"], "ScaleDown");
-        assert_eq!(value["cost_impact"]["delta_hourly"], -2.5);
-        assert_eq!(value["cost_impact"]["delta_monthly"], -1800.0);
-    }
-
-    // ---------------------------------------------------------------
-    // ForecastResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_forecast_response_serialization() {
-        let response = ForecastResponse {
-            trend: "Increasing".to_string(),
-            predicted_value: 0.82,
-            lower_bound: 0.70,
-            upper_bound: 0.95,
-            horizon_minutes: 30,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(value["trend"], "Increasing");
-        assert_eq!(value["predicted_value"], 0.82);
-        assert_eq!(value["lower_bound"], 0.70);
-        assert_eq!(value["upper_bound"], 0.95);
-        assert_eq!(value["horizon_minutes"], 30);
-    }
-
-    #[test]
-    fn test_forecast_response_has_five_fields() {
-        let response = ForecastResponse {
-            trend: "Stable".to_string(),
-            predicted_value: 0.5,
-            lower_bound: 0.4,
-            upper_bound: 0.6,
-            horizon_minutes: 15,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 5);
-    }
-
-    // ---------------------------------------------------------------
-    // CostImpactResponse serialization
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_cost_impact_response_serialization() {
-        let response = CostImpactResponse {
-            current_hourly: 2.50,
-            projected_hourly: 3.75,
-            delta_hourly: 1.25,
-            delta_monthly: 900.0,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(value["current_hourly"], 2.50);
-        assert_eq!(value["projected_hourly"], 3.75);
-        assert_eq!(value["delta_hourly"], 1.25);
-        assert_eq!(value["delta_monthly"], 900.0);
-    }
-
-    #[test]
-    fn test_cost_impact_response_has_four_fields() {
-        let response = CostImpactResponse {
-            current_hourly: 1.0,
-            projected_hourly: 1.0,
-            delta_hourly: 0.0,
-            delta_monthly: 0.0,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 4);
-    }
-
-    #[test]
-    fn test_cost_impact_response_negative_delta() {
-        let response = CostImpactResponse {
-            current_hourly: 5.0,
-            projected_hourly: 2.0,
-            delta_hourly: -3.0,
-            delta_monthly: -2160.0,
-        };
-        let value = serde_json::to_value(&response).unwrap();
-        assert_eq!(value["delta_hourly"], -3.0);
-        assert_eq!(value["delta_monthly"], -2160.0);
-    }
-
-    // ---------------------------------------------------------------
-    // Full ApiResponse wrapping MigrationAdviceResponse
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_wrapping_migration_advice_json() {
-        let advice = MigrationAdviceResponse {
-            workload_name: "api-svc".to_string(),
-            source_runtime: "Podman".to_string(),
-            target_runtime: "Kubernetes".to_string(),
-            recommended_strategy: "BlueGreen".to_string(),
-            estimated_downtime_secs: 15,
-            risk_level: "Low".to_string(),
-            reasons: vec!["Scaling needs".to_string()],
-            warnings: vec![],
-            timing: TimingAdviceResponse {
-                recommendation: "Anytime".to_string(),
-                preferred_window: "any".to_string(),
-                avoid_times: vec![],
-            },
-            canary_config: CanaryConfigResponse {
-                steps: vec![50, 100],
-                step_interval_secs: 120,
-                error_threshold: 0.03,
-                latency_threshold_pct: 8.0,
-                min_observation_secs: 90,
-            },
-        };
-        let api_resp = ApiResponse::success(advice);
-        let json = serde_json::to_value(&api_resp).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert_eq!(json["data"]["workload_name"], "api-svc");
-        assert_eq!(json["data"]["timing"]["recommendation"], "Anytime");
-        assert_eq!(json["data"]["canary_config"]["steps"].as_array().unwrap().len(), 2);
-    }
-
-    // ---------------------------------------------------------------
-    // Full ApiResponse wrapping ScalingAdviceResponse
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_wrapping_scaling_advice_json() {
-        let scaling = ScalingAdviceResponse {
-            action: "ScaleUp".to_string(),
-            current_replicas: 2,
-            recommended_replicas: 4,
-            reason: "High CPU".to_string(),
-            confidence: 0.90,
-            forecast: ForecastResponse {
-                trend: "Increasing".to_string(),
-                predicted_value: 0.85,
-                lower_bound: 0.70,
-                upper_bound: 0.95,
-                horizon_minutes: 30,
-            },
-            cost_impact: CostImpactResponse {
-                current_hourly: 1.0,
-                projected_hourly: 2.0,
-                delta_hourly: 1.0,
-                delta_monthly: 720.0,
-            },
-        };
-        let api_resp = ApiResponse::success(scaling);
-        let json = serde_json::to_value(&api_resp).unwrap();
-
-        assert_eq!(json["success"], true);
-        assert_eq!(json["data"]["action"], "ScaleUp");
-        assert_eq!(json["data"]["forecast"]["trend"], "Increasing");
-        assert_eq!(json["data"]["cost_impact"]["delta_monthly"], 720.0);
-    }
-
-    // ---------------------------------------------------------------
-    // ApiResponse error wrapping for new types
-    // ---------------------------------------------------------------
-
-    #[test]
-    fn test_api_response_error_typed_migration_advice() {
-        let response = ApiResponse::<MigrationAdviceResponse>::error("not found".to_string());
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], false);
-        assert!(json["data"].is_null());
-        assert_eq!(json["error"], "not found");
-    }
-
-    #[test]
-    fn test_api_response_error_typed_scaling_advice() {
-        let response = ApiResponse::<ScalingAdviceResponse>::error("unavailable".to_string());
-        let json = serde_json::to_value(&response).unwrap();
-
-        assert_eq!(json["success"], false);
-        assert!(json["data"].is_null());
-        assert_eq!(json["error"], "unavailable");
     }
 }

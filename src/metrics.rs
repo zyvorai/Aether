@@ -2,214 +2,255 @@
 //!
 //! Tracks workload deployments, runtime distribution, and migration operations.
 
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 use prometheus::{
     Counter, CounterVec, GaugeVec, Histogram, HistogramOpts, HistogramVec, Opts, Registry,
 };
 
-lazy_static! {
-    /// Global metrics registry
-    pub static ref REGISTRY: Registry = Registry::new();
+/// Global metrics registry
+pub static REGISTRY: LazyLock<Registry> = LazyLock::new(|| Registry::new());
 
-    // Workload metrics
-    /// Total number of workload build operations
-    pub static ref WORKLOAD_BUILDS_TOTAL: CounterVec = CounterVec::new(
+// Workload metrics
+/// Total number of workload build operations
+pub static WORKLOAD_BUILDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new("orchestr8_workload_builds_total", "Total number of workload builds")
             .namespace("orchestr8"),
-        &["runtime", "status"]
+        &["runtime", "status"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Total number of workload deployments
-    pub static ref WORKLOAD_DEPLOYMENTS_TOTAL: CounterVec = CounterVec::new(
+/// Total number of workload deployments
+pub static WORKLOAD_DEPLOYMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new(
             "orchestr8_workload_deployments_total",
-            "Total number of workload deployments"
+            "Total number of workload deployments",
         )
         .namespace("orchestr8"),
-        &["runtime", "status"]
+        &["runtime", "status"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Currently running workloads
-    pub static ref WORKLOAD_RUNNING: GaugeVec = GaugeVec::new(
+/// Currently running workloads
+pub static WORKLOAD_RUNNING: LazyLock<GaugeVec> = LazyLock::new(|| {
+    GaugeVec::new(
         Opts::new("orchestr8_workload_running", "Number of currently running workloads")
             .namespace("orchestr8"),
-        &["runtime"]
+        &["runtime"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Workload state distribution
-    pub static ref WORKLOAD_STATE: GaugeVec = GaugeVec::new(
+/// Workload state distribution
+pub static WORKLOAD_STATE: LazyLock<GaugeVec> = LazyLock::new(|| {
+    GaugeVec::new(
         Opts::new("orchestr8_workload_state", "Workload state distribution")
             .namespace("orchestr8"),
-        &["runtime", "state"]
+        &["runtime", "state"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Migration metrics
-    /// Total number of migrations
-    pub static ref MIGRATIONS_TOTAL: CounterVec = CounterVec::new(
+// Migration metrics
+/// Total number of migrations
+pub static MIGRATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new("orchestr8_migrations_total", "Total number of migrations")
             .namespace("orchestr8"),
-        &["source_runtime", "target_runtime", "strategy", "status"]
+        &["source_runtime", "target_runtime", "strategy", "status"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Migration duration histogram
-    pub static ref MIGRATION_DURATION_SECONDS: HistogramVec = HistogramVec::new(
+/// Migration duration histogram
+pub static MIGRATION_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(|| {
+    HistogramVec::new(
         HistogramOpts::new(
             "orchestr8_migration_duration_seconds",
-            "Migration duration in seconds"
+            "Migration duration in seconds",
         )
         .namespace("orchestr8")
         .buckets(vec![1.0, 5.0, 10.0, 30.0, 60.0, 120.0, 300.0, 600.0]),
-        &["source_runtime", "target_runtime", "strategy"]
+        &["source_runtime", "target_runtime", "strategy"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Migration rollbacks
-    pub static ref MIGRATION_ROLLBACKS_TOTAL: CounterVec = CounterVec::new(
+/// Migration rollbacks
+pub static MIGRATION_ROLLBACKS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new(
             "orchestr8_migration_rollbacks_total",
-            "Total number of migration rollbacks"
+            "Total number of migration rollbacks",
         )
         .namespace("orchestr8"),
-        &["source_runtime", "target_runtime", "strategy"]
+        &["source_runtime", "target_runtime", "strategy"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Runtime metrics
-    /// Runtime availability
-    pub static ref RUNTIME_AVAILABLE: GaugeVec = GaugeVec::new(
-        Opts::new("orchestr8_runtime_available", "Runtime availability (1=available, 0=unavailable)")
-            .namespace("orchestr8"),
-        &["runtime"]
+// Runtime metrics
+/// Runtime availability
+pub static RUNTIME_AVAILABLE: LazyLock<GaugeVec> = LazyLock::new(|| {
+    GaugeVec::new(
+        Opts::new(
+            "orchestr8_runtime_available",
+            "Runtime availability (1=available, 0=unavailable)",
+        )
+        .namespace("orchestr8"),
+        &["runtime"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Runtime decision time
-    pub static ref RUNTIME_DECISION_SECONDS: Histogram = Histogram::with_opts(
+/// Runtime decision time
+pub static RUNTIME_DECISION_SECONDS: LazyLock<Histogram> = LazyLock::new(|| {
+    Histogram::with_opts(
         HistogramOpts::new(
             "orchestr8_runtime_decision_seconds",
-            "Runtime decision time in seconds"
+            "Runtime decision time in seconds",
         )
         .namespace("orchestr8")
-        .buckets(vec![0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0])
+        .buckets(vec![0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0]),
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // System metrics
-    /// Orchestr8 version info
-    pub static ref ORCHESTR8_INFO: Counter = Counter::with_opts(
+// System metrics
+/// Orchestr8 version info
+pub static ORCHESTR8_INFO: LazyLock<Counter> = LazyLock::new(|| {
+    Counter::with_opts(
         Opts::new("orchestr8_build_info", "Orchestr8 version and build information")
             .namespace("orchestr8")
-            .const_label("version", env!("CARGO_PKG_VERSION"))
+            .const_label("version", env!("CARGO_PKG_VERSION")),
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Total CLI commands executed
-    pub static ref CLI_COMMANDS_TOTAL: CounterVec = CounterVec::new(
+/// Total CLI commands executed
+pub static CLI_COMMANDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new("orchestr8_cli_commands_total", "Total CLI commands executed")
             .namespace("orchestr8"),
-        &["command"]
+        &["command"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Command execution duration
-    pub static ref COMMAND_DURATION_SECONDS: HistogramVec = HistogramVec::new(
+/// Command execution duration
+pub static COMMAND_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(|| {
+    HistogramVec::new(
         HistogramOpts::new(
             "orchestr8_command_duration_seconds",
-            "Command execution duration in seconds"
+            "Command execution duration in seconds",
         )
         .namespace("orchestr8")
         .buckets(vec![0.1, 0.5, 1.0, 5.0, 10.0, 30.0, 60.0]),
-        &["command"]
+        &["command"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Scheduler metrics
-    /// Total scheduler placement decisions
-    pub static ref SCHEDULER_PLACEMENTS_TOTAL: CounterVec = CounterVec::new(
+// Scheduler metrics
+/// Total scheduler placement decisions
+pub static SCHEDULER_PLACEMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new(
             "orchestr8_scheduler_placements_total",
-            "Total scheduler placement decisions"
+            "Total scheduler placement decisions",
         )
         .namespace("orchestr8"),
-        &["runtime", "strategy", "status"]
+        &["runtime", "strategy", "status"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Orchestrator / health metrics
-    /// Health check results
-    pub static ref HEALTH_CHECKS_TOTAL: CounterVec = CounterVec::new(
+// Orchestrator / health metrics
+/// Health check results
+pub static HEALTH_CHECKS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new("orchestr8_health_checks_total", "Total health check results")
             .namespace("orchestr8"),
-        &["workload", "status"]
+        &["workload", "status"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Circuit breaker state changes
-    pub static ref CIRCUIT_BREAKER_EVENTS_TOTAL: CounterVec = CounterVec::new(
+/// Circuit breaker state changes
+pub static CIRCUIT_BREAKER_EVENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new(
             "orchestr8_circuit_breaker_events_total",
-            "Circuit breaker state change events"
+            "Circuit breaker state change events",
         )
         .namespace("orchestr8"),
-        &["workload", "state"]
+        &["workload", "state"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    /// Auto-restarts triggered by orchestrator
-    pub static ref ORCHESTRATOR_RESTARTS_TOTAL: CounterVec = CounterVec::new(
+/// Auto-restarts triggered by orchestrator
+pub static ORCHESTRATOR_RESTARTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new(
             "orchestr8_orchestrator_restarts_total",
-            "Auto-restarts triggered by orchestrator"
+            "Auto-restarts triggered by orchestrator",
         )
         .namespace("orchestr8"),
-        &["workload", "runtime"]
+        &["workload", "runtime"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Secrets metrics
-    /// Secret operations
-    pub static ref SECRET_OPERATIONS_TOTAL: CounterVec = CounterVec::new(
+// Secrets metrics
+/// Secret operations
+pub static SECRET_OPERATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new("orchestr8_secret_operations_total", "Secret management operations")
             .namespace("orchestr8"),
-        &["operation"]
+        &["operation"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Events metrics
-    /// Events emitted by category
-    pub static ref EVENTS_EMITTED_TOTAL: CounterVec = CounterVec::new(
+// Events metrics
+/// Events emitted by category
+pub static EVENTS_EMITTED_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new("orchestr8_events_emitted_total", "Events emitted by category")
             .namespace("orchestr8"),
-        &["category", "severity"]
+        &["category", "severity"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Environment metrics
-    /// Environment promotions
-    pub static ref ENV_PROMOTIONS_TOTAL: CounterVec = CounterVec::new(
+// Environment metrics
+/// Environment promotions
+pub static ENV_PROMOTIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new("orchestr8_env_promotions_total", "Environment promotion operations")
             .namespace("orchestr8"),
-        &["from_tier", "to_tier", "status"]
+        &["from_tier", "to_tier", "status"],
     )
-    .expect("metric can be created");
+    .expect("metric can be created")
+});
 
-    // Affinity metrics
-    /// Affinity recommendations served
-    pub static ref AFFINITY_RECOMMENDATIONS_TOTAL: CounterVec = CounterVec::new(
+// Affinity metrics
+/// Affinity recommendations served
+pub static AFFINITY_RECOMMENDATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
         Opts::new(
             "orchestr8_affinity_recommendations_total",
-            "Affinity recommendations served"
+            "Affinity recommendations served",
         )
         .namespace("orchestr8"),
-        &["workload_class", "recommended_runtime"]
+        &["workload_class", "recommended_runtime"],
     )
-    .expect("metric can be created");
-}
+    .expect("metric can be created")
+});
 
 /// Initialize metrics registry
 pub fn init() {

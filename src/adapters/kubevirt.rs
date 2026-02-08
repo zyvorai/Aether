@@ -1,15 +1,15 @@
 //! KubeVirt VM runtime adapter
 
+use super::common;
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::{AccessMode, Workload};
 use async_trait::async_trait;
 use kube::{
-    api::{Api, DeleteParams, ListParams, PostParams},
-    core::{DynamicObject, GroupVersionKind},
-    discovery, Client, ResourceExt,
+    api::{Api, DeleteParams, PostParams},
+    core::DynamicObject,
+    Client, ResourceExt,
 };
 use serde_json::json;
-use std::collections::BTreeMap;
 
 /// KubeVirt runtime implementation
 pub struct KubeVirtRuntime {
@@ -45,38 +45,26 @@ impl KubeVirtRuntime {
 
     /// Get API for DataVolume CRD
     async fn get_datavolume_api(&self) -> anyhow::Result<Api<DynamicObject>> {
-        let gvk = GroupVersionKind::gvk("cdi.kubevirt.io", "v1beta1", "DataVolume");
-        let discovery = discovery::Discovery::new(self.client.clone()).run().await?;
-
-        let apigroup = discovery
-            .groups()
-            .find(|g| g.name() == gvk.group)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find CDI API group (KubeVirt not installed?)"))?;
-
-        let (ar, _caps) = apigroup
-            .recommended_kind(&gvk.kind)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find DataVolume resource"))?;
-
-        let api = Api::namespaced_with(self.client.clone(), &self.namespace, &ar);
-        Ok(api)
+        common::discover_crd_api(
+            self.client.clone(),
+            &self.namespace,
+            "cdi.kubevirt.io",
+            "v1beta1",
+            "DataVolume",
+        )
+        .await
     }
 
     /// Get API for VirtualMachine CRD
     async fn get_virtualmachine_api(&self) -> anyhow::Result<Api<DynamicObject>> {
-        let gvk = GroupVersionKind::gvk("kubevirt.io", "v1", "VirtualMachine");
-        let discovery = discovery::Discovery::new(self.client.clone()).run().await?;
-
-        let apigroup = discovery
-            .groups()
-            .find(|g| g.name() == gvk.group)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find KubeVirt API group (KubeVirt not installed?)"))?;
-
-        let (ar, _caps) = apigroup
-            .recommended_kind(&gvk.kind)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find VirtualMachine resource"))?;
-
-        let api = Api::namespaced_with(self.client.clone(), &self.namespace, &ar);
-        Ok(api)
+        common::discover_crd_api(
+            self.client.clone(),
+            &self.namespace,
+            "kubevirt.io",
+            "v1",
+            "VirtualMachine",
+        )
+        .await
     }
 
     /// Get VM status
@@ -115,31 +103,14 @@ impl KubeVirtRuntime {
                     restart_count: 0,
                 })
             }
-            Err(_) => Ok(Status {
-                state: InstanceState::Unknown,
-                ready: false,
-                message: Some("VM not found".to_string()),
-                restart_count: 0,
-            }),
+            Err(_) => Ok(common::not_found_status("VM")),
         }
-    }
-}
-
-/// Parse CPU string (e.g., "4" or "2000m") to core count
-fn parse_cpu_cores(cpu: &str) -> i32 {
-    if cpu.ends_with('m') {
-        let milli = cpu.trim_end_matches('m').parse::<i32>().unwrap_or(1000);
-        (milli / 1000).max(1)
-    } else {
-        cpu.parse::<i32>().unwrap_or(1)
     }
 }
 
 /// Build DataVolume JSON (standalone, testable without kube::Client)
 fn build_datavolume_json(namespace: &str, image: &Image, spec: &Workload) -> serde_json::Value {
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);
 
     let access_mode = match spec.persistence.access_mode {
         AccessMode::ReadWriteOnce => "ReadWriteOnce",
@@ -176,16 +147,9 @@ fn build_datavolume_json(namespace: &str, image: &Image, spec: &Workload) -> ser
 
 /// Build VirtualMachine JSON (standalone, testable without kube::Client)
 fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Value {
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);
 
-    // Add user labels
-    for (k, v) in &spec.metadata.labels {
-        labels.insert(k.clone(), v.clone());
-    }
-
-    let cpu_cores = parse_cpu_cores(&spec.requirements.cpu);
+    let cpu_cores = common::parse_cpu_cores(&spec.requirements.cpu);
 
     let mut vm_spec = json!({
         "apiVersion": "kubevirt.io/v1",
@@ -399,7 +363,7 @@ impl Runtime for KubeVirtRuntime {
         let api = self.get_virtualmachine_api().await?;
 
         // List only VMs managed by orchestr8
-        let lp = ListParams::default().labels("managed-by=orchestr8");
+        let lp = common::managed_list_params();
         let vm_list = api.list(&lp).await?;
 
         let instances: Vec<Instance> = vm_list
@@ -498,49 +462,6 @@ mod tests {
             digest: None,
             runtime: RuntimeKind::KubeVirt,
         }
-    }
-
-    // ---------------------------------------------------------------
-    // parse_cpu_cores tests (original 3, kept intact)
-    // ---------------------------------------------------------------
-    #[test]
-    fn test_parse_cpu_cores_whole() {
-        assert_eq!(parse_cpu_cores("4"), 4);
-        assert_eq!(parse_cpu_cores("1"), 1);
-        assert_eq!(parse_cpu_cores("16"), 16);
-    }
-
-    #[test]
-    fn test_parse_cpu_cores_millicore() {
-        assert_eq!(parse_cpu_cores("2000m"), 2);
-        assert_eq!(parse_cpu_cores("4000m"), 4);
-        assert_eq!(parse_cpu_cores("500m"), 1); // min 1 core
-    }
-
-    #[test]
-    fn test_parse_cpu_cores_invalid() {
-        assert_eq!(parse_cpu_cores("invalid"), 1); // defaults to 1
-        assert_eq!(parse_cpu_cores("xm"), 1); // invalid millicore defaults
-    }
-
-    // ---------------------------------------------------------------
-    // parse_cpu_cores – additional edge cases
-    // ---------------------------------------------------------------
-    #[test]
-    fn test_parse_cpu_cores_large_millicore() {
-        assert_eq!(parse_cpu_cores("8000m"), 8);
-        assert_eq!(parse_cpu_cores("16000m"), 16);
-    }
-
-    #[test]
-    fn test_parse_cpu_cores_zero_millicore_clamps_to_one() {
-        // 0m should clamp to at least 1 core
-        assert_eq!(parse_cpu_cores("0m"), 1);
-    }
-
-    #[test]
-    fn test_parse_cpu_cores_single_core() {
-        assert_eq!(parse_cpu_cores("1000m"), 1);
     }
 
     // ---------------------------------------------------------------
