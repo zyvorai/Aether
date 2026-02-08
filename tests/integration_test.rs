@@ -6,6 +6,7 @@ use orchestr8::{
     spec::Workload,
     state::StateStore,
 };
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -456,4 +457,572 @@ fn test_backup_merge() {
     assert_eq!(merged.list().len(), 2);
     assert!(merged.get("app-existing").is_some());
     assert!(merged.get("app-from-backup").is_some());
+}
+
+// ========== Secrets module tests ==========
+
+#[test]
+fn test_secrets_crud_and_encryption() {
+    use orchestr8::secrets::SecretStore;
+
+    let temp_dir = TempDir::new().unwrap();
+    let store_path = temp_dir.path().join("secrets.json");
+
+    let mut store = SecretStore::new();
+
+    // Create secrets
+    store.create_secret("db-creds", "production");
+    store.create_secret("api-keys", "staging");
+
+    // Set values
+    store.set("db-creds", "username", "admin").unwrap();
+    store.set("db-creds", "password", "s3cret!123").unwrap();
+    store.set("api-keys", "stripe", "sk_test_abc123").unwrap();
+
+    // Read back and verify decryption
+    assert_eq!(store.get("db-creds", "username").unwrap(), "admin");
+    assert_eq!(store.get("db-creds", "password").unwrap(), "s3cret!123");
+    assert_eq!(store.get("api-keys", "stripe").unwrap(), "sk_test_abc123");
+
+    // List
+    let list = store.list();
+    assert_eq!(list.len(), 2);
+
+    // Delete a key
+    store.delete_key("db-creds", "username").unwrap();
+    assert!(store.get("db-creds", "username").is_err());
+    assert_eq!(store.get("db-creds", "password").unwrap(), "s3cret!123");
+
+    // Rotate
+    store.rotate("db-creds", "password", "new_p@ss").unwrap();
+    assert_eq!(store.get("db-creds", "password").unwrap(), "new_p@ss");
+
+    // Verify version incremented
+    let secret = store.get_secret("db-creds").unwrap();
+    assert!(secret.data["password"].version >= 2);
+
+    // Audit access log
+    assert!(!secret.access_log.is_empty());
+
+    // Save and reload
+    store.save(&store_path).unwrap();
+    let mut loaded = SecretStore::load(&store_path).unwrap();
+    assert_eq!(loaded.list().len(), 2);
+    assert_eq!(loaded.get("db-creds", "password").unwrap(), "new_p@ss");
+
+    // Delete entire secret
+    assert!(loaded.delete_secret("api-keys").is_some());
+    assert_eq!(loaded.list().len(), 1);
+}
+
+// ========== Events module tests ==========
+
+#[test]
+fn test_events_emit_filter_acknowledge() {
+    use orchestr8::events::{EventBus, EventCategory, EventSeverity};
+
+    let temp_dir = TempDir::new().unwrap();
+    let events_path = temp_dir.path().join("events.json");
+
+    let mut bus = EventBus::new();
+
+    // Emit events
+    let id1 = bus.emit_simple(
+        EventSeverity::Info,
+        EventCategory::Deployment,
+        "engine",
+        Some("web-app"),
+        "Deployed web-app",
+        "Successfully deployed to kubernetes",
+    );
+    let id2 = bus.emit_simple(
+        EventSeverity::Critical,
+        EventCategory::SlaViolation,
+        "sla-monitor",
+        Some("api-server"),
+        "SLA breach",
+        "Uptime dropped below 99.9%",
+    );
+    bus.emit_simple(
+        EventSeverity::Warning,
+        EventCategory::DriftDetected,
+        "drift-detector",
+        None,
+        "Config drift",
+        "Runtime mismatch detected",
+    );
+
+    assert_eq!(bus.events().len(), 3);
+
+    // Filter by category
+    assert_eq!(bus.events_by_category(&EventCategory::Deployment).len(), 1);
+    assert_eq!(bus.events_by_category(&EventCategory::SlaViolation).len(), 1);
+
+    // Filter by severity
+    assert_eq!(bus.events_by_severity(&EventSeverity::Critical).len(), 1);
+    assert_eq!(bus.events_by_severity(&EventSeverity::Warning).len(), 2); // Warning + Critical
+
+    // Filter by workload
+    assert_eq!(bus.events_for_workload("web-app").len(), 1);
+    assert_eq!(bus.events_for_workload("api-server").len(), 1);
+
+    // Acknowledge
+    assert_eq!(bus.unacknowledged().len(), 3);
+    assert!(bus.acknowledge(id1));
+    assert_eq!(bus.unacknowledged().len(), 2);
+    assert!(bus.acknowledge(id2));
+
+    // Summary
+    let summary = bus.summary();
+    assert_eq!(summary.total_events, 3);
+    assert_eq!(summary.critical_unacked, 0);
+
+    // Prune
+    bus.prune(2);
+    assert_eq!(bus.events().len(), 2);
+
+    // Save and reload
+    bus.save(&events_path).unwrap();
+    let loaded = EventBus::load(&events_path).unwrap();
+    assert_eq!(loaded.events().len(), 2);
+}
+
+// ========== Scheduler module tests ==========
+
+#[test]
+fn test_scheduler_placement_and_release() {
+    use orchestr8::scheduler::{
+        Priority, ScheduleConstraint, ScheduleRequest, ScheduleStrategy, Scheduler,
+    };
+
+    let mut scheduler = Scheduler::new();
+
+    // Basic placement
+    let req = ScheduleRequest {
+        workload_name: "frontend".to_string(),
+        cpu_required: 2.0,
+        memory_required_mb: 2048,
+        storage_required_mb: 10240,
+        gpu_required: 0,
+        preferred_runtime: None,
+        constraints: vec![],
+        priority: Priority::Normal,
+    };
+    let decision = scheduler.schedule(&req).unwrap();
+    assert!(!decision.workload_name.is_empty());
+    assert!(decision.score > 0.0);
+    assert!(decision.estimated_cost_per_day > 0.0);
+    assert_eq!(scheduler.placements().len(), 1);
+
+    // Place with constraint
+    let req2 = ScheduleRequest {
+        workload_name: "backend".to_string(),
+        cpu_required: 4.0,
+        memory_required_mb: 4096,
+        storage_required_mb: 20480,
+        gpu_required: 0,
+        preferred_runtime: None,
+        constraints: vec![ScheduleConstraint::RequireRuntime(RuntimeKind::Kubernetes)],
+        priority: Priority::High,
+    };
+    let decision2 = scheduler.schedule(&req2).unwrap();
+    assert_eq!(decision2.selected_runtime, RuntimeKind::Kubernetes);
+    assert_eq!(scheduler.placements().len(), 2);
+
+    // Co-location
+    let req3 = ScheduleRequest {
+        workload_name: "cache".to_string(),
+        cpu_required: 1.0,
+        memory_required_mb: 1024,
+        storage_required_mb: 5120,
+        gpu_required: 0,
+        preferred_runtime: None,
+        constraints: vec![ScheduleConstraint::CoLocate("backend".to_string())],
+        priority: Priority::Normal,
+    };
+    let decision3 = scheduler.schedule(&req3).unwrap();
+    assert_eq!(decision3.selected_runtime, RuntimeKind::Kubernetes);
+
+    // Utilization summary
+    let utils = scheduler.utilization_summary();
+    assert_eq!(utils.len(), 4);
+
+    // Optimization suggestions (may or may not have suggestions depending on state)
+    let _suggestions = scheduler.optimize();
+
+    // Release and verify capacity restore
+    scheduler.release("frontend");
+    assert_eq!(scheduler.placements().len(), 2);
+
+    // Cost-optimized strategy
+    let mut cost_scheduler = Scheduler::with_strategy(ScheduleStrategy::CostOptimized);
+    let cheap_req = ScheduleRequest {
+        workload_name: "worker".to_string(),
+        cpu_required: 1.0,
+        memory_required_mb: 512,
+        storage_required_mb: 1024,
+        gpu_required: 0,
+        preferred_runtime: None,
+        constraints: vec![],
+        priority: Priority::Low,
+    };
+    let cost_decision = cost_scheduler.schedule(&cheap_req).unwrap();
+    assert_eq!(cost_decision.selected_runtime, RuntimeKind::Podman);
+
+    // Infeasible request
+    let huge_req = ScheduleRequest {
+        workload_name: "giant".to_string(),
+        cpu_required: 99999.0,
+        memory_required_mb: 99999999,
+        storage_required_mb: 99999999,
+        gpu_required: 0,
+        preferred_runtime: None,
+        constraints: vec![],
+        priority: Priority::Normal,
+    };
+    assert!(scheduler.schedule(&huge_req).is_err());
+}
+
+// ========== Orchestrator module tests ==========
+
+#[test]
+fn test_orchestrator_health_lifecycle() {
+    use orchestr8::orchestrator::{
+        CheckResult, CircuitState, HealthCheck, HealthConfig, HealthStatus, Orchestrator,
+        OrchestratorAction, UpdatePhase,
+    };
+
+    let mut orch = Orchestrator::new();
+
+    // Register workloads
+    orch.register("web-app", RuntimeKind::Kubernetes, None);
+    let config = HealthConfig {
+        failure_threshold: 2,
+        success_threshold: 2,
+        max_restarts: 3,
+        ..Default::default()
+    };
+    orch.register("api-server", RuntimeKind::Kubernetes, Some(config));
+
+    assert_eq!(orch.list_workloads().len(), 2);
+
+    // Healthy checks -> status becomes Healthy
+    for _ in 0..3 {
+        orch.process_health_check(HealthCheck {
+            workload: "web-app".to_string(),
+            status: HealthStatus::Healthy,
+            checks: vec![CheckResult {
+                name: "http".to_string(),
+                passed: true,
+                message: "OK".to_string(),
+                latency_ms: Some(25.0),
+            }],
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            consecutive_failures: 0,
+        });
+    }
+    assert_eq!(
+        orch.get_workload("web-app").unwrap().current_health,
+        HealthStatus::Healthy
+    );
+
+    // Failing checks -> triggers restarts
+    let mut restart_count = 0;
+    for _ in 0..6 {
+        let actions = orch.process_health_check(HealthCheck {
+            workload: "api-server".to_string(),
+            status: HealthStatus::Unhealthy,
+            checks: vec![CheckResult {
+                name: "http".to_string(),
+                passed: false,
+                message: "Connection refused".to_string(),
+                latency_ms: None,
+            }],
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            consecutive_failures: 0,
+        });
+        restart_count += actions
+            .iter()
+            .filter(|a| matches!(a, OrchestratorAction::Restart { .. }))
+            .count();
+    }
+    assert!(restart_count > 0);
+
+    // Eventually circuit should open
+    let w = orch.get_workload("api-server").unwrap();
+    assert!(w.restart_count > 0 || w.circuit == CircuitState::Open);
+
+    // Health summary
+    let summary = orch.health_summary();
+    assert_eq!(summary.total_workloads, 2);
+    assert!(summary.healthy >= 1);
+
+    // Manual circuit reset
+    orch.reset_circuit("api-server");
+    assert_eq!(
+        orch.get_workload("api-server").unwrap().circuit,
+        CircuitState::Closed
+    );
+
+    // Rolling update simulation
+    let statuses = orch.rolling_update("web-app", 5, None);
+    assert!(!statuses.is_empty());
+    assert_eq!(statuses.last().unwrap().phase, UpdatePhase::Completed);
+    assert_eq!(statuses.last().unwrap().total_replicas, 5);
+
+    // Unregister
+    assert!(orch.unregister("web-app").is_some());
+    assert_eq!(orch.list_workloads().len(), 1);
+}
+
+// ========== Environments module tests ==========
+
+#[test]
+fn test_environment_promotion_and_parity() {
+    use orchestr8::environments::{
+        EnvTier, EnvWorkload, EnvironmentManager, PromotionRequest, PromotionStrategy,
+    };
+
+    let temp_dir = TempDir::new().unwrap();
+    let env_path = temp_dir.path().join("environments.json");
+
+    let mut mgr = EnvironmentManager::new();
+
+    // Create environments
+    mgr.create_env("dev", EnvTier::Development);
+    mgr.create_env("staging", EnvTier::Staging);
+    mgr.create_env("prod", EnvTier::Production);
+
+    assert_eq!(mgr.list_envs().len(), 3);
+
+    // Add workloads to dev
+    let web = EnvWorkload {
+        name: "web-app".to_string(),
+        spec_path: PathBuf::from("web-app.yaml"),
+        runtime_override: None,
+        replicas: Some(1),
+        cpu_override: Some("1".to_string()),
+        memory_override: Some("512Mi".to_string()),
+        env_vars: HashMap::from([
+            ("NODE_ENV".to_string(), "development".to_string()),
+            ("LOG_LEVEL".to_string(), "debug".to_string()),
+        ]),
+        deployed: true,
+        version: "1.0.0".to_string(),
+    };
+    mgr.add_workload("dev", web).unwrap();
+
+    let api = EnvWorkload {
+        name: "api-server".to_string(),
+        spec_path: PathBuf::from("api.yaml"),
+        runtime_override: None,
+        replicas: Some(1),
+        cpu_override: None,
+        memory_override: None,
+        env_vars: HashMap::new(),
+        deployed: true,
+        version: "2.0.0".to_string(),
+    };
+    mgr.add_workload("dev", api).unwrap();
+
+    assert_eq!(mgr.get_env("dev").unwrap().workloads.len(), 2);
+
+    // Promote web-app from dev to staging (direct)
+    let result = mgr
+        .promote(&PromotionRequest {
+            workload: "web-app".to_string(),
+            from_env: "dev".to_string(),
+            to_env: "staging".to_string(),
+            strategy: PromotionStrategy::Direct,
+            require_approval: false,
+        })
+        .unwrap();
+    assert!(result.success);
+    assert!(mgr.get_env("staging").unwrap().workloads.contains_key("web-app"));
+
+    // Promote web-app from staging to prod (tier-adjusted)
+    let result = mgr
+        .promote(&PromotionRequest {
+            workload: "web-app".to_string(),
+            from_env: "staging".to_string(),
+            to_env: "prod".to_string(),
+            strategy: PromotionStrategy::TierAdjusted,
+            require_approval: false,
+        })
+        .unwrap();
+    assert!(result.success);
+    // Replicas should be scaled up for production
+    let prod_wl = &mgr.get_env("prod").unwrap().workloads["web-app"];
+    assert!(prod_wl.replicas.unwrap_or(0) >= 2);
+
+    // Check parity between staging and prod
+    let parity = mgr.check_parity("staging", "prod", "web-app").unwrap();
+    assert!(!parity.in_sync); // Different replicas, version
+    assert!(!parity.diffs.is_empty());
+
+    // Check parity for missing workload
+    let parity2 = mgr.check_parity("dev", "prod", "api-server").unwrap();
+    assert!(!parity2.in_sync);
+
+    // Set environment variables
+    mgr.set_var("dev", "DATABASE_URL", "localhost:5432").unwrap();
+    assert_eq!(
+        mgr.get_env("dev").unwrap().variables["DATABASE_URL"],
+        "localhost:5432"
+    );
+
+    // Save and reload
+    mgr.save(&env_path).unwrap();
+    let loaded = EnvironmentManager::load(&env_path).unwrap();
+    assert_eq!(loaded.list_envs().len(), 3);
+    assert!(loaded.get_env("prod").unwrap().workloads.contains_key("web-app"));
+}
+
+// ========== Affinity module tests ==========
+
+#[test]
+fn test_affinity_learning_and_recommendation() {
+    use orchestr8::ai::affinity::{AffinityEngine, DeploymentOutcome, WorkloadClass};
+
+    let temp_dir = TempDir::new().unwrap();
+    let affinity_path = temp_dir.path().join("affinity.json");
+
+    let mut engine = AffinityEngine::new();
+
+    // Record successful Kubernetes web service deployments
+    for i in 0..10 {
+        engine.record(DeploymentOutcome {
+            workload_name: format!("web-{}", i),
+            workload_class: WorkloadClass::WebService,
+            runtime: RuntimeKind::Kubernetes,
+            success: true,
+            uptime_pct: Some(99.9),
+            avg_latency_ms: Some(45.0),
+            error_rate_pct: Some(0.1),
+            restarts: 0,
+            cost_per_day: Some(12.0),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            failure_reason: None,
+        });
+    }
+
+    // Record some Podman failures for databases
+    for i in 0..3 {
+        engine.record(DeploymentOutcome {
+            workload_name: format!("db-{}", i),
+            workload_class: WorkloadClass::Database,
+            runtime: RuntimeKind::Podman,
+            success: false,
+            uptime_pct: Some(50.0),
+            avg_latency_ms: Some(500.0),
+            error_rate_pct: Some(10.0),
+            restarts: 5,
+            cost_per_day: Some(5.0),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            failure_reason: Some("Persistent storage issues".to_string()),
+        });
+    }
+
+    // Record successful Kubernetes database deployments
+    for i in 0..5 {
+        engine.record(DeploymentOutcome {
+            workload_name: format!("db-k8s-{}", i),
+            workload_class: WorkloadClass::Database,
+            runtime: RuntimeKind::Kubernetes,
+            success: true,
+            uptime_pct: Some(99.5),
+            avg_latency_ms: Some(10.0),
+            error_rate_pct: Some(0.2),
+            restarts: 0,
+            cost_per_day: Some(20.0),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            failure_reason: None,
+        });
+    }
+
+    // Recommendations: Kubernetes should rank highest for web services
+    let web_recs = engine.recommend(&WorkloadClass::WebService);
+    assert_eq!(web_recs.len(), 4);
+    assert_eq!(web_recs[0].runtime, RuntimeKind::Kubernetes);
+    assert!(web_recs[0].confidence > 0.0);
+
+    // Recommendations: Kubernetes should rank above Podman for databases
+    let db_recs = engine.recommend(&WorkloadClass::Database);
+    let k8s_pos = db_recs.iter().position(|r| r.runtime == RuntimeKind::Kubernetes).unwrap();
+    let podman_pos = db_recs.iter().position(|r| r.runtime == RuntimeKind::Podman).unwrap();
+    assert!(k8s_pos < podman_pos);
+
+    // Incompatibilities tracked
+    let incompat = engine.incompatibilities();
+    assert_eq!(incompat.len(), 1);
+    assert_eq!(incompat[0].workload_class, WorkloadClass::Database);
+    assert_eq!(incompat[0].runtime, RuntimeKind::Podman);
+    assert_eq!(incompat[0].failure_count, 3);
+
+    // Compatibility matrix
+    let matrix = engine.compatibility_matrix();
+    assert_eq!(matrix.len(), 32); // 8 classes x 4 runtimes
+
+    // Learning stats
+    let stats = engine.stats();
+    assert_eq!(stats.total_outcomes, 18);
+    assert_eq!(stats.successes, 15);
+    assert_eq!(stats.failures, 3);
+
+    // Heuristic-only recommendations (no data for ML Training)
+    let ml_recs = engine.recommend(&WorkloadClass::MlTraining);
+    assert!(ml_recs.iter().all(|r| r.confidence == 0.0));
+
+    // Save and reload
+    engine.save(&affinity_path).unwrap();
+    let loaded = AffinityEngine::load(&affinity_path).unwrap();
+    assert_eq!(loaded.stats().total_outcomes, 18);
+    let loaded_recs = loaded.recommend(&WorkloadClass::WebService);
+    assert_eq!(loaded_recs[0].runtime, RuntimeKind::Kubernetes);
+}
+
+// ========== Scheduler persistence tests ==========
+
+#[test]
+fn test_scheduler_save_load() {
+    use orchestr8::scheduler::{Priority, ScheduleRequest, Scheduler};
+
+    let temp_dir = TempDir::new().unwrap();
+    let sched_path = temp_dir.path().join("scheduler.json");
+
+    let mut scheduler = Scheduler::new();
+    let req = ScheduleRequest {
+        workload_name: "persist-test".to_string(),
+        cpu_required: 2.0,
+        memory_required_mb: 2048,
+        storage_required_mb: 10240,
+        gpu_required: 0,
+        preferred_runtime: None,
+        constraints: vec![],
+        priority: Priority::Normal,
+    };
+    scheduler.schedule(&req).unwrap();
+
+    scheduler.save(&sched_path).unwrap();
+    let loaded = Scheduler::load(&sched_path).unwrap();
+    assert_eq!(loaded.placements().len(), 1);
+    assert_eq!(loaded.placements()[0].workload_name, "persist-test");
+}
+
+// ========== Orchestrator persistence tests ==========
+
+#[test]
+fn test_orchestrator_save_load() {
+    use orchestr8::orchestrator::Orchestrator;
+
+    let temp_dir = TempDir::new().unwrap();
+    let orch_path = temp_dir.path().join("orchestrator.json");
+
+    let mut orch = Orchestrator::new();
+    orch.register("app-1", RuntimeKind::Kubernetes, None);
+    orch.register("app-2", RuntimeKind::Podman, None);
+
+    orch.save(&orch_path).unwrap();
+    let loaded = Orchestrator::load(&orch_path).unwrap();
+    assert_eq!(loaded.list_workloads().len(), 2);
 }
