@@ -1,6 +1,6 @@
 [package]
 name = "orchestr8"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Susant Sahani <ssahani@gmail.com>"]
 description = "Universal runtime control plane - One spec, four runtimes (Container, Kubernetes, KubeVirt, Metal3)"
