@@ -246,6 +246,9 @@ pub struct Scheduler {
     capacities: HashMap<RuntimeKind, RuntimeCapacity>,
     placements: Vec<Placement>,
     strategy: ScheduleStrategy,
+    /// Optional affinity scores per runtime (from AffinityEngine)
+    #[serde(default)]
+    affinity_scores: HashMap<RuntimeKind, f64>,
 }
 
 /// A workload placement record
@@ -279,6 +282,7 @@ impl Scheduler {
             capacities,
             placements: Vec::new(),
             strategy: ScheduleStrategy::default(),
+            affinity_scores: HashMap::new(),
         }
     }
 
@@ -292,6 +296,14 @@ impl Scheduler {
     /// Set scheduling strategy
     pub fn set_strategy(&mut self, strategy: ScheduleStrategy) {
         self.strategy = strategy;
+    }
+
+    /// Set affinity scores from the affinity engine
+    ///
+    /// Scores should be composite affinity scores (0.0 - 1.0) keyed by runtime.
+    /// These are factored into scheduling decisions as a bonus.
+    pub fn set_affinity_scores(&mut self, scores: HashMap<RuntimeKind, f64>) {
+        self.affinity_scores = scores;
     }
 
     /// Get current strategy
@@ -326,7 +338,7 @@ impl Scheduler {
             .collect();
 
         // Sort by score descending
-        scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         let (selected, score, reasons) = scored[0].clone();
         let capacity = &self.capacities[&selected];
@@ -627,6 +639,13 @@ impl Scheduler {
         if request.preferred_runtime == Some(*runtime) {
             score += 0.2;
             reasons.push("Preferred runtime".to_string());
+        }
+
+        // Affinity score bonus (from learned deployment outcomes)
+        if let Some(&affinity) = self.affinity_scores.get(runtime) {
+            let bonus = affinity * 0.15; // up to 15% weight from affinity
+            score += bonus;
+            reasons.push(format!("Affinity: {:.0}%", affinity * 100.0));
         }
 
         // Capacity headroom bonus
