@@ -718,10 +718,26 @@ async fn build_command(spec_path: &PathBuf) -> Result<()> {
         Ok(image) => {
             println!("✅ Built image: {}", image.full_name());
             orchestr8::metrics::record_build(&runtime_kind.to_string(), true);
+            emit_event(
+                orchestr8::events::EventSeverity::Info,
+                orchestr8::events::EventCategory::Deployment,
+                "cli",
+                Some(&workload.metadata.name),
+                "Build completed",
+                &format!("Built image on {}", runtime_kind),
+            );
             Ok(())
         }
         Err(e) => {
             orchestr8::metrics::record_build(&runtime_kind.to_string(), false);
+            emit_event(
+                orchestr8::events::EventSeverity::Error,
+                orchestr8::events::EventCategory::Deployment,
+                "cli",
+                Some(&workload.metadata.name),
+                "Build failed",
+                &format!("Build failed on {}: {}", runtime_kind, e),
+            );
             Err(e)
         }
     }
@@ -782,6 +798,9 @@ async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> R
 
     println!("✅ Started instance: {} ({})", instance.name, instance.id);
 
+    // Capture instance name before move
+    let instance_name = instance.name.clone();
+
     // Save state
     let mut state = StateStore::load(&StateStore::default_path())?;
     state.upsert(
@@ -799,6 +818,15 @@ async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> R
 
     // Record metrics
     orchestr8::metrics::record_deployment(&runtime_kind.to_string(), true);
+
+    emit_event(
+        orchestr8::events::EventSeverity::Info,
+        orchestr8::events::EventCategory::Deployment,
+        "cli",
+        Some(&workload.metadata.name),
+        "Workload deployed",
+        &format!("Deployed on {} (instance: {})", runtime_kind, instance_name),
+    );
 
     Ok(())
 }
@@ -832,6 +860,15 @@ async fn stop_command(name: &str) -> Result<()> {
     }
 
     println!("✅ Stopped instance: {}", name);
+
+    emit_event(
+        orchestr8::events::EventSeverity::Info,
+        orchestr8::events::EventCategory::Deployment,
+        "cli",
+        Some(name),
+        "Workload stopped",
+        &format!("Stopped instance {}", name),
+    );
 
     Ok(())
 }
@@ -943,6 +980,15 @@ async fn delete_command(name: &str) -> Result<()> {
     // Record metrics
     orchestr8::metrics::record_deletion(&workload_state.runtime.to_string());
 
+    emit_event(
+        orchestr8::events::EventSeverity::Warning,
+        orchestr8::events::EventCategory::Deployment,
+        "cli",
+        Some(name),
+        "Workload deleted",
+        &format!("Deleted instance from {}", workload_state.runtime),
+    );
+
     println!("✅ Deleted instance: {}", name);
 
     Ok(())
@@ -1049,6 +1095,14 @@ async fn migrate_command(
             println!("  New instance: {} ({})", instance.name, instance.id);
             println!("  Runtime: {}", target_runtime);
         }
+        emit_event(
+            orchestr8::events::EventSeverity::Info,
+            orchestr8::events::EventCategory::Migration,
+            "cli",
+            Some(name),
+            "Migration completed",
+            &format!("Migrated from {} to {} using {}", source_runtime, target_runtime, strategy_str),
+        );
     } else {
         println!("❌ Migration failed!");
         if let Some(error) = result.error {
@@ -1060,6 +1114,14 @@ async fn migrate_command(
                 println!("  Restored instance: {} ({})", instance.name, instance.id);
             }
         }
+        emit_event(
+            orchestr8::events::EventSeverity::Error,
+            orchestr8::events::EventCategory::Migration,
+            "cli",
+            Some(name),
+            "Migration failed",
+            &format!("Failed migrating from {} to {}", source_runtime, target_runtime),
+        );
         anyhow::bail!("Migration failed");
     }
 
@@ -1934,15 +1996,34 @@ async fn secrets_command(action: SecretsAction) -> Result<()> {
         SecretsAction::Create { name, namespace } => {
             store.create_secret(&name, &namespace);
             store.save(&path)?;
+            orchestr8::metrics::record_secret_operation("create");
+            emit_event(
+                orchestr8::events::EventSeverity::Info,
+                orchestr8::events::EventCategory::SecretRotation,
+                "cli",
+                None,
+                "Secret created",
+                &format!("Created secret '{}' in namespace '{}'", name, namespace),
+            );
             println!("✅ Created secret '{}' in namespace '{}'", name, namespace);
         }
         SecretsAction::Set { secret, key, value } => {
             store.set(&secret, &key, &value)?;
             store.save(&path)?;
+            orchestr8::metrics::record_secret_operation("set");
+            emit_event(
+                orchestr8::events::EventSeverity::Info,
+                orchestr8::events::EventCategory::SecretRotation,
+                "cli",
+                None,
+                "Secret updated",
+                &format!("Set key '{}' in secret '{}'", key, secret),
+            );
             println!("✅ Set key '{}' in secret '{}'", key, secret);
         }
         SecretsAction::Get { secret, key } => {
             let value = store.get(&secret, &key)?;
+            orchestr8::metrics::record_secret_operation("get");
             println!("{}", value);
         }
         SecretsAction::List => {
@@ -2027,6 +2108,15 @@ async fn env_command(action: EnvAction) -> Result<()> {
             };
             let result = manager.promote(&request)?;
             manager.save(&path)?;
+            orchestr8::metrics::record_env_promotion(&from, &to, true);
+            emit_event(
+                orchestr8::events::EventSeverity::Info,
+                orchestr8::events::EventCategory::Deployment,
+                "cli",
+                Some(&workload),
+                "Environment promotion",
+                &format!("Promoted from {} to {}", from, to),
+            );
             println!("✅ Promoted '{}' from '{}' to '{}'", workload, from, to);
             if !result.changes.is_empty() {
                 println!("   Changes:");
@@ -2102,6 +2192,20 @@ async fn schedule_command(action: ScheduleAction) -> Result<()> {
             };
             scheduler.set_strategy(sched_strategy);
 
+            // Load affinity scores to inform scheduling decisions
+            if let Ok(affinity_engine) = orchestr8::ai::affinity::AffinityEngine::load(
+                &orchestr8::ai::affinity::AffinityEngine::default_path(),
+            ) {
+                use orchestr8::ai::affinity::WorkloadClass;
+                let class = WorkloadClass::Microservice;
+                let scores = affinity_engine.recommend(&class);
+                let affinity_map: std::collections::HashMap<RuntimeKind, f64> = scores
+                    .into_iter()
+                    .map(|s| (s.runtime, s.composite_score))
+                    .collect();
+                scheduler.set_affinity_scores(affinity_map);
+            }
+
             let preferred_runtime = prefer.as_deref().and_then(|p| match p {
                 "podman" => Some(RuntimeKind::Podman),
                 "kubernetes" | "kube" => Some(RuntimeKind::Kubernetes),
@@ -2125,8 +2229,14 @@ async fn schedule_command(action: ScheduleAction) -> Result<()> {
                 Ok(decision) => {
                     print!("{}", format_schedule_decision(&decision));
                     scheduler.save(&path)?;
+                    orchestr8::metrics::record_scheduler_placement(
+                        &decision.selected_runtime.to_string(),
+                        &strategy,
+                        true,
+                    );
                 }
                 Err(e) => {
+                    orchestr8::metrics::record_scheduler_placement("none", &strategy, false);
                     println!("❌ {}", e);
                 }
             }
@@ -2215,6 +2325,27 @@ async fn orchestrate_command(action: OrchestrateAction) -> Result<()> {
     Ok(())
 }
 
+/// Emit an event and save to the event bus (best-effort, errors are logged)
+fn emit_event(
+    severity: orchestr8::events::EventSeverity,
+    category: orchestr8::events::EventCategory,
+    source: &str,
+    workload: Option<&str>,
+    title: &str,
+    message: &str,
+) {
+    let path = orchestr8::events::EventBus::default_path();
+    match orchestr8::events::EventBus::load(&path) {
+        Ok(mut bus) => {
+            bus.emit_simple(severity, category, source, workload, title, message);
+            let _ = bus.save(&path);
+        }
+        Err(e) => {
+            tracing::warn!("Failed to emit event: {}", e);
+        }
+    }
+}
+
 async fn affinity_command(action: AffinityAction) -> Result<()> {
     use orchestr8::ai::affinity::{format_affinity_report, AffinityEngine, WorkloadClass};
 
@@ -2238,6 +2369,9 @@ async fn affinity_command(action: AffinityAction) -> Result<()> {
                 ),
             };
             let scores = engine.recommend(&wl_class);
+            if let Some(top) = scores.first() {
+                orchestr8::metrics::record_affinity_recommendation(&class, &top.runtime.to_string());
+            }
             print!("{}", format_affinity_report(&wl_class, &scores));
         }
         AffinityAction::Matrix => {
