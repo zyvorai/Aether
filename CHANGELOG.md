@@ -5,6 +5,106 @@ All notable changes to Orchestr8 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-08
+
+### Added
+- **Secrets Management (`secrets` module):**
+  - Encrypted secret storage with XOR obfuscation (dev mode)
+  - Create, set, get, delete, and rotate secrets
+  - Access audit logging with timestamps and actors
+  - Rotation policy enforcement with configurable intervals
+  - Rotation audit alerts (warning/critical severity)
+  - Persistence to `~/.orchestr8/secrets.json`
+  - CLI commands: `secrets create|set|get|list|audit`
+  - API endpoint: `GET /api/secrets`
+
+- **Event & Notification System (`events` module):**
+  - Event bus with severity levels (Info, Warning, Error, Critical)
+  - 10 event categories (Deployment, Migration, SLA, Drift, Policy, Scaling, Health, Secret, Cost, System)
+  - Configurable notification channels (Console, File, Webhook)
+  - Alert rules with cooldown periods
+  - Event filtering by category, severity, and workload
+  - Acknowledge/unacknowledge workflow
+  - Event pruning for storage management
+  - CLI commands: `events list|summary|channels|rules`
+  - API endpoints: `GET /api/events`, `GET /api/events/summary`
+
+- **Workload Scheduler (`scheduler` module):**
+  - Intelligent scheduling across 4 runtimes
+  - 4 scheduling strategies: CostOptimized, PerformanceOptimized, BinPacking, Balanced
+  - 8 constraint types: RequireRuntime, ExcludeRuntime, CoLocate, AntiAffinity, MaxCostPerDay, RequireGpu, RequireBareMetal, Zone
+  - Priority levels: Low, Normal, High, Critical
+  - Runtime capacity tracking with resource utilization
+  - Placement recording and release
+  - Optimization suggestions (cost, capacity, balance)
+  - CLI commands: `schedule place|utilization|optimize|placements`
+  - API endpoints: `GET /api/scheduler/utilization`, `GET /api/scheduler/optimize`
+
+- **Health-Aware Orchestrator (`orchestrator` module):**
+  - Workload health monitoring with configurable thresholds
+  - Circuit breaker pattern (Closed -> Open -> HalfOpen -> Closed)
+  - Automatic restart on health check failures
+  - Configurable failure/success thresholds
+  - Rolling update simulation
+  - Health event audit trail (max 100 entries)
+  - Manual circuit breaker reset
+  - CLI commands: `orchestrate register|status|summary|rolling-update|reset-circuit`
+  - API endpoints: `GET /api/orchestrator/status`, `GET /api/orchestrator/summary`
+
+- **Environment Management (`environments` module):**
+  - Multi-environment support (Development, Staging, Production, Custom)
+  - Workload promotion workflows (Direct, TierAdjusted, Canary)
+  - Automatic resource scaling on tier promotion (e.g., 1 replica dev -> 4 replicas prod)
+  - Environment parity validation with diff reporting
+  - Environment variables per environment
+  - Version bumping on promotion
+  - CLI commands: `env create|list|promote|parity`
+  - API endpoint: `GET /api/environments`
+
+- **Runtime Affinity Learning (`ai/affinity` module):**
+  - Deployment outcome recording and learning
+  - Composite affinity scoring (success rate, uptime, latency, error rate)
+  - Confidence-weighted recommendations
+  - Full compatibility matrix (8 workload classes x 4 runtimes)
+  - Incompatibility tracking from failure history
+  - Heuristic fallback when no deployment data available
+  - CLI commands: `affinity recommend|matrix|stats`
+  - API endpoint: `GET /api/affinity/:class`
+
+- **Metrics Expansion:**
+  - Scheduler placement metrics (`orchestr8_scheduler_placements_total`)
+  - Health check metrics (`orchestr8_health_checks_total`)
+  - Circuit breaker event metrics (`orchestr8_circuit_breaker_events_total`)
+  - Orchestrator restart metrics (`orchestr8_orchestrator_restarts_total`)
+  - Secret operation metrics (`orchestr8_secret_operations_total`)
+  - Event emission metrics (`orchestr8_events_emitted_total`)
+  - Environment promotion metrics (`orchestr8_env_promotions_total`)
+  - Affinity recommendation metrics (`orchestr8_affinity_recommendations_total`)
+
+- **Web Dashboard:**
+  - Complete rewrite with 10-tab navigation
+  - Tabs: Workloads, Scheduler, Health, Events, SLA, Environments, Secrets, Affinity, Templates, Audit
+  - 6 stat cards in header
+  - Runtime utilization bars per runtime
+  - Health summary with circuit breaker badges
+  - Event timeline with severity/category badges
+  - Auto-refresh every 10 seconds
+
+- **Integration Tests:**
+  - Secrets CRUD and encryption roundtrip test
+  - Events emit, filter, and acknowledge test
+  - Scheduler placement, constraints, and release test
+  - Orchestrator health lifecycle and circuit breaker test
+  - Environment promotion and parity validation test
+  - Affinity learning and recommendation test
+  - Scheduler and orchestrator persistence tests
+
+### Changed
+- Version bumped to 0.3.0
+- API serve command now lists 30+ endpoints organized by category
+- Test suite expanded: 173 unit tests + 19 integration tests (192 total)
+- 0 clippy warnings
+
 ## [0.2.1] - 2026-02-06
 
 ### Fixed
@@ -268,6 +368,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory usage: 5-15MB
 - TUI refresh: 450ms for 10 workloads
 
+[0.3.0]: https://github.com/ssahani/orchestr8/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ssahani/orchestr8/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ssahani/orchestr8/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ssahani/orchestr8/releases/tag/v0.1.0

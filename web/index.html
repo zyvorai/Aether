@@ -5,475 +5,654 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orchestr8 Dashboard</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            line-height: 1.6;
+            background: #0f172a; color: #e2e8f0; line-height: 1.6;
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px 0;
-            margin-bottom: 30px;
-            border-radius: 10px;
+            padding: 20px 0; margin-bottom: 20px; border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-align: center;
+        h1 { font-size: 2em; text-align: center; }
+        .tagline { text-align: center; font-size: 1em; opacity: 0.9; }
+        .nav {
+            display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap;
+            background: #1e293b; padding: 6px; border-radius: 10px;
         }
-
-        .tagline {
-            text-align: center;
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: #1e293b;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .stat-card h3 {
-            font-size: 0.9em;
-            text-transform: uppercase;
-            opacity: 0.7;
-            margin-bottom: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .workloads {
-            background: #1e293b;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .workloads h2 {
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #334155;
-        }
-
-        .workload-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .workload-table th {
-            text-align: left;
-            padding: 12px;
-            background: #334155;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85em;
-        }
-
-        .workload-table td {
-            padding: 12px;
-            border-bottom: 1px solid #334155;
-        }
-
-        .workload-table tr:hover {
-            background: #2d3748;
-        }
-
-        .runtime-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .runtime-podman {
-            background: #3b82f6;
-        }
-
-        .runtime-kubernetes {
-            background: #10b981;
-        }
-
-        .runtime-kubevirt {
-            background: #f59e0b;
-        }
-
-        .runtime-metal3 {
-            background: #ef4444;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .status-running {
-            background: #10b981;
-        }
-
-        .status-stopped {
-            background: #ef4444;
-        }
-
-        .actions button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 5px;
-            font-size: 0.85em;
-            transition: background 0.2s;
-        }
-
-        .actions button:hover {
-            background: #5a67d8;
-        }
-
-        .actions button.danger {
-            background: #ef4444;
-        }
-
-        .actions button.danger:hover {
-            background: #dc2626;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            opacity: 0.6;
-        }
-
-        .empty-state .icon {
-            font-size: 4em;
-            margin-bottom: 20px;
-        }
-
-        .refresh-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1em;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        .nav button {
+            background: transparent; color: #94a3b8; border: none; padding: 10px 18px;
+            border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: 500;
             transition: all 0.2s;
         }
-
-        .refresh-btn:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        .nav button:hover { background: #334155; color: #e2e8f0; }
+        .nav button.active { background: #667eea; color: white; }
+        .stats {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px; margin-bottom: 20px;
         }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            opacity: 0.6;
+        .stat-card {
+            background: #1e293b; padding: 16px; border-radius: 10px;
+            border-left: 4px solid #667eea; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
+        .stat-card h3 { font-size: 0.75em; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+        .stat-card .value { font-size: 1.8em; font-weight: bold; color: #667eea; }
+        .stat-card.green { border-left-color: #10b981; }
+        .stat-card.green .value { color: #10b981; }
+        .stat-card.yellow { border-left-color: #f59e0b; }
+        .stat-card.yellow .value { color: #f59e0b; }
+        .stat-card.red { border-left-color: #ef4444; }
+        .stat-card.red .value { color: #ef4444; }
+        .panel {
+            background: #1e293b; border-radius: 10px; padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .panel h2 { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #334155; font-size: 1.2em; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left; padding: 10px 12px; background: #334155;
+            font-weight: 600; text-transform: uppercase; font-size: 0.8em;
+        }
+        td { padding: 10px 12px; border-bottom: 1px solid #334155; }
+        tr:hover { background: #2d3748; }
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 0.8em; font-weight: 600;
+        }
+        .badge-blue { background: #3b82f6; }
+        .badge-green { background: #10b981; }
+        .badge-yellow { background: #f59e0b; color: #000; }
+        .badge-red { background: #ef4444; }
+        .badge-purple { background: #8b5cf6; }
+        .badge-gray { background: #64748b; }
+        .actions button, .btn {
+            background: #667eea; color: white; border: none; padding: 5px 10px;
+            border-radius: 5px; cursor: pointer; margin-right: 4px; font-size: 0.8em;
+            transition: background 0.2s;
+        }
+        .actions button:hover, .btn:hover { background: #5a67d8; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: #10b981; }
+        .btn-success:hover { background: #059669; }
+        .btn-warn { background: #f59e0b; color: #000; }
+        .empty-state { text-align: center; padding: 50px 20px; opacity: 0.6; }
+        .empty-state .icon { font-size: 3em; margin-bottom: 15px; }
+        .refresh-btn {
+            position: fixed; bottom: 25px; right: 25px; background: #667eea;
+            color: white; border: none; padding: 12px 20px; border-radius: 50px;
+            cursor: pointer; font-size: 0.9em;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.2s;
+        }
+        .refresh-btn:hover { background: #5a67d8; transform: translateY(-2px); }
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 100;
         }
-
-        .modal.active {
-            display: flex;
-        }
-
+        .modal.active { display: flex; }
         .modal-content {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
+            background: #1e293b; padding: 25px; border-radius: 10px;
+            max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;
         }
-
-        .modal-content h3 {
-            margin-bottom: 20px;
-        }
-
+        .modal-content h3 { margin-bottom: 15px; }
         .modal-content pre {
-            background: #0f172a;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-            font-size: 0.9em;
+            background: #0f172a; padding: 15px; border-radius: 5px;
+            overflow-x: auto; font-size: 0.85em; white-space: pre-wrap;
         }
-
         .close-btn {
-            float: right;
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
+            float: right; background: #ef4444; color: white; border: none;
+            padding: 6px 14px; border-radius: 5px; cursor: pointer;
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .util-bar { background: #334155; border-radius: 4px; height: 24px; margin: 4px 0; position: relative; overflow: hidden; }
+        .util-fill { height: 100%; border-radius: 4px; transition: width 0.3s; display: flex; align-items: center; padding-left: 8px; font-size: 0.75em; font-weight: 600; }
+        .util-low { background: #10b981; }
+        .util-mid { background: #f59e0b; }
+        .util-high { background: #ef4444; }
+        .event-item { padding: 10px; border-bottom: 1px solid #334155; display: flex; gap: 10px; align-items: flex-start; }
+        .event-item:last-child { border-bottom: none; }
+        .event-time { font-size: 0.75em; opacity: 0.6; white-space: nowrap; min-width: 130px; }
+        .matrix-cell { text-align: center; font-weight: 600; }
+        code { background: #334155; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .nav { overflow-x: auto; flex-wrap: nowrap; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎯 Orchestr8</h1>
+            <h1>Orchestr8</h1>
             <p class="tagline">One spec. Four runtimes. One dashboard.</p>
         </header>
 
-        <div class="stats">
-            <div class="stat-card">
-                <h3>Total Workloads</h3>
-                <div class="value" id="total-workloads">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Running</h3>
-                <div class="value" id="running-workloads">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Runtimes</h3>
-                <div class="value" id="runtimes-count">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Backups</h3>
-                <div class="value" id="backups-count">0</div>
+        <div class="nav" id="nav">
+            <button class="active" onclick="showTab('workloads')">Workloads</button>
+            <button onclick="showTab('scheduler')">Scheduler</button>
+            <button onclick="showTab('orchestrator')">Health</button>
+            <button onclick="showTab('events')">Events</button>
+            <button onclick="showTab('sla')">SLA</button>
+            <button onclick="showTab('environments')">Environments</button>
+            <button onclick="showTab('secrets')">Secrets</button>
+            <button onclick="showTab('affinity')">Affinity</button>
+            <button onclick="showTab('templates')">Templates</button>
+            <button onclick="showTab('audit')">Audit</button>
+        </div>
+
+        <div id="stats-bar" class="stats">
+            <div class="stat-card"><h3>Total Workloads</h3><div class="value" id="total-workloads">-</div></div>
+            <div class="stat-card green"><h3>Healthy</h3><div class="value" id="healthy-count">-</div></div>
+            <div class="stat-card yellow"><h3>Events</h3><div class="value" id="events-count">-</div></div>
+            <div class="stat-card"><h3>Backups</h3><div class="value" id="backups-count">-</div></div>
+            <div class="stat-card red"><h3>Circuits Open</h3><div class="value" id="circuits-count">-</div></div>
+            <div class="stat-card"><h3>Secrets</h3><div class="value" id="secrets-count">-</div></div>
+        </div>
+
+        <!-- Workloads Tab -->
+        <div class="tab-content active" id="tab-workloads">
+            <div class="panel">
+                <h2>Workloads</h2>
+                <div id="workload-list"><div class="empty-state"><div class="icon">Loading...</div></div></div>
             </div>
         </div>
 
-        <div class="workloads">
-            <h2>Workloads</h2>
-            <div id="workload-list">
-                <div class="loading">Loading workloads...</div>
+        <!-- Scheduler Tab -->
+        <div class="tab-content" id="tab-scheduler">
+            <div class="panel">
+                <h2>Runtime Utilization</h2>
+                <div id="utilization-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+            <div class="panel">
+                <h2>Optimization Suggestions</h2>
+                <div id="optimize-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+        </div>
+
+        <!-- Orchestrator Tab -->
+        <div class="tab-content" id="tab-orchestrator">
+            <div class="panel">
+                <h2>Health Summary</h2>
+                <div id="health-summary"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+            <div class="panel">
+                <h2>Managed Workloads</h2>
+                <div id="orch-status"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+        </div>
+
+        <!-- Events Tab -->
+        <div class="tab-content" id="tab-events">
+            <div class="panel">
+                <h2>Event Summary</h2>
+                <div id="event-summary-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+            <div class="panel">
+                <h2>Recent Events</h2>
+                <div id="events-list"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+        </div>
+
+        <!-- SLA Tab -->
+        <div class="tab-content" id="tab-sla">
+            <div class="panel">
+                <h2>SLA Targets</h2>
+                <div id="sla-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+        </div>
+
+        <!-- Environments Tab -->
+        <div class="tab-content" id="tab-environments">
+            <div class="panel">
+                <h2>Environments</h2>
+                <div id="env-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+        </div>
+
+        <!-- Secrets Tab -->
+        <div class="tab-content" id="tab-secrets">
+            <div class="panel">
+                <h2>Secrets</h2>
+                <div id="secrets-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+        </div>
+
+        <!-- Affinity Tab -->
+        <div class="tab-content" id="tab-affinity">
+            <div class="grid-2">
+                <div class="panel">
+                    <h2>Runtime Affinity - Web Service</h2>
+                    <div id="affinity-web"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+                </div>
+                <div class="panel">
+                    <h2>Runtime Affinity - Database</h2>
+                    <div id="affinity-db"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+                </div>
+                <div class="panel">
+                    <h2>Runtime Affinity - ML Training</h2>
+                    <div id="affinity-ml"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+                </div>
+                <div class="panel">
+                    <h2>Runtime Affinity - Microservice</h2>
+                    <div id="affinity-micro"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates Tab -->
+        <div class="tab-content" id="tab-templates">
+            <div class="panel">
+                <h2>Available Templates</h2>
+                <div id="templates-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
+            </div>
+        </div>
+
+        <!-- Audit Tab -->
+        <div class="tab-content" id="tab-audit">
+            <div class="panel">
+                <h2>Audit Trail</h2>
+                <div id="audit-content"><div class="empty-state"><div class="icon">Loading...</div></div></div>
             </div>
         </div>
     </div>
 
-    <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+    <button class="refresh-btn" onclick="refreshAll()">Refresh</button>
 
     <div class="modal" id="logs-modal">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal()">Close</button>
-            <h3>Workload Logs</h3>
-            <pre id="logs-content"></pre>
+            <h3 id="modal-title">Logs</h3>
+            <pre id="modal-content"></pre>
         </div>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8080/api';
+        const API = window.location.origin + '/api';
 
-        async function fetchWorkloads() {
-            try {
-                const response = await fetch(`${API_BASE}/workloads`);
-                const result = await response.json();
-
-                if (result.success && result.data) {
-                    displayWorkloads(result.data);
-                    updateStats(result.data);
-                } else {
-                    showError('Failed to load workloads');
-                }
-            } catch (error) {
-                console.error('Error fetching workloads:', error);
-                showError('Connection error. Is the API server running?');
-            }
+        function showTab(name) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            event.target.classList.add('active');
+            loadTabData(name);
         }
 
-        async function fetchBackups() {
-            try {
-                const response = await fetch(`${API_BASE}/backups`);
-                const result = await response.json();
-
-                if (result.success && result.data) {
-                    document.getElementById('backups-count').textContent = result.data.length;
-                }
-            } catch (error) {
-                console.error('Error fetching backups:', error);
-            }
+        function loadTabData(name) {
+            const loaders = {
+                workloads: loadWorkloads,
+                scheduler: loadScheduler,
+                orchestrator: loadOrchestrator,
+                events: loadEvents,
+                sla: loadSla,
+                environments: loadEnvironments,
+                secrets: loadSecrets,
+                affinity: loadAffinity,
+                templates: loadTemplates,
+                audit: loadAudit,
+            };
+            if (loaders[name]) loaders[name]();
         }
 
-        function displayWorkloads(workloads) {
-            const container = document.getElementById('workload-list');
+        async function apiFetch(path) {
+            try {
+                const r = await fetch(API + path);
+                const j = await r.json();
+                return j.success ? j.data : null;
+            } catch { return null; }
+        }
 
-            if (workloads.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📦</div>
-                        <h3>No workloads deployed</h3>
-                        <p>Use the CLI to deploy your first workload</p>
-                    </div>
-                `;
+        // --- Workloads ---
+        async function loadWorkloads() {
+            const data = await apiFetch('/workloads');
+            const el = document.getElementById('workload-list');
+            if (!data || data.length === 0) {
+                el.innerHTML = '<div class="empty-state"><div class="icon">No workloads deployed</div><p>Use the CLI to deploy your first workload</p></div>';
+                document.getElementById('total-workloads').textContent = '0';
                 return;
             }
-
-            const table = `
-                <table class="workload-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Runtime</th>
-                            <th>Image</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${workloads.map(w => `
-                            <tr>
-                                <td><strong>${w.name}</strong></td>
-                                <td><span class="runtime-badge runtime-${w.runtime.toLowerCase()}">${w.runtime}</span></td>
-                                <td><code>${w.image}</code></td>
-                                <td><span class="status-badge status-${w.status}">${w.status}</span></td>
-                                <td>${new Date(w.created_at).toLocaleString()}</td>
-                                <td class="actions">
-                                    <button onclick="viewLogs('${w.name}')">📋 Logs</button>
-                                    <button onclick="stopWorkload('${w.name}')">⏸️ Stop</button>
-                                    <button class="danger" onclick="deleteWorkload('${w.name}')">🗑️ Delete</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-
-            container.innerHTML = table;
+            document.getElementById('total-workloads').textContent = data.length;
+            const runtimeClass = r => {
+                const l = r.toLowerCase();
+                if (l.includes('podman')) return 'badge-blue';
+                if (l.includes('kube') && !l.includes('virt')) return 'badge-green';
+                if (l.includes('virt')) return 'badge-yellow';
+                return 'badge-red';
+            };
+            el.innerHTML = `<table><thead><tr><th>Name</th><th>Runtime</th><th>Image</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>${
+                data.map(w => `<tr>
+                    <td><strong>${w.name}</strong></td>
+                    <td><span class="badge ${runtimeClass(w.runtime)}">${w.runtime}</span></td>
+                    <td><code>${w.image}</code></td>
+                    <td><span class="badge badge-green">${w.status}</span></td>
+                    <td>${w.created_at.substring(0,19).replace('T',' ')}</td>
+                    <td class="actions">
+                        <button onclick="viewLogs('${w.name}')">Logs</button>
+                        <button class="btn-success" onclick="startWorkload('${w.name}')">Start</button>
+                        <button class="btn-warn" onclick="stopWorkload('${w.name}')">Stop</button>
+                        <button class="btn-danger" onclick="deleteWorkload('${w.name}')">Delete</button>
+                    </td></tr>`).join('')
+            }</tbody></table>`;
         }
 
-        function updateStats(workloads) {
-            document.getElementById('total-workloads').textContent = workloads.length;
-            document.getElementById('running-workloads').textContent =
-                workloads.filter(w => w.status === 'running').length;
-
-            const uniqueRuntimes = new Set(workloads.map(w => w.runtime));
-            document.getElementById('runtimes-count').textContent = uniqueRuntimes.size;
-        }
-
-        async function viewLogs(name) {
-            try {
-                const response = await fetch(`${API_BASE}/workloads/${name}/logs`);
-                const result = await response.json();
-
-                if (result.success && result.data) {
-                    document.getElementById('logs-content').textContent = result.data;
-                    document.getElementById('logs-modal').classList.add('active');
-                } else {
-                    alert('Failed to fetch logs');
-                }
-            } catch (error) {
-                alert('Error fetching logs: ' + error.message);
+        // --- Scheduler ---
+        async function loadScheduler() {
+            const utils = await apiFetch('/scheduler/utilization');
+            const el = document.getElementById('utilization-content');
+            if (!utils || utils.length === 0) {
+                el.innerHTML = '<div class="empty-state">No scheduler data available</div>';
+            } else {
+                el.innerHTML = utils.map(u => {
+                    const cpuPct = Math.round(u.cpu_utilization * 100);
+                    const memPct = Math.round(u.memory_utilization * 100);
+                    const barClass = p => p > 85 ? 'util-high' : p > 60 ? 'util-mid' : 'util-low';
+                    const health = u.healthy ? '<span class="badge badge-green">Healthy</span>' : '<span class="badge badge-red">Unhealthy</span>';
+                    return `<div style="margin-bottom:16px">
+                        <strong>${u.runtime}</strong> ${health}
+                        <span style="float:right;opacity:0.7">${u.workload_count}/${u.max_workloads} workloads | $${u.estimated_cost_per_day.toFixed(2)}/day</span>
+                        <div style="margin-top:6px;font-size:0.8em;opacity:0.7">CPU ${cpuPct}%</div>
+                        <div class="util-bar"><div class="util-fill ${barClass(cpuPct)}" style="width:${Math.max(cpuPct,2)}%">${cpuPct}%</div></div>
+                        <div style="font-size:0.8em;opacity:0.7">Memory ${memPct}%</div>
+                        <div class="util-bar"><div class="util-fill ${barClass(memPct)}" style="width:${Math.max(memPct,2)}%">${memPct}%</div></div>
+                    </div>`;
+                }).join('');
             }
+
+            const opts = await apiFetch('/scheduler/optimize');
+            const oel = document.getElementById('optimize-content');
+            if (!opts || opts.length === 0) {
+                oel.innerHTML = '<div class="empty-state">No optimization suggestions</div>';
+            } else {
+                oel.innerHTML = opts.map(o => {
+                    const catBadge = o.category === 'Cost' ? 'badge-green' : o.category === 'Capacity' ? 'badge-red' : 'badge-yellow';
+                    const saving = o.potential_saving ? ` (save $${o.potential_saving.toFixed(2)}/day)` : '';
+                    return `<div class="event-item"><span class="badge ${catBadge}">${o.category}</span> <span>${o.message}${saving}</span></div>`;
+                }).join('');
+            }
+        }
+
+        // --- Orchestrator ---
+        async function loadOrchestrator() {
+            const summary = await apiFetch('/orchestrator/summary');
+            const sel = document.getElementById('health-summary');
+            if (summary) {
+                document.getElementById('healthy-count').textContent = summary.healthy || 0;
+                document.getElementById('circuits-count').textContent = summary.circuits_open || 0;
+                sel.innerHTML = `<div class="stats" style="margin:0">
+                    <div class="stat-card green"><h3>Healthy</h3><div class="value">${summary.healthy}</div></div>
+                    <div class="stat-card yellow"><h3>Degraded</h3><div class="value">${summary.degraded}</div></div>
+                    <div class="stat-card red"><h3>Unhealthy</h3><div class="value">${summary.unhealthy}</div></div>
+                    <div class="stat-card"><h3>Unknown</h3><div class="value">${summary.unknown}</div></div>
+                    <div class="stat-card red"><h3>Circuits Open</h3><div class="value">${summary.circuits_open}</div></div>
+                </div>`;
+            } else {
+                sel.innerHTML = '<div class="empty-state">No orchestrator data</div>';
+            }
+
+            const status = await apiFetch('/orchestrator/status');
+            const oel = document.getElementById('orch-status');
+            if (!status || status.length === 0) {
+                oel.innerHTML = '<div class="empty-state">No managed workloads registered</div>';
+            } else {
+                const healthBadge = h => {
+                    if (h === 'Healthy') return 'badge-green';
+                    if (h === 'Degraded') return 'badge-yellow';
+                    if (h === 'Unhealthy') return 'badge-red';
+                    return 'badge-gray';
+                };
+                const circuitBadge = c => c === 'Closed' ? 'badge-green' : c === 'Open' ? 'badge-red' : 'badge-yellow';
+                oel.innerHTML = `<table><thead><tr><th>Workload</th><th>Runtime</th><th>Health</th><th>Circuit</th><th>Restarts</th></tr></thead><tbody>${
+                    status.map(w => `<tr>
+                        <td><strong>${w.name}</strong></td>
+                        <td>${w.runtime}</td>
+                        <td><span class="badge ${healthBadge(w.health)}">${w.health}</span></td>
+                        <td><span class="badge ${circuitBadge(w.circuit)}">${w.circuit}</span></td>
+                        <td>${w.restart_count}</td>
+                    </tr>`).join('')
+                }</tbody></table>`;
+            }
+        }
+
+        // --- Events ---
+        async function loadEvents() {
+            const summary = await apiFetch('/events/summary');
+            const sel = document.getElementById('event-summary-content');
+            if (summary) {
+                document.getElementById('events-count').textContent = summary.total_events || 0;
+                const sevHtml = summary.by_severity ? Object.entries(summary.by_severity).map(([k,v]) => `<span class="badge badge-gray">${k}: ${v}</span>`).join(' ') : '';
+                const catHtml = summary.by_category ? Object.entries(summary.by_category).map(([k,v]) => `<span class="badge badge-purple">${k}: ${v}</span>`).join(' ') : '';
+                sel.innerHTML = `<div class="stats" style="margin:0">
+                    <div class="stat-card"><h3>Total Events</h3><div class="value">${summary.total_events}</div></div>
+                    <div class="stat-card yellow"><h3>Unacknowledged</h3><div class="value">${summary.unacknowledged}</div></div>
+                    <div class="stat-card red"><h3>Critical (Unacked)</h3><div class="value">${summary.critical_unacked}</div></div>
+                </div>
+                <div style="margin-top:12px">${sevHtml}</div>
+                <div style="margin-top:8px">${catHtml}</div>`;
+            } else {
+                sel.innerHTML = '<div class="empty-state">No event data</div>';
+            }
+
+            const events = await apiFetch('/events');
+            const eel = document.getElementById('events-list');
+            if (!events || events.length === 0) {
+                eel.innerHTML = '<div class="empty-state">No events recorded</div>';
+            } else {
+                const sevBadge = s => {
+                    if (s === 'CRITICAL') return 'badge-red';
+                    if (s === 'ERROR') return 'badge-red';
+                    if (s === 'WARN') return 'badge-yellow';
+                    return 'badge-gray';
+                };
+                eel.innerHTML = events.map(e => `<div class="event-item">
+                    <span class="event-time">${(e.timestamp||'').substring(0,19).replace('T',' ')}</span>
+                    <span class="badge ${sevBadge(e.severity)}">${e.severity}</span>
+                    <span class="badge badge-purple">${e.category}</span>
+                    <span><strong>${e.title}</strong> - ${e.message}</span>
+                </div>`).join('');
+            }
+        }
+
+        // --- SLA ---
+        async function loadSla() {
+            // SLA endpoint returns target for a specific workload, so show a general message
+            const el = document.getElementById('sla-content');
+            el.innerHTML = `<div class="empty-state">
+                <div class="icon">SLA Compliance</div>
+                <p>Use the CLI to manage SLA targets:</p>
+                <pre style="margin-top:10px;text-align:left;display:inline-block">orchestr8 sla add web-app --tier standard
+orchestr8 sla check web-app --uptime 99.95
+orchestr8 sla list</pre>
+            </div>`;
+        }
+
+        // --- Environments ---
+        async function loadEnvironments() {
+            const data = await apiFetch('/environments');
+            const el = document.getElementById('env-content');
+            if (!data || data.length === 0) {
+                el.innerHTML = '<div class="empty-state">No environments configured. Use <code>orchestr8 env create</code> to create one.</div>';
+            } else {
+                const tierBadge = t => {
+                    if (t === 'Production') return 'badge-red';
+                    if (t === 'Staging') return 'badge-yellow';
+                    return 'badge-green';
+                };
+                el.innerHTML = `<table><thead><tr><th>Name</th><th>Tier</th><th>Workloads</th><th>Variables</th><th>Updated</th></tr></thead><tbody>${
+                    data.map(e => `<tr>
+                        <td><strong>${e.name}</strong></td>
+                        <td><span class="badge ${tierBadge(e.tier)}">${e.tier}</span></td>
+                        <td>${Object.keys(e.workloads || {}).length}</td>
+                        <td>${Object.keys(e.variables || {}).length}</td>
+                        <td>${(e.updated_at||'').substring(0,19).replace('T',' ')}</td>
+                    </tr>`).join('')
+                }</tbody></table>`;
+            }
+        }
+
+        // --- Secrets ---
+        async function loadSecrets() {
+            const data = await apiFetch('/secrets');
+            const el = document.getElementById('secrets-content');
+            document.getElementById('secrets-count').textContent = (data && data.length) || 0;
+            if (!data || data.length === 0) {
+                el.innerHTML = '<div class="empty-state">No secrets stored. Use <code>orchestr8 secrets create</code> to add one.</div>';
+            } else {
+                el.innerHTML = `<table><thead><tr><th>Name</th><th>Namespace</th><th>Keys</th><th>Rotation</th><th>Updated</th></tr></thead><tbody>${
+                    data.map(s => `<tr>
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.namespace}</td>
+                        <td>${s.key_count}</td>
+                        <td>${s.needs_rotation ? '<span class="badge badge-red">Needs Rotation</span>' : '<span class="badge badge-green">OK</span>'}</td>
+                        <td>${(s.updated_at||'').substring(0,19).replace('T',' ')}</td>
+                    </tr>`).join('')
+                }</tbody></table>`;
+            }
+        }
+
+        // --- Affinity ---
+        async function loadAffinity() {
+            const classes = [
+                { key: 'web-service', el: 'affinity-web' },
+                { key: 'database', el: 'affinity-db' },
+                { key: 'ml-training', el: 'affinity-ml' },
+                { key: 'microservice', el: 'affinity-micro' },
+            ];
+            for (const c of classes) {
+                const data = await apiFetch('/affinity/' + c.key);
+                const el = document.getElementById(c.el);
+                if (!data || data.length === 0) {
+                    el.innerHTML = '<div class="empty-state">No data</div>';
+                } else {
+                    el.innerHTML = data.map((s, i) => {
+                        const star = i === 0 ? ' (recommended)' : '';
+                        const confPct = Math.round(s.confidence * 100);
+                        const scorePct = Math.round(s.composite_score * 100);
+                        return `<div style="margin-bottom:10px;padding:8px;background:#334155;border-radius:6px">
+                            <strong>${s.runtime}</strong>${star}
+                            <span style="float:right">Score: ${scorePct}% | Confidence: ${confPct}%</span>
+                            <div class="util-bar" style="margin-top:6px"><div class="util-fill ${scorePct > 70 ? 'util-low' : scorePct > 40 ? 'util-mid' : 'util-high'}" style="width:${Math.max(scorePct,2)}%">${scorePct}%</div></div>
+                            ${s.total_deployments > 0 ? `<div style="font-size:0.75em;opacity:0.7;margin-top:4px">Success: ${Math.round(s.success_rate*100)}% | Uptime: ${s.avg_uptime.toFixed(1)}% | Deployments: ${s.total_deployments}</div>` : '<div style="font-size:0.75em;opacity:0.7;margin-top:4px">Based on heuristic estimation</div>'}
+                        </div>`;
+                    }).join('');
+                }
+            }
+        }
+
+        // --- Templates ---
+        async function loadTemplates() {
+            const data = await apiFetch('/templates');
+            const el = document.getElementById('templates-content');
+            if (!data || data.length === 0) {
+                el.innerHTML = '<div class="empty-state">No templates available</div>';
+            } else {
+                el.innerHTML = `<table><thead><tr><th>Name</th><th>Description</th><th>CPU</th><th>Memory</th><th>Actions</th></tr></thead><tbody>${
+                    data.map(t => `<tr>
+                        <td><strong>${t.name}</strong></td>
+                        <td>${t.description || ''}</td>
+                        <td>${t.default_cpu || '-'}</td>
+                        <td>${t.default_memory || '-'}</td>
+                        <td><button onclick="generateTemplate('${t.name}')">Generate</button></td>
+                    </tr>`).join('')
+                }</tbody></table>`;
+            }
+        }
+
+        async function generateTemplate(name) {
+            try {
+                const r = await fetch(API + '/templates/' + name, { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+                const j = await r.json();
+                if (j.success) {
+                    document.getElementById('modal-title').textContent = 'Generated: ' + name;
+                    document.getElementById('modal-content').textContent = JSON.stringify(j.data, null, 2);
+                    document.getElementById('logs-modal').classList.add('active');
+                }
+            } catch(e) { alert('Error: ' + e.message); }
+        }
+
+        // --- Audit ---
+        async function loadAudit() {
+            const data = await apiFetch('/audit');
+            const el = document.getElementById('audit-content');
+            if (!data) {
+                el.innerHTML = '<div class="empty-state">No audit data available</div>';
+                return;
+            }
+            let html = '';
+            if (data.summary) {
+                const s = data.summary;
+                html += `<div class="stats" style="margin-bottom:16px">
+                    <div class="stat-card"><h3>Total Events</h3><div class="value">${s.total_events}</div></div>
+                    <div class="stat-card green"><h3>Successes</h3><div class="value">${s.successes}</div></div>
+                    <div class="stat-card red"><h3>Failures</h3><div class="value">${s.failures}</div></div>
+                    <div class="stat-card"><h3>Unique Workloads</h3><div class="value">${s.unique_workloads}</div></div>
+                </div>`;
+            }
+            if (data.recent_events && data.recent_events.length > 0) {
+                html += data.recent_events.map(e => `<div class="event-item">
+                    <span class="event-time">${(e.timestamp||'').substring(0,19).replace('T',' ')}</span>
+                    <span class="badge ${e.result === 'success' ? 'badge-green' : 'badge-red'}">${e.result}</span>
+                    <span><strong>${e.action}</strong> ${e.workload || ''} - ${e.message}</span>
+                </div>`).join('');
+            } else {
+                html += '<div class="empty-state">No recent audit events</div>';
+            }
+            el.innerHTML = html;
+        }
+
+        // --- Workload Actions ---
+        async function viewLogs(name) {
+            const data = await apiFetch('/workloads/' + name + '/logs');
+            document.getElementById('modal-title').textContent = 'Logs: ' + name;
+            document.getElementById('modal-content').textContent = data || 'No logs available';
+            document.getElementById('logs-modal').classList.add('active');
+        }
+
+        async function startWorkload(name) {
+            if (!confirm('Start workload "' + name + '"?')) return;
+            try {
+                const r = await fetch(API + '/workloads/' + name + '/start', { method: 'POST' });
+                const j = await r.json();
+                alert(j.success ? 'Started ' + name : 'Error: ' + j.error);
+                loadWorkloads();
+            } catch(e) { alert('Error: ' + e.message); }
         }
 
         async function stopWorkload(name) {
-            if (!confirm(`Stop workload "${name}"?`)) return;
-
+            if (!confirm('Stop workload "' + name + '"?')) return;
             try {
-                const response = await fetch(`${API_BASE}/workloads/${name}/stop`, {
-                    method: 'POST'
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert(`Workload "${name}" stopped`);
-                    refreshData();
-                } else {
-                    alert('Failed to stop workload: ' + result.error);
-                }
-            } catch (error) {
-                alert('Error stopping workload: ' + error.message);
-            }
+                const r = await fetch(API + '/workloads/' + name + '/stop', { method: 'POST' });
+                const j = await r.json();
+                alert(j.success ? 'Stopped ' + name : 'Error: ' + j.error);
+                loadWorkloads();
+            } catch(e) { alert('Error: ' + e.message); }
         }
 
         async function deleteWorkload(name) {
-            if (!confirm(`Delete workload "${name}"? This action cannot be undone.`)) return;
-
+            if (!confirm('Delete workload "' + name + '"? This cannot be undone.')) return;
             try {
-                const response = await fetch(`${API_BASE}/workloads/${name}`, {
-                    method: 'DELETE'
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert(`Workload "${name}" deleted`);
-                    refreshData();
-                } else {
-                    alert('Failed to delete workload: ' + result.error);
-                }
-            } catch (error) {
-                alert('Error deleting workload: ' + error.message);
-            }
+                const r = await fetch(API + '/workloads/' + name, { method: 'DELETE' });
+                const j = await r.json();
+                alert(j.success ? 'Deleted ' + name : 'Error: ' + j.error);
+                loadWorkloads();
+            } catch(e) { alert('Error: ' + e.message); }
         }
 
-        function closeModal() {
-            document.getElementById('logs-modal').classList.remove('active');
-        }
+        function closeModal() { document.getElementById('logs-modal').classList.remove('active'); }
 
-        function showError(message) {
-            const container = document.getElementById('workload-list');
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">⚠️</div>
-                    <h3>Error</h3>
-                    <p>${message}</p>
-                </div>
-            `;
-        }
-
-        function refreshData() {
-            fetchWorkloads();
-            fetchBackups();
+        async function refreshAll() {
+            loadWorkloads();
+            try { const b = await apiFetch('/backups'); document.getElementById('backups-count').textContent = (b && b.length) || 0; } catch {}
+            try { const s = await apiFetch('/orchestrator/summary'); if(s) { document.getElementById('healthy-count').textContent = s.healthy||0; document.getElementById('circuits-count').textContent = s.circuits_open||0; }} catch {}
+            try { const e = await apiFetch('/events/summary'); if(e) document.getElementById('events-count').textContent = e.total_events||0; } catch {}
+            try { const s = await apiFetch('/secrets'); document.getElementById('secrets-count').textContent = (s && s.length)||0; } catch {}
         }
 
         // Initial load
-        refreshData();
-
-        // Auto-refresh every 5 seconds
-        setInterval(refreshData, 5000);
+        refreshAll();
+        setInterval(refreshAll, 10000);
     </script>
 </body>
 </html>
