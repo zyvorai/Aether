@@ -150,6 +150,49 @@ enum Commands {
         #[arg(short, long, default_value = "8080")]
         port: u16,
     },
+
+    /// AI-powered runtime recommendation with scoring
+    Recommend {
+        /// Override runtime to evaluate (optional)
+        #[arg(short, long)]
+        runtime: Option<String>,
+    },
+
+    /// Profile workload and show optimization recommendations
+    Profile {
+        /// Workload name (for deployed workloads)
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+
+    /// Analyze logs for anomalies and patterns
+    AnalyzeLogs {
+        /// Workload name
+        name: String,
+    },
+
+    /// Get AI migration advice
+    MigrationAdvice {
+        /// Workload name
+        name: String,
+
+        /// Target runtime
+        target: String,
+    },
+
+    /// Show predictive scaling recommendation
+    ScalingAdvice,
+
+    /// Show or update configuration
+    Config {
+        /// Show current configuration
+        #[arg(long)]
+        show: bool,
+
+        /// Initialize default configuration file
+        #[arg(long)]
+        init: bool,
+    },
 }
 
 #[tokio::main]
@@ -194,6 +237,12 @@ async fn main() -> Result<()> {
         Commands::ListBackups => "list-backups",
         Commands::Cost { .. } => "cost",
         Commands::Serve { .. } => "serve",
+        Commands::Recommend { .. } => "recommend",
+        Commands::Profile { .. } => "profile",
+        Commands::AnalyzeLogs { .. } => "analyze-logs",
+        Commands::MigrationAdvice { .. } => "migration-advice",
+        Commands::ScalingAdvice => "scaling-advice",
+        Commands::Config { .. } => "config",
     };
 
     let result = match cli.command {
@@ -235,6 +284,24 @@ async fn main() -> Result<()> {
         }
         Commands::Serve { host, port } => {
             serve_command(host, port).await
+        }
+        Commands::Recommend { runtime } => {
+            recommend_command(&cli.spec, runtime).await
+        }
+        Commands::Profile { name } => {
+            profile_command(&cli.spec, name).await
+        }
+        Commands::AnalyzeLogs { name } => {
+            analyze_logs_command(&name).await
+        }
+        Commands::MigrationAdvice { name, target } => {
+            migration_advice_command(&name, &target).await
+        }
+        Commands::ScalingAdvice => {
+            scaling_advice_command().await
+        }
+        Commands::Config { show, init } => {
+            config_command(show, init).await
         }
     };
 
@@ -926,4 +993,214 @@ async fn serve_command(host: String, port: u16) -> Result<()> {
     println!("Press Ctrl+C to stop the server\n");
 
     start_server(config).await
+}
+
+async fn recommend_command(spec_path: &PathBuf, _runtime_override: Option<String>) -> Result<()> {
+    use orchestr8::ai::scoring::{format_scoring_report, ScoringEngine};
+    use orchestr8::config::Config;
+
+    println!("🤖 AI-Powered Runtime Recommendation\n");
+
+    let config = Config::load();
+    let workload = Workload::from_file(spec_path)?;
+    let engine = ScoringEngine::new(config.engine);
+    let result = engine.score(&workload);
+
+    print!("{}", format_scoring_report(&result));
+
+    Ok(())
+}
+
+async fn profile_command(spec_path: &PathBuf, name: Option<String>) -> Result<()> {
+    use orchestr8::ai::profiler::{format_profile_report, Profiler};
+    use orchestr8::config::Config;
+
+    println!("🔍 Workload Profiler\n");
+
+    let config = Config::load();
+    let profiler = Profiler::new(config.profiler.waste_threshold);
+
+    // If name is provided, look up runtime from state
+    let (workload, runtime) = if let Some(ref workload_name) = name {
+        let state = StateStore::load(&StateStore::default_path())?;
+        let ws = state
+            .get(workload_name)
+            .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", workload_name))?;
+        let workload = Workload::from_file(&ws.spec_path)?;
+        (workload, Some(ws.runtime))
+    } else {
+        let workload = Workload::from_file(spec_path)?;
+        (workload, None)
+    };
+
+    let profile = profiler.profile(&workload, runtime);
+    print!("{}", format_profile_report(&profile));
+
+    Ok(())
+}
+
+async fn analyze_logs_command(name: &str) -> Result<()> {
+    use orchestr8::ai::analyzer::{format_analysis_report, LogAnalyzer};
+    use orchestr8::config::Config;
+
+    println!("📊 Log Analysis for '{}'\n", name);
+
+    let config = Config::load();
+    let analyzer = LogAnalyzer::new(config.analyzer);
+
+    let state = StateStore::load(&StateStore::default_path())?;
+    let workload_state = state
+        .get(name)
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+
+    // Fetch logs
+    let logs = match workload_state.runtime {
+        RuntimeKind::Podman => {
+            let runtime = PodmanRuntime::new()?;
+            runtime.logs(&workload_state.instance, false).await?
+        }
+        RuntimeKind::Kubernetes => {
+            let runtime = KubernetesRuntime::new().await?;
+            runtime.logs(&workload_state.instance, false).await?
+        }
+        RuntimeKind::KubeVirt => {
+            let runtime = KubeVirtRuntime::new().await?;
+            runtime.logs(&workload_state.instance, false).await?
+        }
+        RuntimeKind::Metal3 => {
+            let runtime = Metal3Runtime::new().await?;
+            runtime.logs(&workload_state.instance, false).await?
+        }
+    };
+
+    let analysis = analyzer.analyze(&logs);
+    print!("{}", format_analysis_report(&analysis));
+
+    Ok(())
+}
+
+async fn migration_advice_command(name: &str, target: &str) -> Result<()> {
+    use orchestr8::ai::migration::{format_migration_advice, MigrationAdvisor};
+    use orchestr8::config::Config;
+
+    println!("🔄 Migration Advisor for '{}'\n", name);
+
+    let config = Config::load();
+    let advisor = MigrationAdvisor::new(config.migration);
+
+    let state = StateStore::load(&StateStore::default_path())?;
+    let workload_state = state
+        .get(name)
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+
+    let target_runtime = match target {
+        "podman" | "container" => RuntimeKind::Podman,
+        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
+        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
+        "metal" | "metal3" => RuntimeKind::Metal3,
+        _ => anyhow::bail!("Unknown runtime: {}", target),
+    };
+
+    let workload = Workload::from_file(&workload_state.spec_path)?;
+    let advice = advisor.advise(&workload, workload_state.runtime, target_runtime);
+    print!("{}", format_migration_advice(&advice));
+
+    Ok(())
+}
+
+async fn scaling_advice_command() -> Result<()> {
+    use orchestr8::ai::scaling::{format_scaling_report, ScalingEngine, TimeSeries};
+    use orchestr8::config::Config;
+
+    println!("📈 Predictive Scaling Advisor\n");
+
+    let config = Config::load();
+    let engine = ScalingEngine::new(config.scaling);
+
+    // Generate sample metrics (in production this would come from Prometheus/metrics)
+    let mut cpu_series = TimeSeries::new("cpu_utilization", "ratio");
+    let mut mem_series = TimeSeries::new("memory_utilization", "ratio");
+
+    let base_time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs_f64()
+        - 3600.0;
+
+    // Simulate metrics from last hour
+    for i in 0..60 {
+        let t = base_time + (i as f64 * 60.0);
+        cpu_series.add(t, 0.45 + (i as f64 * 0.005) + ((i as f64 * 0.1).sin() * 0.05));
+        mem_series.add(t, 0.55 + (i as f64 * 0.002));
+    }
+
+    let rec = engine.recommend(&cpu_series, &mem_series, 3, 1, 10, 0.05);
+    print!("{}", format_scaling_report(&rec));
+
+    println!("\n💡 Note: Using simulated metrics. Connect to Prometheus for real data.");
+
+    Ok(())
+}
+
+async fn config_command(show: bool, init: bool) -> Result<()> {
+    use orchestr8::config::Config;
+
+    if init {
+        let config = Config::default();
+        let path = Config::default_path();
+        config.save_to(&path)?;
+        println!("✅ Configuration initialized: {}", path.display());
+        println!("\nEdit this file to customize Orchestr8 behavior.");
+        return Ok(());
+    }
+
+    if show {
+        let config = Config::load();
+        let yaml = serde_yaml::to_string(&config)?;
+        println!("📋 Current Configuration ({})\n", Config::default_path().display());
+        println!("{}", yaml);
+        return Ok(());
+    }
+
+    // Default: show summary
+    let config = Config::load();
+    let path = Config::default_path();
+    let exists = path.exists();
+
+    println!("⚙️  Orchestr8 Configuration\n");
+    println!("Config file: {}", path.display());
+    println!("Status: {}\n", if exists { "loaded" } else { "using defaults" });
+
+    println!("Engine:");
+    println!("  Scoring enabled: {}", config.engine.enable_scoring);
+    println!("  Metal3 CPU threshold: {:.0} cores", config.engine.metal3_cpu_threshold);
+    println!("  Metal3 memory threshold: {:.0}Gi", config.engine.metal3_memory_threshold_gi);
+    println!("  Weights: cost={:.0}% perf={:.0}% rel={:.0}% avail={:.0}%",
+        config.engine.scoring_weights.cost * 100.0,
+        config.engine.scoring_weights.performance * 100.0,
+        config.engine.scoring_weights.reliability * 100.0,
+        config.engine.scoring_weights.availability * 100.0,
+    );
+
+    println!("\nMigration:");
+    println!("  Adaptive timing: {}", config.migration.enable_adaptive_timing);
+    println!("  Canary error threshold: {:.1}%", config.migration.canary_error_threshold * 100.0);
+    println!("  Max retries: {}", config.migration.max_validation_retries);
+
+    println!("\nScaling:");
+    println!("  Predictive: {}", config.scaling.enable_predictive);
+    println!("  Scale-up threshold: {:.0}%", config.scaling.scale_up_threshold * 100.0);
+    println!("  Scale-down threshold: {:.0}%", config.scaling.scale_down_threshold * 100.0);
+    println!("  Cost-aware: {}", config.scaling.cost_aware);
+
+    println!("\nCost:");
+    println!("  Include GPU: {}", config.cost.include_gpu);
+    println!("  Include network: {}", config.cost.include_network);
+    println!("  Include load balancer: {}", config.cost.include_load_balancer);
+
+    if !exists {
+        println!("\n💡 Run 'orchestr8 config --init' to create a config file");
+    }
+
+    Ok(())
 }
