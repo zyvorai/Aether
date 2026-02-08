@@ -125,6 +125,14 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/recommend", post(ai_recommend))
         .route("/api/ai/profile/:name", get(ai_profile))
         .route("/api/ai/analyze/:name", get(ai_analyze_logs))
+        .route("/api/drift/:name", get(api_drift_check))
+        .route("/api/policy/check", post(api_policy_check))
+        .route("/api/dependencies", get(api_deps_show))
+        .route("/api/dependencies", post(api_deps_add))
+        .route("/api/audit", get(api_audit_list))
+        .route("/api/templates", get(api_template_list))
+        .route("/api/templates/:name", post(api_template_generate))
+        .route("/api/sla/:workload", get(api_sla_check))
         .with_state(app_state);
 
     // Start server
@@ -992,6 +1000,297 @@ async fn ai_analyze_logs(
             Json(ApiResponse::<serde_json::Value>::error(format!(
                 "Workload {} not found",
                 name
+            ))),
+        ),
+    }
+}
+
+/// GET /api/drift/:name - Check drift for a workload
+async fn api_drift_check(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    use crate::drift::DriftDetector;
+
+    let state = app_state.state.read().await;
+
+    match state.get(&name) {
+        Some(workload_state) => {
+            let spec = match Workload::from_file(&workload_state.spec_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<serde_json::Value>::error(format!(
+                            "Failed to load spec: {}",
+                            e
+                        ))),
+                    )
+                }
+            };
+
+            let detector = DriftDetector::new();
+            let report = detector.detect(&spec, workload_state);
+
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(report).unwrap_or_default(),
+                )),
+            )
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<serde_json::Value>::error(format!(
+                "Workload {} not found",
+                name
+            ))),
+        ),
+    }
+}
+
+/// POST /api/policy/check - Check workload against policies
+#[derive(Debug, Deserialize)]
+struct PolicyCheckRequest {
+    spec: Workload,
+    policy_set: Option<String>,
+}
+
+async fn api_policy_check(Json(request): Json<PolicyCheckRequest>) -> impl IntoResponse {
+    use crate::policy::PolicyEngine;
+
+    let engine = match request.policy_set.as_deref() {
+        Some("development") => PolicyEngine::development(),
+        _ => PolicyEngine::production(),
+    };
+
+    let result = engine.evaluate(&request.spec);
+
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(
+            serde_json::to_value(result).unwrap_or_default(),
+        )),
+    )
+}
+
+/// GET /api/dependencies - Show dependency graph
+async fn api_deps_show() -> impl IntoResponse {
+    use crate::dependencies::DependencyGraph;
+
+    let graph_path = DependencyGraph::default_path();
+    match DependencyGraph::load(&graph_path) {
+        Ok(graph) => {
+            let stats = graph.stats();
+            let order = graph.startup_order().ok();
+            let response = serde_json::json!({
+                "stats": stats,
+                "startup_order": order,
+                "issues": graph.validate(),
+            });
+            (StatusCode::OK, Json(ApiResponse::success(response)))
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// POST /api/dependencies - Add a dependency
+#[derive(Debug, Deserialize)]
+struct AddDependencyRequest {
+    workload: String,
+    dependency: String,
+}
+
+async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> impl IntoResponse {
+    use crate::dependencies::DependencyGraph;
+
+    let graph_path = DependencyGraph::default_path();
+    match DependencyGraph::load(&graph_path) {
+        Ok(mut graph) => {
+            graph.add_dependency(&request.workload, &request.dependency);
+            if let Err(e) = graph.save(&graph_path) {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiResponse::<String>::error(e.to_string())),
+                );
+            }
+            (
+                StatusCode::CREATED,
+                Json(ApiResponse::success(format!(
+                    "Dependency added: {} -> {}",
+                    request.workload, request.dependency
+                ))),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<String>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/audit - List audit events
+async fn api_audit_list() -> impl IntoResponse {
+    use crate::audit::AuditLog;
+
+    let audit_path = AuditLog::default_path();
+    match AuditLog::load(&audit_path) {
+        Ok(log) => {
+            let summary = log.summary();
+            let recent = log.last_n(20);
+            let response = serde_json::json!({
+                "summary": summary,
+                "recent_events": recent,
+            });
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(response)),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        ),
+    }
+}
+
+/// GET /api/templates - List available templates
+async fn api_template_list() -> impl IntoResponse {
+    use crate::templates;
+
+    let templates = templates::list_templates();
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(
+            serde_json::to_value(templates).unwrap_or_default(),
+        )),
+    )
+}
+
+/// POST /api/templates/:name - Generate a workload from template
+#[derive(Debug, Deserialize)]
+struct TemplateRequest {
+    workload_name: Option<String>,
+    owner: Option<String>,
+    project: Option<String>,
+    registry: Option<String>,
+    cpu: Option<String>,
+    memory: Option<String>,
+    port: Option<u16>,
+    replicas: Option<u32>,
+}
+
+async fn api_template_generate(
+    Path(name): Path<String>,
+    Json(request): Json<TemplateRequest>,
+) -> impl IntoResponse {
+    use crate::templates::{self, TemplateKind, TemplateParams};
+
+    let kind = match name.as_str() {
+        "web-app" => TemplateKind::WebApp,
+        "rest-api" => TemplateKind::RestApi,
+        "database" => TemplateKind::Database,
+        "cache" => TemplateKind::Cache,
+        "worker" => TemplateKind::Worker,
+        "cron-job" => TemplateKind::CronJob,
+        "ml-training" => TemplateKind::MlTraining,
+        "microservice" => TemplateKind::Microservice,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<serde_json::Value>::error(format!(
+                    "Unknown template: {}",
+                    name
+                ))),
+            )
+        }
+    };
+
+    let params = TemplateParams {
+        name: request
+            .workload_name
+            .unwrap_or_else(|| format!("my-{}", name)),
+        owner: request.owner.unwrap_or_else(|| "team".to_string()),
+        project: request.project.unwrap_or_else(|| "default".to_string()),
+        registry: request
+            .registry
+            .unwrap_or_else(|| "ghcr.io/org".to_string()),
+        cpu: request.cpu,
+        memory: request.memory,
+        storage: None,
+        port: request.port,
+        replicas: request.replicas,
+        host: None,
+    };
+
+    let spec = templates::generate(&kind, &params);
+
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(
+            serde_json::to_value(spec).unwrap_or_default(),
+        )),
+    )
+}
+
+/// GET /api/sla/:workload - Check SLA compliance
+async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResponse {
+    use crate::sla::{SlaEngine, SlaTarget};
+
+    let sla_path = {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        std::path::PathBuf::from(home).join(".orchestr8/sla.json")
+    };
+
+    if !sla_path.exists() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<serde_json::Value>::error(
+                "No SLA targets configured".to_string(),
+            )),
+        );
+    }
+
+    let content = match std::fs::read_to_string(&sla_path) {
+        Ok(c) => c,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+            )
+        }
+    };
+
+    let targets: Vec<SlaTarget> = match serde_json::from_str(&content) {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+            )
+        }
+    };
+
+    let mut engine = SlaEngine::new();
+    for target in targets {
+        engine.add_target(target);
+    }
+
+    match engine.get_target(&workload) {
+        Some(target) => (
+            StatusCode::OK,
+            Json(ApiResponse::success(
+                serde_json::to_value(target).unwrap_or_default(),
+            )),
+        ),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<serde_json::Value>::error(format!(
+                "No SLA target for workload: {}",
+                workload
             ))),
         ),
     }
