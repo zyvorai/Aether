@@ -8,16 +8,11 @@ use crate::{
 };
 use std::time::{Duration, Instant};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum Screen {
+    #[default]
     Dashboard,
     Logs(String), // workload name
-}
-
-impl Default for Screen {
-    fn default() -> Self {
-        Screen::Dashboard
-    }
 }
 
 #[derive(Debug, Clone)]

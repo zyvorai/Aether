@@ -245,7 +245,7 @@ impl CostComparison {
         let mut output = String::new();
 
         output.push_str(&format!("📊 Cost Estimate for '{}'\n\n", self.workload_name));
-        output.push_str(&format!("Resources:\n"));
+        output.push_str("Resources:\n");
         output.push_str(&format!("  CPU: {}\n", self.cpu));
         output.push_str(&format!("  Memory: {}\n", self.memory));
         output.push_str(&format!("  Storage: {}\n\n", self.storage));

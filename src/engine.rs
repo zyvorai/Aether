@@ -27,31 +27,23 @@ impl Engine {
     /// Automatic runtime selection based on requirements
     fn auto_decide(&self, spec: &Workload) -> anyhow::Result<RuntimeKind> {
         // Rule 1: GPU required -> KubeVirt
-        if spec.requirements.gpu.is_some() {
-            if self.is_allowed(spec, RuntimeType::Kubevirt) {
-                return Ok(RuntimeKind::KubeVirt);
-            }
+        if spec.requirements.gpu.is_some() && self.is_allowed(spec, RuntimeType::Kubevirt) {
+            return Ok(RuntimeKind::KubeVirt);
         }
 
         // Rule 2: Large resource requirements -> Metal3
-        if self.needs_bare_metal(spec) {
-            if self.is_allowed(spec, RuntimeType::Metal) {
-                return Ok(RuntimeKind::Metal3);
-            }
+        if self.needs_bare_metal(spec) && self.is_allowed(spec, RuntimeType::Metal) {
+            return Ok(RuntimeKind::Metal3);
         }
 
         // Rule 3: Network service enabled -> Kubernetes
-        if spec.network.service {
-            if self.is_allowed(spec, RuntimeType::Kube) {
-                return Ok(RuntimeKind::Kubernetes);
-            }
+        if spec.network.service && self.is_allowed(spec, RuntimeType::Kube) {
+            return Ok(RuntimeKind::Kubernetes);
         }
 
         // Rule 4: Persistence enabled -> Kubernetes
-        if spec.persistence.enabled {
-            if self.is_allowed(spec, RuntimeType::Kube) {
-                return Ok(RuntimeKind::Kubernetes);
-            }
+        if spec.persistence.enabled && self.is_allowed(spec, RuntimeType::Kube) {
+            return Ok(RuntimeKind::Kubernetes);
         }
 
         // Default: Container (Podman) for local development
