@@ -150,6 +150,20 @@ impl App {
 
 impl Default for App {
     fn default() -> Self {
-        Self::new().expect("Failed to create App")
+        match Self::new() {
+            Ok(app) => app,
+            Err(_) => Self {
+                state: AppState {
+                    state_store: StateStore::default(),
+                },
+                workloads: Vec::new(),
+                selected_index: 0,
+                screen: Screen::Dashboard,
+                logs_buffer: Vec::new(),
+                should_quit: false,
+                last_refresh: Instant::now(),
+                status_message: None,
+            },
+        }
     }
 }
