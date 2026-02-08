@@ -1,5 +1,6 @@
 //! Runtime adapters module
 
+pub mod common;
 pub mod podman;
 pub mod kube;
 pub mod kubevirt;

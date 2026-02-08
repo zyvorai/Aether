@@ -1,15 +1,15 @@
 //! Metal3 bare metal runtime adapter
 
+use super::common;
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::Workload;
 use async_trait::async_trait;
 use kube::{
-    api::{Api, DeleteParams, ListParams, Patch, PatchParams, PostParams},
-    core::{DynamicObject, GroupVersionKind},
-    discovery, Client, ResourceExt,
+    api::{Api, DeleteParams, Patch, PatchParams, PostParams},
+    core::DynamicObject,
+    Client, ResourceExt,
 };
 use serde_json::json;
-use std::collections::BTreeMap;
 
 /// Metal3 runtime implementation
 pub struct Metal3Runtime {
@@ -75,27 +75,10 @@ fn parse_storage_to_gb(storage: &str) -> i64 {
 
 /// Build BareMetalHost JSON (standalone, testable without kube::Client)
 fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Value {
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
-
-    // Add user labels
-    for (k, v) in &spec.metadata.labels {
-        labels.insert(k.clone(), v.clone());
-    }
+    let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);
 
     // Parse CPU cores
-    let cpu_cores = if spec.requirements.cpu.ends_with('m') {
-        let milli = spec
-            .requirements
-            .cpu
-            .trim_end_matches('m')
-            .parse::<i32>()
-            .unwrap_or(1000);
-        (milli / 1000).max(1)
-    } else {
-        spec.requirements.cpu.parse::<i32>().unwrap_or(1)
-    };
+    let cpu_cores = common::parse_cpu_cores(&spec.requirements.cpu);
 
     // Parse memory (convert to MB)
     let memory_mb = parse_memory_to_mb(&spec.requirements.memory);
@@ -169,22 +152,14 @@ fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Val
 impl Metal3Runtime {
     /// Get API for BareMetalHost CRD
     async fn get_baremetalhost_api(&self) -> anyhow::Result<Api<DynamicObject>> {
-        let gvk = GroupVersionKind::gvk("metal3.io", "v1alpha1", "BareMetalHost");
-        let discovery = discovery::Discovery::new(self.client.clone()).run().await?;
-
-        let apigroup = discovery
-            .groups()
-            .find(|g| g.name() == gvk.group)
-            .ok_or_else(|| {
-                anyhow::anyhow!("Cannot find Metal3 API group (Metal3 not installed?)")
-            })?;
-
-        let (ar, _caps) = apigroup
-            .recommended_kind(&gvk.kind)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find BareMetalHost resource"))?;
-
-        let api = Api::namespaced_with(self.client.clone(), &self.namespace, &ar);
-        Ok(api)
+        common::discover_crd_api(
+            self.client.clone(),
+            &self.namespace,
+            "metal3.io",
+            "v1alpha1",
+            "BareMetalHost",
+        )
+        .await
     }
 
     /// Get host status
@@ -241,12 +216,7 @@ impl Metal3Runtime {
                     restart_count: 0,
                 })
             }
-            Err(_) => Ok(Status {
-                state: InstanceState::Unknown,
-                ready: false,
-                message: Some("Host not found".to_string()),
-                restart_count: 0,
-            }),
+            Err(_) => Ok(common::not_found_status("Host")),
         }
     }
 }
@@ -413,7 +383,7 @@ impl Runtime for Metal3Runtime {
         let api = self.get_baremetalhost_api().await?;
 
         // List only hosts managed by orchestr8
-        let lp = ListParams::default().labels("managed-by=orchestr8");
+        let lp = common::managed_list_params();
         let host_list = api.list(&lp).await?;
 
         let instances: Vec<Instance> = host_list
