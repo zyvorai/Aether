@@ -1,0 +1,640 @@
+//! Event and notification system
+//!
+//! Event bus for SLA violations, drift detection, policy failures,
+//! and operational alerts with configurable notification channels.
+
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+
+/// Event severity levels
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub enum EventSeverity {
+    Info,
+    Warning,
+    Error,
+    Critical,
+}
+
+impl std::fmt::Display for EventSeverity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EventSeverity::Info => write!(f, "INFO"),
+            EventSeverity::Warning => write!(f, "WARN"),
+            EventSeverity::Error => write!(f, "ERROR"),
+            EventSeverity::Critical => write!(f, "CRITICAL"),
+        }
+    }
+}
+
+/// Event categories
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum EventCategory {
+    Deployment,
+    Migration,
+    SlaViolation,
+    DriftDetected,
+    PolicyViolation,
+    ScalingEvent,
+    HealthCheck,
+    SecretRotation,
+    CostAnomaly,
+    SystemAlert,
+}
+
+impl std::fmt::Display for EventCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EventCategory::Deployment => write!(f, "DEPLOY"),
+            EventCategory::Migration => write!(f, "MIGRATE"),
+            EventCategory::SlaViolation => write!(f, "SLA"),
+            EventCategory::DriftDetected => write!(f, "DRIFT"),
+            EventCategory::PolicyViolation => write!(f, "POLICY"),
+            EventCategory::ScalingEvent => write!(f, "SCALE"),
+            EventCategory::HealthCheck => write!(f, "HEALTH"),
+            EventCategory::SecretRotation => write!(f, "SECRET"),
+            EventCategory::CostAnomaly => write!(f, "COST"),
+            EventCategory::SystemAlert => write!(f, "SYSTEM"),
+        }
+    }
+}
+
+/// An event in the system
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Event {
+    pub id: u64,
+    pub timestamp: String,
+    pub severity: EventSeverity,
+    pub category: EventCategory,
+    pub source: String,
+    pub workload: Option<String>,
+    pub title: String,
+    pub message: String,
+    pub metadata: HashMap<String, String>,
+    pub acknowledged: bool,
+}
+
+/// Notification channel configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationChannel {
+    pub name: String,
+    pub channel_type: ChannelType,
+    pub enabled: bool,
+    pub min_severity: EventSeverity,
+    pub categories: Vec<EventCategory>,
+}
+
+/// Types of notification channels
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum ChannelType {
+    /// Log to file
+    File { path: String },
+    /// HTTP webhook (Slack, Discord, PagerDuty, etc.)
+    Webhook { url: String, method: String },
+    /// Write to stdout
+    Console,
+}
+
+impl std::fmt::Display for ChannelType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ChannelType::File { path } => write!(f, "file:{}", path),
+            ChannelType::Webhook { url, .. } => write!(f, "webhook:{}", url),
+            ChannelType::Console => write!(f, "console"),
+        }
+    }
+}
+
+/// Alert rule for automatic event generation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlertRule {
+    pub name: String,
+    pub enabled: bool,
+    pub condition: AlertCondition,
+    pub severity: EventSeverity,
+    pub message_template: String,
+    pub cooldown_seconds: u64,
+    pub last_triggered: Option<String>,
+}
+
+/// Conditions that trigger alerts
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum AlertCondition {
+    /// SLA uptime drops below threshold
+    SlaUptimeBelow(f64),
+    /// Error rate exceeds threshold
+    ErrorRateAbove(f64),
+    /// Cost exceeds monthly budget
+    CostExceeds(f64),
+    /// Restart count exceeds threshold in period
+    ExcessiveRestarts(u32),
+    /// Drift detected on any workload
+    DriftDetected,
+    /// Policy violation on deployment
+    PolicyViolation,
+    /// Secret approaching rotation deadline
+    SecretExpiring(u32),
+}
+
+impl std::fmt::Display for AlertCondition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AlertCondition::SlaUptimeBelow(v) => write!(f, "SLA uptime < {:.2}%", v),
+            AlertCondition::ErrorRateAbove(v) => write!(f, "Error rate > {:.2}%", v),
+            AlertCondition::CostExceeds(v) => write!(f, "Cost > ${:.2}/mo", v),
+            AlertCondition::ExcessiveRestarts(v) => write!(f, "Restarts > {}/day", v),
+            AlertCondition::DriftDetected => write!(f, "Drift detected"),
+            AlertCondition::PolicyViolation => write!(f, "Policy violation"),
+            AlertCondition::SecretExpiring(v) => write!(f, "Secret expires in {} days", v),
+        }
+    }
+}
+
+/// Event bus managing events, channels, and rules
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventBus {
+    events: Vec<Event>,
+    channels: Vec<NotificationChannel>,
+    rules: Vec<AlertRule>,
+    next_id: u64,
+}
+
+impl Default for EventBus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EventBus {
+    pub fn new() -> Self {
+        Self {
+            events: Vec::new(),
+            channels: vec![NotificationChannel {
+                name: "console".to_string(),
+                channel_type: ChannelType::Console,
+                enabled: true,
+                min_severity: EventSeverity::Warning,
+                categories: vec![],
+            }],
+            rules: Self::default_rules(),
+            next_id: 1,
+        }
+    }
+
+    /// Emit an event
+    pub fn emit(&mut self, event: Event) -> u64 {
+        let id = self.next_id;
+        let mut event = event;
+        event.id = id;
+        if event.timestamp.is_empty() {
+            event.timestamp = chrono::Utc::now().to_rfc3339();
+        }
+
+        // Check notification channels
+        let notifications = self.check_channels(&event);
+
+        self.events.push(event);
+        self.next_id += 1;
+
+        // Process notifications (log format for now)
+        for notification in notifications {
+            self.deliver_notification(&notification);
+        }
+
+        id
+    }
+
+    /// Create and emit an event with builder pattern
+    pub fn emit_simple(
+        &mut self,
+        severity: EventSeverity,
+        category: EventCategory,
+        source: &str,
+        workload: Option<&str>,
+        title: &str,
+        message: &str,
+    ) -> u64 {
+        let event = Event {
+            id: 0,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            severity,
+            category,
+            source: source.to_string(),
+            workload: workload.map(|s| s.to_string()),
+            title: title.to_string(),
+            message: message.to_string(),
+            metadata: HashMap::new(),
+            acknowledged: false,
+        };
+        self.emit(event)
+    }
+
+    /// Get all events
+    pub fn events(&self) -> &[Event] {
+        &self.events
+    }
+
+    /// Get events by category
+    pub fn events_by_category(&self, category: &EventCategory) -> Vec<&Event> {
+        self.events
+            .iter()
+            .filter(|e| e.category == *category)
+            .collect()
+    }
+
+    /// Get events by severity (and above)
+    pub fn events_by_severity(&self, min_severity: &EventSeverity) -> Vec<&Event> {
+        self.events
+            .iter()
+            .filter(|e| e.severity >= *min_severity)
+            .collect()
+    }
+
+    /// Get events for a specific workload
+    pub fn events_for_workload(&self, workload: &str) -> Vec<&Event> {
+        self.events
+            .iter()
+            .filter(|e| e.workload.as_deref() == Some(workload))
+            .collect()
+    }
+
+    /// Get unacknowledged events
+    pub fn unacknowledged(&self) -> Vec<&Event> {
+        self.events.iter().filter(|e| !e.acknowledged).collect()
+    }
+
+    /// Acknowledge an event
+    pub fn acknowledge(&mut self, id: u64) -> bool {
+        if let Some(event) = self.events.iter_mut().find(|e| e.id == id) {
+            event.acknowledged = true;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get last N events
+    pub fn last_n(&self, n: usize) -> Vec<&Event> {
+        self.events.iter().rev().take(n).collect()
+    }
+
+    /// Add a notification channel
+    pub fn add_channel(&mut self, channel: NotificationChannel) {
+        self.channels.push(channel);
+    }
+
+    /// List channels
+    pub fn channels(&self) -> &[NotificationChannel] {
+        &self.channels
+    }
+
+    /// Add an alert rule
+    pub fn add_rule(&mut self, rule: AlertRule) {
+        self.rules.push(rule);
+    }
+
+    /// List rules
+    pub fn rules(&self) -> &[AlertRule] {
+        &self.rules
+    }
+
+    /// Get event summary statistics
+    pub fn summary(&self) -> EventSummary {
+        let total = self.events.len();
+        let unacknowledged = self.events.iter().filter(|e| !e.acknowledged).count();
+
+        let mut by_severity: HashMap<String, usize> = HashMap::new();
+        let mut by_category: HashMap<String, usize> = HashMap::new();
+
+        for event in &self.events {
+            *by_severity
+                .entry(format!("{}", event.severity))
+                .or_insert(0) += 1;
+            *by_category
+                .entry(format!("{}", event.category))
+                .or_insert(0) += 1;
+        }
+
+        let critical_count = self
+            .events
+            .iter()
+            .filter(|e| e.severity == EventSeverity::Critical && !e.acknowledged)
+            .count();
+
+        EventSummary {
+            total_events: total,
+            unacknowledged,
+            critical_unacked: critical_count,
+            by_severity,
+            by_category,
+        }
+    }
+
+    /// Prune old events
+    pub fn prune(&mut self, max_events: usize) {
+        if self.events.len() > max_events {
+            let drain_count = self.events.len() - max_events;
+            self.events.drain(..drain_count);
+        }
+    }
+
+    /// Default path
+    pub fn default_path() -> PathBuf {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        PathBuf::from(home).join(".orchestr8/events.json")
+    }
+
+    /// Load from disk
+    pub fn load(path: &Path) -> anyhow::Result<Self> {
+        if !path.exists() {
+            return Ok(Self::new());
+        }
+        let content = std::fs::read_to_string(path)?;
+        let bus: Self = serde_json::from_str(&content)?;
+        Ok(bus)
+    }
+
+    /// Save to disk
+    pub fn save(&self, path: &Path) -> anyhow::Result<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let content = serde_json::to_string_pretty(self)?;
+        std::fs::write(path, content)?;
+        Ok(())
+    }
+
+    // --- Private ---
+
+    fn default_rules() -> Vec<AlertRule> {
+        vec![
+            AlertRule {
+                name: "sla-violation".to_string(),
+                enabled: true,
+                condition: AlertCondition::SlaUptimeBelow(99.9),
+                severity: EventSeverity::Critical,
+                message_template: "SLA violation: uptime below threshold".to_string(),
+                cooldown_seconds: 300,
+                last_triggered: None,
+            },
+            AlertRule {
+                name: "high-error-rate".to_string(),
+                enabled: true,
+                condition: AlertCondition::ErrorRateAbove(5.0),
+                severity: EventSeverity::Error,
+                message_template: "Error rate exceeds 5%".to_string(),
+                cooldown_seconds: 600,
+                last_triggered: None,
+            },
+            AlertRule {
+                name: "drift-alert".to_string(),
+                enabled: true,
+                condition: AlertCondition::DriftDetected,
+                severity: EventSeverity::Warning,
+                message_template: "Configuration drift detected".to_string(),
+                cooldown_seconds: 3600,
+                last_triggered: None,
+            },
+        ]
+    }
+
+    fn check_channels(&self, event: &Event) -> Vec<NotificationPayload> {
+        let mut notifications = Vec::new();
+
+        for channel in &self.channels {
+            if !channel.enabled {
+                continue;
+            }
+            if event.severity < channel.min_severity {
+                continue;
+            }
+            if !channel.categories.is_empty()
+                && !channel.categories.contains(&event.category)
+            {
+                continue;
+            }
+
+            notifications.push(NotificationPayload {
+                channel_name: channel.name.clone(),
+                channel_type: channel.channel_type.clone(),
+                event_id: event.id,
+                title: event.title.clone(),
+                message: format!(
+                    "[{}] [{}] {} - {}",
+                    event.severity, event.category, event.title, event.message
+                ),
+            });
+        }
+
+        notifications
+    }
+
+    fn deliver_notification(&self, notification: &NotificationPayload) {
+        match &notification.channel_type {
+            ChannelType::Console => {
+                eprintln!("[ALERT] {}", notification.message);
+            }
+            ChannelType::File { path } => {
+                if let Ok(mut file) = std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(path)
+                {
+                    use std::io::Write;
+                    let _ = writeln!(file, "{}", notification.message);
+                }
+            }
+            ChannelType::Webhook { .. } => {
+                // In production, send HTTP POST
+                // For now, log intent
+                eprintln!(
+                    "[WEBHOOK] Would send to {}: {}",
+                    notification.channel_name, notification.message
+                );
+            }
+        }
+    }
+}
+
+/// Notification payload
+#[derive(Debug, Clone)]
+struct NotificationPayload {
+    channel_name: String,
+    channel_type: ChannelType,
+    #[allow(dead_code)]
+    event_id: u64,
+    #[allow(dead_code)]
+    title: String,
+    message: String,
+}
+
+/// Event summary statistics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventSummary {
+    pub total_events: usize,
+    pub unacknowledged: usize,
+    pub critical_unacked: usize,
+    pub by_severity: HashMap<String, usize>,
+    pub by_category: HashMap<String, usize>,
+}
+
+/// Format event list
+pub fn format_event_list(events: &[&Event], limit: usize) -> String {
+    let mut output = String::new();
+    output.push_str("Events:\n\n");
+
+    if events.is_empty() {
+        output.push_str("  No events.\n");
+        return output;
+    }
+
+    for event in events.iter().take(limit) {
+        let ack = if event.acknowledged { " ✓" } else { "" };
+        output.push_str(&format!(
+            "  [{}] [{}] {}{}\n",
+            event.severity, event.category, event.title, ack
+        ));
+        output.push_str(&format!("    {}\n", event.message));
+        if let Some(workload) = &event.workload {
+            output.push_str(&format!("    Workload: {}\n", workload));
+        }
+        output.push_str(&format!(
+            "    Time: {}\n\n",
+            &event.timestamp[..19]
+        ));
+    }
+
+    output
+}
+
+/// Format event summary
+pub fn format_event_summary(summary: &EventSummary) -> String {
+    let mut output = String::new();
+    output.push_str("Event Summary:\n\n");
+    output.push_str(&format!("  Total: {}\n", summary.total_events));
+    output.push_str(&format!("  Unacknowledged: {}\n", summary.unacknowledged));
+    output.push_str(&format!("  Critical (unacked): {}\n\n", summary.critical_unacked));
+
+    if !summary.by_severity.is_empty() {
+        output.push_str("  By Severity:\n");
+        let mut items: Vec<_> = summary.by_severity.iter().collect();
+        items.sort_by(|a, b| b.1.cmp(a.1));
+        for (sev, count) in items {
+            output.push_str(&format!("    {}: {}\n", sev, count));
+        }
+    }
+
+    if !summary.by_category.is_empty() {
+        output.push_str("\n  By Category:\n");
+        let mut items: Vec<_> = summary.by_category.iter().collect();
+        items.sort_by(|a, b| b.1.cmp(a.1));
+        for (cat, count) in items {
+            output.push_str(&format!("    {}: {}\n", cat, count));
+        }
+    }
+
+    output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_emit_event() {
+        let mut bus = EventBus::new();
+        let id = bus.emit_simple(
+            EventSeverity::Warning,
+            EventCategory::DriftDetected,
+            "drift-detector",
+            Some("web-app"),
+            "Drift detected",
+            "Runtime mismatch on web-app",
+        );
+        assert_eq!(id, 1);
+        assert_eq!(bus.events().len(), 1);
+    }
+
+    #[test]
+    fn test_filter_by_category() {
+        let mut bus = EventBus::new();
+        bus.emit_simple(
+            EventSeverity::Info,
+            EventCategory::Deployment,
+            "engine",
+            Some("app"),
+            "Deployed",
+            "Success",
+        );
+        bus.emit_simple(
+            EventSeverity::Warning,
+            EventCategory::DriftDetected,
+            "drift",
+            Some("app"),
+            "Drift",
+            "Found drift",
+        );
+
+        assert_eq!(bus.events_by_category(&EventCategory::DriftDetected).len(), 1);
+        assert_eq!(bus.events_by_category(&EventCategory::Deployment).len(), 1);
+    }
+
+    #[test]
+    fn test_acknowledge() {
+        let mut bus = EventBus::new();
+        let id = bus.emit_simple(
+            EventSeverity::Critical,
+            EventCategory::SlaViolation,
+            "sla",
+            Some("api"),
+            "SLA Violated",
+            "Uptime below target",
+        );
+
+        assert_eq!(bus.unacknowledged().len(), 1);
+        assert!(bus.acknowledge(id));
+        assert_eq!(bus.unacknowledged().len(), 0);
+    }
+
+    #[test]
+    fn test_summary() {
+        let mut bus = EventBus::new();
+        bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, "Deploy", "ok");
+        bus.emit_simple(EventSeverity::Warning, EventCategory::DriftDetected, "test", None, "Drift", "found");
+        bus.emit_simple(EventSeverity::Critical, EventCategory::SlaViolation, "test", None, "SLA", "violated");
+
+        let summary = bus.summary();
+        assert_eq!(summary.total_events, 3);
+        assert_eq!(summary.critical_unacked, 1);
+    }
+
+    #[test]
+    fn test_prune() {
+        let mut bus = EventBus::new();
+        for i in 0..100 {
+            bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, &format!("Event {}", i), "msg");
+        }
+        assert_eq!(bus.events().len(), 100);
+        bus.prune(50);
+        assert_eq!(bus.events().len(), 50);
+    }
+
+    #[test]
+    fn test_format_event_list() {
+        let mut bus = EventBus::new();
+        bus.emit_simple(EventSeverity::Warning, EventCategory::DriftDetected, "test", Some("app"), "Drift", "found");
+        let events: Vec<&Event> = bus.events().iter().collect();
+        let output = format_event_list(&events, 10);
+        assert!(output.contains("Drift"));
+        assert!(output.contains("app"));
+    }
+
+    #[test]
+    fn test_format_summary() {
+        let mut bus = EventBus::new();
+        bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, "Deploy", "ok");
+        let summary = bus.summary();
+        let output = format_event_summary(&summary);
+        assert!(output.contains("Event Summary"));
+    }
+}
