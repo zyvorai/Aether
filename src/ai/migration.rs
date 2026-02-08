@@ -336,7 +336,8 @@ impl MigrationAdvisor {
             };
         }
 
-        let latest = observations.last().unwrap();
+        // Safety: observations is guaranteed non-empty by the early return above
+        let latest = &observations[observations.len() - 1];
         let error_rate = latest.error_rate;
         let should_rollback = error_rate > config.error_threshold;
         let should_continue = !should_rollback && latest.healthy;

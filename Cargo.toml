@@ -33,7 +33,7 @@ reqwest = { version = "0.12", features = ["json"] }
 
 # API Server
 axum = "0.7"
-tower = "0.4"
+tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["fs", "cors"] }
 
 # Error handling
@@ -63,6 +63,9 @@ dirs = "5.0"
 [dev-dependencies]
 tempfile = "3.15"
 tokio-test = "0.4"
+http = "1"
+hyper = "1"
+bytes = "1"
 
 [[bin]]
 name = "orchestr8"
