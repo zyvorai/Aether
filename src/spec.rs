@@ -101,17 +101,12 @@ pub struct NetworkSpec {
     pub ports: Vec<PortMapping>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum ServiceType {
+    #[default]
     ClusterIP,
     NodePort,
     LoadBalancer,
-}
-
-impl Default for ServiceType {
-    fn default() -> Self {
-        ServiceType::ClusterIP
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -140,17 +135,12 @@ pub struct PersistenceSpec {
     pub storage_class: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum AccessMode {
+    #[default]
     ReadWriteOnce,
     ReadOnlyMany,
     ReadWriteMany,
-}
-
-impl Default for AccessMode {
-    fn default() -> Self {
-        AccessMode::ReadWriteOnce
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

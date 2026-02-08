@@ -684,8 +684,10 @@ impl Runtime for KubernetesRuntime {
     async fn logs(&self, instance: &Instance, follow: bool) -> crate::Result<String> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
 
-        let mut log_params = LogParams::default();
-        log_params.follow = follow;
+        let log_params = LogParams {
+            follow,
+            ..Default::default()
+        };
 
         let logs = pods.logs(&instance.name, &log_params).await?;
         Ok(logs)
