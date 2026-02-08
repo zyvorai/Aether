@@ -512,7 +512,16 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
         .filter_map(|m| match m.metric_type {
             crate::spec::MetricType::CPU => {
                 // Parse target value (e.g., "80" for 80%)
-                let target_value: i32 = m.target_value.trim_end_matches('%').parse().ok()?;
+                let target_value: i32 = match m.target_value.trim_end_matches('%').parse() {
+                    Ok(v) => v,
+                    Err(_) => {
+                        tracing::warn!(
+                            value = %m.target_value,
+                            "invalid CPU HPA target value, skipping metric"
+                        );
+                        return None;
+                    }
+                };
 
                 Some(MetricSpec {
                     type_: "Resource".to_string(),
@@ -528,7 +537,16 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
                 })
             }
             crate::spec::MetricType::Memory => {
-                let target_value: i32 = m.target_value.trim_end_matches('%').parse().ok()?;
+                let target_value: i32 = match m.target_value.trim_end_matches('%').parse() {
+                    Ok(v) => v,
+                    Err(_) => {
+                        tracing::warn!(
+                            value = %m.target_value,
+                            "invalid memory HPA target value, skipping metric"
+                        );
+                        return None;
+                    }
+                };
 
                 Some(MetricSpec {
                     type_: "Resource".to_string(),
