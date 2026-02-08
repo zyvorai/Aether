@@ -124,7 +124,7 @@ impl AffinityEngine {
             .map(|rt| self.compute_affinity(class, rt))
             .collect();
 
-        scores.sort_by(|a, b| b.composite_score.partial_cmp(&a.composite_score).unwrap());
+        scores.sort_by(|a, b| b.composite_score.partial_cmp(&a.composite_score).unwrap_or(std::cmp::Ordering::Equal));
         scores
     }
 

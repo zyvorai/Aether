@@ -100,37 +100,27 @@ impl Metal3Runtime {
         });
 
         // Add hardware requirements as annotations for matching
-        bmh["metadata"]["annotations"]
-            .as_object_mut()
-            .unwrap()
-            .insert(
+        if let Some(annotations) = bmh["metadata"]["annotations"].as_object_mut() {
+            annotations.insert(
                 "orchestr8.io/cpu-cores".to_string(),
                 json!(cpu_cores.to_string()),
             );
-        bmh["metadata"]["annotations"]
-            .as_object_mut()
-            .unwrap()
-            .insert(
+            annotations.insert(
                 "orchestr8.io/memory-mb".to_string(),
                 json!(memory_mb.to_string()),
             );
 
-        // Add GPU requirements if specified
-        if let Some(ref gpu_req) = spec.requirements.gpu {
-            bmh["metadata"]["annotations"]
-                .as_object_mut()
-                .unwrap()
-                .insert(
+            // Add GPU requirements if specified
+            if let Some(ref gpu_req) = spec.requirements.gpu {
+                annotations.insert(
                     "orchestr8.io/gpu-vendor".to_string(),
                     json!(gpu_req.vendor.clone()),
                 );
-            bmh["metadata"]["annotations"]
-                .as_object_mut()
-                .unwrap()
-                .insert(
+                annotations.insert(
                     "orchestr8.io/gpu-count".to_string(),
                     json!(gpu_req.count.to_string()),
                 );
+            }
         }
 
         bmh
@@ -266,11 +256,6 @@ impl Metal3Runtime {
     }
 }
 
-impl Default for Metal3Runtime {
-    fn default() -> Self {
-        futures::executor::block_on(Self::new()).expect("Failed to initialize Metal3 runtime")
-    }
-}
 
 #[async_trait]
 impl Runtime for Metal3Runtime {

@@ -533,11 +533,6 @@ impl KubernetesRuntime {
     }
 }
 
-impl Default for KubernetesRuntime {
-    fn default() -> Self {
-        futures::executor::block_on(Self::new()).expect("Failed to initialize Kubernetes runtime")
-    }
-}
 
 #[async_trait]
 impl Runtime for KubernetesRuntime {
