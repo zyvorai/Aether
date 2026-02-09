@@ -1742,7 +1742,7 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
     Ok(())
 }
 
-/// Emit an event and save to the event bus (best-effort, errors are logged)
+/// Emit an event and save to the event bus (best-effort, errors are logged).
 pub(crate) fn emit_event(
     severity: orchestr8::events::EventSeverity,
     category: orchestr8::events::EventCategory,
@@ -1760,5 +1760,595 @@ pub(crate) fn emit_event(
         Err(e) => {
             tracing::warn!("Failed to emit event: {}", e);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use orchestr8::runtime::RuntimeKind;
+    use orchestr8::spec::*;
+    use std::collections::HashMap;
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+
+    fn make_valid_workload() -> Workload {
+        Workload {
+            api_version: "orchestr8/v1".to_string(),
+            kind: "Workload".to_string(),
+            metadata: Metadata {
+                name: "test-app".to_string(),
+                owner: "test-team".to_string(),
+                project: "demo".to_string(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "ghcr.io/test".to_string(),
+                build_args: HashMap::new(),
+            },
+            requirements: ResourceRequirements {
+                cpu: "2".to_string(),
+                memory: "4Gi".to_string(),
+                storage: "20Gi".to_string(),
+                gpu: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Auto,
+                allow: vec![RuntimeType::Container, RuntimeType::Kube],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+        }
+    }
+
+    fn write_valid_spec(dir: &std::path::Path) -> PathBuf {
+        let spec = make_valid_workload();
+        let yaml = serde_yaml::to_string(&spec).unwrap();
+        let path = dir.join("workload.yaml");
+        std::fs::write(&path, yaml).unwrap();
+        path
+    }
+
+    // ---------------------------------------------------------------
+    // validate_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_validate_command_valid_spec() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = validate_command(&path).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_validate_command_invalid_yaml() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bad.yaml");
+        std::fs::write(&path, "not: valid: yaml: [[[").unwrap();
+        let result = validate_command(&path).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_validate_command_missing_file() {
+        let path = PathBuf::from("/tmp/nonexistent_orchestr8_test.yaml");
+        let result = validate_command(&path).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_validate_command_invalid_spec() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("invalid.yaml");
+        let mut spec = make_valid_workload();
+        spec.api_version = "orchestr8/v99".to_string();
+        let yaml = serde_yaml::to_string(&spec).unwrap();
+        std::fs::write(&path, yaml).unwrap();
+        let result = validate_command(&path).await;
+        assert!(result.is_err());
+    }
+
+    // ---------------------------------------------------------------
+    // cost_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_cost_command_all_providers() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = cost_command(&path, "all").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_cost_command_aws() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = cost_command(&path, "aws").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_cost_command_azure() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = cost_command(&path, "azure").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_cost_command_gcp() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = cost_command(&path, "gcp").await;
+        assert!(result.is_ok());
+    }
+
+    // ---------------------------------------------------------------
+    // recommend_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_recommend_command() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = recommend_command(&path, None).await;
+        assert!(result.is_ok());
+    }
+
+    // ---------------------------------------------------------------
+    // profile_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_profile_command_from_spec() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = profile_command(&path, None).await;
+        assert!(result.is_ok());
+    }
+
+    // ---------------------------------------------------------------
+    // policy_check_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_policy_check_command_development_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = policy_check_command(&path, "development").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_policy_check_command_invalid_spec() {
+        let path = PathBuf::from("/tmp/nonexistent_orchestr8_policy.yaml");
+        let result = policy_check_command(&path, "production").await;
+        assert!(result.is_err());
+    }
+
+    // ---------------------------------------------------------------
+    // scaling_advice_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_scaling_advice_command() {
+        let result = scaling_advice_command().await;
+        assert!(result.is_ok());
+    }
+
+    // ---------------------------------------------------------------
+    // template_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_template_command_list() {
+        let result = template_command(
+            "list", None, "team", "default", "ghcr.io/org", None, true,
+        ).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_template_command_web_app_stdout() {
+        let result = template_command(
+            "web-app", Some("my-web".to_string()), "team", "demo", "ghcr.io/org", None, false,
+        ).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_template_command_rest_api_to_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let out = dir.path().join("api.yaml");
+        let result = template_command(
+            "rest-api", Some("my-api".to_string()), "team", "demo", "ghcr.io/org",
+            Some(out.clone()), false,
+        ).await;
+        assert!(result.is_ok());
+        assert!(out.exists());
+
+        // Verify the generated file is a valid workload spec
+        let content = std::fs::read_to_string(&out).unwrap();
+        let parsed: Workload = serde_yaml::from_str(&content).unwrap();
+        assert_eq!(parsed.metadata.name, "my-api");
+    }
+
+    #[tokio::test]
+    async fn test_template_command_database() {
+        let result = template_command(
+            "database", None, "team", "demo", "ghcr.io/org", None, false,
+        ).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_template_command_unknown() {
+        let result = template_command(
+            "unknown-kind", None, "team", "demo", "ghcr.io/org", None, false,
+        ).await;
+        assert!(result.is_err());
+    }
+
+    // ---------------------------------------------------------------
+    // list_command (empty state)
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_list_command_empty_state() {
+        // Use a temp dir to avoid touching real state
+        let dir = tempfile::tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+        // Create an empty state file
+        let store = orchestr8::state::StateStore::new();
+        store.save(&state_path).unwrap();
+
+        // list_command uses StateStore::default_path() so we can't easily
+        // redirect it. Instead, test the underlying StateStore directly.
+        let loaded = orchestr8::state::StateStore::load(&state_path).unwrap();
+        assert!(loaded.list().is_empty());
+    }
+
+    // ---------------------------------------------------------------
+    // metrics_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_metrics_gather_not_empty() {
+        orchestr8::metrics::init();
+        let output = orchestr8::metrics::gather();
+        // Metrics output should contain at least the HELP/TYPE headers
+        assert!(!output.is_empty());
+    }
+
+    // ---------------------------------------------------------------
+    // config_command
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_config_show() {
+        // The show branch serializes Config to YAML and prints it
+        let config = orchestr8::config::Config::default();
+        let yaml = serde_yaml::to_string(&config).unwrap();
+        assert!(yaml.contains("engine"));
+        assert!(yaml.contains("migration"));
+        assert!(yaml.contains("scaling"));
+    }
+
+    #[tokio::test]
+    async fn test_config_init_and_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.yaml");
+        let config = orchestr8::config::Config::default();
+        config.save_to(&path).unwrap();
+        assert!(path.exists());
+
+        let loaded = orchestr8::config::Config::load_from(&path);
+        assert_eq!(loaded.engine.enable_scoring, config.engine.enable_scoring);
+    }
+
+    #[tokio::test]
+    async fn test_config_load_nonexistent_returns_default() {
+        let path = PathBuf::from("/tmp/nonexistent_orchestr8_config.yaml");
+        let config = orchestr8::config::Config::load_from(&path);
+        let default = orchestr8::config::Config::default();
+        assert_eq!(config.engine.enable_scoring, default.engine.enable_scoring);
+    }
+
+    // ---------------------------------------------------------------
+    // audit (underlying AuditLog)
+    // ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_audit_list_empty() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("audit.json");
+        let log = orchestr8::audit::AuditLog::new();
+        log.save(&path).unwrap();
+
+        let loaded = orchestr8::audit::AuditLog::load(&path).unwrap();
+        let summary = loaded.summary();
+        assert_eq!(summary.total_events, 0);
+    }
+
+    #[tokio::test]
+    async fn test_audit_record_and_summary() {
+        use orchestr8::audit::{ActionResult, AuditAction, AuditLog};
+
+        let mut log = AuditLog::new();
+        log.record(
+            AuditAction::Deploy,
+            "web-app",
+            Some("podman"),
+            ActionResult::Success,
+            "Deployed successfully",
+            None,
+        );
+        log.record(
+            AuditAction::Build,
+            "api-svc",
+            Some("kubernetes"),
+            ActionResult::Failure,
+            "Build failed",
+            None,
+        );
+
+        let summary = log.summary();
+        assert_eq!(summary.total_events, 2);
+        assert_eq!(summary.successes, 1);
+        assert_eq!(summary.failures, 1);
+    }
+
+    // ---------------------------------------------------------------
+    // emit_event (underlying EventBus)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_event_bus_emit_and_summary() {
+        use orchestr8::events::{EventBus, EventCategory, EventSeverity};
+
+        let mut bus = EventBus::new();
+        bus.emit_simple(
+            EventSeverity::Info,
+            EventCategory::Deployment,
+            "test",
+            Some("my-app"),
+            "Test event",
+            "Testing event emission",
+        );
+        bus.emit_simple(
+            EventSeverity::Warning,
+            EventCategory::DriftDetected,
+            "test",
+            Some("my-app"),
+            "Drift",
+            "Config drift detected",
+        );
+
+        let summary = bus.summary();
+        assert_eq!(summary.total_events, 2);
+    }
+
+    #[test]
+    fn test_event_bus_save_and_load() {
+        use orchestr8::events::{EventBus, EventCategory, EventSeverity};
+
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("events.json");
+
+        let mut bus = EventBus::new();
+        bus.emit_simple(
+            EventSeverity::Error,
+            EventCategory::Deployment,
+            "cli",
+            Some("svc"),
+            "Deploy failed",
+            "Timeout",
+        );
+        bus.save(&path).unwrap();
+
+        let loaded = EventBus::load(&path).unwrap();
+        assert_eq!(loaded.summary().total_events, 1);
+    }
+
+    // ---------------------------------------------------------------
+    // StateStore round-trip
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_state_store_upsert_get_remove() {
+        use orchestr8::runtime::Instance;
+
+        let mut store = orchestr8::state::StateStore::new();
+
+        let ws = orchestr8::state::WorkloadState {
+            name: "web".to_string(),
+            runtime: RuntimeKind::Podman,
+            instance: Instance {
+                id: "abc123".to_string(),
+                name: "web".to_string(),
+                runtime: RuntimeKind::Podman,
+                image: "ghcr.io/org/web:latest".to_string(),
+                created_at: "2025-01-01T00:00:00Z".to_string(),
+            },
+            spec_path: PathBuf::from("workload.yaml"),
+            created_at: "2025-01-01T00:00:00Z".to_string(),
+            updated_at: "2025-01-01T00:00:00Z".to_string(),
+        };
+
+        store.upsert("web".to_string(), ws);
+        assert_eq!(store.list().len(), 1);
+        assert!(store.get("web").is_some());
+
+        store.remove("web");
+        assert!(store.get("web").is_none());
+        assert!(store.list().is_empty());
+    }
+
+    #[test]
+    fn test_state_store_save_and_load() {
+        use orchestr8::runtime::Instance;
+
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("state.json");
+
+        let mut store = orchestr8::state::StateStore::new();
+        store.upsert(
+            "svc".to_string(),
+            orchestr8::state::WorkloadState {
+                name: "svc".to_string(),
+                runtime: RuntimeKind::Kubernetes,
+                instance: Instance {
+                    id: "pod-xyz".to_string(),
+                    name: "svc".to_string(),
+                    runtime: RuntimeKind::Kubernetes,
+                    image: "ghcr.io/org/svc:v1".to_string(),
+                    created_at: "2025-01-01T00:00:00Z".to_string(),
+                },
+                spec_path: PathBuf::from("svc.yaml"),
+                created_at: "2025-01-01T00:00:00Z".to_string(),
+                updated_at: "2025-01-01T00:00:00Z".to_string(),
+            },
+        );
+        store.save(&path).unwrap();
+
+        let loaded = orchestr8::state::StateStore::load(&path).unwrap();
+        assert_eq!(loaded.list().len(), 1);
+        assert_eq!(loaded.get("svc").unwrap().name, "svc");
+    }
+
+    // ---------------------------------------------------------------
+    // Template generation for each kind
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_template_generate_all_kinds() {
+        use orchestr8::templates::{generate, TemplateKind, TemplateParams};
+
+        let kinds = vec![
+            TemplateKind::WebApp,
+            TemplateKind::RestApi,
+            TemplateKind::Database,
+            TemplateKind::Cache,
+            TemplateKind::Worker,
+            TemplateKind::CronJob,
+            TemplateKind::MlTraining,
+            TemplateKind::Microservice,
+        ];
+
+        let params = TemplateParams::default();
+
+        for kind in kinds {
+            let spec = generate(&kind, &params);
+            assert_eq!(spec.api_version, "orchestr8/v1");
+            assert_eq!(spec.kind, "Workload");
+            assert!(spec.validate().is_ok(), "template {:?} produced invalid spec", kind);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Cost estimation (library-level)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_cost_estimate_all_providers() {
+        let spec = make_valid_workload();
+        let estimates = orchestr8::cost::estimate_all_providers(&spec).unwrap();
+        assert_eq!(estimates.len(), 5); // AWS, Azure, GCP, DigitalOcean, Linode
+        for est in &estimates {
+            assert!(est.total_monthly > 0.0);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Policy evaluation (library-level)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_policy_production_evaluates() {
+        let engine = orchestr8::policy::PolicyEngine::production();
+        let spec = make_valid_workload();
+        let result = engine.evaluate(&spec);
+        // Result should have at least some rules evaluated
+        assert!(result.policies_evaluated > 0);
+    }
+
+    #[test]
+    fn test_policy_development_evaluates() {
+        let engine = orchestr8::policy::PolicyEngine::development();
+        let spec = make_valid_workload();
+        let result = engine.evaluate(&spec);
+        assert!(result.policies_evaluated > 0);
+    }
+
+    // ---------------------------------------------------------------
+    // Scoring engine (library-level)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_scoring_engine_recommends_runtime() {
+        let engine = orchestr8::ai::scoring::ScoringEngine::with_defaults();
+        let spec = make_valid_workload();
+        let result = engine.score(&spec);
+        // Should recommend some runtime
+        assert!(!result.scores.is_empty());
+        assert!(result.confidence > 0.0);
+    }
+
+    // ---------------------------------------------------------------
+    // Profiler (library-level)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_profiler_profiles_workload() {
+        let profiler = orchestr8::ai::profiler::Profiler::with_defaults();
+        let spec = make_valid_workload();
+        let profile = profiler.profile(&spec, None);
+        assert_eq!(profile.name, "test-app");
+        assert!(profile.optimization_score >= 0.0 && profile.optimization_score <= 100.0);
+    }
+
+    #[test]
+    fn test_profiler_with_runtime() {
+        let profiler = orchestr8::ai::profiler::Profiler::with_defaults();
+        let spec = make_valid_workload();
+        let profile = profiler.profile(&spec, Some(RuntimeKind::Podman));
+        assert_eq!(profile.name, "test-app");
+    }
+
+    // ---------------------------------------------------------------
+    // Scaling engine (library-level)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_scaling_engine_recommend() {
+        use orchestr8::ai::scaling::{ScalingEngine, TimeSeries};
+
+        let engine = ScalingEngine::with_defaults();
+
+        let mut cpu = TimeSeries::new("cpu", "ratio");
+        let mut mem = TimeSeries::new("mem", "ratio");
+
+        let base = 1_700_000_000.0;
+        for i in 0..60 {
+            let t = base + (i as f64 * 60.0);
+            cpu.add(t, 0.3 + (i as f64 * 0.005));
+            mem.add(t, 0.4 + (i as f64 * 0.002));
+        }
+
+        let rec = engine.recommend(&cpu, &mem, 3, 1, 10, 0.05);
+        assert!(rec.current_replicas == 3);
+        assert!(rec.recommended_replicas >= 1);
+        assert!(rec.confidence >= 0.0);
     }
 }
