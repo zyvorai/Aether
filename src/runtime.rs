@@ -108,3 +108,15 @@ impl fmt::Display for RuntimeKind {
         }
     }
 }
+
+/// Create a runtime instance for the given RuntimeKind.
+pub async fn create_runtime(kind: &RuntimeKind) -> crate::Result<Box<dyn Runtime>> {
+    use crate::adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
+
+    match kind {
+        RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
+        RuntimeKind::Kubernetes => Ok(Box::new(KubernetesRuntime::new().await?)),
+        RuntimeKind::KubeVirt => Ok(Box::new(KubeVirtRuntime::new().await?)),
+        RuntimeKind::Metal3 => Ok(Box::new(Metal3Runtime::new().await?)),
+    }
+}

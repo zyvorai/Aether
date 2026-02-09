@@ -238,6 +238,90 @@ impl BackupManager {
     }
 }
 
+/// Snapshot manager for pre-deploy/pre-migrate snapshots of individual workloads.
+pub struct SnapshotManager {
+    snapshot_dir: PathBuf,
+}
+
+impl SnapshotManager {
+    /// Create a snapshot manager using the default directory.
+    pub fn new() -> Self {
+        let mut path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        path.push(".orchestr8");
+        path.push("snapshots");
+        Self { snapshot_dir: path }
+    }
+
+    /// Create a snapshot manager with a custom directory (useful for testing).
+    pub fn with_dir(path: PathBuf) -> Self {
+        Self { snapshot_dir: path }
+    }
+
+    /// Create a snapshot of a single workload state.
+    /// Returns the path to the saved snapshot file.
+    pub fn create_snapshot(&self, ws: &WorkloadState) -> Result<PathBuf> {
+        fs::create_dir_all(&self.snapshot_dir)
+            .context("Failed to create snapshot directory")?;
+
+        let now = chrono::Utc::now();
+        let timestamp = now.format("%Y%m%dT%H%M%S");
+        let nanos = now.timestamp_subsec_nanos();
+        let filename = format!("{}-{}-{:09}.json", ws.name, timestamp, nanos);
+        let path = self.snapshot_dir.join(filename);
+
+        let backup = Backup {
+            metadata: BackupMetadata {
+                version: "1.0".to_string(),
+                created_at: chrono::Utc::now().to_rfc3339(),
+                workload_count: 1,
+                description: Some(format!("Pre-deploy snapshot of {}", ws.name)),
+                orchestr8_version: env!("CARGO_PKG_VERSION").to_string(),
+            },
+            workloads: vec![ws.clone()],
+        };
+
+        let json = serde_json::to_string_pretty(&backup)
+            .context("Failed to serialize snapshot")?;
+        fs::write(&path, json)
+            .context(format!("Failed to write snapshot to {}", path.display()))?;
+
+        tracing::info!("Snapshot saved: {}", path.display());
+        Ok(path)
+    }
+
+    /// Find the latest snapshot for a workload by name.
+    /// Snapshots are matched by filename prefix `{name}-` and sorted lexicographically.
+    pub fn latest_snapshot(&self, name: &str) -> Result<Option<PathBuf>> {
+        let snapshots = self.list_snapshots(name)?;
+        Ok(snapshots.into_iter().last())
+    }
+
+    /// List all snapshots for a workload, sorted by filename (oldest first).
+    pub fn list_snapshots(&self, name: &str) -> Result<Vec<PathBuf>> {
+        if !self.snapshot_dir.exists() {
+            return Ok(vec![]);
+        }
+
+        let prefix = format!("{}-", name);
+        let mut matches = Vec::new();
+
+        for entry in fs::read_dir(&self.snapshot_dir)
+            .context("Failed to read snapshot directory")?
+        {
+            let entry = entry?;
+            let path = entry.path();
+            if let Some(fname) = path.file_name().and_then(|f| f.to_str()) {
+                if fname.starts_with(&prefix) && fname.ends_with(".json") {
+                    matches.push(path);
+                }
+            }
+        }
+
+        matches.sort();
+        Ok(matches)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -347,5 +431,45 @@ mod tests {
         let deleted = manager.cleanup_old_backups(2).unwrap();
         assert_eq!(deleted, 3);
         assert_eq!(manager.list_backups().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_snapshot_create_and_find_latest() {
+        let dir = tempdir().unwrap();
+        let mgr = SnapshotManager::with_dir(dir.path().to_path_buf());
+
+        let ws = create_test_workload_state();
+        let path = mgr.create_snapshot(&ws).unwrap();
+        assert!(path.exists());
+
+        let latest = mgr.latest_snapshot("test-workload").unwrap();
+        assert!(latest.is_some());
+        assert_eq!(latest.unwrap(), path);
+    }
+
+    #[test]
+    fn test_snapshot_latest_none_when_empty() {
+        let dir = tempdir().unwrap();
+        let mgr = SnapshotManager::with_dir(dir.path().to_path_buf());
+
+        let latest = mgr.latest_snapshot("nonexistent").unwrap();
+        assert!(latest.is_none());
+    }
+
+    #[test]
+    fn test_snapshot_list_multiple() {
+        let dir = tempdir().unwrap();
+        let mgr = SnapshotManager::with_dir(dir.path().to_path_buf());
+
+        let ws = create_test_workload_state();
+        mgr.create_snapshot(&ws).unwrap();
+        // Small sleep to ensure different nanosecond timestamp in filename
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        mgr.create_snapshot(&ws).unwrap();
+
+        let snapshots = mgr.list_snapshots("test-workload").unwrap();
+        assert_eq!(snapshots.len(), 2);
+        // Sorted, so first should be older
+        assert!(snapshots[0] < snapshots[1]);
     }
 }

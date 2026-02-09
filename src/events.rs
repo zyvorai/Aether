@@ -283,6 +283,14 @@ impl EventBus {
         self.channels.push(channel);
     }
 
+    /// Remove a notification channel by name.
+    /// Returns `true` if a channel was removed.
+    pub fn remove_channel(&mut self, name: &str) -> bool {
+        let before = self.channels.len();
+        self.channels.retain(|c| c.name != name);
+        self.channels.len() < before
+    }
+
     /// List channels
     pub fn channels(&self) -> &[NotificationChannel] {
         &self.channels
@@ -444,28 +452,70 @@ impl EventBus {
                     let _ = writeln!(file, "{}", notification.message);
                 }
             }
-            ChannelType::Webhook { .. } => {
-                // In production, send HTTP POST
-                // For now, log intent
-                eprintln!(
-                    "[WEBHOOK] Would send to {}: {}",
-                    notification.channel_name, notification.message
-                );
+            ChannelType::Webhook { url, method } => {
+                let payload = WebhookPayload {
+                    event_id: notification.event_id,
+                    title: notification.title.clone(),
+                    message: notification.message.clone(),
+                    channel: notification.channel_name.clone(),
+                    timestamp: chrono::Utc::now().to_rfc3339(),
+                };
+
+                let client = reqwest::blocking::Client::builder()
+                    .timeout(std::time::Duration::from_secs(10))
+                    .build()
+                    .unwrap_or_else(|_| reqwest::blocking::Client::new());
+
+                let result = if method.eq_ignore_ascii_case("GET") {
+                    client.get(url).query(&[
+                        ("event_id", notification.event_id.to_string()),
+                        ("title", notification.title.clone()),
+                        ("message", notification.message.clone()),
+                    ]).send()
+                } else {
+                    client.post(url).json(&payload).send()
+                };
+
+                match result {
+                    Ok(resp) => {
+                        tracing::info!(
+                            "Webhook delivered to {} (status: {})",
+                            notification.channel_name,
+                            resp.status()
+                        );
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Webhook delivery failed for {}: {}",
+                            notification.channel_name,
+                            e
+                        );
+                    }
+                }
             }
         }
     }
 }
 
 /// Notification payload
-#[derive(Debug, Clone)]
-struct NotificationPayload {
-    channel_name: String,
-    channel_type: ChannelType,
-    #[allow(dead_code)]
-    event_id: u64,
-    #[allow(dead_code)]
-    title: String,
-    message: String,
+#[derive(Debug, Clone, Serialize)]
+pub struct NotificationPayload {
+    pub channel_name: String,
+    #[serde(skip)]
+    pub channel_type: ChannelType,
+    pub event_id: u64,
+    pub title: String,
+    pub message: String,
+}
+
+/// Webhook-specific JSON payload sent to HTTP endpoints
+#[derive(Debug, Clone, Serialize)]
+pub struct WebhookPayload {
+    pub event_id: u64,
+    pub title: String,
+    pub message: String,
+    pub channel: String,
+    pub timestamp: String,
 }
 
 /// Event summary statistics
@@ -636,5 +686,67 @@ mod tests {
         let summary = bus.summary();
         let output = format_event_summary(&summary);
         assert!(output.contains("Event Summary"));
+    }
+
+    #[test]
+    fn test_webhook_payload_serialization() {
+        let payload = WebhookPayload {
+            event_id: 42,
+            title: "Test Alert".to_string(),
+            message: "Something happened".to_string(),
+            channel: "slack-ops".to_string(),
+            timestamp: "2026-01-01T00:00:00Z".to_string(),
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        assert!(json.contains("\"event_id\":42"));
+        assert!(json.contains("\"title\":\"Test Alert\""));
+        assert!(json.contains("\"channel\":\"slack-ops\""));
+    }
+
+    #[test]
+    fn test_remove_channel() {
+        let mut bus = EventBus::new();
+        bus.add_channel(NotificationChannel {
+            name: "slack".to_string(),
+            channel_type: ChannelType::Webhook {
+                url: "https://hooks.slack.com/test".to_string(),
+                method: "POST".to_string(),
+            },
+            enabled: true,
+            min_severity: EventSeverity::Warning,
+            categories: vec![],
+        });
+        let initial_count = bus.channels().len();
+        assert!(bus.remove_channel("slack"));
+        assert_eq!(bus.channels().len(), initial_count - 1);
+        // Removing again should return false
+        assert!(!bus.remove_channel("slack"));
+    }
+
+    #[test]
+    fn test_channel_matching_severity_filter() {
+        let mut bus = EventBus::new();
+        // Remove default console channel
+        bus.remove_channel("console");
+
+        // Add a channel that only accepts Error and above
+        bus.add_channel(NotificationChannel {
+            name: "errors-only".to_string(),
+            channel_type: ChannelType::Console,
+            enabled: true,
+            min_severity: EventSeverity::Error,
+            categories: vec![],
+        });
+
+        // Info event should not match
+        bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, "Info", "ok");
+        // Warning event should not match
+        bus.emit_simple(EventSeverity::Warning, EventCategory::DriftDetected, "test", None, "Warn", "drift");
+        // Error event should match
+        bus.emit_simple(EventSeverity::Error, EventCategory::Deployment, "test", None, "Error", "fail");
+        // Critical event should match
+        bus.emit_simple(EventSeverity::Critical, EventCategory::SlaViolation, "test", None, "Critical", "bad");
+
+        assert_eq!(bus.events().len(), 4);
     }
 }

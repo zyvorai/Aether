@@ -549,6 +549,41 @@ impl Orchestrator {
         statuses
     }
 
+    /// Process health checks from a map of workload name → live HealthStatus.
+    /// For each entry matching a registered workload, builds a HealthCheck
+    /// and delegates to process_health_check().
+    pub fn run_health_checks_from_statuses(
+        &mut self,
+        statuses: &HashMap<String, HealthStatus>,
+    ) -> Vec<OrchestratorAction> {
+        let mut all_actions = Vec::new();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // Collect registered names first to avoid borrow issues
+        let registered: Vec<String> = self.workloads.keys().cloned().collect();
+
+        for name in registered {
+            if let Some(&status) = statuses.get(&name) {
+                let check = HealthCheck {
+                    workload: name.clone(),
+                    status,
+                    checks: vec![CheckResult {
+                        name: "runtime-status".to_string(),
+                        passed: status == HealthStatus::Healthy,
+                        message: format!("Runtime reports: {}", status),
+                        latency_ms: None,
+                    }],
+                    timestamp: now.clone(),
+                    consecutive_failures: 0,
+                };
+                let actions = self.process_health_check(check);
+                all_actions.extend(actions);
+            }
+        }
+
+        all_actions
+    }
+
     /// Default path
     pub fn default_path() -> std::path::PathBuf {
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
@@ -885,5 +920,83 @@ mod tests {
         orch.register("app", RuntimeKind::Kubernetes, None);
         assert!(orch.unregister("app").is_some());
         assert!(orch.get_workload("app").is_none());
+    }
+
+    #[test]
+    fn test_run_health_checks_basic() {
+        let mut orch = Orchestrator::new();
+        orch.register("web", RuntimeKind::Kubernetes, None);
+        orch.register("worker", RuntimeKind::Podman, None);
+
+        let mut statuses = HashMap::new();
+        statuses.insert("web".to_string(), HealthStatus::Healthy);
+        statuses.insert("worker".to_string(), HealthStatus::Healthy);
+
+        let actions = orch.run_health_checks_from_statuses(&statuses);
+        // After enough healthy checks, should see status changes
+        // First round may or may not produce actions depending on success_threshold
+        let _ = actions;
+
+        // Send multiple rounds to exceed default success_threshold (2)
+        for _ in 0..3 {
+            orch.run_health_checks_from_statuses(&statuses);
+        }
+
+        let web = orch.get_workload("web").unwrap();
+        assert_eq!(web.current_health, HealthStatus::Healthy);
+        let worker = orch.get_workload("worker").unwrap();
+        assert_eq!(worker.current_health, HealthStatus::Healthy);
+    }
+
+    #[test]
+    fn test_health_checks_ignores_unregistered() {
+        let mut orch = Orchestrator::new();
+        orch.register("web", RuntimeKind::Kubernetes, None);
+
+        let mut statuses = HashMap::new();
+        statuses.insert("web".to_string(), HealthStatus::Healthy);
+        statuses.insert("unknown-svc".to_string(), HealthStatus::Unhealthy);
+
+        let actions = orch.run_health_checks_from_statuses(&statuses);
+        // Should not produce any action for unknown-svc
+        assert!(!actions.iter().any(|a| match a {
+            OrchestratorAction::Restart { workload, .. } => workload == "unknown-svc",
+            OrchestratorAction::Alert { workload, .. } => workload == "unknown-svc",
+            OrchestratorAction::StatusChanged { workload, .. } => workload == "unknown-svc",
+            OrchestratorAction::CircuitOpened { workload, .. } => workload == "unknown-svc",
+            OrchestratorAction::CircuitClosed { workload } => workload == "unknown-svc",
+        }));
+    }
+
+    #[test]
+    fn test_health_transitions() {
+        let mut orch = Orchestrator::new();
+        let config = HealthConfig {
+            failure_threshold: 2,
+            success_threshold: 2,
+            ..Default::default()
+        };
+        orch.register("app", RuntimeKind::Kubernetes, Some(config));
+
+        // Start healthy
+        let mut statuses = HashMap::new();
+        statuses.insert("app".to_string(), HealthStatus::Healthy);
+        for _ in 0..3 {
+            orch.run_health_checks_from_statuses(&statuses);
+        }
+        assert_eq!(
+            orch.get_workload("app").unwrap().current_health,
+            HealthStatus::Healthy
+        );
+
+        // Transition to unhealthy
+        statuses.insert("app".to_string(), HealthStatus::Unhealthy);
+        for _ in 0..3 {
+            orch.run_health_checks_from_statuses(&statuses);
+        }
+        assert_eq!(
+            orch.get_workload("app").unwrap().current_health,
+            HealthStatus::Unhealthy
+        );
     }
 }
