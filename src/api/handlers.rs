@@ -1,22 +1,16 @@
 //! API handler functions
 
 use super::types::*;
-use crate::adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
 use crate::config::Config;
 use crate::engine::Engine;
-use crate::runtime::RuntimeKind;
+use crate::runtime::{self, RuntimeKind};
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use crate::{backup, cost, Runtime};
 
 /// Create a runtime instance for the given RuntimeKind.
 async fn create_runtime(kind: &RuntimeKind) -> anyhow::Result<Box<dyn Runtime>> {
-    match kind {
-        RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
-        RuntimeKind::Kubernetes => Ok(Box::new(KubernetesRuntime::new().await?)),
-        RuntimeKind::KubeVirt => Ok(Box::new(KubeVirtRuntime::new().await?)),
-        RuntimeKind::Metal3 => Ok(Box::new(Metal3Runtime::new().await?)),
-    }
+    runtime::create_runtime(kind).await
 }
 use axum::{
     extract::{Path, State as AxumState},

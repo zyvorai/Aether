@@ -70,6 +70,9 @@ async fn main() -> Result<()> {
         Commands::Schedule { .. } => "schedule",
         Commands::Orchestrate { .. } => "orchestrate",
         Commands::Affinity { .. } => "affinity",
+        Commands::Webhook { .. } => "webhook",
+        Commands::Diff { .. } => "diff",
+        Commands::Rollback { .. } => "rollback",
     };
 
     let result = match cli.command {
@@ -165,6 +168,15 @@ async fn main() -> Result<()> {
         }
         Commands::Affinity { action } => {
             commands::affinity_command(action).await
+        }
+        Commands::Webhook { action } => {
+            commands::webhook_command(action).await
+        }
+        Commands::Diff { name } => {
+            commands::diff_command(&name).await
+        }
+        Commands::Rollback { name } => {
+            commands::rollback_command(&name).await
         }
     };
 

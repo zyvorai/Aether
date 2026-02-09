@@ -448,6 +448,55 @@ pub fn format_drift_report(report: &DriftReport) -> String {
     output
 }
 
+/// A single row in a live diff comparison
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiffRow {
+    pub field: String,
+    pub spec_value: String,
+    pub stored_value: String,
+    pub live_value: String,
+    pub matches: bool,
+}
+
+/// Full live diff report comparing spec vs stored vs live state
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LiveDiffReport {
+    pub workload_name: String,
+    pub rows: Vec<DiffRow>,
+    pub has_differences: bool,
+}
+
+/// Format a live diff report as a readable table
+pub fn format_live_diff(report: &LiveDiffReport) -> String {
+    let mut output = String::new();
+
+    output.push_str(&format!("Live Diff: {}\n\n", report.workload_name));
+
+    if !report.has_differences {
+        output.push_str("  All fields match. No differences found.\n");
+        return output;
+    }
+
+    output.push_str(&format!(
+        "  {:<16} {:<20} {:<20} {:<20} {}\n",
+        "Field", "Spec", "Stored", "Live", ""
+    ));
+    output.push_str(&format!("  {}\n", "-".repeat(80)));
+
+    for row in &report.rows {
+        let marker = if row.matches { " " } else { "!" };
+        output.push_str(&format!(
+            "{} {:<16} {:<20} {:<20} {:<20}\n",
+            marker, row.field, row.spec_value, row.stored_value, row.live_value,
+        ));
+    }
+
+    let diff_count = report.rows.iter().filter(|r| !r.matches).count();
+    output.push_str(&format!("\n  {} difference(s) found.\n", diff_count));
+
+    output
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -582,5 +631,60 @@ mod tests {
         let report = detector.detect(&spec, &state);
         let formatted = format_drift_report(&report);
         assert!(formatted.contains("Drift Report"));
+    }
+
+    #[test]
+    fn test_format_live_diff_no_differences() {
+        let report = LiveDiffReport {
+            workload_name: "my-app".to_string(),
+            rows: vec![
+                DiffRow {
+                    field: "runtime".to_string(),
+                    spec_value: "podman".to_string(),
+                    stored_value: "podman".to_string(),
+                    live_value: "podman".to_string(),
+                    matches: true,
+                },
+            ],
+            has_differences: false,
+        };
+        let output = format_live_diff(&report);
+        assert!(output.contains("my-app"));
+        assert!(output.contains("No differences found"));
+    }
+
+    #[test]
+    fn test_format_live_diff_with_differences() {
+        let report = LiveDiffReport {
+            workload_name: "my-app".to_string(),
+            rows: vec![
+                DiffRow {
+                    field: "runtime".to_string(),
+                    spec_value: "kubernetes".to_string(),
+                    stored_value: "podman".to_string(),
+                    live_value: "podman".to_string(),
+                    matches: false,
+                },
+                DiffRow {
+                    field: "image".to_string(),
+                    spec_value: "v2".to_string(),
+                    stored_value: "v1".to_string(),
+                    live_value: "v1".to_string(),
+                    matches: false,
+                },
+                DiffRow {
+                    field: "ready".to_string(),
+                    spec_value: "-".to_string(),
+                    stored_value: "-".to_string(),
+                    live_value: "true".to_string(),
+                    matches: true,
+                },
+            ],
+            has_differences: true,
+        };
+        let output = format_live_diff(&report);
+        assert!(output.contains("my-app"));
+        assert!(output.contains("!"));
+        assert!(output.contains("2 difference(s) found"));
     }
 }

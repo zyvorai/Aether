@@ -302,6 +302,24 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         action: AffinityAction,
     },
+
+    /// Manage webhook notification channels
+    Webhook {
+        #[command(subcommand)]
+        action: WebhookAction,
+    },
+
+    /// Compare spec vs stored vs live workload state
+    Diff {
+        /// Workload name
+        name: String,
+    },
+
+    /// Rollback a workload to its latest snapshot
+    Rollback {
+        /// Workload name
+        name: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -478,6 +496,14 @@ pub(crate) enum OrchestrateAction {
         /// Workload name
         name: String,
     },
+    /// Run a single round of health checks against live runtimes
+    HealthCheck,
+    /// Continuously monitor health at a regular interval
+    Watch {
+        /// Check interval in seconds
+        #[arg(long, default_value = "30")]
+        interval: u64,
+    },
 }
 
 #[derive(Subcommand)]
@@ -491,4 +517,33 @@ pub(crate) enum AffinityAction {
     Matrix,
     /// Show learning statistics
     Stats,
+}
+
+#[derive(Subcommand)]
+pub(crate) enum WebhookAction {
+    /// Add a webhook notification channel
+    Add {
+        /// Channel name
+        name: String,
+        /// Webhook URL
+        url: String,
+        /// HTTP method (POST or GET)
+        #[arg(long, default_value = "POST")]
+        method: String,
+        /// Minimum severity to trigger (info, warning, error, critical)
+        #[arg(long, default_value = "warning")]
+        severity: String,
+    },
+    /// Remove a webhook notification channel
+    Remove {
+        /// Channel name
+        name: String,
+    },
+    /// List all notification channels
+    List,
+    /// Send a test notification to a channel
+    Test {
+        /// Channel name
+        name: String,
+    },
 }
