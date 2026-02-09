@@ -146,8 +146,14 @@ pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<St
     // Capture instance name before move
     let instance_name = instance.name.clone();
 
-    // Save state
+    // Save state (auto-snapshot existing workload if present)
     let mut state = StateStore::load(&StateStore::default_path())?;
+    if let Some(existing) = state.get(&workload.metadata.name) {
+        let snap_mgr = orchestr8::backup::SnapshotManager::new();
+        if let Err(e) = snap_mgr.create_snapshot(existing) {
+            tracing::warn!("Failed to create pre-deploy snapshot: {}", e);
+        }
+    }
     state.upsert(
         workload.metadata.name.clone(),
         orchestr8::state::WorkloadState {
@@ -397,6 +403,14 @@ pub(crate) async fn migrate_command(
         "rolling" => MigrationStrategy::Rolling,
         _ => anyhow::bail!("Unknown strategy: {}", strategy_str),
     };
+
+    // Auto-snapshot before migration
+    {
+        let snap_mgr = orchestr8::backup::SnapshotManager::new();
+        if let Err(e) = snap_mgr.create_snapshot(workload_state) {
+            tracing::warn!("Failed to create pre-migrate snapshot: {}", e);
+        }
+    }
 
     println!("📊 Migration Plan:");
     println!("  Workload: {}", name);
@@ -1666,6 +1680,109 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                 println!("❌ Workload '{}' not found", name);
             }
         }
+        OrchestrateAction::HealthCheck => {
+            use orchestr8::orchestrator::HealthStatus;
+            use orchestr8::runtime::{create_runtime, InstanceState};
+
+            let state = StateStore::load(&StateStore::default_path())?;
+            let managed = orch.list_workloads();
+
+            let mut statuses = std::collections::HashMap::new();
+
+            for mw in &managed {
+                if let Some(ws) = state.get(&mw.name) {
+                    match create_runtime(&ws.runtime).await {
+                        Ok(runtime) => {
+                            match runtime.status(&ws.instance).await {
+                                Ok(status) => {
+                                    let hs = match status.state {
+                                        InstanceState::Running if status.ready => HealthStatus::Healthy,
+                                        InstanceState::Running => HealthStatus::Degraded,
+                                        InstanceState::Failed => HealthStatus::Unhealthy,
+                                        _ => HealthStatus::Unknown,
+                                    };
+                                    statuses.insert(mw.name.clone(), hs);
+                                }
+                                Err(e) => {
+                                    tracing::warn!("Failed to get status for {}: {}", mw.name, e);
+                                    statuses.insert(mw.name.clone(), HealthStatus::Unknown);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            tracing::warn!("Failed to create runtime for {}: {}", mw.name, e);
+                            statuses.insert(mw.name.clone(), HealthStatus::Unknown);
+                        }
+                    }
+                }
+            }
+
+            let actions = orch.run_health_checks_from_statuses(&statuses);
+            orch.save(&path)?;
+
+            if actions.is_empty() {
+                println!("Health check complete. No actions required.");
+            } else {
+                println!("Health check actions:");
+                for action in &actions {
+                    println!("  - {:?}", action);
+                }
+            }
+        }
+        OrchestrateAction::Watch { interval } => {
+            use orchestr8::orchestrator::HealthStatus;
+            use orchestr8::runtime::{create_runtime, InstanceState};
+
+            println!("Watching health every {} seconds (Ctrl+C to stop)\n", interval);
+
+            loop {
+                let state = StateStore::load(&StateStore::default_path())?;
+                let managed = orch.list_workloads();
+
+                let mut statuses = std::collections::HashMap::new();
+
+                for mw in &managed {
+                    if let Some(ws) = state.get(&mw.name) {
+                        match create_runtime(&ws.runtime).await {
+                            Ok(runtime) => {
+                                match runtime.status(&ws.instance).await {
+                                    Ok(status) => {
+                                        let hs = match status.state {
+                                            InstanceState::Running if status.ready => HealthStatus::Healthy,
+                                            InstanceState::Running => HealthStatus::Degraded,
+                                            InstanceState::Failed => HealthStatus::Unhealthy,
+                                            _ => HealthStatus::Unknown,
+                                        };
+                                        statuses.insert(mw.name.clone(), hs);
+                                    }
+                                    Err(_) => {
+                                        statuses.insert(mw.name.clone(), HealthStatus::Unknown);
+                                    }
+                                }
+                            }
+                            Err(_) => {
+                                statuses.insert(mw.name.clone(), HealthStatus::Unknown);
+                            }
+                        }
+                    }
+                }
+
+                let actions = orch.run_health_checks_from_statuses(&statuses);
+                orch.save(&path)?;
+
+                let now = chrono::Utc::now().format("%H:%M:%S");
+                if actions.is_empty() {
+                    println!("[{}] Health OK ({} workloads checked)", now, statuses.len());
+                } else {
+                    println!("[{}] {} action(s):", now, actions.len());
+                    for action in &actions {
+                        println!("  - {:?}", action);
+                    }
+                }
+
+                tokio::time::sleep(std::time::Duration::from_secs(interval)).await;
+            }
+        }
     }
 
     Ok(())
@@ -1736,6 +1853,266 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
                     println!("    {}: {}", class, count);
                 }
             }
+        }
+    }
+
+    Ok(())
+}
+
+pub(crate) async fn rollback_command(name: &str) -> Result<()> {
+    use orchestr8::backup::{Backup, SnapshotManager};
+    use orchestr8::runtime::create_runtime;
+
+    println!("Rolling back workload '{}'...\n", name);
+
+    // Find latest snapshot
+    let snap_mgr = SnapshotManager::new();
+    let snapshot_path = snap_mgr
+        .latest_snapshot(name)?
+        .ok_or_else(|| anyhow::anyhow!("No snapshot found for workload '{}'", name))?;
+
+    println!("  Found snapshot: {}", snapshot_path.display());
+
+    // Load snapshot
+    let backup = Backup::load(&snapshot_path)?;
+    let snapshot_ws = backup
+        .workloads
+        .first()
+        .ok_or_else(|| anyhow::anyhow!("Snapshot is empty"))?;
+
+    // Stop current instance (best-effort)
+    let state = StateStore::load(&StateStore::default_path())?;
+    if let Some(current) = state.get(name) {
+        match create_runtime(&current.runtime).await {
+            Ok(runtime) => {
+                if let Err(e) = runtime.stop(&current.instance).await {
+                    tracing::warn!("Failed to stop current instance: {}", e);
+                }
+            }
+            Err(e) => tracing::warn!("Failed to create runtime for stop: {}", e),
+        }
+    }
+
+    // Re-deploy from snapshot
+    let runtime = create_runtime(&snapshot_ws.runtime).await?;
+    let spec = Workload::from_file(&snapshot_ws.spec_path)?;
+    let image = runtime.build(&spec).await?;
+    let instance = runtime.run(&image, &spec).await?;
+
+    println!("  Re-deployed instance: {} ({})", instance.name, instance.id);
+
+    // Update state
+    let mut state = StateStore::load(&StateStore::default_path())?;
+    state.upsert(
+        name.to_string(),
+        orchestr8::state::WorkloadState {
+            name: name.to_string(),
+            runtime: snapshot_ws.runtime,
+            instance,
+            spec_path: snapshot_ws.spec_path.clone(),
+            created_at: snapshot_ws.created_at.clone(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        },
+    );
+    state.save(&StateStore::default_path())?;
+
+    emit_event(
+        orchestr8::events::EventSeverity::Warning,
+        orchestr8::events::EventCategory::Deployment,
+        "cli",
+        Some(name),
+        "Workload rolled back",
+        &format!("Rolled back to snapshot {}", snapshot_path.display()),
+    );
+
+    println!("\nRollback complete for '{}'", name);
+
+    Ok(())
+}
+
+pub(crate) async fn diff_command(name: &str) -> Result<()> {
+    use orchestr8::drift::{format_live_diff, DiffRow, LiveDiffReport};
+    use orchestr8::runtime::create_runtime;
+
+    println!("Comparing spec vs stored vs live state for '{}'\n", name);
+
+    let state = StateStore::load(&StateStore::default_path())?;
+    let workload_state = state
+        .get(name)
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+
+    // Load spec
+    let spec = Workload::from_file(&workload_state.spec_path)?;
+
+    // Query live status
+    let runtime = create_runtime(&workload_state.runtime).await?;
+    let live_status = runtime.status(&workload_state.instance).await?;
+
+    // Build diff rows
+    let spec_runtime = format!("{:?}", spec.runtime.preferred);
+    let stored_runtime = workload_state.runtime.to_string();
+    let live_runtime = stored_runtime.clone(); // runtime doesn't change live
+
+    let spec_image = format!("{}/{}:latest", spec.build.registry, spec.metadata.name);
+    let stored_image = workload_state.instance.image.clone();
+
+    let rows = vec![
+        DiffRow {
+            field: "runtime".to_string(),
+            spec_value: spec_runtime.clone(),
+            stored_value: stored_runtime.clone(),
+            live_value: live_runtime.clone(),
+            matches: spec_runtime == stored_runtime,
+        },
+        DiffRow {
+            field: "image".to_string(),
+            spec_value: spec_image.clone(),
+            stored_value: stored_image.clone(),
+            live_value: stored_image.clone(),
+            matches: spec_image == stored_image,
+        },
+        DiffRow {
+            field: "state".to_string(),
+            spec_value: "running".to_string(),
+            stored_value: "-".to_string(),
+            live_value: format!("{}", live_status.state),
+            matches: live_status.state == orchestr8::runtime::InstanceState::Running,
+        },
+        DiffRow {
+            field: "ready".to_string(),
+            spec_value: "true".to_string(),
+            stored_value: "-".to_string(),
+            live_value: format!("{}", live_status.ready),
+            matches: live_status.ready,
+        },
+        DiffRow {
+            field: "restarts".to_string(),
+            spec_value: "0".to_string(),
+            stored_value: "-".to_string(),
+            live_value: format!("{}", live_status.restart_count),
+            matches: live_status.restart_count == 0,
+        },
+        DiffRow {
+            field: "cpu".to_string(),
+            spec_value: spec.requirements.cpu.clone(),
+            stored_value: "-".to_string(),
+            live_value: "-".to_string(),
+            matches: true,
+        },
+        DiffRow {
+            field: "memory".to_string(),
+            spec_value: spec.requirements.memory.clone(),
+            stored_value: "-".to_string(),
+            live_value: "-".to_string(),
+            matches: true,
+        },
+    ];
+
+    let has_differences = rows.iter().any(|r| !r.matches);
+
+    let report = LiveDiffReport {
+        workload_name: name.to_string(),
+        rows,
+        has_differences,
+    };
+
+    print!("{}", format_live_diff(&report));
+
+    Ok(())
+}
+
+pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
+    use orchestr8::events::{
+        ChannelType, EventBus, EventCategory, EventSeverity, NotificationChannel,
+    };
+
+    let path = EventBus::default_path();
+    let mut bus = EventBus::load(&path)?;
+
+    match action {
+        WebhookAction::Add {
+            name,
+            url,
+            method,
+            severity,
+        } => {
+            let min_severity = match severity.to_lowercase().as_str() {
+                "info" => EventSeverity::Info,
+                "warning" | "warn" => EventSeverity::Warning,
+                "error" => EventSeverity::Error,
+                "critical" => EventSeverity::Critical,
+                _ => anyhow::bail!(
+                    "Unknown severity: {}. Use info, warning, error, or critical.",
+                    severity
+                ),
+            };
+
+            let channel = NotificationChannel {
+                name: name.clone(),
+                channel_type: ChannelType::Webhook {
+                    url: url.clone(),
+                    method: method.clone(),
+                },
+                enabled: true,
+                min_severity,
+                categories: vec![],
+            };
+
+            bus.add_channel(channel);
+            bus.save(&path)?;
+
+            println!("Added webhook channel '{}' -> {} ({})", name, url, method);
+        }
+        WebhookAction::Remove { name } => {
+            if bus.remove_channel(&name) {
+                bus.save(&path)?;
+                println!("Removed webhook channel '{}'", name);
+            } else {
+                println!("Channel '{}' not found", name);
+            }
+        }
+        WebhookAction::List => {
+            let channels = bus.channels();
+            if channels.is_empty() {
+                println!("No notification channels configured.");
+                return Ok(());
+            }
+
+            println!("Notification Channels:\n");
+            println!(
+                "  {:<20} {:<30} {:<10} {:<10}",
+                "Name", "Type", "Enabled", "Min Severity"
+            );
+            println!("  {}", "-".repeat(74));
+
+            for ch in channels {
+                let type_str = format!("{}", ch.channel_type);
+                let enabled_str = if ch.enabled { "yes" } else { "no" };
+                println!(
+                    "  {:<20} {:<30} {:<10} {:<10}",
+                    ch.name,
+                    type_str,
+                    enabled_str,
+                    format!("{}", ch.min_severity),
+                );
+            }
+        }
+        WebhookAction::Test { name } => {
+            let channel_exists = bus.channels().iter().any(|c| c.name == name);
+            if !channel_exists {
+                anyhow::bail!("Channel '{}' not found", name);
+            }
+
+            bus.emit_simple(
+                EventSeverity::Info,
+                EventCategory::SystemAlert,
+                "webhook-test",
+                None,
+                "Webhook Test",
+                &format!("Test notification for channel '{}'", name),
+            );
+            bus.save(&path)?;
+            println!("Test notification sent to channel '{}'", name);
         }
     }
 
@@ -2350,5 +2727,80 @@ mod tests {
         assert!(rec.current_replicas == 3);
         assert!(rec.recommended_replicas >= 1);
         assert!(rec.confidence >= 0.0);
+    }
+
+    // ---------------------------------------------------------------
+    // Diff report formatting
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_diff_report_formatting() {
+        use orchestr8::drift::{format_live_diff, DiffRow, LiveDiffReport};
+
+        let report = LiveDiffReport {
+            workload_name: "test-app".to_string(),
+            rows: vec![
+                DiffRow {
+                    field: "runtime".to_string(),
+                    spec_value: "Auto".to_string(),
+                    stored_value: "podman".to_string(),
+                    live_value: "podman".to_string(),
+                    matches: false,
+                },
+                DiffRow {
+                    field: "state".to_string(),
+                    spec_value: "running".to_string(),
+                    stored_value: "-".to_string(),
+                    live_value: "running".to_string(),
+                    matches: true,
+                },
+            ],
+            has_differences: true,
+        };
+
+        let output = format_live_diff(&report);
+        assert!(output.contains("test-app"));
+        assert!(output.contains("runtime"));
+        assert!(output.contains("1 difference(s) found"));
+    }
+
+    // ---------------------------------------------------------------
+    // Webhook command (event bus level)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_webhook_channel_add_remove_list() {
+        use orchestr8::events::{
+            ChannelType, EventBus, EventSeverity, NotificationChannel,
+        };
+
+        let mut bus = EventBus::new();
+        let initial = bus.channels().len();
+
+        // Add a webhook channel
+        bus.add_channel(NotificationChannel {
+            name: "slack-ops".to_string(),
+            channel_type: ChannelType::Webhook {
+                url: "https://hooks.slack.com/services/test".to_string(),
+                method: "POST".to_string(),
+            },
+            enabled: true,
+            min_severity: EventSeverity::Warning,
+            categories: vec![],
+        });
+
+        assert_eq!(bus.channels().len(), initial + 1);
+
+        // Verify channel properties
+        let ch = bus.channels().iter().find(|c| c.name == "slack-ops").unwrap();
+        assert!(ch.enabled);
+        assert_eq!(ch.min_severity, EventSeverity::Warning);
+
+        // Remove channel
+        assert!(bus.remove_channel("slack-ops"));
+        assert_eq!(bus.channels().len(), initial);
+
+        // Remove non-existent channel
+        assert!(!bus.remove_channel("nonexistent"));
     }
 }

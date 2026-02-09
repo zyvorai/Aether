@@ -21,6 +21,8 @@ pub struct Config {
     pub profiler: ProfilerConfig,
     #[serde(default)]
     pub analyzer: AnalyzerConfig,
+    #[serde(default)]
+    pub webhook: WebhookConfig,
 }
 
 impl Config {
@@ -283,6 +285,31 @@ impl Default for AnalyzerConfig {
     }
 }
 
+/// Webhook notification configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookConfig {
+    /// Enable webhook notifications
+    pub enabled: bool,
+    /// HTTP request timeout in seconds
+    pub timeout_secs: u64,
+    /// Maximum retry attempts for failed deliveries
+    pub max_retries: u32,
+    /// User-Agent header for webhook requests
+    pub user_agent: String,
+}
+
+impl Default for WebhookConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            timeout_secs: 10,
+            max_retries: 3,
+            user_agent: format!("orchestr8/{}", env!("CARGO_PKG_VERSION")),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -323,5 +350,14 @@ mod tests {
     fn test_load_missing_file() {
         let config = Config::load_from(&PathBuf::from("/nonexistent/config.yaml"));
         assert_eq!(config.engine.metal3_cpu_threshold, 16.0);
+    }
+
+    #[test]
+    fn test_webhook_config_defaults() {
+        let config = WebhookConfig::default();
+        assert!(config.enabled);
+        assert_eq!(config.timeout_secs, 10);
+        assert_eq!(config.max_retries, 3);
+        assert!(config.user_agent.starts_with("orchestr8/"));
     }
 }
