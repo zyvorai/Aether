@@ -8,6 +8,16 @@ use crate::runtime::RuntimeKind;
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use crate::{backup, cost, Runtime};
+
+/// Create a runtime instance for the given RuntimeKind.
+async fn create_runtime(kind: &RuntimeKind) -> anyhow::Result<Box<dyn Runtime>> {
+    match kind {
+        RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
+        RuntimeKind::Kubernetes => Ok(Box::new(KubernetesRuntime::new().await?)),
+        RuntimeKind::KubeVirt => Ok(Box::new(KubeVirtRuntime::new().await?)),
+        RuntimeKind::Metal3 => Ok(Box::new(Metal3Runtime::new().await?)),
+    }
+}
 use axum::{
     extract::{Path, State as AxumState},
     http::StatusCode,
@@ -91,118 +101,31 @@ pub(crate) async fn create_workload(
     };
 
     // Build and run based on runtime
-    let instance = match runtime_kind {
-        RuntimeKind::Podman => {
-            let runtime = match PodmanRuntime::new() {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&request.spec).await {
-                Ok(image) => match runtime.run(&image, &request.spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
+    let runtime = match create_runtime(&runtime_kind).await {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(e.to_string())),
+            )
         }
-        RuntimeKind::Kubernetes => {
-            let runtime = match KubernetesRuntime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&request.spec).await {
-                Ok(image) => match runtime.run(&image, &request.spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
+    };
+    let image = match runtime.build(&request.spec).await {
+        Ok(img) => img,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(e.to_string())),
+            )
         }
-        RuntimeKind::KubeVirt => {
-            let runtime = match KubeVirtRuntime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&request.spec).await {
-                Ok(image) => match runtime.run(&image, &request.spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = match Metal3Runtime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&request.spec).await {
-                Ok(image) => match runtime.run(&image, &request.spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
+    };
+    let instance = match runtime.run(&image, &request.spec).await {
+        Ok(inst) => inst,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(e.to_string())),
+            )
         }
     };
 
@@ -303,86 +226,22 @@ pub(crate) async fn get_logs(
 
     match state.get(&name) {
         Some(workload) => {
-            let logs = match workload.runtime {
-                RuntimeKind::Podman => {
-                    let runtime = match PodmanRuntime::new() {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(logs) => logs,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    }
+            let runtime = match create_runtime(&workload.runtime).await {
+                Ok(r) => r,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
                 }
-                RuntimeKind::Kubernetes => {
-                    let runtime = match KubernetesRuntime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(logs) => logs,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    }
-                }
-                RuntimeKind::KubeVirt => {
-                    let runtime = match KubeVirtRuntime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(logs) => logs,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    }
-                }
-                RuntimeKind::Metal3 => {
-                    let runtime = match Metal3Runtime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(logs) => logs,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    }
+            };
+            let logs = match runtime.logs(&workload.instance, false).await {
+                Ok(logs) => logs,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
                 }
             };
 
@@ -433,118 +292,31 @@ pub(crate) async fn start_workload(
     };
 
     // Build and run on the same runtime
-    let instance = match workload_state.runtime {
-        RuntimeKind::Podman => {
-            let runtime = match PodmanRuntime::new() {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&spec).await {
-                Ok(image) => match runtime.run(&image, &spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
+    let runtime = match create_runtime(&workload_state.runtime).await {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(e.to_string())),
+            )
         }
-        RuntimeKind::Kubernetes => {
-            let runtime = match KubernetesRuntime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&spec).await {
-                Ok(image) => match runtime.run(&image, &spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
+    };
+    let image = match runtime.build(&spec).await {
+        Ok(img) => img,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(e.to_string())),
+            )
         }
-        RuntimeKind::KubeVirt => {
-            let runtime = match KubeVirtRuntime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&spec).await {
-                Ok(image) => match runtime.run(&image, &spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = match Metal3Runtime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            match runtime.build(&spec).await {
-                Ok(image) => match runtime.run(&image, &spec).await {
-                    Ok(inst) => inst,
-                    Err(e) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(e.to_string())),
-                        )
-                    }
-                },
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            }
+    };
+    let instance = match runtime.run(&image, &spec).await {
+        Ok(inst) => inst,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<String>::error(e.to_string())),
+            )
         }
     };
 
@@ -585,56 +357,16 @@ pub(crate) async fn stop_workload(
 
     match state.get(&name) {
         Some(workload) => {
-            let result = match workload.runtime {
-                RuntimeKind::Podman => {
-                    let runtime = match PodmanRuntime::new() {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    runtime.stop(&workload.instance).await
-                }
-                RuntimeKind::Kubernetes => {
-                    let runtime = match KubernetesRuntime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    runtime.stop(&workload.instance).await
-                }
-                RuntimeKind::KubeVirt => {
-                    let runtime = match KubeVirtRuntime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    runtime.stop(&workload.instance).await
-                }
-                RuntimeKind::Metal3 => {
-                    let runtime = match Metal3Runtime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<String>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    runtime.stop(&workload.instance).await
+            let runtime = match create_runtime(&workload.runtime).await {
+                Ok(r) => r,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<String>::error(e.to_string())),
+                    )
                 }
             };
+            let result = runtime.stop(&workload.instance).await;
 
             match result {
                 Ok(_) => (
@@ -768,86 +500,22 @@ pub(crate) async fn ai_analyze_logs(
     match state.get(&name) {
         Some(workload) => {
             // Fetch logs
-            let logs = match workload.runtime {
-                RuntimeKind::Podman => {
-                    let runtime = match PodmanRuntime::new() {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(l) => l,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    }
+            let runtime = match create_runtime(&workload.runtime).await {
+                Ok(r) => r,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                    )
                 }
-                RuntimeKind::Kubernetes => {
-                    let runtime = match KubernetesRuntime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(l) => l,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    }
-                }
-                RuntimeKind::KubeVirt => {
-                    let runtime = match KubeVirtRuntime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(l) => l,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    }
-                }
-                RuntimeKind::Metal3 => {
-                    let runtime = match Metal3Runtime::new().await {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    };
-                    match runtime.logs(&workload.instance, false).await {
-                        Ok(l) => l,
-                        Err(e) => {
-                            return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                            )
-                        }
-                    }
+            };
+            let logs = match runtime.logs(&workload.instance, false).await {
+                Ok(l) => l,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                    )
                 }
             };
 
@@ -1658,56 +1326,16 @@ pub(crate) async fn build_workload(
     };
 
     // Build based on runtime
-    let image = match workload_state.runtime {
-        RuntimeKind::Podman => {
-            let runtime = match PodmanRuntime::new() {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<BuildResponse>::error(e.to_string())),
-                    )
-                }
-            };
-            runtime.build(&spec).await
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = match KubernetesRuntime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<BuildResponse>::error(e.to_string())),
-                    )
-                }
-            };
-            runtime.build(&spec).await
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = match KubeVirtRuntime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<BuildResponse>::error(e.to_string())),
-                    )
-                }
-            };
-            runtime.build(&spec).await
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = match Metal3Runtime::new().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<BuildResponse>::error(e.to_string())),
-                    )
-                }
-            };
-            runtime.build(&spec).await
+    let runtime = match create_runtime(&workload_state.runtime).await {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<BuildResponse>::error(e.to_string())),
+            )
         }
     };
+    let image = runtime.build(&spec).await;
 
     match image {
         Ok(img) => {
