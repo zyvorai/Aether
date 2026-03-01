@@ -8,10 +8,6 @@ use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use crate::{backup, cost, Runtime};
 
-/// Create a runtime instance for the given RuntimeKind.
-async fn create_runtime(kind: &RuntimeKind) -> anyhow::Result<Box<dyn Runtime>> {
-    runtime::create_runtime(kind).await
-}
 use axum::{
     extract::{Path, State as AxumState},
     http::StatusCode,
@@ -20,6 +16,33 @@ use axum::{
 use axum::http::header;
 use std::path::PathBuf;
 use chrono;
+
+/// Look up a workload by name from state, returning a cloned WorkloadState
+/// or an HTTP 404 error response.
+async fn lookup_workload<T: serde::Serialize>(
+    app_state: &AppState,
+    name: &str,
+) -> Result<WorkloadState, (StatusCode, Json<ApiResponse<T>>)> {
+    let state = app_state.state.read().await;
+    state.get(name).cloned().ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::error(format!("Workload {} not found", name))),
+        )
+    })
+}
+
+/// Create a runtime client or return an HTTP 500 error response.
+async fn make_runtime<T: serde::Serialize>(
+    kind: &RuntimeKind,
+) -> Result<Box<dyn Runtime>, (StatusCode, Json<ApiResponse<T>>)> {
+    runtime::create_runtime(kind).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::error(e.to_string())),
+        )
+    })
+}
 
 /// Embedded dashboard HTML
 pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/index.html");
@@ -89,14 +112,9 @@ pub(crate) async fn create_workload(
     };
 
     // Build and run based on runtime
-    let runtime = match create_runtime(&runtime_kind).await {
+    let runtime = match make_runtime::<String>(&runtime_kind).await {
         Ok(r) => r,
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
-        }
+        Err(e) => return e,
     };
     let image = match runtime.build(&request.spec).await {
         Ok(img) => img,
@@ -153,27 +171,19 @@ pub(crate) async fn get_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let state = app_state.state.read().await;
+    let workload = match lookup_workload::<WorkloadResponse>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
 
-    match state.get(&name) {
-        Some(workload) => {
-            let response = WorkloadResponse {
-                name: workload.name.clone(),
-                runtime: format!("{:?}", workload.runtime),
-                image: workload.instance.image.clone(),
-                status: format!("deployed ({})", workload.runtime),
-                created_at: workload.created_at.clone(),
-            };
-            (StatusCode::OK, Json(ApiResponse::success(response)))
-        }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::<WorkloadResponse>::error(format!(
-                "Workload {} not found",
-                name
-            ))),
-        ),
-    }
+    let response = WorkloadResponse {
+        name: workload.name.clone(),
+        runtime: format!("{:?}", workload.runtime),
+        image: workload.instance.image.clone(),
+        status: format!("deployed ({})", workload.runtime),
+        created_at: workload.created_at.clone(),
+    };
+    (StatusCode::OK, Json(ApiResponse::success(response)))
 }
 
 /// DELETE /api/workloads/:name - Delete a workload
@@ -210,37 +220,21 @@ pub(crate) async fn get_logs(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let state = app_state.state.read().await;
+    let workload = match lookup_workload::<String>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
 
-    match state.get(&name) {
-        Some(workload) => {
-            let runtime = match create_runtime(&workload.runtime).await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            let logs = match runtime.logs(&workload.instance, false).await {
-                Ok(logs) => logs,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
+    let rt = match make_runtime::<String>(&workload.runtime).await {
+        Ok(r) => r,
+        Err(e) => return e,
+    };
 
-            (StatusCode::OK, Json(ApiResponse::success(logs)))
-        }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::<String>::error(format!(
-                "Workload {} not found",
-                name
-            ))),
+    match rt.logs(&workload.instance, false).await {
+        Ok(logs) => (StatusCode::OK, Json(ApiResponse::success(logs))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<String>::error(e.to_string())),
         ),
     }
 }
@@ -250,19 +244,9 @@ pub(crate) async fn start_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let state = app_state.state.read().await;
-
-    let workload_state = match state.get(&name) {
-        Some(w) => w.clone(),
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(ApiResponse::<String>::error(format!(
-                    "Workload {} not found",
-                    name
-                ))),
-            )
-        }
+    let workload_state = match lookup_workload::<String>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
     };
 
     // Load workload spec from the stored path
@@ -280,14 +264,9 @@ pub(crate) async fn start_workload(
     };
 
     // Build and run on the same runtime
-    let runtime = match create_runtime(&workload_state.runtime).await {
+    let runtime = match make_runtime::<String>(&workload_state.runtime).await {
         Ok(r) => r,
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
-        }
+        Err(e) => return e,
     };
     let image = match runtime.build(&spec).await {
         Ok(img) => img,
@@ -309,7 +288,6 @@ pub(crate) async fn start_workload(
     };
 
     // Update state with the new instance
-    drop(state);
     let mut state = app_state.state.write().await;
     state.upsert(
         name.clone(),
@@ -341,38 +319,24 @@ pub(crate) async fn stop_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let state = app_state.state.read().await;
+    let workload = match lookup_workload::<String>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
 
-    match state.get(&name) {
-        Some(workload) => {
-            let runtime = match create_runtime(&workload.runtime).await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<String>::error(e.to_string())),
-                    )
-                }
-            };
-            let result = runtime.stop(&workload.instance).await;
+    let rt = match make_runtime::<String>(&workload.runtime).await {
+        Ok(r) => r,
+        Err(e) => return e,
+    };
 
-            match result {
-                Ok(_) => (
-                    StatusCode::OK,
-                    Json(ApiResponse::success(format!("Workload {} stopped", name))),
-                ),
-                Err(e) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ApiResponse::<String>::error(e.to_string())),
-                ),
-            }
-        }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::<String>::error(format!(
-                "Workload {} not found",
-                name
-            ))),
+    match rt.stop(&workload.instance).await {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(ApiResponse::success(format!("Workload {} stopped", name))),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<String>::error(e.to_string())),
         ),
     }
 }
@@ -440,40 +404,32 @@ pub(crate) async fn ai_profile(
 ) -> impl IntoResponse {
     use crate::ai::profiler::Profiler;
 
-    let state = app_state.state.read().await;
+    let workload_state = match lookup_workload::<serde_json::Value>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
 
-    match state.get(&name) {
-        Some(workload_state) => {
-            let spec = match Workload::from_file(&workload_state.spec_path) {
-                Ok(s) => s,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<serde_json::Value>::error(format!(
-                            "Failed to load spec: {}",
-                            e
-                        ))),
-                    )
-                }
-            };
-
-            let config = Config::load();
-            let profiler = Profiler::new(config.profiler.waste_threshold);
-            let profile = profiler.profile(&spec, Some(workload_state.runtime));
-
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(serde_json::to_value(profile).unwrap_or_default())),
+    let spec = match Workload::from_file(&workload_state.spec_path) {
+        Ok(s) => s,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<serde_json::Value>::error(format!(
+                    "Failed to load spec: {}",
+                    e
+                ))),
             )
         }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::<serde_json::Value>::error(format!(
-                "Workload {} not found",
-                name
-            ))),
-        ),
-    }
+    };
+
+    let config = Config::load();
+    let profiler = Profiler::new(config.profiler.waste_threshold);
+    let profile = profiler.profile(&spec, Some(workload_state.runtime));
+
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(serde_json::to_value(profile).unwrap_or_default())),
+    )
 }
 
 /// GET /api/ai/analyze/:name - Analyze workload logs
@@ -483,47 +439,34 @@ pub(crate) async fn ai_analyze_logs(
 ) -> impl IntoResponse {
     use crate::ai::analyzer::LogAnalyzer;
 
-    let state = app_state.state.read().await;
+    let workload = match lookup_workload::<serde_json::Value>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
 
-    match state.get(&name) {
-        Some(workload) => {
-            // Fetch logs
-            let runtime = match create_runtime(&workload.runtime).await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                    )
-                }
-            };
-            let logs = match runtime.logs(&workload.instance, false).await {
-                Ok(l) => l,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-                    )
-                }
-            };
+    let rt = match make_runtime::<serde_json::Value>(&workload.runtime).await {
+        Ok(r) => r,
+        Err(e) => return e,
+    };
 
-            let config = Config::load();
-            let analyzer = LogAnalyzer::new(config.analyzer);
-            let analysis = analyzer.analyze(&logs);
-
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(serde_json::to_value(analysis).unwrap_or_default())),
+    let logs = match rt.logs(&workload.instance, false).await {
+        Ok(l) => l,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
             )
         }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::<serde_json::Value>::error(format!(
-                "Workload {} not found",
-                name
-            ))),
-        ),
-    }
+    };
+
+    let config = Config::load();
+    let analyzer = LogAnalyzer::new(config.analyzer);
+    let analysis = analyzer.analyze(&logs);
+
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(serde_json::to_value(analysis).unwrap_or_default())),
+    )
 }
 
 /// GET /api/ai/migration-advice/:name/:target - Migration path recommendations
@@ -533,19 +476,9 @@ pub(crate) async fn ai_migration_advice(
 ) -> impl IntoResponse {
     use crate::ai::migration::MigrationAdvisor;
 
-    let state = app_state.state.read().await;
-
-    let workload_state = match state.get(&name) {
-        Some(w) => w.clone(),
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(ApiResponse::<MigrationAdviceResponse>::error(format!(
-                    "Workload {} not found",
-                    name
-                ))),
-            )
-        }
+    let workload_state = match lookup_workload::<MigrationAdviceResponse>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
     };
 
     let target_runtime = match target.parse::<RuntimeKind>() {
@@ -658,41 +591,33 @@ pub(crate) async fn api_drift_check(
 ) -> impl IntoResponse {
     use crate::drift::DriftDetector;
 
-    let state = app_state.state.read().await;
+    let workload_state = match lookup_workload::<serde_json::Value>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
 
-    match state.get(&name) {
-        Some(workload_state) => {
-            let spec = match Workload::from_file(&workload_state.spec_path) {
-                Ok(s) => s,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<serde_json::Value>::error(format!(
-                            "Failed to load spec: {}",
-                            e
-                        ))),
-                    )
-                }
-            };
-
-            let detector = DriftDetector::new();
-            let report = detector.detect(&spec, workload_state);
-
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(
-                    serde_json::to_value(report).unwrap_or_default(),
-                )),
+    let spec = match Workload::from_file(&workload_state.spec_path) {
+        Ok(s) => s,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<serde_json::Value>::error(format!(
+                    "Failed to load spec: {}",
+                    e
+                ))),
             )
         }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::<serde_json::Value>::error(format!(
-                "Workload {} not found",
-                name
-            ))),
-        ),
-    }
+    };
+
+    let detector = DriftDetector::new();
+    let report = detector.detect(&spec, &workload_state);
+
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(
+            serde_json::to_value(report).unwrap_or_default(),
+        )),
+    )
 }
 
 /// POST /api/policy/check - Check workload against policies
@@ -1121,21 +1046,10 @@ pub(crate) async fn migrate_workload(
 ) -> impl IntoResponse {
     use crate::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
 
-    let state = app_state.state.read().await;
-
-    let workload_state = match state.get(&name) {
-        Some(w) => w.clone(),
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(ApiResponse::<String>::error(format!(
-                    "Workload {} not found",
-                    name
-                ))),
-            )
-        }
+    let workload_state = match lookup_workload::<String>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
     };
-    drop(state);
 
     let source_runtime = workload_state.runtime;
 
@@ -1244,19 +1158,9 @@ pub(crate) async fn build_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let state = app_state.state.read().await;
-
-    let workload_state = match state.get(&name) {
-        Some(w) => w.clone(),
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(ApiResponse::<BuildResponse>::error(format!(
-                    "Workload {} not found",
-                    name
-                ))),
-            )
-        }
+    let workload_state = match lookup_workload::<BuildResponse>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
     };
 
     // Load workload spec from the stored path
@@ -1274,14 +1178,9 @@ pub(crate) async fn build_workload(
     };
 
     // Build based on runtime
-    let runtime = match create_runtime(&workload_state.runtime).await {
+    let runtime = match make_runtime::<BuildResponse>(&workload_state.runtime).await {
         Ok(r) => r,
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<BuildResponse>::error(e.to_string())),
-            )
-        }
+        Err(e) => return e,
     };
     let image = runtime.build(&spec).await;
 
