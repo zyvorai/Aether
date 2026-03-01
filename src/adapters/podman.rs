@@ -3,7 +3,7 @@
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::Workload;
 use async_trait::async_trait;
-use std::process::Command;
+use tokio::process::Command;
 
 /// Podman runtime implementation
 pub struct PodmanRuntime;
@@ -47,7 +47,7 @@ impl Runtime for PodmanRuntime {
             cmd.arg("--build-arg").arg(format!("{}={}", key, value));
         }
 
-        let output = cmd.output()?;
+        let output = cmd.output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -83,7 +83,7 @@ impl Runtime for PodmanRuntime {
         // Add image
         cmd.arg(image.full_name());
 
-        let output = cmd.output()?;
+        let output = cmd.output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -106,7 +106,7 @@ impl Runtime for PodmanRuntime {
 
         let output = Command::new("podman")
             .args(["stop", &instance.id])
-            .output()?;
+            .output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -119,7 +119,7 @@ impl Runtime for PodmanRuntime {
     async fn status(&self, instance: &Instance) -> crate::Result<Status> {
         let output = Command::new("podman")
             .args(["inspect", "--format", "{{.State.Status}}", &instance.id])
-            .output()?;
+            .output().await?;
 
         if !output.status.success() {
             return Ok(Status {
@@ -154,7 +154,7 @@ impl Runtime for PodmanRuntime {
             cmd.arg("--follow");
         }
 
-        let output = cmd.output()?;
+        let output = cmd.output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -169,7 +169,7 @@ impl Runtime for PodmanRuntime {
 
         let output = Command::new("podman")
             .args(["rm", "-f", &instance.id])
-            .output()?;
+            .output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -182,7 +182,7 @@ impl Runtime for PodmanRuntime {
     async fn list(&self) -> crate::Result<Vec<Instance>> {
         let output = Command::new("podman")
             .args(["ps", "-a", "--format", "json"])
-            .output()?;
+            .output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);

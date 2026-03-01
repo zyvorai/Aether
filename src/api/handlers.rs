@@ -65,18 +65,12 @@ pub(crate) async fn create_workload(
 ) -> impl IntoResponse {
     // Select runtime
     let runtime_kind = if let Some(runtime_name) = request.runtime {
-        match runtime_name.to_lowercase().as_str() {
-            "podman" => RuntimeKind::Podman,
-            "kubernetes" => RuntimeKind::Kubernetes,
-            "kubevirt" => RuntimeKind::KubeVirt,
-            "metal3" => RuntimeKind::Metal3,
-            _ => {
+        match runtime_name.parse::<RuntimeKind>() {
+            Ok(rt) => rt,
+            Err(e) => {
                 return (
                     StatusCode::BAD_REQUEST,
-                    Json(ApiResponse::<String>::error(format!(
-                        "Invalid runtime: {}",
-                        runtime_name
-                    ))),
+                    Json(ApiResponse::<String>::error(e.to_string())),
                 )
             }
         }
@@ -554,18 +548,12 @@ pub(crate) async fn ai_migration_advice(
         }
     };
 
-    let target_runtime = match target.to_lowercase().as_str() {
-        "podman" | "container" => RuntimeKind::Podman,
-        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
-        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
-        "metal" | "metal3" => RuntimeKind::Metal3,
-        _ => {
+    let target_runtime = match target.parse::<RuntimeKind>() {
+        Ok(rt) => rt,
+        Err(e) => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<MigrationAdviceResponse>::error(format!(
-                    "Unknown target runtime: {}",
-                    target
-                ))),
+                Json(ApiResponse::<MigrationAdviceResponse>::error(e.to_string())),
             )
         }
     };
@@ -823,22 +811,12 @@ pub(crate) async fn api_template_generate(
 ) -> impl IntoResponse {
     use crate::templates::{self, TemplateKind, TemplateParams};
 
-    let kind = match name.as_str() {
-        "web-app" => TemplateKind::WebApp,
-        "rest-api" => TemplateKind::RestApi,
-        "database" => TemplateKind::Database,
-        "cache" => TemplateKind::Cache,
-        "worker" => TemplateKind::Worker,
-        "cron-job" => TemplateKind::CronJob,
-        "ml-training" => TemplateKind::MlTraining,
-        "microservice" => TemplateKind::Microservice,
-        _ => {
+    let kind = match name.parse::<TemplateKind>() {
+        Ok(k) => k,
+        Err(e) => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<serde_json::Value>::error(format!(
-                    "Unknown template: {}",
-                    name
-                ))),
+                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
             )
         }
     };
@@ -1110,22 +1088,12 @@ pub(crate) async fn api_orchestrator_summary() -> impl IntoResponse {
 pub(crate) async fn api_affinity_recommend(Path(class): Path<String>) -> impl IntoResponse {
     use crate::ai::affinity::{AffinityEngine, WorkloadClass};
 
-    let wl_class = match class.as_str() {
-        "web-service" => WorkloadClass::WebService,
-        "api-backend" => WorkloadClass::ApiBackend,
-        "database" => WorkloadClass::Database,
-        "cache" => WorkloadClass::Cache,
-        "batch-job" => WorkloadClass::BatchJob,
-        "ml-training" => WorkloadClass::MlTraining,
-        "worker" => WorkloadClass::Worker,
-        "microservice" => WorkloadClass::Microservice,
-        _ => {
+    let wl_class = match class.parse::<WorkloadClass>() {
+        Ok(c) => c,
+        Err(e) => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<serde_json::Value>::error(format!(
-                    "Unknown workload class: {}",
-                    class
-                ))),
+                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
             )
         }
     };
@@ -1174,33 +1142,22 @@ pub(crate) async fn migrate_workload(
 
     let source_runtime = workload_state.runtime;
 
-    let target_runtime = match request.target_runtime.to_lowercase().as_str() {
-        "podman" | "container" => RuntimeKind::Podman,
-        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
-        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
-        "metal" | "metal3" => RuntimeKind::Metal3,
-        _ => {
+    let target_runtime = match request.target_runtime.parse::<RuntimeKind>() {
+        Ok(rt) => rt,
+        Err(e) => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<String>::error(format!(
-                    "Unknown target runtime: {}",
-                    request.target_runtime
-                ))),
+                Json(ApiResponse::<String>::error(e.to_string())),
             )
         }
     };
 
-    let strategy = match request.strategy.to_lowercase().as_str() {
-        "immediate" => MigrationStrategy::Immediate,
-        "blue-green" => MigrationStrategy::BlueGreen,
-        "rolling" => MigrationStrategy::Rolling,
-        _ => {
+    let strategy = match request.strategy.parse::<MigrationStrategy>() {
+        Ok(s) => s,
+        Err(e) => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<String>::error(format!(
-                    "Unknown strategy: {}. Use immediate, blue-green, or rolling.",
-                    request.strategy
-                ))),
+                Json(ApiResponse::<String>::error(e.to_string())),
             )
         }
     };

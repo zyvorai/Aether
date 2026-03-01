@@ -1,10 +1,8 @@
 //! Application state for TUI
 
 use crate::{
-    adapters::{KubernetesRuntime, PodmanRuntime},
-    runtime::{RuntimeKind, Status},
+    runtime::{self, RuntimeKind, Status},
     state::{StateStore, WorkloadState},
-    Runtime,
 };
 use std::time::{Duration, Instant};
 
@@ -62,17 +60,27 @@ impl App {
             .cloned()
             .collect();
 
-        let mut updated_workloads = Vec::new();
-
+        // Group workloads by runtime to reuse clients
+        let mut by_runtime: std::collections::HashMap<RuntimeKind, Vec<WorkloadState>> =
+            std::collections::HashMap::new();
         for state in workload_states {
-            // Fetch current status
-            let status = self.fetch_status(&state).await.ok();
+            by_runtime.entry(state.runtime).or_default().push(state);
+        }
 
-            updated_workloads.push(WorkloadInfo {
-                state,
-                status,
-                last_updated: Instant::now(),
-            });
+        let mut updated_workloads = Vec::new();
+        for (kind, states) in by_runtime {
+            let rt = runtime::create_runtime(&kind).await.ok();
+            for state in states {
+                let status = match &rt {
+                    Some(r) => r.status(&state.instance).await.ok(),
+                    None => None,
+                };
+                updated_workloads.push(WorkloadInfo {
+                    state,
+                    status,
+                    last_updated: Instant::now(),
+                });
+            }
         }
 
         self.workloads = updated_workloads;
@@ -81,34 +89,10 @@ impl App {
         Ok(())
     }
 
-    async fn fetch_status(&self, state: &WorkloadState) -> anyhow::Result<Status> {
-        match state.runtime {
-            RuntimeKind::Podman => {
-                let runtime = PodmanRuntime::new()?;
-                runtime.status(&state.instance).await
-            }
-            RuntimeKind::Kubernetes => {
-                let runtime = KubernetesRuntime::new().await?;
-                runtime.status(&state.instance).await
-            }
-            _ => anyhow::bail!("Runtime not yet implemented"),
-        }
-    }
-
     pub async fn load_logs(&mut self, workload_name: &str) -> anyhow::Result<()> {
         if let Some(workload) = self.workloads.iter().find(|w| w.state.name == workload_name) {
-            let logs = match workload.state.runtime {
-                RuntimeKind::Podman => {
-                    let runtime = PodmanRuntime::new()?;
-                    runtime.logs(&workload.state.instance, false).await?
-                }
-                RuntimeKind::Kubernetes => {
-                    let runtime = KubernetesRuntime::new().await?;
-                    runtime.logs(&workload.state.instance, false).await?
-                }
-                _ => anyhow::bail!("Runtime not yet implemented"),
-            };
-
+            let rt = runtime::create_runtime(&workload.state.runtime).await?;
+            let logs = rt.logs(&workload.state.instance, false).await?;
             self.logs_buffer = logs.lines().map(|s| s.to_string()).collect();
         }
 

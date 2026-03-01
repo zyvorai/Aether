@@ -27,6 +27,19 @@ impl std::fmt::Display for EnvTier {
     }
 }
 
+impl std::str::FromStr for EnvTier {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_str() {
+            "development" | "dev" => EnvTier::Development,
+            "staging" | "stg" => EnvTier::Staging,
+            "production" | "prod" => EnvTier::Production,
+            other => EnvTier::Custom(other.to_string()),
+        })
+    }
+}
+
 /// Environment configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Environment {
@@ -418,28 +431,17 @@ impl EnvironmentManager {
 
     /// Default path
     pub fn default_path() -> PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".orchestr8/environments.json")
+        crate::resources::orchestr8_path("environments.json")
     }
 
     /// Load from disk
     pub fn load(path: &Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let mgr: Self = serde_json::from_str(&content)?;
-        Ok(mgr)
+        crate::resources::json_load(path)
     }
 
     /// Save to disk
     pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 
     // --- Private ---
@@ -701,5 +703,16 @@ mod tests {
     fn test_version_bump() {
         assert_eq!(EnvironmentManager::bump_version("1.0.0"), "1.0.1");
         assert_eq!(EnvironmentManager::bump_version("2.3.5"), "2.3.6");
+    }
+
+    #[test]
+    fn test_env_tier_from_str() {
+        assert_eq!("development".parse::<EnvTier>().unwrap(), EnvTier::Development);
+        assert_eq!("dev".parse::<EnvTier>().unwrap(), EnvTier::Development);
+        assert_eq!("staging".parse::<EnvTier>().unwrap(), EnvTier::Staging);
+        assert_eq!("stg".parse::<EnvTier>().unwrap(), EnvTier::Staging);
+        assert_eq!("production".parse::<EnvTier>().unwrap(), EnvTier::Production);
+        assert_eq!("prod".parse::<EnvTier>().unwrap(), EnvTier::Production);
+        assert_eq!("custom-tier".parse::<EnvTier>().unwrap(), EnvTier::Custom("custom-tier".to_string()));
     }
 }

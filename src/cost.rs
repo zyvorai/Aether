@@ -26,6 +26,21 @@ impl std::fmt::Display for CloudProvider {
     }
 }
 
+impl std::str::FromStr for CloudProvider {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "aws" => Ok(CloudProvider::AWS),
+            "azure" => Ok(CloudProvider::Azure),
+            "gcp" => Ok(CloudProvider::GCP),
+            "digitalocean" | "do" => Ok(CloudProvider::DigitalOcean),
+            "linode" => Ok(CloudProvider::Linode),
+            _ => Err(anyhow::anyhow!("Unknown provider: '{}'. Valid: aws, azure, gcp, digitalocean, linode", s)),
+        }
+    }
+}
+
 /// Cost breakdown for a workload
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -498,5 +513,17 @@ mod tests {
         let report = comparison.display();
         assert!(report.contains("test-app"));
         assert!(report.contains("Savings"));
+    }
+
+    #[test]
+    fn test_cloud_provider_from_str() {
+        assert_eq!("aws".parse::<CloudProvider>().unwrap(), CloudProvider::AWS);
+        assert_eq!("AWS".parse::<CloudProvider>().unwrap(), CloudProvider::AWS);
+        assert_eq!("azure".parse::<CloudProvider>().unwrap(), CloudProvider::Azure);
+        assert_eq!("gcp".parse::<CloudProvider>().unwrap(), CloudProvider::GCP);
+        assert_eq!("digitalocean".parse::<CloudProvider>().unwrap(), CloudProvider::DigitalOcean);
+        assert_eq!("do".parse::<CloudProvider>().unwrap(), CloudProvider::DigitalOcean);
+        assert_eq!("linode".parse::<CloudProvider>().unwrap(), CloudProvider::Linode);
+        assert!("hetzner".parse::<CloudProvider>().is_err());
     }
 }
