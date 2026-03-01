@@ -72,24 +72,33 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
 
 pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> Result<()> {
     println!("🚀 Running workload...");
-
     let workload = Workload::from_file(spec_path)?;
+    deploy_single_workload(&workload, spec_path, runtime_override.as_deref()).await
+}
+
+/// Deploy a single workload: decide runtime, build, run, persist state, record metrics.
+/// Extracted from run_command so deploy_command can reuse it per-workload.
+async fn deploy_single_workload(
+    workload: &Workload,
+    spec_path: &Path,
+    runtime_override: Option<&str>,
+) -> Result<()> {
     let engine = Engine::new();
 
     // Determine runtime
     let runtime_kind = if let Some(override_str) = runtime_override {
         override_str.parse::<RuntimeKind>()?
     } else {
-        engine.decide(&workload)?
+        engine.decide(workload)?
     };
 
     println!("📦 Selected runtime: {}", runtime_kind);
 
     // Build and run based on runtime
     let rt = orchestr8::runtime::create_runtime(&runtime_kind).await?;
-    let image = rt.build(&workload).await?;
+    let image = rt.build(workload).await?;
     println!("✅ Image ready: {}", image.full_name());
-    let instance = rt.run(&image, &workload).await?;
+    let instance = rt.run(&image, workload).await?;
 
     println!("✅ Started instance: {} ({})", instance.name, instance.id);
 
@@ -110,7 +119,7 @@ pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<St
             name: workload.metadata.name.clone(),
             runtime: runtime_kind,
             instance,
-            spec_path: spec_path.clone(),
+            spec_path: spec_path.to_path_buf(),
             created_at: chrono::Utc::now().to_rfc3339(),
             updated_at: chrono::Utc::now().to_rfc3339(),
         },
@@ -1878,6 +1887,174 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
     Ok(())
 }
 
+/// Scan a directory for `*.yaml` / `*.yml` files and parse each as a Workload.
+/// Invalid files are skipped with a warning.
+fn discover_workloads(dir: &Path) -> Result<Vec<(PathBuf, Workload)>> {
+    if !dir.is_dir() {
+        anyhow::bail!("'{}' is not a directory", dir.display());
+    }
+
+    let mut workloads = Vec::new();
+    let mut entries: Vec<_> = std::fs::read_dir(dir)?
+        .filter_map(|e| e.ok())
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+
+    for entry in entries {
+        let path = entry.path();
+        match path.extension().and_then(|e| e.to_str()) {
+            Some("yaml" | "yml") => {}
+            _ => continue,
+        }
+        match Workload::from_file(&path.to_path_buf()) {
+            Ok(w) => workloads.push((path, w)),
+            Err(e) => {
+                eprintln!(
+                    "⚠️  Skipping {}: {}",
+                    path.display(),
+                    e
+                );
+            }
+        }
+    }
+
+    if workloads.is_empty() {
+        anyhow::bail!("No valid workload specs found in '{}'", dir.display());
+    }
+
+    Ok(workloads)
+}
+
+/// Order workloads according to DependencyGraph startup order.
+/// Workloads present in the graph come first (in topological order);
+/// workloads not in the graph are appended in discovery order.
+fn order_workloads_by_deps(
+    workloads: Vec<(PathBuf, Workload)>,
+    graph: &orchestr8::dependencies::DependencyGraph,
+) -> Vec<(PathBuf, Workload)> {
+    let order = graph.startup_order().unwrap_or_default();
+
+    // Index workloads by name for fast lookup
+    let mut by_name: std::collections::HashMap<String, (PathBuf, Workload)> = workloads
+        .into_iter()
+        .map(|(p, w)| (w.metadata.name.clone(), (p, w)))
+        .collect();
+
+    let mut ordered: Vec<(PathBuf, Workload)> = Vec::with_capacity(by_name.len());
+
+    // First: workloads that appear in the graph's startup order
+    for name in &order {
+        if let Some(entry) = by_name.remove(name) {
+            ordered.push(entry);
+        }
+    }
+
+    // Then: remaining workloads in alphabetical order (stable for reproducibility)
+    let mut remaining: Vec<_> = by_name.into_values().collect();
+    remaining.sort_by(|a, b| a.1.metadata.name.cmp(&b.1.metadata.name));
+    ordered.extend(remaining);
+
+    ordered
+}
+
+/// Deploy all workloads discovered in a directory.
+pub(crate) async fn deploy_command(
+    dir: &Path,
+    runtime_override: Option<String>,
+    fail_fast: bool,
+    dry_run: bool,
+) -> Result<()> {
+    println!("📂 Discovering workloads in '{}'...", dir.display());
+
+    let workloads = discover_workloads(dir)?;
+
+    // Load dependency graph for ordering
+    let graph_path = orchestr8::dependencies::DependencyGraph::default_path();
+    let graph = orchestr8::dependencies::DependencyGraph::load(&graph_path)
+        .unwrap_or_default();
+
+    let ordered = order_workloads_by_deps(workloads, &graph);
+
+    // Show plan
+    println!("\n📋 Deployment plan ({} workloads):", ordered.len());
+    for (i, (path, w)) in ordered.iter().enumerate() {
+        println!(
+            "  {}. {} ({})",
+            i + 1,
+            w.metadata.name,
+            path.display()
+        );
+    }
+
+    if dry_run {
+        println!("\n🔍 Dry run — no workloads were deployed.");
+        return Ok(());
+    }
+
+    println!();
+
+    let total = ordered.len();
+    let mut succeeded = 0usize;
+    let mut failed: Vec<(String, String)> = Vec::new();
+
+    for (i, (path, workload)) in ordered.iter().enumerate() {
+        println!(
+            "▶ [{}/{}] Deploying '{}'...",
+            i + 1,
+            total,
+            workload.metadata.name
+        );
+
+        match deploy_single_workload(
+            workload,
+            path,
+            runtime_override.as_deref(),
+        )
+        .await
+        {
+            Ok(()) => {
+                succeeded += 1;
+            }
+            Err(e) => {
+                let msg = format!("{}", e);
+                eprintln!(
+                    "❌ Failed to deploy '{}': {}",
+                    workload.metadata.name, msg
+                );
+                failed.push((workload.metadata.name.clone(), msg));
+                if fail_fast {
+                    println!(
+                        "\n⛔ Aborting (--fail-fast): {}/{} succeeded, 1 failed.",
+                        succeeded, total
+                    );
+                    return Err(anyhow::anyhow!(
+                        "Deploy aborted: '{}' failed",
+                        failed.last().unwrap().0
+                    ));
+                }
+            }
+        }
+    }
+
+    // Summary
+    println!("\n📊 Deploy summary: {} succeeded, {} failed out of {} total",
+        succeeded, failed.len(), total);
+
+    if !failed.is_empty() {
+        println!("\nFailed workloads:");
+        for (name, err) in &failed {
+            println!("  - {}: {}", name, err);
+        }
+        anyhow::bail!(
+            "{} of {} workloads failed to deploy",
+            failed.len(),
+            total
+        );
+    }
+
+    Ok(())
+}
+
 /// Emit an event and save to the event bus (best-effort, errors are logged).
 pub(crate) fn emit_event(
     severity: orchestr8::events::EventSeverity,
@@ -2561,5 +2738,153 @@ mod tests {
 
         // Remove non-existent channel
         assert!(!bus.remove_channel("nonexistent"));
+    }
+
+    // ---------------------------------------------------------------
+    // discover_workloads
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_discover_workloads_valid_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        // Write two valid specs with distinct names
+        let mut spec_a = make_valid_workload();
+        spec_a.metadata.name = "alpha-svc".to_string();
+        let mut spec_b = make_valid_workload();
+        spec_b.metadata.name = "beta-svc".to_string();
+
+        std::fs::write(
+            dir.path().join("alpha.yaml"),
+            serde_yaml::to_string(&spec_a).unwrap(),
+        ).unwrap();
+        std::fs::write(
+            dir.path().join("beta.yml"),
+            serde_yaml::to_string(&spec_b).unwrap(),
+        ).unwrap();
+
+        let result = discover_workloads(dir.path()).unwrap();
+        assert_eq!(result.len(), 2);
+        let names: Vec<&str> = result.iter().map(|(_, w)| w.metadata.name.as_str()).collect();
+        assert!(names.contains(&"alpha-svc"));
+        assert!(names.contains(&"beta-svc"));
+    }
+
+    #[test]
+    fn test_discover_workloads_skips_invalid() {
+        let dir = tempfile::tempdir().unwrap();
+        // One valid, one invalid YAML, one non-YAML file
+        let spec = make_valid_workload();
+        std::fs::write(
+            dir.path().join("good.yaml"),
+            serde_yaml::to_string(&spec).unwrap(),
+        ).unwrap();
+        std::fs::write(dir.path().join("bad.yaml"), "not: valid: [[[").unwrap();
+        std::fs::write(dir.path().join("readme.txt"), "ignore me").unwrap();
+
+        let result = discover_workloads(dir.path()).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].1.metadata.name, "test-app");
+    }
+
+    #[test]
+    fn test_discover_workloads_empty_dir_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = discover_workloads(dir.path());
+        assert!(result.is_err());
+        let msg = result.unwrap_err().to_string();
+        assert!(msg.contains("No valid workload specs found"));
+    }
+
+    #[test]
+    fn test_discover_workloads_not_a_dir_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let file_path = dir.path().join("file.txt");
+        std::fs::write(&file_path, "hello").unwrap();
+
+        let result = discover_workloads(&file_path);
+        assert!(result.is_err());
+        let msg = result.unwrap_err().to_string();
+        assert!(msg.contains("is not a directory"));
+    }
+
+    // ---------------------------------------------------------------
+    // order_workloads_by_deps
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_order_workloads_with_graph() {
+        use orchestr8::dependencies::DependencyGraph;
+
+        let mut graph = DependencyGraph::new();
+        // api depends on db
+        graph.add_dependency("api-svc", "db-svc");
+
+        let mut db = make_valid_workload();
+        db.metadata.name = "db-svc".to_string();
+        let mut api = make_valid_workload();
+        api.metadata.name = "api-svc".to_string();
+
+        // Provide in reverse order to prove reordering works
+        let workloads = vec![
+            (PathBuf::from("api.yaml"), api),
+            (PathBuf::from("db.yaml"), db),
+        ];
+
+        let ordered = order_workloads_by_deps(workloads, &graph);
+        assert_eq!(ordered.len(), 2);
+        assert_eq!(ordered[0].1.metadata.name, "db-svc");
+        assert_eq!(ordered[1].1.metadata.name, "api-svc");
+    }
+
+    #[test]
+    fn test_order_workloads_without_graph() {
+        use orchestr8::dependencies::DependencyGraph;
+
+        let graph = DependencyGraph::new();
+
+        let mut a = make_valid_workload();
+        a.metadata.name = "beta-svc".to_string();
+        let mut b = make_valid_workload();
+        b.metadata.name = "alpha-svc".to_string();
+
+        let workloads = vec![
+            (PathBuf::from("beta.yaml"), a),
+            (PathBuf::from("alpha.yaml"), b),
+        ];
+
+        let ordered = order_workloads_by_deps(workloads, &graph);
+        // No graph entries, so remaining are sorted alphabetically by name
+        assert_eq!(ordered[0].1.metadata.name, "alpha-svc");
+        assert_eq!(ordered[1].1.metadata.name, "beta-svc");
+    }
+
+    #[test]
+    fn test_order_workloads_partial_graph() {
+        use orchestr8::dependencies::DependencyGraph;
+
+        let mut graph = DependencyGraph::new();
+        // Only db-svc is in the graph
+        graph.add_workload("db-svc");
+
+        let mut db = make_valid_workload();
+        db.metadata.name = "db-svc".to_string();
+        let mut web = make_valid_workload();
+        web.metadata.name = "web-svc".to_string();
+        let mut cache = make_valid_workload();
+        cache.metadata.name = "cache-svc".to_string();
+
+        let workloads = vec![
+            (PathBuf::from("web.yaml"), web),
+            (PathBuf::from("cache.yaml"), cache),
+            (PathBuf::from("db.yaml"), db),
+        ];
+
+        let ordered = order_workloads_by_deps(workloads, &graph);
+        assert_eq!(ordered.len(), 3);
+        // db-svc is in the graph, so it comes first
+        assert_eq!(ordered[0].1.metadata.name, "db-svc");
+        // Remaining sorted alphabetically
+        assert_eq!(ordered[1].1.metadata.name, "cache-svc");
+        assert_eq!(ordered[2].1.metadata.name, "web-svc");
     }
 }

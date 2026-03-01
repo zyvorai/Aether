@@ -73,6 +73,7 @@ async fn main() -> Result<()> {
         Commands::Webhook { .. } => "webhook",
         Commands::Diff { .. } => "diff",
         Commands::Rollback { .. } => "rollback",
+        Commands::Deploy { .. } => "deploy",
     };
 
     let result = match cli.command {
@@ -176,6 +177,9 @@ async fn main() -> Result<()> {
         }
         Commands::Rollback { name } => {
             commands::rollback_command(&name).await
+        }
+        Commands::Deploy { dir, runtime, fail_fast, dry_run } => {
+            commands::deploy_command(&dir, runtime, fail_fast, dry_run).await
         }
     };
 

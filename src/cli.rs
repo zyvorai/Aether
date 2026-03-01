@@ -320,6 +320,24 @@ pub(crate) enum Commands {
         /// Workload name
         name: String,
     },
+
+    /// Deploy all workloads from a directory
+    Deploy {
+        /// Directory containing YAML workload specs
+        dir: PathBuf,
+
+        /// Override runtime for all workloads (podman, kube, kubevirt, metal)
+        #[arg(short, long)]
+        runtime: Option<String>,
+
+        /// Stop on first failure
+        #[arg(long)]
+        fail_fast: bool,
+
+        /// Show deployment plan without executing
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Subcommand)]
