@@ -1070,10 +1070,7 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
     use orchestr8::sla::{format_sla_report, SlaEngine, SlaObservation, SlaTarget};
 
     // Persist SLA targets via a simple JSON file
-    let sla_path = {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        std::path::PathBuf::from(home).join(".orchestr8/sla.json")
-    };
+    let sla_path = orchestr8::resources::orchestr8_path("sla.json");
 
     let load_engine = || -> Result<SlaEngine> {
         if sla_path.exists() {

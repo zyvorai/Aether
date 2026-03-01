@@ -116,7 +116,7 @@ impl std::str::FromStr for RuntimeKind {
         match s.to_lowercase().as_str() {
             "podman" | "container" => Ok(RuntimeKind::Podman),
             "kubernetes" | "kube" | "k8s" => Ok(RuntimeKind::Kubernetes),
-            "kubevirt" => Ok(RuntimeKind::KubeVirt),
+            "kubevirt" | "vm" => Ok(RuntimeKind::KubeVirt),
             "metal3" | "metal" | "bare-metal" => Ok(RuntimeKind::Metal3),
             _ => Err(anyhow::anyhow!("Unknown runtime: '{}'. Valid: podman, kubernetes, kubevirt, metal3", s)),
         }
@@ -135,6 +135,7 @@ mod tests {
         assert_eq!("kube".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
         assert_eq!("k8s".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
         assert_eq!("kubevirt".parse::<RuntimeKind>().unwrap(), RuntimeKind::KubeVirt);
+        assert_eq!("vm".parse::<RuntimeKind>().unwrap(), RuntimeKind::KubeVirt);
         assert_eq!("metal3".parse::<RuntimeKind>().unwrap(), RuntimeKind::Metal3);
         assert_eq!("metal".parse::<RuntimeKind>().unwrap(), RuntimeKind::Metal3);
         assert_eq!("bare-metal".parse::<RuntimeKind>().unwrap(), RuntimeKind::Metal3);

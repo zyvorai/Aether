@@ -852,10 +852,7 @@ pub(crate) async fn api_template_generate(
 pub(crate) async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResponse {
     use crate::sla::{SlaEngine, SlaTarget};
 
-    let sla_path = {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        std::path::PathBuf::from(home).join(".orchestr8/sla.json")
-    };
+    let sla_path = crate::resources::orchestr8_path("sla.json");
 
     if !sla_path.exists() {
         return (

@@ -31,16 +31,8 @@ impl StateStore {
     }
 
     /// Load state from disk
-    pub fn load(path: &PathBuf) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-
-        let content = std::fs::read_to_string(path)
-            .with_context(|| format!("failed to read state file: {}", path.display()))?;
-        let store: StateStore = serde_json::from_str(&content)
-            .with_context(|| format!("failed to parse state file: {}", path.display()))?;
-        Ok(store)
+    pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
+        crate::resources::json_load(path)
     }
 
     /// Save state to disk
