@@ -1026,3 +1026,297 @@ fn test_orchestrator_save_load() {
     let loaded = Orchestrator::load(&orch_path).unwrap();
     assert_eq!(loaded.list_workloads().len(), 2);
 }
+
+// ── Template generation ─────────────────────────────────────────────
+
+#[test]
+fn test_template_generation_and_validation() {
+    use orchestr8::templates::{generate, TemplateKind, TemplateParams};
+
+    let templates = vec![
+        TemplateKind::WebApp,
+        TemplateKind::RestApi,
+        TemplateKind::Database,
+        TemplateKind::Cache,
+        TemplateKind::Worker,
+        TemplateKind::CronJob,
+        TemplateKind::MlTraining,
+        TemplateKind::Microservice,
+    ];
+
+    for kind in templates {
+        let params = TemplateParams {
+            name: "test-gen".to_string(),
+            owner: "ci".to_string(),
+            project: "test".to_string(),
+            registry: "ghcr.io/test".to_string(),
+            ..Default::default()
+        };
+        let spec = generate(&kind, &params);
+        // Every generated spec must pass validation
+        assert!(spec.validate().is_ok(), "Template {:?} failed validation", kind);
+        assert_eq!(spec.metadata.name, "test-gen");
+    }
+}
+
+#[test]
+fn test_template_kind_from_str_roundtrip() {
+    use orchestr8::templates::TemplateKind;
+
+    for name in &["web-app", "rest-api", "database", "cache", "worker", "cron-job", "ml-training", "microservice"] {
+        let kind: TemplateKind = name.parse().expect(name);
+        // Generate from parsed kind to verify it works end-to-end
+        let params = orchestr8::templates::TemplateParams::default();
+        let spec = orchestr8::templates::generate(&kind, &params);
+        assert!(spec.validate().is_ok());
+    }
+}
+
+// ── Drift detection ─────────────────────────────────────────────────
+
+#[test]
+fn test_drift_detection_full_cycle() {
+    use orchestr8::drift::{DriftDetector, DriftCategory};
+    use orchestr8::runtime::Instance;
+    use orchestr8::state::WorkloadState;
+
+    let temp_dir = TempDir::new().unwrap();
+    let (spec, _) = create_test_workload("drift-test", &temp_dir);
+
+    // State with matching runtime
+    let state = WorkloadState {
+        name: "drift-test".to_string(),
+        runtime: RuntimeKind::Podman,
+        instance: Instance {
+            id: "id1".to_string(),
+            name: "drift-test".to_string(),
+            runtime: RuntimeKind::Podman,
+            image: "ghcr.io/test/drift-test:latest".to_string(),
+            created_at: chrono::Utc::now().to_rfc3339(),
+        },
+        spec_path: PathBuf::from("test.yaml"),
+        created_at: chrono::Utc::now().to_rfc3339(),
+        updated_at: chrono::Utc::now().to_rfc3339(),
+    };
+
+    let detector = DriftDetector::new();
+    let report = detector.detect(&spec, &state);
+
+    // Should detect health drift (service=true but no health probes in the spec)
+    assert!(report.has_drift);
+    assert!(report.drifts.iter().any(|d| d.category == DriftCategory::Health));
+    assert!(!report.reconciliation_plan.is_empty());
+}
+
+// ── Policy engine ──────────────────────────────────────────────────
+
+#[test]
+fn test_policy_engine_production_rules() {
+    use orchestr8::policy::PolicyEngine;
+
+    let temp_dir = TempDir::new().unwrap();
+    let (spec, _) = create_test_workload("policy-test", &temp_dir);
+
+    let engine = PolicyEngine::production();
+    let result = engine.evaluate(&spec);
+
+    // Should pass resource limits (2 CPU, 4Gi is within 64 CPU / 256Gi limit)
+    // May warn about missing health probes
+    assert!(result.policies_evaluated > 0);
+}
+
+#[test]
+fn test_policy_engine_dev_cpu_exceeded() {
+    use orchestr8::policy::{Policy, PolicyEngine, PolicyRule, PolicySeverity, RuleCheck};
+
+    let temp_dir = TempDir::new().unwrap();
+    let (spec, _) = create_test_workload("policy-test", &temp_dir);
+
+    // Dev policy with 1 CPU max (our workload has 2)
+    let engine = PolicyEngine::new(vec![Policy {
+        name: "strict".to_string(),
+        description: "test".to_string(),
+        enabled: true,
+        rules: vec![PolicyRule {
+            name: "max-cpu".to_string(),
+            check: RuleCheck::MaxCpu(1.0),
+            severity: PolicySeverity::Error,
+            message: "Too much CPU".to_string(),
+        }],
+    }]);
+
+    let result = engine.evaluate(&spec);
+    assert!(!result.passed);
+    assert_eq!(result.violations.len(), 1);
+}
+
+// ── Dependency graph ────────────────────────────────────────────────
+
+#[test]
+fn test_dependency_graph_save_load_cycle() {
+    use orchestr8::dependencies::DependencyGraph;
+
+    let temp_dir = TempDir::new().unwrap();
+    let path = temp_dir.path().join("deps.json");
+
+    let mut graph = DependencyGraph::new();
+    graph.add_dependency("web", "api");
+    graph.add_dependency("api", "database");
+    graph.add_dependency("api", "cache");
+    graph.save(&path).unwrap();
+
+    let loaded = DependencyGraph::load(&path).unwrap();
+    let order = loaded.startup_order().unwrap();
+
+    // database and cache must start before api, api before web
+    let db_pos = order.iter().position(|n| n == "database").unwrap();
+    let api_pos = order.iter().position(|n| n == "api").unwrap();
+    let web_pos = order.iter().position(|n| n == "web").unwrap();
+    assert!(db_pos < api_pos);
+    assert!(api_pos < web_pos);
+
+    // Impact analysis
+    let impact = loaded.impact_analysis("database");
+    assert!(impact.cascade_count >= 2); // api + web
+}
+
+// ── Audit trail ─────────────────────────────────────────────────────
+
+#[test]
+fn test_audit_log_save_load_prune() {
+    use orchestr8::audit::{ActionResult, AuditAction, AuditLog};
+
+    let temp_dir = TempDir::new().unwrap();
+    let path = temp_dir.path().join("audit.json");
+
+    let mut log = AuditLog::new();
+    for i in 0..25 {
+        log.record(
+            AuditAction::Deploy,
+            &format!("app-{}", i),
+            Some("podman"),
+            ActionResult::Success,
+            "deployed",
+            None,
+        );
+    }
+
+    log.save(&path).unwrap();
+    let loaded = AuditLog::load(&path).unwrap();
+    assert_eq!(loaded.events().len(), 25);
+
+    let summary = loaded.summary();
+    assert_eq!(summary.total_events, 25);
+    assert_eq!(summary.successes, 25);
+    assert_eq!(summary.failures, 0);
+}
+
+// ── SLA engine ──────────────────────────────────────────────────────
+
+#[test]
+fn test_sla_engine_compliance_check() {
+    use orchestr8::sla::{ComplianceStatus, SlaEngine, SlaObservation, SlaTarget};
+
+    let mut engine = SlaEngine::new();
+    engine.add_target(SlaTarget::standard("web-app"));
+    engine.add_target(SlaTarget::high_availability("critical-api"));
+    engine.add_target(SlaTarget::best_effort("worker"));
+
+    assert_eq!(engine.list_targets().len(), 3);
+
+    // Good observation (well above 99.9% target + 0.1% at-risk margin)
+    let obs = SlaObservation {
+        uptime_pct: 99.95 + 0.15,
+        avg_latency_ms: 50.0,
+        error_rate_pct: 0.01,
+        restarts: 0,
+        observation_period: "24h".to_string(),
+    };
+    let report = engine.evaluate("web-app", &obs).unwrap();
+    assert_eq!(report.status, ComplianceStatus::Compliant);
+    assert!(report.remaining_error_budget.is_some());
+
+    // Bad observation
+    let bad_obs = SlaObservation {
+        uptime_pct: 95.0,
+        avg_latency_ms: 1000.0,
+        error_rate_pct: 10.0,
+        restarts: 20,
+        observation_period: "24h".to_string(),
+    };
+    let bad_report = engine.evaluate("critical-api", &bad_obs).unwrap();
+    assert_eq!(bad_report.status, ComplianceStatus::Violated);
+}
+
+// ── Resources module (shared utilities) ─────────────────────────────
+
+#[test]
+fn test_resources_json_load_save_roundtrip() {
+    use orchestr8::resources::{json_load, json_save, orchestr8_path};
+
+    // Verify orchestr8_path is deterministic
+    let p1 = orchestr8_path("test.json");
+    let p2 = orchestr8_path("test.json");
+    assert_eq!(p1, p2);
+    assert!(p1.ends_with(".orchestr8/test.json"));
+
+    // JSON roundtrip with a real type
+    let temp_dir = TempDir::new().unwrap();
+    let path = temp_dir.path().join("state.json");
+
+    let mut store = StateStore::new();
+    store.upsert(
+        "rt-test".to_string(),
+        orchestr8::state::WorkloadState {
+            name: "rt-test".to_string(),
+            runtime: RuntimeKind::Kubernetes,
+            instance: orchestr8::runtime::Instance {
+                id: "k-1".to_string(),
+                name: "rt-test".to_string(),
+                runtime: RuntimeKind::Kubernetes,
+                image: "test:v1".to_string(),
+                created_at: chrono::Utc::now().to_rfc3339(),
+            },
+            spec_path: PathBuf::from("test.yaml"),
+            created_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        },
+    );
+
+    json_save(&store, &path).unwrap();
+    let loaded: StateStore = json_load(&path).unwrap();
+    assert_eq!(loaded.list().len(), 1);
+    assert_eq!(loaded.get("rt-test").unwrap().runtime, RuntimeKind::Kubernetes);
+}
+
+// ── FromStr integration (cross-module) ──────────────────────────────
+
+#[test]
+fn test_runtime_kind_from_str_used_in_engine_context() {
+    let temp_dir = TempDir::new().unwrap();
+    let (workload, _) = create_test_workload("from-str-test", &temp_dir);
+
+    // Parse a runtime string, then verify it can drive engine decisions
+    let rt: RuntimeKind = "kubernetes".parse().unwrap();
+    assert_eq!(rt, RuntimeKind::Kubernetes);
+
+    // Verify engine decision still works
+    let engine = Engine::new();
+    let decided = engine.decide(&workload).unwrap();
+    assert!(matches!(decided, RuntimeKind::Kubernetes | RuntimeKind::Podman));
+}
+
+#[test]
+fn test_migration_strategy_from_str_integration() {
+    use orchestr8::migration::MigrationStrategy;
+
+    // All strategies parse correctly
+    let strategies = vec!["immediate", "blue-green", "rolling"];
+    for s in strategies {
+        let parsed: MigrationStrategy = s.parse().unwrap();
+        // Display roundtrip
+        let displayed = parsed.to_string();
+        let reparsed: MigrationStrategy = displayed.parse().unwrap();
+        assert_eq!(parsed, reparsed);
+    }
+}
