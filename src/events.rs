@@ -27,6 +27,20 @@ impl std::fmt::Display for EventSeverity {
     }
 }
 
+impl std::str::FromStr for EventSeverity {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "info" => Ok(EventSeverity::Info),
+            "warning" | "warn" => Ok(EventSeverity::Warning),
+            "error" => Ok(EventSeverity::Error),
+            "critical" => Ok(EventSeverity::Critical),
+            _ => Err(anyhow::anyhow!("Unknown severity: '{}'. Valid: info, warning, error, critical", s)),
+        }
+    }
+}
+
 /// Event categories
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EventCategory {
@@ -166,6 +180,9 @@ impl Default for EventBus {
 }
 
 impl EventBus {
+    /// Maximum number of events to retain
+    const MAX_EVENTS: usize = 10_000;
+
     pub fn new() -> Self {
         Self {
             events: Vec::new(),
@@ -195,6 +212,12 @@ impl EventBus {
 
         self.events.push(event);
         self.next_id += 1;
+
+        // Auto-prune to prevent unbounded growth
+        if self.events.len() > Self::MAX_EVENTS {
+            let drain = self.events.len() - Self::MAX_EVENTS;
+            self.events.drain(..drain);
+        }
 
         // Process notifications (log format for now)
         for notification in notifications {
@@ -348,28 +371,17 @@ impl EventBus {
 
     /// Default path
     pub fn default_path() -> PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".orchestr8/events.json")
+        crate::resources::orchestr8_path("events.json")
     }
 
     /// Load from disk
     pub fn load(path: &Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let bus: Self = serde_json::from_str(&content)?;
-        Ok(bus)
+        crate::resources::json_load(path)
     }
 
     /// Save to disk
     pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 
     // --- Private ---
@@ -461,37 +473,48 @@ impl EventBus {
                     timestamp: chrono::Utc::now().to_rfc3339(),
                 };
 
-                let client = reqwest::blocking::Client::builder()
-                    .timeout(std::time::Duration::from_secs(10))
-                    .build()
-                    .unwrap_or_else(|_| reqwest::blocking::Client::new());
+                let url = url.clone();
+                let method = method.clone();
+                let channel_name = notification.channel_name.clone();
+                let event_id = notification.event_id;
+                let title = notification.title.clone();
+                let message = notification.message.clone();
 
-                let result = if method.eq_ignore_ascii_case("GET") {
-                    client.get(url).query(&[
-                        ("event_id", notification.event_id.to_string()),
-                        ("title", notification.title.clone()),
-                        ("message", notification.message.clone()),
-                    ]).send()
-                } else {
-                    client.post(url).json(&payload).send()
-                };
+                // Fire-and-forget on a blocking thread to avoid blocking
+                // the caller and to avoid recreating the client per call.
+                std::thread::spawn(move || {
+                    let client = reqwest::blocking::Client::builder()
+                        .timeout(std::time::Duration::from_secs(10))
+                        .build()
+                        .unwrap_or_else(|_| reqwest::blocking::Client::new());
 
-                match result {
-                    Ok(resp) => {
-                        tracing::info!(
-                            "Webhook delivered to {} (status: {})",
-                            notification.channel_name,
-                            resp.status()
-                        );
+                    let result = if method.eq_ignore_ascii_case("GET") {
+                        client.get(&url).query(&[
+                            ("event_id", event_id.to_string()),
+                            ("title", title),
+                            ("message", message),
+                        ]).send()
+                    } else {
+                        client.post(&url).json(&payload).send()
+                    };
+
+                    match result {
+                        Ok(resp) => {
+                            tracing::info!(
+                                "Webhook delivered to {} (status: {})",
+                                channel_name,
+                                resp.status()
+                            );
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                "Webhook delivery failed for {}: {}",
+                                channel_name,
+                                e
+                            );
+                        }
                     }
-                    Err(e) => {
-                        tracing::warn!(
-                            "Webhook delivery failed for {}: {}",
-                            notification.channel_name,
-                            e
-                        );
-                    }
-                }
+                });
             }
         }
     }
@@ -748,5 +771,16 @@ mod tests {
         bus.emit_simple(EventSeverity::Critical, EventCategory::SlaViolation, "test", None, "Critical", "bad");
 
         assert_eq!(bus.events().len(), 4);
+    }
+
+    #[test]
+    fn test_event_severity_from_str() {
+        assert_eq!("info".parse::<EventSeverity>().unwrap(), EventSeverity::Info);
+        assert_eq!("warning".parse::<EventSeverity>().unwrap(), EventSeverity::Warning);
+        assert_eq!("warn".parse::<EventSeverity>().unwrap(), EventSeverity::Warning);
+        assert_eq!("error".parse::<EventSeverity>().unwrap(), EventSeverity::Error);
+        assert_eq!("critical".parse::<EventSeverity>().unwrap(), EventSeverity::Critical);
+        assert_eq!("CRITICAL".parse::<EventSeverity>().unwrap(), EventSeverity::Critical);
+        assert!("debug".parse::<EventSeverity>().is_err());
     }
 }

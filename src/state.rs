@@ -74,16 +74,12 @@ impl StateStore {
 
     /// Get default state file path
     pub fn default_path() -> PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".orchestr8/state.json")
+        crate::resources::orchestr8_path("state.json")
     }
 
     /// Ensure state directory exists
     pub fn ensure_state_dir() -> anyhow::Result<()> {
-        let state_file = Self::default_path();
-        if let Some(parent) = state_file.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
+        std::fs::create_dir_all(crate::resources::orchestr8_dir())?;
         Ok(())
     }
 }

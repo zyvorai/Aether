@@ -60,8 +60,7 @@ impl Config {
 
     /// Default config file path
     pub fn default_path() -> PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".orchestr8/config.yaml")
+        crate::resources::orchestr8_path("config.yaml")
     }
 }
 

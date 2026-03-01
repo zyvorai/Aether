@@ -18,6 +18,29 @@ pub enum MigrationStrategy {
     Rolling,
 }
 
+impl std::fmt::Display for MigrationStrategy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MigrationStrategy::Immediate => write!(f, "immediate"),
+            MigrationStrategy::BlueGreen => write!(f, "blue-green"),
+            MigrationStrategy::Rolling => write!(f, "rolling"),
+        }
+    }
+}
+
+impl std::str::FromStr for MigrationStrategy {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "immediate" => Ok(MigrationStrategy::Immediate),
+            "blue-green" | "bluegreen" => Ok(MigrationStrategy::BlueGreen),
+            "rolling" => Ok(MigrationStrategy::Rolling),
+            _ => Err(anyhow::anyhow!("Unknown migration strategy: '{}'. Valid: immediate, blue-green, rolling", s)),
+        }
+    }
+}
+
 /// Migration plan
 #[derive(Debug, Clone)]
 pub struct MigrationPlan {
@@ -1425,5 +1448,22 @@ mod tests {
         );
         assert_eq!(plan.strategy, MigrationStrategy::Rolling);
         assert!(plan.rollback_on_failure);
+    }
+
+    #[test]
+    fn test_migration_strategy_from_str() {
+        assert_eq!("immediate".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Immediate);
+        assert_eq!("blue-green".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::BlueGreen);
+        assert_eq!("bluegreen".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::BlueGreen);
+        assert_eq!("rolling".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Rolling);
+        assert_eq!("IMMEDIATE".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Immediate);
+        assert!("unknown".parse::<MigrationStrategy>().is_err());
+    }
+
+    #[test]
+    fn test_migration_strategy_display() {
+        assert_eq!(MigrationStrategy::Immediate.to_string(), "immediate");
+        assert_eq!(MigrationStrategy::BlueGreen.to_string(), "blue-green");
+        assert_eq!(MigrationStrategy::Rolling.to_string(), "rolling");
     }
 }

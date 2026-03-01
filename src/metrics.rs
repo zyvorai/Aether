@@ -8,7 +8,7 @@ use prometheus::{
 };
 
 /// Global metrics registry
-pub static REGISTRY: LazyLock<Registry> = LazyLock::new(|| Registry::new());
+pub static REGISTRY: LazyLock<Registry> = LazyLock::new(Registry::new);
 
 // Workload metrics
 /// Total number of workload build operations

@@ -74,40 +74,25 @@ impl Engine {
         cpu > 16.0 || memory > 64.0 * 1024.0 * 1024.0 * 1024.0 // 64Gi
     }
 
-    /// Parse CPU string (e.g., "2", "2000m")
+    /// Parse CPU string (e.g., "2", "2000m"), defaulting to 1.0 on bad input
     fn parse_cpu(&self, cpu: &str) -> f64 {
-        let result = if let Some(stripped) = cpu.strip_suffix('m') {
-            stripped.parse::<f64>().ok().map(|v| v / 1000.0)
+        let v = crate::resources::parse_cpu(cpu);
+        if v > 0.0 {
+            v
         } else {
-            cpu.parse::<f64>().ok()
-        };
-        match result {
-            Some(v) if v > 0.0 => v,
-            _ => {
-                tracing::warn!(value = cpu, "invalid CPU resource value, defaulting to 1.0");
-                1.0
-            }
+            tracing::warn!(value = cpu, "invalid CPU resource value, defaulting to 1.0");
+            1.0
         }
     }
 
-    /// Parse memory string (e.g., "4Gi", "4096Mi")
+    /// Parse memory string (e.g., "4Gi", "4096Mi") to bytes, defaulting to 1Gi on bad input
     fn parse_memory(&self, memory: &str) -> f64 {
-        let memory = memory.trim();
-        let result = if let Some(stripped) = memory.strip_suffix("Gi") {
-            stripped.parse::<f64>().ok().map(|v| v * 1024.0 * 1024.0 * 1024.0)
-        } else if let Some(stripped) = memory.strip_suffix("Mi") {
-            stripped.parse::<f64>().ok().map(|v| v * 1024.0 * 1024.0)
-        } else if let Some(stripped) = memory.strip_suffix("Ki") {
-            stripped.parse::<f64>().ok().map(|v| v * 1024.0)
+        let gi = crate::resources::parse_memory_gi(memory);
+        if gi > 0.0 {
+            gi * 1024.0 * 1024.0 * 1024.0
         } else {
-            memory.parse::<f64>().ok()
-        };
-        match result {
-            Some(v) if v > 0.0 => v,
-            _ => {
-                tracing::warn!(value = memory, "invalid memory resource value, defaulting to 1Gi");
-                1024.0 * 1024.0 * 1024.0
-            }
+            tracing::warn!(value = memory, "invalid memory resource value, defaulting to 1Gi");
+            1024.0 * 1024.0 * 1024.0
         }
     }
 
@@ -812,11 +797,11 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_memory_plain_bytes() {
+    fn test_parse_memory_plain_bytes_defaults_to_1gi() {
         let engine = Engine::new();
-        assert!((engine.parse_memory("1048576") - 1048576.0).abs() < 1.0);
-        // "0" is invalid (not > 0), so defaults to 1Gi
         let one_gi = 1024.0 * 1024.0 * 1024.0;
+        // Plain numbers without a suffix are invalid; engine defaults to 1Gi
+        assert!((engine.parse_memory("1048576") - one_gi).abs() < 1.0);
         assert!((engine.parse_memory("0") - one_gi).abs() < 1.0);
     }
 

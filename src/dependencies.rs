@@ -354,28 +354,17 @@ pub fn format_dependency_report(graph: &DependencyGraph) -> String {
 impl DependencyGraph {
     /// Default path for dependency graph file
     pub fn default_path() -> std::path::PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        std::path::PathBuf::from(home).join(".orchestr8/dependencies.json")
+        crate::resources::orchestr8_path("dependencies.json")
     }
 
     /// Load from disk
     pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let graph: Self = serde_json::from_str(&content)?;
-        Ok(graph)
+        crate::resources::json_load(path)
     }
 
     /// Save to disk
     pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 }
 

@@ -54,6 +54,27 @@ impl std::fmt::Display for WorkloadClass {
     }
 }
 
+impl std::str::FromStr for WorkloadClass {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().replace('_', "-").as_str() {
+            "web-service" => Ok(WorkloadClass::WebService),
+            "api-backend" => Ok(WorkloadClass::ApiBackend),
+            "database" | "db" => Ok(WorkloadClass::Database),
+            "cache" => Ok(WorkloadClass::Cache),
+            "batch-job" | "batch" => Ok(WorkloadClass::BatchJob),
+            "ml-training" | "ml" => Ok(WorkloadClass::MlTraining),
+            "worker" => Ok(WorkloadClass::Worker),
+            "microservice" => Ok(WorkloadClass::Microservice),
+            _ => Err(anyhow::anyhow!(
+                "Unknown workload class: '{}'. Valid: web-service, api-backend, database, cache, batch-job, ml-training, worker, microservice",
+                s
+            )),
+        }
+    }
+}
+
 /// Runtime affinity score for a workload class
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AffinityScore {
@@ -101,6 +122,9 @@ impl AffinityEngine {
         Self::default()
     }
 
+    /// Maximum number of deployment outcomes to retain
+    const MAX_OUTCOMES: usize = 10_000;
+
     /// Record a deployment outcome
     pub fn record(&mut self, outcome: DeploymentOutcome) {
         // Track incompatibilities from failures
@@ -108,6 +132,11 @@ impl AffinityEngine {
             self.record_failure(&outcome);
         }
         self.outcomes.push(outcome);
+        // Prune oldest outcomes if over limit
+        if self.outcomes.len() > Self::MAX_OUTCOMES {
+            let drain = self.outcomes.len() - Self::MAX_OUTCOMES;
+            self.outcomes.drain(..drain);
+        }
     }
 
     /// Get the best runtime recommendation for a workload class
@@ -203,28 +232,17 @@ impl AffinityEngine {
 
     /// Default path
     pub fn default_path() -> std::path::PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        std::path::PathBuf::from(home).join(".orchestr8/affinity.json")
+        crate::resources::orchestr8_path("affinity.json")
     }
 
     /// Load from disk
     pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let engine: Self = serde_json::from_str(&content)?;
-        Ok(engine)
+        crate::resources::json_load(path)
     }
 
     /// Save to disk
     pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 
     // --- Private ---
@@ -515,5 +533,19 @@ mod tests {
         let recs = engine.recommend(&WorkloadClass::WebService);
         let output = format_affinity_report(&WorkloadClass::WebService, &recs);
         assert!(output.contains("Web Service"));
+    }
+
+    #[test]
+    fn test_workload_class_from_str() {
+        assert_eq!("web-service".parse::<WorkloadClass>().unwrap(), WorkloadClass::WebService);
+        assert_eq!("api-backend".parse::<WorkloadClass>().unwrap(), WorkloadClass::ApiBackend);
+        assert_eq!("database".parse::<WorkloadClass>().unwrap(), WorkloadClass::Database);
+        assert_eq!("db".parse::<WorkloadClass>().unwrap(), WorkloadClass::Database);
+        assert_eq!("cache".parse::<WorkloadClass>().unwrap(), WorkloadClass::Cache);
+        assert_eq!("batch-job".parse::<WorkloadClass>().unwrap(), WorkloadClass::BatchJob);
+        assert_eq!("ml-training".parse::<WorkloadClass>().unwrap(), WorkloadClass::MlTraining);
+        assert_eq!("worker".parse::<WorkloadClass>().unwrap(), WorkloadClass::Worker);
+        assert_eq!("microservice".parse::<WorkloadClass>().unwrap(), WorkloadClass::Microservice);
+        assert!("unknown-class".parse::<WorkloadClass>().is_err());
     }
 }

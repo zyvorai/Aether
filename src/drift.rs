@@ -378,21 +378,11 @@ impl DriftDetector {
     }
 
     fn parse_cpu(&self, cpu: &str) -> f64 {
-        if let Some(stripped) = cpu.strip_suffix('m') {
-            stripped.parse::<f64>().unwrap_or(0.0) / 1000.0
-        } else {
-            cpu.parse::<f64>().unwrap_or(0.0)
-        }
+        crate::resources::parse_cpu(cpu)
     }
 
     fn parse_memory_gi(&self, memory: &str) -> f64 {
-        if let Some(stripped) = memory.strip_suffix("Gi") {
-            stripped.parse::<f64>().unwrap_or(0.0)
-        } else if let Some(stripped) = memory.strip_suffix("Mi") {
-            stripped.parse::<f64>().unwrap_or(0.0) / 1024.0
-        } else {
-            0.0
-        }
+        crate::resources::parse_memory_gi(memory)
     }
 }
 
