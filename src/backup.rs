@@ -92,7 +92,7 @@ impl Backup {
 
     /// Merge backup into existing state (don't overwrite)
     pub fn merge(&self, state_path: &Path) -> Result<()> {
-        let mut state = StateStore::load(&state_path.to_path_buf())
+        let mut state = StateStore::load(state_path)
             .unwrap_or_else(|_| StateStore::new());
 
         let mut merged_count = 0;

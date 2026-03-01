@@ -412,24 +412,7 @@ impl MigrationEngine {
 
     /// Get runtime instance
     async fn get_runtime(&self, kind: &RuntimeKind) -> Result<Box<dyn Runtime>> {
-        match kind {
-            RuntimeKind::Podman => {
-                let runtime = crate::adapters::PodmanRuntime::new()?;
-                Ok(Box::new(runtime))
-            }
-            RuntimeKind::Kubernetes => {
-                let runtime = crate::adapters::KubernetesRuntime::new().await?;
-                Ok(Box::new(runtime))
-            }
-            RuntimeKind::KubeVirt => {
-                let runtime = crate::adapters::KubeVirtRuntime::new().await?;
-                Ok(Box::new(runtime))
-            }
-            RuntimeKind::Metal3 => {
-                let runtime = crate::adapters::Metal3Runtime::new().await?;
-                Ok(Box::new(runtime))
-            }
-        }
+        crate::runtime::create_runtime(kind).await
     }
 }
 
