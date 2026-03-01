@@ -273,15 +273,15 @@ impl PolicyEngine {
                 }
             }
             RuleCheck::DisallowRuntime(runtime_name) => {
+                use crate::runtime::RuntimeKind;
                 use crate::spec::RuntimeType;
-                let disallowed = match runtime_name.as_str() {
-                    "container" | "podman" => Some(RuntimeType::Container),
-                    "kube" | "kubernetes" => Some(RuntimeType::Kube),
-                    "kubevirt" => Some(RuntimeType::Kubevirt),
-                    "metal" | "metal3" => Some(RuntimeType::Metal),
-                    _ => None,
-                };
-                if let Some(rt) = disallowed {
+                if let Ok(kind) = runtime_name.parse::<RuntimeKind>() {
+                    let rt = match kind {
+                        RuntimeKind::Podman => RuntimeType::Container,
+                        RuntimeKind::Kubernetes => RuntimeType::Kube,
+                        RuntimeKind::KubeVirt => RuntimeType::Kubevirt,
+                        RuntimeKind::Metal3 => RuntimeType::Metal,
+                    };
                     if spec.runtime.allow.contains(&rt) {
                         violations.push(PolicyViolation {
                             policy: policy.name.clone(),
