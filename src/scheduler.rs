@@ -240,6 +240,20 @@ impl std::fmt::Display for ScheduleStrategy {
     }
 }
 
+impl std::str::FromStr for ScheduleStrategy {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "cost" | "cost-optimized" => Ok(ScheduleStrategy::CostOptimized),
+            "performance" | "performance-optimized" => Ok(ScheduleStrategy::PerformanceOptimized),
+            "bin-packing" | "binpacking" => Ok(ScheduleStrategy::BinPacking),
+            "balanced" => Ok(ScheduleStrategy::Balanced),
+            _ => Err(anyhow::anyhow!("Unknown schedule strategy: '{}'. Valid: balanced, cost, performance, bin-packing", s)),
+        }
+    }
+}
+
 /// The workload scheduler
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scheduler {
@@ -519,28 +533,17 @@ impl Scheduler {
 
     /// Default path
     pub fn default_path() -> std::path::PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        std::path::PathBuf::from(home).join(".orchestr8/scheduler.json")
+        crate::resources::orchestr8_path("scheduler.json")
     }
 
     /// Load from disk
     pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let sched: Self = serde_json::from_str(&content)?;
-        Ok(sched)
+        crate::resources::json_load(path)
     }
 
     /// Save to disk
     pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 
     // --- Private ---
@@ -916,5 +919,15 @@ mod tests {
         let utils = scheduler.utilization_summary();
         let output = format_utilization(&utils);
         assert!(output.contains("Runtime Utilization"));
+    }
+
+    #[test]
+    fn test_schedule_strategy_from_str() {
+        assert_eq!("balanced".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::Balanced);
+        assert_eq!("cost".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::CostOptimized);
+        assert_eq!("cost-optimized".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::CostOptimized);
+        assert_eq!("performance".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::PerformanceOptimized);
+        assert_eq!("bin-packing".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::BinPacking);
+        assert!("unknown".parse::<ScheduleStrategy>().is_err());
     }
 }

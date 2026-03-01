@@ -19,6 +19,7 @@ pub mod metrics;
 pub mod migration;
 pub mod orchestrator;
 pub mod policy;
+pub mod resources;
 pub mod runtime;
 pub mod scheduler;
 pub mod secrets;

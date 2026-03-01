@@ -586,28 +586,17 @@ impl Orchestrator {
 
     /// Default path
     pub fn default_path() -> std::path::PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        std::path::PathBuf::from(home).join(".orchestr8/orchestrator.json")
+        crate::resources::orchestr8_path("orchestrator.json")
     }
 
     /// Load from disk
     pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let orch: Self = serde_json::from_str(&content)?;
-        Ok(orch)
+        crate::resources::json_load(path)
     }
 
     /// Save to disk
     pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 }
 

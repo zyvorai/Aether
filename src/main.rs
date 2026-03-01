@@ -93,8 +93,7 @@ async fn main() -> Result<()> {
         } => commands::migrate_command(&name, &target, &strategy, no_validation, no_rollback).await,
         Commands::Tui => commands::tui_command().await,
         Commands::Completions { shell } => {
-            commands::completions_command(&shell);
-            Ok(())
+            commands::completions_command(&shell)
         }
         Commands::Metrics => {
             commands::metrics_command().await;

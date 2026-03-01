@@ -81,6 +81,9 @@ pub struct AuditLog {
 }
 
 impl AuditLog {
+    /// Maximum number of audit events to retain
+    const MAX_EVENTS: usize = 10_000;
+
     pub fn new() -> Self {
         Self {
             events: Vec::new(),
@@ -111,6 +114,12 @@ impl AuditLog {
 
         self.events.push(event);
         self.next_id += 1;
+
+        // Auto-prune to prevent unbounded growth
+        if self.events.len() > Self::MAX_EVENTS {
+            let drain = self.events.len() - Self::MAX_EVENTS;
+            self.events.drain(..drain);
+        }
     }
 
     /// Get all events
@@ -191,28 +200,17 @@ impl AuditLog {
 
     /// Default path for audit log
     pub fn default_path() -> PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".orchestr8/audit.json")
+        crate::resources::orchestr8_path("audit.json")
     }
 
     /// Load from disk
     pub fn load(path: &Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let log: Self = serde_json::from_str(&content)?;
-        Ok(log)
+        crate::resources::json_load(path)
     }
 
     /// Save to disk
     pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 }
 

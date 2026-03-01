@@ -2,12 +2,10 @@
 
 use anyhow::Result;
 use orchestr8::{
-    adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime},
     engine::Engine,
     runtime::RuntimeKind,
     spec::Workload,
     state::StateStore,
-    Runtime,
 };
 use std::path::{Path, PathBuf};
 
@@ -40,24 +38,8 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
     println!("📦 Selected runtime: {}", runtime_kind);
 
     // Build based on runtime
-    let result = match runtime_kind {
-        RuntimeKind::Podman => {
-            let runtime = PodmanRuntime::new()?;
-            runtime.build(&workload).await
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = KubernetesRuntime::new().await?;
-            runtime.build(&workload).await
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = KubeVirtRuntime::new().await?;
-            runtime.build(&workload).await
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = Metal3Runtime::new().await?;
-            runtime.build(&workload).await
-        }
-    };
+    let rt = orchestr8::runtime::create_runtime(&runtime_kind).await?;
+    let result = rt.build(&workload).await;
 
     match result {
         Ok(image) => {
@@ -96,13 +78,7 @@ pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<St
 
     // Determine runtime
     let runtime_kind = if let Some(override_str) = runtime_override {
-        match override_str.as_str() {
-            "podman" | "container" => RuntimeKind::Podman,
-            "kube" | "kubernetes" => RuntimeKind::Kubernetes,
-            "kubevirt" | "vm" => RuntimeKind::KubeVirt,
-            "metal" | "metal3" => RuntimeKind::Metal3,
-            _ => anyhow::bail!("Unknown runtime: {}", override_str),
-        }
+        override_str.parse::<RuntimeKind>()?
     } else {
         engine.decide(&workload)?
     };
@@ -110,36 +86,10 @@ pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<St
     println!("📦 Selected runtime: {}", runtime_kind);
 
     // Build and run based on runtime
-    let (_image, instance) = match runtime_kind {
-        RuntimeKind::Podman => {
-            let runtime = PodmanRuntime::new()?;
-            let image = runtime.build(&workload).await?;
-            println!("✅ Built image: {}", image.full_name());
-            let instance = runtime.run(&image, &workload).await?;
-            (image, instance)
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = KubernetesRuntime::new().await?;
-            let image = runtime.build(&workload).await?;
-            println!("✅ Image reference: {}", image.full_name());
-            let instance = runtime.run(&image, &workload).await?;
-            (image, instance)
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = KubeVirtRuntime::new().await?;
-            let image = runtime.build(&workload).await?;
-            println!("✅ VM image reference: {}", image.full_name());
-            let instance = runtime.run(&image, &workload).await?;
-            (image, instance)
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = Metal3Runtime::new().await?;
-            let image = runtime.build(&workload).await?;
-            println!("✅ Bare metal image reference: {}", image.full_name());
-            let instance = runtime.run(&image, &workload).await?;
-            (image, instance)
-        }
-    };
+    let rt = orchestr8::runtime::create_runtime(&runtime_kind).await?;
+    let image = rt.build(&workload).await?;
+    println!("✅ Image ready: {}", image.full_name());
+    let instance = rt.run(&image, &workload).await?;
 
     println!("✅ Started instance: {} ({})", instance.name, instance.id);
 
@@ -191,24 +141,8 @@ pub(crate) async fn stop_command(name: &str) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
 
     // Stop based on runtime
-    match workload_state.runtime {
-        RuntimeKind::Podman => {
-            let runtime = PodmanRuntime::new()?;
-            runtime.stop(&workload_state.instance).await?;
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = KubernetesRuntime::new().await?;
-            runtime.stop(&workload_state.instance).await?;
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = KubeVirtRuntime::new().await?;
-            runtime.stop(&workload_state.instance).await?;
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = Metal3Runtime::new().await?;
-            runtime.stop(&workload_state.instance).await?;
-        }
-    }
+    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
+    rt.stop(&workload_state.instance).await?;
 
     println!("✅ Stopped instance: {}", name);
 
@@ -231,24 +165,8 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
 
     // Get status based on runtime
-    let status = match workload_state.runtime {
-        RuntimeKind::Podman => {
-            let runtime = PodmanRuntime::new()?;
-            runtime.status(&workload_state.instance).await?
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = KubernetesRuntime::new().await?;
-            runtime.status(&workload_state.instance).await?
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = KubeVirtRuntime::new().await?;
-            runtime.status(&workload_state.instance).await?
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = Metal3Runtime::new().await?;
-            runtime.status(&workload_state.instance).await?
-        }
-    };
+    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
+    let status = rt.status(&workload_state.instance).await?;
 
     println!("📊 Status for '{}':", name);
     println!("  Runtime: {}", workload_state.runtime);
@@ -271,24 +189,8 @@ pub(crate) async fn logs_command(name: &str, follow: bool) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
 
     // Get logs based on runtime
-    let logs = match workload_state.runtime {
-        RuntimeKind::Podman => {
-            let runtime = PodmanRuntime::new()?;
-            runtime.logs(&workload_state.instance, follow).await?
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = KubernetesRuntime::new().await?;
-            runtime.logs(&workload_state.instance, follow).await?
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = KubeVirtRuntime::new().await?;
-            runtime.logs(&workload_state.instance, follow).await?
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = Metal3Runtime::new().await?;
-            runtime.logs(&workload_state.instance, follow).await?
-        }
-    };
+    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
+    let logs = rt.logs(&workload_state.instance, follow).await?;
 
     println!("{}", logs);
 
@@ -305,24 +207,8 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
         .clone();
 
     // Delete based on runtime
-    match workload_state.runtime {
-        RuntimeKind::Podman => {
-            let runtime = PodmanRuntime::new()?;
-            runtime.delete(&workload_state.instance).await?;
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = KubernetesRuntime::new().await?;
-            runtime.delete(&workload_state.instance).await?;
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = KubeVirtRuntime::new().await?;
-            runtime.delete(&workload_state.instance).await?;
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = Metal3Runtime::new().await?;
-            runtime.delete(&workload_state.instance).await?;
-        }
-    }
+    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
+    rt.delete(&workload_state.instance).await?;
 
     // Remove from state
     state.remove(name);
@@ -388,21 +274,10 @@ pub(crate) async fn migrate_command(
     let source_runtime = workload_state.runtime;
 
     // Parse target runtime
-    let target_runtime = match target {
-        "podman" | "container" => RuntimeKind::Podman,
-        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
-        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
-        "metal" | "metal3" => RuntimeKind::Metal3,
-        _ => anyhow::bail!("Unknown runtime: {}", target),
-    };
+    let target_runtime: RuntimeKind = target.parse()?;
 
     // Parse strategy
-    let strategy = match strategy_str {
-        "immediate" => MigrationStrategy::Immediate,
-        "blue-green" => MigrationStrategy::BlueGreen,
-        "rolling" => MigrationStrategy::Rolling,
-        _ => anyhow::bail!("Unknown strategy: {}", strategy_str),
-    };
+    let strategy: MigrationStrategy = strategy_str.parse()?;
 
     // Auto-snapshot before migration
     {
@@ -549,7 +424,7 @@ async fn run_tui<B: ratatui::backend::Backend>(
     Ok(())
 }
 
-pub(crate) fn completions_command(shell_str: &str) {
+pub(crate) fn completions_command(shell_str: &str) -> Result<()> {
     use clap::CommandFactory;
     use clap_complete::Shell;
 
@@ -560,15 +435,14 @@ pub(crate) fn completions_command(shell_str: &str) {
         "powershell" | "ps1" => Shell::PowerShell,
         "elvish" => Shell::Elvish,
         _ => {
-            eprintln!("Unknown shell: {}", shell_str);
-            eprintln!();
             orchestr8::completions::list_shells();
-            std::process::exit(1);
+            anyhow::bail!("Unknown shell: '{}'. See list above.", shell_str);
         }
     };
 
     let mut cmd = Cli::command();
     orchestr8::completions::generate_completions(shell, &mut cmd);
+    Ok(())
 }
 
 pub(crate) async fn metrics_command() {
@@ -711,18 +585,7 @@ pub(crate) async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<
         print!("{}", comparison.display());
     } else {
         // Show estimate for specific provider
-        let cloud_provider = match provider.to_lowercase().as_str() {
-            "aws" => CloudProvider::AWS,
-            "azure" => CloudProvider::Azure,
-            "gcp" => CloudProvider::GCP,
-            "digitalocean" | "do" => CloudProvider::DigitalOcean,
-            "linode" => CloudProvider::Linode,
-            _ => {
-                eprintln!("Unknown provider: {}", provider);
-                eprintln!("Available: aws, azure, gcp, digitalocean, linode");
-                std::process::exit(1);
-            }
-        };
+        let cloud_provider: CloudProvider = provider.parse()?;
 
         let estimate = estimate_cost(&workload, cloud_provider)?;
 
@@ -865,24 +728,8 @@ pub(crate) async fn analyze_logs_command(name: &str) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
 
     // Fetch logs
-    let logs = match workload_state.runtime {
-        RuntimeKind::Podman => {
-            let runtime = PodmanRuntime::new()?;
-            runtime.logs(&workload_state.instance, false).await?
-        }
-        RuntimeKind::Kubernetes => {
-            let runtime = KubernetesRuntime::new().await?;
-            runtime.logs(&workload_state.instance, false).await?
-        }
-        RuntimeKind::KubeVirt => {
-            let runtime = KubeVirtRuntime::new().await?;
-            runtime.logs(&workload_state.instance, false).await?
-        }
-        RuntimeKind::Metal3 => {
-            let runtime = Metal3Runtime::new().await?;
-            runtime.logs(&workload_state.instance, false).await?
-        }
-    };
+    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
+    let logs = rt.logs(&workload_state.instance, false).await?;
 
     let analysis = analyzer.analyze(&logs);
     print!("{}", format_analysis_report(&analysis));
@@ -904,13 +751,7 @@ pub(crate) async fn migration_advice_command(name: &str, target: &str) -> Result
         .get(name)
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
 
-    let target_runtime = match target {
-        "podman" | "container" => RuntimeKind::Podman,
-        "kube" | "kubernetes" => RuntimeKind::Kubernetes,
-        "kubevirt" | "vm" => RuntimeKind::KubeVirt,
-        "metal" | "metal3" => RuntimeKind::Metal3,
-        _ => anyhow::bail!("Unknown runtime: {}", target),
-    };
+    let target_runtime: RuntimeKind = target.parse()?;
 
     let workload = Workload::from_file(&workload_state.spec_path)?;
     let advice = advisor.advise(&workload, workload_state.runtime, target_runtime);
@@ -1069,7 +910,7 @@ pub(crate) async fn policy_check_command(spec_path: &PathBuf, policy_name: &str)
     print!("{}", format_policy_report(&result));
 
     if !result.passed {
-        std::process::exit(1);
+        anyhow::bail!("Policy check failed with {} violation(s)", result.violations.len());
     }
 
     Ok(())
@@ -1198,22 +1039,7 @@ pub(crate) async fn template_command(
         return Ok(());
     }
 
-    let kind = match name {
-        "web-app" => TemplateKind::WebApp,
-        "rest-api" => TemplateKind::RestApi,
-        "database" => TemplateKind::Database,
-        "cache" => TemplateKind::Cache,
-        "worker" => TemplateKind::Worker,
-        "cron-job" => TemplateKind::CronJob,
-        "ml-training" => TemplateKind::MlTraining,
-        "microservice" => TemplateKind::Microservice,
-        _ => {
-            anyhow::bail!(
-                "Unknown template: {}. Run 'orchestr8 template list' to see available templates.",
-                name
-            );
-        }
-    };
+    let kind: TemplateKind = name.parse()?;
 
     let wl_name = workload_name.unwrap_or_else(|| format!("my-{}", name));
 
@@ -1419,13 +1245,7 @@ pub(crate) async fn events_command(last: usize, severity: Option<String>, summar
     }
 
     let events = if let Some(sev) = severity {
-        let min_severity = match sev.to_lowercase().as_str() {
-            "info" => EventSeverity::Info,
-            "warning" | "warn" => EventSeverity::Warning,
-            "error" => EventSeverity::Error,
-            "critical" => EventSeverity::Critical,
-            _ => anyhow::bail!("Unknown severity: {}. Use info, warning, error, or critical.", sev),
-        };
+        let min_severity: EventSeverity = sev.parse()?;
         bus.events_by_severity(&min_severity)
     } else {
         bus.last_n(last)
@@ -1444,12 +1264,7 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
 
     match action {
         EnvAction::Create { name, tier } => {
-            let env_tier = match tier.as_str() {
-                "development" | "dev" => EnvTier::Development,
-                "staging" | "stg" => EnvTier::Staging,
-                "production" | "prod" => EnvTier::Production,
-                _ => EnvTier::Custom(tier.clone()),
-            };
+            let env_tier: EnvTier = tier.parse().expect("EnvTier::from_str is infallible");
             manager.create_env(&name, env_tier);
             manager.save(&path)?;
             println!("✅ Created environment '{}' ({})", name, tier);
@@ -1543,13 +1358,7 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
             strategy,
             prefer,
         } => {
-            let sched_strategy = match strategy.as_str() {
-                "balanced" => ScheduleStrategy::Balanced,
-                "cost" => ScheduleStrategy::CostOptimized,
-                "performance" => ScheduleStrategy::PerformanceOptimized,
-                "bin-packing" => ScheduleStrategy::BinPacking,
-                _ => anyhow::bail!("Unknown strategy: {}. Use balanced, cost, performance, or bin-packing.", strategy),
-            };
+            let sched_strategy: ScheduleStrategy = strategy.parse()?;
             scheduler.set_strategy(sched_strategy);
 
             // Load affinity scores to inform scheduling decisions
@@ -1566,13 +1375,7 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
                 scheduler.set_affinity_scores(affinity_map);
             }
 
-            let preferred_runtime = prefer.as_deref().and_then(|p| match p {
-                "podman" => Some(RuntimeKind::Podman),
-                "kubernetes" | "kube" => Some(RuntimeKind::Kubernetes),
-                "kubevirt" => Some(RuntimeKind::KubeVirt),
-                "metal3" | "metal" => Some(RuntimeKind::Metal3),
-                _ => None,
-            });
+            let preferred_runtime = prefer.as_deref().and_then(|p| p.parse::<RuntimeKind>().ok());
 
             let request = ScheduleRequest {
                 workload_name: name,
@@ -1649,12 +1452,9 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
 
     match action {
         OrchestrateAction::Register { name, runtime } => {
-            let rt = match runtime.as_str() {
-                "podman" => RuntimeKind::Podman,
-                "kubernetes" | "kube" => RuntimeKind::Kubernetes,
-                "kubevirt" => RuntimeKind::KubeVirt,
-                "metal3" | "metal" => RuntimeKind::Metal3,
-                _ => anyhow::bail!("Unknown runtime: {}", runtime),
+            let rt: RuntimeKind = match runtime.parse() {
+                Ok(rt) => rt,
+                Err(e) => anyhow::bail!("{}", e),
             };
             orch.register(&name, rt, None);
             orch.save(&path)?;
@@ -1681,42 +1481,7 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
             }
         }
         OrchestrateAction::HealthCheck => {
-            use orchestr8::orchestrator::HealthStatus;
-            use orchestr8::runtime::{create_runtime, InstanceState};
-
-            let state = StateStore::load(&StateStore::default_path())?;
-            let managed = orch.list_workloads();
-
-            let mut statuses = std::collections::HashMap::new();
-
-            for mw in &managed {
-                if let Some(ws) = state.get(&mw.name) {
-                    match create_runtime(&ws.runtime).await {
-                        Ok(runtime) => {
-                            match runtime.status(&ws.instance).await {
-                                Ok(status) => {
-                                    let hs = match status.state {
-                                        InstanceState::Running if status.ready => HealthStatus::Healthy,
-                                        InstanceState::Running => HealthStatus::Degraded,
-                                        InstanceState::Failed => HealthStatus::Unhealthy,
-                                        _ => HealthStatus::Unknown,
-                                    };
-                                    statuses.insert(mw.name.clone(), hs);
-                                }
-                                Err(e) => {
-                                    tracing::warn!("Failed to get status for {}: {}", mw.name, e);
-                                    statuses.insert(mw.name.clone(), HealthStatus::Unknown);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            tracing::warn!("Failed to create runtime for {}: {}", mw.name, e);
-                            statuses.insert(mw.name.clone(), HealthStatus::Unknown);
-                        }
-                    }
-                }
-            }
-
+            let statuses = collect_health_statuses(&orch, &StateStore::load(&StateStore::default_path())?).await;
             let actions = orch.run_health_checks_from_statuses(&statuses);
             orch.save(&path)?;
 
@@ -1730,43 +1495,10 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
             }
         }
         OrchestrateAction::Watch { interval } => {
-            use orchestr8::orchestrator::HealthStatus;
-            use orchestr8::runtime::{create_runtime, InstanceState};
-
             println!("Watching health every {} seconds (Ctrl+C to stop)\n", interval);
 
             loop {
-                let state = StateStore::load(&StateStore::default_path())?;
-                let managed = orch.list_workloads();
-
-                let mut statuses = std::collections::HashMap::new();
-
-                for mw in &managed {
-                    if let Some(ws) = state.get(&mw.name) {
-                        match create_runtime(&ws.runtime).await {
-                            Ok(runtime) => {
-                                match runtime.status(&ws.instance).await {
-                                    Ok(status) => {
-                                        let hs = match status.state {
-                                            InstanceState::Running if status.ready => HealthStatus::Healthy,
-                                            InstanceState::Running => HealthStatus::Degraded,
-                                            InstanceState::Failed => HealthStatus::Unhealthy,
-                                            _ => HealthStatus::Unknown,
-                                        };
-                                        statuses.insert(mw.name.clone(), hs);
-                                    }
-                                    Err(_) => {
-                                        statuses.insert(mw.name.clone(), HealthStatus::Unknown);
-                                    }
-                                }
-                            }
-                            Err(_) => {
-                                statuses.insert(mw.name.clone(), HealthStatus::Unknown);
-                            }
-                        }
-                    }
-                }
-
+                let statuses = collect_health_statuses(&orch, &StateStore::load(&StateStore::default_path())?).await;
                 let actions = orch.run_health_checks_from_statuses(&statuses);
                 orch.save(&path)?;
 
@@ -1796,20 +1528,7 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
 
     match action {
         AffinityAction::Recommend { class } => {
-            let wl_class = match class.as_str() {
-                "web-service" => WorkloadClass::WebService,
-                "api-backend" => WorkloadClass::ApiBackend,
-                "database" => WorkloadClass::Database,
-                "cache" => WorkloadClass::Cache,
-                "batch-job" => WorkloadClass::BatchJob,
-                "ml-training" => WorkloadClass::MlTraining,
-                "worker" => WorkloadClass::Worker,
-                "microservice" => WorkloadClass::Microservice,
-                _ => anyhow::bail!(
-                    "Unknown class: {}. Use web-service, api-backend, database, cache, batch-job, ml-training, worker, or microservice.",
-                    class
-                ),
-            };
+            let wl_class: WorkloadClass = class.parse()?;
             let scores = engine.recommend(&wl_class);
             if let Some(top) = scores.first() {
                 orchestr8::metrics::record_affinity_recommendation(&class, &top.runtime.to_string());
@@ -1930,6 +1649,58 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
     Ok(())
 }
 
+/// Collect live HealthStatus for all managed workloads, grouping by runtime
+/// to avoid creating duplicate runtime clients (N+1).
+async fn collect_health_statuses(
+    orch: &orchestr8::orchestrator::Orchestrator,
+    state: &StateStore,
+) -> std::collections::HashMap<String, orchestr8::orchestrator::HealthStatus> {
+    use orchestr8::orchestrator::HealthStatus;
+    use orchestr8::runtime::{create_runtime, InstanceState};
+
+    let managed = orch.list_workloads();
+    let mut statuses = std::collections::HashMap::new();
+
+    // Group managed workloads by runtime
+    let mut by_runtime: std::collections::HashMap<RuntimeKind, Vec<_>> =
+        std::collections::HashMap::new();
+    for mw in &managed {
+        if let Some(ws) = state.get(&mw.name) {
+            by_runtime.entry(ws.runtime).or_default().push((mw.name.clone(), ws.instance.clone()));
+        }
+    }
+
+    for (kind, workloads) in by_runtime {
+        match create_runtime(&kind).await {
+            Ok(runtime) => {
+                for (name, instance) in workloads {
+                    let hs = match runtime.status(&instance).await {
+                        Ok(status) => match status.state {
+                            InstanceState::Running if status.ready => HealthStatus::Healthy,
+                            InstanceState::Running => HealthStatus::Degraded,
+                            InstanceState::Failed => HealthStatus::Unhealthy,
+                            _ => HealthStatus::Unknown,
+                        },
+                        Err(e) => {
+                            tracing::warn!("Failed to get status for {}: {}", name, e);
+                            HealthStatus::Unknown
+                        }
+                    };
+                    statuses.insert(name, hs);
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Failed to create {} runtime: {}", kind, e);
+                for (name, _) in workloads {
+                    statuses.insert(name, HealthStatus::Unknown);
+                }
+            }
+        }
+    }
+
+    statuses
+}
+
 pub(crate) async fn diff_command(name: &str) -> Result<()> {
     use orchestr8::drift::{format_live_diff, DiffRow, LiveDiffReport};
     use orchestr8::runtime::create_runtime;
@@ -2036,16 +1807,7 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
             method,
             severity,
         } => {
-            let min_severity = match severity.to_lowercase().as_str() {
-                "info" => EventSeverity::Info,
-                "warning" | "warn" => EventSeverity::Warning,
-                "error" => EventSeverity::Error,
-                "critical" => EventSeverity::Critical,
-                _ => anyhow::bail!(
-                    "Unknown severity: {}. Use info, warning, error, or critical.",
-                    severity
-                ),
-            };
+            let min_severity: EventSeverity = severity.parse()?;
 
             let channel = NotificationChannel {
                 name: name.clone(),

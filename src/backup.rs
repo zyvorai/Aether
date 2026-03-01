@@ -243,6 +243,12 @@ pub struct SnapshotManager {
     snapshot_dir: PathBuf,
 }
 
+impl Default for SnapshotManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SnapshotManager {
     /// Create a snapshot manager using the default directory.
     pub fn new() -> Self {

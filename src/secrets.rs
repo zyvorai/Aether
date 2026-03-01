@@ -330,29 +330,19 @@ impl SecretStore {
 
     /// Default path for secrets store
     pub fn default_path() -> PathBuf {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".orchestr8/secrets.json")
+        crate::resources::orchestr8_path("secrets.json")
     }
 
     /// Load from disk
     pub fn load(path: &Path) -> anyhow::Result<Self> {
-        if !path.exists() {
-            return Ok(Self::new());
-        }
-        let content = std::fs::read_to_string(path)?;
-        let mut store: Self = serde_json::from_str(&content)?;
+        let mut store: Self = crate::resources::json_load(path)?;
         store.encryption_key = Self::default_key();
         Ok(store)
     }
 
     /// Save to disk
     pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
+        crate::resources::json_save(self, path)
     }
 
     // --- Private ---

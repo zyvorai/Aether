@@ -36,6 +36,27 @@ impl std::fmt::Display for TemplateKind {
     }
 }
 
+impl std::str::FromStr for TemplateKind {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "web-app" | "webapp" => Ok(TemplateKind::WebApp),
+            "rest-api" | "restapi" | "api" => Ok(TemplateKind::RestApi),
+            "database" | "db" => Ok(TemplateKind::Database),
+            "cache" => Ok(TemplateKind::Cache),
+            "worker" => Ok(TemplateKind::Worker),
+            "cron-job" | "cronjob" | "cron" => Ok(TemplateKind::CronJob),
+            "ml-training" | "ml" => Ok(TemplateKind::MlTraining),
+            "microservice" => Ok(TemplateKind::Microservice),
+            _ => Err(anyhow::anyhow!(
+                "Unknown template: '{}'. Valid: web-app, rest-api, database, cache, worker, cron-job, ml-training, microservice",
+                s
+            )),
+        }
+    }
+}
+
 /// Template metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateInfo {
@@ -562,5 +583,20 @@ mod tests {
         let output = format_template_list();
         assert!(output.contains("web-app"));
         assert!(output.contains("database"));
+    }
+
+    #[test]
+    fn test_template_kind_from_str() {
+        assert_eq!("web-app".parse::<TemplateKind>().unwrap(), TemplateKind::WebApp);
+        assert_eq!("rest-api".parse::<TemplateKind>().unwrap(), TemplateKind::RestApi);
+        assert_eq!("api".parse::<TemplateKind>().unwrap(), TemplateKind::RestApi);
+        assert_eq!("database".parse::<TemplateKind>().unwrap(), TemplateKind::Database);
+        assert_eq!("db".parse::<TemplateKind>().unwrap(), TemplateKind::Database);
+        assert_eq!("cache".parse::<TemplateKind>().unwrap(), TemplateKind::Cache);
+        assert_eq!("worker".parse::<TemplateKind>().unwrap(), TemplateKind::Worker);
+        assert_eq!("cron-job".parse::<TemplateKind>().unwrap(), TemplateKind::CronJob);
+        assert_eq!("ml-training".parse::<TemplateKind>().unwrap(), TemplateKind::MlTraining);
+        assert_eq!("microservice".parse::<TemplateKind>().unwrap(), TemplateKind::Microservice);
+        assert!("nonexistent".parse::<TemplateKind>().is_err());
     }
 }
