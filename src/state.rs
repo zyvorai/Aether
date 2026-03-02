@@ -35,6 +35,18 @@ impl WorkloadState {
             updated_at: now,
         }
     }
+
+    /// Return a copy migrated to a new runtime/instance, preserving `created_at`.
+    pub fn migrated(&self, runtime: RuntimeKind, instance: Instance) -> Self {
+        Self {
+            name: self.name.clone(),
+            runtime,
+            instance,
+            spec_path: self.spec_path.clone(),
+            created_at: self.created_at.clone(),
+            updated_at: crate::resources::now_rfc3339(),
+        }
+    }
 }
 
 impl StateStore {
