@@ -350,23 +350,7 @@ pub fn format_dependency_report(graph: &DependencyGraph) -> String {
     output
 }
 
-/// Persistence for the dependency graph
-impl DependencyGraph {
-    /// Default path for dependency graph file
-    pub fn default_path() -> std::path::PathBuf {
-        crate::resources::orchestr8_path("dependencies.json")
-    }
-
-    /// Load from disk
-    pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        crate::resources::json_load(path)
-    }
-
-    /// Save to disk
-    pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        crate::resources::json_save(self, path)
-    }
-}
+crate::impl_json_store!(DependencyGraph, "dependencies.json");
 
 #[cfg(test)]
 mod tests {

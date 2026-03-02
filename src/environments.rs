@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Environment tier
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -161,6 +161,8 @@ impl std::fmt::Display for ParitySeverity {
 pub struct EnvironmentManager {
     environments: HashMap<String, Environment>,
 }
+
+crate::impl_json_store!(EnvironmentManager, "environments.json");
 
 impl EnvironmentManager {
     pub fn new() -> Self {
@@ -427,21 +429,6 @@ impl EnvironmentManager {
             in_sync: diffs.is_empty(),
             diffs,
         })
-    }
-
-    /// Default path
-    pub fn default_path() -> PathBuf {
-        crate::resources::orchestr8_path("environments.json")
-    }
-
-    /// Load from disk
-    pub fn load(path: &Path) -> anyhow::Result<Self> {
-        crate::resources::json_load(path)
-    }
-
-    /// Save to disk
-    pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        crate::resources::json_save(self, path)
     }
 
     // --- Private ---

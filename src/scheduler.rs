@@ -281,6 +281,8 @@ impl Default for Scheduler {
     }
 }
 
+crate::impl_json_store!(Scheduler, "scheduler.json");
+
 impl Scheduler {
     pub fn new() -> Self {
         let mut capacities = HashMap::new();
@@ -529,21 +531,6 @@ impl Scheduler {
         }
 
         suggestions
-    }
-
-    /// Default path
-    pub fn default_path() -> std::path::PathBuf {
-        crate::resources::orchestr8_path("scheduler.json")
-    }
-
-    /// Load from disk
-    pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        crate::resources::json_load(path)
-    }
-
-    /// Save to disk
-    pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        crate::resources::json_save(self, path)
     }
 
     // --- Private ---

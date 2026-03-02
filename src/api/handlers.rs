@@ -24,24 +24,51 @@ async fn lookup_workload<T: serde::Serialize>(
     name: &str,
 ) -> Result<WorkloadState, (StatusCode, Json<ApiResponse<T>>)> {
     let state = app_state.state.read().await;
-    state.get(name).cloned().ok_or_else(|| {
-        (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::error(format!("Workload {} not found", name))),
-        )
-    })
+    state
+        .get(name)
+        .cloned()
+        .ok_or_else(|| err_not_found(format!("Workload {} not found", name)))
 }
 
 /// Create a runtime client or return an HTTP 500 error response.
 async fn make_runtime<T: serde::Serialize>(
     kind: &RuntimeKind,
 ) -> Result<Box<dyn Runtime>, (StatusCode, Json<ApiResponse<T>>)> {
-    runtime::create_runtime(kind).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::error(e.to_string())),
-        )
-    })
+    runtime::create_runtime(kind).await.map_err(|e| err_internal(e))
+}
+
+/// Shorthand for a successful JSON response.
+fn ok_json<T: serde::Serialize>(data: T) -> (StatusCode, Json<ApiResponse<T>>) {
+    (StatusCode::OK, Json(ApiResponse::success(data)))
+}
+
+/// Shorthand for a 201 Created JSON response.
+fn created_json<T: serde::Serialize>(data: T) -> (StatusCode, Json<ApiResponse<T>>) {
+    (StatusCode::CREATED, Json(ApiResponse::success(data)))
+}
+
+/// Shorthand for an internal-server-error JSON response.
+fn err_internal<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ApiResponse::error(e.to_string())),
+    )
+}
+
+/// Shorthand for a bad-request JSON response.
+fn err_bad_request<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
+    (
+        StatusCode::BAD_REQUEST,
+        Json(ApiResponse::error(e.to_string())),
+    )
+}
+
+/// Shorthand for a not-found JSON response.
+fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
+    (
+        StatusCode::NOT_FOUND,
+        Json(ApiResponse::error(msg.into())),
+    )
 }
 
 /// Embedded dashboard HTML
@@ -91,10 +118,7 @@ pub(crate) async fn create_workload(
         match runtime_name.parse::<RuntimeKind>() {
             Ok(rt) => rt,
             Err(e) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(ApiResponse::<String>::error(e.to_string())),
-                )
+                return err_bad_request::<String>(e)
             }
         }
     } else {
@@ -103,10 +127,7 @@ pub(crate) async fn create_workload(
         match engine.decide(&request.spec) {
             Ok(runtime) => runtime,
             Err(e) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ApiResponse::<String>::error(e.to_string())),
-                )
+                return err_internal::<String>(e)
             }
         }
     };
@@ -119,19 +140,13 @@ pub(crate) async fn create_workload(
     let image = match runtime.build(&request.spec).await {
         Ok(img) => img,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
+            return err_internal::<String>(e)
         }
     };
     let instance = match runtime.run(&image, &request.spec).await {
         Ok(inst) => inst,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
+            return err_internal::<String>(e)
         }
     };
 
@@ -151,19 +166,10 @@ pub(crate) async fn create_workload(
 
     // Persist to disk
     if let Err(e) = state.save(&StateStore::default_path()) {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e.to_string())),
-        );
+        return err_internal::<String>(e);
     }
 
-    (
-        StatusCode::CREATED,
-        Json(ApiResponse::success(format!(
-            "Workload {} created",
-            request.spec.metadata.name
-        ))),
-    )
+    created_json(format!("Workload {} created", request.spec.metadata.name))
 }
 
 /// GET /api/workloads/:name - Get workload details
@@ -183,7 +189,7 @@ pub(crate) async fn get_workload(
         status: format!("deployed ({})", workload.runtime),
         created_at: workload.created_at.clone(),
     };
-    (StatusCode::OK, Json(ApiResponse::success(response)))
+    ok_json(response)
 }
 
 /// DELETE /api/workloads/:name - Delete a workload
@@ -197,10 +203,7 @@ pub(crate) async fn delete_workload(
         Some(_) => {
             // Persist to disk
             if let Err(e) = state.save(&StateStore::default_path()) {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ApiResponse::<String>::error(e.to_string())),
-                );
+                return err_internal::<String>(e);
             }
 
             (
@@ -231,11 +234,8 @@ pub(crate) async fn get_logs(
     };
 
     match rt.logs(&workload.instance, false).await {
-        Ok(logs) => (StatusCode::OK, Json(ApiResponse::success(logs))),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e.to_string())),
-        ),
+        Ok(logs) => ok_json(logs),
+        Err(e) => err_internal::<String>(e),
     }
 }
 
@@ -271,19 +271,13 @@ pub(crate) async fn start_workload(
     let image = match runtime.build(&spec).await {
         Ok(img) => img,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
+            return err_internal::<String>(e)
         }
     };
     let instance = match runtime.run(&image, &spec).await {
         Ok(inst) => inst,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
+            return err_internal::<String>(e)
         }
     };
 
@@ -302,10 +296,7 @@ pub(crate) async fn start_workload(
     );
 
     if let Err(e) = state.save(&StateStore::default_path()) {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e.to_string())),
-        );
+        return err_internal::<String>(e);
     }
 
     (
@@ -334,21 +325,15 @@ pub(crate) async fn stop_workload(
             StatusCode::OK,
             Json(ApiResponse::success(format!("Workload {} stopped", name))),
         ),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<String>(e),
     }
 }
 
 /// POST /api/cost - Estimate costs for a workload
 pub(crate) async fn estimate_cost(Json(spec): Json<Workload>) -> impl IntoResponse {
     match cost::estimate_all_providers(&spec) {
-        Ok(estimates) => (StatusCode::OK, Json(ApiResponse::success(estimates))),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<Vec<cost::CostEstimate>>::error(e.to_string())),
-        ),
+        Ok(estimates) => ok_json(estimates),
+        Err(e) => err_internal::<Vec<cost::CostEstimate>>(e),
     }
 }
 
@@ -357,11 +342,8 @@ pub(crate) async fn list_backups() -> impl IntoResponse {
     let manager = backup::BackupManager::new(backup::BackupManager::default_dir());
 
     match manager.list_backups() {
-        Ok(backups) => (StatusCode::OK, Json(ApiResponse::success(backups))),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<Vec<PathBuf>>::error(e.to_string())),
-        ),
+        Ok(backups) => ok_json(backups),
+        Err(e) => err_internal::<Vec<PathBuf>>(e),
     }
 }
 
@@ -378,10 +360,7 @@ pub(crate) async fn create_backup(
             StatusCode::CREATED,
             Json(ApiResponse::success(format!("Backup created: {:?}", path))),
         ),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<String>(e),
     }
 }
 
@@ -394,7 +373,7 @@ pub(crate) async fn ai_recommend(Json(spec): Json<Workload>) -> impl IntoRespons
     let engine = ScoringEngine::new(config.engine);
     let result = engine.score(&spec);
 
-    (StatusCode::OK, Json(ApiResponse::success(result)))
+    ok_json(result)
 }
 
 /// GET /api/ai/profile/:name - Profile a deployed workload
@@ -531,7 +510,7 @@ pub(crate) async fn ai_migration_advice(
         },
     };
 
-    (StatusCode::OK, Json(ApiResponse::success(response)))
+    ok_json(response)
 }
 
 /// GET /api/ai/scaling-advice - Predictive scaling recommendations
@@ -581,7 +560,7 @@ pub(crate) async fn ai_scaling_advice() -> impl IntoResponse {
         },
     };
 
-    (StatusCode::OK, Json(ApiResponse::success(response)))
+    ok_json(response)
 }
 
 /// GET /api/drift/:name - Check drift for a workload
@@ -653,12 +632,9 @@ pub(crate) async fn api_deps_show() -> impl IntoResponse {
                 "startup_order": order,
                 "issues": graph.validate(),
             });
-            (StatusCode::OK, Json(ApiResponse::success(response)))
+            ok_json(response)
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -671,10 +647,7 @@ pub(crate) async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> i
         Ok(mut graph) => {
             graph.add_dependency(&request.workload, &request.dependency);
             if let Err(e) = graph.save(&graph_path) {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ApiResponse::<String>::error(e.to_string())),
-                );
+                return err_internal::<String>(e);
             }
             (
                 StatusCode::CREATED,
@@ -684,10 +657,7 @@ pub(crate) async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> i
                 ))),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<String>(e),
     }
 }
 
@@ -709,10 +679,7 @@ pub(crate) async fn api_audit_list() -> impl IntoResponse {
                 Json(ApiResponse::success(response)),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -845,10 +812,7 @@ pub(crate) async fn api_secrets_list() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -867,10 +831,7 @@ pub(crate) async fn api_events_list() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -889,10 +850,7 @@ pub(crate) async fn api_events_summary() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -911,10 +869,7 @@ pub(crate) async fn api_env_list() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -933,10 +888,7 @@ pub(crate) async fn api_scheduler_utilization() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -955,10 +907,7 @@ pub(crate) async fn api_scheduler_optimize() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -977,10 +926,7 @@ pub(crate) async fn api_orchestrator_status() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -999,10 +945,7 @@ pub(crate) async fn api_orchestrator_summary() -> impl IntoResponse {
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -1031,10 +974,7 @@ pub(crate) async fn api_affinity_recommend(Path(class): Path<String>) -> impl In
                 )),
             )
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -1192,7 +1132,7 @@ pub(crate) async fn build_workload(
                 full_name: img.full_name(),
                 runtime: format!("{}", workload_state.runtime),
             };
-            (StatusCode::OK, Json(ApiResponse::success(response)))
+            ok_json(response)
         }
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -1221,7 +1161,7 @@ pub(crate) async fn validate_workload(
                         workload_name: Some(workload.metadata.name),
                         errors: vec![],
                     };
-                    (StatusCode::OK, Json(ApiResponse::success(response)))
+                    ok_json(response)
                 }
                 Err(e) => {
                     let response = ValidateResponse {
@@ -1229,7 +1169,7 @@ pub(crate) async fn validate_workload(
                         workload_name: Some(workload.metadata.name),
                         errors: vec![e.to_string()],
                     };
-                    (StatusCode::OK, Json(ApiResponse::success(response)))
+                    ok_json(response)
                 }
             }
         }
@@ -1239,7 +1179,7 @@ pub(crate) async fn validate_workload(
                 workload_name: None,
                 errors: vec![format!("YAML parse error: {}", e)],
             };
-            (StatusCode::OK, Json(ApiResponse::success(response)))
+            ok_json(response)
         }
     }
 }
@@ -1289,10 +1229,7 @@ pub(crate) async fn get_secret(
                 ),
             }
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
@@ -1331,10 +1268,7 @@ pub(crate) async fn delete_secret(
                 ),
             }
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e.to_string())),
-        ),
+        Err(e) => err_internal::<String>(e),
     }
 }
 

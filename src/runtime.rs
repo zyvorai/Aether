@@ -98,6 +98,16 @@ pub enum RuntimeKind {
     Metal3,
 }
 
+impl RuntimeKind {
+    /// All supported runtime variants.
+    pub const ALL: [RuntimeKind; 4] = [
+        RuntimeKind::Podman,
+        RuntimeKind::Kubernetes,
+        RuntimeKind::KubeVirt,
+        RuntimeKind::Metal3,
+    ];
+}
+
 impl fmt::Display for RuntimeKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -155,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_runtime_kind_display_roundtrip() {
-        for rt in [RuntimeKind::Podman, RuntimeKind::Kubernetes, RuntimeKind::KubeVirt, RuntimeKind::Metal3] {
+        for rt in RuntimeKind::ALL {
             let s = rt.to_string();
             assert_eq!(s.parse::<RuntimeKind>().unwrap(), rt);
         }

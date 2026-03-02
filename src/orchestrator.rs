@@ -584,21 +584,9 @@ impl Orchestrator {
         all_actions
     }
 
-    /// Default path
-    pub fn default_path() -> std::path::PathBuf {
-        crate::resources::orchestr8_path("orchestrator.json")
-    }
-
-    /// Load from disk
-    pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        crate::resources::json_load(path)
-    }
-
-    /// Save to disk
-    pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        crate::resources::json_save(self, path)
-    }
 }
+
+crate::impl_json_store!(Orchestrator, "orchestrator.json");
 
 /// Actions the orchestrator may request
 #[derive(Debug, Clone, Serialize, Deserialize)]

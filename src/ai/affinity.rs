@@ -117,6 +117,8 @@ pub struct Incompatibility {
     pub last_seen: String,
 }
 
+crate::impl_json_store!(AffinityEngine, "affinity.json");
+
 impl AffinityEngine {
     pub fn new() -> Self {
         Self::default()
@@ -228,21 +230,6 @@ impl AffinityEngine {
             by_runtime,
             by_class,
         }
-    }
-
-    /// Default path
-    pub fn default_path() -> std::path::PathBuf {
-        crate::resources::orchestr8_path("affinity.json")
-    }
-
-    /// Load from disk
-    pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
-        crate::resources::json_load(path)
-    }
-
-    /// Save to disk
-    pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        crate::resources::json_save(self, path)
     }
 
     // --- Private ---
