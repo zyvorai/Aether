@@ -145,14 +145,12 @@ async fn deploy_single_workload(
     }
     state.upsert(
         workload.metadata.name.clone(),
-        orchestr8::state::WorkloadState {
-            name: workload.metadata.name.clone(),
-            runtime: runtime_kind,
+        orchestr8::state::WorkloadState::new(
+            workload.metadata.name.clone(),
+            runtime_kind,
             instance,
-            spec_path: spec_path.to_path_buf(),
-            created_at: chrono::Utc::now().to_rfc3339(),
-            updated_at: chrono::Utc::now().to_rfc3339(),
-        },
+            spec_path.to_path_buf(),
+        ),
     );
     state.save(&StateStore::default_path())?;
 
@@ -459,7 +457,7 @@ pub(crate) fn completions_command(shell_str: &str) -> Result<()> {
 
 pub(crate) async fn metrics_command() {
     println!("# Orchestr8 Metrics");
-    println!("# Updated: {}", chrono::Utc::now().to_rfc3339());
+    println!("# Updated: {}", orchestr8::resources::now_rfc3339());
     println!();
 
     // Update workload state metrics from state store
@@ -1627,7 +1625,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
             instance,
             spec_path: snapshot_ws.spec_path.clone(),
             created_at: snapshot_ws.created_at.clone(),
-            updated_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: orchestr8::resources::now_rfc3339(),
         },
     );
     state.save(&StateStore::default_path())?;

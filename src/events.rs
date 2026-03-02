@@ -205,7 +205,7 @@ impl EventBus {
         let mut event = event;
         event.id = id;
         if event.timestamp.is_empty() {
-            event.timestamp = chrono::Utc::now().to_rfc3339();
+            event.timestamp = crate::resources::now_rfc3339();
         }
 
         // Check notification channels
@@ -240,7 +240,7 @@ impl EventBus {
     ) -> u64 {
         let event = Event {
             id: 0,
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: crate::resources::now_rfc3339(),
             severity,
             category,
             source: source.to_string(),
@@ -456,7 +456,7 @@ impl EventBus {
                     title: notification.title.clone(),
                     message: notification.message.clone(),
                     channel: notification.channel_name.clone(),
-                    timestamp: chrono::Utc::now().to_rfc3339(),
+                    timestamp: crate::resources::now_rfc3339(),
                 };
 
                 let url = url.clone();

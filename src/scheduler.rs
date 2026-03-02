@@ -398,7 +398,7 @@ impl Scheduler {
             runtime: selected,
             cpu_reserved: request.cpu_required,
             memory_reserved_mb: request.memory_required_mb,
-            placed_at: chrono::Utc::now().to_rfc3339(),
+            placed_at: crate::resources::now_rfc3339(),
         };
         self.placements.push(placement);
 

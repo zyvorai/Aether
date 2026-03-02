@@ -242,7 +242,7 @@ impl Orchestrator {
             last_restart: None,
             circuit_opened_at: None,
             history: vec![HealthEvent {
-                timestamp: chrono::Utc::now().to_rfc3339(),
+                timestamp: crate::resources::now_rfc3339(),
                 event_type: HealthEventType::StatusChanged,
                 message: "Workload registered for health monitoring".to_string(),
             }],
@@ -259,7 +259,7 @@ impl Orchestrator {
     /// Process a health check result
     pub fn process_health_check(&mut self, check: HealthCheck) -> Vec<OrchestratorAction> {
         let mut actions = Vec::new();
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
 
         let workload = match self.workloads.get_mut(&check.workload) {
             Some(w) => w,
@@ -455,7 +455,7 @@ impl Orchestrator {
             workload.consecutive_failures = 0;
             workload.circuit_opened_at = None;
             workload.history.push(HealthEvent {
-                timestamp: chrono::Utc::now().to_rfc3339(),
+                timestamp: crate::resources::now_rfc3339(),
                 event_type: HealthEventType::ManualIntervention,
                 message: "Circuit breaker manually reset".to_string(),
             });
@@ -557,7 +557,7 @@ impl Orchestrator {
         statuses: &HashMap<String, HealthStatus>,
     ) -> Vec<OrchestratorAction> {
         let mut all_actions = Vec::new();
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
 
         // Collect registered names first to avoid borrow issues
         let registered: Vec<String> = self.workloads.keys().cloned().collect();
@@ -737,7 +737,7 @@ mod tests {
                 message: "HTTP check".to_string(),
                 latency_ms: Some(50.0),
             }],
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: crate::resources::now_rfc3339(),
             consecutive_failures: 0,
         }
     }

@@ -102,7 +102,7 @@ impl AuditLog {
     ) {
         let event = AuditEvent {
             id: self.next_id,
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: crate::resources::now_rfc3339(),
             action,
             workload: workload.to_string(),
             runtime: runtime.map(|s| s.to_string()),
