@@ -143,8 +143,8 @@ impl ScoringEngine {
         }
 
         // High-resource bare metal
-        let cpu = self.parse_cpu(&spec.requirements.cpu);
-        let memory_gi = self.parse_memory_gi(&spec.requirements.memory);
+        let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
+        let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
         if cpu > self.config.metal3_cpu_threshold || memory_gi > self.config.metal3_memory_threshold_gi {
             return WorkloadClass::BareMetal;
         }
@@ -204,8 +204,8 @@ impl ScoringEngine {
 
     /// Score runtime on cost efficiency
     fn score_cost(&self, runtime: RuntimeKind, spec: &Workload, reasons: &mut Vec<String>) -> f64 {
-        let cpu = self.parse_cpu(&spec.requirements.cpu);
-        let memory_gi = self.parse_memory_gi(&spec.requirements.memory);
+        let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
+        let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
 
         match runtime {
             RuntimeKind::Podman => {
@@ -419,13 +419,6 @@ impl ScoringEngine {
             .collect()
     }
 
-    fn parse_cpu(&self, cpu: &str) -> f64 {
-        crate::resources::parse_cpu(cpu)
-    }
-
-    fn parse_memory_gi(&self, memory: &str) -> f64 {
-        crate::resources::parse_memory_gi(memory)
-    }
 }
 
 /// Display a scoring result as a formatted report

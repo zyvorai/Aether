@@ -176,19 +176,19 @@ impl PolicyEngine {
 
         match &rule.check {
             RuleCheck::MaxCpu(max) => {
-                let cpu = self.parse_cpu(&spec.requirements.cpu);
+                let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
                 if cpu > *max {
                     violate(format!("CPU {:.1} cores exceeds maximum {:.1}", cpu, max), "requirements.cpu");
                 }
             }
             RuleCheck::MaxMemoryGi(max) => {
-                let mem = self.parse_memory_gi(&spec.requirements.memory);
+                let mem = crate::resources::parse_memory_gi(&spec.requirements.memory);
                 if mem > *max {
                     violate(format!("Memory {:.1}Gi exceeds maximum {:.1}Gi", mem, max), "requirements.memory");
                 }
             }
             RuleCheck::MaxStorageGi(max) => {
-                let storage = self.parse_memory_gi(&spec.requirements.storage);
+                let storage = crate::resources::parse_memory_gi(&spec.requirements.storage);
                 if storage > *max {
                     violate(format!("Storage {:.1}Gi exceeds maximum {:.1}Gi", storage, max), "requirements.storage");
                 }
@@ -226,8 +226,8 @@ impl PolicyEngine {
                 }
             }
             RuleCheck::RequireResourceLimits => {
-                let cpu = self.parse_cpu(&spec.requirements.cpu);
-                let mem = self.parse_memory_gi(&spec.requirements.memory);
+                let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
+                let mem = crate::resources::parse_memory_gi(&spec.requirements.memory);
                 if cpu == 0.0 || mem == 0.0 {
                     violate("CPU and memory limits must be set".to_string(), "requirements");
                 }
@@ -264,13 +264,6 @@ impl PolicyEngine {
         }
     }
 
-    fn parse_cpu(&self, cpu: &str) -> f64 {
-        crate::resources::parse_cpu(cpu)
-    }
-
-    fn parse_memory_gi(&self, memory: &str) -> f64 {
-        crate::resources::parse_memory_gi(memory)
-    }
 }
 
 /// Default production policies
