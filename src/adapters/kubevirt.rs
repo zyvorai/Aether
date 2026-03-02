@@ -17,22 +17,9 @@ pub struct KubeVirtRuntime {
     namespace: String,
 }
 
+super::impl_kube_adapter_new!(KubeVirtRuntime, "default");
+
 impl KubeVirtRuntime {
-    /// Create new KubeVirt runtime
-    pub async fn new() -> anyhow::Result<Self> {
-        let client = Client::try_default().await?;
-        let namespace =
-            std::env::var("ORCHESTR8_NAMESPACE").unwrap_or_else(|_| "default".to_string());
-
-        Ok(Self { client, namespace })
-    }
-
-    /// Create new KubeVirt runtime with specific namespace
-    pub async fn with_namespace(namespace: String) -> anyhow::Result<Self> {
-        let client = Client::try_default().await?;
-        Ok(Self { client, namespace })
-    }
-
     /// Generate DataVolume JSON from workload spec
     fn generate_datavolume_json(&self, image: &Image, spec: &Workload) -> serde_json::Value {
         build_datavolume_json(&self.namespace, image, spec)
