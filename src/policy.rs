@@ -163,73 +163,45 @@ impl PolicyEngine {
         violations: &mut Vec<PolicyViolation>,
         warnings: &mut Vec<PolicyWarning>,
     ) {
+        // Shorthand to push a violation with the current policy/rule context.
+        let mut violate = |msg: String, field: &str| {
+            violations.push(PolicyViolation {
+                policy: policy.name.clone(),
+                rule: rule.name.clone(),
+                message: msg,
+                field: field.to_string(),
+                severity: rule.severity.clone(),
+            });
+        };
+
         match &rule.check {
             RuleCheck::MaxCpu(max) => {
                 let cpu = self.parse_cpu(&spec.requirements.cpu);
                 if cpu > *max {
-                    violations.push(PolicyViolation {
-                        policy: policy.name.clone(),
-                        rule: rule.name.clone(),
-                        message: format!(
-                            "CPU {:.1} cores exceeds maximum {:.1}",
-                            cpu, max
-                        ),
-                        field: "requirements.cpu".to_string(),
-                        severity: rule.severity.clone(),
-                    });
+                    violate(format!("CPU {:.1} cores exceeds maximum {:.1}", cpu, max), "requirements.cpu");
                 }
             }
             RuleCheck::MaxMemoryGi(max) => {
                 let mem = self.parse_memory_gi(&spec.requirements.memory);
                 if mem > *max {
-                    violations.push(PolicyViolation {
-                        policy: policy.name.clone(),
-                        rule: rule.name.clone(),
-                        message: format!(
-                            "Memory {:.1}Gi exceeds maximum {:.1}Gi",
-                            mem, max
-                        ),
-                        field: "requirements.memory".to_string(),
-                        severity: rule.severity.clone(),
-                    });
+                    violate(format!("Memory {:.1}Gi exceeds maximum {:.1}Gi", mem, max), "requirements.memory");
                 }
             }
             RuleCheck::MaxStorageGi(max) => {
                 let storage = self.parse_memory_gi(&spec.requirements.storage);
                 if storage > *max {
-                    violations.push(PolicyViolation {
-                        policy: policy.name.clone(),
-                        rule: rule.name.clone(),
-                        message: format!(
-                            "Storage {:.1}Gi exceeds maximum {:.1}Gi",
-                            storage, max
-                        ),
-                        field: "requirements.storage".to_string(),
-                        severity: rule.severity.clone(),
-                    });
+                    violate(format!("Storage {:.1}Gi exceeds maximum {:.1}Gi", storage, max), "requirements.storage");
                 }
             }
             RuleCheck::RequireHealthProbes => {
                 if spec.health.is_none() {
-                    violations.push(PolicyViolation {
-                        policy: policy.name.clone(),
-                        rule: rule.name.clone(),
-                        message: "Health probes are required".to_string(),
-                        field: "health".to_string(),
-                        severity: rule.severity.clone(),
-                    });
+                    violate("Health probes are required".to_string(), "health");
                 }
             }
             RuleCheck::RequireTls => {
                 if let Some(ingress) = &spec.ingress {
                     if ingress.enabled && !ingress.tls {
-                        violations.push(PolicyViolation {
-                            policy: policy.name.clone(),
-                            rule: rule.name.clone(),
-                            message: "TLS is required on ingress".to_string(),
-                            field: "ingress.tls".to_string(),
-                            severity: rule.severity.clone(),
-                        });
+                        violate("TLS is required on ingress".to_string(), "ingress.tls");
                     }
                 }
             }
@@ -250,26 +222,14 @@ impl PolicyEngine {
             }
             RuleCheck::RequireOwner => {
                 if spec.metadata.owner.is_empty() {
-                    violations.push(PolicyViolation {
-                        policy: policy.name.clone(),
-                        rule: rule.name.clone(),
-                        message: "Owner is required".to_string(),
-                        field: "metadata.owner".to_string(),
-                        severity: rule.severity.clone(),
-                    });
+                    violate("Owner is required".to_string(), "metadata.owner");
                 }
             }
             RuleCheck::RequireResourceLimits => {
                 let cpu = self.parse_cpu(&spec.requirements.cpu);
                 let mem = self.parse_memory_gi(&spec.requirements.memory);
                 if cpu == 0.0 || mem == 0.0 {
-                    violations.push(PolicyViolation {
-                        policy: policy.name.clone(),
-                        rule: rule.name.clone(),
-                        message: "CPU and memory limits must be set".to_string(),
-                        field: "requirements".to_string(),
-                        severity: rule.severity.clone(),
-                    });
+                    violate("CPU and memory limits must be set".to_string(), "requirements");
                 }
             }
             RuleCheck::DisallowRuntime(runtime_name) => {
@@ -283,45 +243,21 @@ impl PolicyEngine {
                         RuntimeKind::Metal3 => RuntimeType::Metal,
                     };
                     if spec.runtime.allow.contains(&rt) {
-                        violations.push(PolicyViolation {
-                            policy: policy.name.clone(),
-                            rule: rule.name.clone(),
-                            message: format!("Runtime '{}' is not allowed by policy", runtime_name),
-                            field: "runtime.allow".to_string(),
-                            severity: rule.severity.clone(),
-                        });
+                        violate(format!("Runtime '{}' is not allowed by policy", runtime_name), "runtime.allow");
                     }
                 }
             }
             RuleCheck::MinReplicas(min) => {
                 if let Some(scaling) = &spec.scaling {
                     if scaling.enabled && scaling.min_replicas < *min {
-                        violations.push(PolicyViolation {
-                            policy: policy.name.clone(),
-                            rule: rule.name.clone(),
-                            message: format!(
-                                "Minimum replicas {} is below required {}",
-                                scaling.min_replicas, min
-                            ),
-                            field: "scaling.minReplicas".to_string(),
-                            severity: rule.severity.clone(),
-                        });
+                        violate(format!("Minimum replicas {} is below required {}", scaling.min_replicas, min), "scaling.minReplicas");
                     }
                 }
             }
             RuleCheck::MaxGpu(max) => {
                 if let Some(gpu) = &spec.requirements.gpu {
                     if gpu.count > *max {
-                        violations.push(PolicyViolation {
-                            policy: policy.name.clone(),
-                            rule: rule.name.clone(),
-                            message: format!(
-                                "GPU count {} exceeds maximum {}",
-                                gpu.count, max
-                            ),
-                            field: "requirements.gpu.count".to_string(),
-                            severity: rule.severity.clone(),
-                        });
+                        violate(format!("GPU count {} exceeds maximum {}", gpu.count, max), "requirements.gpu.count");
                     }
                 }
             }

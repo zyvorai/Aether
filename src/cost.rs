@@ -1,7 +1,7 @@
 //! Cost estimation for workload resources
 
 use crate::spec::Workload;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 /// Cloud provider for cost estimation
@@ -249,56 +249,19 @@ fn generate_cost_recommendations(
 }
 
 /// Parse CPU requirement to cores
+/// Parse CPU string to fractional cores, delegating to shared utility.
 fn parse_cpu(cpu: &str) -> Result<f64> {
-    let cpu = cpu.trim();
-
-    if cpu.ends_with('m') {
-        // Millicores (e.g., "1000m")
-        let millicores: f64 = cpu
-            .trim_end_matches('m')
-            .parse()
-            .context("Invalid millicores value")?;
-        Ok(millicores / 1000.0)
-    } else {
-        // Cores (e.g., "2")
-        cpu.parse().context("Invalid CPU value")
-    }
+    Ok(crate::resources::parse_cpu(cpu))
 }
 
-/// Parse memory requirement to GB
-fn parse_memory(memory: &str) -> Result<f64> {
-    let memory = memory.trim();
-
-    if memory.ends_with("Gi") {
-        memory
-            .trim_end_matches("Gi")
-            .parse()
-            .context("Invalid GiB value")
-    } else if memory.ends_with("Mi") {
-        let mib: f64 = memory
-            .trim_end_matches("Mi")
-            .parse()
-            .context("Invalid MiB value")?;
-        Ok(mib / 1024.0)
-    } else if memory.ends_with("GB") {
-        memory
-            .trim_end_matches("GB")
-            .parse()
-            .context("Invalid GB value")
-    } else if memory.ends_with("MB") {
-        let mb: f64 = memory
-            .trim_end_matches("MB")
-            .parse()
-            .context("Invalid MB value")?;
-        Ok(mb / 1000.0)
-    } else {
-        Err(anyhow::anyhow!("Unknown memory format: {}", memory))
-    }
+/// Parse memory/storage string to GiB, delegating to shared utility.
+fn parse_memory(mem: &str) -> Result<f64> {
+    Ok(crate::resources::parse_memory_gi(mem))
 }
 
-/// Parse storage requirement to GB
+/// Parse storage requirement to GiB (same logic as memory).
 fn parse_storage(storage: &str) -> Result<f64> {
-    parse_memory(storage) // Same parsing logic as memory
+    parse_memory(storage)
 }
 
 /// Estimate cost for a workload
