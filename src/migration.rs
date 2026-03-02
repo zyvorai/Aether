@@ -2,7 +2,7 @@
 
 use crate::runtime::{Instance, Runtime, RuntimeKind};
 use crate::spec::Workload;
-use crate::state::{StateStore, WorkloadState};
+use crate::state::StateStore;
 use anyhow::Result;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -185,14 +185,7 @@ impl MigrationEngine {
         // Update state
         state.upsert(
             plan.workload_name.clone(),
-            WorkloadState {
-                name: plan.workload_name.clone(),
-                runtime: plan.target_runtime,
-                instance: target_instance.clone(),
-                spec_path: workload_state.spec_path,
-                created_at: workload_state.created_at,
-                updated_at: crate::resources::now_rfc3339(),
-            },
+            workload_state.migrated(plan.target_runtime, target_instance.clone()),
         );
         state.save(&self.state_path)?;
 
@@ -277,14 +270,7 @@ impl MigrationEngine {
         // Update state
         state.upsert(
             plan.workload_name.clone(),
-            WorkloadState {
-                name: plan.workload_name.clone(),
-                runtime: plan.target_runtime,
-                instance: target_instance.clone(),
-                spec_path: workload_state.spec_path,
-                created_at: workload_state.created_at,
-                updated_at: crate::resources::now_rfc3339(),
-            },
+            workload_state.migrated(plan.target_runtime, target_instance.clone()),
         );
         state.save(&self.state_path)?;
 
@@ -388,14 +374,7 @@ impl MigrationEngine {
         // Update state
         state.upsert(
             plan.workload_name.clone(),
-            WorkloadState {
-                name: plan.workload_name.clone(),
-                runtime: plan.target_runtime,
-                instance: target_instance.clone(),
-                spec_path: workload_state.spec_path,
-                created_at: workload_state.created_at,
-                updated_at: crate::resources::now_rfc3339(),
-            },
+            workload_state.migrated(plan.target_runtime, target_instance.clone()),
         );
         state.save(&self.state_path)?;
 
