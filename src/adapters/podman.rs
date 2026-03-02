@@ -5,6 +5,17 @@ use crate::spec::Workload;
 use async_trait::async_trait;
 use tokio::process::Command;
 
+/// Execute a pre-built podman [`Command`], returning its output on success.
+/// On failure, bails with a message that includes the sub-command name and stderr.
+async fn exec_podman(mut cmd: Command, subcmd: &str) -> crate::Result<std::process::Output> {
+    let output = cmd.output().await?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Podman {} failed: {}", subcmd, stderr);
+    }
+    Ok(output)
+}
+
 /// Podman runtime implementation
 pub struct PodmanRuntime;
 
@@ -35,24 +46,17 @@ impl Runtime for PodmanRuntime {
 
         tracing::info!("Building image with Podman: {}", image_name);
 
-        // Build command
         let mut cmd = Command::new("podman");
         cmd.args(["build", "-t", &image_name])
             .arg("-f")
             .arg(&spec.build.dockerfile)
             .arg(&spec.build.context);
 
-        // Add build args
         for (key, value) in &spec.build.build_args {
             cmd.arg("--build-arg").arg(format!("{}={}", key, value));
         }
 
-        let output = cmd.output().await?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Podman build failed: {}", stderr);
-        }
+        exec_podman(cmd, "build").await?;
 
         Ok(Image {
             name: spec.metadata.name.clone(),
@@ -68,7 +72,6 @@ impl Runtime for PodmanRuntime {
         let mut cmd = Command::new("podman");
         cmd.args(["run", "-d", "--name", &spec.metadata.name]);
 
-        // Add port mappings
         for port in &spec.network.ports {
             cmd.arg("-p").arg(format!(
                 "{}:{}",
@@ -76,20 +79,11 @@ impl Runtime for PodmanRuntime {
             ));
         }
 
-        // Add resource limits
         cmd.arg("--cpus").arg(&spec.requirements.cpu);
         cmd.arg("--memory").arg(&spec.requirements.memory);
-
-        // Add image
         cmd.arg(image.full_name());
 
-        let output = cmd.output().await?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Podman run failed: {}", stderr);
-        }
-
+        let output = exec_podman(cmd, "run").await?;
         let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
         Ok(Instance {
@@ -104,14 +98,9 @@ impl Runtime for PodmanRuntime {
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
         tracing::info!("Stopping container: {}", instance.name);
 
-        let output = Command::new("podman")
-            .args(["stop", &instance.id])
-            .output().await?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Podman stop failed: {}", stderr);
-        }
+        let mut cmd = Command::new("podman");
+        cmd.args(["stop", &instance.id]);
+        exec_podman(cmd, "stop").await?;
 
         Ok(())
     }
@@ -149,45 +138,28 @@ impl Runtime for PodmanRuntime {
     async fn logs(&self, instance: &Instance, follow: bool) -> crate::Result<String> {
         let mut cmd = Command::new("podman");
         cmd.args(["logs", &instance.id]);
-
         if follow {
             cmd.arg("--follow");
         }
 
-        let output = cmd.output().await?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Podman logs failed: {}", stderr);
-        }
-
+        let output = exec_podman(cmd, "logs").await?;
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
 
     async fn delete(&self, instance: &Instance) -> crate::Result<()> {
         tracing::info!("Deleting container: {}", instance.name);
 
-        let output = Command::new("podman")
-            .args(["rm", "-f", &instance.id])
-            .output().await?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Podman rm failed: {}", stderr);
-        }
+        let mut cmd = Command::new("podman");
+        cmd.args(["rm", "-f", &instance.id]);
+        exec_podman(cmd, "rm").await?;
 
         Ok(())
     }
 
     async fn list(&self) -> crate::Result<Vec<Instance>> {
-        let output = Command::new("podman")
-            .args(["ps", "-a", "--format", "json"])
-            .output().await?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Podman ps failed: {}", stderr);
-        }
+        let mut cmd = Command::new("podman");
+        cmd.args(["ps", "-a", "--format", "json"]);
+        let output = exec_podman(cmd, "ps").await?;
 
         let json_str = String::from_utf8_lossy(&output.stdout);
         let containers: Vec<serde_json::Value> = serde_json::from_str(&json_str)?;

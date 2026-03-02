@@ -32,56 +32,9 @@ pub struct KubernetesRuntime {
     namespace: String,
 }
 
+super::impl_kube_adapter_new!(KubernetesRuntime, "default");
+
 impl KubernetesRuntime {
-    /// Create new Kubernetes runtime
-    pub async fn new() -> anyhow::Result<Self> {
-        let client = Client::try_default().await?;
-        let namespace = std::env::var("ORCHESTR8_NAMESPACE").unwrap_or_else(|_| "default".to_string());
-
-        Ok(Self { client, namespace })
-    }
-
-    /// Create new Kubernetes runtime with specific namespace
-    pub async fn with_namespace(namespace: String) -> anyhow::Result<Self> {
-        let client = Client::try_default().await?;
-        Ok(Self { client, namespace })
-    }
-
-    /// Generate Pod manifest from workload spec
-    fn generate_pod(&self, image: &Image, spec: &Workload) -> Pod {
-        build_pod_manifest(&self.namespace, image, spec)
-    }
-
-    /// Generate Service manifest from workload spec
-    fn generate_service(&self, spec: &Workload) -> Option<Service> {
-        build_service_manifest(&self.namespace, spec)
-    }
-
-    /// Generate PersistentVolumeClaim manifest from workload spec
-    fn generate_pvc(&self, spec: &Workload) -> Option<PersistentVolumeClaim> {
-        build_pvc_manifest(&self.namespace, spec)
-    }
-
-    /// Generate ConfigMaps from workload spec
-    fn generate_configmaps(&self, spec: &Workload) -> Vec<ConfigMap> {
-        build_configmap_manifests(&self.namespace, spec)
-    }
-
-    /// Generate Secrets from workload spec
-    fn generate_secrets(&self, spec: &Workload) -> Vec<Secret> {
-        build_secret_manifests(&self.namespace, spec)
-    }
-
-    /// Generate Ingress from workload spec
-    fn generate_ingress(&self, spec: &Workload) -> Option<Ingress> {
-        build_ingress_manifest(&self.namespace, spec)
-    }
-
-    /// Generate HorizontalPodAutoscaler from workload spec
-    fn generate_hpa(&self, spec: &Workload) -> Option<HorizontalPodAutoscaler> {
-        build_hpa_manifest(&self.namespace, spec)
-    }
-
     /// Get pod status
     async fn get_pod_status(&self, name: &str) -> anyhow::Result<Status> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -619,7 +572,7 @@ impl Runtime for KubernetesRuntime {
         );
 
         // Create ConfigMaps
-        for configmap in self.generate_configmaps(spec) {
+        for configmap in build_configmap_manifests(&self.namespace, spec) {
             let configmaps: Api<ConfigMap> =
                 Api::namespaced(self.client.clone(), &self.namespace);
 
@@ -635,7 +588,7 @@ impl Runtime for KubernetesRuntime {
         }
 
         // Create Secrets
-        for secret in self.generate_secrets(spec) {
+        for secret in build_secret_manifests(&self.namespace, spec) {
             let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
 
             match secrets.create(&PostParams::default(), &secret).await {
@@ -650,7 +603,7 @@ impl Runtime for KubernetesRuntime {
         }
 
         // Create PVC if needed
-        if let Some(pvc) = self.generate_pvc(spec) {
+        if let Some(pvc) = build_pvc_manifest(&self.namespace, spec) {
             let pvcs: Api<PersistentVolumeClaim> =
                 Api::namespaced(self.client.clone(), &self.namespace);
 
@@ -661,7 +614,7 @@ impl Runtime for KubernetesRuntime {
         }
 
         // Create Service if needed
-        if let Some(service) = self.generate_service(spec) {
+        if let Some(service) = build_service_manifest(&self.namespace, spec) {
             let services: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
 
             match services.create(&PostParams::default(), &service).await {
@@ -671,7 +624,7 @@ impl Runtime for KubernetesRuntime {
         }
 
         // Create Ingress if needed
-        if let Some(ingress) = self.generate_ingress(spec) {
+        if let Some(ingress) = build_ingress_manifest(&self.namespace, spec) {
             let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
 
             match ingresses.create(&PostParams::default(), &ingress).await {
@@ -681,7 +634,7 @@ impl Runtime for KubernetesRuntime {
         }
 
         // Create Pod
-        let pod = self.generate_pod(image, spec);
+        let pod = build_pod_manifest(&self.namespace, image, spec);
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
 
         let created_pod = pods.create(&PostParams::default(), &pod).await?;
@@ -699,7 +652,7 @@ impl Runtime for KubernetesRuntime {
         tracing::info!("Created Pod: {}", pod_name);
 
         // Create HPA if needed
-        if let Some(hpa) = self.generate_hpa(spec) {
+        if let Some(hpa) = build_hpa_manifest(&self.namespace, spec) {
             let hpas: Api<HorizontalPodAutoscaler> =
                 Api::namespaced(self.client.clone(), &self.namespace);
 
