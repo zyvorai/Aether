@@ -86,13 +86,7 @@ impl Runtime for PodmanRuntime {
         let output = exec_podman(cmd, "run").await?;
         let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-        Ok(Instance {
-            id: container_id,
-            name: spec.metadata.name.clone(),
-            runtime: RuntimeKind::Podman,
-            image: image.full_name(),
-            created_at: chrono::Utc::now().to_rfc3339(),
-        })
+        Ok(Instance::new(container_id, spec.metadata.name.clone(), RuntimeKind::Podman, image.full_name()))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {

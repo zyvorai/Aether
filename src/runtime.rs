@@ -58,6 +58,19 @@ pub struct Instance {
     pub created_at: String,
 }
 
+impl Instance {
+    /// Create a new instance, setting `created_at` to the current time.
+    pub fn new(id: String, name: String, runtime: RuntimeKind, image: String) -> Self {
+        Self {
+            id,
+            name,
+            runtime,
+            image,
+            created_at: crate::resources::now_rfc3339(),
+        }
+    }
+}
+
 /// Instance status
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Status {

@@ -77,6 +77,13 @@ pub fn json_save<T: serde::Serialize>(value: &T, path: &std::path::Path) -> anyh
     Ok(())
 }
 
+/// Return the current UTC time as an RFC 3339 string.
+///
+/// Replaces the ubiquitous `chrono::Utc::now().to_rfc3339()` one-liner.
+pub fn now_rfc3339() -> String {
+    chrono::Utc::now().to_rfc3339()
+}
+
 /// Implement `default_path()`, `load()`, and `save()` for a JSON-persisted store type.
 ///
 /// Eliminates the identical 3-method boilerplate across `EventBus`, `AuditLog`,

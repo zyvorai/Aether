@@ -269,13 +269,7 @@ impl Runtime for KubeVirtRuntime {
 
         tracing::info!("Created VirtualMachine: {}", vm_name);
 
-        Ok(Instance {
-            id: uid,
-            name: vm_name,
-            runtime: RuntimeKind::KubeVirt,
-            image: image.full_name(),
-            created_at: chrono::Utc::now().to_rfc3339(),
-        })
+        Ok(Instance::new(uid, vm_name, RuntimeKind::KubeVirt, image.full_name()))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
@@ -380,7 +374,7 @@ impl Runtime for KubeVirtRuntime {
                     .creation_timestamp
                     .as_ref()
                     .map(|t| t.0.to_rfc3339())
-                    .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+                    .unwrap_or_else(|| crate::resources::now_rfc3339());
 
                 Instance {
                     id: uid,

@@ -130,7 +130,7 @@ impl SecretStore {
 
     /// Create a new secret
     pub fn create_secret(&mut self, name: &str, namespace: &str) -> &mut Secret {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
         let secret = Secret {
             name: name.to_string(),
             namespace: namespace.to_string(),
@@ -147,7 +147,7 @@ impl SecretStore {
     /// Set a key-value pair in a secret
     pub fn set(&mut self, secret_name: &str, key: &str, value: &str) -> anyhow::Result<()> {
         let encrypted = self.encrypt(value);
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
 
         let secret = self
             .secrets
@@ -182,7 +182,7 @@ impl SecretStore {
 
     /// Get a decrypted value from a secret
     pub fn get(&mut self, secret_name: &str, key: &str) -> anyhow::Result<String> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
         let secret = self
             .secrets
             .get_mut(secret_name)
@@ -207,7 +207,7 @@ impl SecretStore {
 
     /// Delete a key from a secret
     pub fn delete_key(&mut self, secret_name: &str, key: &str) -> anyhow::Result<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
         let secret = self
             .secrets
             .get_mut(secret_name)
@@ -253,7 +253,7 @@ impl SecretStore {
     /// Rotate a specific key in a secret
     pub fn rotate(&mut self, secret_name: &str, key: &str, new_value: &str) -> anyhow::Result<()> {
         let encrypted = self.encrypt(new_value);
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
 
         let secret = self
             .secrets

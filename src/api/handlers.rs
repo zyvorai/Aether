@@ -15,7 +15,6 @@ use axum::{
 };
 use axum::http::header;
 use std::path::PathBuf;
-use chrono;
 
 /// Look up a workload by name from state, returning a cloned WorkloadState
 /// or an HTTP 404 error response.
@@ -154,14 +153,12 @@ pub(crate) async fn create_workload(
     let mut state = app_state.state.write().await;
     state.upsert(
         request.spec.metadata.name.clone(),
-        WorkloadState {
-            name: request.spec.metadata.name.clone(),
-            runtime: runtime_kind,
+        WorkloadState::new(
+            request.spec.metadata.name.clone(),
+            runtime_kind,
             instance,
-            spec_path: PathBuf::from("api_created"),
-            created_at: chrono::Utc::now().to_rfc3339(),
-            updated_at: chrono::Utc::now().to_rfc3339(),
-        },
+            PathBuf::from("api_created"),
+        ),
     );
 
     // Persist to disk
@@ -211,10 +208,7 @@ pub(crate) async fn delete_workload(
                 Json(ApiResponse::success(format!("Workload {} deleted", name))),
             )
         }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::<String>::error(format!("Workload {} not found", name))),
-        ),
+        None => err_not_found::<String>(format!("Workload {} not found", name)),
     }
 }
 
@@ -253,13 +247,7 @@ pub(crate) async fn start_workload(
     let spec = match Workload::from_file(&workload_state.spec_path) {
         Ok(s) => s,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(format!(
-                    "Failed to load workload spec: {}",
-                    e
-                ))),
-            )
+            return err_internal::<String>(format!("Failed to load workload spec: {}", e))
         }
     };
 
@@ -291,7 +279,7 @@ pub(crate) async fn start_workload(
             instance,
             spec_path: workload_state.spec_path,
             created_at: workload_state.created_at,
-            updated_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: crate::resources::now_rfc3339(),
         },
     );
 
@@ -391,13 +379,7 @@ pub(crate) async fn ai_profile(
     let spec = match Workload::from_file(&workload_state.spec_path) {
         Ok(s) => s,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<serde_json::Value>::error(format!(
-                    "Failed to load spec: {}",
-                    e
-                ))),
-            )
+            return err_internal::<serde_json::Value>(format!("Failed to load spec: {}", e))
         }
     };
 
@@ -431,10 +413,7 @@ pub(crate) async fn ai_analyze_logs(
     let logs = match rt.logs(&workload.instance, false).await {
         Ok(l) => l,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-            )
+            return err_internal::<serde_json::Value>(e)
         }
     };
 
@@ -463,23 +442,14 @@ pub(crate) async fn ai_migration_advice(
     let target_runtime = match target.parse::<RuntimeKind>() {
         Ok(rt) => rt,
         Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<MigrationAdviceResponse>::error(e.to_string())),
-            )
+            return err_bad_request::<MigrationAdviceResponse>(e)
         }
     };
 
     let spec = match Workload::from_file(&workload_state.spec_path) {
         Ok(s) => s,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<MigrationAdviceResponse>::error(format!(
-                    "Failed to load workload spec: {}",
-                    e
-                ))),
-            )
+            return err_internal::<MigrationAdviceResponse>(format!("Failed to load workload spec: {}", e))
         }
     };
 
@@ -578,13 +548,7 @@ pub(crate) async fn api_drift_check(
     let spec = match Workload::from_file(&workload_state.spec_path) {
         Ok(s) => s,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<serde_json::Value>::error(format!(
-                    "Failed to load spec: {}",
-                    e
-                ))),
-            )
+            return err_internal::<serde_json::Value>(format!("Failed to load spec: {}", e))
         }
     };
 
@@ -706,10 +670,7 @@ pub(crate) async fn api_template_generate(
     let kind = match name.parse::<TemplateKind>() {
         Ok(k) => k,
         Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-            )
+            return err_bad_request::<serde_json::Value>(e)
         }
     };
 
@@ -758,20 +719,14 @@ pub(crate) async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResp
     let content = match std::fs::read_to_string(&sla_path) {
         Ok(c) => c,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-            )
+            return err_internal::<serde_json::Value>(e)
         }
     };
 
     let targets: Vec<SlaTarget> = match serde_json::from_str(&content) {
         Ok(t) => t,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-            )
+            return err_internal::<serde_json::Value>(e)
         }
     };
 
@@ -956,10 +911,7 @@ pub(crate) async fn api_affinity_recommend(Path(class): Path<String>) -> impl In
     let wl_class = match class.parse::<WorkloadClass>() {
         Ok(c) => c,
         Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
-            )
+            return err_bad_request::<serde_json::Value>(e)
         }
     };
 
@@ -996,20 +948,14 @@ pub(crate) async fn migrate_workload(
     let target_runtime = match request.target_runtime.parse::<RuntimeKind>() {
         Ok(rt) => rt,
         Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
+            return err_bad_request::<String>(e)
         }
     };
 
     let strategy = match request.strategy.parse::<MigrationStrategy>() {
         Ok(s) => s,
         Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<String>::error(e.to_string())),
-            )
+            return err_bad_request::<String>(e)
         }
     };
 
@@ -1027,13 +973,7 @@ pub(crate) async fn migrate_workload(
     let result = match engine.migrate(plan).await {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<String>::error(format!(
-                    "Migration failed: {}",
-                    e
-                ))),
-            )
+            return err_internal::<String>(format!("Migration failed: {}", e))
         }
     };
     let duration = migration_start.elapsed().as_secs_f64();
@@ -1107,13 +1047,7 @@ pub(crate) async fn build_workload(
     let spec = match Workload::from_file(&workload_state.spec_path) {
         Ok(s) => s,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<BuildResponse>::error(format!(
-                    "Failed to load workload spec: {}",
-                    e
-                ))),
-            )
+            return err_internal::<BuildResponse>(format!("Failed to load workload spec: {}", e))
         }
     };
 
@@ -1134,13 +1068,7 @@ pub(crate) async fn build_workload(
             };
             ok_json(response)
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<BuildResponse>::error(format!(
-                "Build failed: {}",
-                e
-            ))),
-        ),
+        Err(e) => err_internal::<BuildResponse>(format!("Build failed: {}", e)),
     }
 }
 
@@ -1246,13 +1174,7 @@ pub(crate) async fn delete_secret(
                 Some(_) => {
                     // Save the updated store
                     if let Err(e) = store.save(&path) {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<String>::error(format!(
-                                "Failed to save secret store: {}",
-                                e
-                            ))),
-                        );
+                        return err_internal::<String>(format!("Failed to save secret store: {}", e));
                     }
                     (
                         StatusCode::OK,
