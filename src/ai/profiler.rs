@@ -199,7 +199,7 @@ impl Profiler {
         }
 
         // Development: small resources, no health checks, no scaling
-        let cpu = self.parse_cpu(&spec.requirements.cpu);
+        let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
         if cpu <= 1.0 && spec.health.is_none() && spec.scaling.is_none() {
             return WorkloadType::Development;
         }
@@ -209,9 +209,9 @@ impl Profiler {
 
     /// Analyze resource allocation and estimate efficiency
     fn analyze_resources(&self, spec: &Workload, classification: &WorkloadType) -> ResourceAnalysis {
-        let cpu = self.parse_cpu(&spec.requirements.cpu);
-        let memory_gi = self.parse_memory_gi(&spec.requirements.memory);
-        let storage_gi = self.parse_storage_gi(&spec.requirements.storage);
+        let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
+        let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
+        let storage_gi = crate::resources::parse_memory_gi(&spec.requirements.storage);
 
         // Estimate typical utilization based on workload type
         let (cpu_util, mem_util, storage_util) = match classification {
@@ -479,17 +479,6 @@ impl Profiler {
         score.clamp(0.0, 100.0)
     }
 
-    fn parse_cpu(&self, cpu: &str) -> f64 {
-        crate::resources::parse_cpu(cpu)
-    }
-
-    fn parse_memory_gi(&self, memory: &str) -> f64 {
-        crate::resources::parse_memory_gi(memory)
-    }
-
-    fn parse_storage_gi(&self, storage: &str) -> f64 {
-        crate::resources::parse_memory_gi(storage)
-    }
 }
 
 /// Format workload profile as a report
@@ -810,61 +799,53 @@ mod tests {
 
     #[test]
     fn test_parse_cpu_whole_cores() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_cpu("4") - 4.0).abs() < f64::EPSILON);
-        assert!((profiler.parse_cpu("1") - 1.0).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("4") - 4.0).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("1") - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_parse_cpu_millicores() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_cpu("500m") - 0.5).abs() < f64::EPSILON);
-        assert!((profiler.parse_cpu("2000m") - 2.0).abs() < f64::EPSILON);
-        assert!((profiler.parse_cpu("250m") - 0.25).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("500m") - 0.5).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("2000m") - 2.0).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("250m") - 0.25).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_parse_cpu_invalid() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_cpu("")).abs() < f64::EPSILON);
-        assert!((profiler.parse_cpu("abc")).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("")).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("abc")).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_parse_cpu_fractional() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_cpu("0.5") - 0.5).abs() < f64::EPSILON);
-        assert!((profiler.parse_cpu("1.5") - 1.5).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("0.5") - 0.5).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_cpu("1.5") - 1.5).abs() < f64::EPSILON);
     }
 
     // ── Memory parsing ─────────────────────────────────────────────────
 
     #[test]
     fn test_parse_memory_gi() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_memory_gi("8Gi") - 8.0).abs() < f64::EPSILON);
-        assert!((profiler.parse_memory_gi("1Gi") - 1.0).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("8Gi") - 8.0).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("1Gi") - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_parse_memory_mi() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_memory_gi("1024Mi") - 1.0).abs() < f64::EPSILON);
-        assert!((profiler.parse_memory_gi("512Mi") - 0.5).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("1024Mi") - 1.0).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("512Mi") - 0.5).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_parse_memory_unknown_suffix() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_memory_gi("8GB")).abs() < f64::EPSILON);
-        assert!((profiler.parse_memory_gi("abc")).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("8GB")).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("abc")).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_parse_storage_delegates_to_memory() {
-        let profiler = Profiler::with_defaults();
-        assert!((profiler.parse_storage_gi("50Gi") - 50.0).abs() < f64::EPSILON);
-        assert!((profiler.parse_storage_gi("512Mi") - 0.5).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("50Gi") - 50.0).abs() < f64::EPSILON);
+        assert!((crate::resources::parse_memory_gi("512Mi") - 0.5).abs() < f64::EPSILON);
     }
 
     // ── Resource analysis ──────────────────────────────────────────────

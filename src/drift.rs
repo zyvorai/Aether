@@ -238,8 +238,8 @@ impl DriftDetector {
         let memory = &spec.requirements.memory;
 
         // Detect potentially problematic resource configurations
-        let cpu_val = self.parse_cpu(cpu);
-        let mem_val = self.parse_memory_gi(memory);
+        let cpu_val = crate::resources::parse_cpu(cpu);
+        let mem_val = crate::resources::parse_memory_gi(memory);
 
         if cpu_val > 32.0 {
             drifts.push(DriftItem {
@@ -377,13 +377,6 @@ impl DriftDetector {
         actions
     }
 
-    fn parse_cpu(&self, cpu: &str) -> f64 {
-        crate::resources::parse_cpu(cpu)
-    }
-
-    fn parse_memory_gi(&self, memory: &str) -> f64 {
-        crate::resources::parse_memory_gi(memory)
-    }
 }
 
 /// Format drift report as a readable string
