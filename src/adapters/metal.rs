@@ -17,60 +17,27 @@ pub struct Metal3Runtime {
     namespace: String,
 }
 
+super::impl_kube_adapter_new!(Metal3Runtime, "metal3-system");
+
 impl Metal3Runtime {
-    /// Create new Metal3 runtime
-    pub async fn new() -> anyhow::Result<Self> {
-        let client = Client::try_default().await?;
-        let namespace =
-            std::env::var("ORCHESTR8_NAMESPACE").unwrap_or_else(|_| "metal3-system".to_string());
-
-        Ok(Self { client, namespace })
-    }
-
-    /// Create new Metal3 runtime with specific namespace
-    pub async fn with_namespace(namespace: String) -> anyhow::Result<Self> {
-        let client = Client::try_default().await?;
-        Ok(Self { client, namespace })
-    }
-
     /// Generate BareMetalHost JSON from workload spec
     fn generate_baremetalhost_json(&self, spec: &Workload) -> serde_json::Value {
         build_baremetalhost_json(&self.namespace, spec)
     }
 }
 
-/// Parse memory string (e.g., "64Gi", "512Mi") to megabytes
+/// Parse memory string (e.g., "64Gi", "512Mi") to megabytes.
+/// Delegates to the shared `resources::parse_memory_gi` and converts GiB -> MiB.
 fn parse_memory_to_mb(memory: &str) -> i64 {
-    if memory.ends_with("Gi") {
-        let val = memory.trim_end_matches("Gi").parse::<i64>().unwrap_or(1);
-        val * 1024
-    } else if memory.ends_with("Mi") {
-        memory.trim_end_matches("Mi").parse::<i64>().unwrap_or(1024)
-    } else if memory.ends_with("G") {
-        let val = memory.trim_end_matches('G').parse::<i64>().unwrap_or(1);
-        val * 1024
-    } else if memory.ends_with('M') {
-        memory.trim_end_matches('M').parse::<i64>().unwrap_or(1024)
-    } else {
-        1024
-    }
+    let gi = crate::resources::parse_memory_gi(memory);
+    if gi == 0.0 { 1024 } else { (gi * 1024.0) as i64 }
 }
 
-/// Parse storage string (e.g., "500Gi", "10240Mi") to gigabytes
+/// Parse storage string (e.g., "500Gi", "10240Mi") to gigabytes.
+/// Delegates to the shared `resources::parse_memory_gi` (same suffix rules).
 fn parse_storage_to_gb(storage: &str) -> i64 {
-    if storage.ends_with("Gi") {
-        storage.trim_end_matches("Gi").parse::<i64>().unwrap_or(10)
-    } else if storage.ends_with("Mi") {
-        let val = storage.trim_end_matches("Mi").parse::<i64>().unwrap_or(10240);
-        (val / 1024).max(1)
-    } else if storage.ends_with('G') {
-        storage.trim_end_matches('G').parse::<i64>().unwrap_or(10)
-    } else if storage.ends_with('M') {
-        let val = storage.trim_end_matches('M').parse::<i64>().unwrap_or(10240);
-        (val / 1024).max(1)
-    } else {
-        10
-    }
+    let gi = crate::resources::parse_memory_gi(storage);
+    if gi == 0.0 { 10 } else { (gi as i64).max(1) }
 }
 
 /// Build BareMetalHost JSON (standalone, testable without kube::Client)

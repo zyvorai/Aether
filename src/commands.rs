@@ -11,6 +11,36 @@ use std::path::{Path, PathBuf};
 
 use crate::cli::*;
 
+/// Load the state store and look up a workload by name, returning a borrowed
+/// reference tied to the returned store. Avoids repeating the 3-line
+/// `StateStore::load` + `state.get` + `ok_or_else` pattern everywhere.
+fn load_workload_state(name: &str) -> Result<(StateStore, String)> {
+    let state = StateStore::load(&StateStore::default_path())?;
+    if state.get(name).is_none() {
+        anyhow::bail!("Workload '{}' not found", name);
+    }
+    Ok((state, name.to_string()))
+}
+
+/// Load a workload's state and create a runtime client in one step.
+/// Used by commands that need to interact with the actual runtime
+/// (stop, status, logs, delete, analyze-logs, diff).
+async fn load_state_and_runtime(
+    name: &str,
+) -> Result<(
+    StateStore,
+    orchestr8::state::WorkloadState,
+    Box<dyn orchestr8::Runtime>,
+)> {
+    let state = StateStore::load(&StateStore::default_path())?;
+    let ws = state
+        .get(name)
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?
+        .clone();
+    let rt = orchestr8::runtime::create_runtime(&ws.runtime).await?;
+    Ok((state, ws, rt))
+}
+
 pub(crate) async fn validate_command(spec_path: &PathBuf) -> Result<()> {
     println!("🔍 Validating workload specification...");
 
@@ -144,14 +174,8 @@ async fn deploy_single_workload(
 pub(crate) async fn stop_command(name: &str) -> Result<()> {
     println!("⏸️  Stopping workload '{}'...", name);
 
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
-
-    // Stop based on runtime
-    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
-    rt.stop(&workload_state.instance).await?;
+    let (_state, ws, rt) = load_state_and_runtime(name).await?;
+    rt.stop(&ws.instance).await?;
 
     println!("✅ Stopped instance: {}", name);
 
@@ -168,17 +192,11 @@ pub(crate) async fn stop_command(name: &str) -> Result<()> {
 }
 
 pub(crate) async fn status_command(name: &str) -> Result<()> {
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
-
-    // Get status based on runtime
-    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
-    let status = rt.status(&workload_state.instance).await?;
+    let (_state, ws, rt) = load_state_and_runtime(name).await?;
+    let status = rt.status(&ws.instance).await?;
 
     println!("📊 Status for '{}':", name);
-    println!("  Runtime: {}", workload_state.runtime);
+    println!("  Runtime: {}", ws.runtime);
     println!("  State: {}", status.state);
     println!("  Ready: {}", status.ready);
     if let Some(msg) = status.message {
@@ -192,14 +210,8 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
 }
 
 pub(crate) async fn logs_command(name: &str, follow: bool) -> Result<()> {
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
-
-    // Get logs based on runtime
-    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
-    let logs = rt.logs(&workload_state.instance, follow).await?;
+    let (_state, ws, rt) = load_state_and_runtime(name).await?;
+    let logs = rt.logs(&ws.instance, follow).await?;
 
     println!("{}", logs);
 
@@ -209,22 +221,15 @@ pub(crate) async fn logs_command(name: &str, follow: bool) -> Result<()> {
 pub(crate) async fn delete_command(name: &str) -> Result<()> {
     println!("🗑️  Deleting workload '{}'...", name);
 
-    let mut state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?
-        .clone();
-
-    // Delete based on runtime
-    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
-    rt.delete(&workload_state.instance).await?;
+    let (mut state, ws, rt) = load_state_and_runtime(name).await?;
+    rt.delete(&ws.instance).await?;
 
     // Remove from state
     state.remove(name);
     state.save(&StateStore::default_path())?;
 
     // Record metrics
-    orchestr8::metrics::record_deletion(&workload_state.runtime.to_string());
+    orchestr8::metrics::record_deletion(&ws.runtime.to_string());
 
     emit_event(
         orchestr8::events::EventSeverity::Warning,
@@ -232,7 +237,7 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
         "cli",
         Some(name),
         "Workload deleted",
-        &format!("Deleted instance from {}", workload_state.runtime),
+        &format!("Deleted instance from {}", ws.runtime),
     );
 
     println!("✅ Deleted instance: {}", name);
@@ -275,10 +280,8 @@ pub(crate) async fn migrate_command(
     println!("🔄 Migrating workload '{}'...", name);
 
     // Load current state
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+    let (state, _) = load_workload_state(name)?;
+    let workload_state = state.get(name).unwrap();
 
     let source_runtime = workload_state.runtime;
 
@@ -705,10 +708,8 @@ pub(crate) async fn profile_command(spec_path: &PathBuf, name: Option<String>) -
 
     // If name is provided, look up runtime from state
     let (workload, runtime) = if let Some(ref workload_name) = name {
-        let state = StateStore::load(&StateStore::default_path())?;
-        let ws = state
-            .get(workload_name)
-            .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", workload_name))?;
+        let (state, _) = load_workload_state(workload_name)?;
+        let ws = state.get(workload_name).unwrap();
         let workload = Workload::from_file(&ws.spec_path)?;
         (workload, Some(ws.runtime))
     } else {
@@ -731,14 +732,8 @@ pub(crate) async fn analyze_logs_command(name: &str) -> Result<()> {
     let config = Config::load();
     let analyzer = LogAnalyzer::new(config.analyzer);
 
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
-
-    // Fetch logs
-    let rt = orchestr8::runtime::create_runtime(&workload_state.runtime).await?;
-    let logs = rt.logs(&workload_state.instance, false).await?;
+    let (_state, ws, rt) = load_state_and_runtime(name).await?;
+    let logs = rt.logs(&ws.instance, false).await?;
 
     let analysis = analyzer.analyze(&logs);
     print!("{}", format_analysis_report(&analysis));
@@ -755,15 +750,13 @@ pub(crate) async fn migration_advice_command(name: &str, target: &str) -> Result
     let config = Config::load();
     let advisor = MigrationAdvisor::new(config.migration);
 
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+    let (state, _) = load_workload_state(name)?;
+    let ws = state.get(name).unwrap();
 
     let target_runtime: RuntimeKind = target.parse()?;
 
-    let workload = Workload::from_file(&workload_state.spec_path)?;
-    let advice = advisor.advise(&workload, workload_state.runtime, target_runtime);
+    let workload = Workload::from_file(&ws.spec_path)?;
+    let advice = advisor.advise(&workload, ws.runtime, target_runtime);
     print!("{}", format_migration_advice(&advice));
 
     Ok(())
@@ -871,14 +864,12 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
 
     println!("🔍 Checking drift for '{}'\n", name);
 
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+    let (state, _) = load_workload_state(name)?;
+    let ws = state.get(name).unwrap();
 
-    let spec = Workload::from_file(&workload_state.spec_path)?;
+    let spec = Workload::from_file(&ws.spec_path)?;
     let detector = DriftDetector::new();
-    let report = detector.detect(&spec, workload_state);
+    let report = detector.detect(&spec, ws);
 
     print!("{}", format_drift_report(&report));
 
@@ -1709,20 +1700,15 @@ async fn collect_health_statuses(
 
 pub(crate) async fn diff_command(name: &str) -> Result<()> {
     use orchestr8::drift::{format_live_diff, DiffRow, LiveDiffReport};
-    use orchestr8::runtime::create_runtime;
 
     println!("Comparing spec vs stored vs live state for '{}'\n", name);
 
-    let state = StateStore::load(&StateStore::default_path())?;
-    let workload_state = state
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?;
+    let (_state, workload_state, runtime) = load_state_and_runtime(name).await?;
 
     // Load spec
     let spec = Workload::from_file(&workload_state.spec_path)?;
 
     // Query live status
-    let runtime = create_runtime(&workload_state.runtime).await?;
     let live_status = runtime.status(&workload_state.instance).await?;
 
     // Build diff rows
