@@ -77,6 +77,34 @@ pub fn json_save<T: serde::Serialize>(value: &T, path: &std::path::Path) -> anyh
     Ok(())
 }
 
+/// Implement `default_path()`, `load()`, and `save()` for a JSON-persisted store type.
+///
+/// Eliminates the identical 3-method boilerplate across `EventBus`, `AuditLog`,
+/// `Scheduler`, `Orchestrator`, `DependencyGraph`, `EnvironmentManager`, etc.
+///
+/// The type must derive `Serialize + DeserializeOwned + Default`.
+#[macro_export]
+macro_rules! impl_json_store {
+    ($ty:ty, $filename:expr) => {
+        impl $ty {
+            /// Return the default on-disk path for this store.
+            pub fn default_path() -> std::path::PathBuf {
+                $crate::resources::orchestr8_path($filename)
+            }
+
+            /// Load from disk, returning `Default` if the file does not exist.
+            pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
+                $crate::resources::json_load(path)
+            }
+
+            /// Persist to disk, creating parent directories as needed.
+            pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
+                $crate::resources::json_save(self, path)
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

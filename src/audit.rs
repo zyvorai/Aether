@@ -4,7 +4,6 @@
 //! action type, result, and context for compliance and debugging.
 
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
 
 /// A single audit event
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -198,21 +197,9 @@ impl AuditLog {
         self.events.retain(|e| e.timestamp >= cutoff_str);
     }
 
-    /// Default path for audit log
-    pub fn default_path() -> PathBuf {
-        crate::resources::orchestr8_path("audit.json")
-    }
-
-    /// Load from disk
-    pub fn load(path: &Path) -> anyhow::Result<Self> {
-        crate::resources::json_load(path)
-    }
-
-    /// Save to disk
-    pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        crate::resources::json_save(self, path)
-    }
 }
+
+crate::impl_json_store!(AuditLog, "audit.json");
 
 /// Audit summary statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
