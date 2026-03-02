@@ -5,7 +5,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 
 /// Event severity levels
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -178,6 +177,8 @@ impl Default for EventBus {
         Self::new()
     }
 }
+
+crate::impl_json_store!(EventBus, "events.json");
 
 impl EventBus {
     /// Maximum number of events to retain
@@ -367,21 +368,6 @@ impl EventBus {
             let drain_count = self.events.len() - max_events;
             self.events.drain(..drain_count);
         }
-    }
-
-    /// Default path
-    pub fn default_path() -> PathBuf {
-        crate::resources::orchestr8_path("events.json")
-    }
-
-    /// Load from disk
-    pub fn load(path: &Path) -> anyhow::Result<Self> {
-        crate::resources::json_load(path)
-    }
-
-    /// Save to disk
-    pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        crate::resources::json_save(self, path)
     }
 
     // --- Private ---
