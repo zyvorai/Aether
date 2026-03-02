@@ -171,7 +171,7 @@ impl EnvironmentManager {
 
     /// Create a new environment
     pub fn create_env(&mut self, name: &str, tier: EnvTier) -> &Environment {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::resources::now_rfc3339();
         let env = Environment {
             name: name.to_string(),
             tier,
@@ -207,7 +207,7 @@ impl EnvironmentManager {
             .get_mut(env_name)
             .ok_or_else(|| anyhow::anyhow!("Environment '{}' not found", env_name))?;
         env.workloads.insert(workload.name.clone(), workload);
-        env.updated_at = chrono::Utc::now().to_rfc3339();
+        env.updated_at = crate::resources::now_rfc3339();
         Ok(())
     }
 
@@ -223,7 +223,7 @@ impl EnvironmentManager {
             .get_mut(env_name)
             .ok_or_else(|| anyhow::anyhow!("Environment '{}' not found", env_name))?;
         env.variables.insert(key.to_string(), value.to_string());
-        env.updated_at = chrono::Utc::now().to_rfc3339();
+        env.updated_at = crate::resources::now_rfc3339();
         Ok(())
     }
 
@@ -288,7 +288,7 @@ impl EnvironmentManager {
         // Insert into target
         let target = self.environments.get_mut(&request.to_env).expect("target env validated above");
         target.workloads.insert(request.workload.clone(), promoted);
-        target.updated_at = chrono::Utc::now().to_rfc3339();
+        target.updated_at = crate::resources::now_rfc3339();
 
         Ok(PromotionResult {
             success: true,

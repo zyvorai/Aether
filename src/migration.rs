@@ -191,7 +191,7 @@ impl MigrationEngine {
                 instance: target_instance.clone(),
                 spec_path: workload_state.spec_path,
                 created_at: workload_state.created_at,
-                updated_at: chrono::Utc::now().to_rfc3339(),
+                updated_at: crate::resources::now_rfc3339(),
             },
         );
         state.save(&self.state_path)?;
@@ -283,7 +283,7 @@ impl MigrationEngine {
                 instance: target_instance.clone(),
                 spec_path: workload_state.spec_path,
                 created_at: workload_state.created_at,
-                updated_at: chrono::Utc::now().to_rfc3339(),
+                updated_at: crate::resources::now_rfc3339(),
             },
         );
         state.save(&self.state_path)?;
@@ -394,7 +394,7 @@ impl MigrationEngine {
                 instance: target_instance.clone(),
                 spec_path: workload_state.spec_path,
                 created_at: workload_state.created_at,
-                updated_at: chrono::Utc::now().to_rfc3339(),
+                updated_at: crate::resources::now_rfc3339(),
             },
         );
         state.save(&self.state_path)?;

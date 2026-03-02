@@ -40,7 +40,7 @@ impl Backup {
         Self {
             metadata: BackupMetadata {
                 version: "1.0".to_string(),
-                created_at: chrono::Utc::now().to_rfc3339(),
+                created_at: crate::resources::now_rfc3339(),
                 workload_count: workloads.len(),
                 description,
                 orchestr8_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -278,7 +278,7 @@ impl SnapshotManager {
         let backup = Backup {
             metadata: BackupMetadata {
                 version: "1.0".to_string(),
-                created_at: chrono::Utc::now().to_rfc3339(),
+                created_at: crate::resources::now_rfc3339(),
                 workload_count: 1,
                 description: Some(format!("Pre-deploy snapshot of {}", ws.name)),
                 orchestr8_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -343,11 +343,11 @@ mod tests {
                 name: "test-name".to_string(),
                 runtime: RuntimeKind::Podman,
                 image: "test:latest".to_string(),
-                created_at: chrono::Utc::now().to_rfc3339(),
+                created_at: crate::resources::now_rfc3339(),
             },
             spec_path: PathBuf::from("/tmp/workload.yaml"),
-            created_at: chrono::Utc::now().to_rfc3339(),
-            updated_at: chrono::Utc::now().to_rfc3339(),
+            created_at: crate::resources::now_rfc3339(),
+            updated_at: crate::resources::now_rfc3339(),
         }
     }
 

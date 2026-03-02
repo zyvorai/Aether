@@ -426,7 +426,7 @@ mod tests {
             error_rate_pct: Some(0.5),
             restarts: 0,
             cost_per_day: Some(10.0),
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: crate::resources::now_rfc3339(),
             failure_reason: if success {
                 None
             } else {

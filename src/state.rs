@@ -22,6 +22,21 @@ pub struct WorkloadState {
     pub updated_at: String,
 }
 
+impl WorkloadState {
+    /// Create a new WorkloadState, setting both timestamps to now.
+    pub fn new(name: String, runtime: RuntimeKind, instance: Instance, spec_path: PathBuf) -> Self {
+        let now = crate::resources::now_rfc3339();
+        Self {
+            name,
+            runtime,
+            instance,
+            spec_path,
+            created_at: now.clone(),
+            updated_at: now,
+        }
+    }
+}
+
 impl StateStore {
     /// Create new state store
     pub fn new() -> Self {
