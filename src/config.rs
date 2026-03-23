@@ -32,14 +32,23 @@ impl Config {
     }
 
     /// Load configuration from a specific path
-    pub fn load_from(path: &PathBuf) -> Self {
+    pub fn load_from(path: &std::path::Path) -> Self {
         if !path.exists() {
             return Self::default();
         }
 
         match std::fs::read_to_string(path) {
-            Ok(content) => serde_yaml::from_str(&content).unwrap_or_default(),
-            Err(_) => Self::default(),
+            Ok(content) => match serde_yaml::from_str(&content) {
+                Ok(config) => config,
+                Err(e) => {
+                    tracing::warn!("Failed to parse config {}: {}, using defaults", path.display(), e);
+                    Self::default()
+                }
+            },
+            Err(e) => {
+                tracing::warn!("Failed to read config {}: {}, using defaults", path.display(), e);
+                Self::default()
+            }
         }
     }
 
@@ -49,7 +58,7 @@ impl Config {
     }
 
     /// Save configuration to a specific path
-    pub fn save_to(&self, path: &PathBuf) -> anyhow::Result<()> {
+    pub fn save_to(&self, path: &std::path::Path) -> anyhow::Result<()> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
@@ -117,7 +126,8 @@ impl ScoringWeights {
     /// Normalize weights to sum to 1.0
     pub fn normalized(&self) -> Self {
         let total = self.cost + self.performance + self.reliability + self.availability;
-        if total == 0.0 {
+        if total.abs() < f64::EPSILON {
+            tracing::warn!("All scoring weights are zero; using defaults");
             return Self::default();
         }
         Self {
@@ -126,6 +136,21 @@ impl ScoringWeights {
             reliability: self.reliability / total,
             availability: self.availability / total,
         }
+    }
+
+    /// Validate that all weights are in the valid range [0.0, 1.0]
+    pub fn validate(&self) -> anyhow::Result<()> {
+        for (name, val) in [
+            ("cost", self.cost),
+            ("performance", self.performance),
+            ("reliability", self.reliability),
+            ("availability", self.availability),
+        ] {
+            if !(0.0..=1.0).contains(&val) {
+                anyhow::bail!("Scoring weight '{}' must be between 0.0 and 1.0, got {}", name, val);
+            }
+        }
+        Ok(())
     }
 }
 

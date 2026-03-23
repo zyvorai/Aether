@@ -441,13 +441,36 @@ impl EventBus {
                 eprintln!("[ALERT] {}", notification.message);
             }
             ChannelType::File { path } => {
-                if let Ok(mut file) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(path)
-                {
-                    use std::io::Write;
-                    let _ = writeln!(file, "{}", notification.message);
+                // Check file size before writing to prevent unbounded growth
+                const MAX_EVENT_FILE_SIZE: u64 = 50 * 1024 * 1024; // 50 MB
+                let should_write = match std::fs::metadata(path) {
+                    Ok(meta) => meta.len() < MAX_EVENT_FILE_SIZE,
+                    Err(_) => true, // file doesn't exist yet, ok to create
+                };
+                if should_write {
+                    match std::fs::OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open(path)
+                    {
+                        Ok(mut file) => {
+                            use std::io::Write;
+                            let _ = writeln!(file, "{}", notification.message);
+                        }
+                        Err(e) => {
+                            tracing::error!(
+                                "Failed to open event log file '{}': {} — notification channel is broken",
+                                path, e
+                            );
+                        }
+                    }
+                } else {
+                    tracing::error!(
+                        "Event log file {} exceeds {} MB — events are being dropped! \
+                         Rotate or truncate the file to resume logging.",
+                        path,
+                        MAX_EVENT_FILE_SIZE / (1024 * 1024)
+                    );
                 }
             }
             ChannelType::Webhook { url, method } => {

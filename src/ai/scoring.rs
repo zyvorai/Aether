@@ -112,7 +112,16 @@ impl ScoringEngine {
         // Sort by total score descending
         scores.sort_by(|a, b| b.total_score.partial_cmp(&a.total_score).unwrap_or(std::cmp::Ordering::Equal));
 
-        let recommended = scores.first().map(|s| s.runtime).unwrap_or(RuntimeKind::Podman);
+        let recommended = match scores.first() {
+            Some(s) => s.runtime,
+            None => {
+                tracing::error!(
+                    "No allowed runtimes found for workload '{}'; defaulting to Podman",
+                    spec.metadata.name
+                );
+                RuntimeKind::Podman
+            }
+        };
 
         // Calculate confidence based on score spread
         let confidence = if scores.len() >= 2 {

@@ -16,21 +16,34 @@ pub fn build_managed_labels(
     user_labels: &HashMap<String, String>,
 ) -> BTreeMap<String, String> {
     let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), name.to_string());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    // Insert user labels first so that managed labels take precedence
     for (k, v) in user_labels {
         labels.insert(k.clone(), v.clone());
     }
+    // Managed labels always win — insert after user labels to prevent overrides
+    labels.insert("app".to_string(), name.to_string());
+    labels.insert("managed-by".to_string(), "orchestr8".to_string());
     labels
 }
 
 /// Parse CPU string (e.g., "4" or "2000m") to core count
 pub fn parse_cpu_cores(cpu: &str) -> i32 {
     if cpu.ends_with('m') {
-        let milli = cpu.trim_end_matches('m').parse::<i32>().unwrap_or(1000);
-        (milli / 1000).max(1)
+        match cpu.trim_end_matches('m').parse::<i32>() {
+            Ok(milli) => (milli / 1000).max(1),
+            Err(_) => {
+                tracing::warn!("Invalid CPU value '{}', defaulting to 1 core", cpu);
+                1
+            }
+        }
     } else {
-        cpu.parse::<i32>().unwrap_or(1)
+        match cpu.parse::<i32>() {
+            Ok(v) => v.max(1),
+            Err(_) => {
+                tracing::warn!("Invalid CPU value '{}', defaulting to 1 core", cpu);
+                1
+            }
+        }
     }
 }
 
@@ -144,10 +157,9 @@ mod tests {
         user.insert("managed-by".to_string(), "someone-else".to_string());
 
         let labels = build_managed_labels("my-app", &user);
-        // BTreeMap insert order: base labels first, then user labels override
-        // Since user labels are inserted after, they would override.
-        // This is acceptable — if users explicitly set managed-by, respect it.
-        assert_eq!(labels.get("managed-by").unwrap(), "someone-else");
+        // Managed labels are inserted after user labels, so they take precedence.
+        // Users cannot override reserved keys like "managed-by".
+        assert_eq!(labels.get("managed-by").unwrap(), "orchestr8");
     }
 
     // ── managed_list_params ─────────────────────────────────────────

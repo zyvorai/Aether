@@ -338,25 +338,25 @@ impl Workload {
         Self::validate_byte_quantity(storage, "requirements.storage")
     }
 
-    /// Validate a Kubernetes-style byte quantity (e.g., "4Gi", "512Mi", "100G", "256M")
+    /// Validate a Kubernetes-style byte quantity (e.g., "4Gi", "512Mi", "100G", "256M", "1.5Gi")
     fn validate_byte_quantity(value: &str, field: &str) -> anyhow::Result<()> {
         if value.is_empty() {
             anyhow::bail!("{} cannot be empty", field);
         }
-        let suffixes = ["Gi", "Mi", "Ti", "G", "M", "T"];
+        let suffixes = ["Gi", "Mi", "Ti", "Ki", "G", "M", "T", "K"];
         for suffix in &suffixes {
             if let Some(num) = value.strip_suffix(suffix) {
-                let val = num.parse::<u64>().map_err(|_| {
+                let val = num.parse::<f64>().map_err(|_| {
                     anyhow::anyhow!("{}: invalid numeric value in '{}'", field, value)
                 })?;
-                if val == 0 {
+                if val <= 0.0 {
                     anyhow::bail!("{} must be > 0", field);
                 }
                 return Ok(());
             }
         }
         anyhow::bail!(
-            "{}: invalid format '{}', expected value with suffix (e.g., '4Gi', '512Mi')",
+            "{}: invalid format '{}', expected value with suffix (e.g., '4Gi', '512Mi', '1.5Gi')",
             field,
             value
         );

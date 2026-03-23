@@ -379,26 +379,47 @@ impl Orchestrator {
                         CircuitState::Open => {
                             // Check if cooldown has elapsed
                             if let Some(opened_at) = &workload.circuit_opened_at {
-                                if let Ok(opened) = chrono::DateTime::parse_from_rfc3339(opened_at) {
-                                    let elapsed = chrono::Utc::now() - opened.with_timezone(&chrono::Utc);
-                                    if elapsed.num_seconds()
-                                        >= workload.health_config.cooldown_seconds as i64
-                                    {
-                                        workload.circuit = CircuitState::HalfOpen;
+                                match chrono::DateTime::parse_from_rfc3339(opened_at) {
+                                    Ok(opened) => {
+                                        let elapsed = chrono::Utc::now() - opened.with_timezone(&chrono::Utc);
+                                        if elapsed.num_seconds()
+                                            >= workload.health_config.cooldown_seconds as i64
+                                        {
+                                            workload.circuit = CircuitState::HalfOpen;
+                                            workload.restart_count = 0;
+                                            workload.consecutive_failures = 0;
+
+                                            workload.history.push(HealthEvent {
+                                                timestamp: now.clone(),
+                                                event_type: HealthEventType::CircuitHalfOpen,
+                                                message: "Circuit half-open - attempting recovery"
+                                                    .to_string(),
+                                            });
+
+                                            actions.push(OrchestratorAction::Restart {
+                                                workload: check.workload.clone(),
+                                                runtime: workload.runtime,
+                                                reason: "Circuit half-open recovery attempt".to_string(),
+                                            });
+                                        }
+                                    }
+                                    Err(e) => {
+                                        tracing::warn!(
+                                            "Failed to parse circuit_opened_at '{}': {}; resetting circuit breaker to Closed",
+                                            opened_at, e
+                                        );
+                                        workload.circuit = CircuitState::Closed;
                                         workload.restart_count = 0;
                                         workload.consecutive_failures = 0;
+                                        workload.circuit_opened_at = None;
 
                                         workload.history.push(HealthEvent {
                                             timestamp: now.clone(),
-                                            event_type: HealthEventType::CircuitHalfOpen,
-                                            message: "Circuit half-open - attempting recovery"
-                                                .to_string(),
-                                        });
-
-                                        actions.push(OrchestratorAction::Restart {
-                                            workload: check.workload.clone(),
-                                            runtime: workload.runtime,
-                                            reason: "Circuit half-open recovery attempt".to_string(),
+                                            event_type: HealthEventType::CircuitClosed,
+                                            message: format!(
+                                                "Circuit reset to Closed due to unparseable opened_at timestamp: {}",
+                                                e
+                                            ),
                                         });
                                     }
                                 }

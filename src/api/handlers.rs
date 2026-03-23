@@ -387,9 +387,14 @@ pub(crate) async fn ai_profile(
     let profiler = Profiler::new(config.profiler.waste_threshold);
     let profile = profiler.profile(&spec, Some(workload_state.runtime));
 
+    let value = match serde_json::to_value(profile) {
+        Ok(v) => v,
+        Err(e) => return err_internal::<serde_json::Value>(format!("Failed to serialize profile: {}", e)),
+    };
+
     (
         StatusCode::OK,
-        Json(ApiResponse::success(serde_json::to_value(profile).unwrap_or_default())),
+        Json(ApiResponse::success(value)),
     )
 }
 

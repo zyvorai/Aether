@@ -30,7 +30,12 @@ impl Metal3Runtime {
 /// Delegates to the shared `resources::parse_memory_gi` and converts GiB -> MiB.
 fn parse_memory_to_mb(memory: &str) -> i64 {
     let gi = crate::resources::parse_memory_gi(memory);
-    if gi == 0.0 { 1024 } else { (gi * 1024.0) as i64 }
+    if gi <= 0.0 {
+        tracing::warn!("Could not parse memory '{}', defaulting to 1024 MB", memory);
+        1024
+    } else {
+        (gi * 1024.0) as i64
+    }
 }
 
 /// Parse storage string (e.g., "500Gi", "10240Mi") to gigabytes.
@@ -303,15 +308,15 @@ impl Runtime for Metal3Runtime {
             .unwrap_or_else(|| "N/A".to_string());
 
         Ok(format!(
-            "BareMetalHost Information:\\n\\n\\\
-            Host: {}\\n\\\
-            BMC Address: {}\\n\\\
-            Provisioning State: {}\\n\\n\\\
-            Hardware Details:\\n{}\\n\\n\\\
-            Console Access:\\n  \\\
-            For IPMI: ipmitool -I lanplus -H <BMC-IP> -U <user> -P <pass> sol activate\\n  \\\
-            For Redfish: Check BMC web interface at {}\\n\\n\\\
-            Note: BMC credentials should be stored in Secret referenced by BareMetalHost\\n\\\
+            "BareMetalHost Information:\n\n\
+            Host: {}\n\
+            BMC Address: {}\n\
+            Provisioning State: {}\n\n\
+            Hardware Details:\n{}\n\n\
+            Console Access:\n  \
+            For IPMI: ipmitool -I lanplus -H <BMC-IP> -U <user> -P <pass> sol activate\n  \
+            For Redfish: Check BMC web interface at {}\n\n\
+            Note: BMC credentials should be stored in Secret referenced by BareMetalHost\n\
             Get full status: kubectl get bmh {} -n {} -o yaml",
             instance.name,
             bmc_address,
@@ -452,12 +457,14 @@ mod tests {
 
     #[test]
     fn test_parse_memory_to_mb_g() {
-        assert_eq!(parse_memory_to_mb("4G"), 4096);
+        // 4 decimal GB ≈ 3.725 GiB ≈ 3814 MB
+        assert_eq!(parse_memory_to_mb("4G"), 3814);
     }
 
     #[test]
     fn test_parse_memory_to_mb_m() {
-        assert_eq!(parse_memory_to_mb("256M"), 256);
+        // 256 decimal MB ≈ 0.238 GiB ≈ 244 MB
+        assert_eq!(parse_memory_to_mb("256M"), 244);
     }
 
     #[test]
@@ -479,12 +486,14 @@ mod tests {
 
     #[test]
     fn test_parse_memory_to_mb_large_g() {
-        assert_eq!(parse_memory_to_mb("16G"), 16384);
+        // 16 decimal GB ≈ 14.901 GiB ≈ 15258 MB
+        assert_eq!(parse_memory_to_mb("16G"), 15258);
     }
 
     #[test]
     fn test_parse_memory_to_mb_large_m() {
-        assert_eq!(parse_memory_to_mb("4096M"), 4096);
+        // 4096 decimal MB ≈ 3.815 GiB ≈ 3906 MB
+        assert_eq!(parse_memory_to_mb("4096M"), 3906);
     }
 
     #[test]
@@ -537,14 +546,18 @@ mod tests {
 
     #[test]
     fn test_parse_storage_to_gb_g_suffix() {
-        assert_eq!(parse_storage_to_gb("100G"), 100);
+        // 100 decimal GB ≈ 93.13 GiB → 93
+        assert_eq!(parse_storage_to_gb("100G"), 93);
+        // 1 decimal GB ≈ 0.93 GiB → max(1) = 1
         assert_eq!(parse_storage_to_gb("1G"), 1);
     }
 
     #[test]
     fn test_parse_storage_to_gb_m_suffix() {
-        assert_eq!(parse_storage_to_gb("10240M"), 10);
-        assert_eq!(parse_storage_to_gb("2048M"), 2);
+        // 10240 decimal MB ≈ 9.54 GiB → 9
+        assert_eq!(parse_storage_to_gb("10240M"), 9);
+        // 2048 decimal MB ≈ 1.91 GiB → 1
+        assert_eq!(parse_storage_to_gb("2048M"), 1);
     }
 
     #[test]
