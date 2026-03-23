@@ -1143,7 +1143,7 @@ pub(crate) async fn get_secret(
                         keys,
                         created_at: secret.created_at.clone(),
                         updated_at: secret.updated_at.clone(),
-                        needs_rotation: store.list().iter().any(|s| s.name == name && s.needs_rotation),
+                        needs_rotation: store.needs_rotation(secret),
                         rotation_policy: rotation_info,
                     };
                     (

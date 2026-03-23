@@ -431,7 +431,7 @@ impl LogAnalyzer {
         // Detect new error patterns appearing late
         for pattern in patterns {
             if pattern.severity == Severity::Error
-                && pattern.first_seen > timeline.len().saturating_sub(1) * self.config.window_size
+                && pattern.first_seen >= (timeline.len() * self.config.window_size).saturating_sub(self.config.window_size)
                 && pattern.count >= 3
             {
                 anomalies.push(Anomaly {
