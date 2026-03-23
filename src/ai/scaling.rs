@@ -155,7 +155,7 @@ impl ScalingEngine {
                 * cost_per_replica_hourly,
             delta_monthly: (recommended_replicas as f64 - current_replicas as f64)
                 * cost_per_replica_hourly
-                * self.config.forecast_minutes as f64, // approximate
+                * 730.0, // hours per month
         };
 
         ScalingRecommendation {
@@ -212,9 +212,10 @@ impl ScalingEngine {
         // Determine trend
         let trend = self.classify_trend(slope, stddev, mean);
 
-        // Confidence bounds (1 stddev)
+        // Confidence bounds (1 stddev), guarding against NaN
+        let stddev = if stddev.is_finite() { stddev } else { 0.0 };
         let lower_bound = (predicted_value - stddev).max(0.0);
-        let upper_bound = (predicted_value + stddev).min(1.0);
+        let upper_bound = predicted_value + stddev;
 
         Forecast {
             trend,
@@ -296,6 +297,7 @@ impl ScalingEngine {
             }
         }
 
+        let confidence = if forecast.trend == Trend::Volatile { 0.50 } else { 0.90 };
         (
             ScalingAction::NoChange,
             current_replicas,
@@ -304,7 +306,7 @@ impl ScalingEngine {
                 predicted * 100.0,
                 forecast.trend
             ),
-            0.90,
+            confidence,
         )
     }
 }

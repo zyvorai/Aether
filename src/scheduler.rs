@@ -353,7 +353,17 @@ impl Scheduler {
             })
             .collect();
 
-        // Sort by score descending
+        // Filter out NaN/Inf scores before sorting
+        scored.retain(|(_, score, _)| score.is_finite());
+
+        if scored.is_empty() {
+            return Err(ScheduleError::NoFeasibleRuntime {
+                workload: request.workload_name.clone(),
+                reason: "All candidate scores were non-finite (NaN/Inf)".to_string(),
+            });
+        }
+
+        // Sort by score descending (all scores are finite after the retain above)
         scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         let (selected, score, reasons) = scored[0].clone();
@@ -404,6 +414,15 @@ impl Scheduler {
 
         // Update capacity
         if let Some(cap) = self.capacities.get_mut(&selected) {
+            if request.cpu_required > cap.available_cpu
+                || request.memory_required_mb > cap.available_memory_mb
+                || request.storage_required_mb > cap.available_storage_mb
+            {
+                tracing::warn!(
+                    "Workload '{}' exceeds available capacity on {:?} — placement may be over-committed",
+                    request.workload_name, selected
+                );
+            }
             cap.available_cpu -= request.cpu_required;
             cap.available_memory_mb = cap.available_memory_mb.saturating_sub(request.memory_required_mb);
             cap.available_storage_mb = cap.available_storage_mb.saturating_sub(request.storage_required_mb);

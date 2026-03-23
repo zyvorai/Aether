@@ -81,7 +81,7 @@ impl Backup {
             state.upsert(workload.name.clone(), workload.clone());
         }
 
-        state.save(&state_path.to_path_buf())?;
+        state.save(state_path)?;
 
         tracing::info!(
             "Restored {} workloads from backup",
@@ -103,7 +103,7 @@ impl Backup {
             }
         }
 
-        state.save(&state_path.to_path_buf())?;
+        state.save(state_path)?;
 
         tracing::info!(
             "Merged {} new workloads from backup (total: {})",
@@ -127,7 +127,10 @@ impl BackupManager {
 
     /// Get default backup directory
     pub fn default_dir() -> PathBuf {
-        let mut path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        let mut path = dirs::home_dir().unwrap_or_else(|| {
+            tracing::warn!("Could not determine home directory, using current directory for backups");
+            std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+        });
         path.push(".orchestr8");
         path.push("backups");
         path
@@ -177,6 +180,12 @@ impl BackupManager {
         {
             let entry = entry?;
             let path = entry.path();
+
+            // Skip symlinks to prevent traversal attacks
+            if path.is_symlink() {
+                tracing::warn!("Skipping symlink in backup directory: {}", path.display());
+                continue;
+            }
 
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
                 backups.push(path);
@@ -252,7 +261,10 @@ impl Default for SnapshotManager {
 impl SnapshotManager {
     /// Create a snapshot manager using the default directory.
     pub fn new() -> Self {
-        let mut path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        let mut path = dirs::home_dir().unwrap_or_else(|| {
+            tracing::warn!("Could not determine home directory, using current directory for snapshots");
+            std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+        });
         path.push(".orchestr8");
         path.push("snapshots");
         Self { snapshot_dir: path }

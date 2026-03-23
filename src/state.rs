@@ -63,7 +63,7 @@ impl StateStore {
     }
 
     /// Save state to disk
-    pub fn save(&self, path: &PathBuf) -> anyhow::Result<()> {
+    pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
         let content = serde_json::to_string_pretty(self)
             .context("failed to serialize state")?;
         std::fs::write(path, &content)

@@ -77,23 +77,13 @@ impl Engine {
     /// Parse CPU string (e.g., "2", "2000m"), defaulting to 1.0 on bad input
     fn parse_cpu(&self, cpu: &str) -> f64 {
         let v = crate::resources::parse_cpu(cpu);
-        if v > 0.0 {
-            v
-        } else {
-            tracing::warn!(value = cpu, "invalid CPU resource value, defaulting to 1.0");
-            1.0
-        }
+        if v > 0.0 { v } else { 1.0 }
     }
 
     /// Parse memory string (e.g., "4Gi", "4096Mi") to bytes, defaulting to 1Gi on bad input
     fn parse_memory(&self, memory: &str) -> f64 {
         let gi = crate::resources::parse_memory_gi(memory);
-        if gi > 0.0 {
-            gi * 1024.0 * 1024.0 * 1024.0
-        } else {
-            tracing::warn!(value = memory, "invalid memory resource value, defaulting to 1Gi");
-            1024.0 * 1024.0 * 1024.0
-        }
+        if gi > 0.0 { gi * 1024.0 * 1024.0 * 1024.0 } else { 1024.0 * 1024.0 * 1024.0 }
     }
 
     /// Convert RuntimeType to RuntimeKind

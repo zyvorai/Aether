@@ -740,6 +740,19 @@ impl Runtime for KubernetesRuntime {
 
         // Delete ConfigMaps and Secrets managed by orchestr8
         // We'll use label selectors to find and delete them
+        // Validate instance name is a valid Kubernetes DNS label (RFC 1123):
+        // alphanumeric + hyphens only, no leading/trailing hyphens, max 63 chars
+        if instance.name.is_empty()
+            || instance.name.len() > 63
+            || !instance.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+            || instance.name.starts_with('-')
+            || instance.name.ends_with('-')
+        {
+            return Err(anyhow::anyhow!(
+                "Invalid instance name '{}': must be a valid DNS label (1-63 alphanumeric/hyphen chars, no leading/trailing hyphens)",
+                instance.name
+            ).into());
+        }
         let lp = ListParams::default().labels(&format!(
             "app={},managed-by=orchestr8",
             instance.name

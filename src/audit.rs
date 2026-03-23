@@ -190,7 +190,12 @@ impl AuditLog {
         }
     }
 
-    /// Prune events older than N days
+    /// Prune events older than N days.
+    ///
+    /// Note: comparing RFC 3339 timestamps as strings via `>=` is correct here
+    /// because RFC 3339 uses a fixed-width, most-significant-digit-first format
+    /// (e.g. "2026-03-23T..."), so lexicographic ordering matches chronological
+    /// ordering for timestamps in the same UTC offset.
     pub fn prune(&mut self, days: i64) {
         let cutoff = chrono::Utc::now() - chrono::Duration::days(days);
         let cutoff_str = cutoff.to_rfc3339();

@@ -228,7 +228,7 @@ impl PolicyEngine {
             RuleCheck::RequireResourceLimits => {
                 let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
                 let mem = crate::resources::parse_memory_gi(&spec.requirements.memory);
-                if cpu == 0.0 || mem == 0.0 {
+                if cpu < f64::EPSILON || mem < f64::EPSILON {
                     violate("CPU and memory limits must be set".to_string(), "requirements");
                 }
             }

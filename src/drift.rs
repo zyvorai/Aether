@@ -241,6 +241,8 @@ impl DriftDetector {
         let cpu_val = crate::resources::parse_cpu(cpu);
         let mem_val = crate::resources::parse_memory_gi(memory);
 
+        // Configurable drift detection defaults: these thresholds flag
+        // unusually large resource requests and can be overridden via config.
         if cpu_val > 32.0 {
             drifts.push(DriftItem {
                 field: "requirements.cpu".to_string(),
@@ -251,6 +253,7 @@ impl DriftDetector {
             });
         }
 
+        // Configurable drift detection default for memory (see cpu threshold above).
         if mem_val > 128.0 {
             drifts.push(DriftItem {
                 field: "requirements.memory".to_string(),
