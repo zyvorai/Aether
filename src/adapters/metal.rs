@@ -34,7 +34,13 @@ fn parse_memory_to_mb(memory: &str) -> i64 {
         tracing::warn!("Could not parse memory '{}', defaulting to 1024 MB", memory);
         1024
     } else {
-        (gi * 1024.0) as i64
+        // Guard against overflow: i64::MAX MB ≈ 8.8 exabytes
+        let mb = gi * 1024.0;
+        if mb > i64::MAX as f64 {
+            i64::MAX
+        } else {
+            mb as i64
+        }
     }
 }
 
