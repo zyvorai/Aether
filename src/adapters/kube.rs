@@ -90,6 +90,22 @@ impl KubernetesRuntime {
     }
 }
 
+/// Validate that a name is a valid Kubernetes DNS label (RFC 1123).
+fn validate_kube_name(name: &str) -> anyhow::Result<()> {
+    if name.is_empty()
+        || name.len() > 63
+        || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        || name.starts_with('-')
+        || name.ends_with('-')
+    {
+        anyhow::bail!(
+            "Invalid Kubernetes name '{}': must be a valid DNS label (1-63 alphanumeric/hyphen chars, no leading/trailing hyphens)",
+            name
+        );
+    }
+    Ok(())
+}
+
 // ---------------------------------------------------------------------------
 // Standalone manifest-generation functions (testable without a kube::Client)
 // ---------------------------------------------------------------------------
@@ -666,7 +682,7 @@ impl Runtime for KubernetesRuntime {
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
-        // In Kubernetes, "stopping" means deleting the Pod
+        validate_kube_name(&instance.name)?;
         tracing::info!("Stopping (deleting) Pod: {}", instance.name);
 
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -740,19 +756,7 @@ impl Runtime for KubernetesRuntime {
 
         // Delete ConfigMaps and Secrets managed by orchestr8
         // We'll use label selectors to find and delete them
-        // Validate instance name is a valid Kubernetes DNS label (RFC 1123):
-        // alphanumeric + hyphens only, no leading/trailing hyphens, max 63 chars
-        if instance.name.is_empty()
-            || instance.name.len() > 63
-            || !instance.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
-            || instance.name.starts_with('-')
-            || instance.name.ends_with('-')
-        {
-            return Err(anyhow::anyhow!(
-                "Invalid instance name '{}': must be a valid DNS label (1-63 alphanumeric/hyphen chars, no leading/trailing hyphens)",
-                instance.name
-            ).into());
-        }
+        validate_kube_name(&instance.name)?;
         let lp = ListParams::default().labels(&format!(
             "app={},managed-by=orchestr8",
             instance.name

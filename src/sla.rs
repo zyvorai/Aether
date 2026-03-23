@@ -278,14 +278,10 @@ impl SlaEngine {
         };
 
         // Project when budget will be exhausted
-        let projected_exhaustion = if consumed_minutes > 0.0 && remaining > 0.0 {
-            // Extrapolate based on current burn rate
-            let daily_burn = consumed_minutes; // Simplified: assume observation is for 1 day
-            if daily_burn > 0.0 {
-                Some(remaining / daily_burn)
-            } else {
-                None
-            }
+        let projected_exhaustion = if consumed_minutes > f64::EPSILON && remaining > 0.0 {
+            // Extrapolate based on current burn rate (simplified: assume observation is for 1 day)
+            let daily_burn = consumed_minutes;
+            Some(remaining / daily_burn)
         } else if remaining <= 0.0 {
             Some(0.0)
         } else {
