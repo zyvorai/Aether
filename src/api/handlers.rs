@@ -269,8 +269,24 @@ pub(crate) async fn start_workload(
         }
     };
 
-    // Update state with the new instance
+    // Re-check workload still exists before updating state (guard against concurrent delete)
     let mut state = app_state.state.write().await;
+    if state.get(&name).is_none() {
+        // Workload was deleted while we were building/running — stop the orphaned instance
+        tracing::warn!(
+            "Workload '{}' was deleted during start; stopping orphaned instance",
+            name
+        );
+        let cleanup_rt = make_runtime::<String>(&workload_state.runtime).await;
+        if let Ok(rt) = cleanup_rt {
+            let _ = rt.stop(&instance).await;
+        }
+        return err_internal::<String>(format!(
+            "Workload '{}' was deleted by a concurrent request during start",
+            name
+        ));
+    }
+
     state.upsert(
         name.clone(),
         WorkloadState {
