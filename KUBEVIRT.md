@@ -445,9 +445,9 @@ Generated GPU configuration:
 devices:
   gpus:
     - name: gpu0
-      deviceName: nvidia.com/nvidia
+      deviceName: nvidia.com/gpu
     - name: gpu1
-      deviceName: nvidia.com/nvidia
+      deviceName: nvidia.com/gpu
 ```
 
 **Prerequisites for GPU:**

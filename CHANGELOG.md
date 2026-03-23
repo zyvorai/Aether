@@ -29,6 +29,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Migration:** Blue-green traffic switch now uses configurable delay from `MigrationPlan.validation_delay` instead of hard-coded 10s
 - **Cost:** CPU parse failure in cost recommendations now logs warning instead of silently defaulting to 0.0
 - **Audit:** `prune()` now parses timestamps to `DateTime` for comparison instead of string comparison, fixing issues with different UTC offset formats (`Z` vs `+00:00`)
+- **Kubernetes Adapter:** HPA `scale_target_ref` now targets `Deployment` (apps/v1) instead of `Pod` (v1); Pods cannot be scaled by HPA
+- **Kubernetes Adapter:** HPA creation skipped when all metrics fail to parse (empty metrics list would be rejected by K8s)
+- **Kubernetes Adapter:** HPA creation skipped when `min_replicas > max_replicas`
+- **Kubernetes Adapter:** `validate_kube_name()` moved to `common.rs` for reuse across all CRD-based adapters
+- **KubeVirt Adapter:** Added `validate_kube_name()` call in `run()` before creating CRD resources
+- **KubeVirt Adapter:** GPU `deviceName` fixed from `vendor.com/vendor` to `vendor.com/gpu` (e.g., `nvidia.com/gpu`)
+- **Metal3 Adapter:** Added `validate_kube_name()` call in `run()` before creating CRD resources
+- **Metal3 Adapter:** Removed dead `_online` variable and unused `spec` binding in `get_host_status()`
+- **Metal3 Adapter:** Guard against `i64` overflow in `parse_memory_to_mb()` for extreme memory values
+- **Commands:** Replaced `.expect()` on user-provided tier string with proper `?` error propagation
+- **Cost:** NaN-safe sort pushes NaN values to end instead of using `unwrap_or(Equal)`
+- **AI Scaling:** Variance clamped to `>= 0.0` before `sqrt()` to prevent NaN from negative floating-point results
+- **AI Migration:** Removed unreachable `_ => RiskLevel::Critical` match arm (risk_score already clamped to 5)
+- **Scheduler:** Affinity scores clamped to `[0.0, 1.0]` before applying bonus to prevent score corruption
 
 ## [0.3.0] - 2026-02-08
 
