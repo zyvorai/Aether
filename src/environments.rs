@@ -414,12 +414,7 @@ impl EnvironmentManager {
                 });
             }
             (None, None) => {
-                diffs.push(ParityDiff {
-                    field: "workload".to_string(),
-                    env_a_value: "missing".to_string(),
-                    env_b_value: "missing".to_string(),
-                    severity: ParitySeverity::Critical,
-                });
+                // Both environments are missing this workload — they are in sync
             }
         }
 

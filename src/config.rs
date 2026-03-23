@@ -126,8 +126,8 @@ impl ScoringWeights {
     /// Normalize weights to sum to 1.0
     pub fn normalized(&self) -> Self {
         let total = self.cost + self.performance + self.reliability + self.availability;
-        if total.abs() < f64::EPSILON {
-            tracing::warn!("All scoring weights are zero; using defaults");
+        if total.abs() < 0.001 {
+            tracing::warn!("Scoring weights sum to near-zero ({:.6}); using defaults", total);
             return Self::default();
         }
         Self {
