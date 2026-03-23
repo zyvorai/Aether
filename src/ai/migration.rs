@@ -193,8 +193,8 @@ impl MigrationAdvisor {
         match risk_score {
             0..=1 => RiskLevel::Low,
             2..=3 => RiskLevel::Medium,
-            4..=5 => RiskLevel::High,
-            _ => RiskLevel::Critical,
+            // risk_score is clamped to 5 above, so 4..=5 covers all remaining cases
+            _ => RiskLevel::High,
         }
     }
 

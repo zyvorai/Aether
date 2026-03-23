@@ -205,7 +205,7 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
             .map(|i| {
                 json!({
                     "name": format!("gpu{}", i),
-                    "deviceName": format!("{}.com/{}", gpu_req.vendor, gpu_req.vendor)
+                    "deviceName": format!("{}.com/gpu", gpu_req.vendor)
                 })
             })
             .collect();
@@ -235,6 +235,8 @@ impl Runtime for KubeVirtRuntime {
     }
 
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
+        common::validate_kube_name(&spec.metadata.name)?;
+
         tracing::info!(
             "Deploying VirtualMachine to namespace '{}': {}",
             self.namespace,
@@ -672,7 +674,7 @@ mod tests {
             .unwrap();
         assert_eq!(gpus.len(), 1);
         assert_eq!(gpus[0]["name"], "gpu0");
-        assert_eq!(gpus[0]["deviceName"], "nvidia.com/nvidia");
+        assert_eq!(gpus[0]["deviceName"], "nvidia.com/gpu");
     }
 
     #[test]
@@ -691,7 +693,7 @@ mod tests {
         assert_eq!(gpus.len(), 4);
         for i in 0..4 {
             assert_eq!(gpus[i]["name"], format!("gpu{}", i));
-            assert_eq!(gpus[i]["deviceName"], "nvidia.com/nvidia");
+            assert_eq!(gpus[i]["deviceName"], "nvidia.com/gpu");
         }
     }
 
@@ -709,8 +711,8 @@ mod tests {
             .as_array()
             .unwrap();
         assert_eq!(gpus.len(), 2);
-        assert_eq!(gpus[0]["deviceName"], "amd.com/amd");
-        assert_eq!(gpus[1]["deviceName"], "amd.com/amd");
+        assert_eq!(gpus[0]["deviceName"], "amd.com/gpu");
+        assert_eq!(gpus[1]["deviceName"], "amd.com/gpu");
     }
 
     // ---------------------------------------------------------------

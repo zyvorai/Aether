@@ -47,6 +47,22 @@ pub fn parse_cpu_cores(cpu: &str) -> i32 {
     }
 }
 
+/// Validate that a name is a valid Kubernetes DNS label (RFC 1123).
+pub fn validate_kube_name(name: &str) -> anyhow::Result<()> {
+    if name.is_empty()
+        || name.len() > 63
+        || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        || name.starts_with('-')
+        || name.ends_with('-')
+    {
+        anyhow::bail!(
+            "Invalid Kubernetes name '{}': must be a valid DNS label (1-63 alphanumeric/hyphen chars, no leading/trailing hyphens)",
+            name
+        );
+    }
+    Ok(())
+}
+
 /// Build ListParams that filter to orchestr8-managed resources
 pub fn managed_list_params() -> ListParams {
     ListParams::default().labels("managed-by=orchestr8")

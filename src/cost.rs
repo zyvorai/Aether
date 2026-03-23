@@ -317,7 +317,13 @@ pub fn estimate_all_providers(workload: &Workload) -> Result<Vec<CostEstimate>> 
     }
 
     // Sort by total monthly cost
-    estimates.sort_by(|a, b| a.total_monthly.partial_cmp(&b.total_monthly).unwrap_or(std::cmp::Ordering::Equal));
+    estimates.sort_by(|a, b| {
+        a.total_monthly.partial_cmp(&b.total_monthly).unwrap_or_else(|| {
+            // Push NaN values to the end
+            if a.total_monthly.is_nan() { std::cmp::Ordering::Greater }
+            else { std::cmp::Ordering::Less }
+        })
+    });
 
     Ok(estimates)
 }

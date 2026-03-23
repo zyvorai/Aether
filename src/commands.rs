@@ -1259,7 +1259,8 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
 
     match action {
         EnvAction::Create { name, tier } => {
-            let env_tier: EnvTier = tier.parse().expect("EnvTier::from_str is infallible");
+            let env_tier: EnvTier = tier.parse()
+                .map_err(|e| anyhow::anyhow!("Invalid tier '{}': {}", tier, e))?;
             manager.create_env(&name, env_tier);
             manager.save(&path)?;
             println!("✅ Created environment '{}' ({})", name, tier);

@@ -660,9 +660,10 @@ impl Scheduler {
 
         // Affinity score bonus (from learned deployment outcomes)
         if let Some(&affinity) = self.affinity_scores.get(runtime) {
-            let bonus = affinity * 0.15; // up to 15% weight from affinity
+            let clamped = affinity.clamp(0.0, 1.0);
+            let bonus = clamped * 0.15; // up to 15% weight from affinity
             score += bonus;
-            reasons.push(format!("Affinity: {:.0}%", affinity * 100.0));
+            reasons.push(format!("Affinity: {:.0}%", clamped * 100.0));
         }
 
         // Capacity headroom bonus
