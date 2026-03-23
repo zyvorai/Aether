@@ -727,7 +727,8 @@ orchestr8/
 │   ├── metrics.rs        # Prometheus metrics (290 lines)
 │   ├── completions.rs    # Shell completions
 │   ├── adapters/
-│   │   ├── mod.rs        # Adapter exports
+│   │   ├── mod.rs        # Adapter exports + constructor macro
+│   │   ├── common.rs     # Shared utilities (name validation, labels, CRD discovery)
 │   │   ├── podman.rs     # Podman runtime
 │   │   ├── kube.rs       # Kubernetes runtime (1,000+ lines)
 │   │   ├── kubevirt.rs   # KubeVirt runtime (450+ lines)
