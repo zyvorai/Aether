@@ -581,6 +581,9 @@ impl Runtime for KubernetesRuntime {
     }
 
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
+        // Validate workload name is a valid Kubernetes DNS label before creating any resources
+        validate_kube_name(&spec.metadata.name)?;
+
         tracing::info!(
             "Deploying to Kubernetes namespace '{}': {}",
             self.namespace,

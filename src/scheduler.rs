@@ -412,16 +412,24 @@ impl Scheduler {
         };
         self.placements.push(placement);
 
-        // Update capacity
+        // Update capacity — reject placement if resources are insufficient
         if let Some(cap) = self.capacities.get_mut(&selected) {
             if request.cpu_required > cap.available_cpu
                 || request.memory_required_mb > cap.available_memory_mb
                 || request.storage_required_mb > cap.available_storage_mb
             {
-                tracing::warn!(
-                    "Workload '{}' exceeds available capacity on {:?} — placement may be over-committed",
-                    request.workload_name, selected
-                );
+                // Remove the placement we just recorded
+                self.placements.pop();
+                return Err(ScheduleError::NoFeasibleRuntime {
+                    workload: request.workload_name.clone(),
+                    reason: format!(
+                        "Workload exceeds available capacity on {} (cpu: {:.1}/{:.1}, mem: {}/{}, storage: {}/{})",
+                        selected,
+                        request.cpu_required, cap.available_cpu,
+                        request.memory_required_mb, cap.available_memory_mb,
+                        request.storage_required_mb, cap.available_storage_mb,
+                    ),
+                });
             }
             cap.available_cpu -= request.cpu_required;
             cap.available_memory_mb = cap.available_memory_mb.saturating_sub(request.memory_required_mb);

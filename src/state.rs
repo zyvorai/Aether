@@ -62,12 +62,22 @@ impl StateStore {
         crate::resources::json_load(path)
     }
 
-    /// Save state to disk
+    /// Save state to disk atomically (write to temp file, then rename)
     pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
         let content = serde_json::to_string_pretty(self)
             .context("failed to serialize state")?;
-        std::fs::write(path, &content)
-            .with_context(|| format!("failed to write state file: {}", path.display()))?;
+
+        // Write to a temporary file in the same directory, then rename.
+        // This ensures the state file is never left in a half-written state.
+        let dir = path.parent().unwrap_or(std::path::Path::new("."));
+        std::fs::create_dir_all(dir)
+            .with_context(|| format!("failed to create state directory: {}", dir.display()))?;
+
+        let tmp_path = path.with_extension("json.tmp");
+        std::fs::write(&tmp_path, &content)
+            .with_context(|| format!("failed to write temp state file: {}", tmp_path.display()))?;
+        std::fs::rename(&tmp_path, path)
+            .with_context(|| format!("failed to rename temp file to {}", path.display()))?;
         Ok(())
     }
 

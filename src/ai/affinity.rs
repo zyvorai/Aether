@@ -262,23 +262,26 @@ impl AffinityEngine {
         let successes = relevant.iter().filter(|o| o.success).count();
         let success_rate = successes as f64 / total as f64;
 
-        let avg_uptime = relevant
-            .iter()
-            .filter_map(|o| o.uptime_pct)
-            .sum::<f64>()
-            / relevant.iter().filter(|o| o.uptime_pct.is_some()).count().max(1) as f64;
+        let uptime_count = relevant.iter().filter(|o| o.uptime_pct.is_some()).count();
+        let avg_uptime = if uptime_count > 0 {
+            relevant.iter().filter_map(|o| o.uptime_pct).sum::<f64>() / uptime_count as f64
+        } else {
+            0.0 // No data — return 0 instead of heuristic value
+        };
 
-        let avg_latency = relevant
-            .iter()
-            .filter_map(|o| o.avg_latency_ms)
-            .sum::<f64>()
-            / relevant.iter().filter(|o| o.avg_latency_ms.is_some()).count().max(1) as f64;
+        let latency_count = relevant.iter().filter(|o| o.avg_latency_ms.is_some()).count();
+        let avg_latency = if latency_count > 0 {
+            relevant.iter().filter_map(|o| o.avg_latency_ms).sum::<f64>() / latency_count as f64
+        } else {
+            0.0
+        };
 
-        let avg_error = relevant
-            .iter()
-            .filter_map(|o| o.error_rate_pct)
-            .sum::<f64>()
-            / relevant.iter().filter(|o| o.error_rate_pct.is_some()).count().max(1) as f64;
+        let error_count = relevant.iter().filter(|o| o.error_rate_pct.is_some()).count();
+        let avg_error = if error_count > 0 {
+            relevant.iter().filter_map(|o| o.error_rate_pct).sum::<f64>() / error_count as f64
+        } else {
+            0.0
+        };
 
         let avg_cost = relevant
             .iter()

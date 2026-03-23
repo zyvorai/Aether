@@ -69,11 +69,38 @@ fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Val
         },
         "spec": {
             "online": true,
-            "bootMACAddress": "00:00:00:00:00:00",
+            "bootMACAddress": spec.metadata.annotations
+                .get("orchestr8.io/boot-mac-address")
+                .cloned()
+                .unwrap_or_else(|| {
+                    tracing::warn!(
+                        "No 'orchestr8.io/boot-mac-address' annotation set for '{}'; \
+                         using placeholder MAC '00:00:00:00:00:00'. \
+                         Set the annotation in metadata.annotations to match real hardware."
+                        , spec.metadata.name
+                    );
+                    "00:00:00:00:00:00".to_string()
+                }),
             "bootMode": "UEFI",
             "image": {
-                "url": format!("http://image-server/{}.img", spec.image_name()),
-                "checksum": "http://image-server/{}.img.sha256sum".to_string(),
+                "url": spec.metadata.annotations
+                    .get("orchestr8.io/image-url")
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        let fallback = format!("http://image-server/{}.img", spec.image_name());
+                        tracing::warn!(
+                            "No 'orchestr8.io/image-url' annotation set for '{}'; \
+                             using fallback URL '{}'. Set the annotation for production use.",
+                            spec.metadata.name, fallback
+                        );
+                        fallback
+                    }),
+                "checksum": spec.metadata.annotations
+                    .get("orchestr8.io/image-checksum-url")
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        format!("http://image-server/{}.img.sha256sum", spec.image_name())
+                    }),
             },
             "userData": {
                 "name": format!("{}-userdata", spec.metadata.name),

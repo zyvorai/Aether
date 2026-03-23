@@ -258,13 +258,15 @@ impl MigrationEngine {
         // 1. Update load balancer/service to point to green
         // 2. Wait for connection draining
         // 3. Monitor for errors
-        // For now, we simulate a traffic switch delay
-        tokio::time::sleep(Duration::from_secs(10)).await;
+        // Traffic switch delay (configurable via MigrationPlan.validation_delay)
+        let switch_delay = plan.validation_delay;
+        tracing::info!("Switching traffic (delay: {:?})", switch_delay);
+        tokio::time::sleep(switch_delay).await;
 
         // Stop and delete blue (source) deployment
         tracing::info!("Stopping blue deployment (source)");
         source_runtime.stop(&workload_state.instance).await?;
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        tokio::time::sleep(Duration::from_secs(2)).await;
         source_runtime.delete(&workload_state.instance).await?;
 
         // Update state

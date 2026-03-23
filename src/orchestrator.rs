@@ -248,7 +248,11 @@ impl Orchestrator {
             }],
         };
         self.workloads.insert(name.to_string(), workload);
-        self.workloads.get(name).expect("just inserted")
+        // SAFETY: we just inserted this key on the line above and hold &mut self,
+        // so no concurrent removal is possible.
+        self.workloads.get(name).unwrap_or_else(|| {
+            unreachable!("workload '{}' was just inserted but not found in HashMap", name)
+        })
     }
 
     /// Unregister a workload
@@ -404,21 +408,21 @@ impl Orchestrator {
                                         }
                                     }
                                     Err(e) => {
-                                        // Replace corrupted timestamp with current time
-                                        // so the circuit stays Open and respects the cooldown,
-                                        // preserving restart_count and failure history.
-                                        tracing::warn!(
+                                        // Corrupted timestamp: log an error and leave the
+                                        // circuit Open without resetting the cooldown timer.
+                                        // The operator should investigate and manually reset
+                                        // via `reset_circuit()` if needed.
+                                        tracing::error!(
                                             "Failed to parse circuit_opened_at '{}': {}; \
-                                             replacing with current time to preserve circuit state",
+                                             circuit remains Open — manual reset required",
                                             opened_at, e
                                         );
-                                        workload.circuit_opened_at = Some(now.clone());
 
                                         workload.history.push(HealthEvent {
                                             timestamp: now.clone(),
                                             event_type: HealthEventType::CircuitOpened,
                                             message: format!(
-                                                "Corrupted circuit_opened_at timestamp replaced: {}",
+                                                "Corrupted circuit_opened_at timestamp — manual reset required: {}",
                                                 e
                                             ),
                                         });
@@ -461,9 +465,12 @@ impl Orchestrator {
             });
         }
 
-        // Trim history
-        if workload.history.len() > 100 {
-            workload.history.drain(..workload.history.len() - 100);
+        // Trim history — keep the most recent 100 events.
+        // Use a single drain to avoid unbounded growth.
+        let max_history = 100;
+        if workload.history.len() > max_history {
+            let excess = workload.history.len() - max_history;
+            workload.history.drain(..excess);
         }
 
         actions

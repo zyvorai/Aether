@@ -277,10 +277,8 @@ pub(crate) async fn start_workload(
             "Workload '{}' was deleted during start; stopping orphaned instance",
             name
         );
-        let cleanup_rt = make_runtime::<String>(&workload_state.runtime).await;
-        if let Ok(rt) = cleanup_rt {
-            let _ = rt.stop(&instance).await;
-        }
+        // Reuse the runtime client we already created to stop the orphaned instance
+        let _ = runtime.stop(&instance).await;
         return err_internal::<String>(format!(
             "Workload '{}' was deleted by a concurrent request during start",
             name
@@ -442,10 +440,10 @@ pub(crate) async fn ai_analyze_logs(
     let analyzer = LogAnalyzer::new(config.analyzer);
     let analysis = analyzer.analyze(&logs);
 
-    (
-        StatusCode::OK,
-        Json(ApiResponse::success(serde_json::to_value(analysis).unwrap_or_default())),
-    )
+    match serde_json::to_value(analysis) {
+        Ok(value) => (StatusCode::OK, Json(ApiResponse::success(value))),
+        Err(e) => err_internal::<serde_json::Value>(format!("Failed to serialize analysis: {}", e)),
+    }
 }
 
 /// GET /api/ai/migration-advice/:name/:target - Migration path recommendations
@@ -1012,14 +1010,16 @@ pub(crate) async fn migrate_workload(
         // Reload state after migration engine updated it
         let new_state = match StateStore::load(&StateStore::default_path()) {
             Ok(s) => s,
-            Err(_) => {
-                return (
-                    StatusCode::OK,
-                    Json(ApiResponse::success(format!(
-                        "Workload {} migrated to {}",
-                        name, target_runtime
-                    ))),
-                )
+            Err(e) => {
+                tracing::error!(
+                    "Migration succeeded but failed to reload state from disk: {}. \
+                     In-memory state may be stale — restart the API server to resync.",
+                    e
+                );
+                return err_internal::<String>(format!(
+                    "Migration succeeded but state reload failed: {}. Restart API server to resync.",
+                    e
+                ));
             }
         };
         let mut state = app_state.state.write().await;

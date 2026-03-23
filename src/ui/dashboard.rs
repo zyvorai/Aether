@@ -128,7 +128,6 @@ fn render_workload_list(f: &mut Frame, area: Rect, app: &App) {
             if let Some(ref status) = workload_info.status {
                 let badge = status_badge(&status.state, status.ready);
                 let badge_icon = badge.spans.first().cloned().unwrap_or_else(|| Span::raw("?"));
-                let badge = status_badge(&status.state, status.ready);
                 let badge_text = badge.spans.get(2).cloned().unwrap_or_else(|| Span::raw("unknown"));
                 let status_line = Line::from(vec![
                     Span::raw("   Status: "),
