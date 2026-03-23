@@ -327,8 +327,14 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 
 # No validation (fast but risky)
 orchestr8 migrate my-app kubernetes --strategy blue-green --no-validation
+```
 
-# Custom delay (not directly supported, but validation_delay in code)
+The validation delay is also used as the traffic switch delay in blue-green migrations, ensuring consistent timing throughout the migration process. Configure via `MigrationPlan.validation_delay` in the API or `~/.orchestr8/config.yaml`:
+
+```yaml
+migration:
+  trafficSwitchDelaySecs: 10
+  gracefulShutdownSecs: 5
 ```
 
 ### Automatic Rollback
@@ -800,11 +806,11 @@ orchestr8 delete my-app-canary
 - Podman → Metal3: 10-30 minutes
 
 **Blue-Green:**
-- Add deployment time + 10 seconds (traffic switch)
+- Add deployment time + configurable traffic switch delay (default: validation_delay from MigrationPlan)
 - Example: Podman → Kubernetes = 60-90 seconds
 
 **Rolling:**
-- Add deployment time + 40 seconds (4 x 10s traffic shifts)
+- Add deployment time + configurable traffic shift intervals
 - Example: Podman → Kubernetes = 90-120 seconds
 
 ### Resource Usage

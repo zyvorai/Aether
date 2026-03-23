@@ -169,6 +169,13 @@ metadata:
   name: edge-server
   owner: ops-team
   project: infrastructure
+  annotations:
+    # Required for production: set the boot MAC address of your target server
+    orchestr8.io/boot-mac-address: "52:54:00:12:34:56"
+    # Required for production: HTTP URL of the bootable disk image
+    orchestr8.io/image-url: "http://image-server.local/coreos-stable.img"
+    # Optional: checksum URL for image verification
+    orchestr8.io/image-checksum-url: "http://image-server.local/coreos-stable.img.sha256sum"
 
 build:
   registry: image-server.local
@@ -196,6 +203,8 @@ persistence:
   storage_class: "local"
   access_mode: ReadWriteOnce
 ```
+
+> **Note:** The `orchestr8.io/boot-mac-address` and `orchestr8.io/image-url` annotations are required for production deployments. Without them, Orchestr8 uses placeholder values and logs warnings.
 
 ### 3. Validate Spec
 
@@ -307,6 +316,18 @@ deprovisioning ←────────────────────�
  available
 ```
 
+### Metal3 Annotations
+
+Orchestr8 uses workload annotations to configure bare metal provisioning:
+
+| Annotation | Required | Description |
+|-----------|----------|-------------|
+| `orchestr8.io/boot-mac-address` | **Yes** (production) | Boot MAC address of the target server |
+| `orchestr8.io/image-url` | **Yes** (production) | HTTP URL of the bootable disk image |
+| `orchestr8.io/image-checksum-url` | No | URL of the image checksum file |
+
+If these annotations are not set, Orchestr8 uses placeholder values and logs warnings. This is acceptable for development/testing but must be configured for production.
+
 ### Resources Created
 
 For each bare metal deployment, Orchestr8 creates:
@@ -314,7 +335,7 @@ For each bare metal deployment, Orchestr8 creates:
 1. **BareMetalHost** (Metal3 resource)
    - Server specification
    - BMC connection details
-   - Image URL and checksum
+   - Image URL and checksum (from annotations or fallback)
    - Hardware requirements (annotations)
    - Online/offline state
 
@@ -342,14 +363,14 @@ metadata:
     orchestr8.io/gpu-count: "2"
 spec:
   online: true
-  bootMACAddress: "52:54:00:12:34:56"
+  bootMACAddress: "52:54:00:12:34:56"  # from orchestr8.io/boot-mac-address annotation
   bootMode: UEFI
   bmc:
     address: redfish://192.168.1.100
     credentialsName: edge-server-bmc-secret
   image:
-    url: http://image-server/edge-server.img
-    checksum: http://image-server/edge-server.img.sha256sum
+    url: http://image-server/edge-server.img         # from orchestr8.io/image-url annotation
+    checksum: http://image-server/edge-server.img.sha256sum  # from orchestr8.io/image-checksum-url
   rootDeviceHints:
     deviceName: /dev/sda
     minSizeGigabytes: 500

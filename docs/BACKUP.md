@@ -387,6 +387,16 @@ chmod 755 ~/.orchestr8/backups
 
 ## Backup Security
 
+### Symlink Protection
+
+Orchestr8 protects against path traversal attacks via symlinks in the backup directory:
+
+- **Listing backups:** Symlinks are skipped with a warning
+- **Reading backup info:** Symlinks are rejected with an error
+- **Deleting backups:** Symlinks are rejected with an error
+
+This prevents an attacker from creating symlinks in the backup directory to read or delete arbitrary files on the system.
+
 ### Encryption
 
 Encrypt sensitive backups:
