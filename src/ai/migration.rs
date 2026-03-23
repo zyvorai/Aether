@@ -188,6 +188,8 @@ impl MigrationAdvisor {
             risk_score += 1;
         }
 
+        let risk_score = risk_score.min(5);
+
         match risk_score {
             0..=1 => RiskLevel::Low,
             2..=3 => RiskLevel::Medium,
@@ -279,9 +281,20 @@ impl MigrationAdvisor {
         }
     }
 
+    /// Validate that canary steps are in ascending order and the last step equals 100
+    fn validate_canary_steps(steps: &[u32]) -> bool {
+        if steps.is_empty() {
+            return false;
+        }
+        if steps.last() != Some(&100) {
+            return false;
+        }
+        steps.windows(2).all(|w| w[0] < w[1])
+    }
+
     /// Build canary configuration based on risk
     fn build_canary_config(&self, risk_level: &RiskLevel, has_health: bool) -> CanaryConfig {
-        match risk_level {
+        let config = match risk_level {
             RiskLevel::Critical => CanaryConfig {
                 steps: vec![5, 10, 25, 50, 75, 100],
                 step_interval_secs: 120,
@@ -322,7 +335,14 @@ impl MigrationAdvisor {
                     }
                 }
             }
-        }
+        };
+
+        assert!(
+            Self::validate_canary_steps(&config.steps),
+            "Canary steps must be in ascending order and the last step must equal 100"
+        );
+
+        config
     }
 
     /// Analyze canary observations and decide whether to proceed

@@ -8,33 +8,57 @@ use std::path::PathBuf;
 /// Parse a CPU resource string to fractional cores.
 ///
 /// Accepts whole cores (`"4"`) or millicores (`"500m"`).
-/// Returns `0.0` on invalid input.
+/// Returns `0.0` and logs a warning on invalid input.
 pub fn parse_cpu(cpu: &str) -> f64 {
     if let Some(stripped) = cpu.strip_suffix('m') {
-        stripped.parse::<f64>().unwrap_or(0.0) / 1000.0
+        match stripped.parse::<f64>() {
+            Ok(v) => v / 1000.0,
+            Err(_) => {
+                tracing::warn!("Invalid CPU value '{}', defaulting to 0.0", cpu);
+                0.0
+            }
+        }
     } else {
-        cpu.parse::<f64>().unwrap_or(0.0)
+        match cpu.parse::<f64>() {
+            Ok(v) => v,
+            Err(_) => {
+                tracing::warn!("Invalid CPU value '{}', defaulting to 0.0", cpu);
+                0.0
+            }
+        }
     }
 }
 
 /// Parse a memory/storage resource string to GiB.
 ///
 /// Accepts `Gi`, `Mi`, `Ki` suffixes (binary) and `G`, `M` (decimal).
-/// Returns `0.0` on invalid input.
+/// Returns `0.0` and logs a warning on invalid input.
 pub fn parse_memory_gi(memory: &str) -> f64 {
     let memory = memory.trim();
-    if let Some(stripped) = memory.strip_suffix("Gi") {
-        stripped.parse::<f64>().unwrap_or(0.0)
+
+    let (num_str, divisor) = if let Some(stripped) = memory.strip_suffix("Gi") {
+        (stripped, 1.0)
     } else if let Some(stripped) = memory.strip_suffix("Mi") {
-        stripped.parse::<f64>().unwrap_or(0.0) / 1024.0
+        (stripped, 1024.0)
     } else if let Some(stripped) = memory.strip_suffix("Ki") {
-        stripped.parse::<f64>().unwrap_or(0.0) / (1024.0 * 1024.0)
+        (stripped, 1024.0 * 1024.0)
     } else if let Some(stripped) = memory.strip_suffix('G') {
-        stripped.parse::<f64>().unwrap_or(0.0)
+        // Decimal GB (10^9 bytes) → GiB: divide by 1.073741824
+        (stripped, 1.073741824)
     } else if let Some(stripped) = memory.strip_suffix('M') {
-        stripped.parse::<f64>().unwrap_or(0.0) / 1024.0
+        // Decimal MB (10^6 bytes) → GiB: divide by 1073.741824
+        (stripped, 1073.741824)
     } else {
-        0.0
+        tracing::warn!("Invalid memory value '{}' (missing suffix like Gi, Mi, G, M), defaulting to 0.0", memory);
+        return 0.0;
+    };
+
+    match num_str.parse::<f64>() {
+        Ok(v) => v / divisor,
+        Err(_) => {
+            tracing::warn!("Invalid memory value '{}', defaulting to 0.0", memory);
+            0.0
+        }
     }
 }
 
@@ -136,7 +160,8 @@ mod tests {
     fn test_parse_memory_gi() {
         assert!((parse_memory_gi("4Gi") - 4.0).abs() < f64::EPSILON);
         assert!((parse_memory_gi("512Mi") - 0.5).abs() < f64::EPSILON);
-        assert!((parse_memory_gi("8G") - 8.0).abs() < f64::EPSILON);
+        // 8 decimal GB = 8 / 1.073741824 ≈ 7.4506 GiB
+        assert!((parse_memory_gi("8G") - 8.0 / 1.073741824).abs() < 0.001);
     }
 
     #[test]

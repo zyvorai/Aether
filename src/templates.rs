@@ -247,7 +247,15 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
         }),
     });
 
-    let host = params.host.clone().unwrap_or_else(|| format!("{}.example.com", params.name));
+    let host = params.host.clone().unwrap_or_else(|| {
+        let fallback = format!("{}.example.com", params.name);
+        tracing::warn!(
+            "No host specified for web-app template '{}'; using fallback '{}'.  \
+             Set a proper hostname via the --host flag or template params.",
+            params.name, fallback
+        );
+        fallback
+    });
     w.ingress = Some(IngressSpec {
         enabled: true,
         host,

@@ -337,7 +337,11 @@ impl CostComparison {
         let cheapest_cost = estimates.first().map(|e| e.total_monthly).unwrap_or(0.0);
         let expensive_cost = estimates.last().map(|e| e.total_monthly).unwrap_or(0.0);
 
-        let savings = ((expensive_cost - cheapest_cost) / expensive_cost) * 100.0;
+        let savings = if expensive_cost > 0.0 {
+            ((expensive_cost - cheapest_cost) / expensive_cost) * 100.0
+        } else {
+            0.0
+        };
 
         Ok(Self {
             workload_name: workload.metadata.name.clone(),

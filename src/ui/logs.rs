@@ -74,12 +74,13 @@ fn render_logs_content(f: &mut Frame, area: Rect, app: &App) {
     let log_lines: Vec<Line> = app.logs_buffer[start_idx..]
         .iter()
         .map(|line| {
-            // Simple log level coloring
-            let color = if line.contains("ERROR") || line.contains("error") {
+            // Simple log level coloring (case-insensitive matching)
+            let lower = line.to_lowercase();
+            let color = if lower.contains("error") {
                 Color::Red
-            } else if line.contains("WARN") || line.contains("warn") {
+            } else if lower.contains("warn") {
                 Color::Yellow
-            } else if line.contains("INFO") || line.contains("info") {
+            } else if lower.contains("info") {
                 Color::Green
             } else {
                 Color::White

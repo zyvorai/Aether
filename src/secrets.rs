@@ -181,7 +181,24 @@ impl SecretStore {
     }
 
     /// Get a decrypted value from a secret
-    pub fn get(&mut self, secret_name: &str, key: &str) -> anyhow::Result<String> {
+    pub fn get(&self, secret_name: &str, key: &str) -> anyhow::Result<String> {
+        let secret = self
+            .secrets
+            .get(secret_name)
+            .ok_or_else(|| anyhow::anyhow!("Secret '{}' not found", secret_name))?;
+
+        let encrypted = secret
+            .data
+            .get(key)
+            .ok_or_else(|| anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name))?
+            .encrypted
+            .clone();
+
+        self.decrypt(&encrypted)
+    }
+
+    /// Get a decrypted value and log the access
+    pub fn get_and_log(&mut self, secret_name: &str, key: &str) -> anyhow::Result<String> {
         let now = crate::resources::now_rfc3339();
         let secret = self
             .secrets
@@ -348,9 +365,16 @@ impl SecretStore {
     // --- Private ---
 
     fn default_key() -> Vec<u8> {
-        // In production, this would come from environment variable or HSM
-        // This is a development-only key
-        b"orchestr8-dev-key-do-not-use-prod".to_vec()
+        match std::env::var("ORCHESTR8_SECRET_KEY") {
+            Ok(key) if !key.is_empty() => key.into_bytes(),
+            _ => {
+                tracing::warn!(
+                    "ORCHESTR8_SECRET_KEY not set — using built-in dev key. \
+                     Do NOT use this in production!"
+                );
+                b"orchestr8-dev-key-do-not-use-prod".to_vec()
+            }
+        }
     }
 
     fn encrypt(&self, plaintext: &str) -> String {

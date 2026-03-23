@@ -324,6 +324,16 @@ impl AffinityEngine {
             existing.last_seen = outcome.timestamp.clone();
             if !existing.reason.contains(&reason) {
                 existing.reason = format!("{}; {}", existing.reason, reason);
+                if existing.reason.len() > 500 {
+                    // Truncate at a char boundary and add ellipsis
+                    let truncate_at = existing.reason.char_indices()
+                        .take_while(|(i, _)| *i < 497)
+                        .last()
+                        .map(|(i, c)| i + c.len_utf8())
+                        .unwrap_or(497);
+                    existing.reason.truncate(truncate_at);
+                    existing.reason.push_str("...");
+                }
             }
         } else {
             self.incompatibilities.push(Incompatibility {

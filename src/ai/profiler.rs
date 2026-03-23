@@ -265,7 +265,7 @@ impl Profiler {
                     analysis.cpu_efficiency * 100.0,
                     analysis.cpu_requested
                 ),
-                estimated_savings_pct: (1.0 - analysis.cpu_efficiency) * 40.0,
+                estimated_savings_pct: ((1.0 - analysis.cpu_efficiency.max(analysis.memory_efficiency)) * 100.0).min(80.0),
                 action: format!("Reduce CPU to {:.0} cores", suggested),
             });
         }
@@ -283,7 +283,7 @@ impl Profiler {
                     analysis.memory_efficiency * 100.0,
                     analysis.memory_requested_gi
                 ),
-                estimated_savings_pct: (1.0 - analysis.memory_efficiency) * 30.0,
+                estimated_savings_pct: ((1.0 - analysis.cpu_efficiency.max(analysis.memory_efficiency)) * 100.0).min(80.0),
                 action: format!("Reduce memory to {:.0}Gi", suggested),
             });
         }
@@ -300,7 +300,7 @@ impl Profiler {
                     analysis.storage_efficiency * 100.0,
                     analysis.storage_requested_gi
                 ),
-                estimated_savings_pct: (1.0 - analysis.storage_efficiency) * 10.0,
+                estimated_savings_pct: ((1.0 - analysis.cpu_efficiency.max(analysis.memory_efficiency).max(analysis.storage_efficiency)) * 100.0).min(80.0),
                 action: format!(
                     "Reduce storage to {:.0}Gi",
                     (analysis.storage_estimated_usage_gi * 2.0).ceil()
@@ -319,10 +319,14 @@ impl Profiler {
                     analysis.cpu_efficiency * 100.0
                 ),
                 estimated_savings_pct: 0.0,
-                action: format!(
-                    "Consider increasing CPU to {:.0} cores",
-                    (spec.requirements.cpu.parse::<f64>().unwrap_or(1.0) * 1.5).ceil()
-                ),
+                action: {
+                    let current_cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
+                    if current_cpu > 0.0 {
+                        format!("Consider increasing CPU to {:.0} cores", (current_cpu * 1.5).ceil())
+                    } else {
+                        "Consider setting a valid CPU resource value".to_string()
+                    }
+                },
             });
         }
     }

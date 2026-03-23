@@ -13,14 +13,21 @@ use ratatui::{
 };
 
 pub fn render_dashboard(f: &mut Frame, app: &App) {
+    let area = f.area();
+    // Guard against very small terminals (need at least header + 1 row + footer = 7 lines)
+    if area.height < 7 {
+        let msg = Paragraph::new("Terminal too small").alignment(Alignment::Center);
+        f.render_widget(msg, area);
+        return;
+    }
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3),  // Header
-            Constraint::Min(10),    // Main content
+            Constraint::Min(1),     // Main content
             Constraint::Length(3),  // Footer
         ])
-        .split(f.area());
+        .split(area);
 
     render_header(f, chunks[0], app);
     render_workload_list(f, chunks[1], app);
@@ -119,11 +126,15 @@ fn render_workload_list(f: &mut Frame, area: Rect, app: &App) {
 
             // Line 2: Status
             if let Some(ref status) = workload_info.status {
+                let badge = status_badge(&status.state, status.ready);
+                let badge_icon = badge.spans.first().cloned().unwrap_or_else(|| Span::raw("?"));
+                let badge = status_badge(&status.state, status.ready);
+                let badge_text = badge.spans.get(2).cloned().unwrap_or_else(|| Span::raw("unknown"));
                 let status_line = Line::from(vec![
                     Span::raw("   Status: "),
-                    status_badge(&status.state, status.ready).spans[0].clone(),
+                    badge_icon,
                     Span::raw(" "),
-                    status_badge(&status.state, status.ready).spans[2].clone(),
+                    badge_text,
                 ]);
                 lines.push(status_line);
 

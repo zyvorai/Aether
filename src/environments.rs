@@ -286,7 +286,8 @@ impl EnvironmentManager {
         }
 
         // Insert into target
-        let target = self.environments.get_mut(&request.to_env).expect("target env validated above");
+        let target = self.environments.get_mut(&request.to_env)
+            .ok_or_else(|| anyhow::anyhow!("Target environment '{}' disappeared during promotion", request.to_env))?;
         target.workloads.insert(request.workload.clone(), promoted);
         target.updated_at = crate::resources::now_rfc3339();
 
@@ -480,7 +481,10 @@ impl EnvironmentManager {
                 return format!("{}.{}.{}", parts[0], parts[1], patch + 1);
             }
         }
-        format!("{}-promoted", version)
+        // Avoid repeated "-promoted" suffixes.
+        // Strip any existing "-promoted" suffix, then re-append with an incrementing counter.
+        let base = version.strip_suffix("-promoted").unwrap_or(version);
+        format!("{}-promoted", base)
     }
 }
 
