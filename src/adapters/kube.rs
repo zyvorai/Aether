@@ -90,21 +90,7 @@ impl KubernetesRuntime {
     }
 }
 
-/// Validate that a name is a valid Kubernetes DNS label (RFC 1123).
-fn validate_kube_name(name: &str) -> anyhow::Result<()> {
-    if name.is_empty()
-        || name.len() > 63
-        || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
-        || name.starts_with('-')
-        || name.ends_with('-')
-    {
-        anyhow::bail!(
-            "Invalid Kubernetes name '{}': must be a valid DNS label (1-63 alphanumeric/hyphen chars, no leading/trailing hyphens)",
-            name
-        );
-    }
-    Ok(())
-}
+use super::common::validate_kube_name;
 
 // ---------------------------------------------------------------------------
 // Standalone manifest-generation functions (testable without a kube::Client)
@@ -534,6 +520,21 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
         })
         .collect();
 
+    // Don't create an HPA with no valid metrics
+    if metrics.is_empty() {
+        tracing::warn!("No valid HPA metrics for '{}', skipping HPA creation", spec.metadata.name);
+        return None;
+    }
+
+    // Validate min/max replicas
+    if scaling_spec.min_replicas > scaling_spec.max_replicas {
+        tracing::warn!(
+            "Invalid scaling spec for '{}': min_replicas ({}) > max_replicas ({}), skipping HPA",
+            spec.metadata.name, scaling_spec.min_replicas, scaling_spec.max_replicas
+        );
+        return None;
+    }
+
     let mut match_labels = BTreeMap::new();
     match_labels.insert("app".to_string(), spec.metadata.name.clone());
 
@@ -546,8 +547,8 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
         },
         spec: Some(HorizontalPodAutoscalerSpec {
             scale_target_ref: k8s_openapi::api::autoscaling::v2::CrossVersionObjectReference {
-                api_version: Some("v1".to_string()),
-                kind: "Pod".to_string(),
+                api_version: Some("apps/v1".to_string()),
+                kind: "Deployment".to_string(),
                 name: spec.metadata.name.clone(),
             },
             min_replicas: Some(scaling_spec.min_replicas as i32),
@@ -2053,9 +2054,9 @@ mod tests {
         assert_eq!(hpa_spec.max_replicas, 10);
 
         // Verify scale target ref
-        assert_eq!(hpa_spec.scale_target_ref.kind, "Pod");
+        assert_eq!(hpa_spec.scale_target_ref.kind, "Deployment");
         assert_eq!(hpa_spec.scale_target_ref.name, "test-app");
-        assert_eq!(hpa_spec.scale_target_ref.api_version, Some("v1".to_string()));
+        assert_eq!(hpa_spec.scale_target_ref.api_version, Some("apps/v1".to_string()));
 
         let metrics = hpa_spec.metrics.as_ref().unwrap();
         assert_eq!(metrics.len(), 1);
