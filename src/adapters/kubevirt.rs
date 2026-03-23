@@ -251,9 +251,30 @@ impl Runtime for KubeVirtRuntime {
             Err(e) => tracing::warn!("DataVolume creation failed (may already exist): {}", e),
         }
 
-        // Wait for DataVolume to be registered before creating the VM.
-        // TODO: Replace with proper polling/watch on DataVolume readiness.
-        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        // Poll for DataVolume registration before creating the VM.
+        {
+            let max_wait = tokio::time::Duration::from_secs(60);
+            let poll_interval = tokio::time::Duration::from_secs(2);
+            let start = tokio::time::Instant::now();
+            loop {
+                match dv_api.get(&format!("{}-disk", spec.metadata.name)).await {
+                    Ok(_) => {
+                        tracing::info!("DataVolume registered, proceeding with VM creation");
+                        break;
+                    }
+                    Err(_) if start.elapsed() < max_wait => {
+                        tokio::time::sleep(poll_interval).await;
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "DataVolume not ready after {:?}, proceeding anyway: {}",
+                            max_wait, e
+                        );
+                        break;
+                    }
+                }
+            }
+        }
 
         // Create VirtualMachine
         let vm_json = self.generate_virtualmachine_json(spec);

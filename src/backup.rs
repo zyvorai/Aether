@@ -196,8 +196,13 @@ impl BackupManager {
         Ok(backups)
     }
 
-    /// Get backup info without loading full content
+    /// Get backup info without loading full content.
+    /// Rejects symlinks to prevent path traversal attacks.
     pub fn get_backup_info(&self, path: &Path) -> Result<BackupMetadata> {
+        if path.is_symlink() {
+            anyhow::bail!("Refusing to read symlink backup path: {}", path.display());
+        }
+
         let contents = fs::read_to_string(path)
             .context("Failed to read backup file")?;
 
@@ -207,8 +212,13 @@ impl BackupManager {
         Ok(backup.metadata)
     }
 
-    /// Delete a backup
+    /// Delete a backup.
+    /// Rejects symlinks to prevent path traversal attacks.
     pub fn delete_backup(&self, path: &Path) -> Result<()> {
+        if path.is_symlink() {
+            anyhow::bail!("Refusing to delete symlink backup path: {}", path.display());
+        }
+
         fs::remove_file(path)
             .context(format!("Failed to delete backup {}", path.display()))?;
 

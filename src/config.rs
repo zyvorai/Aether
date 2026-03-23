@@ -41,7 +41,11 @@ impl Config {
             Ok(content) => match serde_yaml::from_str(&content) {
                 Ok(config) => config,
                 Err(e) => {
-                    tracing::warn!("Failed to parse config {}: {}, using defaults", path.display(), e);
+                    tracing::error!(
+                        "Failed to parse config {}: {}. Using defaults. \
+                         Fix the config file to apply your settings.",
+                        path.display(), e
+                    );
                     Self::default()
                 }
             },

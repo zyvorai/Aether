@@ -378,8 +378,19 @@ impl SecretStore {
     }
 
     fn encrypt(&self, plaintext: &str) -> String {
-        // Simple XOR obfuscation for development
-        // In production, use ring/aes-gcm for AES-256-GCM
+        // WARNING: XOR obfuscation — NOT cryptographically secure.
+        // This provides only basic obfuscation for local development.
+        // For production, integrate a real encryption library (ring, aes-gcm)
+        // or use an external vault (HashiCorp Vault, AWS KMS, etc.).
+        if self.encryption_key == b"orchestr8-dev-key-do-not-use-prod" {
+            tracing::debug!("Using XOR obfuscation (dev-only, NOT secure for production)");
+        } else {
+            tracing::warn!(
+                "ORCHESTR8_SECRET_KEY is set but encryption still uses XOR obfuscation. \
+                 This is NOT cryptographically secure. Integrate a real encryption \
+                 library (e.g. aes-gcm) for production use."
+            );
+        }
         let key = &self.encryption_key;
         let encrypted: Vec<u8> = plaintext
             .as_bytes()

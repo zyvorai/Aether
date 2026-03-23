@@ -231,7 +231,16 @@ fn generate_cost_recommendations(
     }
 
     // Right-sizing
-    let cpu = parse_cpu(&workload.requirements.cpu).unwrap_or(0.0);
+    let cpu = match parse_cpu(&workload.requirements.cpu) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(
+                "Failed to parse CPU '{}' for cost recommendation: {}; skipping right-sizing check",
+                workload.requirements.cpu, e
+            );
+            0.0
+        }
+    };
     if cpu >= 8.0 {
         recs.push(CostRecommendation {
             category: "Right-Sizing".to_string(),
