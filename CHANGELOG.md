@@ -5,6 +5,31 @@ All notable changes to Orchestr8 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Orchestrator:** Replace `.expect("just inserted")` with safe `unreachable!()` in `register()`
+- **Orchestrator:** Corrupted `circuit_opened_at` timestamps no longer silently reset the cooldown timer; circuit remains Open and requires manual reset
+- **Orchestrator:** Clarified history trimming to prevent unbounded growth
+- **KubeVirt Adapter:** Replaced hard-coded 5-second sleep with proper DataVolume polling loop (2s interval, 60s timeout)
+- **Metal3 Adapter:** MAC address and image URL now read from workload annotations (`orchestr8.io/boot-mac-address`, `orchestr8.io/image-url`, `orchestr8.io/image-checksum-url`) with fallback to placeholders and warnings
+- **Secrets:** Added explicit warnings that XOR obfuscation is NOT cryptographically secure, even when a custom key is set via `ORCHESTR8_SECRET_KEY`
+- **Scheduler:** Over-committed placements now rejected with error instead of logging a warning and proceeding
+- **API Handlers:** State reload failure after migration now returns HTTP 500 error instead of silent HTTP 200
+- **API Handlers:** `ai_analyze_logs` properly handles serialization errors instead of `unwrap_or_default()`
+- **API Handlers:** Orphan cleanup in `start_workload` reuses existing runtime client instead of creating a new one
+- **Dashboard:** Removed duplicate `status_badge()` call (copy-paste bug)
+- **State Store:** `save()` now uses atomic writes (temp file + rename) to prevent corruption on crash
+- **Engine:** `parse_cpu`/`parse_memory` now log warnings when falling back to defaults on bad input
+- **Config:** Config parse errors elevated from `warn!` to `error!` level with guidance to fix the file
+- **Kubernetes Adapter:** `validate_kube_name()` now called at start of `run()` before creating any resources
+- **Podman Adapter:** Container listing now skips entries with empty id/name instead of creating ghost instances
+- **Affinity Engine:** Division-by-zero fix: returns 0.0 when no metric data available instead of dividing by `max(1)`
+- **Backup:** Added symlink checks in `get_backup_info()` and `delete_backup()` to prevent path traversal attacks
+- **Migration:** Blue-green traffic switch now uses configurable delay from `MigrationPlan.validation_delay` instead of hard-coded 10s
+- **Cost:** CPU parse failure in cost recommendations now logs warning instead of silently defaulting to 0.0
+- **Audit:** `prune()` now parses timestamps to `DateTime` for comparison instead of string comparison, fixing issues with different UTC offset formats (`Z` vs `+00:00`)
+
 ## [0.3.0] - 2026-02-08
 
 ### Added
