@@ -274,7 +274,12 @@ impl ScalingEngine {
 
         if predicted < self.config.scale_down_threshold && current_replicas > min_replicas {
             // Scale down (more conservative)
-            let target = ((current_replicas as f64 * predicted / self.config.scale_up_threshold)
+            let threshold = if self.config.scale_up_threshold > 0.0 {
+                self.config.scale_up_threshold
+            } else {
+                0.80 // safe default if misconfigured
+            };
+            let target = ((current_replicas as f64 * predicted / threshold)
                 .ceil() as u32)
                 .max(min_replicas);
 

@@ -401,7 +401,7 @@ impl SecretStore {
         String::from_utf8(decrypted).map_err(|e| anyhow::anyhow!("Decryption failed: {}", e))
     }
 
-    fn needs_rotation(&self, secret: &Secret) -> bool {
+    pub fn needs_rotation(&self, secret: &Secret) -> bool {
         if let Some(policy) = &secret.rotation_policy {
             for value in secret.data.values() {
                 if self.age_in_days(&value.last_rotated) > policy.interval_days as f64 {
