@@ -295,6 +295,7 @@ For each VM deployment, Orchestr8 creates:
    - Imports container image to PVC
    - Converts to bootable disk
    - Manages storage lifecycle
+   - Orchestr8 polls for DataVolume registration (up to 60s) before proceeding with VM creation
 
 2. **VirtualMachine** (KubeVirt resource)
    - Defines VM configuration

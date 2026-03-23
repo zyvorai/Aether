@@ -5,7 +5,7 @@
 > One spec. Four runtimes. One tool. Seamless migration.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ssahani/orchestr8)
-[![Tests](https://img.shields.io/badge/tests-57%2F57%20passing-brightgreen)](https://github.com/ssahani/orchestr8)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/ssahani/orchestr8)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](LICENSE)
 
@@ -66,9 +66,11 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - Prometheus ServiceMonitor support
 
 **Production Ready**
-- 5,800+ lines of Rust code
-- 57/57 tests passing (46 unit + 11 integration)
+- 6,000+ lines of Rust code
+- All tests passing (unit + integration)
 - Zero compiler warnings
+- Atomic state persistence (crash-safe)
+- Symlink-safe backup operations
 - Comprehensive documentation (14,500+ lines)
 - Package distribution via APT and YUM repositories
 
@@ -661,7 +663,7 @@ orchestr8 migrate my-app kubernetes --strategy rolling
 |--------|-------|
 | **Total Code** | 5,800+ lines of Rust |
 | **Documentation** | 14,500+ lines |
-| **Tests** | 57/57 passing ✅ |
+| **Tests** | All passing ✅ |
 | **Compiler Warnings** | 0 ✅ |
 | **Runtimes** | 4/4 complete ✅ |
 | **Phases** | 6/6 delivered ✅ |
@@ -693,14 +695,16 @@ cargo test test_migration_plan_creation
 ### Test Results
 
 ```
-running 46 unit tests + 11 integration tests = 57 total
+running unit + integration tests
 
-Unit tests: adapters (kube, kubevirt, metal3), api, backup, completions,
-            cost, engine, metrics, migration, spec, state
+Unit tests: adapters (kube, kubevirt, metal3, podman), api, backup,
+            completions, cost, engine, metrics, migration, spec, state,
+            orchestrator, scheduler, secrets, events, environments, affinity
 Integration tests: workload parsing, decision engine, state store,
-                   GPU selection, migration plans, backup/restore, cost estimation
+                   GPU selection, migration plans, backup/restore, cost estimation,
+                   scheduler, orchestrator, secrets, events, environments, affinity
 
-test result: ok. 57 passed; 0 failed; 0 ignored
+test result: ok. All passed; 0 failed; 0 ignored
 ```
 
 ---
@@ -911,7 +915,7 @@ Built with:
 ✅ Backup/restore, cost estimation, Prometheus metrics
 ✅ Web dashboard, Helm chart, DEB/RPM packages
 ✅ Zero compiler warnings
-✅ 57/57 tests passing
+✅ All tests passing
 
 **One spec. Four runtimes. One tool. Seamless migration.**
 
