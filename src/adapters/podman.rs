@@ -160,17 +160,31 @@ impl Runtime for PodmanRuntime {
 
         let instances: Vec<Instance> = containers
             .iter()
-            .map(|c| Instance {
-                id: c["Id"].as_str().unwrap_or("").to_string(),
-                name: c["Names"]
+            .filter_map(|c| {
+                let id = c["Id"].as_str().unwrap_or("").to_string();
+                let name = c["Names"]
                     .as_array()
                     .and_then(|a| a.first())
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
-                    .to_string(),
-                runtime: RuntimeKind::Podman,
-                image: c["Image"].as_str().unwrap_or("").to_string(),
-                created_at: c["CreatedAt"].as_str().unwrap_or("").to_string(),
+                    .to_string();
+
+                // Skip containers with missing critical fields
+                if id.is_empty() || name.is_empty() {
+                    tracing::warn!(
+                        "Skipping container with missing id or name (id='{}', name='{}')",
+                        id, name
+                    );
+                    return None;
+                }
+
+                Some(Instance {
+                    id,
+                    name,
+                    runtime: RuntimeKind::Podman,
+                    image: c["Image"].as_str().unwrap_or("unknown").to_string(),
+                    created_at: c["CreatedAt"].as_str().unwrap_or("").to_string(),
+                })
             })
             .collect();
 

@@ -192,14 +192,20 @@ impl AuditLog {
 
     /// Prune events older than N days.
     ///
-    /// Note: comparing RFC 3339 timestamps as strings via `>=` is correct here
-    /// because RFC 3339 uses a fixed-width, most-significant-digit-first format
-    /// (e.g. "2026-03-23T..."), so lexicographic ordering matches chronological
-    /// ordering for timestamps in the same UTC offset.
+    /// Parses timestamps to proper DateTime for comparison to avoid
+    /// issues with different UTC offset formats (e.g. "+00:00" vs "Z").
     pub fn prune(&mut self, days: i64) {
         let cutoff = chrono::Utc::now() - chrono::Duration::days(days);
-        let cutoff_str = cutoff.to_rfc3339();
-        self.events.retain(|e| e.timestamp >= cutoff_str);
+        self.events.retain(|e| {
+            match chrono::DateTime::parse_from_rfc3339(&e.timestamp) {
+                Ok(dt) => dt.with_timezone(&chrono::Utc) >= cutoff,
+                Err(_) => {
+                    // Keep events with unparseable timestamps (don't silently drop data)
+                    tracing::warn!("Could not parse event timestamp '{}', keeping event", e.timestamp);
+                    true
+                }
+            }
+        });
     }
 
 }
