@@ -404,20 +404,21 @@ impl Orchestrator {
                                         }
                                     }
                                     Err(e) => {
+                                        // Replace corrupted timestamp with current time
+                                        // so the circuit stays Open and respects the cooldown,
+                                        // preserving restart_count and failure history.
                                         tracing::warn!(
-                                            "Failed to parse circuit_opened_at '{}': {}; resetting circuit breaker to Closed",
+                                            "Failed to parse circuit_opened_at '{}': {}; \
+                                             replacing with current time to preserve circuit state",
                                             opened_at, e
                                         );
-                                        workload.circuit = CircuitState::Closed;
-                                        workload.restart_count = 0;
-                                        workload.consecutive_failures = 0;
-                                        workload.circuit_opened_at = None;
+                                        workload.circuit_opened_at = Some(now.clone());
 
                                         workload.history.push(HealthEvent {
                                             timestamp: now.clone(),
-                                            event_type: HealthEventType::CircuitClosed,
+                                            event_type: HealthEventType::CircuitOpened,
                                             message: format!(
-                                                "Circuit reset to Closed due to unparseable opened_at timestamp: {}",
+                                                "Corrupted circuit_opened_at timestamp replaced: {}",
                                                 e
                                             ),
                                         });
