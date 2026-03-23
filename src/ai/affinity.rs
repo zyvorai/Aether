@@ -325,13 +325,12 @@ impl AffinityEngine {
             if !existing.reason.contains(&reason) {
                 existing.reason = format!("{}; {}", existing.reason, reason);
                 if existing.reason.len() > 500 {
-                    // Truncate at a char boundary and add ellipsis
-                    let truncate_at = existing.reason.char_indices()
-                        .take_while(|(i, _)| *i < 497)
-                        .last()
-                        .map(|(i, c)| i + c.len_utf8())
-                        .unwrap_or(497);
-                    existing.reason.truncate(truncate_at);
+                    // Truncate at a char boundary, leaving room for "..."
+                    let mut end = 497.min(existing.reason.len());
+                    while end > 0 && !existing.reason.is_char_boundary(end) {
+                        end -= 1;
+                    }
+                    existing.reason.truncate(end);
                     existing.reason.push_str("...");
                 }
             }

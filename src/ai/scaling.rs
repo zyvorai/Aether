@@ -219,7 +219,7 @@ impl ScalingEngine {
 
         Forecast {
             trend,
-            predicted_value: predicted_value.min(1.0),
+            predicted_value,
             lower_bound,
             upper_bound,
             horizon_minutes: self.config.forecast_minutes,

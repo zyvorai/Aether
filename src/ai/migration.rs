@@ -294,7 +294,7 @@ impl MigrationAdvisor {
 
     /// Build canary configuration based on risk
     fn build_canary_config(&self, risk_level: &RiskLevel, has_health: bool) -> CanaryConfig {
-        let config = match risk_level {
+        let mut config = match risk_level {
             RiskLevel::Critical => CanaryConfig {
                 steps: vec![5, 10, 25, 50, 75, 100],
                 step_interval_secs: 120,
@@ -337,10 +337,13 @@ impl MigrationAdvisor {
             }
         };
 
-        assert!(
-            Self::validate_canary_steps(&config.steps),
-            "Canary steps must be in ascending order and the last step must equal 100"
-        );
+        if !Self::validate_canary_steps(&config.steps) {
+            tracing::error!(
+                "Invalid canary steps {:?}: must be ascending and end at 100; using default [25, 50, 75, 100]",
+                config.steps
+            );
+            config.steps = vec![25, 50, 75, 100];
+        }
 
         config
     }
