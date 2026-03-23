@@ -206,7 +206,7 @@ impl ScalingEngine {
 
         // Calculate standard deviation for bounds
         let mean = sum_y / n;
-        let variance: f64 = points.iter().map(|p| (p.value - mean).powi(2)).sum::<f64>() / n;
+        let variance: f64 = (points.iter().map(|p| (p.value - mean).powi(2)).sum::<f64>() / n).max(0.0);
         let stddev = variance.sqrt();
 
         // Determine trend

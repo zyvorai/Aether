@@ -167,14 +167,7 @@ impl Metal3Runtime {
 
         match api.get(name).await {
             Ok(host) => {
-                let spec = host.data.get("spec");
                 let status = host.data.get("status");
-
-                // Check online field
-                let _online = spec
-                    .and_then(|s| s.get("online"))
-                    .and_then(|o| o.as_bool())
-                    .unwrap_or(false);
 
                 // Check provisioning state
                 let provisioning_state = status
@@ -240,6 +233,8 @@ impl Runtime for Metal3Runtime {
     }
 
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
+        common::validate_kube_name(&spec.metadata.name)?;
+
         tracing::info!(
             "Provisioning BareMetalHost to namespace '{}': {}",
             self.namespace,
