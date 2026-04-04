@@ -3,6 +3,7 @@
 //! Detects when running workload state diverges from the desired spec
 //! and provides reconciliation actions to bring them back in sync.
 
+use crate::output;
 use crate::runtime::RuntimeKind;
 use crate::spec::Workload;
 use crate::state::WorkloadState;
@@ -386,15 +387,14 @@ impl DriftDetector {
 pub fn format_drift_report(report: &DriftReport) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("Drift Report: {}\n", report.workload_name));
-    output.push_str(&format!(
-        "Status: {}\n\n",
-        if report.has_drift {
+    output.push_str(&output::property_section(&[
+        ("Drift Report", report.workload_name.clone()),
+        ("Status", if report.has_drift {
             format!("DRIFT DETECTED ({})", report.severity)
         } else {
             "IN SYNC".to_string()
-        }
-    ));
+        }),
+    ]));
 
     if report.drifts.is_empty() {
         output.push_str("No drift detected. Workload matches desired spec.\n");

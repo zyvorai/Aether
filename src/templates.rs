@@ -7,6 +7,7 @@ use crate::spec::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use crate::output;
 
 /// Template identifier
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -507,20 +508,24 @@ fn generate_microservice(params: &TemplateParams) -> Workload {
 
 /// Format template list as a report
 pub fn format_template_list() -> String {
-    let mut output = String::new();
-    output.push_str("Available Templates:\n\n");
+    let mut out = String::new();
 
-    for tmpl in list_templates() {
-        output.push_str(&format!("  {} - {}\n", tmpl.name, tmpl.description));
-        output.push_str(&format!(
-            "    Tags: {}  |  Runtime: {:?}\n\n",
-            tmpl.tags.join(", "),
-            tmpl.default_runtime
-        ));
-    }
+    let rows: Vec<Vec<String>> = list_templates()
+        .iter()
+        .map(|t| vec![
+            t.name.clone(),
+            t.description.clone(),
+            t.tags.join(", "),
+            format!("{:?}", t.default_runtime),
+        ])
+        .collect();
 
-    output.push_str("Usage: orchestr8 template <name> --name <workload-name>\n");
-    output
+    out.push_str(&format!(
+        "\n{}\n",
+        output::table(&["Template", "Description", "Tags", "Runtime"], rows),
+    ));
+    out.push_str("  Usage: orchestr8 template <name> --name <workload-name>\n");
+    out
 }
 
 #[cfg(test)]

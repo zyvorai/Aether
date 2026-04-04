@@ -1,5 +1,6 @@
 //! Cost estimation for workload resources
 
+use crate::output;
 use crate::spec::Workload;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -374,11 +375,12 @@ impl CostComparison {
     pub fn display(&self) -> String {
         let mut output = String::new();
 
-        output.push_str(&format!("📊 Cost Estimate for '{}'\n\n", self.workload_name));
-        output.push_str("Resources:\n");
-        output.push_str(&format!("  CPU: {}\n", self.cpu));
-        output.push_str(&format!("  Memory: {}\n", self.memory));
-        output.push_str(&format!("  Storage: {}\n\n", self.storage));
+        output.push_str(&output::property_section(&[
+            ("Cost Estimate", self.workload_name.clone()),
+            ("CPU", self.cpu.clone()),
+            ("Memory", self.memory.clone()),
+            ("Storage", self.storage.clone()),
+        ]));
 
         output.push_str("Monthly Cost Estimates:\n\n");
 

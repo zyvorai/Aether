@@ -4,6 +4,7 @@
 //! scaling actions. Uses time-series analysis and trend detection.
 
 use crate::config::ScalingConfig;
+use crate::output;
 use serde::{Deserialize, Serialize};
 
 /// A single metric data point
@@ -320,29 +321,19 @@ impl ScalingEngine {
 pub fn format_scaling_report(rec: &ScalingRecommendation) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("Action: {}\n", rec.action));
-    output.push_str(&format!(
-        "Replicas: {} -> {}\n",
-        rec.current_replicas, rec.recommended_replicas
-    ));
-    output.push_str(&format!("Confidence: {:.0}%\n", rec.confidence * 100.0));
-    output.push_str(&format!("Reason: {}\n\n", rec.reason));
+    output.push_str(&output::property_section(&[
+        ("Action", format!("{}", rec.action)),
+        ("Replicas", format!("{} -> {}", rec.current_replicas, rec.recommended_replicas)),
+        ("Confidence", format!("{:.0}%", rec.confidence * 100.0)),
+        ("Reason", rec.reason.clone()),
+    ]));
 
-    output.push_str("Forecast:\n");
-    output.push_str(&format!("  Trend: {}\n", rec.forecast.trend));
-    output.push_str(&format!(
-        "  Predicted: {:.1}%\n",
-        rec.forecast.predicted_value * 100.0
-    ));
-    output.push_str(&format!(
-        "  Range: {:.1}% - {:.1}%\n",
-        rec.forecast.lower_bound * 100.0,
-        rec.forecast.upper_bound * 100.0
-    ));
-    output.push_str(&format!(
-        "  Horizon: {} minutes\n\n",
-        rec.forecast.horizon_minutes
-    ));
+    output.push_str(&output::property_section(&[
+        ("Trend", format!("{}", rec.forecast.trend)),
+        ("Predicted", format!("{:.1}%", rec.forecast.predicted_value * 100.0)),
+        ("Range", format!("{:.1}% - {:.1}%", rec.forecast.lower_bound * 100.0, rec.forecast.upper_bound * 100.0)),
+        ("Horizon", format!("{} minutes", rec.forecast.horizon_minutes)),
+    ]));
 
     if rec.action != ScalingAction::NoChange {
         output.push_str("Cost Impact:\n");

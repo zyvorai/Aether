@@ -3,6 +3,7 @@
 //! One spec. Four runtimes. One tool.
 
 pub mod adapters;
+pub mod output;
 pub mod ai;
 pub mod api;
 pub mod audit;
