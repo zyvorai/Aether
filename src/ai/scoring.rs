@@ -4,6 +4,7 @@
 //! reliability, and availability criteria, returning a ranked list with explanations.
 
 use crate::config::{EngineConfig, ScoringWeights};
+use crate::output;
 use crate::runtime::RuntimeKind;
 use crate::spec::Workload;
 use serde::{Deserialize, Serialize};
@@ -434,14 +435,10 @@ impl ScoringEngine {
 pub fn format_scoring_report(result: &ScoringResult) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!(
-        "Workload Classification: {}\n",
-        result.workload_class
-    ));
-    output.push_str(&format!(
-        "Recommended Runtime: {} (confidence: {:.0}%)\n\n",
-        result.recommended, result.confidence * 100.0
-    ));
+    output.push_str(&output::property_section(&[
+        ("Workload Classification", format!("{}", result.workload_class)),
+        ("Recommended Runtime", format!("{} (confidence: {:.0}%)", result.recommended, result.confidence * 100.0)),
+    ]));
 
     output.push_str("Runtime Scores:\n");
     output.push_str(&format!(
@@ -475,10 +472,10 @@ pub fn format_scoring_report(result: &ScoringResult) -> String {
     if let Some(top) = result.scores.first() {
         output.push_str("Decision Factors:\n");
         for reason in &top.reasons {
-            output.push_str(&format!("  + {}\n", reason));
+            output.push_str(&output::tree_bullet("✓", reason));
         }
         for warning in &top.warnings {
-            output.push_str(&format!("  ! {}\n", warning));
+            output.push_str(&output::tree_bullet("⚠", warning));
         }
     }
 

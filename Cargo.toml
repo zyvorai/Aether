@@ -59,6 +59,11 @@ prometheus = "0.13"
 # Utilities
 dirs = "5.0"
 
+# Pretty terminal output (matching HyperSDK UX)
+colored = "2.1"
+indicatif = "0.17"
+comfy-table = "7.1"
+
 [dev-dependencies]
 tempfile = "3.15"
 tokio-test = "0.4"

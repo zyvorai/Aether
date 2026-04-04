@@ -3,6 +3,7 @@
 //! Records every operation performed on workloads with timestamps,
 //! action type, result, and context for compliance and debugging.
 
+use crate::output;
 use serde::{Deserialize, Serialize};
 
 /// A single audit event
@@ -227,11 +228,13 @@ pub fn format_audit_report(log: &AuditLog, limit: usize) -> String {
     let mut output = String::new();
     let summary = log.summary();
 
-    output.push_str("Audit Trail\n\n");
-    output.push_str(&format!("Total events: {}\n", summary.total_events));
-    output.push_str(&format!("Successes: {}\n", summary.successes));
-    output.push_str(&format!("Failures: {}\n", summary.failures));
-    output.push_str(&format!("Workloads: {}\n\n", summary.unique_workloads));
+    output.push_str(&output::property_section(&[
+        ("Audit Trail", String::new()),
+        ("Total events", format!("{}", summary.total_events)),
+        ("Successes", format!("{}", summary.successes)),
+        ("Failures", format!("{}", summary.failures)),
+        ("Workloads", format!("{}", summary.unique_workloads)),
+    ]));
 
     if !summary.events_by_action.is_empty() {
         output.push_str("By Action:\n");

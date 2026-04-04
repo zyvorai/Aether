@@ -1,7 +1,7 @@
 //! Event handling for TUI
 
 use super::app::{App, Screen};
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::time::Duration;
 
 pub async fn handle_events(app: &mut App) -> anyhow::Result<()> {
@@ -28,6 +28,12 @@ async fn handle_key_event(app: &mut App, key: KeyEvent) -> anyhow::Result<()> {
 }
 
 async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<()> {
+    // Ctrl+C to quit
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
+        app.should_quit = true;
+        return Ok(());
+    }
+
     match key.code {
         KeyCode::Char('q') | KeyCode::Char('Q') => {
             app.should_quit = true;
@@ -43,6 +49,18 @@ async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<(
         KeyCode::Up | KeyCode::Char('k') => {
             app.select_previous();
         }
+        KeyCode::Home | KeyCode::Char('g') => {
+            // Jump to first workload
+            if !app.workloads.is_empty() {
+                app.selected_index = 0;
+            }
+        }
+        KeyCode::End | KeyCode::Char('G') => {
+            // Jump to last workload
+            if !app.workloads.is_empty() {
+                app.selected_index = app.workloads.len().saturating_sub(1);
+            }
+        }
         KeyCode::Enter | KeyCode::Char('l') => {
             if let Some(workload) = app.selected_workload() {
                 let name = workload.state.name.clone();
@@ -56,14 +74,24 @@ async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<(
     Ok(())
 }
 
-async fn handle_logs_keys(app: &mut App, key: KeyEvent, _name: &str) -> anyhow::Result<()> {
+async fn handle_logs_keys(app: &mut App, key: KeyEvent, name: &str) -> anyhow::Result<()> {
+    // Ctrl+C to quit
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
+        app.should_quit = true;
+        return Ok(());
+    }
+
     match key.code {
         KeyCode::Char('q') | KeyCode::Char('Q') => {
             app.should_quit = true;
         }
-        KeyCode::Esc => {
+        KeyCode::Esc | KeyCode::Backspace => {
             app.screen = Screen::Dashboard;
             app.logs_buffer.clear();
+        }
+        KeyCode::Char('r') | KeyCode::Char('R') => {
+            // Reload logs
+            app.load_logs(name).await?;
         }
         _ => {}
     }

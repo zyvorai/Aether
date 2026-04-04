@@ -3,6 +3,7 @@
 //! Tracks inter-workload dependencies for ordered startup, cascade
 //! stop/delete, and impact analysis.
 
+use crate::output;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -313,14 +314,13 @@ pub fn format_dependency_report(graph: &DependencyGraph) -> String {
     let mut output = String::new();
     let stats = graph.stats();
 
-    output.push_str("Dependency Graph\n\n");
-    output.push_str(&format!("Workloads: {}\n", stats.total_workloads));
-    output.push_str(&format!("Dependencies: {}\n", stats.total_edges));
-    output.push_str(&format!("Max depth: {}\n", stats.max_depth));
-    output.push_str(&format!(
-        "Cycles: {}\n\n",
-        if stats.has_cycles { "YES" } else { "none" }
-    ));
+    output.push_str(&output::property_section(&[
+        ("Dependency Graph", String::new()),
+        ("Workloads", format!("{}", stats.total_workloads)),
+        ("Dependencies", format!("{}", stats.total_edges)),
+        ("Max depth", format!("{}", stats.max_depth)),
+        ("Cycles", if stats.has_cycles { "YES".to_string() } else { "none".to_string() }),
+    ]));
 
     if let Ok(order) = graph.startup_order() {
         output.push_str("Startup Order:\n");
@@ -343,7 +343,7 @@ pub fn format_dependency_report(graph: &DependencyGraph) -> String {
     if !issues.is_empty() {
         output.push_str("\nIssues:\n");
         for issue in &issues {
-            output.push_str(&format!("  - {}\n", issue));
+            output.push_str(&output::tree_bullet("⚠", issue));
         }
     }
 

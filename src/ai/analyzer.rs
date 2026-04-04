@@ -4,6 +4,7 @@
 //! detection for workload logs.
 
 use crate::config::AnalyzerConfig;
+use crate::output;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -500,18 +501,12 @@ impl LogAnalyzer {
 pub fn format_analysis_report(analysis: &LogAnalysis) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("Log Analysis ({} lines)\n\n", analysis.total_lines));
-
-    output.push_str(&format!(
-        "Health: {} (score: {:.0}/100)\n",
-        analysis.health_assessment.status, analysis.health_assessment.score
-    ));
-    output.push_str(&format!(
-        "Errors: {} ({:.1}%)\n",
-        analysis.error_count,
-        analysis.error_rate * 100.0
-    ));
-    output.push_str(&format!("Warnings: {}\n\n", analysis.warning_count));
+    output.push_str(&output::property_section(&[
+        ("Log Analysis", format!("{} lines", analysis.total_lines)),
+        ("Health", format!("{} (score: {:.0}/100)", analysis.health_assessment.status, analysis.health_assessment.score)),
+        ("Errors", format!("{} ({:.1}%)", analysis.error_count, analysis.error_rate * 100.0)),
+        ("Warnings", format!("{}", analysis.warning_count)),
+    ]));
 
     if !analysis.anomalies.is_empty() {
         output.push_str(&format!("Anomalies Detected ({}):\n", analysis.anomalies.len()));
@@ -527,7 +522,7 @@ pub fn format_analysis_report(analysis: &LogAnalysis) -> String {
     if !analysis.health_assessment.issues.is_empty() {
         output.push_str("Issues:\n");
         for issue in &analysis.health_assessment.issues {
-            output.push_str(&format!("  - {}\n", issue));
+            output.push_str(&output::tree_bullet("❌", issue));
         }
         output.push('\n');
     }
@@ -535,7 +530,7 @@ pub fn format_analysis_report(analysis: &LogAnalysis) -> String {
     if !analysis.health_assessment.suggestions.is_empty() {
         output.push_str("Suggestions:\n");
         for suggestion in &analysis.health_assessment.suggestions {
-            output.push_str(&format!("  - {}\n", suggestion));
+            output.push_str(&output::tree_bullet("💡", suggestion));
         }
         output.push('\n');
     }

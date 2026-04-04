@@ -5,6 +5,7 @@ mod commands;
 
 use anyhow::Result;
 use clap::Parser;
+use colored::Colorize;
 use orchestr8::state::StateStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -14,17 +15,22 @@ use cli::{Cli, Commands};
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Initialize tracing
+    // Initialize tracing (suppress default fmt for non-verbose to keep output clean)
     let filter = if cli.verbose {
         tracing_subscriber::EnvFilter::new("debug")
     } else {
-        tracing_subscriber::EnvFilter::new("info")
+        tracing_subscriber::EnvFilter::new("warn")
     };
 
     tracing_subscriber::registry()
         .with(filter)
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    // Set output modes
+    orchestr8::output::set_quiet(cli.quiet);
+    orchestr8::output::set_json(cli.json);
+    orchestr8::output::set_yes(cli.yes);
 
     // Initialize metrics
     orchestr8::metrics::init();
@@ -34,47 +40,7 @@ async fn main() -> Result<()> {
 
     // Record command start time
     let start = std::time::Instant::now();
-    let command_name = match &cli.command {
-        Commands::Validate => "validate",
-        Commands::Build => "build",
-        Commands::Run { .. } => "run",
-        Commands::Stop { .. } => "stop",
-        Commands::Status { .. } => "status",
-        Commands::Logs { .. } => "logs",
-        Commands::Delete { .. } => "delete",
-        Commands::List => "list",
-        Commands::Migrate { .. } => "migrate",
-        Commands::Tui => "tui",
-        Commands::Completions { .. } => "completions",
-        Commands::Metrics => "metrics",
-        Commands::Backup { .. } => "backup",
-        Commands::Restore { .. } => "restore",
-        Commands::ListBackups => "list-backups",
-        Commands::Cost { .. } => "cost",
-        Commands::Serve { .. } => "serve",
-        Commands::Recommend { .. } => "recommend",
-        Commands::Profile { .. } => "profile",
-        Commands::AnalyzeLogs { .. } => "analyze-logs",
-        Commands::MigrationAdvice { .. } => "migration-advice",
-        Commands::ScalingAdvice => "scaling-advice",
-        Commands::Config { .. } => "config",
-        Commands::Drift { .. } => "drift",
-        Commands::PolicyCheck { .. } => "policy-check",
-        Commands::Deps { .. } => "deps",
-        Commands::Audit { .. } => "audit",
-        Commands::Template { .. } => "template",
-        Commands::Sla { .. } => "sla",
-        Commands::Secrets { .. } => "secrets",
-        Commands::Events { .. } => "events",
-        Commands::Env { .. } => "env",
-        Commands::Schedule { .. } => "schedule",
-        Commands::Orchestrate { .. } => "orchestrate",
-        Commands::Affinity { .. } => "affinity",
-        Commands::Webhook { .. } => "webhook",
-        Commands::Diff { .. } => "diff",
-        Commands::Rollback { .. } => "rollback",
-        Commands::Deploy { .. } => "deploy",
-    };
+    let command_name = cli.command.name();
 
     let result = match cli.command {
         Commands::Validate => commands::validate_command(&cli.spec).await,
@@ -115,8 +81,8 @@ async fn main() -> Result<()> {
         Commands::Serve { host, port } => {
             commands::serve_command(host, port).await
         }
-        Commands::Recommend { runtime } => {
-            commands::recommend_command(&cli.spec, runtime).await
+        Commands::Recommend { .. } => {
+            commands::recommend_command(&cli.spec).await
         }
         Commands::Profile { name } => {
             commands::profile_command(&cli.spec, name).await
@@ -172,6 +138,10 @@ async fn main() -> Result<()> {
         Commands::Webhook { action } => {
             commands::webhook_command(action).await
         }
+        Commands::HelpAll => {
+            orchestr8::completions::show_help();
+            Ok(())
+        }
         Commands::Diff { name } => {
             commands::diff_command(&name).await
         }
@@ -187,5 +157,59 @@ async fn main() -> Result<()> {
     let duration = start.elapsed().as_secs_f64();
     orchestr8::metrics::record_command(command_name, duration);
 
-    result
+    // Show elapsed time for commands that take noticeable time
+    if duration >= 0.1 && !cli.quiet && !cli.json {
+        let elapsed = if duration < 1.0 {
+            format!("{:.0}ms", duration * 1000.0)
+        } else if duration < 60.0 {
+            format!("{:.1}s", duration)
+        } else {
+            let mins = (duration / 60.0).floor() as u64;
+            let secs = duration % 60.0;
+            format!("{}m {:.0}s", mins, secs)
+        };
+        eprintln!(
+            "\n{}",
+            format!("  ⏱ {} | {}", elapsed, command_name)
+                .truecolor(
+                    orchestr8::output::COLOR_MUTED.0,
+                    orchestr8::output::COLOR_MUTED.1,
+                    orchestr8::output::COLOR_MUTED.2,
+                )
+        );
+    }
+
+    // Styled error display — print our styled version, then return a simple
+    // error message to avoid the runtime printing the full error chain again.
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            if cli.json {
+                eprintln!(
+                    r#"{{"status":"error","command":"{}","message":{}}}"#,
+                    command_name,
+                    serde_json::to_string(&e.to_string()).unwrap_or_else(|_| format!("\"{}\"", e))
+                );
+            } else if !cli.quiet {
+                eprintln!(
+                    "\n{} {} {}\n",
+                    "Error:"
+                        .truecolor(
+                            orchestr8::output::COLOR_ERROR.0,
+                            orchestr8::output::COLOR_ERROR.1,
+                            orchestr8::output::COLOR_ERROR.2,
+                        )
+                        .bold(),
+                    e,
+                    format!("({})", command_name).truecolor(
+                        orchestr8::output::COLOR_MUTED.0,
+                        orchestr8::output::COLOR_MUTED.1,
+                        orchestr8::output::COLOR_MUTED.2,
+                    ),
+                );
+            }
+            // Return a minimal error so the runtime doesn't re-print the full message
+            Err(anyhow::anyhow!(""))
+        }
+    }
 }

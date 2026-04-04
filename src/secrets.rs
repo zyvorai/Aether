@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use crate::output;
 
 /// A managed secret
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -537,27 +538,29 @@ impl std::fmt::Display for AlertSeverity {
 
 /// Format secrets list
 pub fn format_secrets_list(summaries: &[SecretSummary]) -> String {
-    let mut output = String::new();
-    output.push_str("Secrets:\n\n");
+    let mut out = String::new();
 
     if summaries.is_empty() {
-        output.push_str("  No secrets stored.\n");
-        return output;
+        out.push_str("  No secrets stored.\n");
+        return out;
     }
 
-    for s in summaries {
-        output.push_str(&format!(
-            "  {} ({}) - {} keys\n",
-            s.name, s.namespace, s.key_count
-        ));
-        output.push_str(&format!("    Updated: {}\n", &s.updated_at[..19]));
-        if s.needs_rotation {
-            output.push_str("    ⚠ Rotation needed\n");
-        }
-        output.push('\n');
-    }
+    let rows: Vec<Vec<String>> = summaries
+        .iter()
+        .map(|s| vec![
+            s.name.clone(),
+            s.namespace.clone(),
+            s.key_count.to_string(),
+            s.updated_at[..19].to_string(),
+            if s.needs_rotation { "⚠ Yes" } else { "OK" }.to_string(),
+        ])
+        .collect();
+    out.push_str(&format!(
+        "\n{}\n",
+        output::table(&["Name", "Namespace", "Keys", "Updated", "Rotation"], rows),
+    ));
 
-    output
+    out
 }
 
 #[cfg(test)]

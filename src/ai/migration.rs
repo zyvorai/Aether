@@ -4,9 +4,10 @@
 //! provides adaptive canary analysis, and load-aware scheduling.
 
 use crate::config::MigrationConfig;
+use crate::migration::MigrationStrategy;
+use crate::output;
 use crate::runtime::RuntimeKind;
 use crate::spec::Workload;
-use crate::migration::MigrationStrategy;
 use serde::{Deserialize, Serialize};
 
 /// Migration recommendation from the advisor
@@ -398,25 +399,21 @@ impl MigrationAdvisor {
 pub fn format_migration_advice(advice: &MigrationAdvice) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!(
-        "Strategy: {:?}\n",
-        advice.recommended_strategy
-    ));
-    output.push_str(&format!("Risk Level: {}\n", advice.risk_level));
-    output.push_str(&format!(
-        "Estimated Downtime: {}s\n\n",
-        advice.estimated_downtime_secs
-    ));
+    output.push_str(&output::property_section(&[
+        ("Strategy", format!("{:?}", advice.recommended_strategy)),
+        ("Risk Level", format!("{}", advice.risk_level)),
+        ("Estimated Downtime", format!("{}s", advice.estimated_downtime_secs)),
+    ]));
 
     output.push_str("Reasons:\n");
     for reason in &advice.reasons {
-        output.push_str(&format!("  + {}\n", reason));
+        output.push_str(&output::tree_bullet("✓", reason));
     }
 
     if !advice.warnings.is_empty() {
         output.push_str("\nWarnings:\n");
         for warning in &advice.warnings {
-            output.push_str(&format!("  ! {}\n", warning));
+            output.push_str(&output::tree_bullet("⚠", warning));
         }
     }
 

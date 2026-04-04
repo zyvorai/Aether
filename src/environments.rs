@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use crate::output;
 
 /// Environment tier
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -485,22 +486,29 @@ impl EnvironmentManager {
 
 /// Format environment list
 pub fn format_env_list(envs: &[&Environment]) -> String {
-    let mut output = String::new();
-    output.push_str("Environments:\n\n");
+    let mut out = String::new();
 
     if envs.is_empty() {
-        output.push_str("  No environments configured.\n");
-        return output;
+        out.push_str("  No environments configured.\n");
+        return out;
     }
 
-    for env in envs {
-        output.push_str(&format!("  {} ({})\n", env.name, env.tier));
-        output.push_str(&format!("    Workloads: {}\n", env.workloads.len()));
-        output.push_str(&format!("    Variables: {}\n", env.variables.len()));
-        output.push_str(&format!("    Updated: {}\n\n", &env.updated_at[..19]));
-    }
+    let rows: Vec<Vec<String>> = envs
+        .iter()
+        .map(|e| vec![
+            e.name.clone(),
+            format!("{}", e.tier),
+            e.workloads.len().to_string(),
+            e.variables.len().to_string(),
+            e.updated_at[..19].to_string(),
+        ])
+        .collect();
+    out.push_str(&format!(
+        "\n{}\n",
+        output::table(&["Environment", "Tier", "Workloads", "Variables", "Updated"], rows),
+    ));
 
-    output
+    out
 }
 
 /// Format parity report

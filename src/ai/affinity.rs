@@ -7,6 +7,7 @@
 use crate::runtime::RuntimeKind;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::output;
 
 /// A deployment outcome record for learning
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -389,33 +390,40 @@ pub struct LearningStats {
 
 /// Format affinity recommendation
 pub fn format_affinity_report(class: &WorkloadClass, scores: &[AffinityScore]) -> String {
-    let mut output = String::new();
-    output.push_str(&format!("Runtime Affinity for {}\n\n", class));
+    let mut out = String::new();
+    out.push_str(&format!("\n  Runtime Affinity for {}\n\n", class));
 
-    for (i, score) in scores.iter().enumerate() {
-        let indicator = if i == 0 { "★" } else { " " };
-        output.push_str(&format!(
-            "  {} {} - Score: {:.0}% (confidence: {:.0}%)\n",
-            indicator,
-            score.runtime,
-            score.composite_score * 100.0,
-            score.confidence * 100.0,
-        ));
-        if score.total_deployments > 0 {
-            output.push_str(&format!(
-                "    Success: {:.0}% | Uptime: {:.1}% | Latency: {:.0}ms | Deployments: {}\n",
-                score.success_rate * 100.0,
-                score.avg_uptime,
-                score.avg_latency_ms,
-                score.total_deployments,
-            ));
-        } else {
-            output.push_str("    Based on heuristic estimation (no deployment history)\n");
-        }
-        output.push('\n');
-    }
+    let rows: Vec<Vec<String>> = scores
+        .iter()
+        .enumerate()
+        .map(|(i, s)| {
+            let indicator = if i == 0 { "★" } else { " " };
+            let details = if s.total_deployments > 0 {
+                format!(
+                    "{:.0}% success | {:.1}% uptime | {:.0}ms latency",
+                    s.success_rate * 100.0,
+                    s.avg_uptime,
+                    s.avg_latency_ms,
+                )
+            } else {
+                "heuristic (no history)".to_string()
+            };
+            vec![
+                format!("{} {}", indicator, s.runtime),
+                format!("{:.0}%", s.composite_score * 100.0),
+                format!("{:.0}%", s.confidence * 100.0),
+                s.total_deployments.to_string(),
+                details,
+            ]
+        })
+        .collect();
 
-    output
+    out.push_str(&output::table(
+        &["Runtime", "Score", "Confidence", "Deploys", "Details"],
+        rows,
+    ));
+
+    out
 }
 
 #[cfg(test)]
