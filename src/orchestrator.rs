@@ -3,6 +3,7 @@
 //! Coordinates workload lifecycle with health monitoring,
 //! automatic recovery, rolling updates, and circuit breaking.
 
+use crate::output;
 use crate::runtime::RuntimeKind;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -720,12 +721,14 @@ pub fn format_workload_list(workloads: &[WorkloadSummary]) -> String {
 /// Format health summary
 pub fn format_health_summary(summary: &HealthSummary) -> String {
     let mut output = String::new();
-    output.push_str("Health Summary:\n\n");
-    output.push_str(&format!("  Total Workloads: {}\n", summary.total_workloads));
-    output.push_str(&format!("  Healthy:   {}\n", summary.healthy));
-    output.push_str(&format!("  Degraded:  {}\n", summary.degraded));
-    output.push_str(&format!("  Unhealthy: {}\n", summary.unhealthy));
-    output.push_str(&format!("  Unknown:   {}\n", summary.unknown));
+    output.push_str(&output::property_section(&[
+        ("Health Summary", String::new()),
+        ("Total Workloads", format!("{}", summary.total_workloads)),
+        ("Healthy", format!("{}", summary.healthy)),
+        ("Degraded", format!("{}", summary.degraded)),
+        ("Unhealthy", format!("{}", summary.unhealthy)),
+        ("Unknown", format!("{}", summary.unknown)),
+    ]));
     if summary.circuits_open > 0 {
         output.push_str(&format!(
             "\n  Circuits Open: {} (requires manual intervention)\n",

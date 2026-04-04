@@ -4,6 +4,7 @@
 //! resource availability, affinity scores, cost constraints,
 //! and placement policies.
 
+use crate::output;
 use crate::runtime::RuntimeKind;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -747,20 +748,16 @@ impl std::fmt::Display for OptCategory {
 /// Format schedule decision
 pub fn format_schedule_decision(decision: &ScheduleDecision) -> String {
     let mut output = String::new();
-    output.push_str(&format!(
-        "Schedule Decision: {}  →  {}\n\n",
-        decision.workload_name, decision.selected_runtime
-    ));
-    output.push_str(&format!("  Score: {:.0}%\n", decision.score * 100.0));
-    output.push_str(&format!(
-        "  Estimated Cost: ${:.2}/day\n\n",
-        decision.estimated_cost_per_day
-    ));
+    output.push_str(&output::property_section(&[
+        ("Schedule Decision", format!("{}  →  {}", decision.workload_name, decision.selected_runtime)),
+        ("Score", format!("{:.0}%", decision.score * 100.0)),
+        ("Estimated Cost", format!("${:.2}/day", decision.estimated_cost_per_day)),
+    ]));
 
     if !decision.reasons.is_empty() {
         output.push_str("  Reasons:\n");
         for reason in &decision.reasons {
-            output.push_str(&format!("    - {}\n", reason));
+            output.push_str(&output::tree_bullet("✓", reason));
         }
         output.push('\n');
     }
@@ -781,7 +778,7 @@ pub fn format_schedule_decision(decision: &ScheduleDecision) -> String {
     if !decision.warnings.is_empty() {
         output.push_str("  Warnings:\n");
         for warn in &decision.warnings {
-            output.push_str(&format!("    ! {}\n", warn));
+            output.push_str(&output::tree_bullet("⚠", warn));
         }
     }
 

@@ -5,8 +5,12 @@ use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "orchestr8")]
-#[command(about = "Universal runtime control plane - One spec, four runtimes", long_about = None)]
+#[command(
+    about = "Universal runtime control plane - One spec, four runtimes",
+    long_about = "Orchestr8 deploys workloads across four runtimes (Podman, Kubernetes, KubeVirt, Metal3)\nfrom a single YAML specification with AI-powered runtime selection, zero-downtime\nmigration, and built-in observability.",
+)]
 #[command(version)]
+#[command(styles = get_styles())]
 pub(crate) struct Cli {
     #[command(subcommand)]
     pub(crate) command: Commands,
@@ -18,6 +22,42 @@ pub(crate) struct Cli {
     /// Enable verbose logging
     #[arg(short, long)]
     pub(crate) verbose: bool,
+
+    /// Suppress all output except errors (machine-friendly)
+    #[arg(short, long)]
+    pub(crate) quiet: bool,
+
+    /// Output results as JSON (machine-readable)
+    #[arg(long, conflicts_with = "quiet")]
+    pub(crate) json: bool,
+
+    /// Skip confirmation prompts (for automation/CI)
+    #[arg(short, long)]
+    pub(crate) yes: bool,
+}
+
+/// Custom clap styles matching the orange vision-optimized theme
+fn get_styles() -> clap::builder::Styles {
+    clap::builder::Styles::styled()
+        .header(
+            clap::builder::styling::AnsiColor::BrightYellow.on_default()
+                | clap::builder::styling::Effects::BOLD,
+        )
+        .usage(
+            clap::builder::styling::AnsiColor::BrightYellow.on_default()
+                | clap::builder::styling::Effects::BOLD,
+        )
+        .literal(
+            clap::builder::styling::AnsiColor::Yellow.on_default()
+                | clap::builder::styling::Effects::BOLD,
+        )
+        .placeholder(clap::builder::styling::AnsiColor::Cyan.on_default())
+        .valid(clap::builder::styling::AnsiColor::Green.on_default())
+        .invalid(clap::builder::styling::AnsiColor::Red.on_default())
+        .error(
+            clap::builder::styling::AnsiColor::Red.on_default()
+                | clap::builder::styling::Effects::BOLD,
+        )
 }
 
 #[derive(Subcommand)]
@@ -309,6 +349,10 @@ pub(crate) enum Commands {
         action: WebhookAction,
     },
 
+    /// Show detailed command reference with examples
+    #[command(name = "help-all")]
+    HelpAll,
+
     /// Compare spec vs stored vs live workload state
     Diff {
         /// Workload name
@@ -338,6 +382,54 @@ pub(crate) enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+}
+
+impl Commands {
+    /// Return the kebab-case command name for metrics and error display.
+    pub(crate) fn name(&self) -> &'static str {
+        match self {
+            Self::Validate => "validate",
+            Self::Build => "build",
+            Self::Run { .. } => "run",
+            Self::Stop { .. } => "stop",
+            Self::Status { .. } => "status",
+            Self::Logs { .. } => "logs",
+            Self::Delete { .. } => "delete",
+            Self::List => "list",
+            Self::Migrate { .. } => "migrate",
+            Self::Tui => "tui",
+            Self::Completions { .. } => "completions",
+            Self::Metrics => "metrics",
+            Self::Backup { .. } => "backup",
+            Self::Restore { .. } => "restore",
+            Self::ListBackups => "list-backups",
+            Self::Cost { .. } => "cost",
+            Self::Serve { .. } => "serve",
+            Self::Recommend { .. } => "recommend",
+            Self::Profile { .. } => "profile",
+            Self::AnalyzeLogs { .. } => "analyze-logs",
+            Self::MigrationAdvice { .. } => "migration-advice",
+            Self::ScalingAdvice => "scaling-advice",
+            Self::Config { .. } => "config",
+            Self::Drift { .. } => "drift",
+            Self::PolicyCheck { .. } => "policy-check",
+            Self::Deps { .. } => "deps",
+            Self::Audit { .. } => "audit",
+            Self::Template { .. } => "template",
+            Self::Sla { .. } => "sla",
+            Self::Secrets { .. } => "secrets",
+            Self::Events { .. } => "events",
+            Self::Env { .. } => "env",
+            Self::Schedule { .. } => "schedule",
+            Self::Orchestrate { .. } => "orchestrate",
+            Self::Affinity { .. } => "affinity",
+            Self::Webhook { .. } => "webhook",
+            Self::HelpAll => "help-all",
+            Self::Diff { .. } => "diff",
+            Self::Rollback { .. } => "rollback",
+            Self::Deploy { .. } => "deploy",
+        }
+    }
 }
 
 #[derive(Subcommand)]

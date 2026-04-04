@@ -1,11 +1,14 @@
-//! Log viewer screen
+//! Log viewer screen - Orange-themed with enhanced features (matching HyperSDK)
 
-use super::{app::App, components::bordered_block};
+use super::{
+    app::App,
+    components::{bordered_block, PRIMARY, MUTED, WARNING},
+};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, BorderType, Paragraph},
     Frame,
 };
 
@@ -13,38 +16,53 @@ pub fn render_logs(f: &mut Frame, app: &App, workload_name: &str) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Header
-            Constraint::Min(10),    // Logs
-            Constraint::Length(3),  // Footer
+            Constraint::Length(3), // Header with breadcrumb
+            Constraint::Min(10),   // Logs
+            Constraint::Length(3), // Footer
         ])
         .split(f.area());
 
-    render_logs_header(f, chunks[0], workload_name);
+    render_logs_header(f, chunks[0], workload_name, app);
     render_logs_content(f, chunks[1], app);
     render_logs_footer(f, chunks[2]);
 }
 
-fn render_logs_header(f: &mut Frame, area: Rect, workload_name: &str) {
+fn render_logs_header(f: &mut Frame, area: Rect, workload_name: &str, app: &App) {
+    let line_count = app.logs_buffer.len();
     let header = Paragraph::new(vec![Line::from(vec![
         Span::styled(
-            "Logs: ",
+            " Dashboard ",
+            Style::default().fg(MUTED),
+        ),
+        Span::styled(
+            "›",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            " Logs ",
+            Style::default().fg(MUTED),
+        ),
+        Span::styled(
+            "›",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            format!(" {} ", workload_name),
             Style::default()
-                .fg(Color::Cyan)
+                .fg(PRIMARY)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
-            workload_name,
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
+            format!("  ({} lines)", line_count),
+            Style::default().fg(MUTED),
         ),
     ])])
     .block(
         Block::default()
             .borders(Borders::ALL)
-            .style(Style::default().fg(Color::Cyan)),
-    )
-    .alignment(Alignment::Center);
+            .border_style(Style::default().fg(PRIMARY))
+            .border_type(BorderType::Rounded),
+    );
 
     f.render_widget(header, area);
 }
@@ -56,12 +74,17 @@ fn render_logs_content(f: &mut Frame, area: Rect, app: &App) {
             Line::from(Span::styled(
                 "No logs available",
                 Style::default()
-                    .fg(Color::DarkGray)
+                    .fg(MUTED)
                     .add_modifier(Modifier::ITALIC),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Press 'r' to reload",
+                Style::default().fg(WARNING),
             )),
         ])
         .alignment(Alignment::Center)
-        .block(bordered_block("Output"));
+        .block(bordered_block(" Output "));
 
         f.render_widget(empty, area);
         return;
@@ -73,39 +96,54 @@ fn render_logs_content(f: &mut Frame, area: Rect, app: &App) {
 
     let log_lines: Vec<Line> = app.logs_buffer[start_idx..]
         .iter()
-        .map(|line| {
-            // Simple log level coloring (case-insensitive matching)
-            let lower = line.to_lowercase();
-            let color = if lower.contains("error") {
-                Color::Red
-            } else if lower.contains("warn") {
-                Color::Yellow
-            } else if lower.contains("info") {
-                Color::Green
-            } else {
-                Color::White
-            };
+        .enumerate()
+        .map(|(i, line)| {
+            // Line number prefix
+            let line_num = start_idx + i + 1;
+            let line_num_span = Span::styled(
+                format!("{:>4} │ ", line_num),
+                Style::default().fg(MUTED),
+            );
 
-            Line::from(Span::styled(line.clone(), Style::default().fg(color)))
+            // Log level coloring — shared classification with output::colorize_log_line
+            let (r, g, b) = crate::output::log_level_color(line);
+            let color = ratatui::style::Color::Rgb(r, g, b);
+
+            Line::from(vec![
+                line_num_span,
+                Span::styled(line.clone(), Style::default().fg(color)),
+            ])
         })
         .collect();
 
-    let logs = Paragraph::new(log_lines).block(bordered_block("Output"));
+    let logs = Paragraph::new(log_lines).block(bordered_block(" Output "));
 
     f.render_widget(logs, area);
 }
 
 fn render_logs_footer(f: &mut Frame, area: Rect) {
     let footer = Paragraph::new(Line::from(vec![
-        Span::styled("Esc", Style::default().fg(Color::Yellow)),
-        Span::raw(" Back | "),
-        Span::styled("q", Style::default().fg(Color::Yellow)),
+        Span::styled(
+            "Esc/Backspace",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" Back  "),
+        Span::styled(
+            "r",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" Reload  "),
+        Span::styled(
+            "q",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
         Span::raw(" Quit"),
     ]))
     .block(
         Block::default()
             .borders(Borders::ALL)
-            .style(Style::default().fg(Color::DarkGray)),
+            .border_style(Style::default().fg(MUTED))
+            .border_type(BorderType::Rounded),
     )
     .alignment(Alignment::Center);
 

@@ -3,6 +3,7 @@
 //! Enforces rules before deployment: resource limits, naming conventions,
 //! security requirements, and compliance checks.
 
+use crate::output;
 use crate::spec::Workload;
 use serde::{Deserialize, Serialize};
 
@@ -368,14 +369,10 @@ fn default_development_policies() -> Vec<Policy> {
 pub fn format_policy_report(result: &PolicyResult) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!(
-        "Policy Evaluation: {}\n",
-        if result.passed { "PASSED" } else { "FAILED" }
-    ));
-    output.push_str(&format!(
-        "Policies evaluated: {}\n\n",
-        result.policies_evaluated
-    ));
+    output.push_str(&output::property_section(&[
+        ("Policy Evaluation", if result.passed { "PASSED".to_string() } else { "FAILED".to_string() }),
+        ("Policies evaluated", format!("{}", result.policies_evaluated)),
+    ]));
 
     if !result.violations.is_empty() {
         output.push_str(&format!("Violations ({}):\n", result.violations.len()));
@@ -392,7 +389,7 @@ pub fn format_policy_report(result: &PolicyResult) -> String {
     if !result.warnings.is_empty() {
         output.push_str(&format!("Warnings ({}):\n", result.warnings.len()));
         for w in &result.warnings {
-            output.push_str(&format!("  [{}] {}\n", w.policy, w.message));
+            output.push_str(&output::tree_bullet("⚠", &format!("[{}] {}", w.policy, w.message)));
             output.push_str(&format!("    Suggestion: {}\n", w.suggestion));
         }
     }

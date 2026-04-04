@@ -3,6 +3,7 @@
 //! Classifies workloads, tracks resource usage patterns, detects waste,
 //! and provides right-sizing recommendations.
 
+use crate::output;
 use crate::runtime::RuntimeKind;
 use crate::spec::Workload;
 use serde::{Deserialize, Serialize};
@@ -489,12 +490,11 @@ impl Profiler {
 pub fn format_profile_report(profile: &WorkloadProfile) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("Workload: {}\n", profile.name));
-    output.push_str(&format!("Type: {}\n", profile.classification));
-    output.push_str(&format!(
-        "Optimization Score: {:.0}/100\n\n",
-        profile.optimization_score
-    ));
+    output.push_str(&output::property_section(&[
+        ("Workload", profile.name.clone()),
+        ("Type", format!("{}", profile.classification)),
+        ("Optimization Score", format!("{:.0}/100", profile.optimization_score)),
+    ]));
 
     output.push_str("Resource Analysis:\n");
     output.push_str(&format!(
@@ -1564,7 +1564,7 @@ mod tests {
         let spec = create_test_workload();
         let profile = profiler.profile(&spec, None);
         let report = format_profile_report(&profile);
-        assert!(report.contains("Optimization Score:"));
+        assert!(report.contains("Optimization Score"));
         assert!(report.contains("/100"));
     }
 

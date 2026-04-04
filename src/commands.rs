@@ -3,6 +3,7 @@
 use anyhow::Result;
 use orchestr8::{
     engine::Engine,
+    output,
     runtime::RuntimeKind,
     spec::Workload,
     state::StateStore,
@@ -42,38 +43,60 @@ async fn load_state_and_runtime(
 }
 
 pub(crate) async fn validate_command(spec_path: &PathBuf) -> Result<()> {
-    println!("🔍 Validating workload specification...");
+    let sp = output::spinner("Validating workload specification...");
 
-    let workload = Workload::from_file(spec_path)?;
-    println!("✅ Workload '{}' is valid", workload.metadata.name);
-    println!("\n📋 Workload Details:");
-    println!("  Name: {}", workload.metadata.name);
-    println!("  Owner: {}", workload.metadata.owner);
-    println!("  Project: {}", workload.metadata.project);
-    println!("  CPU: {}", workload.requirements.cpu);
-    println!("  Memory: {}", workload.requirements.memory);
-    println!("  Storage: {}", workload.requirements.storage);
-    println!("  Preferred Runtime: {:?}", workload.runtime.preferred);
+    let workload = match Workload::from_file(spec_path) {
+        Ok(w) => {
+            output::spinner_success(&sp, "Workload specification is valid");
+            w
+        }
+        Err(e) => {
+            output::spinner_fail(&sp, "Validation failed");
+            return Err(e);
+        }
+    };
+
+    output::success(&format!("Workload '{}' is valid", workload.metadata.name));
+
+    println!(
+        "{}",
+        output::property_table(&[
+            ("Name", workload.metadata.name.clone()),
+            ("Owner", workload.metadata.owner.clone()),
+            ("Project", workload.metadata.project.clone()),
+            ("CPU", workload.requirements.cpu.clone()),
+            ("Memory", workload.requirements.memory.clone()),
+            ("Storage", workload.requirements.storage.clone()),
+            (
+                "Preferred Runtime",
+                format!("{:?}", workload.runtime.preferred),
+            ),
+        ])
+    );
 
     Ok(())
 }
 
 pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
-    println!("🔨 Building workload...");
-
     let workload = Workload::from_file(spec_path)?;
     let engine = Engine::new();
     let runtime_kind = engine.decide(&workload)?;
 
-    println!("📦 Selected runtime: {}", runtime_kind);
+    output::info(&format!(
+        "Selected runtime: {}",
+        output::runtime_display(&runtime_kind)
+    ));
 
-    // Build based on runtime
+    // Create runtime before spinner so failure doesn't leave orphan spinner
     let rt = orchestr8::runtime::create_runtime(&runtime_kind).await?;
+
+    let sp = output::spinner("Building workload...");
     let result = rt.build(&workload).await;
 
     match result {
         Ok(image) => {
-            println!("✅ Built image: {}", image.full_name());
+            output::spinner_success(&sp, "Build completed");
+            output::success(&format!("Built image: {}", image.full_name()));
             orchestr8::metrics::record_build(&runtime_kind.to_string(), true);
             emit_event(
                 orchestr8::events::EventSeverity::Info,
@@ -86,6 +109,8 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
             Ok(())
         }
         Err(e) => {
+            output::spinner_fail(&sp, "Build failed");
+            output::error(&format!("Build failed: {}", e));
             orchestr8::metrics::record_build(&runtime_kind.to_string(), false);
             emit_event(
                 orchestr8::events::EventSeverity::Error,
@@ -101,17 +126,18 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
 }
 
 pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> Result<()> {
-    println!("🚀 Running workload...");
     let workload = Workload::from_file(spec_path)?;
-    deploy_single_workload(&workload, spec_path, runtime_override.as_deref()).await
+    deploy_single_workload(&workload, spec_path, runtime_override.as_deref(), None).await
 }
 
 /// Deploy a single workload: decide runtime, build, run, persist state, record metrics.
 /// Extracted from run_command so deploy_command can reuse it per-workload.
+/// When `event_batch` is provided, events accumulate in memory instead of hitting disk.
 async fn deploy_single_workload(
     workload: &Workload,
     spec_path: &Path,
     runtime_override: Option<&str>,
+    event_batch: Option<&mut EventBatch>,
 ) -> Result<()> {
     let engine = Engine::new();
 
@@ -122,15 +148,25 @@ async fn deploy_single_workload(
         engine.decide(workload)?
     };
 
-    println!("📦 Selected runtime: {}", runtime_kind);
+    output::info(&format!(
+        "Selected runtime: {}",
+        output::runtime_display(&runtime_kind)
+    ));
 
     // Build and run based on runtime
     let rt = orchestr8::runtime::create_runtime(&runtime_kind).await?;
+    let sp = output::spinner("Building and deploying workload...");
     let image = rt.build(workload).await?;
-    println!("✅ Image ready: {}", image.full_name());
-    let instance = rt.run(&image, workload).await?;
 
-    println!("✅ Started instance: {} ({})", instance.name, instance.id);
+    sp.set_message(format!("Image ready: {}. Starting instance...", image.full_name()));
+
+    let instance = rt.run(&image, workload).await?;
+    output::spinner_success(&sp, "Deployment completed");
+
+    output::success(&format!(
+        "Started instance: {} ({})",
+        instance.name, instance.id
+    ));
 
     // Capture instance name before move
     let instance_name = instance.name.clone();
@@ -157,25 +193,27 @@ async fn deploy_single_workload(
     // Record metrics
     orchestr8::metrics::record_deployment(&runtime_kind.to_string(), true);
 
-    emit_event(
-        orchestr8::events::EventSeverity::Info,
-        orchestr8::events::EventCategory::Deployment,
-        "cli",
-        Some(&workload.metadata.name),
-        "Workload deployed",
-        &format!("Deployed on {} (instance: {})", runtime_kind, instance_name),
-    );
+    // Emit event — use batch if provided, otherwise single disk round-trip
+    let sev = orchestr8::events::EventSeverity::Info;
+    let cat = orchestr8::events::EventCategory::Deployment;
+    let msg = format!("Deployed on {} (instance: {})", runtime_kind, instance_name);
+    if let Some(batch) = event_batch {
+        batch.emit(sev, cat, "cli", Some(&workload.metadata.name), "Workload deployed", &msg);
+    } else {
+        emit_event(sev, cat, "cli", Some(&workload.metadata.name), "Workload deployed", &msg);
+    }
 
     Ok(())
 }
 
 pub(crate) async fn stop_command(name: &str) -> Result<()> {
-    println!("⏸️  Stopping workload '{}'...", name);
-
     let (_state, ws, rt) = load_state_and_runtime(name).await?;
+
+    let sp = output::spinner(&format!("Stopping workload '{}'...", name));
     rt.stop(&ws.instance).await?;
 
-    println!("✅ Stopped instance: {}", name);
+    output::spinner_success(&sp, &format!("Stopped '{}'", name));
+    output::success(&format!("Stopped instance: {}", name));
 
     emit_event(
         orchestr8::events::EventSeverity::Info,
@@ -191,35 +229,63 @@ pub(crate) async fn stop_command(name: &str) -> Result<()> {
 
 pub(crate) async fn status_command(name: &str) -> Result<()> {
     let (_state, ws, rt) = load_state_and_runtime(name).await?;
+
+    let sp = output::spinner(&format!("Fetching status for '{}'...", name));
     let status = rt.status(&ws.instance).await?;
 
-    println!("📊 Status for '{}':", name);
-    println!("  Runtime: {}", ws.runtime);
-    println!("  State: {}", status.state);
-    println!("  Ready: {}", status.ready);
+    output::spinner_success(&sp, "Status retrieved");
+
+    output::section_with_icon("📊", &format!("Status for '{}'", name));
+
+    let ready_str = if status.ready {
+        "● Yes".to_string()
+    } else {
+        "○ No".to_string()
+    };
+
+    let mut pairs: Vec<(&str, String)> = vec![
+        ("Runtime", output::runtime_display(&ws.runtime)),
+        ("State", format!("{}", status.state)),
+        ("Ready", ready_str),
+    ];
+
     if let Some(msg) = status.message {
-        println!("  Message: {}", msg);
+        pairs.push(("Message", msg));
     }
     if status.restart_count > 0 {
-        println!("  Restarts: {}", status.restart_count);
+        pairs.push(("Restarts", format!("{}", status.restart_count)));
     }
+
+    println!("{}", output::property_table(&pairs));
 
     Ok(())
 }
 
 pub(crate) async fn logs_command(name: &str, follow: bool) -> Result<()> {
     let (_state, ws, rt) = load_state_and_runtime(name).await?;
-    let logs = rt.logs(&ws.instance, follow).await?;
 
-    println!("{}", logs);
+    let sp = output::spinner(&format!("Fetching logs for '{}'...", name));
+    let logs = rt.logs(&ws.instance, follow).await?;
+    output::spinner_success(&sp, &format!("Logs for '{}' ({})", name, ws.runtime));
+
+    // Color-code each log line by level
+    for line in logs.lines() {
+        println!("{}", output::colorize_log_line(line));
+    }
 
     Ok(())
 }
 
 pub(crate) async fn delete_command(name: &str) -> Result<()> {
-    println!("🗑️  Deleting workload '{}'...", name);
+    // Confirm destructive action
+    if !output::confirm(&format!("Delete workload '{}'?", name)) {
+        output::muted("Cancelled.");
+        return Ok(());
+    }
 
     let (mut state, ws, rt) = load_state_and_runtime(name).await?;
+
+    let sp = output::spinner(&format!("Deleting workload '{}'...", name));
     rt.delete(&ws.instance).await?;
 
     // Remove from state
@@ -238,7 +304,8 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
         &format!("Deleted instance from {}", ws.runtime),
     );
 
-    println!("✅ Deleted instance: {}", name);
+    output::spinner_success(&sp, &format!("Deleted '{}'", name));
+    output::success(&format!("Deleted instance: {}", name));
 
     Ok(())
 }
@@ -248,19 +315,24 @@ pub(crate) async fn list_command() -> Result<()> {
     let workloads = state.list();
 
     if workloads.is_empty() {
-        println!("No workloads running");
+        output::muted("No workloads running");
         return Ok(());
     }
 
-    println!("📋 Running workloads:");
-    for w in workloads {
-        println!(
-            "  {} ({}) - {}",
-            w.name,
-            w.runtime,
-            w.instance.id.chars().take(12).collect::<String>()
-        );
-    }
+    output::section_with_icon("📋", "Running Workloads");
+
+    let rows: Vec<Vec<String>> = workloads
+        .iter()
+        .map(|w| {
+            vec![
+                w.name.clone(),
+                output::runtime_display(&w.runtime),
+                w.instance.id.chars().take(12).collect::<String>(),
+            ]
+        })
+        .collect();
+
+    println!("{}", output::table(&["Name", "Runtime", "Instance ID"], rows));
 
     Ok(())
 }
@@ -274,8 +346,6 @@ pub(crate) async fn migrate_command(
 ) -> Result<()> {
     use orchestr8::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
     use std::time::Duration;
-
-    println!("🔄 Migrating workload '{}'...", name);
 
     // Load current state
     let (state, _) = load_workload_state(name)?;
@@ -297,11 +367,17 @@ pub(crate) async fn migrate_command(
         }
     }
 
-    println!("📊 Migration Plan:");
-    println!("  Workload: {}", name);
-    println!("  Source: {}", source_runtime);
-    println!("  Target: {}", target_runtime);
-    println!("  Strategy: {:?}", strategy);
+    output::section_with_icon("🔄", &format!("Migrating workload '{}'", name));
+
+    println!(
+        "{}",
+        output::property_table(&[
+            ("Workload", name.to_string()),
+            ("Source", output::runtime_display(&source_runtime)),
+            ("Target", output::runtime_display(&target_runtime)),
+            ("Strategy", format!("{:?}", strategy)),
+        ])
+    );
 
     // Create migration plan
     let plan = MigrationPlan {
@@ -318,6 +394,7 @@ pub(crate) async fn migrate_command(
     };
 
     // Execute migration
+    let sp = output::spinner("Executing migration...");
     let migration_start = std::time::Instant::now();
     let engine = MigrationEngine::new(StateStore::default_path());
     let result = engine.migrate(plan).await?;
@@ -334,37 +411,66 @@ pub(crate) async fn migrate_command(
     );
 
     if result.success {
-        println!("✅ Migration completed successfully!");
-        if let Some(instance) = result.target_instance {
-            println!("  New instance: {} ({})", instance.name, instance.id);
-            println!("  Runtime: {}", target_runtime);
+        output::spinner_success(&sp, "Migration completed");
+
+        let duration_str = if migration_duration < 1.0 {
+            format!("{:.0}ms", migration_duration * 1000.0)
+        } else {
+            format!("{:.1}s", migration_duration)
+        };
+
+        let mut summary_items: Vec<(&str, String)> = vec![
+            ("Workload", name.to_string()),
+            ("Source", format!("{}", source_runtime)),
+            ("Target", format!("{}", target_runtime)),
+            ("Strategy", strategy_str.to_string()),
+            ("Duration", duration_str),
+        ];
+        if let Some(ref instance) = result.target_instance {
+            summary_items.push(("Instance", format!("{} ({})", instance.name, instance.id)));
         }
+        output::summary_success("Migration Successful", &summary_items);
+
         emit_event(
             orchestr8::events::EventSeverity::Info,
             orchestr8::events::EventCategory::Migration,
             "cli",
             Some(name),
             "Migration completed",
-            &format!("Migrated from {} to {} using {}", source_runtime, target_runtime, strategy_str),
+            &format!(
+                "Migrated from {} to {} using {}",
+                source_runtime, target_runtime, strategy_str
+            ),
         );
     } else {
-        println!("❌ Migration failed!");
-        if let Some(error) = result.error {
-            println!("  Error: {}", error);
+        output::spinner_fail(&sp, "Migration failed");
+
+        let mut error_items: Vec<(&str, String)> = vec![
+            ("Workload", name.to_string()),
+            ("Source", format!("{}", source_runtime)),
+            ("Target", format!("{}", target_runtime)),
+        ];
+        if let Some(ref error) = result.error {
+            error_items.push(("Error", error.clone()));
         }
         if result.rollback_performed {
-            println!("  Rollback: Performed successfully");
-            if let Some(instance) = result.source_instance {
-                println!("  Restored instance: {} ({})", instance.name, instance.id);
+            error_items.push(("Rollback", "Performed successfully".to_string()));
+            if let Some(ref instance) = result.source_instance {
+                error_items.push(("Restored", format!("{} ({})", instance.name, instance.id)));
             }
         }
+        output::summary_error("Migration Failed", &error_items);
+
         emit_event(
             orchestr8::events::EventSeverity::Error,
             orchestr8::events::EventCategory::Migration,
             "cli",
             Some(name),
             "Migration failed",
-            &format!("Failed migrating from {} to {}", source_runtime, target_runtime),
+            &format!(
+                "Failed migrating from {} to {}",
+                source_runtime, target_runtime
+            ),
         );
         anyhow::bail!("Migration failed");
     }
@@ -456,8 +562,8 @@ pub(crate) fn completions_command(shell_str: &str) -> Result<()> {
 }
 
 pub(crate) async fn metrics_command() {
-    println!("# Orchestr8 Metrics");
-    println!("# Updated: {}", orchestr8::resources::now_rfc3339());
+    output::section_with_icon("📊", "Orchestr8 Metrics");
+    output::muted(&format!("Updated: {}", orchestr8::resources::now_rfc3339()));
     println!();
 
     // Update workload state metrics from state store
@@ -480,17 +586,21 @@ pub(crate) async fn metrics_command() {
     print!("{}", orchestr8::metrics::gather());
 }
 
-pub(crate) async fn backup_command(name: Option<String>, description: Option<String>) -> Result<()> {
+pub(crate) async fn backup_command(
+    name: Option<String>,
+    description: Option<String>,
+) -> Result<()> {
     use orchestr8::backup::BackupManager;
 
-    println!("💾 Creating backup...");
+    let sp = output::spinner("Creating backup...");
 
     // Load current state
     let state = StateStore::load(&StateStore::default_path())?;
     let workload_count = state.list().len();
 
     if workload_count == 0 {
-        println!("⚠️  No workloads to backup");
+        output::spinner_fail(&sp, "No workloads to backup");
+        output::warning("No workloads to backup");
         return Ok(());
     }
 
@@ -498,10 +608,11 @@ pub(crate) async fn backup_command(name: Option<String>, description: Option<Str
     let manager = BackupManager::new(BackupManager::default_dir());
     let backup_path = manager.create_backup(&state, name.clone(), description.clone())?;
 
-    println!("✅ Backup created: {}", backup_path.display());
-    println!("   Workloads: {}", workload_count);
+    output::spinner_success(&sp, "Backup created");
+    output::success(&format!("Backup created: {}", backup_path.display()));
+    output::kv_tree("Workloads", &workload_count.to_string(), description.is_none());
     if let Some(desc) = description {
-        println!("   Description: {}", desc);
+        output::kv_tree("Description", &desc, true);
     }
 
     Ok(())
@@ -510,34 +621,49 @@ pub(crate) async fn backup_command(name: Option<String>, description: Option<Str
 pub(crate) async fn restore_command(backup_path: &Path, merge: bool) -> Result<()> {
     use orchestr8::backup::Backup;
 
-    println!("📦 Restoring from backup...");
+    let sp = output::spinner("Loading backup...");
 
     // Load backup
     let backup = Backup::load(backup_path)?;
 
-    println!("   Backup created: {}", backup.metadata.created_at);
-    println!("   Workloads: {}", backup.metadata.workload_count);
-    println!("   Version: {}", backup.metadata.orchestr8_version);
+    output::spinner_success(&sp, "Backup loaded");
 
-    if let Some(desc) = &backup.metadata.description {
-        println!("   Description: {}", desc);
-    }
+    output::section_with_icon("📦", "Backup Details");
+    println!(
+        "{}",
+        output::property_table(&[
+            ("Created", backup.metadata.created_at.clone()),
+            ("Workloads", backup.metadata.workload_count.to_string()),
+            ("Version", backup.metadata.orchestr8_version.clone()),
+            (
+                "Description",
+                backup
+                    .metadata
+                    .description
+                    .clone()
+                    .unwrap_or_else(|| "-".to_string()),
+            ),
+        ])
+    );
 
     // Restore or merge
     let state_path = StateStore::default_path();
 
     if merge {
-        println!("\n🔀 Merging backup with existing state...");
+        let sp = output::spinner("Merging backup with existing state...");
         backup.merge(&state_path)?;
-        println!("✅ Backup merged successfully");
+        output::spinner_success(&sp, "Merge completed");
+        output::success("Backup merged successfully");
     } else {
-        println!("\n⚠️  This will replace your current state!");
-        println!("   Press Enter to continue, or Ctrl+C to cancel...");
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
+        if !output::confirm("This will replace your current state. Continue?") {
+            output::muted("Cancelled.");
+            return Ok(());
+        }
 
+        let sp = output::spinner("Restoring backup...");
         backup.restore(&state_path)?;
-        println!("✅ Backup restored successfully");
+        output::spinner_success(&sp, "Restore completed");
+        output::success("Backup restored successfully");
     }
 
     Ok(())
@@ -550,34 +676,44 @@ pub(crate) async fn list_backups_command() -> Result<()> {
     let backups = manager.list_backups()?;
 
     if backups.is_empty() {
-        println!("No backups found");
-        println!("Backup directory: {}", BackupManager::default_dir().display());
+        output::muted("No backups found");
+        output::detail(&format!(
+            "Backup directory: {}",
+            BackupManager::default_dir().display()
+        ));
         return Ok(());
     }
 
-    println!("📋 Available backups:\n");
+    output::section_with_icon("📋", "Available Backups");
 
     for backup_path in backups {
         match manager.get_backup_info(&backup_path) {
             Ok(info) => {
-                let fname = backup_path.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| backup_path.display().to_string());
-                println!("  📄 {}", fname);
-                println!("     Created: {}", info.created_at);
-                println!("     Workloads: {}", info.workload_count);
-                println!("     Version: {}", info.orchestr8_version);
-                if let Some(desc) = info.description {
-                    println!("     Description: {}", desc);
-                }
+                let fname = backup_path
+                    .file_name()
+                    .map(|f| f.to_string_lossy().to_string())
+                    .unwrap_or_else(|| backup_path.display().to_string());
+
                 println!();
+                output::kv_tree("File", &fname, false);
+                output::kv_tree("Created", &info.created_at, false);
+                output::kv_tree("Workloads", &info.workload_count.to_string(), false);
+                output::kv_tree("Version", &info.orchestr8_version, info.description.is_none());
+                if let Some(desc) = info.description {
+                    output::kv_tree("Description", &desc, true);
+                }
             }
             Err(e) => {
-                println!("  ⚠️  {} (error: {})", backup_path.display(), e);
-                println!();
+                output::warning(&format!("{} (error: {})", backup_path.display(), e));
             }
         }
     }
 
-    println!("Backup directory: {}", BackupManager::default_dir().display());
+    println!();
+    output::muted(&format!(
+        "Backup directory: {}",
+        BackupManager::default_dir().display()
+    ));
 
     Ok(())
 }
@@ -585,7 +721,7 @@ pub(crate) async fn list_backups_command() -> Result<()> {
 pub(crate) async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<()> {
     use orchestr8::cost::{estimate_cost, CloudProvider, CostComparison};
 
-    println!("💰 Estimating costs...\n");
+    output::section_with_icon("💰", "Cost Estimation");
 
     let workload = Workload::from_file(spec_path)?;
 
@@ -599,28 +735,42 @@ pub(crate) async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<
 
         let estimate = estimate_cost(&workload, cloud_provider)?;
 
-        println!("Workload: {}", workload.metadata.name);
-        println!("Resources: {} CPU | {} RAM | {} Storage",
-            workload.requirements.cpu,
-            workload.requirements.memory,
-            workload.requirements.storage);
-        println!();
+        println!(
+            "{}",
+            output::property_table(&[
+                ("Workload", workload.metadata.name.clone()),
+                (
+                    "Resources",
+                    format!(
+                        "{} CPU | {} RAM | {} Storage",
+                        workload.requirements.cpu,
+                        workload.requirements.memory,
+                        workload.requirements.storage
+                    ),
+                ),
+            ])
+        );
         println!("{}", estimate.display());
     }
 
-    println!("\n💡 Note: Estimates are based on baseline pricing and may vary based on:");
-    println!("   - Region selection");
-    println!("   - Reserved vs. on-demand instances");
-    println!("   - Volume discounts");
-    println!("   - Additional services (load balancers, networking, etc.)");
+    println!();
+    output::boxed(
+        "Note",
+        "Estimates are based on baseline pricing and may vary based on:\n\
+         - Region selection\n\
+         - Reserved vs. on-demand instances\n\
+         - Volume discounts\n\
+         - Additional services (load balancers, networking, etc.)",
+    );
 
     Ok(())
 }
 
 pub(crate) async fn serve_command(host: String, port: u16) -> Result<()> {
-    use orchestr8::api::{ApiConfig, start_server};
+    use orchestr8::api::{start_server, ApiConfig};
 
-    println!("🚀 Starting Orchestr8 API Server\n");
+    output::logo();
+    output::banner("ORCHESTR8 API SERVER", "Universal Runtime Control Plane");
 
     let config = ApiConfig {
         host,
@@ -628,62 +778,63 @@ pub(crate) async fn serve_command(host: String, port: u16) -> Result<()> {
         state_path: StateStore::default_path(),
     };
 
-    println!("📊 Dashboard URL: http://{}:{}", config.host, config.port);
-    println!("🔌 API Endpoints:");
+    output::kv("Dashboard URL", &format!("http://{}:{}", config.host, config.port));
+
+    output::endpoint_category("Workloads");
+    output::endpoint("GET", "/health");
+    output::endpoint("GET", "/api/workloads");
+    output::endpoint("POST", "/api/workloads");
+    output::endpoint("GET", "/api/workloads/:name");
+    output::endpoint("DELETE", "/api/workloads/:name");
+    output::endpoint("GET", "/api/workloads/:name/logs");
+    output::endpoint("POST", "/api/workloads/:name/start");
+    output::endpoint("POST", "/api/workloads/:name/stop");
+
+    output::endpoint_category("Cost & Backups");
+    output::endpoint("POST", "/api/cost");
+    output::endpoint("GET", "/api/backups");
+    output::endpoint("POST", "/api/backups");
+
+    output::endpoint_category("AI Intelligence");
+    output::endpoint("POST", "/api/ai/recommend");
+    output::endpoint("GET", "/api/ai/profile/:name");
+    output::endpoint("GET", "/api/ai/analyze/:name");
+    output::endpoint("GET", "/api/affinity/:class");
+
+    output::endpoint_category("Operations");
+    output::endpoint("GET", "/api/drift/:name");
+    output::endpoint("POST", "/api/policy/check");
+    output::endpoint("GET", "/api/dependencies");
+    output::endpoint("POST", "/api/dependencies");
+    output::endpoint("GET", "/api/audit");
+    output::endpoint("GET", "/api/sla/:workload");
+
+    output::endpoint_category("Templates");
+    output::endpoint("GET", "/api/templates");
+    output::endpoint("POST", "/api/templates/:name");
+
+    output::endpoint_category("Advanced");
+    output::endpoint("GET", "/api/secrets");
+    output::endpoint("GET", "/api/events");
+    output::endpoint("GET", "/api/events/summary");
+    output::endpoint("GET", "/api/environments");
+    output::endpoint("GET", "/api/scheduler/utilization");
+    output::endpoint("GET", "/api/scheduler/optimize");
+    output::endpoint("GET", "/api/orchestrator/status");
+    output::endpoint("GET", "/api/orchestrator/summary");
+
     println!();
-    println!("   Workloads:");
-    println!("     GET    /health");
-    println!("     GET    /api/workloads");
-    println!("     POST   /api/workloads");
-    println!("     GET    /api/workloads/:name");
-    println!("     DELETE /api/workloads/:name");
-    println!("     GET    /api/workloads/:name/logs");
-    println!("     POST   /api/workloads/:name/start");
-    println!("     POST   /api/workloads/:name/stop");
+    output::muted("Press Ctrl+C to stop the server");
     println!();
-    println!("   Cost & Backups:");
-    println!("     POST   /api/cost");
-    println!("     GET    /api/backups");
-    println!("     POST   /api/backups");
-    println!();
-    println!("   AI Intelligence:");
-    println!("     POST   /api/ai/recommend");
-    println!("     GET    /api/ai/profile/:name");
-    println!("     GET    /api/ai/analyze/:name");
-    println!("     GET    /api/affinity/:class");
-    println!();
-    println!("   Operations:");
-    println!("     GET    /api/drift/:name");
-    println!("     POST   /api/policy/check");
-    println!("     GET    /api/dependencies");
-    println!("     POST   /api/dependencies");
-    println!("     GET    /api/audit");
-    println!("     GET    /api/sla/:workload");
-    println!();
-    println!("   Templates:");
-    println!("     GET    /api/templates");
-    println!("     POST   /api/templates/:name");
-    println!();
-    println!("   Advanced:");
-    println!("     GET    /api/secrets");
-    println!("     GET    /api/events");
-    println!("     GET    /api/events/summary");
-    println!("     GET    /api/environments");
-    println!("     GET    /api/scheduler/utilization");
-    println!("     GET    /api/scheduler/optimize");
-    println!("     GET    /api/orchestrator/status");
-    println!("     GET    /api/orchestrator/summary");
-    println!();
-    println!("Press Ctrl+C to stop the server\n");
 
     start_server(config).await
 }
 
-pub(crate) async fn recommend_command(spec_path: &PathBuf, _runtime_override: Option<String>) -> Result<()> {
+pub(crate) async fn recommend_command(spec_path: &PathBuf) -> Result<()> {
     use orchestr8::ai::scoring::{format_scoring_report, ScoringEngine};
     use orchestr8::config::Config;
 
-    println!("🤖 AI-Powered Runtime Recommendation\n");
+    output::section_with_icon("🤖", "AI-Powered Runtime Recommendation");
 
     let config = Config::load();
     let workload = Workload::from_file(spec_path)?;
@@ -699,7 +850,7 @@ pub(crate) async fn profile_command(spec_path: &PathBuf, name: Option<String>) -
     use orchestr8::ai::profiler::{format_profile_report, Profiler};
     use orchestr8::config::Config;
 
-    println!("🔍 Workload Profiler\n");
+    output::section_with_icon("🔍", "Workload Profiler");
 
     let config = Config::load();
     let profiler = Profiler::new(config.profiler.waste_threshold);
@@ -725,15 +876,18 @@ pub(crate) async fn analyze_logs_command(name: &str) -> Result<()> {
     use orchestr8::ai::analyzer::{format_analysis_report, LogAnalyzer};
     use orchestr8::config::Config;
 
-    println!("📊 Log Analysis for '{}'\n", name);
+    output::section_with_icon("📊", &format!("Log Analysis for '{}'", name));
 
     let config = Config::load();
     let analyzer = LogAnalyzer::new(config.analyzer);
 
+    let sp = output::spinner("Analyzing logs...");
     let (_state, ws, rt) = load_state_and_runtime(name).await?;
     let logs = rt.logs(&ws.instance, false).await?;
 
     let analysis = analyzer.analyze(&logs);
+    output::spinner_success(&sp, "Analysis complete");
+
     print!("{}", format_analysis_report(&analysis));
 
     Ok(())
@@ -743,7 +897,7 @@ pub(crate) async fn migration_advice_command(name: &str, target: &str) -> Result
     use orchestr8::ai::migration::{format_migration_advice, MigrationAdvisor};
     use orchestr8::config::Config;
 
-    println!("🔄 Migration Advisor for '{}'\n", name);
+    output::section_with_icon("🔄", &format!("Migration Advisor for '{}'", name));
 
     let config = Config::load();
     let advisor = MigrationAdvisor::new(config.migration);
@@ -764,7 +918,7 @@ pub(crate) async fn scaling_advice_command() -> Result<()> {
     use orchestr8::ai::scaling::{format_scaling_report, ScalingEngine, TimeSeries};
     use orchestr8::config::Config;
 
-    println!("📈 Predictive Scaling Advisor\n");
+    output::section_with_icon("📈", "Predictive Scaling Advisor");
 
     let config = Config::load();
     let engine = ScalingEngine::new(config.scaling);
@@ -789,7 +943,8 @@ pub(crate) async fn scaling_advice_command() -> Result<()> {
     let rec = engine.recommend(&cpu_series, &mem_series, 3, 1, 10, 0.05);
     print!("{}", format_scaling_report(&rec));
 
-    println!("\n💡 Note: Using simulated metrics. Connect to Prometheus for real data.");
+    println!();
+    output::info("Using simulated metrics. Connect to Prometheus for real data.");
 
     Ok(())
 }
@@ -801,15 +956,18 @@ pub(crate) async fn config_command(show: bool, init: bool) -> Result<()> {
         let config = Config::default();
         let path = Config::default_path();
         config.save_to(&path)?;
-        println!("✅ Configuration initialized: {}", path.display());
-        println!("\nEdit this file to customize Orchestr8 behavior.");
+        output::success(&format!("Configuration initialized: {}", path.display()));
+        output::detail("Edit this file to customize Orchestr8 behavior.");
         return Ok(());
     }
 
     if show {
         let config = Config::load();
         let yaml = serde_yaml::to_string(&config)?;
-        println!("📋 Current Configuration ({})\n", Config::default_path().display());
+        output::section_with_icon(
+            "📋",
+            &format!("Configuration ({})", Config::default_path().display()),
+        );
         println!("{}", yaml);
         return Ok(());
     }
@@ -819,39 +977,81 @@ pub(crate) async fn config_command(show: bool, init: bool) -> Result<()> {
     let path = Config::default_path();
     let exists = path.exists();
 
-    println!("⚙️  Orchestr8 Configuration\n");
-    println!("Config file: {}", path.display());
-    println!("Status: {}\n", if exists { "loaded" } else { "using defaults" });
+    output::section_with_icon("⚙️", "Orchestr8 Configuration");
 
-    println!("Engine:");
-    println!("  Scoring enabled: {}", config.engine.enable_scoring);
-    println!("  Metal3 CPU threshold: {:.0} cores", config.engine.metal3_cpu_threshold);
-    println!("  Metal3 memory threshold: {:.0}Gi", config.engine.metal3_memory_threshold_gi);
-    println!("  Weights: cost={:.0}% perf={:.0}% rel={:.0}% avail={:.0}%",
-        config.engine.scoring_weights.cost * 100.0,
-        config.engine.scoring_weights.performance * 100.0,
-        config.engine.scoring_weights.reliability * 100.0,
-        config.engine.scoring_weights.availability * 100.0,
+    println!(
+        "{}",
+        output::property_table(&[
+            ("Config file", path.display().to_string()),
+            (
+                "Status",
+                if exists {
+                    "loaded".to_string()
+                } else {
+                    "using defaults".to_string()
+                },
+            ),
+        ])
     );
 
-    println!("\nMigration:");
-    println!("  Adaptive timing: {}", config.migration.enable_adaptive_timing);
-    println!("  Canary error threshold: {:.1}%", config.migration.canary_error_threshold * 100.0);
-    println!("  Max retries: {}", config.migration.max_validation_retries);
+    output::section("Engine");
+    output::kv("Scoring enabled", &config.engine.enable_scoring.to_string());
+    output::kv(
+        "Metal3 CPU threshold",
+        &format!("{:.0} cores", config.engine.metal3_cpu_threshold),
+    );
+    output::kv(
+        "Metal3 memory threshold",
+        &format!("{:.0}Gi", config.engine.metal3_memory_threshold_gi),
+    );
+    output::kv(
+        "Weights",
+        &format!(
+            "cost={:.0}% perf={:.0}% rel={:.0}% avail={:.0}%",
+            config.engine.scoring_weights.cost * 100.0,
+            config.engine.scoring_weights.performance * 100.0,
+            config.engine.scoring_weights.reliability * 100.0,
+            config.engine.scoring_weights.availability * 100.0,
+        ),
+    );
 
-    println!("\nScaling:");
-    println!("  Predictive: {}", config.scaling.enable_predictive);
-    println!("  Scale-up threshold: {:.0}%", config.scaling.scale_up_threshold * 100.0);
-    println!("  Scale-down threshold: {:.0}%", config.scaling.scale_down_threshold * 100.0);
-    println!("  Cost-aware: {}", config.scaling.cost_aware);
+    output::section("Migration");
+    output::kv(
+        "Adaptive timing",
+        &config.migration.enable_adaptive_timing.to_string(),
+    );
+    output::kv(
+        "Canary error threshold",
+        &format!("{:.1}%", config.migration.canary_error_threshold * 100.0),
+    );
+    output::kv(
+        "Max retries",
+        &config.migration.max_validation_retries.to_string(),
+    );
 
-    println!("\nCost:");
-    println!("  Include GPU: {}", config.cost.include_gpu);
-    println!("  Include network: {}", config.cost.include_network);
-    println!("  Include load balancer: {}", config.cost.include_load_balancer);
+    output::section("Scaling");
+    output::kv("Predictive", &config.scaling.enable_predictive.to_string());
+    output::kv(
+        "Scale-up threshold",
+        &format!("{:.0}%", config.scaling.scale_up_threshold * 100.0),
+    );
+    output::kv(
+        "Scale-down threshold",
+        &format!("{:.0}%", config.scaling.scale_down_threshold * 100.0),
+    );
+    output::kv("Cost-aware", &config.scaling.cost_aware.to_string());
+
+    output::section("Cost");
+    output::kv("Include GPU", &config.cost.include_gpu.to_string());
+    output::kv("Include network", &config.cost.include_network.to_string());
+    output::kv(
+        "Include load balancer",
+        &config.cost.include_load_balancer.to_string(),
+    );
 
     if !exists {
-        println!("\n💡 Run 'orchestr8 config --init' to create a config file");
+        println!();
+        output::info("Run 'orchestr8 config --init' to create a config file");
     }
 
     Ok(())
@@ -860,7 +1060,7 @@ pub(crate) async fn config_command(show: bool, init: bool) -> Result<()> {
 pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
     use orchestr8::drift::{format_drift_report, DriftDetector};
 
-    println!("🔍 Checking drift for '{}'\n", name);
+    let sp = output::spinner(&format!("Checking drift for '{}'...", name));
 
     let (state, _) = load_workload_state(name)?;
     let ws = state.get(name).unwrap();
@@ -869,15 +1069,26 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
     let detector = DriftDetector::new();
     let report = detector.detect(&spec, ws);
 
+    output::spinner_success(&sp, "Drift check complete");
+
     print!("{}", format_drift_report(&report));
 
     if reconcile && report.has_drift {
-        println!("\n🔧 Reconciliation Actions:");
+        output::section_with_icon("🔧", "Reconciliation Actions");
         for action in &report.reconciliation_plan {
-            println!("  - [{}] {} {}", action.action_type, action.description,
-                if action.requires_restart { "(requires restart)" } else { "" });
+            let restart_note = if action.requires_restart {
+                " (requires restart)"
+            } else {
+                ""
+            };
+            output::kv_tree(
+                &format!("{}", action.action_type),
+                &format!("{}{}", action.description, restart_note),
+                false,
+            );
         }
-        println!("\n💡 To apply these changes, re-run the workload with: orchestr8 run");
+        println!();
+        output::info("To apply these changes, re-run the workload with: orchestr8 run");
     }
 
     Ok(())
@@ -886,7 +1097,7 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
 pub(crate) async fn policy_check_command(spec_path: &PathBuf, policy_name: &str) -> Result<()> {
     use orchestr8::policy::{format_policy_report, PolicyEngine};
 
-    println!("📋 Policy Check\n");
+    output::section_with_icon("📋", "Policy Check");
 
     let workload = Workload::from_file(spec_path)?;
 
@@ -899,7 +1110,10 @@ pub(crate) async fn policy_check_command(spec_path: &PathBuf, policy_name: &str)
             if path.exists() {
                 PolicyEngine::load(path)?
             } else {
-                anyhow::bail!("Unknown policy set: {}. Use 'production', 'development', or a file path.", policy_name);
+                anyhow::bail!(
+                    "Unknown policy set: {}. Use 'production', 'development', or a file path.",
+                    policy_name
+                );
             }
         }
     };
@@ -908,7 +1122,10 @@ pub(crate) async fn policy_check_command(spec_path: &PathBuf, policy_name: &str)
     print!("{}", format_policy_report(&result));
 
     if !result.passed {
-        anyhow::bail!("Policy check failed with {} violation(s)", result.violations.len());
+        anyhow::bail!(
+            "Policy check failed with {} violation(s)",
+            result.violations.len()
+        );
     }
 
     Ok(())
@@ -921,58 +1138,78 @@ pub(crate) async fn deps_command(action: DepsAction) -> Result<()> {
     let mut graph = DependencyGraph::load(&graph_path)?;
 
     match action {
-        DepsAction::Add { workload, dependency } => {
+        DepsAction::Add {
+            workload,
+            dependency,
+        } => {
             graph.add_dependency(&workload, &dependency);
             graph.save(&graph_path)?;
-            println!("✅ Added dependency: {} -> {}", workload, dependency);
+            output::success(&format!("Added dependency: {} -> {}", workload, dependency));
 
             let issues = graph.validate();
             if !issues.is_empty() {
-                println!("\n⚠️  Warnings:");
+                println!();
+                output::warning("Warnings:");
                 for issue in &issues {
-                    println!("  - {}", issue);
+                    output::detail(&format!("  - {}", issue));
                 }
             }
         }
-        DepsAction::Remove { workload, dependency } => {
+        DepsAction::Remove {
+            workload,
+            dependency,
+        } => {
             graph.remove_dependency(&workload, &dependency);
             graph.save(&graph_path)?;
-            println!("✅ Removed dependency: {} -> {}", workload, dependency);
+            output::success(&format!(
+                "Removed dependency: {} -> {}",
+                workload, dependency
+            ));
         }
         DepsAction::Show => {
             print!("{}", format_dependency_report(&graph));
         }
         DepsAction::Impact { workload } => {
             let impact = graph.impact_analysis(&workload);
-            println!("Impact Analysis for '{}':\n", workload);
-            println!("  Severity: {}", impact.severity);
-            println!("  Affected workloads: {}", impact.cascade_count);
+
+            output::section_with_icon("💥", &format!("Impact Analysis for '{}'", workload));
+
+            println!(
+                "{}",
+                output::property_table(&[
+                    ("Severity", impact.severity.to_string()),
+                    ("Affected workloads", impact.cascade_count.to_string()),
+                ])
+            );
+
             if !impact.affected_workloads.is_empty() {
-                println!("\n  Cascade:");
+                output::section("Cascade");
                 for affected in &impact.affected_workloads {
-                    println!("    - {}", affected);
+                    output::detail(&format!("  - {}", affected));
                 }
             }
         }
-        DepsAction::Order => {
-            match graph.startup_order() {
-                Ok(order) => {
-                    println!("Startup Order:\n");
-                    for (i, name) in order.iter().enumerate() {
-                        println!("  {}. {}", i + 1, name);
-                    }
-                }
-                Err(e) => {
-                    println!("❌ {}", e);
+        DepsAction::Order => match graph.startup_order() {
+            Ok(order) => {
+                output::section_with_icon("🚀", "Startup Order");
+                for (i, name) in order.iter().enumerate() {
+                    output::kv(&format!("  {}", i + 1), name);
                 }
             }
-        }
+            Err(e) => {
+                output::error(&format!("{}", e));
+            }
+        },
     }
 
     Ok(())
 }
 
-pub(crate) async fn audit_command(last: usize, workload: Option<String>, summary: bool) -> Result<()> {
+pub(crate) async fn audit_command(
+    last: usize,
+    workload: Option<String>,
+    summary: bool,
+) -> Result<()> {
     use orchestr8::audit::{format_audit_report, AuditLog};
 
     let audit_path = AuditLog::default_path();
@@ -980,18 +1217,24 @@ pub(crate) async fn audit_command(last: usize, workload: Option<String>, summary
 
     if summary {
         let s = log.summary();
-        println!("📊 Audit Summary\n");
-        println!("Total events: {}", s.total_events);
-        println!("Successes: {}", s.successes);
-        println!("Failures: {}", s.failures);
-        println!("Unique workloads: {}", s.unique_workloads);
+        output::section_with_icon("📊", "Audit Summary");
+
+        println!(
+            "{}",
+            output::property_table(&[
+                ("Total events", s.total_events.to_string()),
+                ("Successes", s.successes.to_string()),
+                ("Failures", s.failures.to_string()),
+                ("Unique workloads", s.unique_workloads.to_string()),
+            ])
+        );
 
         if !s.events_by_action.is_empty() {
-            println!("\nBy Action:");
+            output::section("By Action");
             let mut actions: Vec<_> = s.events_by_action.iter().collect();
             actions.sort_by(|a, b| b.1.cmp(a.1));
             for (action, count) in actions {
-                println!("  {}: {}", action, count);
+                output::kv(action, &count.to_string());
             }
         }
         return Ok(());
@@ -1000,9 +1243,9 @@ pub(crate) async fn audit_command(last: usize, workload: Option<String>, summary
     if let Some(ref name) = workload {
         let events = log.events_for(name);
         if events.is_empty() {
-            println!("No audit events for '{}'", name);
+            output::muted(&format!("No audit events for '{}'", name));
         } else {
-            println!("📋 Audit Events for '{}'\n", name);
+            output::section_with_icon("📋", &format!("Audit Events for '{}'", name));
             for event in events {
                 println!(
                     "  [{}] {} {} - {}",
@@ -1027,7 +1270,7 @@ pub(crate) async fn template_command(
     owner: &str,
     project: &str,
     registry: &str,
-    output: Option<PathBuf>,
+    output_path: Option<PathBuf>,
     list: bool,
 ) -> Result<()> {
     use orchestr8::templates::{self, TemplateKind, TemplateParams};
@@ -1052,12 +1295,12 @@ pub(crate) async fn template_command(
     let spec = templates::generate(&kind, &params);
     let yaml = serde_yaml::to_string(&spec)?;
 
-    if let Some(path) = output {
+    if let Some(path) = output_path {
         std::fs::write(&path, &yaml)?;
-        println!("✅ Generated {} template: {}", name, path.display());
-        println!("   Workload name: {}", wl_name);
+        output::success(&format!("Generated {} template: {}", name, path.display()));
+        output::kv_tree("Workload name", &wl_name, true);
     } else {
-        println!("# Generated from '{}' template\n", name);
+        output::muted(&format!("# Generated from '{}' template", name));
         println!("{}", yaml);
     }
 
@@ -1101,15 +1344,18 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
                 "standard" => SlaTarget::standard(&workload),
                 "high-availability" | "ha" => SlaTarget::high_availability(&workload),
                 "best-effort" | "be" => SlaTarget::best_effort(&workload),
-                _ => anyhow::bail!("Unknown SLA tier: {}. Use standard, high-availability, or best-effort.", tier),
+                _ => anyhow::bail!(
+                    "Unknown SLA tier: {}. Use standard, high-availability, or best-effort.",
+                    tier
+                ),
             };
-            println!("✅ Added SLA target for '{}' ({})", workload, tier);
-            println!("   Uptime target: {:.2}%", target.uptime_target_pct);
+            output::success(&format!("Added SLA target for '{}' ({})", workload, tier));
+            output::kv_tree("Uptime target", &format!("{:.2}%", target.uptime_target_pct), false);
             if let Some(lat) = target.max_latency_ms {
-                println!("   Max latency: {:.0}ms", lat);
+                output::kv_tree("Max latency", &format!("{:.0}ms", lat), false);
             }
             if let Some(err) = target.max_error_rate_pct {
-                println!("   Max error rate: {:.2}%", err);
+                output::kv_tree("Max error rate", &format!("{:.2}%", err), true);
             }
             engine.add_target(target);
             save_engine(&engine)?;
@@ -1135,7 +1381,10 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
                     print!("{}", format_sla_report(&report));
                 }
                 None => {
-                    println!("❌ No SLA target found for '{}'. Add one with: orchestr8 sla add {}", workload, workload);
+                    output::error(&format!(
+                        "No SLA target found for '{}'. Add one with: orchestr8 sla add {}",
+                        workload, workload
+                    ));
                 }
             }
         }
@@ -1143,22 +1392,26 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
             let engine = load_engine()?;
             let targets = engine.list_targets();
             if targets.is_empty() {
-                println!("No SLA targets defined.");
-                println!("Add one with: orchestr8 sla add <workload> --tier standard");
+                output::muted("No SLA targets defined.");
+                output::detail("Add one with: orchestr8 sla add <workload> --tier standard");
             } else {
-                println!("📋 SLA Targets\n");
+                output::section_with_icon("📋", "SLA Targets");
                 for target in targets {
-                    println!("  {} - {:.2}% uptime", target.workload, target.uptime_target_pct);
+                    println!();
+                    output::kv_tree(
+                        &target.workload,
+                        &format!("{:.2}% uptime", target.uptime_target_pct),
+                        false,
+                    );
                     if let Some(lat) = target.max_latency_ms {
-                        println!("    Max latency: {:.0}ms", lat);
+                        output::kv_tree("Max latency", &format!("{:.0}ms", lat), false);
                     }
                     if let Some(err) = target.max_error_rate_pct {
-                        println!("    Max error rate: {:.2}%", err);
+                        output::kv_tree("Max error rate", &format!("{:.2}%", err), false);
                     }
                     if let Some(restarts) = target.max_restarts_per_day {
-                        println!("    Max restarts/day: {}", restarts);
+                        output::kv_tree("Max restarts/day", &restarts.to_string(), true);
                     }
-                    println!();
                 }
             }
         }
@@ -1186,7 +1439,10 @@ pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
                 "Secret created",
                 &format!("Created secret '{}' in namespace '{}'", name, namespace),
             );
-            println!("✅ Created secret '{}' in namespace '{}'", name, namespace);
+            output::success(&format!(
+                "Created secret '{}' in namespace '{}'",
+                name, namespace
+            ));
         }
         SecretsAction::Set { secret, key, value } => {
             store.set(&secret, &key, &value)?;
@@ -1200,7 +1456,7 @@ pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
                 "Secret updated",
                 &format!("Set key '{}' in secret '{}'", key, secret),
             );
-            println!("✅ Set key '{}' in secret '{}'", key, secret);
+            output::success(&format!("Set key '{}' in secret '{}'", key, secret));
         }
         SecretsAction::Get { secret, key } => {
             let value = store.get(&secret, &key)?;
@@ -1214,11 +1470,11 @@ pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
         SecretsAction::Audit => {
             let alerts = store.audit_rotation();
             if alerts.is_empty() {
-                println!("✅ All secrets are within rotation policy limits.");
+                output::success("All secrets are within rotation policy limits.");
             } else {
-                println!("⚠️  Rotation Alerts:\n");
+                output::section_with_icon("⚠️", "Rotation Alerts");
                 for alert in &alerts {
-                    println!("  [{}] {}", alert.severity, alert.message);
+                    output::kv_tree(&alert.severity.to_string(), &alert.message, false);
                 }
             }
         }
@@ -1227,7 +1483,11 @@ pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn events_command(last: usize, severity: Option<String>, summary: bool) -> Result<()> {
+pub(crate) async fn events_command(
+    last: usize,
+    severity: Option<String>,
+    summary: bool,
+) -> Result<()> {
     use orchestr8::events::{format_event_list, format_event_summary, EventBus, EventSeverity};
 
     let path = EventBus::default_path();
@@ -1252,24 +1512,31 @@ pub(crate) async fn events_command(last: usize, severity: Option<String>, summar
 }
 
 pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
-    use orchestr8::environments::{EnvTier, EnvironmentManager, PromotionRequest, PromotionStrategy, format_env_list};
+    use orchestr8::environments::{
+        format_env_list, EnvTier, EnvironmentManager, PromotionRequest, PromotionStrategy,
+    };
 
     let path = EnvironmentManager::default_path();
     let mut manager = EnvironmentManager::load(&path)?;
 
     match action {
         EnvAction::Create { name, tier } => {
-            let env_tier: EnvTier = tier.parse()
+            let env_tier: EnvTier = tier
+                .parse()
                 .map_err(|e| anyhow::anyhow!("Invalid tier '{}': {}", tier, e))?;
             manager.create_env(&name, env_tier);
             manager.save(&path)?;
-            println!("✅ Created environment '{}' ({})", name, tier);
+            output::success(&format!("Created environment '{}' ({})", name, tier));
         }
         EnvAction::List => {
             let envs = manager.list_envs();
             print!("{}", format_env_list(&envs));
         }
-        EnvAction::Promote { workload, from, to } => {
+        EnvAction::Promote {
+            workload,
+            from,
+            to,
+        } => {
             let request = PromotionRequest {
                 workload: workload.clone(),
                 from_env: from.clone(),
@@ -1288,46 +1555,64 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
                 "Environment promotion",
                 &format!("Promoted from {} to {}", from, to),
             );
-            println!("✅ Promoted '{}' from '{}' to '{}'", workload, from, to);
+            output::success(&format!(
+                "Promoted '{}' from '{}' to '{}'",
+                workload, from, to
+            ));
             if !result.changes.is_empty() {
-                println!("   Changes:");
+                output::section("Changes");
                 for change in &result.changes {
-                    println!("     - {}: {} -> {} ({})", change.field, change.from_value, change.to_value, change.reason);
+                    output::kv_tree(
+                        &change.field,
+                        &format!("{} -> {} ({})", change.from_value, change.to_value, change.reason),
+                        false,
+                    );
                 }
             }
             if !result.warnings.is_empty() {
-                println!("   Warnings:");
+                println!();
+                output::warning("Warnings:");
                 for warn in &result.warnings {
-                    println!("     - {}", warn);
+                    output::detail(&format!("  - {}", warn));
                 }
             }
         }
         EnvAction::Parity { env1, env2 } => {
             // Parity needs a workload name - check all workloads in env1
-            let env = manager.get_env(&env1)
+            let env = manager
+                .get_env(&env1)
                 .ok_or_else(|| anyhow::anyhow!("Environment '{}' not found", env1))?;
             let workload_names: Vec<String> = env.workloads.keys().cloned().collect();
 
             if workload_names.is_empty() {
-                println!("No workloads in environment '{}' to compare.", env1);
+                output::muted(&format!(
+                    "No workloads in environment '{}' to compare.",
+                    env1
+                ));
                 return Ok(());
             }
 
-            println!("Environment Parity: {} vs {}\n", env1, env2);
+            output::section_with_icon(
+                "🔍",
+                &format!("Environment Parity: {} vs {}", env1, env2),
+            );
             for wl_name in &workload_names {
                 match manager.check_parity(&env1, &env2, wl_name) {
                     Ok(report) => {
                         if report.in_sync {
-                            println!("  ✅ '{}': In parity", wl_name);
+                            output::success(&format!("'{}': In parity", wl_name));
                         } else {
-                            println!("  ⚠️  '{}': Differences found", wl_name);
+                            output::warning(&format!("'{}': Differences found", wl_name));
                             for diff in &report.diffs {
-                                println!("      [{}] {}: {} vs {}", diff.severity, diff.field, diff.env_a_value, diff.env_b_value);
+                                output::detail(&format!(
+                                    "    [{}] {}: {} vs {}",
+                                    diff.severity, diff.field, diff.env_a_value, diff.env_b_value
+                                ));
                             }
                         }
                     }
                     Err(e) => {
-                        println!("  ❌ '{}': {}", wl_name, e);
+                        output::error(&format!("'{}': {}", wl_name, e));
                     }
                 }
             }
@@ -1339,8 +1624,8 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
 
 pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
     use orchestr8::scheduler::{
-        format_schedule_decision, format_utilization, ScheduleRequest, ScheduleStrategy,
-        Scheduler, Priority,
+        format_schedule_decision, format_utilization, Priority, ScheduleRequest, ScheduleStrategy,
+        Scheduler,
     };
 
     let path = Scheduler::default_path();
@@ -1396,7 +1681,7 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
                 }
                 Err(e) => {
                     orchestr8::metrics::record_scheduler_placement("none", &strategy, false);
-                    println!("❌ {}", e);
+                    output::error(&format!("{}", e));
                 }
             }
         }
@@ -1407,30 +1692,37 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
         ScheduleAction::Optimize => {
             let suggestions = scheduler.optimize();
             if suggestions.is_empty() {
-                println!("✅ No optimization suggestions. All runtimes look good.");
+                output::success("No optimization suggestions. All runtimes look good.");
             } else {
-                println!("Optimization Suggestions:\n");
+                output::section_with_icon("💡", "Optimization Suggestions");
                 for s in &suggestions {
-                    print!("  [{}] {}", s.category, s.message);
-                    if let Some(saving) = s.potential_saving {
-                        print!(" (potential saving: ${:.2}/day)", saving);
-                    }
-                    println!();
+                    let saving = if let Some(saving) = s.potential_saving {
+                        format!(" (potential saving: ${:.2}/day)", saving)
+                    } else {
+                        String::new()
+                    };
+                    output::kv_tree(&s.category.to_string(), &format!("{}{}", s.message, saving), false);
                 }
             }
         }
         ScheduleAction::Placements => {
             let placements = scheduler.placements();
             if placements.is_empty() {
-                println!("No workloads placed.");
+                output::muted("No workloads placed.");
             } else {
-                println!("Current Placements:\n");
-                for p in placements {
-                    println!(
-                        "  {} -> {} ({:.0} CPU, {} MB)",
-                        p.workload_name, p.runtime, p.cpu_reserved, p.memory_reserved_mb
-                    );
-                }
+                output::section_with_icon("📍", "Current Placements");
+                let rows: Vec<Vec<String>> = placements
+                    .iter()
+                    .map(|p| {
+                        vec![
+                            p.workload_name.clone(),
+                            format!("{}", p.runtime),
+                            format!("{:.0}", p.cpu_reserved),
+                            format!("{} MB", p.memory_reserved_mb),
+                        ]
+                    })
+                    .collect();
+                println!("{}", output::table(&["Workload", "Runtime", "CPU", "Memory"], rows));
             }
         }
     }
@@ -1454,7 +1746,10 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
             };
             orch.register(&name, rt, None);
             orch.save(&path)?;
-            println!("✅ Registered '{}' for health monitoring ({})", name, runtime);
+            output::success(&format!(
+                "Registered '{}' for health monitoring ({})",
+                name, runtime
+            ));
         }
         OrchestrateAction::Status => {
             let list = orch.list_workloads();
@@ -1465,46 +1760,67 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
             print!("{}", format_health_summary(&summary));
         }
         OrchestrateAction::RollingUpdate { name, replicas } => {
+            let sp = output::spinner(&format!("Rolling update for '{}'...", name));
             let statuses = orch.rolling_update(&name, replicas, None);
+            output::spinner_success(&sp, "Rolling update complete");
             print!("{}", format_rolling_update(&statuses));
         }
         OrchestrateAction::ResetCircuit { name } => {
             if orch.reset_circuit(&name) {
                 orch.save(&path)?;
-                println!("✅ Circuit breaker reset for '{}'", name);
+                output::success(&format!("Circuit breaker reset for '{}'", name));
             } else {
-                println!("❌ Workload '{}' not found", name);
+                output::error(&format!("Workload '{}' not found", name));
             }
         }
         OrchestrateAction::HealthCheck => {
-            let statuses = collect_health_statuses(&orch, &StateStore::load(&StateStore::default_path())?).await;
+            let sp = output::spinner("Running health checks...");
+            let statuses = collect_health_statuses(
+                &orch,
+                &StateStore::load(&StateStore::default_path())?,
+            )
+            .await;
             let actions = orch.run_health_checks_from_statuses(&statuses);
             orch.save(&path)?;
 
+            output::spinner_success(&sp, "Health check complete");
+
             if actions.is_empty() {
-                println!("Health check complete. No actions required.");
+                output::success("No actions required.");
             } else {
-                println!("Health check actions:");
+                output::section_with_icon("🏥", "Health Check Actions");
                 for action in &actions {
-                    println!("  - {:?}", action);
+                    output::detail(&format!("  - {:?}", action));
                 }
             }
         }
         OrchestrateAction::Watch { interval } => {
-            println!("Watching health every {} seconds (Ctrl+C to stop)\n", interval);
+            output::info(&format!(
+                "Watching health every {} seconds (Ctrl+C to stop)",
+                interval
+            ));
+            println!();
 
             loop {
-                let statuses = collect_health_statuses(&orch, &StateStore::load(&StateStore::default_path())?).await;
+                let statuses = collect_health_statuses(
+                    &orch,
+                    &StateStore::load(&StateStore::default_path())?,
+                )
+                .await;
                 let actions = orch.run_health_checks_from_statuses(&statuses);
                 orch.save(&path)?;
 
                 let now = chrono::Utc::now().format("%H:%M:%S");
                 if actions.is_empty() {
-                    println!("[{}] Health OK ({} workloads checked)", now, statuses.len());
+                    output::success(&format!(
+                        "[{}] Health OK ({} workloads checked)",
+                        now,
+                        statuses.len()
+                    ));
                 } else {
-                    println!("[{}] {} action(s):", now, actions.len());
+                    output::warning(&format!("[{}] {} action(s):", now, actions.len()));
                     for action in &actions {
-                        println!("  - {:?}", action);
+                        output::detail(&format!("  - {:?}", action));
                     }
                 }
 
@@ -1527,45 +1843,67 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
             let wl_class: WorkloadClass = class.parse()?;
             let scores = engine.recommend(&wl_class);
             if let Some(top) = scores.first() {
-                orchestr8::metrics::record_affinity_recommendation(&class, &top.runtime.to_string());
+                orchestr8::metrics::record_affinity_recommendation(
+                    &class,
+                    &top.runtime.to_string(),
+                );
             }
             print!("{}", format_affinity_report(&wl_class, &scores));
         }
         AffinityAction::Matrix => {
             let matrix = engine.compatibility_matrix();
-            println!("Compatibility Matrix:\n");
+            output::section_with_icon("🔢", "Compatibility Matrix");
             let mut entries: Vec<_> = matrix.iter().collect();
             entries.sort_by_key(|((class, rt), _)| (format!("{}", class), format!("{}", rt)));
-            for ((class, rt), entry) in &entries {
-                let compat = if entry.compatible { "✓" } else { "✗" };
-                println!(
-                    "  {} {} + {} (score: {:.0}%, deployments: {})",
-                    compat,
-                    class,
-                    rt,
-                    entry.score * 100.0,
-                    entry.deployments,
-                );
-            }
+
+            let rows: Vec<Vec<String>> = entries
+                .iter()
+                .map(|((class, rt), entry)| {
+                    vec![
+                        if entry.compatible {
+                            "✓".to_string()
+                        } else {
+                            "✗".to_string()
+                        },
+                        format!("{}", class),
+                        format!("{}", rt),
+                        format!("{:.0}%", entry.score * 100.0),
+                        entry.deployments.to_string(),
+                    ]
+                })
+                .collect();
+            println!(
+                "{}",
+                output::table(&["Compat", "Class", "Runtime", "Score", "Deployments"], rows)
+            );
         }
         AffinityAction::Stats => {
             let stats = engine.stats();
-            println!("Affinity Learning Stats:\n");
-            println!("  Total outcomes: {}", stats.total_outcomes);
-            println!("  Successes: {}", stats.successes);
-            println!("  Failures: {}", stats.failures);
-            println!("  Known incompatibilities: {}", stats.incompatibilities);
+            output::section_with_icon("📊", "Affinity Learning Stats");
+
+            println!(
+                "{}",
+                output::property_table(&[
+                    ("Total outcomes", stats.total_outcomes.to_string()),
+                    ("Successes", stats.successes.to_string()),
+                    ("Failures", stats.failures.to_string()),
+                    (
+                        "Known incompatibilities",
+                        stats.incompatibilities.to_string(),
+                    ),
+                ])
+            );
 
             if !stats.by_runtime.is_empty() {
-                println!("\n  By Runtime:");
+                output::section("By Runtime");
                 for (rt, count) in &stats.by_runtime {
-                    println!("    {}: {}", rt, count);
+                    output::kv(rt, &count.to_string());
                 }
             }
             if !stats.by_class.is_empty() {
-                println!("\n  By Workload Class:");
+                output::section("By Workload Class");
                 for (class, count) in &stats.by_class {
-                    println!("    {}: {}", class, count);
+                    output::kv(class, &count.to_string());
                 }
             }
         }
@@ -1578,7 +1916,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
     use orchestr8::backup::{Backup, SnapshotManager};
     use orchestr8::runtime::create_runtime;
 
-    println!("Rolling back workload '{}'...\n", name);
+    output::section_with_icon("⏪", &format!("Rolling back workload '{}'", name));
 
     // Find latest snapshot
     let snap_mgr = SnapshotManager::new();
@@ -1586,7 +1924,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
         .latest_snapshot(name)?
         .ok_or_else(|| anyhow::anyhow!("No snapshot found for workload '{}'", name))?;
 
-    println!("  Found snapshot: {}", snapshot_path.display());
+    output::kv_tree("Found snapshot", &snapshot_path.display().to_string(), true);
 
     // Load snapshot
     let backup = Backup::load(&snapshot_path)?;
@@ -1596,7 +1934,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Snapshot is empty"))?;
 
     // Stop current instance (best-effort)
-    let state = StateStore::load(&StateStore::default_path())?;
+    let mut state = StateStore::load(&StateStore::default_path())?;
     if let Some(current) = state.get(name) {
         match create_runtime(&current.runtime).await {
             Ok(runtime) => {
@@ -1609,15 +1947,20 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
     }
 
     // Re-deploy from snapshot
+    let sp = output::spinner("Re-deploying from snapshot...");
     let runtime = create_runtime(&snapshot_ws.runtime).await?;
     let spec = Workload::from_file(&snapshot_ws.spec_path)?;
     let image = runtime.build(&spec).await?;
     let instance = runtime.run(&image, &spec).await?;
 
-    println!("  Re-deployed instance: {} ({})", instance.name, instance.id);
+    output::spinner_success(&sp, "Re-deployment complete");
+    output::kv_tree(
+        "Re-deployed instance",
+        &format!("{} ({})", instance.name, instance.id),
+        true,
+    );
 
-    // Update state
-    let mut state = StateStore::load(&StateStore::default_path())?;
+    // Update state (reuse the already-loaded store)
     state.upsert(
         name.to_string(),
         orchestr8::state::WorkloadState {
@@ -1640,7 +1983,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
         &format!("Rolled back to snapshot {}", snapshot_path.display()),
     );
 
-    println!("\nRollback complete for '{}'", name);
+    output::success(&format!("Rollback complete for '{}'", name));
 
     Ok(())
 }
@@ -1662,7 +2005,10 @@ async fn collect_health_statuses(
         std::collections::HashMap::new();
     for mw in &managed {
         if let Some(ws) = state.get(&mw.name) {
-            by_runtime.entry(ws.runtime).or_default().push((mw.name.clone(), ws.instance.clone()));
+            by_runtime
+                .entry(ws.runtime)
+                .or_default()
+                .push((mw.name.clone(), ws.instance.clone()));
         }
     }
 
@@ -1700,8 +2046,12 @@ async fn collect_health_statuses(
 pub(crate) async fn diff_command(name: &str) -> Result<()> {
     use orchestr8::drift::{format_live_diff, DiffRow, LiveDiffReport};
 
-    println!("Comparing spec vs stored vs live state for '{}'\n", name);
+    output::section_with_icon(
+        "🔍",
+        &format!("Comparing spec vs stored vs live state for '{}'", name),
+    );
 
+    let sp = output::spinner("Fetching live state...");
     let (_state, workload_state, runtime) = load_state_and_runtime(name).await?;
 
     // Load spec
@@ -1709,6 +2059,8 @@ pub(crate) async fn diff_command(name: &str) -> Result<()> {
 
     // Query live status
     let live_status = runtime.status(&workload_state.instance).await?;
+
+    output::spinner_success(&sp, "State retrieved");
 
     // Build diff rows
     let spec_runtime = format!("{:?}", spec.runtime.preferred);
@@ -1814,41 +2166,47 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
             bus.add_channel(channel);
             bus.save(&path)?;
 
-            println!("Added webhook channel '{}' -> {} ({})", name, url, method);
+            output::success(&format!(
+                "Added webhook channel '{}' -> {} ({})",
+                name, url, method
+            ));
         }
         WebhookAction::Remove { name } => {
             if bus.remove_channel(&name) {
                 bus.save(&path)?;
-                println!("Removed webhook channel '{}'", name);
+                output::success(&format!("Removed webhook channel '{}'", name));
             } else {
-                println!("Channel '{}' not found", name);
+                output::error(&format!("Channel '{}' not found", name));
             }
         }
         WebhookAction::List => {
             let channels = bus.channels();
             if channels.is_empty() {
-                println!("No notification channels configured.");
+                output::muted("No notification channels configured.");
                 return Ok(());
             }
 
-            println!("Notification Channels:\n");
-            println!(
-                "  {:<20} {:<30} {:<10} {:<10}",
-                "Name", "Type", "Enabled", "Min Severity"
-            );
-            println!("  {}", "-".repeat(74));
+            output::section_with_icon("🔔", "Notification Channels");
 
-            for ch in channels {
-                let type_str = format!("{}", ch.channel_type);
-                let enabled_str = if ch.enabled { "yes" } else { "no" };
-                println!(
-                    "  {:<20} {:<30} {:<10} {:<10}",
-                    ch.name,
-                    type_str,
-                    enabled_str,
-                    format!("{}", ch.min_severity),
-                );
-            }
+            let rows: Vec<Vec<String>> = channels
+                .iter()
+                .map(|ch| {
+                    vec![
+                        ch.name.clone(),
+                        format!("{}", ch.channel_type),
+                        if ch.enabled {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                        format!("{}", ch.min_severity),
+                    ]
+                })
+                .collect();
+            println!(
+                "{}",
+                output::table(&["Name", "Type", "Enabled", "Min Severity"], rows)
+            );
         }
         WebhookAction::Test { name } => {
             let channel_exists = bus.channels().iter().any(|c| c.name == name);
@@ -1865,7 +2223,7 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
                 &format!("Test notification for channel '{}'", name),
             );
             bus.save(&path)?;
-            println!("Test notification sent to channel '{}'", name);
+            output::success(&format!("Test notification sent to channel '{}'", name));
         }
     }
 
@@ -1894,11 +2252,7 @@ fn discover_workloads(dir: &Path) -> Result<Vec<(PathBuf, Workload)>> {
         match Workload::from_file(&path.to_path_buf()) {
             Ok(w) => workloads.push((path, w)),
             Err(e) => {
-                eprintln!(
-                    "⚠️  Skipping {}: {}",
-                    path.display(),
-                    e
-                );
+                output::warning(&format!("Skipping {}: {}", path.display(), e));
             }
         }
     }
@@ -1949,30 +2303,38 @@ pub(crate) async fn deploy_command(
     fail_fast: bool,
     dry_run: bool,
 ) -> Result<()> {
-    println!("📂 Discovering workloads in '{}'...", dir.display());
+    let sp = output::spinner(&format!("Discovering workloads in '{}'...", dir.display()));
 
     let workloads = discover_workloads(dir)?;
 
     // Load dependency graph for ordering
     let graph_path = orchestr8::dependencies::DependencyGraph::default_path();
-    let graph = orchestr8::dependencies::DependencyGraph::load(&graph_path)
-        .unwrap_or_default();
+    let graph = orchestr8::dependencies::DependencyGraph::load(&graph_path).unwrap_or_default();
 
     let ordered = order_workloads_by_deps(workloads, &graph);
 
-    // Show plan
-    println!("\n📋 Deployment plan ({} workloads):", ordered.len());
-    for (i, (path, w)) in ordered.iter().enumerate() {
-        println!(
-            "  {}. {} ({})",
-            i + 1,
-            w.metadata.name,
-            path.display()
-        );
-    }
+    output::spinner_success(
+        &sp,
+        &format!("Found {} workloads", ordered.len()),
+    );
+
+    // Show plan as table
+    output::section_with_icon("📋", &format!("Deployment Plan ({} workloads)", ordered.len()));
+    let rows: Vec<Vec<String>> = ordered
+        .iter()
+        .enumerate()
+        .map(|(i, (path, w))| {
+            vec![
+                format!("{}", i + 1),
+                w.metadata.name.clone(),
+                path.display().to_string(),
+            ]
+        })
+        .collect();
+    println!("{}", output::table(&["#", "Workload", "Spec"], rows));
 
     if dry_run {
-        println!("\n🔍 Dry run — no workloads were deployed.");
+        output::info("Dry run -- no workloads were deployed.");
         return Ok(());
     }
 
@@ -1981,37 +2343,34 @@ pub(crate) async fn deploy_command(
     let total = ordered.len();
     let mut succeeded = 0usize;
     let mut failed: Vec<(String, String)> = Vec::new();
+    let mut event_batch = EventBatch::new();
 
     for (i, (path, workload)) in ordered.iter().enumerate() {
-        println!(
-            "▶ [{}/{}] Deploying '{}'...",
+        let sp = output::spinner(&format!(
+            "[{}/{}] Deploying '{}'...",
             i + 1,
             total,
             workload.metadata.name
-        );
+        ));
 
-        match deploy_single_workload(
-            workload,
-            path,
-            runtime_override.as_deref(),
-        )
-        .await
-        {
+        match deploy_single_workload(workload, path, runtime_override.as_deref(), Some(&mut event_batch)).await {
             Ok(()) => {
+                output::spinner_success(&sp, &format!("Deployed '{}'", workload.metadata.name));
                 succeeded += 1;
             }
             Err(e) => {
                 let msg = format!("{}", e);
-                eprintln!(
-                    "❌ Failed to deploy '{}': {}",
-                    workload.metadata.name, msg
+                output::spinner_fail(
+                    &sp,
+                    &format!("Failed to deploy '{}'", workload.metadata.name),
                 );
+                output::error(&format!("Failed to deploy '{}': {}", workload.metadata.name, msg));
                 failed.push((workload.metadata.name.clone(), msg));
                 if fail_fast {
-                    println!(
-                        "\n⛔ Aborting (--fail-fast): {}/{} succeeded, 1 failed.",
+                    output::error(&format!(
+                        "Aborting (--fail-fast): {}/{} succeeded, 1 failed.",
                         succeeded, total
-                    );
+                    ));
                     return Err(anyhow::anyhow!(
                         "Deploy aborted: '{}' failed",
                         failed.last().unwrap().0
@@ -2022,14 +2381,21 @@ pub(crate) async fn deploy_command(
     }
 
     // Summary
-    println!("\n📊 Deploy summary: {} succeeded, {} failed out of {} total",
-        succeeded, failed.len(), total);
-
-    if !failed.is_empty() {
-        println!("\nFailed workloads:");
+    if failed.is_empty() {
+        output::summary_success("Deploy Complete", &[
+            ("Succeeded", succeeded.to_string()),
+            ("Total", total.to_string()),
+        ]);
+    } else {
+        let mut items: Vec<(&str, String)> = vec![
+            ("Succeeded", succeeded.to_string()),
+            ("Failed", failed.len().to_string()),
+            ("Total", total.to_string()),
+        ];
         for (name, err) in &failed {
-            println!("  - {}: {}", name, err);
+            items.push((name.as_str(), err.clone()));
         }
+        output::summary_error("Deploy Failed", &items);
         anyhow::bail!(
             "{} of {} workloads failed to deploy",
             failed.len(),
@@ -2041,6 +2407,7 @@ pub(crate) async fn deploy_command(
 }
 
 /// Emit an event and save to the event bus (best-effort, errors are logged).
+/// For single operations. Use `EventBatch` for loops to avoid N disk round-trips.
 pub(crate) fn emit_event(
     severity: orchestr8::events::EventSeverity,
     category: orchestr8::events::EventCategory,
@@ -2058,6 +2425,40 @@ pub(crate) fn emit_event(
         Err(e) => {
             tracing::warn!("Failed to emit event: {}", e);
         }
+    }
+}
+
+/// Batched event emitter — loads once, accumulates events, saves once on drop.
+pub(crate) struct EventBatch {
+    bus: orchestr8::events::EventBus,
+    path: std::path::PathBuf,
+}
+
+impl EventBatch {
+    pub(crate) fn new() -> Self {
+        let path = orchestr8::events::EventBus::default_path();
+        let bus = orchestr8::events::EventBus::load(&path).unwrap_or_else(|_| {
+            orchestr8::events::EventBus::new()
+        });
+        Self { bus, path }
+    }
+
+    pub(crate) fn emit(
+        &mut self,
+        severity: orchestr8::events::EventSeverity,
+        category: orchestr8::events::EventCategory,
+        source: &str,
+        workload: Option<&str>,
+        title: &str,
+        message: &str,
+    ) {
+        self.bus.emit_simple(severity, category, source, workload, title, message);
+    }
+}
+
+impl Drop for EventBatch {
+    fn drop(&mut self) {
+        let _ = self.bus.save(&self.path);
     }
 }
 
@@ -2200,7 +2601,7 @@ mod tests {
     async fn test_recommend_command() {
         let dir = tempfile::tempdir().unwrap();
         let path = write_valid_spec(dir.path());
-        let result = recommend_command(&path, None).await;
+        let result = recommend_command(&path).await;
         assert!(result.is_ok());
     }
 
@@ -2253,15 +2654,23 @@ mod tests {
     async fn test_template_command_list() {
         let result = template_command(
             "list", None, "team", "default", "ghcr.io/org", None, true,
-        ).await;
+        )
+        .await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_template_command_web_app_stdout() {
         let result = template_command(
-            "web-app", Some("my-web".to_string()), "team", "demo", "ghcr.io/org", None, false,
-        ).await;
+            "web-app",
+            Some("my-web".to_string()),
+            "team",
+            "demo",
+            "ghcr.io/org",
+            None,
+            false,
+        )
+        .await;
         assert!(result.is_ok());
     }
 
@@ -2270,9 +2679,15 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let out = dir.path().join("api.yaml");
         let result = template_command(
-            "rest-api", Some("my-api".to_string()), "team", "demo", "ghcr.io/org",
-            Some(out.clone()), false,
-        ).await;
+            "rest-api",
+            Some("my-api".to_string()),
+            "team",
+            "demo",
+            "ghcr.io/org",
+            Some(out.clone()),
+            false,
+        )
+        .await;
         assert!(result.is_ok());
         assert!(out.exists());
 
@@ -2286,7 +2701,8 @@ mod tests {
     async fn test_template_command_database() {
         let result = template_command(
             "database", None, "team", "demo", "ghcr.io/org", None, false,
-        ).await;
+        )
+        .await;
         assert!(result.is_ok());
     }
 
@@ -2294,7 +2710,8 @@ mod tests {
     async fn test_template_command_unknown() {
         let result = template_command(
             "unknown-kind", None, "team", "demo", "ghcr.io/org", None, false,
-        ).await;
+        )
+        .await;
         assert!(result.is_err());
     }
 
@@ -2550,7 +2967,11 @@ mod tests {
             let spec = generate(&kind, &params);
             assert_eq!(spec.api_version, "orchestr8/v1");
             assert_eq!(spec.kind, "Workload");
-            assert!(spec.validate().is_ok(), "template {:?} produced invalid spec", kind);
+            assert!(
+                spec.validate().is_ok(),
+                "template {:?} produced invalid spec",
+                kind
+            );
         }
     }
 
@@ -2691,9 +3112,7 @@ mod tests {
 
     #[test]
     fn test_webhook_channel_add_remove_list() {
-        use orchestr8::events::{
-            ChannelType, EventBus, EventSeverity, NotificationChannel,
-        };
+        use orchestr8::events::{ChannelType, EventBus, EventSeverity, NotificationChannel};
 
         let mut bus = EventBus::new();
         let initial = bus.channels().len();
@@ -2713,7 +3132,11 @@ mod tests {
         assert_eq!(bus.channels().len(), initial + 1);
 
         // Verify channel properties
-        let ch = bus.channels().iter().find(|c| c.name == "slack-ops").unwrap();
+        let ch = bus
+            .channels()
+            .iter()
+            .find(|c| c.name == "slack-ops")
+            .unwrap();
         assert!(ch.enabled);
         assert_eq!(ch.min_severity, EventSeverity::Warning);
 
@@ -2741,15 +3164,20 @@ mod tests {
         std::fs::write(
             dir.path().join("alpha.yaml"),
             serde_yaml::to_string(&spec_a).unwrap(),
-        ).unwrap();
+        )
+        .unwrap();
         std::fs::write(
             dir.path().join("beta.yml"),
             serde_yaml::to_string(&spec_b).unwrap(),
-        ).unwrap();
+        )
+        .unwrap();
 
         let result = discover_workloads(dir.path()).unwrap();
         assert_eq!(result.len(), 2);
-        let names: Vec<&str> = result.iter().map(|(_, w)| w.metadata.name.as_str()).collect();
+        let names: Vec<&str> = result
+            .iter()
+            .map(|(_, w)| w.metadata.name.as_str())
+            .collect();
         assert!(names.contains(&"alpha-svc"));
         assert!(names.contains(&"beta-svc"));
     }
@@ -2762,7 +3190,8 @@ mod tests {
         std::fs::write(
             dir.path().join("good.yaml"),
             serde_yaml::to_string(&spec).unwrap(),
-        ).unwrap();
+        )
+        .unwrap();
         std::fs::write(dir.path().join("bad.yaml"), "not: valid: [[[").unwrap();
         std::fs::write(dir.path().join("readme.txt"), "ignore me").unwrap();
 

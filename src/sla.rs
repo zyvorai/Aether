@@ -3,6 +3,7 @@
 //! Define uptime and performance targets for workloads, track compliance,
 //! and generate SLA reports.
 
+use crate::output;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -345,8 +346,10 @@ impl SlaEngine {
 pub fn format_sla_report(report: &SlaReport) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("SLA Report: {}\n", report.workload));
-    output.push_str(&format!("Status: {}\n\n", report.status));
+    output.push_str(&output::property_section(&[
+        ("SLA Report", report.workload.clone()),
+        ("Status", format!("{}", report.status)),
+    ]));
 
     output.push_str(&format!(
         "{:<14} {:>10} {:>10} {:>8} {:>8}\n",
@@ -367,26 +370,23 @@ pub fn format_sla_report(report: &SlaReport) -> String {
     }
 
     if let Some(budget) = &report.remaining_error_budget {
-        output.push_str(&format!(
-            "\nError Budget: {:.1} min remaining of {:.1} min ({:.0}% consumed)\n",
-            budget.remaining_minutes, budget.total_minutes, budget.consumed_pct
-        ));
+        let mut budget_pairs = vec![
+            ("Error Budget", format!("{:.1} min remaining of {:.1} min ({:.0}% consumed)", budget.remaining_minutes, budget.total_minutes, budget.consumed_pct)),
+        ];
         if let Some(days) = budget.projected_exhaustion_days {
             if days <= 0.0 {
-                output.push_str("  Budget EXHAUSTED\n");
+                budget_pairs.push(("Projected exhaustion", "EXHAUSTED".to_string()));
             } else {
-                output.push_str(&format!(
-                    "  Projected exhaustion: {:.0} days\n",
-                    days
-                ));
+                budget_pairs.push(("Projected exhaustion", format!("{:.0} days", days)));
             }
         }
+        output.push_str(&output::property_section(&budget_pairs));
     }
 
     if !report.recommendations.is_empty() {
         output.push_str("\nRecommendations:\n");
         for rec in &report.recommendations {
-            output.push_str(&format!("  - {}\n", rec));
+            output.push_str(&output::tree_bullet("💡", rec));
         }
     }
 

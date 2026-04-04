@@ -3,6 +3,7 @@
 //! Event bus for SLA violations, drift detection, policy failures,
 //! and operational alerts with configurable notification channels.
 
+use crate::output;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -592,10 +593,12 @@ pub fn format_event_list(events: &[&Event], limit: usize) -> String {
 /// Format event summary
 pub fn format_event_summary(summary: &EventSummary) -> String {
     let mut output = String::new();
-    output.push_str("Event Summary:\n\n");
-    output.push_str(&format!("  Total: {}\n", summary.total_events));
-    output.push_str(&format!("  Unacknowledged: {}\n", summary.unacknowledged));
-    output.push_str(&format!("  Critical (unacked): {}\n\n", summary.critical_unacked));
+    output.push_str(&output::property_section(&[
+        ("Event Summary", String::new()),
+        ("Total", format!("{}", summary.total_events)),
+        ("Unacknowledged", format!("{}", summary.unacknowledged)),
+        ("Critical (unacked)", format!("{}", summary.critical_unacked)),
+    ]));
 
     if !summary.by_severity.is_empty() {
         output.push_str("  By Severity:\n");
