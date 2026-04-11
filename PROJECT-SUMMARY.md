@@ -499,4 +499,4 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 **Version:** 0.1.0 (Unreleased)
 **Last Updated:** 2024-02-06
 **Status:** Production-Ready
-**License:** MIT OR Apache-2.0
+**License:** Proprietary (HyperSDK)

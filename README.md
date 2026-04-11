@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ssahani/orchestr8)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/ssahani/orchestr8)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-Proprietary-red)](LICENSE)
 
 Orchestr8 is a **production-ready universal runtime control plane** that deploys the same workload to multiple runtimes:
 
@@ -983,12 +983,11 @@ Contributions welcome! Areas for enhancement:
 
 ## 📄 License
 
-Licensed under either of:
+**Proprietary** - Copyright (c) 2024-2026 HyperSDK. All rights reserved.
 
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-- MIT license ([LICENSE-MIT](LICENSE-MIT))
+This software is proprietary and confidential. See [LICENSE](LICENSE) for details.
 
-at your option.
+For licensing inquiries, contact: licensing@hypersdk.io
 
 ---
 
