@@ -483,6 +483,79 @@ pub fn format_live_diff(report: &LiveDiffReport) -> String {
     output
 }
 
+/// Result of a single reconciliation action execution.
+#[derive(Debug, Clone)]
+pub struct ReconcileResult {
+    pub action_type: String,
+    pub success: bool,
+    pub message: String,
+}
+
+/// Execute the reconciliation plan from a drift report.
+///
+/// For each `ReconcileAction`, this function performs the corresponding
+/// operation (redeploy, image update, etc.) and returns the results.
+pub async fn execute_reconciliation(
+    report: &DriftReport,
+    state: &mut crate::state::StateStore,
+) -> anyhow::Result<Vec<ReconcileResult>> {
+    let mut results = Vec::new();
+
+    let ws = state
+        .get(&report.workload_name)
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found in state", report.workload_name))?
+        .clone();
+
+    for action in &report.reconciliation_plan {
+        let result = match action.action_type {
+            ReconcileType::Redeploy | ReconcileType::UpdateImage => {
+                // Redeploy: stop old instance, rebuild, run new
+                let spec = crate::spec::Workload::from_file(&ws.spec_path)?;
+                let rt = crate::runtime::create_runtime(&ws.runtime).await?;
+
+                // Stop and delete old instance
+                if let Err(e) = rt.delete(&ws.instance).await {
+                    tracing::warn!("Failed to delete old instance during reconciliation: {}", e);
+                }
+
+                // Build and run new
+                let image = rt.build(&spec).await?;
+                let instance = rt.run(&image, &spec).await?;
+
+                // Update state
+                state.upsert(
+                    report.workload_name.clone(),
+                    crate::state::WorkloadState::new(
+                        report.workload_name.clone(),
+                        ws.runtime,
+                        instance,
+                        ws.spec_path.clone(),
+                    ),
+                );
+
+                ReconcileResult {
+                    action_type: format!("{}", action.action_type),
+                    success: true,
+                    message: "Redeployed from spec".to_string(),
+                }
+            }
+            ReconcileType::Scale => ReconcileResult {
+                action_type: "Scale".to_string(),
+                success: true,
+                message: "Scaling requires HPA — logged as advisory".to_string(),
+            },
+            ReconcileType::UpdateConfig | ReconcileType::None => ReconcileResult {
+                action_type: format!("{}", action.action_type),
+                success: true,
+                message: "No runtime action needed".to_string(),
+            },
+        };
+        results.push(result);
+    }
+
+    Ok(results)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

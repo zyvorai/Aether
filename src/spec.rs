@@ -366,6 +366,31 @@ impl Workload {
     pub fn image_name(&self) -> String {
         format!("{}/{}:latest", self.build.registry, self.metadata.name)
     }
+
+    /// Return a copy with additional environment variables injected.
+    ///
+    /// Creates a synthetic "compose-env" ConfigMap in the config section,
+    /// which adapters already know how to process as environment variables.
+    pub fn with_env(mut self, env: &std::collections::HashMap<String, String>) -> Self {
+        if env.is_empty() {
+            return self;
+        }
+        let config = self.config.get_or_insert_with(|| ConfigSpec {
+            config_maps: vec![],
+            secrets: vec![],
+            env_from: vec![],
+        });
+        if let Some(cm) = config.config_maps.iter_mut().find(|c| c.name == "compose-env") {
+            cm.data.extend(env.clone());
+        } else {
+            config.config_maps.push(ConfigMapSpec {
+                name: "compose-env".to_string(),
+                data: env.clone(),
+                mount_path: None,
+            });
+        }
+        self
+    }
 }
 
 /// Configuration specification (ConfigMaps and Secrets)

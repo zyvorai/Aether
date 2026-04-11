@@ -34,6 +34,7 @@ async fn main() -> Result<()> {
     orchestr8::output::set_yaml(matches!(cli.output, cli::OutputFormat::Yaml));
     orchestr8::output::set_wide(matches!(cli.output, cli::OutputFormat::Wide));
     orchestr8::output::set_yes(cli.yes);
+    commands::set_skip_policy(cli.skip_policy);
 
     // Initialize metrics
     orchestr8::metrics::init();
