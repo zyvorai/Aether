@@ -203,7 +203,7 @@ pub(crate) enum Commands {
         host: String,
 
         /// Server port
-        #[arg(short, long, default_value = "8080")]
+        #[arg(short, long, default_value = "5090")]
         port: u16,
     },
 
