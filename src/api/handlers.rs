@@ -949,6 +949,92 @@ pub(crate) async fn api_affinity_recommend(Path(class): Path<String>) -> impl In
     }
 }
 
+// GET /api/plugins - List registered plugins
+pub(crate) async fn api_plugins_list() -> impl IntoResponse {
+    let path = crate::plugin::PluginRegistry::default_path();
+    match crate::plugin::PluginRegistry::load(&path) {
+        Ok(reg) => {
+            let plugins: Vec<&crate::plugin::PluginManifest> = reg.plugins.values().collect();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(plugins).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => err_internal::<serde_json::Value>(e),
+    }
+}
+
+// POST /api/plugins/discover - Discover plugins
+pub(crate) async fn api_plugins_discover() -> impl IntoResponse {
+    let path = crate::plugin::PluginRegistry::default_path();
+    match crate::plugin::PluginRegistry::load(&path) {
+        Ok(mut reg) => match reg.discover() {
+            Ok(count) => {
+                let _ = reg.save(&path);
+                (
+                    StatusCode::OK,
+                    Json(ApiResponse::success(serde_json::json!({
+                        "discovered": count,
+                        "total": reg.plugins.len(),
+                    }))),
+                )
+            }
+            Err(e) => err_internal::<serde_json::Value>(e),
+        },
+        Err(e) => err_internal::<serde_json::Value>(e),
+    }
+}
+
+// GET /api/health/:workload - Health history summary
+pub(crate) async fn api_health_summary(Path(workload): Path<String>) -> impl IntoResponse {
+    let health_path = crate::health::HealthHistory::default_path();
+    match crate::health::HealthHistory::load(&health_path) {
+        Ok(history) => {
+            let summary = history.summary(&workload);
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(
+                    serde_json::to_value(summary).unwrap_or_default(),
+                )),
+            )
+        }
+        Err(e) => err_internal::<serde_json::Value>(e),
+    }
+}
+
+// POST /api/compose/validate - Validate a compose spec
+pub(crate) async fn api_compose_validate(
+    body: String,
+) -> impl IntoResponse {
+    use crate::compose;
+
+    match serde_yaml::from_str::<compose::ComposeSpec>(&body) {
+        Ok(spec) => match compose::validate(&spec) {
+            Ok(()) => {
+                let order = compose::resolve_order(&spec).unwrap_or_default();
+                (
+                    StatusCode::OK,
+                    Json(ApiResponse::success(serde_json::json!({
+                        "valid": true,
+                        "workload_count": spec.workloads.len(),
+                        "deploy_order": order,
+                    }))),
+                )
+            }
+            Err(e) => {
+                let msg = e.to_string();
+                (StatusCode::BAD_REQUEST, Json(ApiResponse::error(msg)))
+            }
+        },
+        Err(e) => {
+            let msg = format!("Invalid YAML: {}", e);
+            (StatusCode::BAD_REQUEST, Json(ApiResponse::error(msg)))
+        }
+    }
+}
+
 /// POST /api/workloads/:name/migrate - Migrate a workload to a different runtime
 pub(crate) async fn migrate_workload(
     AxumState(app_state): AxumState<AppState>,
@@ -978,14 +1064,13 @@ pub(crate) async fn migrate_workload(
         }
     };
 
-    let plan = MigrationPlan {
-        workload_name: name.clone(),
+    let plan = MigrationPlan::new(
+        name.clone(),
         source_runtime,
         target_runtime,
         strategy,
-        validation_delay: std::time::Duration::from_secs(30),
-        rollback_on_failure: true,
-    };
+        true,
+    );
 
     let migration_start = std::time::Instant::now();
     let engine = MigrationEngine::new(StateStore::default_path());
@@ -1235,7 +1320,7 @@ mod tests {
 
     #[test]
     fn test_dashboard_html_is_not_empty() {
-        assert!(!DASHBOARD_HTML.is_empty());
+        assert!(DASHBOARD_HTML.len() > 100);
     }
 
     #[test]

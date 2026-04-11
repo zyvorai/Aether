@@ -161,6 +161,10 @@ impl SecretStore {
             .map(|v| v.version + 1)
             .unwrap_or(1);
 
+        output::warning(
+            "Secret stored with XOR obfuscation (dev-only). \
+             Use AES-256 or Vault for production workloads.",
+        );
         secret.data.insert(
             key.to_string(),
             SecretValue {

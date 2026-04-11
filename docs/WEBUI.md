@@ -283,6 +283,83 @@ Response:
 }
 ```
 
+#### List Plugins
+```http
+GET /api/plugins
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "name": "wasm-runtime",
+      "version": "0.1.0",
+      "runtime_kind": "wasm",
+      "command": "/usr/bin/wasm-adapter",
+      "capabilities": ["build", "run", "stop"]
+    }
+  ]
+}
+```
+
+#### Discover Plugins
+```http
+POST /api/plugins/discover
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "discovered": 2,
+    "total": 3
+  }
+}
+```
+
+#### Health Summary
+```http
+GET /api/health/:workload
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "workload": "my-app",
+    "total_checks": 50,
+    "ready_checks": 48,
+    "uptime_percent": 96.0,
+    "last_restart_count": 1,
+    "last_state": "running"
+  }
+}
+```
+
+#### Validate Compose
+```http
+POST /api/compose/validate
+Content-Type: text/plain
+```
+
+Request body: YAML compose spec
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "workload_count": 3,
+    "deploy_order": ["database", "api", "web"]
+  }
+}
+```
+
 ## API Client Examples
 
 ### cURL

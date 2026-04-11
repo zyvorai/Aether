@@ -3,12 +3,12 @@
 //! One spec. Four runtimes. One tool.
 
 pub mod adapters;
-pub mod output;
 pub mod ai;
 pub mod api;
 pub mod audit;
 pub mod backup;
 pub mod completions;
+pub mod compose;
 pub mod config;
 pub mod cost;
 pub mod dependencies;
@@ -16,9 +16,12 @@ pub mod drift;
 pub mod engine;
 pub mod environments;
 pub mod events;
+pub mod health;
 pub mod metrics;
 pub mod migration;
 pub mod orchestrator;
+pub mod output;
+pub mod plugin;
 pub mod policy;
 pub mod resources;
 pub mod runtime;

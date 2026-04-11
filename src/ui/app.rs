@@ -29,6 +29,10 @@ pub struct App {
     pub should_quit: bool,
     pub last_refresh: Instant,
     pub status_message: Option<String>,
+    /// Search/filter string for workload list
+    pub search_filter: String,
+    /// Whether the search input is active
+    pub search_active: bool,
 }
 
 pub struct AppState {
@@ -48,6 +52,8 @@ impl App {
             should_quit: false,
             last_refresh: Instant::now(),
             status_message: None,
+            search_filter: String::new(),
+            search_active: false,
         })
     }
 
@@ -100,23 +106,62 @@ impl App {
     }
 
     pub fn select_next(&mut self) {
-        if !self.workloads.is_empty() {
-            self.selected_index = (self.selected_index + 1) % self.workloads.len();
+        let len = self.filtered_workloads().len();
+        if len > 0 {
+            self.selected_index = (self.selected_index + 1) % len;
         }
     }
 
     pub fn select_previous(&mut self) {
-        if !self.workloads.is_empty() {
+        let len = self.filtered_workloads().len();
+        if len > 0 {
             if self.selected_index > 0 {
                 self.selected_index -= 1;
             } else {
-                self.selected_index = self.workloads.len().saturating_sub(1);
+                self.selected_index = len - 1;
             }
         }
     }
 
     pub fn selected_workload(&self) -> Option<&WorkloadInfo> {
-        self.workloads.get(self.selected_index)
+        let filtered = self.filtered_workloads();
+        filtered.get(self.selected_index).copied()
+    }
+
+    /// Return workloads matching the current search filter
+    pub fn filtered_workloads(&self) -> Vec<&WorkloadInfo> {
+        if self.search_filter.is_empty() {
+            self.workloads.iter().collect()
+        } else {
+            let query = self.search_filter.to_lowercase();
+            self.workloads
+                .iter()
+                .filter(|w| {
+                    w.state.name.to_lowercase().contains(&query)
+                        || w.state.runtime.to_string().to_lowercase().contains(&query)
+                })
+                .collect()
+        }
+    }
+
+    /// Toggle search mode on/off
+    pub fn toggle_search(&mut self) {
+        self.search_active = !self.search_active;
+        if !self.search_active {
+            self.search_filter.clear();
+        }
+    }
+
+    /// Append a character to search filter
+    pub fn search_push(&mut self, ch: char) {
+        self.search_filter.push(ch);
+        self.selected_index = 0;
+    }
+
+    /// Remove last character from search filter
+    pub fn search_pop(&mut self) {
+        self.search_filter.pop();
+        self.selected_index = 0;
     }
 
     pub fn should_refresh(&self) -> bool {
@@ -147,6 +192,8 @@ impl Default for App {
                 should_quit: false,
                 last_refresh: Instant::now(),
                 status_message: None,
+                search_filter: String::new(),
+                search_active: false,
             },
         }
     }

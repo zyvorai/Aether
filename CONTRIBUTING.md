@@ -257,23 +257,29 @@ pub fn validate(spec: &Workload) -> Result<()> {
 orchestr8/
 ├── src/
 │   ├── main.rs           # CLI entrypoint
+│   ├── cli.rs            # CLI framework (commands, args)
+│   ├── commands.rs       # Command handler implementations
 │   ├── lib.rs            # Library root
 │   ├── spec.rs           # Workload specification
-│   ├── runtime.rs        # Runtime trait
+│   ├── runtime.rs        # Runtime trait + factory
 │   ├── engine.rs         # Decision engine
-│   ├── state.rs          # State management
-│   ├── migration.rs      # Migration engine
+│   ├── state.rs          # State management (with file locking)
+│   ├── migration.rs      # Migration engine (3 strategies)
+│   ├── compose.rs        # Multi-workload compose support
+│   ├── plugin.rs         # Runtime plugin system
+│   ├── health.rs         # Health history and uptime tracking
+│   ├── output.rs         # Pretty terminal output
 │   ├── adapters/         # Runtime adapters
 │   │   ├── podman.rs
 │   │   ├── kube.rs
 │   │   ├── kubevirt.rs
 │   │   └── metal.rs
 │   └── ui/               # TUI components
-│       ├── app.rs
-│       ├── dashboard.rs
+│       ├── app.rs        # App state (incl. search/filter)
+│       ├── dashboard.rs  # Dashboard screen
 │       ├── logs.rs
 │       ├── components.rs
-│       └── events.rs
+│       └── events.rs     # Keyboard handling
 └── tests/                # Integration tests
 ```
 

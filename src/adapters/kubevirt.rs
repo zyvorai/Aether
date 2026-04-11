@@ -398,7 +398,7 @@ impl Runtime for KubeVirtRuntime {
                     .creation_timestamp
                     .as_ref()
                     .map(|t| t.0.to_rfc3339())
-                    .unwrap_or_else(|| crate::resources::now_rfc3339());
+                    .unwrap_or_else(crate::resources::now_rfc3339);
 
                 Instance {
                     id: uid,
@@ -691,9 +691,9 @@ mod tests {
             .as_array()
             .unwrap();
         assert_eq!(gpus.len(), 4);
-        for i in 0..4 {
-            assert_eq!(gpus[i]["name"], format!("gpu{}", i));
-            assert_eq!(gpus[i]["deviceName"], "nvidia.com/gpu");
+        for (i, gpu) in gpus.iter().enumerate() {
+            assert_eq!(gpu["name"], format!("gpu{}", i));
+            assert_eq!(gpu["deviceName"], "nvidia.com/gpu");
         }
     }
 

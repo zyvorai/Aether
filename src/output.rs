@@ -18,6 +18,8 @@ use std::time::Duration;
 static QUIET_MODE: AtomicBool = AtomicBool::new(false);
 static JSON_MODE: AtomicBool = AtomicBool::new(false);
 static YES_MODE: AtomicBool = AtomicBool::new(false);
+static YAML_MODE: AtomicBool = AtomicBool::new(false);
+static WIDE_MODE: AtomicBool = AtomicBool::new(false);
 
 /// Enable quiet mode (suppress all output except errors)
 pub fn set_quiet(enabled: bool) {
@@ -34,6 +36,16 @@ pub fn set_yes(enabled: bool) {
     YES_MODE.store(enabled, Ordering::Relaxed);
 }
 
+/// Enable YAML output mode
+pub fn set_yaml(enabled: bool) {
+    YAML_MODE.store(enabled, Ordering::Relaxed);
+}
+
+/// Enable wide output mode (extra columns)
+pub fn set_wide(enabled: bool) {
+    WIDE_MODE.store(enabled, Ordering::Relaxed);
+}
+
 /// Check if quiet mode is active
 pub fn is_quiet() -> bool {
     QUIET_MODE.load(Ordering::Relaxed)
@@ -42,6 +54,16 @@ pub fn is_quiet() -> bool {
 /// Check if JSON mode is active
 pub fn is_json() -> bool {
     JSON_MODE.load(Ordering::Relaxed)
+}
+
+/// Check if YAML output mode is active
+pub fn is_yaml() -> bool {
+    YAML_MODE.load(Ordering::Relaxed)
+}
+
+/// Check if wide output mode is active
+pub fn is_wide() -> bool {
+    WIDE_MODE.load(Ordering::Relaxed)
 }
 
 // ─── Vision-optimized color palette — SINGLE SOURCE OF TRUTH ─────────
@@ -738,7 +760,7 @@ pub fn change(field: &str, old_val: &str, new_val: &str) {
         field
             .truecolor(COLOR_INFO.0, COLOR_INFO.1, COLOR_INFO.2)
             .bold(),
-        ":"
+        ":".truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
     println!(
         "    {} {}",
@@ -750,6 +772,59 @@ pub fn change(field: &str, old_val: &str, new_val: &str) {
         "+".truecolor(COLOR_SUCCESS.0, COLOR_SUCCESS.1, COLOR_SUCCESS.2),
         new_val.truecolor(COLOR_SUCCESS.0, COLOR_SUCCESS.1, COLOR_SUCCESS.2)
     );
+}
+
+// ─── Interactive Selector ─────────────────────────────────────────────
+
+/// Display an interactive runtime selector with descriptions.
+/// Returns the selected index, or None if cancelled.
+/// Falls back to `None` in quiet/json/non-interactive modes.
+pub fn select_runtime(options: &[(&str, &str, &str)]) -> Option<usize> {
+    if is_quiet() || is_json() || YES_MODE.load(Ordering::Relaxed) {
+        return None; // non-interactive: let auto-select decide
+    }
+
+    println!();
+    println!(
+        "{}",
+        "  Select a runtime:"
+            .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+            .bold()
+    );
+    println!();
+
+    for (i, (icon, name, description)) in options.iter().enumerate() {
+        println!(
+            "  {} {} {}  {}",
+            format!("[{}]", i + 1)
+                .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+                .bold(),
+            icon,
+            name.truecolor(COLOR_INFO.0, COLOR_INFO.1, COLOR_INFO.2)
+                .bold(),
+            description.truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2),
+        );
+    }
+
+    eprint!(
+        "\n  {} ",
+        format!("Choice (1-{}, or Enter for auto):", options.len())
+            .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+    );
+
+    let mut input = String::new();
+    if std::io::stdin().read_line(&mut input).is_ok() {
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            return None; // auto-select
+        }
+        if let Ok(n) = trimmed.parse::<usize>() {
+            if (1..=options.len()).contains(&n) {
+                return Some(n - 1);
+            }
+        }
+    }
+    None
 }
 
 // ─── Step / Wizard Display ────────────────────────────────────────────

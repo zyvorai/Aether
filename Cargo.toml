@@ -63,6 +63,7 @@ dirs = "5.0"
 colored = "2.1"
 indicatif = "0.17"
 comfy-table = "7.1"
+libc = "0.2.184"
 
 [dev-dependencies]
 tempfile = "3.15"
