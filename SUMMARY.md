@@ -633,7 +633,7 @@ cargo run -- delete web-app
 
 ### License
 
-MIT OR Apache-2.0
+Proprietary (HyperSDK)
 
 ---
 
