@@ -88,6 +88,15 @@ impl Runtime for PodmanRuntime {
             ));
         }
 
+        // Inject environment variables from config maps
+        if let Some(config) = &spec.config {
+            for cm in &config.config_maps {
+                for (k, v) in &cm.data {
+                    cmd.arg("-e").arg(format!("{}={}", k, v));
+                }
+            }
+        }
+
         cmd.arg("--cpus").arg(&spec.requirements.cpu);
         cmd.arg("--memory").arg(&spec.requirements.memory);
         cmd.arg(image.full_name());

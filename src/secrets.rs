@@ -147,7 +147,7 @@ impl SecretStore {
 
     /// Set a key-value pair in a secret
     pub fn set(&mut self, secret_name: &str, key: &str, value: &str) -> anyhow::Result<()> {
-        let encrypted = self.encrypt(value);
+        let (encrypted, method) = self.encrypt(value);
         let now = crate::resources::now_rfc3339();
 
         let secret = self
@@ -161,15 +161,17 @@ impl SecretStore {
             .map(|v| v.version + 1)
             .unwrap_or(1);
 
-        output::warning(
-            "Secret stored with XOR obfuscation (dev-only). \
-             Use AES-256 or Vault for production workloads.",
-        );
+        if method == EncryptionMethod::Obfuscate {
+            output::warning(
+                "Secret stored with XOR obfuscation (dev-only). \
+                 Set ORCHESTR8_SECRET_KEY for AES-256 encryption.",
+            );
+        }
         secret.data.insert(
             key.to_string(),
             SecretValue {
                 encrypted,
-                method: EncryptionMethod::Obfuscate,
+                method,
                 version,
                 last_rotated: now.clone(),
             },
@@ -192,14 +194,12 @@ impl SecretStore {
             .get(secret_name)
             .ok_or_else(|| anyhow::anyhow!("Secret '{}' not found", secret_name))?;
 
-        let encrypted = secret
+        let sv = secret
             .data
             .get(key)
-            .ok_or_else(|| anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name))?
-            .encrypted
-            .clone();
+            .ok_or_else(|| anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name))?;
 
-        self.decrypt(&encrypted)
+        self.decrypt(&sv.encrypted, &sv.method)
     }
 
     /// Get a decrypted value and log the access
@@ -210,12 +210,12 @@ impl SecretStore {
             .get_mut(secret_name)
             .ok_or_else(|| anyhow::anyhow!("Secret '{}' not found", secret_name))?;
 
-        let encrypted = secret
+        let sv = secret
             .data
             .get(key)
-            .ok_or_else(|| anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name))?
-            .encrypted
-            .clone();
+            .ok_or_else(|| anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name))?;
+        let encrypted = sv.encrypted.clone();
+        let method = sv.method.clone();
 
         secret.access_log.push(SecretAccess {
             timestamp: now,
@@ -224,7 +224,7 @@ impl SecretStore {
             actor: "cli".to_string(),
         });
 
-        self.decrypt(&encrypted)
+        self.decrypt(&encrypted, &method)
     }
 
     /// Delete a key from a secret
@@ -274,7 +274,7 @@ impl SecretStore {
 
     /// Rotate a specific key in a secret
     pub fn rotate(&mut self, secret_name: &str, key: &str, new_value: &str) -> anyhow::Result<()> {
-        let encrypted = self.encrypt(new_value);
+        let (encrypted, method) = self.encrypt(new_value);
         let now = crate::resources::now_rfc3339();
 
         let secret = self
@@ -292,7 +292,7 @@ impl SecretStore {
             key.to_string(),
             SecretValue {
                 encrypted,
-                method: EncryptionMethod::Obfuscate,
+                method,
                 version,
                 last_rotated: now.clone(),
             },
@@ -382,20 +382,35 @@ impl SecretStore {
         }
     }
 
-    fn encrypt(&self, plaintext: &str) -> String {
-        // WARNING: XOR obfuscation — NOT cryptographically secure.
-        // This provides only basic obfuscation for local development.
-        // For production, integrate a real encryption library (ring, aes-gcm)
-        // or use an external vault (HashiCorp Vault, AWS KMS, etc.).
-        if self.encryption_key == b"orchestr8-dev-key-do-not-use-prod" {
-            tracing::debug!("Using XOR obfuscation (dev-only, NOT secure for production)");
+    /// Returns true if the encryption key is a user-provided production key
+    /// (not the built-in dev key).
+    fn is_production_key(&self) -> bool {
+        self.encryption_key != b"orchestr8-dev-key-do-not-use-prod"
+    }
+
+    /// Encrypt a plaintext value. Uses AES-256-GCM when a production key is
+    /// set, otherwise falls back to XOR obfuscation for local dev.
+    fn encrypt(&self, plaintext: &str) -> (String, EncryptionMethod) {
+        if self.is_production_key() {
+            (self.aes_encrypt(plaintext), EncryptionMethod::Aes256)
         } else {
-            tracing::warn!(
-                "ORCHESTR8_SECRET_KEY is set but encryption still uses XOR obfuscation. \
-                 This is NOT cryptographically secure. Integrate a real encryption \
-                 library (e.g. aes-gcm) for production use."
-            );
+            tracing::debug!("Using XOR obfuscation (dev-only, NOT secure for production)");
+            (self.xor_encrypt(plaintext), EncryptionMethod::Obfuscate)
         }
+    }
+
+    /// Decrypt a ciphertext value, dispatching by encryption method.
+    fn decrypt(&self, ciphertext: &str, method: &EncryptionMethod) -> anyhow::Result<String> {
+        match method {
+            EncryptionMethod::Aes256 => self.aes_decrypt(ciphertext),
+            EncryptionMethod::Obfuscate => self.xor_decrypt(ciphertext),
+            EncryptionMethod::VaultRef => {
+                anyhow::bail!("VaultRef secrets are stored externally and cannot be decrypted locally")
+            }
+        }
+    }
+
+    fn xor_encrypt(&self, plaintext: &str) -> String {
         let key = &self.encryption_key;
         let encrypted: Vec<u8> = plaintext
             .as_bytes()
@@ -406,7 +421,7 @@ impl SecretStore {
         base64_encode(&encrypted)
     }
 
-    fn decrypt(&self, ciphertext: &str) -> anyhow::Result<String> {
+    fn xor_decrypt(&self, ciphertext: &str) -> anyhow::Result<String> {
         let encrypted = base64_decode(ciphertext)?;
         let key = &self.encryption_key;
         let decrypted: Vec<u8> = encrypted
@@ -415,6 +430,53 @@ impl SecretStore {
             .map(|(i, b)| b ^ key[i % key.len()])
             .collect();
         String::from_utf8(decrypted).map_err(|e| anyhow::anyhow!("Decryption failed: {}", e))
+    }
+
+    fn aes_encrypt(&self, plaintext: &str) -> String {
+        use aes_gcm::aead::rand_core::RngCore;
+        use aes_gcm::aead::{Aead, KeyInit, OsRng};
+        use aes_gcm::{Aes256Gcm, Nonce};
+        use sha2::{Digest, Sha256};
+
+        // Derive 32-byte key from user key via SHA-256
+        let key_bytes: [u8; 32] = Sha256::digest(&self.encryption_key).into();
+        let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("32-byte key");
+
+        // Generate random 12-byte nonce
+        let mut nonce_bytes = [0u8; 12];
+        OsRng.fill_bytes(&mut nonce_bytes);
+        let nonce = Nonce::from_slice(&nonce_bytes);
+
+        let ciphertext = cipher
+            .encrypt(nonce, plaintext.as_bytes())
+            .expect("AES-256-GCM encryption failed");
+
+        // Prepend nonce to ciphertext, then base64 encode
+        let mut combined = nonce_bytes.to_vec();
+        combined.extend_from_slice(&ciphertext);
+        base64_encode(&combined)
+    }
+
+    fn aes_decrypt(&self, ciphertext: &str) -> anyhow::Result<String> {
+        use aes_gcm::aead::{Aead, KeyInit};
+        use aes_gcm::{Aes256Gcm, Nonce};
+        use sha2::{Digest, Sha256};
+
+        let combined = base64_decode(ciphertext)?;
+        if combined.len() < 12 {
+            anyhow::bail!("Invalid AES ciphertext: too short (missing nonce)");
+        }
+
+        let (nonce_bytes, encrypted) = combined.split_at(12);
+        let key_bytes: [u8; 32] = Sha256::digest(&self.encryption_key).into();
+        let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("32-byte key");
+        let nonce = Nonce::from_slice(nonce_bytes);
+
+        let plaintext = cipher
+            .decrypt(nonce, encrypted)
+            .map_err(|_| anyhow::anyhow!("AES-256-GCM decryption failed (wrong key or corrupted data)"))?;
+
+        String::from_utf8(plaintext).map_err(|e| anyhow::anyhow!("Decrypted data is not valid UTF-8: {}", e))
     }
 
     pub fn needs_rotation(&self, secret: &Secret) -> bool {
@@ -582,12 +644,50 @@ mod tests {
     }
 
     #[test]
-    fn test_encrypt_decrypt_roundtrip() {
+    fn test_encrypt_decrypt_roundtrip_xor() {
         let store = SecretStore::new();
         let plaintext = "hello-world-secret-value";
-        let encrypted = store.encrypt(plaintext);
-        let decrypted = store.decrypt(&encrypted).unwrap();
+        let (encrypted, method) = store.encrypt(plaintext);
+        assert_eq!(method, EncryptionMethod::Obfuscate);
+        let decrypted = store.decrypt(&encrypted, &method).unwrap();
         assert_eq!(decrypted, plaintext);
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_roundtrip_aes() {
+        let store = SecretStore::with_key(b"my-production-secret-key-32chars!".to_vec());
+        let plaintext = "super-secret-database-password";
+        let (encrypted, method) = store.encrypt(plaintext);
+        assert_eq!(method, EncryptionMethod::Aes256);
+        let decrypted = store.decrypt(&encrypted, &method).unwrap();
+        assert_eq!(decrypted, plaintext);
+    }
+
+    #[test]
+    fn test_aes_different_nonces() {
+        let store = SecretStore::with_key(b"test-key-for-nonce-check".to_vec());
+        let plaintext = "same-value";
+        let (enc1, _) = store.encrypt(plaintext);
+        let (enc2, _) = store.encrypt(plaintext);
+        // Different nonces should produce different ciphertexts
+        assert_ne!(enc1, enc2);
+    }
+
+    #[test]
+    fn test_aes_wrong_key_fails() {
+        let store1 = SecretStore::with_key(b"key-one-for-encryption".to_vec());
+        let store2 = SecretStore::with_key(b"key-two-different-key".to_vec());
+        let (encrypted, _) = store1.encrypt("secret-data");
+        let result = store2.aes_decrypt(&encrypted);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_vault_ref_decrypt_fails() {
+        let store = SecretStore::new();
+        let result = store.decrypt("anything", &EncryptionMethod::VaultRef);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("VaultRef"));
     }
 
     #[test]

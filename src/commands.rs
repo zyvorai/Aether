@@ -9,8 +9,17 @@ use orchestr8::{
     state::StateStore,
 };
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 
 use crate::cli::*;
+
+/// Global flag to skip policy checks (set via --skip-policy)
+static SKIP_POLICY: AtomicBool = AtomicBool::new(false);
+
+/// Enable skip-policy mode
+pub(crate) fn set_skip_policy(enabled: bool) {
+    SKIP_POLICY.store(enabled, std::sync::atomic::Ordering::Relaxed);
+}
 
 /// Load the state store and look up a workload by name, returning a borrowed
 /// reference tied to the returned store. Avoids repeating the 3-line
@@ -166,6 +175,12 @@ async fn deploy_workload_inner(
     event_batch: Option<&mut EventBatch>,
     interactive: bool,
 ) -> Result<()> {
+    // Policy gate: evaluate workload against configured policies
+    let config = orchestr8::config::Config::load();
+    if config.policy.enforce_on_deploy && !SKIP_POLICY.load(std::sync::atomic::Ordering::Relaxed) {
+        orchestr8::policy::gate_deploy(workload, &config.policy)?;
+    }
+
     let engine = Engine::new();
 
     // Determine runtime
@@ -391,6 +406,9 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
     state.remove(name);
     state.save(&StateStore::default_path())?;
 
+    // Cascade: clean up subsystem stores
+    cascade_delete(name);
+
     // Record metrics
     orchestr8::metrics::record_deletion(&ws.runtime.to_string());
 
@@ -407,6 +425,46 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
     output::success(&format!("Deleted instance: {}", name));
 
     Ok(())
+}
+
+/// Clean up orphaned data across all subsystem stores when a workload is deleted.
+/// Best-effort: errors are logged but do not block the deletion.
+fn cascade_delete(name: &str) {
+    // 1. Remove from orchestrator
+    let orch_path = orchestr8::orchestrator::Orchestrator::default_path();
+    if let Ok(mut orch) = orchestr8::orchestrator::Orchestrator::load(&orch_path) {
+        if orch.unregister(name).is_some() {
+            let _ = orch.save(&orch_path);
+            tracing::debug!("Cascade: removed '{}' from orchestrator", name);
+        }
+    }
+
+    // 2. Remove from dependency graph
+    let deps_path = orchestr8::dependencies::DependencyGraph::default_path();
+    if let Ok(mut deps) = orchestr8::dependencies::DependencyGraph::load(&deps_path) {
+        deps.remove_workload(name);
+        let _ = deps.save(&deps_path);
+        tracing::debug!("Cascade: removed '{}' from dependency graph", name);
+    }
+
+    // 3. Remove from scheduler placements
+    let sched_path = orchestr8::scheduler::Scheduler::default_path();
+    if let Ok(mut sched) = orchestr8::scheduler::Scheduler::load(&sched_path) {
+        sched.release(name);
+        let _ = sched.save(&sched_path);
+        tracing::debug!("Cascade: released '{}' from scheduler", name);
+    }
+
+    // 4. Prune health records for this workload
+    let health_path = orchestr8::health::HealthHistory::default_path();
+    if let Ok(mut history) = orchestr8::health::HealthHistory::load(&health_path) {
+        let before = history.records.len();
+        history.records.retain(|r| r.workload != name);
+        if history.records.len() < before {
+            let _ = history.save(&health_path);
+            tracing::debug!("Cascade: pruned {} health records for '{}'", before - history.records.len(), name);
+        }
+    }
 }
 
 pub(crate) async fn list_command() -> Result<()> {
@@ -1237,21 +1295,32 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
     print!("{}", format_drift_report(&report));
 
     if reconcile && report.has_drift {
-        output::section_with_icon("🔧", "Reconciliation Actions");
-        for action in &report.reconciliation_plan {
-            let restart_note = if action.requires_restart {
-                " (requires restart)"
-            } else {
-                ""
-            };
-            output::kv_tree(
-                &format!("{}", action.action_type),
-                &format!("{}{}", action.description, restart_note),
-                false,
-            );
+        if !output::confirm("Apply reconciliation actions?") {
+            output::muted("Reconciliation cancelled.");
+            return Ok(());
         }
-        println!();
-        output::info("To apply these changes, re-run the workload with: orchestr8 run");
+
+        output::section_with_icon("🔧", "Executing Reconciliation");
+        let mut state = StateStore::load(&StateStore::default_path())?;
+        let results = orchestr8::drift::execute_reconciliation(&report, &mut state).await?;
+        state.save(&StateStore::default_path())?;
+
+        for r in &results {
+            if r.success {
+                output::success(&format!("[{}] {}", r.action_type, r.message));
+            } else {
+                output::error(&format!("[{}] {}", r.action_type, r.message));
+            }
+        }
+
+        emit_event(
+            orchestr8::events::EventSeverity::Info,
+            orchestr8::events::EventCategory::DriftDetected,
+            "cli",
+            Some(name),
+            "Drift reconciled",
+            &format!("{} action(s) executed", results.len()),
+        );
     }
 
     Ok(())
@@ -1984,36 +2053,111 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
             }
         }
         OrchestrateAction::Watch { interval } => {
+            let recon_config = orchestr8::config::Config::load().reconciliation;
             output::info(&format!(
-                "Watching health every {} seconds (Ctrl+C to stop)",
-                interval
+                "Reconciliation daemon: health={}s, drift={}s, sla={}s (Ctrl+C to stop)",
+                recon_config.health_interval_secs,
+                recon_config.drift_interval_secs,
+                recon_config.sla_interval_secs,
             ));
             println!();
 
-            loop {
-                let statuses = collect_health_statuses(
-                    &orch,
-                    &StateStore::load(&StateStore::default_path())?,
-                )
-                .await;
-                let actions = orch.run_health_checks_from_statuses(&statuses);
-                orch.save(&path)?;
+            let mut health_elapsed = 0u64;
+            let mut drift_elapsed = 0u64;
+            let mut sla_elapsed = 0u64;
 
-                let now = chrono::Utc::now().format("%H:%M:%S");
-                if actions.is_empty() {
-                    output::success(&format!(
-                        "[{}] Health OK ({} workloads checked)",
-                        now,
-                        statuses.len()
-                    ));
-                } else {
-                    output::warning(&format!("[{}] {} action(s):", now, actions.len()));
-                    for action in &actions {
-                        output::detail(&format!("  - {:?}", action));
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(interval)).await;
+                health_elapsed += interval;
+                drift_elapsed += interval;
+                sla_elapsed += interval;
+
+                let now_str = chrono::Utc::now().format("%H:%M:%S");
+                let state_store = StateStore::load(&StateStore::default_path())?;
+
+                // Health checks
+                if health_elapsed >= recon_config.health_interval_secs {
+                    health_elapsed = 0;
+                    let statuses = collect_health_statuses(&orch, &state_store).await;
+                    let actions = orch.run_health_checks_from_statuses(&statuses);
+                    orch.save(&path)?;
+
+                    if actions.is_empty() {
+                        output::success(&format!(
+                            "[{}] Health OK ({} workloads)",
+                            now_str, statuses.len()
+                        ));
+                    } else {
+                        output::warning(&format!("[{}] {} health action(s):", now_str, actions.len()));
+                        for action in &actions {
+                            output::detail(&format!("  - {:?}", action));
+                        }
                     }
                 }
 
-                tokio::time::sleep(std::time::Duration::from_secs(interval)).await;
+                // Drift checks
+                if drift_elapsed >= recon_config.drift_interval_secs {
+                    drift_elapsed = 0;
+                    let detector = orchestr8::drift::DriftDetector::new();
+                    let mut drift_count = 0usize;
+                    for ws in state_store.list() {
+                        if let Ok(spec) = Workload::from_file(&ws.spec_path) {
+                            let report = detector.detect(&spec, ws);
+                            if report.has_drift {
+                                drift_count += 1;
+                                output::warning(&format!(
+                                    "[{}] Drift detected on '{}': {} item(s)",
+                                    now_str, ws.name, report.drifts.len()
+                                ));
+                                emit_event(
+                                    orchestr8::events::EventSeverity::Warning,
+                                    orchestr8::events::EventCategory::DriftDetected,
+                                    "reconciliation-loop",
+                                    Some(&ws.name),
+                                    "Drift detected",
+                                    &format!("{} drift(s)", report.drifts.len()),
+                                );
+                            }
+                        }
+                    }
+                    if drift_count == 0 {
+                        output::success(&format!("[{}] Drift: no divergence", now_str));
+                    }
+                }
+
+                // SLA checks — verify health-based uptime against baseline
+                if sla_elapsed >= recon_config.sla_interval_secs {
+                    sla_elapsed = 0;
+                    let health_path = orchestr8::health::HealthHistory::default_path();
+                    let history = orchestr8::health::HealthHistory::load(&health_path)
+                        .unwrap_or_default();
+                    let mut at_risk = 0usize;
+                    for ws in state_store.list() {
+                        let uptime = history.uptime_percent(&ws.name);
+                        // Flag workloads below 99% uptime (Standard SLA baseline)
+                        if uptime > 0.0 && uptime < 99.0 {
+                            at_risk += 1;
+                            output::warning(&format!(
+                                "[{}] SLA at risk for '{}': {:.1}% uptime",
+                                now_str, ws.name, uptime
+                            ));
+                            emit_event(
+                                orchestr8::events::EventSeverity::Warning,
+                                orchestr8::events::EventCategory::SlaViolation,
+                                "reconciliation-loop",
+                                Some(&ws.name),
+                                "SLA at risk",
+                                &format!("{:.1}% uptime", uptime),
+                            );
+                        }
+                    }
+                    if at_risk == 0 {
+                        output::success(&format!("[{}] SLA: all workloads healthy", now_str));
+                    }
+                }
+
+                // Process webhook retry queue
+                orchestr8::events::WebhookQueue::process_queue_once();
             }
         }
     }
@@ -2427,6 +2571,50 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
             );
             bus.save(&path)?;
             output::success(&format!("Test notification sent to channel '{}'", name));
+        }
+        WebhookAction::Queue => {
+            let queue = orchestr8::events::WebhookQueue::load(
+                &orchestr8::events::WebhookQueue::default_path(),
+            )?;
+            if queue.pending.is_empty() {
+                output::muted("No pending webhook deliveries.");
+            } else {
+                output::section_with_icon("📬", "Pending Webhook Deliveries");
+                let rows: Vec<Vec<String>> = queue
+                    .pending
+                    .iter()
+                    .map(|p| {
+                        vec![
+                            p.url.clone(),
+                            p.method.clone(),
+                            format!("{}/{}", p.attempts, p.max_attempts),
+                            p.next_attempt_at.chars().take(19).collect::<String>(),
+                        ]
+                    })
+                    .collect();
+                println!(
+                    "{}",
+                    output::table(&["URL", "Method", "Attempts", "Next Retry"], rows)
+                );
+            }
+        }
+        WebhookAction::Flush => {
+            output::header("📤", "Flushing Webhook Queue");
+            let before = orchestr8::events::WebhookQueue::load(
+                &orchestr8::events::WebhookQueue::default_path(),
+            )
+            .map(|q| q.pending.len())
+            .unwrap_or(0);
+            orchestr8::events::WebhookQueue::process_queue_once();
+            let after = orchestr8::events::WebhookQueue::load(
+                &orchestr8::events::WebhookQueue::default_path(),
+            )
+            .map(|q| q.pending.len())
+            .unwrap_or(0);
+            output::success(&format!(
+                "Processed queue: {} before, {} remaining",
+                before, after
+            ));
         }
     }
 
@@ -3143,7 +3331,7 @@ pub(crate) async fn compose_command(action: ComposeAction) -> Result<()> {
                 }
 
                 let rt_override = wl.runtime.as_deref().or(runtime.as_deref());
-                let workload = Workload::from_file(&wl.spec)?;
+                let workload = Workload::from_file(&wl.spec)?.with_env(&wl.env);
                 deploy_single_workload(&workload, &wl.spec, rt_override, None).await?;
             }
 

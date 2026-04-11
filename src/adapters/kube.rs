@@ -203,6 +203,24 @@ fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
         })
         .unwrap_or_default();
 
+    // Inline environment variables from config maps (e.g. compose env injection)
+    let inline_env: Vec<k8s_openapi::api::core::v1::EnvVar> = spec
+        .config
+        .as_ref()
+        .map(|c| {
+            c.config_maps
+                .iter()
+                .flat_map(|cm| {
+                    cm.data.iter().map(|(k, v)| k8s_openapi::api::core::v1::EnvVar {
+                        name: k.clone(),
+                        value: Some(v.clone()),
+                        ..Default::default()
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
     // Container spec
     let container = Container {
         name: spec.metadata.name.clone(),
@@ -211,6 +229,7 @@ fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
         resources: Some(resources),
         liveness_probe,
         readiness_probe,
+        env: if inline_env.is_empty() { None } else { Some(inline_env) },
         env_from: if env_from.is_empty() {
             None
         } else {
