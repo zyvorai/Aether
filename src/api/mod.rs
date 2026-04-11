@@ -68,6 +68,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/orchestrator/status", get(api_orchestrator_status))
         .route("/api/orchestrator/summary", get(api_orchestrator_summary))
         .route("/api/affinity/:class", get(api_affinity_recommend))
+        .route("/api/plugins", get(api_plugins_list))
+        .route("/api/plugins/discover", post(api_plugins_discover))
+        .route("/api/health/:workload", get(api_health_summary))
+        .route("/api/compose/validate", post(api_compose_validate))
         .with_state(app_state);
 
     // Start server

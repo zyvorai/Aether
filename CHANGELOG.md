@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **New CLI Commands:**
+  - `exec` - Execute a command inside a running workload (Podman, Kubernetes, KubeVirt)
+  - `port-forward` - Forward local ports to a running workload with port validation
+  - `watch` - Watch spec file and auto-redeploy on changes (with 1s debounce)
+  - `compare` - Compare workload suitability and cost across all four runtimes
+  - `init` - First-time setup wizard with runtime detection and sample workload generation
+  - `compose up/down/validate` - Multi-workload compose file support with dependency ordering
+  - `plugin list/discover/register/remove` - Runtime plugin management system
+  - `health` - View workload health history, uptime percentage, and timeline
+- **Compose Module (`compose`):** Multi-workload compose file with topological dependency resolution (Kahn's algorithm), circular dependency detection, and per-workload runtime overrides
+- **Plugin Module (`plugin`):** Runtime extension system with JSON manifest discovery from `~/.orchestr8/plugins/`, JSON-RPC style protocol for plugin communication, and persistent registry
+- **Health Module (`health`):** Workload health history tracking with bounded ring buffer (max 1000 records), uptime calculation, restart tracking, and timeline views
+- **Output Formats:** New `--output` flag supporting `table` (default), `json`, `yaml`, and `wide` formats for `list`, `status`, and `health` commands
+- **Dry Run Mode:** Global `--dry-run` flag for `run`, `stop`, `delete`, and `migrate` commands shows what would happen without executing
+- **Interactive Runtime Selector:** `orchestr8 run` now shows an interactive menu for manual runtime selection when no `--runtime` is specified
+- **TUI Search/Filter:** Press `/` in the TUI dashboard to filter workloads by name or runtime; `Esc` to clear
+- **TUI Resource Panel:** Detail panel now shows CPU, memory, storage, and GPU requirements from the workload spec
+- **REST API Endpoints:**
+  - `GET /api/plugins` - List registered plugins
+  - `POST /api/plugins/discover` - Discover plugins from filesystem
+  - `GET /api/health/:workload` - Get health summary for a workload
+  - `POST /api/compose/validate` - Validate a compose specification
+- **Migration Improvements:**
+  - `MigrationPlan::new()` constructor with sensible defaults for timing parameters
+  - Configurable `shutdown_delay`, `traffic_shift_interval`, `cleanup_delay`, `max_health_retries`, and `health_retry_base_interval`
+  - Exponential backoff (base * 2^attempt, capped at 30s) during rolling migration health checks
+  - Guard rejecting same-runtime migration with helpful hint
+  - Guard rejecting empty workload name
+  - Rollback deletion errors now logged instead of silently discarded
+- **State Store:** Advisory file locking (`flock`) on state.json to prevent concurrent write corruption
+- **Podman Adapter:** 10-minute timeout for podman commands to prevent indefinite hangs
+- **Error Suggestions:** Contextual hints appended to common errors (workload not found, podman missing, cluster connection failures, unknown runtime)
+- **Help Documentation:** `help-all` updated with all new commands and output modes
+- **Integration Tests:** 290+ lines of new tests covering compose, plugin, health, migration guards, and output modes
+
+### Changed
+- **Migration Plan:** Replaced struct literal construction with `MigrationPlan::new()` across all call sites for consistent defaults
+- **State Store Locking:** Uses blocking `LOCK_EX` (instead of `LOCK_NB`) so concurrent processes wait briefly rather than failing immediately
+- **State Store Locking:** Updated from deprecated `AsRawFd` to modern `AsFd` + `AsRawFd` idiom
+- **Engine:** `test_engine_default` renamed to `test_engine_construction`, uses `Engine::new()` instead of `Engine::default()`
+- **Adapters:** Simplified `unwrap_or_else(|| fn())` to `unwrap_or_else(fn)` in kube, kubevirt, and metal adapters
+- **KubeVirt Tests:** Replaced indexed loop with iterator (`enumerate`) per Clippy recommendation
+- **Podman Adapter:** `Default::default()` now logs a warning when podman is not available
+- **Commands:** Eliminated 5 instances of `state.get(name).unwrap()` via new `get_workload_state()` helper
+- **Dashboard:** Detail panel lines initialized via `vec![]` literal instead of repeated `.push()` calls
+- **Status Command:** Health recording gated behind `!is_quiet()` so scripting/machine-readable modes skip disk writes
+- **Init Command:** Now prints target directory path before writing `workload.yaml`
+- **Compare Command:** `engine.decide()` hoisted outside the loop (was called N times with identical result)
+- **Main:** Error display uses `Err(anyhow!(""))` instead of `std::process::exit(1)` to allow proper Drop cleanup
+- **Exec/Port-Forward:** Rewrote `run_with_timeout` from spin-loop polling to `tokio::process::Command` with `tokio::time::timeout`
+- **Runtime Selector:** Prompt text is now dynamic (`"Choice (1-N, ...)"`) instead of hardcoded `"1-4"`
+- **Runtime Selector:** Range check uses idiomatic `(1..=len).contains(&n)`
+- **Port Forward:** Rejects port 0 for both local and remote ports
+- **Output Tests:** Added `OutputModeGuard` (Drop-based cleanup) to prevent global state pollution across parallel tests
+
 ### Fixed
 - **Orchestrator:** Replace `.expect("just inserted")` with safe `unreachable!()` in `register()`
 - **Orchestrator:** Corrupted `circuit_opened_at` timestamps no longer silently reset the cooldown timer; circuit remains Open and requires manual reset

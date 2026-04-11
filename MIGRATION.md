@@ -329,12 +329,41 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 orchestr8 migrate my-app kubernetes --strategy blue-green --no-validation
 ```
 
-The validation delay is also used as the traffic switch delay in blue-green migrations, ensuring consistent timing throughout the migration process. Configure via `MigrationPlan.validation_delay` in the API or `~/.orchestr8/config.yaml`:
+The migration engine uses configurable timing parameters with sensible defaults. Configure via `MigrationPlan::new()` in the API or `~/.orchestr8/config.yaml`:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `validation_delay` | 10s | Wait before checking target health |
+| `shutdown_delay` | 5s | Graceful shutdown delay before starting target |
+| `traffic_shift_interval` | 5s | Delay between rolling traffic-shift steps |
+| `cleanup_delay` | 2s | Delay before cleaning up source |
+| `max_health_retries` | 3 | Health check retry attempts |
+| `health_retry_base_interval` | 2s | Base interval for exponential backoff |
+
+Health check retries use **exponential backoff** (base * 2^attempt, capped at 30s).
 
 ```yaml
 migration:
   trafficSwitchDelaySecs: 10
   gracefulShutdownSecs: 5
+```
+
+### Same-Runtime Guard
+
+Migrating to the same runtime is rejected with a helpful error:
+
+```bash
+$ orchestr8 migrate my-app podman
+# Error: Source and target runtimes are the same (podman). Migration is unnecessary.
+# Hint: Use `orchestr8 rollback my-app` to redeploy on the same runtime.
+```
+
+### Dry Run
+
+Preview what a migration would do without executing:
+
+```bash
+orchestr8 migrate my-app kubernetes --strategy blue-green --dry-run
 ```
 
 ### Automatic Rollback

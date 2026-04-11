@@ -5,10 +5,16 @@ use crate::spec::Workload;
 use async_trait::async_trait;
 use tokio::process::Command;
 
+/// Default timeout for podman commands (10 minutes).
+const PODMAN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
+
 /// Execute a pre-built podman [`Command`], returning its output on success.
 /// On failure, bails with a message that includes the sub-command name and stderr.
+/// Commands are subject to a 10-minute timeout to prevent indefinite hangs.
 async fn exec_podman(mut cmd: Command, subcmd: &str) -> crate::Result<std::process::Output> {
-    let output = cmd.output().await?;
+    let output = tokio::time::timeout(PODMAN_TIMEOUT, cmd.output())
+        .await
+        .map_err(|_| anyhow::anyhow!("Podman {} timed out after {:?}", subcmd, PODMAN_TIMEOUT))??;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         anyhow::bail!("Podman {} failed: {}", subcmd, stderr);
@@ -34,7 +40,10 @@ impl Default for PodmanRuntime {
     fn default() -> Self {
         match Self::new() {
             Ok(rt) => rt,
-            Err(_) => Self,
+            Err(e) => {
+                tracing::warn!("Podman not available ({}), creating stub runtime", e);
+                Self
+            }
         }
     }
 }

@@ -834,7 +834,7 @@ impl Runtime for KubernetesRuntime {
                     .creation_timestamp
                     .as_ref()
                     .map(|t| t.0.to_rfc3339())
-                    .unwrap_or_else(|| crate::resources::now_rfc3339());
+                    .unwrap_or_else(crate::resources::now_rfc3339);
 
                 Instance {
                     id: uid,

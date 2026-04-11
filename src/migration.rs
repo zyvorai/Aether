@@ -50,6 +50,16 @@ pub struct MigrationPlan {
     pub strategy: MigrationStrategy,
     pub validation_delay: Duration,
     pub rollback_on_failure: bool,
+    /// Graceful shutdown delay before starting target (default: 5s)
+    pub shutdown_delay: Duration,
+    /// Delay between traffic-shift steps in rolling migration (default: 5s)
+    pub traffic_shift_interval: Duration,
+    /// Delay after stopping source before cleanup (default: 2s)
+    pub cleanup_delay: Duration,
+    /// Maximum health check attempts during rolling validation (default: 3)
+    pub max_health_retries: u32,
+    /// Interval between health check retries with exponential backoff (default: 2s base)
+    pub health_retry_base_interval: Duration,
 }
 
 /// Migration result
@@ -60,6 +70,31 @@ pub struct MigrationResult {
     pub target_instance: Option<Instance>,
     pub error: Option<String>,
     pub rollback_performed: bool,
+}
+
+impl MigrationPlan {
+    /// Create a new migration plan with sensible defaults for timing parameters.
+    pub fn new(
+        workload_name: String,
+        source_runtime: RuntimeKind,
+        target_runtime: RuntimeKind,
+        strategy: MigrationStrategy,
+        rollback_on_failure: bool,
+    ) -> Self {
+        Self {
+            workload_name,
+            source_runtime,
+            target_runtime,
+            strategy,
+            validation_delay: Duration::from_secs(10),
+            rollback_on_failure,
+            shutdown_delay: Duration::from_secs(5),
+            traffic_shift_interval: Duration::from_secs(5),
+            cleanup_delay: Duration::from_secs(2),
+            max_health_retries: 3,
+            health_retry_base_interval: Duration::from_secs(2),
+        }
+    }
 }
 
 /// Migration engine
@@ -75,6 +110,21 @@ impl MigrationEngine {
 
     /// Execute migration
     pub async fn migrate(&self, plan: MigrationPlan) -> Result<MigrationResult> {
+        // Guard: reject same-runtime migration
+        if plan.source_runtime == plan.target_runtime {
+            return Err(anyhow::anyhow!(
+                "Source and target runtimes are the same ({}). Migration is unnecessary.\n\
+                 Hint: Use `orchestr8 rollback {}` to redeploy on the same runtime.",
+                plan.source_runtime,
+                plan.workload_name,
+            ));
+        }
+
+        // Guard: reject empty workload name
+        if plan.workload_name.is_empty() {
+            return Err(anyhow::anyhow!("Workload name cannot be empty"));
+        }
+
         tracing::info!(
             "Starting migration: {} from {} to {}",
             plan.workload_name,
@@ -119,8 +169,8 @@ impl MigrationEngine {
         tracing::info!("Stopping source instance on {}", plan.source_runtime);
         source_runtime.stop(&workload_state.instance).await?;
 
-        // Wait for graceful shutdown
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        // Wait for graceful shutdown (configurable)
+        tokio::time::sleep(plan.shutdown_delay).await;
 
         // Get target runtime
         let target_runtime = self.get_runtime(&plan.target_runtime).await?;
@@ -162,7 +212,9 @@ impl MigrationEngine {
             // Rollback if not ready and rollback enabled
             if plan.rollback_on_failure {
                 tracing::warn!("Target instance not ready, rolling back");
-                let _ = target_runtime.delete(&target_instance).await;
+                if let Err(e) = target_runtime.delete(&target_instance).await {
+                    tracing::error!("Failed to delete target instance during rollback: {}", e);
+                }
                 let rollback_image = source_runtime.build(&workload).await?;
                 let source_instance = source_runtime.run(&rollback_image, &workload).await?;
 
@@ -241,7 +293,9 @@ impl MigrationEngine {
         let status = target_runtime.status(&target_instance).await?;
         if !status.ready {
             tracing::warn!("Green deployment not ready, cleaning up");
-            let _ = target_runtime.delete(&target_instance).await;
+            if let Err(e) = target_runtime.delete(&target_instance).await {
+                tracing::error!("Failed to clean up failed green deployment: {}", e);
+            }
 
             return Ok(MigrationResult {
                 success: false,
@@ -266,7 +320,7 @@ impl MigrationEngine {
         // Stop and delete blue (source) deployment
         tracing::info!("Stopping blue deployment (source)");
         source_runtime.stop(&workload_state.instance).await?;
-        tokio::time::sleep(Duration::from_secs(2)).await;
+        tokio::time::sleep(plan.cleanup_delay).await;
         source_runtime.delete(&workload_state.instance).await?;
 
         // Update state
@@ -310,13 +364,14 @@ impl MigrationEngine {
         let image = target_runtime.build(&workload).await?;
         let target_instance = target_runtime.run(&image, &workload).await?;
 
-        // Phase 2: Validate target
+        // Phase 2: Validate target with exponential backoff
         tracing::info!("Phase 2: Validating target deployment");
         tokio::time::sleep(plan.validation_delay).await;
 
         let mut validation_attempts = 0;
-        let max_attempts = 3;
+        let max_attempts = plan.max_health_retries;
         let mut target_ready = false;
+        let base_interval = plan.health_retry_base_interval;
 
         while validation_attempts < max_attempts {
             let status = target_runtime.status(&target_instance).await?;
@@ -327,14 +382,23 @@ impl MigrationEngine {
 
             validation_attempts += 1;
             if validation_attempts < max_attempts {
-                tracing::info!("Target not ready, retrying ({}/{})", validation_attempts, max_attempts);
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                // Exponential backoff: base * 2^attempt, capped at 30s
+                let backoff = base_interval
+                    .mul_f64(2.0_f64.powi(validation_attempts as i32 - 1))
+                    .min(Duration::from_secs(30));
+                tracing::info!(
+                    "Target not ready, retrying ({}/{}) in {:?}",
+                    validation_attempts, max_attempts, backoff
+                );
+                tokio::time::sleep(backoff).await;
             }
         }
 
         if !target_ready {
             tracing::warn!("Target failed validation, rolling back");
-            let _ = target_runtime.delete(&target_instance).await;
+            if let Err(e) = target_runtime.delete(&target_instance).await {
+                tracing::error!("Failed to delete target instance during rollback: {}", e);
+            }
 
             return Ok(MigrationResult {
                 success: false,
@@ -349,13 +413,15 @@ impl MigrationEngine {
         tracing::info!("Phase 3: Gradual traffic shift");
         for percentage in [25, 50, 75, 100] {
             tracing::info!("Shifting {}% traffic to target", percentage);
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(plan.traffic_shift_interval).await;
 
             // Verify target still healthy
             let status = target_runtime.status(&target_instance).await?;
             if !status.ready {
                 tracing::error!("Target became unhealthy during traffic shift, rolling back");
-                let _ = target_runtime.delete(&target_instance).await;
+                if let Err(e) = target_runtime.delete(&target_instance).await {
+                    tracing::error!("Failed to delete target instance during rollback: {}", e);
+                }
 
                 return Ok(MigrationResult {
                     success: false,
@@ -370,7 +436,7 @@ impl MigrationEngine {
         // Phase 4: Cleanup source
         tracing::info!("Phase 4: Cleaning up source deployment");
         source_runtime.stop(&workload_state.instance).await?;
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        tokio::time::sleep(plan.shutdown_delay).await;
         source_runtime.delete(&workload_state.instance).await?;
 
         // Update state
@@ -412,14 +478,13 @@ mod tests {
         strategy: MigrationStrategy,
         rollback: bool,
     ) -> MigrationPlan {
-        MigrationPlan {
-            workload_name: name.to_string(),
-            source_runtime: source,
-            target_runtime: target,
+        MigrationPlan::new(
+            name.to_string(),
+            source,
+            target,
             strategy,
-            validation_delay: Duration::from_secs(10),
-            rollback_on_failure: rollback,
-        }
+            rollback,
+        )
     }
 
     // Helper: build a test Instance
@@ -439,21 +504,24 @@ mod tests {
 
     #[test]
     fn test_migration_plan_creation() {
-        let plan = MigrationPlan {
-            workload_name: "test-app".to_string(),
-            source_runtime: RuntimeKind::Podman,
-            target_runtime: RuntimeKind::Kubernetes,
-            strategy: MigrationStrategy::BlueGreen,
-            validation_delay: Duration::from_secs(30),
-            rollback_on_failure: true,
-        };
+        let plan = MigrationPlan::new(
+            "test-app".to_string(),
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::BlueGreen,
+            true,
+        );
 
         assert_eq!(plan.workload_name, "test-app");
         assert_eq!(plan.source_runtime, RuntimeKind::Podman);
         assert_eq!(plan.target_runtime, RuntimeKind::Kubernetes);
         assert_eq!(plan.strategy, MigrationStrategy::BlueGreen);
-        assert_eq!(plan.validation_delay, Duration::from_secs(30));
         assert!(plan.rollback_on_failure);
+        // Verify defaults
+        assert_eq!(plan.shutdown_delay, Duration::from_secs(5));
+        assert_eq!(plan.traffic_shift_interval, Duration::from_secs(5));
+        assert_eq!(plan.cleanup_delay, Duration::from_secs(2));
+        assert_eq!(plan.max_health_retries, 3);
     }
 
     #[test]
@@ -476,6 +544,7 @@ mod tests {
 
     #[test]
     fn test_migration_plan_same_source_and_target() {
+        // Same-runtime plans can still be constructed (guard is in migrate())
         let plan = make_plan(
             "loop-app",
             RuntimeKind::Podman,
@@ -486,29 +555,61 @@ mod tests {
         assert_eq!(plan.source_runtime, plan.target_runtime);
     }
 
+    #[tokio::test]
+    async fn test_migrate_rejects_same_runtime() {
+        let dir = tempfile::tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+        let engine = MigrationEngine::new(state_path);
+        let plan = make_plan(
+            "same-rt-app",
+            RuntimeKind::Podman,
+            RuntimeKind::Podman,
+            MigrationStrategy::Immediate,
+            false,
+        );
+        let err = engine.migrate(plan).await.unwrap_err();
+        assert!(err.to_string().contains("same"));
+    }
+
+    #[tokio::test]
+    async fn test_migrate_rejects_empty_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+        let engine = MigrationEngine::new(state_path);
+        let plan = make_plan(
+            "",
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::Immediate,
+            false,
+        );
+        let err = engine.migrate(plan).await.unwrap_err();
+        assert!(err.to_string().contains("empty"));
+    }
+
     #[test]
     fn test_migration_plan_zero_validation_delay() {
-        let plan = MigrationPlan {
-            workload_name: "fast-app".to_string(),
-            source_runtime: RuntimeKind::Podman,
-            target_runtime: RuntimeKind::Kubernetes,
-            strategy: MigrationStrategy::Immediate,
-            validation_delay: Duration::ZERO,
-            rollback_on_failure: false,
-        };
+        let mut plan = MigrationPlan::new(
+            "fast-app".to_string(),
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::Immediate,
+            false,
+        );
+        plan.validation_delay = Duration::ZERO;
         assert_eq!(plan.validation_delay, Duration::ZERO);
     }
 
     #[test]
     fn test_migration_plan_large_validation_delay() {
-        let plan = MigrationPlan {
-            workload_name: "slow-app".to_string(),
-            source_runtime: RuntimeKind::Podman,
-            target_runtime: RuntimeKind::Kubernetes,
-            strategy: MigrationStrategy::Rolling,
-            validation_delay: Duration::from_secs(3600),
-            rollback_on_failure: true,
-        };
+        let mut plan = MigrationPlan::new(
+            "slow-app".to_string(),
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::Rolling,
+            true,
+        );
+        plan.validation_delay = Duration::from_secs(3600);
         assert_eq!(plan.validation_delay, Duration::from_secs(3600));
     }
 
@@ -1158,27 +1259,27 @@ mod tests {
 
     #[test]
     fn test_validation_delay_millis() {
-        let plan = MigrationPlan {
-            workload_name: "millis-app".to_string(),
-            source_runtime: RuntimeKind::Podman,
-            target_runtime: RuntimeKind::Kubernetes,
-            strategy: MigrationStrategy::Immediate,
-            validation_delay: Duration::from_millis(500),
-            rollback_on_failure: false,
-        };
+        let mut plan = MigrationPlan::new(
+            "millis-app".to_string(),
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::Immediate,
+            false,
+        );
+        plan.validation_delay = Duration::from_millis(500);
         assert_eq!(plan.validation_delay.as_millis(), 500);
     }
 
     #[test]
     fn test_validation_delay_seconds() {
-        let plan = MigrationPlan {
-            workload_name: "secs-app".to_string(),
-            source_runtime: RuntimeKind::Podman,
-            target_runtime: RuntimeKind::Kubernetes,
-            strategy: MigrationStrategy::BlueGreen,
-            validation_delay: Duration::from_secs(60),
-            rollback_on_failure: true,
-        };
+        let mut plan = MigrationPlan::new(
+            "secs-app".to_string(),
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::BlueGreen,
+            true,
+        );
+        plan.validation_delay = Duration::from_secs(60);
         assert_eq!(plan.validation_delay.as_secs(), 60);
     }
 

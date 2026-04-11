@@ -288,20 +288,21 @@ fn test_migration_plan_structure() {
     use orchestr8::migration::{MigrationPlan, MigrationStrategy};
     use std::time::Duration;
 
-    let plan = MigrationPlan {
-        workload_name: "test-app".to_string(),
-        source_runtime: RuntimeKind::Podman,
-        target_runtime: RuntimeKind::Kubernetes,
-        strategy: MigrationStrategy::BlueGreen,
-        validation_delay: Duration::from_secs(30),
-        rollback_on_failure: true,
-    };
+    let plan = MigrationPlan::new(
+        "test-app".to_string(),
+        RuntimeKind::Podman,
+        RuntimeKind::Kubernetes,
+        MigrationStrategy::BlueGreen,
+        true,
+    );
 
     assert_eq!(plan.workload_name, "test-app");
     assert_eq!(plan.source_runtime, RuntimeKind::Podman);
     assert_eq!(plan.target_runtime, RuntimeKind::Kubernetes);
     assert_eq!(plan.strategy, MigrationStrategy::BlueGreen);
     assert!(plan.rollback_on_failure);
+    assert_eq!(plan.shutdown_delay, Duration::from_secs(5));
+    assert_eq!(plan.max_health_retries, 3);
 }
 
 #[test]
@@ -1319,4 +1320,305 @@ fn test_migration_strategy_from_str_integration() {
         let reparsed: MigrationStrategy = displayed.parse().unwrap();
         assert_eq!(parsed, reparsed);
     }
+}
+
+// ─── Compose module integration tests ────────────────────────────────
+
+#[test]
+fn test_compose_load_and_validate() {
+    use orchestr8::compose;
+
+    let dir = TempDir::new().unwrap();
+    let compose_path = dir.path().join("orchestr8-compose.yaml");
+
+    // Create a minimal compose file
+    let yaml = r#"
+version: "1"
+workloads:
+  web:
+    spec: web.yaml
+    depends_on: [db]
+  db:
+    spec: db.yaml
+"#;
+    fs::write(&compose_path, yaml).unwrap();
+
+    let spec = compose::load(&compose_path).unwrap();
+    assert_eq!(spec.workloads.len(), 2);
+    assert!(spec.workloads.contains_key("web"));
+    assert!(spec.workloads.contains_key("db"));
+
+    // Validate (should pass — no circular deps)
+    compose::validate(&spec).unwrap();
+
+    // Resolve order: db before web
+    let order = compose::resolve_order(&spec).unwrap();
+    assert_eq!(order[0], "db");
+    assert_eq!(order[1], "web");
+}
+
+#[test]
+fn test_compose_circular_dependency_detected() {
+    use orchestr8::compose;
+
+    let dir = TempDir::new().unwrap();
+    let compose_path = dir.path().join("orchestr8-compose.yaml");
+
+    let yaml = r#"
+version: "1"
+workloads:
+  a:
+    spec: a.yaml
+    depends_on: [b]
+  b:
+    spec: b.yaml
+    depends_on: [a]
+"#;
+    fs::write(&compose_path, yaml).unwrap();
+
+    let spec = compose::load(&compose_path).unwrap();
+    let result = compose::validate(&spec);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("ircular"));
+}
+
+// ─── Plugin module integration tests ─────────────────────────────────
+
+#[test]
+fn test_plugin_registry_roundtrip() {
+    use orchestr8::plugin::{PluginManifest, PluginRegistry};
+
+    let dir = TempDir::new().unwrap();
+    let path = dir.path().join("plugins.json");
+
+    let mut reg = PluginRegistry::new();
+    reg.register(PluginManifest {
+        name: "wasm-runtime".to_string(),
+        version: "0.1.0".to_string(),
+        runtime_kind: "wasm".to_string(),
+        command: "/usr/bin/wasm-adapter".to_string(),
+        capabilities: vec!["build".to_string(), "run".to_string(), "stop".to_string()],
+    });
+    reg.save(&path).unwrap();
+
+    let loaded = PluginRegistry::load(&path).unwrap();
+    assert_eq!(loaded.plugins.len(), 1);
+    let plugin = loaded.get("wasm-runtime").unwrap();
+    assert_eq!(plugin.runtime_kind, "wasm");
+    assert_eq!(plugin.capabilities.len(), 3);
+}
+
+// ─── Health history integration tests ────────────────────────────────
+
+#[test]
+fn test_health_history_integration() {
+    use orchestr8::health::{HealthHistory, HealthRecord};
+    use orchestr8::runtime::{InstanceState, RuntimeKind};
+
+    let dir = TempDir::new().unwrap();
+    let path = dir.path().join("health.json");
+
+    let mut history = HealthHistory::default();
+
+    // Record multiple health checks
+    for i in 0..10 {
+        history.record(HealthRecord {
+            timestamp: format!("2026-01-01T00:{:02}:00Z", i),
+            workload: "web-app".to_string(),
+            runtime: RuntimeKind::Kubernetes,
+            state: if i < 8 { InstanceState::Running } else { InstanceState::Failed },
+            ready: i < 8,
+            restart_count: if i >= 8 { 1 } else { 0 },
+            latency_ms: Some(50.0 + i as f64),
+        });
+    }
+
+    // Save and reload
+    history.save(&path).unwrap();
+    let loaded = HealthHistory::load(&path).unwrap();
+
+    // Verify uptime
+    let uptime = loaded.uptime_percent("web-app");
+    assert!((uptime - 80.0).abs() < 0.1);
+
+    // Verify summary
+    let summary = loaded.summary("web-app");
+    assert_eq!(summary.total_checks, 10);
+    assert_eq!(summary.ready_checks, 8);
+    assert_eq!(summary.last_restart_count, 1);
+}
+
+// ─── Migration guard integration tests ───────────────────────────────
+
+#[tokio::test]
+async fn test_migration_rejects_same_runtime_integration() {
+    use orchestr8::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
+
+    let dir = TempDir::new().unwrap();
+    let state_path = dir.path().join("state.json");
+
+    let engine = MigrationEngine::new(state_path);
+    let plan = MigrationPlan::new(
+        "test-app".to_string(),
+        RuntimeKind::Podman,
+        RuntimeKind::Podman,
+        MigrationStrategy::Immediate,
+        false,
+    );
+
+    let result = engine.migrate(plan).await;
+    assert!(result.is_err());
+    let err_msg = result.unwrap_err().to_string();
+    assert!(err_msg.contains("same"), "Error should mention same runtime: {}", err_msg);
+}
+
+#[tokio::test]
+async fn test_migration_rejects_empty_name_integration() {
+    use orchestr8::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
+
+    let dir = TempDir::new().unwrap();
+    let state_path = dir.path().join("state.json");
+
+    let engine = MigrationEngine::new(state_path);
+    let plan = MigrationPlan::new(
+        String::new(),
+        RuntimeKind::Podman,
+        RuntimeKind::Kubernetes,
+        MigrationStrategy::Immediate,
+        false,
+    );
+
+    let result = engine.migrate(plan).await;
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("empty"));
+}
+
+// ─── Migration plan default fields test ──────────────────────────────
+
+#[test]
+fn test_migration_plan_configurable_delays() {
+    use orchestr8::migration::{MigrationPlan, MigrationStrategy};
+    use std::time::Duration;
+
+    let mut plan = MigrationPlan::new(
+        "test-app".to_string(),
+        RuntimeKind::Podman,
+        RuntimeKind::Kubernetes,
+        MigrationStrategy::Rolling,
+        true,
+    );
+
+    // Verify defaults
+    assert_eq!(plan.shutdown_delay, Duration::from_secs(5));
+    assert_eq!(plan.traffic_shift_interval, Duration::from_secs(5));
+    assert_eq!(plan.cleanup_delay, Duration::from_secs(2));
+    assert_eq!(plan.max_health_retries, 3);
+    assert_eq!(plan.health_retry_base_interval, Duration::from_secs(2));
+
+    // Override
+    plan.shutdown_delay = Duration::from_secs(10);
+    plan.traffic_shift_interval = Duration::from_secs(3);
+    assert_eq!(plan.shutdown_delay, Duration::from_secs(10));
+    assert_eq!(plan.traffic_shift_interval, Duration::from_secs(3));
+}
+
+// ─── Output format mode tests ────────────────────────────────────────
+
+/// Drop guard that resets all global output modes to false on drop.
+/// Prevents test pollution even if the test panics.
+struct OutputModeGuard;
+
+impl Drop for OutputModeGuard {
+    fn drop(&mut self) {
+        orchestr8::output::set_yaml(false);
+        orchestr8::output::set_wide(false);
+        orchestr8::output::set_quiet(false);
+        orchestr8::output::set_json(false);
+        orchestr8::output::set_yes(false);
+    }
+}
+
+#[test]
+fn test_output_modes_default_state() {
+    let _guard = OutputModeGuard;
+    // Modes are global static — other tests may have set them,
+    // so we just verify the getters don't panic.
+    let _ = orchestr8::output::is_json();
+    let _ = orchestr8::output::is_yaml();
+    let _ = orchestr8::output::is_wide();
+    let _ = orchestr8::output::is_quiet();
+}
+
+#[test]
+fn test_output_set_and_check_yaml() {
+    let _guard = OutputModeGuard;
+    orchestr8::output::set_yaml(true);
+    assert!(orchestr8::output::is_yaml());
+}
+
+#[test]
+fn test_output_set_and_check_wide() {
+    let _guard = OutputModeGuard;
+    orchestr8::output::set_wide(true);
+    assert!(orchestr8::output::is_wide());
+}
+
+#[test]
+fn test_select_runtime_returns_none_in_quiet_mode() {
+    let _guard = OutputModeGuard;
+    orchestr8::output::set_quiet(true);
+    let result = orchestr8::output::select_runtime(&[
+        ("🐳", "Podman", "test"),
+    ]);
+    assert!(result.is_none());
+}
+
+// ─── Health history integration with status recording ────────────────
+
+#[test]
+fn test_health_summary_for_unknown_workload() {
+    use orchestr8::health::HealthHistory;
+
+    let history = HealthHistory::default();
+    let summary = history.summary("nonexistent");
+    assert_eq!(summary.total_checks, 0);
+    assert_eq!(summary.uptime_percent, 0.0);
+}
+
+// ─── Compose missing dependency validation ───────────────────────────
+
+#[test]
+fn test_compose_missing_dependency() {
+    use orchestr8::compose;
+
+    let dir = TempDir::new().unwrap();
+    let compose_path = dir.path().join("orchestr8-compose.yaml");
+
+    let yaml = r#"
+version: "1"
+workloads:
+  web:
+    spec: web.yaml
+    depends_on: [nonexistent]
+"#;
+    fs::write(&compose_path, yaml).unwrap();
+
+    let spec = compose::load(&compose_path).unwrap();
+    let result = compose::validate(&spec);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("nonexistent"));
+}
+
+// ─── Plugin protocol roundtrip ───────────────────────────────────────
+
+#[test]
+fn test_plugin_protocol_serialization() {
+    use orchestr8::plugin::PluginProtocol;
+
+    let msg = PluginProtocol::BuildRequest {
+        spec_json: r#"{"name":"test"}"#.to_string(),
+    };
+    let json = serde_json::to_string(&msg).unwrap();
+    let parsed: PluginProtocol = serde_json::from_str(&json).unwrap();
+    assert_eq!(msg, parsed);
 }

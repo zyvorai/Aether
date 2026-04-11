@@ -37,9 +37,14 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - Three strategies: Immediate, Blue-Green, Rolling
 - Zero-downtime migrations
 - Automatic rollback on failure
+- Exponential backoff health checks
+- Configurable timing parameters
+- Same-runtime guard with helpful hints
 
 **Interactive TUI Dashboard**
 - Real-time monitoring across all runtimes
+- Search/filter workloads by name or runtime
+- Resource details panel (CPU, memory, storage, GPU)
 - Integrated log viewer
 - Color-coded status indicators
 - Auto-refresh every 5 seconds
@@ -53,6 +58,14 @@ Deploy once. Run anywhere. Migrate seamlessly.
 **Developer Experience**
 - Shell completions (bash, zsh, fish, powershell, elvish)
 - JSON Schema for IDE autocomplete and validation
+- Interactive runtime selector with descriptions
+- Multi-format output (`--output table|json|yaml|wide`)
+- Dry-run mode (`--dry-run`) for safe previews
+- `watch` mode for auto-redeploy on spec changes
+- `exec` and `port-forward` for live debugging
+- `init` wizard for first-time setup
+- Compose files for multi-workload deployments
+- Runtime plugin system for custom runtimes
 - Comprehensive CI/CD with GitHub Actions
 - Integration tests and examples
 - Makefile for common tasks
@@ -66,10 +79,10 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - Prometheus ServiceMonitor support
 
 **Production Ready**
-- 6,000+ lines of Rust code
-- All tests passing (unit + integration)
-- Zero compiler warnings
-- Atomic state persistence (crash-safe)
+- 8,000+ lines of Rust code
+- 884 tests passing (unit + integration)
+- Zero compiler warnings, zero Clippy lints
+- Atomic state persistence with advisory file locking (crash-safe)
 - Symlink-safe backup operations
 - Comprehensive documentation (14,500+ lines)
 - Package distribution via APT and YUM repositories
@@ -340,14 +353,20 @@ Source Runtime                    Target Runtime
 ### Workload Management
 
 ```bash
+# First-time setup wizard
+orchestr8 init
+
 # Validate workload spec
 orchestr8 validate [--spec workload.yaml]
 
 # Build image for target runtime
 orchestr8 build [--spec workload.yaml]
 
-# Deploy workload
+# Deploy workload (interactive runtime selector)
 orchestr8 run [--spec workload.yaml] [--runtime podman|kube|kubevirt|metal]
+
+# Deploy with dry-run preview
+orchestr8 run --spec workload.yaml --dry-run
 
 # Get workload status
 orchestr8 status <name>
@@ -363,6 +382,61 @@ orchestr8 delete <name>
 
 # List all workloads
 orchestr8 list
+
+# List with extra columns
+orchestr8 list --output wide
+
+# List as JSON/YAML
+orchestr8 list --output json
+orchestr8 list --output yaml
+```
+
+### Developer Workflow
+
+```bash
+# Execute command inside a running workload
+orchestr8 exec <name> [command] [-i] [-t timeout]
+
+# Forward local ports to a workload
+orchestr8 port-forward <name> <local:remote>
+
+# Watch spec and auto-redeploy on changes
+orchestr8 watch [--runtime podman]
+
+# Compare workload across all runtimes
+orchestr8 compare
+
+# View health history and uptime
+orchestr8 health <name> [--last 20] [--summary]
+```
+
+### Multi-Workload Compose
+
+```bash
+# Validate compose file
+orchestr8 compose validate [file]
+
+# Deploy all workloads in dependency order
+orchestr8 compose up [file] [--runtime kube] [--dry-run]
+
+# Stop all workloads in reverse order
+orchestr8 compose down [file]
+```
+
+### Runtime Plugins
+
+```bash
+# List registered plugins
+orchestr8 plugin list
+
+# Discover plugins from ~/.orchestr8/plugins/
+orchestr8 plugin discover
+
+# Register a plugin from manifest
+orchestr8 plugin register <manifest.json>
+
+# Remove a plugin
+orchestr8 plugin remove <name>
 ```
 
 ### Migration
@@ -370,6 +444,9 @@ orchestr8 list
 ```bash
 # Migrate to different runtime
 orchestr8 migrate <name> <target> [--strategy immediate|blue-green|rolling]
+
+# Dry-run migration preview
+orchestr8 migrate <name> <target> --dry-run
 
 # Fast migration (skip validation)
 orchestr8 migrate <name> <target> --strategy immediate --no-validation
@@ -386,7 +463,10 @@ orchestr8 tui
 
 # Keyboard shortcuts:
 #   ↑/↓   - Navigate workloads
+#   /     - Search/filter workloads
+#   Esc   - Clear filter
 #   Enter - View logs
+#   g/G   - Jump to first/last
 #   r     - Refresh
 #   q     - Quit
 ```
@@ -399,6 +479,15 @@ orchestr8 -v <command>
 
 # Custom spec file
 orchestr8 --spec custom.yaml <command>
+
+# Output format
+orchestr8 --output table|json|yaml|wide <command>
+
+# Dry-run mode (mutating commands)
+orchestr8 --dry-run <command>
+
+# Skip confirmation prompts
+orchestr8 --yes <command>
 
 # Help
 orchestr8 --help
@@ -574,11 +663,11 @@ orchestr8 migrate my-app kubernetes --strategy rolling
 | [KUBERNETES.md](KUBERNETES.md) | Complete Kubernetes deployment guide | 500+ |
 | [KUBEVIRT.md](KUBEVIRT.md) | VM deployment with KubeVirt | 500+ |
 | [METAL3.md](METAL3.md) | Bare metal provisioning | 650+ |
-| [MIGRATION.md](MIGRATION.md) | Runtime migration guide | 550+ |
-| [TUI.md](TUI.md) | Interactive dashboard guide | 400+ |
+| [MIGRATION.md](MIGRATION.md) | Runtime migration guide (timing, backoff, guards) | 900+ |
+| [TUI.md](TUI.md) | Interactive dashboard guide (search/filter) | 550+ |
 | [docs/BACKUP.md](docs/BACKUP.md) | Backup and restore guide | 500+ |
 | [docs/COST.md](docs/COST.md) | Cost estimation guide | 480+ |
-| [docs/WEBUI.md](docs/WEBUI.md) | WebUI and REST API guide | 800+ |
+| [docs/WEBUI.md](docs/WEBUI.md) | WebUI and REST API guide (15 endpoints) | 900+ |
 | [docs/TEMPLATES.md](docs/TEMPLATES.md) | Template usage guide | 650+ |
 | [docs/CICD.md](docs/CICD.md) | CI/CD integration guide | 800+ |
 | [docs/METRICS.md](docs/METRICS.md) | Prometheus metrics guide | 340+ |
@@ -661,15 +750,16 @@ orchestr8 migrate my-app kubernetes --strategy rolling
 
 | Metric | Value |
 |--------|-------|
-| **Total Code** | 5,800+ lines of Rust |
+| **Total Code** | 8,000+ lines of Rust |
 | **Documentation** | 14,500+ lines |
-| **Tests** | All passing ✅ |
+| **Tests** | 884 passing ✅ |
 | **Compiler Warnings** | 0 ✅ |
+| **Clippy Lints** | 0 ✅ |
 | **Runtimes** | 4/4 complete ✅ |
 | **Phases** | 6/6 delivered ✅ |
-| **Commands** | 16 implemented ✅ |
+| **Commands** | 24 implemented ✅ |
 | **Migration Paths** | 16 (all runtime pairs) |
-| **REST API Endpoints** | 11 |
+| **REST API Endpoints** | 15 |
 | **Cloud Providers** | 5 (cost estimation) |
 | **Templates** | 6 production-ready |
 | **Binary Size** | 14MB (release) |
@@ -698,13 +788,15 @@ cargo test test_migration_plan_creation
 running unit + integration tests
 
 Unit tests: adapters (kube, kubevirt, metal3, podman), api, backup,
-            completions, cost, engine, metrics, migration, spec, state,
-            orchestrator, scheduler, secrets, events, environments, affinity
+            completions, compose, cost, engine, health, metrics, migration,
+            plugin, spec, state, orchestrator, scheduler, secrets, events,
+            environments, affinity, output
 Integration tests: workload parsing, decision engine, state store,
-                   GPU selection, migration plans, backup/restore, cost estimation,
-                   scheduler, orchestrator, secrets, events, environments, affinity
+                   GPU selection, migration plans/guards, backup/restore,
+                   cost estimation, scheduler, orchestrator, secrets, events,
+                   environments, affinity, compose, plugin, health, output modes
 
-test result: ok. All passed; 0 failed; 0 ignored
+test result: ok. 884 passed; 0 failed; 0 ignored
 ```
 
 ---
@@ -714,18 +806,24 @@ test result: ok. All passed; 0 failed; 0 ignored
 ```
 orchestr8/
 ├── src/
-│   ├── main.rs           # CLI entrypoint (930 lines)
+│   ├── main.rs           # CLI entrypoint
+│   ├── cli.rs            # CLI framework (commands, args, subcommands)
+│   ├── commands.rs       # Command handler implementations
 │   ├── lib.rs            # Library root
 │   ├── spec.rs           # Workload schema (420+ lines)
-│   ├── runtime.rs        # Runtime trait (110 lines)
+│   ├── runtime.rs        # Runtime trait + factory
 │   ├── engine.rs         # Decision engine (210 lines)
-│   ├── state.rs          # State store (120 lines)
-│   ├── migration.rs      # Migration engine (440+ lines)
-│   ├── api.rs            # REST API server (660+ lines)
+│   ├── state.rs          # State store with advisory file locking
+│   ├── migration.rs      # Migration engine (660+ lines)
+│   ├── compose.rs        # Multi-workload compose support
+│   ├── plugin.rs         # Runtime plugin system
+│   ├── health.rs         # Health history and uptime tracking
+│   ├── output.rs         # Pretty terminal output + interactive selector
+│   ├── api/              # REST API server (15 endpoints)
 │   ├── backup.rs         # Backup/restore system (350+ lines)
 │   ├── cost.rs           # Cost estimation (370+ lines)
 │   ├── metrics.rs        # Prometheus metrics (290 lines)
-│   ├── completions.rs    # Shell completions
+│   ├── completions.rs    # Shell completions + help-all
 │   ├── adapters/
 │   │   ├── mod.rs        # Adapter exports + constructor macro
 │   │   ├── common.rs     # Shared utilities (name validation, labels, CRD discovery)
@@ -911,12 +1009,13 @@ Built with:
 
 ✅ All 6 phases complete
 ✅ All 4 runtimes working
-✅ 16 CLI commands + REST API
-✅ Migration engine with 3 strategies
+✅ 24 CLI commands + 15 REST API endpoints
+✅ Migration engine with 3 strategies + exponential backoff
+✅ Compose files, plugin system, health tracking
 ✅ Backup/restore, cost estimation, Prometheus metrics
 ✅ Web dashboard, Helm chart, DEB/RPM packages
-✅ Zero compiler warnings
-✅ All tests passing
+✅ Zero compiler warnings, zero Clippy lints
+✅ 884 tests passing
 
 **One spec. Four runtimes. One tool. Seamless migration.**
 
