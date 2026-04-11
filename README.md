@@ -51,9 +51,17 @@ Deploy once. Run anywhere. Migrate seamlessly.
 
 **Advanced Kubernetes Features**
 - ConfigMaps and Secrets management
+- Auto volume mounts for ConfigMaps, Secrets, and PVCs
 - Ingress with TLS support
 - Horizontal Pod Autoscaling (HPA)
 - Environment variables from ConfigMaps/Secrets
+- Namespace override via `-n` flag or `ORCHESTR8_NAMESPACE` env var
+
+**Podman Production Features**
+- Native health checks mapped from workload spec (HTTP, TCP, Exec probes)
+- Automatic restart policy (`on-failure:3`)
+- Health-aware status reporting (healthy/unhealthy/starting)
+- Restart count tracking
 
 **Developer Experience**
 - Shell completions (bash, zsh, fish, powershell, elvish)
@@ -65,7 +73,8 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - `exec` and `port-forward` for live debugging
 - `init` wizard for first-time setup
 - Compose files for multi-workload deployments
-- Runtime plugin system for custom runtimes
+- Runtime plugin system with full IPC-based lifecycle
+- Alert rule evaluation in background monitoring loops
 - Comprehensive CI/CD with GitHub Actions
 - Integration tests and examples
 - Makefile for common tasks

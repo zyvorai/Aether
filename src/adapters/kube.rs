@@ -96,6 +96,23 @@ use super::common::validate_kube_name;
 // Standalone manifest-generation functions (testable without a kube::Client)
 // ---------------------------------------------------------------------------
 
+/// Sanitize a string into a valid Kubernetes DNS-1123 label for use as a
+/// volume name.  Replaces invalid characters with hyphens, lowercases,
+/// trims leading/trailing hyphens, and truncates to 63 characters.
+fn sanitize_volume_name(name: &str) -> String {
+    let sanitized: String = name
+        .to_ascii_lowercase()
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '-' })
+        .collect();
+    let trimmed = sanitized.trim_matches('-');
+    if trimmed.is_empty() {
+        "vol".to_string()
+    } else {
+        trimmed.chars().take(63).collect()
+    }
+}
+
 /// Build a Pod manifest from workload spec.
 fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
     let mut labels = BTreeMap::new();
@@ -221,6 +238,71 @@ fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
         })
         .unwrap_or_default();
 
+    // Volume mounts for ConfigMaps, Secrets, and PVCs
+    let mut volumes: Vec<k8s_openapi::api::core::v1::Volume> = Vec::new();
+    let mut volume_mounts: Vec<k8s_openapi::api::core::v1::VolumeMount> = Vec::new();
+
+    if let Some(config) = &spec.config {
+        for cm in &config.config_maps {
+            if let Some(mount_path) = &cm.mount_path {
+                let vol_name = sanitize_volume_name(&format!("cm-{}", cm.name));
+                volumes.push(k8s_openapi::api::core::v1::Volume {
+                    name: vol_name.clone(),
+                    config_map: Some(k8s_openapi::api::core::v1::ConfigMapVolumeSource {
+                        name: cm.name.clone(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                });
+                volume_mounts.push(k8s_openapi::api::core::v1::VolumeMount {
+                    name: vol_name,
+                    mount_path: mount_path.clone(),
+                    read_only: Some(true),
+                    ..Default::default()
+                });
+            }
+        }
+        for secret in &config.secrets {
+            if let Some(mount_path) = &secret.mount_path {
+                let vol_name = sanitize_volume_name(&format!("secret-{}", secret.name));
+                volumes.push(k8s_openapi::api::core::v1::Volume {
+                    name: vol_name.clone(),
+                    secret: Some(k8s_openapi::api::core::v1::SecretVolumeSource {
+                        secret_name: Some(secret.name.clone()),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                });
+                volume_mounts.push(k8s_openapi::api::core::v1::VolumeMount {
+                    name: vol_name,
+                    mount_path: mount_path.clone(),
+                    read_only: Some(true),
+                    ..Default::default()
+                });
+            }
+        }
+    }
+
+    // Mount PVC when persistence is enabled
+    if spec.persistence.enabled {
+        let vol_name = format!("{}-storage", spec.metadata.name);
+        volumes.push(k8s_openapi::api::core::v1::Volume {
+            name: vol_name.clone(),
+            persistent_volume_claim: Some(
+                k8s_openapi::api::core::v1::PersistentVolumeClaimVolumeSource {
+                    claim_name: format!("{}-pvc", spec.metadata.name),
+                    read_only: Some(false),
+                },
+            ),
+            ..Default::default()
+        });
+        volume_mounts.push(k8s_openapi::api::core::v1::VolumeMount {
+            name: vol_name,
+            mount_path: "/data".to_string(),
+            ..Default::default()
+        });
+    }
+
     // Container spec
     let container = Container {
         name: spec.metadata.name.clone(),
@@ -235,6 +317,7 @@ fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
         } else {
             Some(env_from)
         },
+        volume_mounts: if volume_mounts.is_empty() { None } else { Some(volume_mounts) },
         ..Default::default()
     };
 
@@ -248,6 +331,7 @@ fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
         },
         spec: Some(PodSpec {
             containers: vec![container],
+            volumes: if volumes.is_empty() { None } else { Some(volumes) },
             ..Default::default()
         }),
         ..Default::default()
@@ -2455,5 +2539,125 @@ mod tests {
         assert!(build_hpa_manifest("default", &spec).is_none());
         assert!(build_configmap_manifests("default", &spec).is_empty());
         assert!(build_secret_manifests("default", &spec).is_empty());
+    }
+
+    // ── sanitize_volume_name ─────────────────────────────────────────
+
+    #[test]
+    fn test_sanitize_volume_name_valid_input() {
+        assert_eq!(sanitize_volume_name("cm-app-config"), "cm-app-config");
+    }
+
+    #[test]
+    fn test_sanitize_volume_name_uppercase() {
+        assert_eq!(sanitize_volume_name("CM-MyConfig"), "cm-myconfig");
+    }
+
+    #[test]
+    fn test_sanitize_volume_name_underscores() {
+        assert_eq!(sanitize_volume_name("cm-my_config"), "cm-my-config");
+    }
+
+    #[test]
+    fn test_sanitize_volume_name_dots_and_special() {
+        assert_eq!(sanitize_volume_name("secret-tls.crt@v2"), "secret-tls-crt-v2");
+    }
+
+    #[test]
+    fn test_sanitize_volume_name_leading_trailing_hyphens() {
+        assert_eq!(sanitize_volume_name("--name--"), "name");
+    }
+
+    #[test]
+    fn test_sanitize_volume_name_all_invalid_chars() {
+        assert_eq!(sanitize_volume_name("___"), "vol");
+    }
+
+    #[test]
+    fn test_sanitize_volume_name_truncates_to_63() {
+        let long_name = "a".repeat(100);
+        let result = sanitize_volume_name(&long_name);
+        assert_eq!(result.len(), 63);
+    }
+
+    #[test]
+    fn test_sanitize_volume_name_empty() {
+        assert_eq!(sanitize_volume_name(""), "vol");
+    }
+
+    // ── volume mount generation ──────────────────────────────────────
+
+    #[test]
+    fn test_pod_manifest_with_configmap_volume_mount() {
+        let mut spec = create_test_workload();
+        spec.config = Some(ConfigSpec {
+            config_maps: vec![ConfigMapSpec {
+                name: "app-config".to_string(),
+                data: std::collections::HashMap::new(),
+                mount_path: Some("/etc/app".to_string()),
+            }],
+            secrets: vec![],
+            env_from: vec![],
+        });
+
+        let image = create_test_image();
+        let pod = build_pod_manifest("default", &image, &spec);
+
+        let pod_spec = pod.spec.as_ref().unwrap();
+        let volumes = pod_spec.volumes.as_ref().unwrap();
+        assert_eq!(volumes.len(), 1);
+        assert_eq!(volumes[0].name, "cm-app-config");
+        assert!(volumes[0].config_map.is_some());
+
+        let container = &pod_spec.containers[0];
+        let mounts = container.volume_mounts.as_ref().unwrap();
+        assert_eq!(mounts.len(), 1);
+        assert_eq!(mounts[0].name, "cm-app-config");
+        assert_eq!(mounts[0].mount_path, "/etc/app");
+        assert_eq!(mounts[0].read_only, Some(true));
+    }
+
+    #[test]
+    fn test_pod_manifest_with_pvc_volume_mount() {
+        let mut spec = create_test_workload();
+        spec.persistence = PersistenceSpec {
+            enabled: true,
+            size: "10Gi".to_string(),
+            access_mode: AccessMode::ReadWriteOnce,
+            storage_class: Some("standard".to_string()),
+        };
+
+        let image = create_test_image();
+        let pod = build_pod_manifest("default", &image, &spec);
+
+        let pod_spec = pod.spec.as_ref().unwrap();
+        let volumes = pod_spec.volumes.as_ref().unwrap();
+        assert_eq!(volumes.len(), 1);
+        assert!(volumes[0].persistent_volume_claim.is_some());
+
+        let container = &pod_spec.containers[0];
+        let mounts = container.volume_mounts.as_ref().unwrap();
+        assert_eq!(mounts.len(), 1);
+        assert_eq!(mounts[0].mount_path, "/data");
+    }
+
+    #[test]
+    fn test_pod_manifest_no_volumes_when_no_mount_path() {
+        let mut spec = create_test_workload();
+        spec.config = Some(ConfigSpec {
+            config_maps: vec![ConfigMapSpec {
+                name: "app-config".to_string(),
+                data: [("key".to_string(), "val".to_string())].into_iter().collect(),
+                mount_path: None, // No mount_path means env var injection only
+            }],
+            secrets: vec![],
+            env_from: vec![],
+        });
+
+        let image = create_test_image();
+        let pod = build_pod_manifest("default", &image, &spec);
+
+        let pod_spec = pod.spec.as_ref().unwrap();
+        assert!(pod_spec.volumes.is_none());
     }
 }
