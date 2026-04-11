@@ -398,4 +398,4 @@ Issues? Questions?
 
 ## License
 
-Same as Orchestr8 project (MIT OR Apache-2.0)
+Same as Orchestr8 project (Proprietary (HyperSDK))

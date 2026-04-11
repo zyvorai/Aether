@@ -469,7 +469,7 @@ Contributions welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelin
 
 ## License
 
-MIT OR Apache-2.0
+Proprietary (HyperSDK)
 
 ## Support
 
