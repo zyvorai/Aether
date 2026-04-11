@@ -97,6 +97,31 @@ impl Runtime for PodmanRuntime {
             }
         }
 
+        // Health probes (podman native health checks)
+        if let Some(health) = &spec.health {
+            if let Some(liveness) = &health.liveness {
+                let health_cmd = match &liveness.probe_type {
+                    crate::spec::ProbeType::HttpGet { path, port } => {
+                        format!("curl -sf http://localhost:{}{} || exit 1", port, path)
+                    }
+                    crate::spec::ProbeType::TcpSocket { port } => {
+                        format!("bash -c '</dev/tcp/localhost/{}' || exit 1", port)
+                    }
+                    crate::spec::ProbeType::Exec { command } => {
+                        command.join(" ")
+                    }
+                };
+                cmd.arg("--health-cmd").arg(&health_cmd);
+                cmd.arg("--health-interval")
+                    .arg(format!("{}s", liveness.period_seconds));
+                cmd.arg("--health-start-period")
+                    .arg(format!("{}s", liveness.initial_delay_seconds));
+            }
+        }
+
+        // Restart policy for resilience
+        cmd.arg("--restart").arg("on-failure:3");
+
         cmd.arg("--cpus").arg(&spec.requirements.cpu);
         cmd.arg("--memory").arg(&spec.requirements.memory);
         cmd.arg(image.full_name());
@@ -119,7 +144,11 @@ impl Runtime for PodmanRuntime {
 
     async fn status(&self, instance: &Instance) -> crate::Result<Status> {
         let output = Command::new("podman")
-            .args(["inspect", "--format", "{{.State.Status}}", &instance.id])
+            .args([
+                "inspect", "--format",
+                "{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{.RestartCount}}",
+                &instance.id,
+            ])
             .output().await?;
 
         if !output.status.success() {
@@ -131,19 +160,41 @@ impl Runtime for PodmanRuntime {
             });
         }
 
-        let status_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        let state = match status_str.as_str() {
+        let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let parts: Vec<&str> = raw.splitn(3, '|').collect();
+        let status_str = parts.first().unwrap_or(&"unknown");
+        let health_str = parts.get(1).unwrap_or(&"none");
+        let restart_str = parts.get(2).unwrap_or(&"0");
+
+        let state = match *status_str {
             "running" => InstanceState::Running,
             "exited" => InstanceState::Stopped,
             "created" => InstanceState::Pending,
             _ => InstanceState::Unknown,
         };
 
+        let restart_count = restart_str.parse::<u32>().unwrap_or(0);
+
+        // Health-aware readiness: use health status when available
+        let ready = match *health_str {
+            "healthy" => true,
+            "unhealthy" => false,
+            "starting" => false,
+            "none" => matches!(state, InstanceState::Running),
+            _ => matches!(state, InstanceState::Running),
+        };
+
+        let message = match *health_str {
+            "unhealthy" => Some("Health check failing".to_string()),
+            "starting" => Some("Health check starting".to_string()),
+            _ => None,
+        };
+
         Ok(Status {
-            state: state.clone(),
-            ready: matches!(state, InstanceState::Running),
-            message: None,
-            restart_count: 0,
+            state,
+            ready,
+            message,
+            restart_count,
         })
     }
 

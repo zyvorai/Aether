@@ -35,6 +35,7 @@ async fn main() -> Result<()> {
     orchestr8::output::set_wide(matches!(cli.output, cli::OutputFormat::Wide));
     orchestr8::output::set_yes(cli.yes);
     commands::set_skip_policy(cli.skip_policy);
+    commands::set_namespace(cli.namespace.clone());
 
     // Initialize metrics
     orchestr8::metrics::init();

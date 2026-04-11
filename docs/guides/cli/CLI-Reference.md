@@ -84,6 +84,7 @@ These flags apply to **every** command:
 | Flag              | Short | Default          | Description                                      |
 |-------------------|-------|------------------|--------------------------------------------------|
 | `--spec <FILE>`   | `-s`  | `workload.yaml`  | Workload specification file                      |
+| `--namespace <NS>`| `-n`  |                  | Kubernetes namespace override (also `ORCHESTR8_NAMESPACE` env var) |
 | `--verbose`       | `-v`  |                  | Enable debug-level logging                       |
 | `--quiet`         | `-q`  |                  | Suppress all output except errors                |
 | `--json`          |       |                  | Output results as JSON (conflicts with `--quiet`)|
@@ -91,6 +92,17 @@ These flags apply to **every** command:
 | `--yes`           | `-y`  |                  | Skip confirmation prompts (CI/automation)        |
 | `--dry-run`       |       |                  | Show what would happen without executing         |
 | `--skip-policy`   |       |                  | Skip policy checks on deploy (use with caution)  |
+
+**Namespace resolution order:** `--namespace` flag > `ORCHESTR8_NAMESPACE` env var > `"default"`.
+
+```bash
+# Deploy to a specific namespace
+orchestr8 -n staging run --runtime kube
+
+# Or use the environment variable
+export ORCHESTR8_NAMESPACE=production
+orchestr8 run --runtime kube
+```
 
 ---
 
@@ -898,7 +910,7 @@ orchestr8 orchestrate <SUBCOMMAND>
 | `rolling-update <NAME> [--replicas <N>]`         | Simulate a rolling update                     |
 | `reset-circuit <NAME>`                           | Reset circuit breaker for a workload          |
 | `health-check`                                   | Run a single round of health checks           |
-| `watch [--interval <SECS>]`                      | Continuously monitor health (default: 30s)    |
+| `watch [--interval <SECS>]`                      | Continuously monitor health + evaluate alert rules (default: 30s) |
 
 **Examples:**
 

@@ -168,6 +168,210 @@ pub enum PluginProtocol {
     },
 }
 
+// ─── Plugin Runtime (IPC-based Runtime trait implementation) ──────────
+
+/// A runtime backed by an external plugin binary.
+/// Communicates via stdin/stdout JSON-RPC using `PluginProtocol` messages.
+pub struct PluginRuntime {
+    manifest: PluginManifest,
+}
+
+impl PluginRuntime {
+    /// Create a new plugin runtime from a manifest.
+    /// Validates that the plugin binary exists.
+    pub fn new(manifest: PluginManifest) -> anyhow::Result<Self> {
+        let path = std::path::Path::new(&manifest.command);
+        if !path.exists() {
+            anyhow::bail!(
+                "Plugin binary '{}' not found for plugin '{}'",
+                manifest.command,
+                manifest.name
+            );
+        }
+        Ok(Self { manifest })
+    }
+
+    /// Send a request to the plugin binary via stdin and read the response from stdout.
+    async fn ipc_call(&self, request: PluginProtocol) -> anyhow::Result<PluginProtocol> {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let request_json = serde_json::to_string(&request)?;
+
+        let mut child = tokio::process::Command::new(&self.manifest.command)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| anyhow::anyhow!("Failed to spawn plugin '{}': {}", self.manifest.name, e))?;
+
+        // Write request to stdin
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(request_json.as_bytes()).await?;
+            stdin.write_all(b"\n").await?;
+            // Drop stdin to signal EOF
+        }
+
+        // Read stdout and stderr concurrently to prevent deadlock when
+        // the plugin writes more than the OS pipe buffer to stderr.
+        let mut stdout_handle = child.stdout.take();
+        let mut stderr_handle = child.stderr.take();
+
+        let output = tokio::time::timeout(
+            std::time::Duration::from_secs(60),
+            async {
+                let stdout_fut = async {
+                    let mut buf = String::new();
+                    if let Some(ref mut stdout) = stdout_handle {
+                        stdout.read_to_string(&mut buf).await?;
+                    }
+                    Ok::<String, anyhow::Error>(buf)
+                };
+                let stderr_fut = async {
+                    let mut buf = String::new();
+                    if let Some(ref mut stderr) = stderr_handle {
+                        stderr.read_to_string(&mut buf).await?;
+                    }
+                    Ok::<String, anyhow::Error>(buf)
+                };
+
+                let (stdout_result, stderr_result) = tokio::join!(stdout_fut, stderr_fut);
+                let stdout_buf = stdout_result?;
+                let stderr_buf = stderr_result.unwrap_or_default();
+
+                let status = child.wait().await?;
+                if !status.success() {
+                    anyhow::bail!(
+                        "Plugin '{}' exited with {}: {}",
+                        self.manifest.name, status, stderr_buf.trim()
+                    );
+                }
+                Ok::<String, anyhow::Error>(stdout_buf)
+            }
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("Plugin '{}' timed out after 60s", self.manifest.name))??;
+
+        let response: PluginProtocol = serde_json::from_str(output.trim())
+            .map_err(|e| anyhow::anyhow!(
+                "Plugin '{}' returned invalid JSON: {} (raw: {})",
+                self.manifest.name, e, output.chars().take(200).collect::<String>()
+            ))?;
+
+        Ok(response)
+    }
+
+    /// Check that the plugin supports a given capability.
+    fn require_capability(&self, cap: &str) -> anyhow::Result<()> {
+        if !self.manifest.capabilities.iter().any(|c| c == cap) {
+            anyhow::bail!(
+                "Plugin '{}' does not support '{}' (capabilities: {})",
+                self.manifest.name, cap, self.manifest.capabilities.join(", ")
+            );
+        }
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl crate::Runtime for PluginRuntime {
+    async fn build(&self, spec: &crate::spec::Workload) -> crate::Result<crate::runtime::Image> {
+        self.require_capability("build")?;
+        let spec_json = serde_json::to_string(spec)?;
+        let response = self.ipc_call(PluginProtocol::BuildRequest { spec_json }).await?;
+        match response {
+            PluginProtocol::BuildResponse { image_json } => {
+                Ok(serde_json::from_str(&image_json)?)
+            }
+            other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
+        }
+    }
+
+    async fn run(
+        &self,
+        image: &crate::runtime::Image,
+        spec: &crate::spec::Workload,
+    ) -> crate::Result<crate::runtime::Instance> {
+        self.require_capability("run")?;
+        let image_json = serde_json::to_string(image)?;
+        let spec_json = serde_json::to_string(spec)?;
+        let response = self.ipc_call(PluginProtocol::RunRequest { image_json, spec_json }).await?;
+        match response {
+            PluginProtocol::RunResponse { instance_json } => {
+                Ok(serde_json::from_str(&instance_json)?)
+            }
+            other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
+        }
+    }
+
+    async fn stop(&self, instance: &crate::runtime::Instance) -> crate::Result<()> {
+        self.require_capability("stop")?;
+        let instance_json = serde_json::to_string(instance)?;
+        let response = self.ipc_call(PluginProtocol::StopRequest { instance_json }).await?;
+        match response {
+            PluginProtocol::StopResponse { success } => {
+                if success { Ok(()) } else { anyhow::bail!("Plugin stop returned failure") }
+            }
+            other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
+        }
+    }
+
+    async fn status(&self, instance: &crate::runtime::Instance) -> crate::Result<crate::runtime::Status> {
+        self.require_capability("status")?;
+        let instance_json = serde_json::to_string(instance)?;
+        let response = self.ipc_call(PluginProtocol::StatusRequest { instance_json }).await?;
+        match response {
+            PluginProtocol::StatusResponse { status_json } => {
+                Ok(serde_json::from_str(&status_json)?)
+            }
+            other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
+        }
+    }
+
+    async fn delete(&self, instance: &crate::runtime::Instance) -> crate::Result<()> {
+        self.require_capability("delete")?;
+        let instance_json = serde_json::to_string(instance)?;
+        let response = self.ipc_call(PluginProtocol::DeleteRequest { instance_json }).await?;
+        match response {
+            PluginProtocol::DeleteResponse { success } => {
+                if success { Ok(()) } else { anyhow::bail!("Plugin delete returned failure") }
+            }
+            other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
+        }
+    }
+
+    async fn logs(&self, _instance: &crate::runtime::Instance, _follow: bool) -> crate::Result<String> {
+        Ok("Plugin log streaming not yet supported".to_string())
+    }
+
+    async fn list(&self) -> crate::Result<Vec<crate::runtime::Instance>> {
+        if !self.manifest.capabilities.iter().any(|c| c == "list") {
+            return Ok(vec![]);
+        }
+        let response = self.ipc_call(PluginProtocol::ListRequest).await?;
+        match response {
+            PluginProtocol::ListResponse { instances_json } => {
+                Ok(serde_json::from_str(&instances_json)?)
+            }
+            other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
+        }
+    }
+}
+
+/// Create a plugin runtime from the registry for a given runtime kind name.
+/// Returns `None` if no matching plugin is registered.
+pub fn create_plugin_runtime(runtime_kind: &str) -> anyhow::Result<Option<PluginRuntime>> {
+    let path = PluginRegistry::default_path();
+    let registry = PluginRegistry::load(&path)?;
+
+    for manifest in registry.plugins.values() {
+        if manifest.runtime_kind == runtime_kind {
+            return Ok(Some(PluginRuntime::new(manifest.clone())?));
+        }
+    }
+
+    Ok(None)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

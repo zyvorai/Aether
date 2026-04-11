@@ -180,6 +180,75 @@ orchestr8 health api-service --summary
 
 ---
 
+## 🐳 Podman Native Health Checks
+
+When deploying to Podman, Orchestr8 automatically maps workload health probes to native Podman health check flags. This enables container-level health monitoring without external tooling.
+
+### Probe Type Mapping
+
+| Probe Type | Podman `--health-cmd` |
+|---|---|
+| `httpGet` | `curl -sf http://localhost:{port}{path} \|\| exit 1` |
+| `tcpSocket` | `bash -c '</dev/tcp/localhost/{port}' \|\| exit 1` |
+| `exec` | The command array joined as a single string |
+
+### Configuration
+
+Health check timing is derived from the workload spec's `health.liveness` probe:
+
+| Spec Field | Podman Flag | Description |
+|---|---|---|
+| `period_seconds` | `--health-interval` | Time between health checks |
+| `initial_delay_seconds` | `--health-start-period` | Grace period before first check |
+
+### Restart Policy
+
+All Podman containers are started with `--restart on-failure:3`, providing automatic restart resilience for up to 3 consecutive failures.
+
+### Health-Aware Status
+
+The `orchestr8 status` command queries Podman's health subsystem and returns enriched status information:
+
+| Field | Source | Description |
+|---|---|---|
+| `state` | Container state | `running`, `stopped`, `pending`, `unknown` |
+| `ready` | Health check result | `true` if healthy or no health check configured |
+| `message` | Health status | `"Health check failing"` or `"Health check starting"` when applicable |
+| `restart_count` | `RestartCount` | Number of times the container has been restarted |
+
+### Example
+
+```yaml
+health:
+  liveness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+```
+
+This translates to:
+
+```bash
+podman run \
+  --health-cmd "curl -sf http://localhost:8080/health || exit 1" \
+  --health-interval 5s \
+  --health-start-period 10s \
+  --restart on-failure:3 \
+  ...
+```
+
+Status output will then show:
+
+```
+State:     running
+Ready:     true (healthy)
+Restarts:  0
+```
+
+---
+
 ## 🔄 Integration with Status Command
 
 The `orchestr8 status <name>` command automatically records a health check when it queries a workload's status. This means every status check contributes to the health history.
@@ -227,7 +296,9 @@ Each watch cycle:
 1. Queries status of **all registered workloads** across all runtimes
 2. Records a `HealthRecord` for each workload
 3. Saves the updated health history to disk
-4. Triggers alerts if circuit breakers trip
+4. Evaluates **alert rules** against current system metrics (SLA uptimes, restart counts, drift, policy violations, secret expiry)
+5. Triggers notifications for fired alerts via configured webhook channels
+6. Triggers circuit breaker alerts if workloads fail repeatedly
 
 ### One-Shot Health Check
 
@@ -389,10 +460,65 @@ When a new record is added and the buffer is at capacity:
 
 ---
 
+## 🚨 Alert Rule Evaluation
+
+The `orchestrate watch` loop evaluates configured alert rules against live system metrics on every monitoring cycle. When a rule's condition is met, an event is emitted and notifications are sent via configured channels.
+
+### System Metrics
+
+Each watch cycle collects the following metrics for evaluation:
+
+| Metric | Source | Description |
+|---|---|---|
+| `sla_uptimes` | Health history | Per-workload uptime percentage (0.0 -- 100.0) |
+| `restart_counts` | Health history | Per-workload cumulative restart count |
+| `drift_detected` | Drift engine | Whether any workload has configuration drift |
+| `policy_violations` | Policy engine | Whether any policy violations exist |
+| `secrets_expiring_days` | Secrets store | Per-secret days until expiry |
+
+### Alert Conditions
+
+| Condition | Triggers When |
+|---|---|
+| `SlaUptimeBelow(threshold)` | Any workload's uptime drops below the threshold (e.g., 99.9%) |
+| `ExcessiveRestarts(max)` | Any workload exceeds the maximum restart count |
+| `DriftDetected` | Configuration drift is found on any workload |
+| `PolicyViolation` | Any active policy violation exists |
+| `SecretExpiring(days)` | Any secret expires within the specified number of days |
+| `ErrorRateAbove(rate)` | (Reserved for future use) |
+| `CostExceeds(amount)` | (Reserved for future use) |
+
+### Cooldown
+
+Each alert rule has a `cooldown_seconds` field that prevents repeated firing. After an alert fires, it will not fire again until the cooldown period has elapsed, even if the condition remains true.
+
+### Integration with Orchestrate Watch
+
+Alert evaluation happens automatically during each `orchestrate watch` cycle:
+
+```bash
+# Alerts are evaluated every 30 seconds (default interval)
+orchestr8 orchestrate watch
+
+# Alerts are evaluated every 10 seconds
+orchestr8 orchestrate watch --interval 10
+```
+
+When alerts fire, they appear in the event stream:
+
+```bash
+orchestr8 events --severity warning
+```
+
+Alerts also trigger any configured webhook notification channels.
+
+---
+
 ## 🔗 Cross-References
 
 | Document | Relevance |
 |---|---|
+| [Kubernetes Guide](../../KUBERNETES.md) | Kubernetes health probes and volume mounts |
 | [Security Guide](./security.md) | Secrets and policy enforcement |
 | [Compose Guide](./compose.md) | Multi-workload deployments |
 | [Plugin System](./plugins.md) | Custom runtime health checks |

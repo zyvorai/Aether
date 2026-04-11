@@ -334,6 +334,64 @@ plugin    ──stdout──► {"type":"RunResponse","instance_json":"{...}"}
 
 ---
 
+## 🏗️ Plugin Runtime Implementation
+
+When a plugin is registered, Orchestr8 can use it as a full `Runtime` implementation via the `PluginRuntime` struct. This means plugins participate in the same lifecycle as built-in runtimes (Podman, Kubernetes, KubeVirt, Metal3).
+
+### How It Works
+
+1. **Binary validation:** On creation, `PluginRuntime` verifies the plugin binary exists at the path specified in the manifest
+2. **Capability checking:** Before each operation, the plugin's `capabilities` list is checked -- calling `build` on a plugin that only supports `["run", "stop"]` returns an error
+3. **IPC call:** A JSON-RPC message is written to the plugin's stdin, and the response is read from stdout
+4. **Timeout:** Each IPC call has a **60-second timeout** -- plugins that hang are terminated with an error
+5. **Error handling:** Non-zero exit codes, invalid JSON responses, and unexpected message types all produce descriptive errors
+
+### Operation Flow
+
+```
+orchestr8 CLI
+     │
+     ▼
+PluginRuntime::build(spec)
+     │  1. Check "build" in capabilities
+     │  2. Serialize spec to JSON
+     │  3. Spawn plugin binary
+     │  4. Write {"type":"BuildRequest","spec_json":"..."} to stdin
+     │  5. Read stdout (60s timeout)
+     │  6. Parse {"type":"BuildResponse","image_json":"..."}
+     │  7. Deserialize image from JSON
+     ▼
+Image returned to caller
+```
+
+### Error Scenarios
+
+| Scenario | Error Message |
+|---|---|
+| Binary not found | `Plugin binary '/path/to/bin' not found for plugin 'name'` |
+| Missing capability | `Plugin 'name' does not support 'build' (capabilities: run, stop)` |
+| Timeout after 60s | `Plugin 'name' timed out after 60s` |
+| Non-zero exit | `Plugin 'name' exited with exit status 1: <stderr>` |
+| Invalid JSON response | `Plugin 'name' returned invalid JSON: <parse error> (raw: ...)` |
+| Unexpected response type | `Unexpected response from plugin: <type>` |
+
+### Plugin Discovery in Runtime Factory
+
+The `create_plugin_runtime()` function searches the plugin registry for a plugin whose `runtime_kind` matches the requested runtime name. This enables custom runtimes to be used anywhere a built-in runtime is accepted:
+
+```bash
+# Use a plugin-provided runtime in compose files
+# runtime: wasm  ←  matches a plugin with runtime_kind: "wasm"
+orchestr8 compose up
+```
+
+### Unsupported Operations
+
+- **Logs:** Returns `"Plugin log streaming not yet supported"` (plugins do not yet implement log forwarding)
+- **List without capability:** Returns an empty list instead of an error
+
+---
+
 ## 🛠️ Creating a Custom Runtime Plugin
 
 This walkthrough creates a minimal plugin in Bash. Plugins can be written in **any language** (Rust, Go, Python, Node.js, etc.).

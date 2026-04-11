@@ -46,6 +46,10 @@ pub(crate) struct Cli {
     /// Skip policy checks on deploy (use with caution)
     #[arg(long)]
     pub(crate) skip_policy: bool,
+
+    /// Kubernetes namespace (overrides ORCHESTR8_NAMESPACE env var)
+    #[arg(short = 'n', long, env = "ORCHESTR8_NAMESPACE")]
+    pub(crate) namespace: Option<String>,
 }
 
 /// Output format for CLI results
