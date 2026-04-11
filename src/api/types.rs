@@ -19,7 +19,7 @@ impl Default for ApiConfig {
     fn default() -> Self {
         Self {
             host: "127.0.0.1".to_string(),
-            port: 8080,
+            port: 5090,
             state_path: StateStore::default_path(),
         }
     }
@@ -250,7 +250,7 @@ mod tests {
     fn test_api_config_default() {
         let config = ApiConfig::default();
         assert_eq!(config.host, "127.0.0.1");
-        assert_eq!(config.port, 8080);
+        assert_eq!(config.port, 5090);
     }
 
     #[test]
