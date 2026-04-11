@@ -42,6 +42,10 @@ pub(crate) struct Cli {
     /// Show what would happen without executing (for mutating commands)
     #[arg(long)]
     pub(crate) dry_run: bool,
+
+    /// Skip policy checks on deploy (use with caution)
+    #[arg(long)]
+    pub(crate) skip_policy: bool,
 }
 
 /// Output format for CLI results
@@ -756,6 +760,10 @@ pub(crate) enum WebhookAction {
         /// Channel name
         name: String,
     },
+    /// Show pending webhook deliveries in the retry queue
+    Queue,
+    /// Force-retry all queued webhooks now
+    Flush,
 }
 
 #[derive(Subcommand)]

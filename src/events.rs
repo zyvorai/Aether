@@ -483,48 +483,8 @@ impl EventBus {
                     timestamp: crate::resources::now_rfc3339(),
                 };
 
-                let url = url.clone();
-                let method = method.clone();
-                let channel_name = notification.channel_name.clone();
-                let event_id = notification.event_id;
-                let title = notification.title.clone();
-                let message = notification.message.clone();
-
-                // Fire-and-forget on a blocking thread to avoid blocking
-                // the caller and to avoid recreating the client per call.
-                std::thread::spawn(move || {
-                    let client = reqwest::blocking::Client::builder()
-                        .timeout(std::time::Duration::from_secs(10))
-                        .build()
-                        .unwrap_or_else(|_| reqwest::blocking::Client::new());
-
-                    let result = if method.eq_ignore_ascii_case("GET") {
-                        client.get(&url).query(&[
-                            ("event_id", event_id.to_string()),
-                            ("title", title),
-                            ("message", message),
-                        ]).send()
-                    } else {
-                        client.post(&url).json(&payload).send()
-                    };
-
-                    match result {
-                        Ok(resp) => {
-                            tracing::info!(
-                                "Webhook delivered to {} (status: {})",
-                                channel_name,
-                                resp.status()
-                            );
-                        }
-                        Err(e) => {
-                            tracing::warn!(
-                                "Webhook delivery failed for {}: {}",
-                                channel_name,
-                                e
-                            );
-                        }
-                    }
-                });
+                // Queue with immediate delivery attempt + persistent retry on failure
+                WebhookQueue::enqueue(&payload, url, method);
             }
         }
     }
@@ -619,6 +579,157 @@ pub fn format_event_summary(summary: &EventSummary) -> String {
     }
 
     output
+}
+
+// ─── Webhook Retry Queue ──────────────────────────────────────────────
+
+/// A pending webhook delivery awaiting retry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PendingWebhook {
+    /// Serialized JSON payload to send
+    pub payload_json: String,
+    /// Target URL
+    pub url: String,
+    /// HTTP method (GET or POST)
+    pub method: String,
+    /// Number of delivery attempts so far
+    pub attempts: u32,
+    /// Maximum delivery attempts before discarding
+    pub max_attempts: u32,
+    /// Earliest time to retry (RFC 3339)
+    pub next_attempt_at: String,
+    /// When the webhook was first queued
+    pub created_at: String,
+}
+
+/// Persistent retry queue for failed webhook deliveries.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct WebhookQueue {
+    pub pending: Vec<PendingWebhook>,
+}
+
+crate::impl_json_store!(WebhookQueue, "webhook_queue.json");
+
+impl WebhookQueue {
+    /// Queue a webhook for delivery. Attempts immediate delivery first;
+    /// on failure, the webhook is persisted for later retry.
+    pub fn enqueue(payload: &WebhookPayload, url: &str, method: &str) {
+        let payload_json = serde_json::to_string(payload).unwrap_or_default();
+        let now = crate::resources::now_rfc3339();
+
+        // Try immediate delivery
+        if Self::try_deliver(&payload_json, url, method) {
+            return;
+        }
+
+        // Failed — queue for retry
+        let path = Self::default_path();
+        let mut queue = Self::load(&path).unwrap_or_default();
+        queue.pending.push(PendingWebhook {
+            payload_json,
+            url: url.to_string(),
+            method: method.to_string(),
+            attempts: 1,
+            max_attempts: 5,
+            next_attempt_at: Self::backoff_time(&now, 1),
+            created_at: now,
+        });
+        let _ = queue.save(&path);
+        tracing::info!("Webhook queued for retry ({} pending)", queue.pending.len());
+    }
+
+    /// Process all pending webhooks that are due for retry.
+    /// Removes successfully delivered or exhausted entries.
+    pub fn process_queue_once() {
+        let path = Self::default_path();
+        let mut queue = match Self::load(&path) {
+            Ok(q) if !q.pending.is_empty() => q,
+            _ => return,
+        };
+
+        let now = crate::resources::now_rfc3339();
+        let mut changed = false;
+
+        queue.pending.retain_mut(|entry| {
+            // Not yet due for retry
+            if entry.next_attempt_at > now {
+                return true;
+            }
+
+            entry.attempts += 1;
+
+            if Self::try_deliver(&entry.payload_json, &entry.url, &entry.method) {
+                tracing::info!("Webhook delivered to {} on retry #{}", entry.url, entry.attempts);
+                changed = true;
+                return false; // remove from queue
+            }
+
+            if entry.attempts >= entry.max_attempts {
+                tracing::warn!(
+                    "Webhook to {} exhausted {} attempts, discarding",
+                    entry.url, entry.max_attempts
+                );
+                changed = true;
+                return false; // discard
+            }
+
+            // Schedule next retry with exponential backoff
+            entry.next_attempt_at = Self::backoff_time(&now, entry.attempts);
+            changed = true;
+            true // keep in queue
+        });
+
+        if changed {
+            let _ = queue.save(&path);
+        }
+    }
+
+    /// Attempt a single HTTP delivery. Returns true on success.
+    fn try_deliver(payload_json: &str, url: &str, method: &str) -> bool {
+        let client = match reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+        {
+            Ok(c) => c,
+            Err(_) => return false,
+        };
+
+        let result = if method.eq_ignore_ascii_case("GET") {
+            client.get(url).body(payload_json.to_string()).send()
+        } else {
+            client
+                .post(url)
+                .header("Content-Type", "application/json")
+                .body(payload_json.to_string())
+                .send()
+        };
+
+        match result {
+            Ok(resp) if resp.status().is_success() || resp.status().is_redirection() => true,
+            Ok(resp) => {
+                tracing::warn!("Webhook to {} returned status {}", url, resp.status());
+                false
+            }
+            Err(e) => {
+                tracing::warn!("Webhook delivery to {} failed: {}", url, e);
+                false
+            }
+        }
+    }
+
+    /// Calculate the next retry time using exponential backoff.
+    /// Base: 30s, doubled each attempt, capped at 30 minutes.
+    fn backoff_time(now: &str, attempt: u32) -> String {
+        let base_secs: u64 = 30;
+        let backoff_secs = base_secs.saturating_mul(2u64.saturating_pow(attempt.saturating_sub(1)));
+        let capped = backoff_secs.min(1800); // cap at 30 minutes
+        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(now) {
+            let next = dt + chrono::Duration::seconds(capped as i64);
+            next.to_rfc3339()
+        } else {
+            now.to_string()
+        }
+    }
 }
 
 #[cfg(test)]

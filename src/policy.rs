@@ -365,6 +365,54 @@ fn default_development_policies() -> Vec<Policy> {
     }]
 }
 
+/// Evaluate a workload against the configured policy set. Returns `Ok(())`
+/// if the workload passes, or an error describing the violations.
+///
+/// Used as a deploy-time gate: inserted into the deploy pipeline so that
+/// workloads violating `PolicySeverity::Error` rules are rejected.
+pub fn gate_deploy(spec: &Workload, config: &crate::config::PolicyConfig) -> anyhow::Result<()> {
+    let engine = match config.policy_set.as_str() {
+        "development" | "dev" => PolicyEngine::development(),
+        "production" | "prod" => PolicyEngine::production(),
+        path => {
+            let p = std::path::Path::new(path);
+            if p.exists() {
+                PolicyEngine::load(p)?
+            } else {
+                tracing::warn!(
+                    "Policy set '{}' not found, falling back to production policies",
+                    path
+                );
+                PolicyEngine::production()
+            }
+        }
+    };
+
+    let result = engine.evaluate(spec);
+
+    // Show warnings even if passed
+    for w in &result.warnings {
+        output::warning(&format!("[{}] {}", w.policy, w.message));
+    }
+
+    if !result.passed {
+        let error_count = result
+            .violations
+            .iter()
+            .filter(|v| v.severity == PolicySeverity::Error)
+            .count();
+        if error_count > 0 {
+            anyhow::bail!(
+                "Policy check failed with {} violation(s):\n{}",
+                error_count,
+                format_policy_report(&result)
+            );
+        }
+    }
+
+    Ok(())
+}
+
 /// Format policy result as a report
 pub fn format_policy_report(result: &PolicyResult) -> String {
     let mut output = String::new();

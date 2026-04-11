@@ -23,6 +23,10 @@ pub struct Config {
     pub analyzer: AnalyzerConfig,
     #[serde(default)]
     pub webhook: WebhookConfig,
+    #[serde(default)]
+    pub policy: PolicyConfig,
+    #[serde(default)]
+    pub reconciliation: ReconciliationConfig,
 }
 
 impl Config {
@@ -334,6 +338,50 @@ impl Default for WebhookConfig {
             timeout_secs: 10,
             max_retries: 3,
             user_agent: format!("orchestr8/{}", env!("CARGO_PKG_VERSION")),
+        }
+    }
+}
+
+/// Policy enforcement configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PolicyConfig {
+    /// Enforce policies on every deploy (run, compose up, deploy)
+    pub enforce_on_deploy: bool,
+    /// Policy set to use: "production", "development", or a file path
+    pub policy_set: String,
+}
+
+impl Default for PolicyConfig {
+    fn default() -> Self {
+        Self {
+            enforce_on_deploy: true,
+            policy_set: "production".to_string(),
+        }
+    }
+}
+
+/// Background reconciliation loop configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReconciliationConfig {
+    /// Health check interval in seconds
+    pub health_interval_secs: u64,
+    /// Drift detection interval in seconds
+    pub drift_interval_secs: u64,
+    /// SLA evaluation interval in seconds
+    pub sla_interval_secs: u64,
+    /// Automatically reconcile detected drift
+    pub auto_reconcile: bool,
+}
+
+impl Default for ReconciliationConfig {
+    fn default() -> Self {
+        Self {
+            health_interval_secs: 30,
+            drift_interval_secs: 300,
+            sla_interval_secs: 60,
+            auto_reconcile: false,
         }
     }
 }
