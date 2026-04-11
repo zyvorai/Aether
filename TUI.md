@@ -6,10 +6,12 @@ The Orchestr8 TUI provides an interactive dashboard for managing workloads acros
 
 - 📊 **Live Dashboard** - Real-time workload status
 - 🔄 **Auto-refresh** - Updates every 5 seconds
+- 🔍 **Search/Filter** - Filter workloads by name or runtime (`/` to search)
 - 📝 **Log Viewer** - View logs without leaving the interface
+- 📋 **Resource Panel** - CPU, memory, storage, GPU details in the detail view
 - 🎨 **Color-coded** - Visual status indicators
 - ⌨️ **Keyboard Navigation** - Efficient workflow
-- 🐳☸️ **Multi-Runtime** - Podman + Kubernetes support
+- 🐳☸️ **Multi-Runtime** - Podman + Kubernetes + KubeVirt + Metal3 support
 
 ---
 
@@ -34,21 +36,18 @@ That's it! The dashboard will load automatically.
 │         ORCHESTR8 - Universal Runtime      │
 │      Workloads: 3 | Last refresh: 2s ago   │
 └────────────────────────────────────────────┘
-┌─ Workloads ────────────────────────────────┐
-│                                             │
-│  my-app  🐳 podman                         │
-│    Status: ● running                        │
-│                                             │
-│  web-app  ☸️ kubernetes                    │
-│    Status: ● running                        │
-│                                             │
-│  db  🐳 podman                             │
-│    Status: ○ stopped                        │
-│    Message: Exited                          │
-│                                             │
-└────────────────────────────────────────────┘
+┌─ Workloads ───────┬─ Detail ──────────────┐
+│                    │  Name:     my-app     │
+│▸ my-app  🐳 podman│  Runtime:  🐳 Podman  │
+│  web-app ☸️ kube  │  Instance: abc123...  │
+│  db      🐳 podman│  ─── Resources ───    │
+│                    │  CPU:      2          │
+│                    │  Memory:   4Gi        │
+│                    │  Storage:  20Gi       │
+│                    │  Health:   ████████░░ │
+└────────────────────┴───────────────────────┘
 ┌────────────────────────────────────────────┐
-│  ↑↓ Select | Enter Logs | r Refresh | q Quit │
+│ [/] search  ↑↓ Select │ Enter Logs │ q Quit│
 └────────────────────────────────────────────┘
 ```
 
@@ -95,8 +94,25 @@ Each workload displays:
 | `↑` or `k` | Select previous workload |
 | `↓` or `j` | Select next workload |
 | `Enter` or `l` | View logs for selected workload |
+| `/` | Open search/filter mode |
+| `Esc` | Clear search filter |
+| `g` | Jump to first workload |
+| `G` | Jump to last workload |
 | `r` or `R` | Force refresh status |
 | `q` or `Q` | Quit application |
+
+### Search/Filter Mode
+
+When search mode is active (press `/`):
+
+| Key | Action |
+|-----|--------|
+| Any character | Append to search query |
+| `Backspace` | Remove last character |
+| `Enter` | Confirm filter (keep filter, exit input mode) |
+| `Esc` | Cancel and clear filter |
+
+Search matches against workload **name** and **runtime** (case-insensitive).
 
 ### Log Viewer
 
@@ -408,8 +424,15 @@ orchestr8 tui
 │  NAVIGATION                         │
 │  ↑/k ............... Select previous│
 │  ↓/j ............... Select next    │
+│  g ................. Jump to first  │
+│  G ................. Jump to last   │
 │  Enter/l ........... View logs      │
-│  Esc ............... Back/Close     │
+│  Esc ............... Clear/Back     │
+│                                     │
+│  SEARCH                             │
+│  / ................. Open filter    │
+│  Enter ............. Confirm filter │
+│  Esc ............... Clear filter   │
 │                                     │
 │  ACTIONS                            │
 │  r ................. Refresh now    │
@@ -456,6 +479,8 @@ App State
    ├─ Workloads (from state.json)
    ├─ Current Screen (Dashboard/Logs)
    ├─ Selected Index
+   ├─ Search Filter (name/runtime query)
+   ├─ Search Active (input mode flag)
    ├─ Logs Buffer
    └─ Status Messages
       ↓
@@ -536,6 +561,8 @@ The Orchestr8 TUI provides:
 ✅ **Real-time updates** (auto-refresh)
 ✅ **Integrated log viewer**
 ✅ **Keyboard-driven** workflow
+✅ **Search/filter** workloads by name or runtime
+✅ **Resource details** (CPU, memory, storage, GPU) in detail panel
 ✅ **Color-coded** status indicators
 
 Perfect for:

@@ -125,12 +125,35 @@ pub fn show_help() {
         )
     );
 
+    // New commands
+    println!(
+        "{}",
+        output::table(
+            &["🚀 Developer Workflow", "Description", "Example"],
+            vec![
+                vec!["exec <name>".into(), "Shell into workload".into(), "orchestr8 exec my-app".into()],
+                vec!["port-forward <name>".into(), "Forward local ports".into(), "orchestr8 port-forward my-app 8080:80".into()],
+                vec!["watch".into(), "Auto-redeploy on changes".into(), "orchestr8 watch".into()],
+                vec!["compare".into(), "Cross-runtime comparison".into(), "orchestr8 compare".into()],
+                vec!["init".into(), "First-time setup wizard".into(), "orchestr8 init".into()],
+                vec!["compose up".into(), "Deploy from compose file".into(), "orchestr8 compose up".into()],
+                vec!["compose down".into(), "Stop compose workloads".into(), "orchestr8 compose down".into()],
+                vec!["plugin list".into(), "List runtime plugins".into(), "orchestr8 plugin list".into()],
+                vec!["plugin discover".into(), "Scan for plugins".into(), "orchestr8 plugin discover".into()],
+                vec!["health <name>".into(), "Health timeline & uptime".into(), "orchestr8 health my-app".into()],
+            ],
+        )
+    );
+
     // Output modes
     output::section("Output Modes");
     output::bullet_list(&[
-        "--quiet    Suppress all output except errors (machine-friendly)",
-        "--json     Output results as JSON (machine-readable)",
-        "--verbose  Enable debug logging",
+        "--quiet      Suppress all output except errors (machine-friendly)",
+        "--json       Output results as JSON (machine-readable)",
+        "--output     Format: table (default), json, yaml, wide",
+        "--verbose    Enable debug logging",
+        "--dry-run    Show what would happen without executing",
+        "--yes        Skip confirmation prompts (for CI)",
     ]);
 
     // Runtime icons

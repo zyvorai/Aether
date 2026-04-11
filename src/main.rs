@@ -29,7 +29,10 @@ async fn main() -> Result<()> {
 
     // Set output modes
     orchestr8::output::set_quiet(cli.quiet);
-    orchestr8::output::set_json(cli.json);
+    let json_mode = cli.json || matches!(cli.output, cli::OutputFormat::Json);
+    orchestr8::output::set_json(json_mode);
+    orchestr8::output::set_yaml(matches!(cli.output, cli::OutputFormat::Yaml));
+    orchestr8::output::set_wide(matches!(cli.output, cli::OutputFormat::Wide));
     orchestr8::output::set_yes(cli.yes);
 
     // Initialize metrics
@@ -45,11 +48,29 @@ async fn main() -> Result<()> {
     let result = match cli.command {
         Commands::Validate => commands::validate_command(&cli.spec).await,
         Commands::Build => commands::build_command(&cli.spec).await,
-        Commands::Run { runtime } => commands::run_command(&cli.spec, runtime).await,
-        Commands::Stop { name } => commands::stop_command(&name).await,
+        Commands::Run { runtime } => {
+            if cli.dry_run {
+                commands::dry_run_command(&cli.spec, runtime).await
+            } else {
+                commands::run_command(&cli.spec, runtime).await
+            }
+        }
+        Commands::Stop { name } => {
+            if cli.dry_run {
+                orchestr8::output::info(&format!("[dry-run] Would stop workload '{}'", name));
+                return Ok(());
+            }
+            commands::stop_command(&name).await
+        }
         Commands::Status { name } => commands::status_command(&name).await,
         Commands::Logs { name, follow } => commands::logs_command(&name, follow).await,
-        Commands::Delete { name } => commands::delete_command(&name).await,
+        Commands::Delete { name } => {
+            if cli.dry_run {
+                orchestr8::output::info(&format!("[dry-run] Would delete workload '{}'", name));
+                return Ok(());
+            }
+            commands::delete_command(&name).await
+        }
         Commands::List => commands::list_command().await,
         Commands::Migrate {
             name,
@@ -57,7 +78,16 @@ async fn main() -> Result<()> {
             strategy,
             no_validation,
             no_rollback,
-        } => commands::migrate_command(&name, &target, &strategy, no_validation, no_rollback).await,
+        } => {
+            if cli.dry_run {
+                orchestr8::output::info(&format!(
+                    "[dry-run] Would migrate '{}' to {} using {} strategy",
+                    name, target, strategy
+                ));
+                return Ok(());
+            }
+            commands::migrate_command(&name, &target, &strategy, no_validation, no_rollback).await
+        }
         Commands::Tui => commands::tui_command().await,
         Commands::Completions { shell } => {
             commands::completions_command(&shell)
@@ -151,6 +181,30 @@ async fn main() -> Result<()> {
         Commands::Deploy { dir, runtime, fail_fast, dry_run } => {
             commands::deploy_command(&dir, runtime, fail_fast, dry_run).await
         }
+        Commands::Exec { name, command, interactive, timeout } => {
+            commands::exec_command(&name, &command, interactive, timeout).await
+        }
+        Commands::PortForward { name, ports, timeout } => {
+            commands::port_forward_command(&name, &ports, timeout).await
+        }
+        Commands::Watch { runtime } => {
+            commands::watch_command(&cli.spec, runtime).await
+        }
+        Commands::Compare => {
+            commands::compare_command(&cli.spec).await
+        }
+        Commands::Init => {
+            commands::init_command().await
+        }
+        Commands::Compose { action } => {
+            commands::compose_command(action).await
+        }
+        Commands::Plugin { action } => {
+            commands::plugin_command(action).await
+        }
+        Commands::Health { name, last, summary } => {
+            commands::health_command(&name, last, summary).await
+        }
     };
 
     // Record command execution time
@@ -179,8 +233,10 @@ async fn main() -> Result<()> {
         );
     }
 
-    // Styled error display — print our styled version, then return a simple
-    // error message to avoid the runtime printing the full error chain again.
+    // Styled error display — print our styled version, then return a
+    // minimal error so the runtime doesn't re-print the full message.
+    // Add contextual help suggestions to errors.
+    let result = result.map_err(commands::suggest_on_error);
     match result {
         Ok(()) => Ok(()),
         Err(e) => {

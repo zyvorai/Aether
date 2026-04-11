@@ -34,6 +34,26 @@ async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<(
         return Ok(());
     }
 
+    // Search mode: route keypresses to the search buffer
+    if app.search_active {
+        match key.code {
+            KeyCode::Esc => {
+                app.toggle_search();
+            }
+            KeyCode::Enter => {
+                app.search_active = false; // keep filter, exit input mode
+            }
+            KeyCode::Backspace => {
+                app.search_pop();
+            }
+            KeyCode::Char(ch) => {
+                app.search_push(ch);
+            }
+            _ => {}
+        }
+        return Ok(());
+    }
+
     match key.code {
         KeyCode::Char('q') | KeyCode::Char('Q') => {
             app.should_quit = true;
@@ -50,15 +70,16 @@ async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<(
             app.select_previous();
         }
         KeyCode::Home | KeyCode::Char('g') => {
-            // Jump to first workload
-            if !app.workloads.is_empty() {
+            // Jump to first workload (in filtered view)
+            if !app.filtered_workloads().is_empty() {
                 app.selected_index = 0;
             }
         }
         KeyCode::End | KeyCode::Char('G') => {
-            // Jump to last workload
-            if !app.workloads.is_empty() {
-                app.selected_index = app.workloads.len().saturating_sub(1);
+            // Jump to last workload (in filtered view)
+            let len = app.filtered_workloads().len();
+            if len > 0 {
+                app.selected_index = len - 1;
             }
         }
         KeyCode::Enter | KeyCode::Char('l') => {
@@ -66,6 +87,17 @@ async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<(
                 let name = workload.state.name.clone();
                 app.screen = Screen::Logs(name.clone());
                 app.load_logs(&name).await?;
+            }
+        }
+        // Search filter
+        KeyCode::Char('/') => {
+            app.toggle_search();
+        }
+        // Clear search
+        KeyCode::Esc => {
+            if !app.search_filter.is_empty() {
+                app.search_filter.clear();
+                app.selected_index = 0;
             }
         }
         _ => {}

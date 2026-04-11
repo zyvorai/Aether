@@ -33,7 +33,7 @@ pub fn render_dashboard(f: &mut Frame, app: &App) {
     render_header(f, chunks[0], app);
     render_stats_bar(f, chunks[1], app);
     render_main_content(f, chunks[2], app);
-    render_footer(f, chunks[3]);
+    render_footer(f, app, chunks[3]);
 }
 
 fn render_header(f: &mut Frame, area: Rect, _app: &App) {
@@ -134,8 +134,27 @@ fn render_stats_bar(f: &mut Frame, area: Rect, app: &App) {
 }
 
 fn render_main_content(f: &mut Frame, area: Rect, app: &App) {
-    if app.workloads.is_empty() {
-        render_empty_state(f, area);
+    let filtered = app.filtered_workloads();
+    if filtered.is_empty() {
+        if !app.search_filter.is_empty() {
+            // Show "no matches" when filter is active
+            let msg = Paragraph::new(vec![
+                Line::from(""),
+                Line::from(Span::styled(
+                    format!("No workloads matching '{}'", app.search_filter),
+                    Style::default().fg(WARNING).add_modifier(Modifier::ITALIC),
+                )),
+                Line::from(Span::styled(
+                    "Press Esc to clear filter",
+                    Style::default().fg(MUTED),
+                )),
+            ])
+            .alignment(Alignment::Center)
+            .block(bordered_block(" Workloads "));
+            f.render_widget(msg, area);
+        } else {
+            render_empty_state(f, area);
+        }
         return;
     }
 
@@ -179,8 +198,8 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
 }
 
 fn render_workload_list(f: &mut Frame, area: Rect, app: &App) {
-    let items: Vec<ListItem> = app
-        .workloads
+    let filtered = app.filtered_workloads();
+    let items: Vec<ListItem> = filtered
         .iter()
         .enumerate()
         .map(|(idx, workload_info)| {
@@ -271,10 +290,9 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
     };
 
     let ws = &selected.state;
-    let mut lines: Vec<Line> = Vec::new();
-
+    let mut lines: Vec<Line> = vec![
     // Name
-    lines.push(Line::from(vec![
+    Line::from(vec![
         Span::styled("  Name:     ", Style::default().fg(INFO)),
         Span::styled(
             ws.name.clone(),
@@ -282,51 +300,52 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
                 .fg(PRIMARY)
                 .add_modifier(Modifier::BOLD),
         ),
-    ]));
+    ]),
 
     // Runtime
-    lines.push(Line::from(vec![
+    Line::from(vec![
         Span::styled("  Runtime:  ", Style::default().fg(INFO)),
         runtime_badge(&ws.runtime),
-    ]));
+    ]),
 
     // Instance ID
-    lines.push(Line::from(vec![
+    Line::from(vec![
         Span::styled("  Instance: ", Style::default().fg(INFO)),
         Span::styled(
             ws.instance.id.chars().take(12).collect::<String>(),
             Style::default().fg(Color::White),
         ),
-    ]));
+    ]),
 
     // Image
-    lines.push(Line::from(vec![
+    Line::from(vec![
         Span::styled("  Image:    ", Style::default().fg(INFO)),
         Span::styled(
             ws.instance.image.clone(),
             Style::default().fg(MUTED),
         ),
-    ]));
+    ]),
 
     // Created
-    lines.push(Line::from(vec![
+    Line::from(vec![
         Span::styled("  Created:  ", Style::default().fg(INFO)),
         Span::styled(
             ws.created_at.chars().take(19).collect::<String>(),
             Style::default().fg(MUTED),
         ),
-    ]));
+    ]),
 
     // Spec path
-    lines.push(Line::from(vec![
+    Line::from(vec![
         Span::styled("  Spec:     ", Style::default().fg(INFO)),
         Span::styled(
             ws.spec_path.display().to_string(),
             Style::default().fg(MUTED),
         ),
-    ]));
+    ]),
 
-    lines.push(Line::from(""));
+    Line::from(""),
+    ];
 
     // Status details
     if let Some(ref status) = selected.status {
@@ -374,6 +393,47 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
             ]));
         }
 
+        // Resource requirements from spec (if loadable)
+        if let Ok(spec) = crate::spec::Workload::from_file(&ws.spec_path) {
+            lines.push(Line::from(""));
+            lines.push(Line::from(vec![
+                Span::styled(
+                    "  ─── Resources ───",
+                    Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+                ),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("  CPU:      ", Style::default().fg(INFO)),
+                Span::styled(
+                    spec.requirements.cpu.clone(),
+                    Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                ),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("  Memory:   ", Style::default().fg(INFO)),
+                Span::styled(
+                    spec.requirements.memory.clone(),
+                    Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                ),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("  Storage:  ", Style::default().fg(INFO)),
+                Span::styled(
+                    spec.requirements.storage.clone(),
+                    Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                ),
+            ]));
+            if let Some(ref gpu) = spec.requirements.gpu {
+                lines.push(Line::from(vec![
+                    Span::styled("  GPU:      ", Style::default().fg(INFO)),
+                    Span::styled(
+                        format!("{}x {}", gpu.count, gpu.vendor),
+                        Style::default().fg(WARNING).add_modifier(Modifier::BOLD),
+                    ),
+                ]));
+            }
+        }
+
         // Health bar — considers state, readiness, and restart count
         lines.push(Line::from(""));
         let health_pct: usize = match status.state {
@@ -415,9 +475,26 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
     f.render_widget(detail, area);
 }
 
-fn render_footer(f: &mut Frame, area: Rect) {
-    // Show status message if present, otherwise help text
-    let content = help_text();
+fn render_footer(f: &mut Frame, app: &App, area: Rect) {
+    let content = if app.search_active {
+        Line::from(vec![
+            Span::styled(" Search: ", Style::default().fg(WARNING).add_modifier(Modifier::BOLD)),
+            Span::styled(app.search_filter.clone(), Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+            Span::styled("▌", Style::default().fg(WARNING)),
+            Span::styled("  [Enter] confirm  [Esc] cancel", Style::default().fg(MUTED)),
+        ])
+    } else if !app.search_filter.is_empty() {
+        Line::from(vec![
+            Span::styled(format!(" Filter: {} ", app.search_filter), Style::default().fg(WARNING)),
+            Span::styled("│ [Esc] clear  ", Style::default().fg(MUTED)),
+        ])
+    } else {
+        let mut spans = vec![
+            Span::styled("[/] search  ", Style::default().fg(MUTED)),
+        ];
+        spans.extend(help_text().spans);
+        Line::from(spans)
+    };
 
     let footer = Paragraph::new(content)
         .block(

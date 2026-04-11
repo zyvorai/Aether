@@ -63,22 +63,59 @@ impl StateStore {
     }
 
     /// Save state to disk atomically (write to temp file, then rename)
+    /// with advisory file locking to prevent concurrent write corruption.
     pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
+        use std::fs::OpenOptions;
+
         let content = serde_json::to_string_pretty(self)
             .context("failed to serialize state")?;
 
-        // Write to a temporary file in the same directory, then rename.
-        // This ensures the state file is never left in a half-written state.
+        // Ensure directory exists
         let dir = path.parent().unwrap_or(std::path::Path::new("."));
         std::fs::create_dir_all(dir)
             .with_context(|| format!("failed to create state directory: {}", dir.display()))?;
 
+        // Acquire advisory lock on a .lock file
+        let lock_path = path.with_extension("json.lock");
+        let lock_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&lock_path)
+            .with_context(|| format!("failed to create lock file: {}", lock_path.display()))?;
+        Self::flock_exclusive(&lock_file)
+            .with_context(|| "failed to acquire state file lock (is another orchestr8 process running?)")?;
+
+        // Write to a temporary file in the same directory, then rename.
+        // This ensures the state file is never left in a half-written state.
         let tmp_path = path.with_extension("json.tmp");
         std::fs::write(&tmp_path, &content)
             .with_context(|| format!("failed to write temp state file: {}", tmp_path.display()))?;
         std::fs::rename(&tmp_path, path)
             .with_context(|| format!("failed to rename temp file to {}", path.display()))?;
+
+        // Lock is released when lock_file is dropped
+        drop(lock_file);
         Ok(())
+    }
+
+    /// Acquire an exclusive advisory lock (Unix flock).
+    /// Uses blocking LOCK_EX so concurrent processes wait briefly
+    /// instead of failing immediately.
+    #[cfg(unix)]
+    fn flock_exclusive(file: &std::fs::File) -> anyhow::Result<()> {
+        use std::os::unix::io::{AsFd, AsRawFd};
+        let ret = unsafe { libc::flock(file.as_fd().as_raw_fd(), libc::LOCK_EX) };
+        if ret != 0 {
+            anyhow::bail!("could not acquire exclusive lock");
+        }
+        Ok(())
+    }
+
+    /// Acquire an exclusive advisory lock (non-Unix fallback — no-op)
+    #[cfg(not(unix))]
+    fn flock_exclusive(_file: &std::fs::File) -> anyhow::Result<()> {
+        Ok(()) // No-op on non-Unix platforms
     }
 
     /// Add or update workload state

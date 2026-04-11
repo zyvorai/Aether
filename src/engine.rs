@@ -1137,9 +1137,9 @@ mod tests {
     }
 
     #[test]
-    fn test_engine_default() {
-        let _engine = Engine::default();
-        // Just verifying Default trait works
+    fn test_engine_construction() {
+        let _engine = Engine::new();
+        // Just verifying construction works
     }
 
     // ---------------------------------------------------------------

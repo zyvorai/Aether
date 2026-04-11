@@ -18,9 +18,17 @@ use crate::cli::*;
 fn load_workload_state(name: &str) -> Result<(StateStore, String)> {
     let state = StateStore::load(&StateStore::default_path())?;
     if state.get(name).is_none() {
-        anyhow::bail!("Workload '{}' not found", name);
+        anyhow::bail!("Workload '{}' not found.\nHint: Run `orchestr8 list` to see deployed workloads.", name);
     }
     Ok((state, name.to_string()))
+}
+
+/// Convenience: load state and get a cloned WorkloadState, avoiding the
+/// `state.get(name).unwrap()` pattern after `load_workload_state`.
+fn get_workload_state(state: &StateStore, name: &str) -> Result<orchestr8::state::WorkloadState> {
+    state.get(name)
+        .cloned()
+        .ok_or_else(|| anyhow::anyhow!("Workload '{}' disappeared from state", name))
 }
 
 /// Load a workload's state and create a runtime client in one step.
@@ -127,23 +135,58 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
 
 pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> Result<()> {
     let workload = Workload::from_file(spec_path)?;
-    deploy_single_workload(&workload, spec_path, runtime_override.as_deref(), None).await
+    deploy_workload_interactive(&workload, spec_path, runtime_override.as_deref()).await
 }
 
 /// Deploy a single workload: decide runtime, build, run, persist state, record metrics.
 /// Extracted from run_command so deploy_command can reuse it per-workload.
 /// When `event_batch` is provided, events accumulate in memory instead of hitting disk.
+/// When `interactive` is true, shows the runtime selector menu for manual choice.
 async fn deploy_single_workload(
     workload: &Workload,
     spec_path: &Path,
     runtime_override: Option<&str>,
     event_batch: Option<&mut EventBatch>,
 ) -> Result<()> {
+    deploy_workload_inner(workload, spec_path, runtime_override, event_batch, false).await
+}
+
+async fn deploy_workload_interactive(
+    workload: &Workload,
+    spec_path: &Path,
+    runtime_override: Option<&str>,
+) -> Result<()> {
+    deploy_workload_inner(workload, spec_path, runtime_override, None, true).await
+}
+
+async fn deploy_workload_inner(
+    workload: &Workload,
+    spec_path: &Path,
+    runtime_override: Option<&str>,
+    event_batch: Option<&mut EventBatch>,
+    interactive: bool,
+) -> Result<()> {
     let engine = Engine::new();
 
     // Determine runtime
     let runtime_kind = if let Some(override_str) = runtime_override {
         override_str.parse::<RuntimeKind>()?
+    } else if interactive {
+        // Interactive selection: show menu
+        let ai_recommended = engine.decide(workload)?;
+        let selected = output::select_runtime(&[
+            ("🐳", "Podman", "Local container — fast, simple, single-host"),
+            ("☸️", "Kubernetes", "Cluster orchestration — HA, services, scaling"),
+            ("🖥️", "KubeVirt", "Virtual machines — GPU passthrough, isolation"),
+            ("🖧", "Metal3", "Bare metal — maximum performance, BMC provisioning"),
+        ]);
+        match selected {
+            Some(0) => RuntimeKind::Podman,
+            Some(1) => RuntimeKind::Kubernetes,
+            Some(2) => RuntimeKind::KubeVirt,
+            Some(3) => RuntimeKind::Metal3,
+            _ => ai_recommended,
+        }
     } else {
         engine.decide(workload)?
     };
@@ -235,6 +278,50 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
 
     output::spinner_success(&sp, "Status retrieved");
 
+    // Record health check (side-effect: status queries feed the health timeline)
+    if !output::is_quiet() {
+        let health_path = orchestr8::health::HealthHistory::default_path();
+        let mut history = orchestr8::health::HealthHistory::load(&health_path)
+            .unwrap_or_default();
+        history.record(orchestr8::health::HealthRecord {
+            timestamp: orchestr8::resources::now_rfc3339(),
+            workload: name.to_string(),
+            runtime: ws.runtime,
+            state: status.state.clone(),
+            ready: status.ready,
+            restart_count: status.restart_count,
+            latency_ms: None,
+        });
+        let _ = history.save(&health_path);
+    }
+
+    // JSON/YAML output modes
+    if output::is_json() {
+        let val = serde_json::json!({
+            "workload": name,
+            "runtime": ws.runtime.to_string(),
+            "state": format!("{}", status.state),
+            "ready": status.ready,
+            "restart_count": status.restart_count,
+            "message": status.message,
+            "instance_id": ws.instance.id,
+            "image": ws.instance.image,
+        });
+        println!("{}", serde_json::to_string_pretty(&val)?);
+        return Ok(());
+    }
+    if output::is_yaml() {
+        let val = serde_json::json!({
+            "workload": name,
+            "runtime": ws.runtime.to_string(),
+            "state": format!("{}", status.state),
+            "ready": status.ready,
+            "restart_count": status.restart_count,
+        });
+        println!("{}", serde_yaml::to_string(&val)?);
+        return Ok(());
+    }
+
     output::section_with_icon("📊", &format!("Status for '{}'", name));
 
     let ready_str = if status.ready {
@@ -249,11 +336,23 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
         ("Ready", ready_str),
     ];
 
-    if let Some(msg) = status.message {
-        pairs.push(("Message", msg));
+    if let Some(ref msg) = status.message {
+        pairs.push(("Message", msg.clone()));
     }
     if status.restart_count > 0 {
         pairs.push(("Restarts", format!("{}", status.restart_count)));
+    }
+
+    // Show health history summary if available
+    {
+        let health_path = orchestr8::health::HealthHistory::default_path();
+        if let Ok(history) = orchestr8::health::HealthHistory::load(&health_path) {
+            let summary = history.summary(name);
+            if summary.total_checks > 1 {
+                pairs.push(("Uptime", format!("{:.1}% ({}/{} checks)",
+                    summary.uptime_percent, summary.ready_checks, summary.total_checks)));
+            }
+        }
     }
 
     println!("{}", output::property_table(&pairs));
@@ -315,24 +414,82 @@ pub(crate) async fn list_command() -> Result<()> {
     let workloads = state.list();
 
     if workloads.is_empty() {
-        output::muted("No workloads running");
+        if output::is_json() {
+            println!("[]");
+        } else if output::is_yaml() {
+            println!("workloads: []");
+        } else {
+            output::muted("No workloads running");
+        }
+        return Ok(());
+    }
+
+    // JSON output
+    if output::is_json() {
+        let list: Vec<serde_json::Value> = workloads.iter().map(|w| {
+            serde_json::json!({
+                "name": w.name,
+                "runtime": w.runtime.to_string(),
+                "instance_id": w.instance.id,
+                "image": w.instance.image,
+                "spec_path": w.spec_path.display().to_string(),
+                "created_at": w.created_at,
+                "updated_at": w.updated_at,
+            })
+        }).collect();
+        println!("{}", serde_json::to_string_pretty(&list)?);
+        return Ok(());
+    }
+
+    // YAML output
+    if output::is_yaml() {
+        let list: Vec<serde_json::Value> = workloads.iter().map(|w| {
+            serde_json::json!({
+                "name": w.name,
+                "runtime": w.runtime.to_string(),
+                "instance_id": w.instance.id,
+                "image": w.instance.image,
+                "created_at": w.created_at,
+            })
+        }).collect();
+        println!("{}", serde_yaml::to_string(&list)?);
         return Ok(());
     }
 
     output::section_with_icon("📋", "Running Workloads");
 
-    let rows: Vec<Vec<String>> = workloads
-        .iter()
-        .map(|w| {
-            vec![
-                w.name.clone(),
-                output::runtime_display(&w.runtime),
-                w.instance.id.chars().take(12).collect::<String>(),
-            ]
-        })
-        .collect();
-
-    println!("{}", output::table(&["Name", "Runtime", "Instance ID"], rows));
+    // Wide mode: show extra columns
+    if output::is_wide() {
+        let rows: Vec<Vec<String>> = workloads
+            .iter()
+            .map(|w| {
+                vec![
+                    w.name.clone(),
+                    output::runtime_display(&w.runtime),
+                    w.instance.id.chars().take(12).collect::<String>(),
+                    w.instance.image.clone(),
+                    w.spec_path.display().to_string(),
+                    w.created_at.chars().take(19).collect::<String>(),
+                ]
+            })
+            .collect();
+        println!("{}", output::table(
+            &["Name", "Runtime", "Instance ID", "Image", "Spec", "Created"],
+            rows,
+        ));
+    } else {
+        let rows: Vec<Vec<String>> = workloads
+            .iter()
+            .map(|w| {
+                vec![
+                    w.name.clone(),
+                    output::runtime_display(&w.runtime),
+                    w.instance.id.chars().take(12).collect::<String>(),
+                ]
+            })
+            .collect();
+        println!("{}", output::table(&["Name", "Runtime", "Instance ID"], rows));
+    }
 
     Ok(())
 }
@@ -349,7 +506,7 @@ pub(crate) async fn migrate_command(
 
     // Load current state
     let (state, _) = load_workload_state(name)?;
-    let workload_state = state.get(name).unwrap();
+    let workload_state = get_workload_state(&state, name)?;
 
     let source_runtime = workload_state.runtime;
 
@@ -362,7 +519,7 @@ pub(crate) async fn migrate_command(
     // Auto-snapshot before migration
     {
         let snap_mgr = orchestr8::backup::SnapshotManager::new();
-        if let Err(e) = snap_mgr.create_snapshot(workload_state) {
+        if let Err(e) = snap_mgr.create_snapshot(&workload_state) {
             tracing::warn!("Failed to create pre-migrate snapshot: {}", e);
         }
     }
@@ -380,23 +537,29 @@ pub(crate) async fn migrate_command(
     );
 
     // Create migration plan
-    let plan = MigrationPlan {
-        workload_name: name.to_string(),
+    let mut plan = MigrationPlan::new(
+        name.to_string(),
         source_runtime,
         target_runtime,
         strategy,
-        validation_delay: if no_validation {
-            Duration::from_secs(5)
-        } else {
-            Duration::from_secs(30)
-        },
-        rollback_on_failure: !no_rollback,
-    };
+        !no_rollback,
+    );
+    if no_validation {
+        plan.validation_delay = Duration::from_secs(5);
+    } else {
+        plan.validation_delay = Duration::from_secs(30);
+    }
 
-    // Execute migration
-    let sp = output::spinner("Executing migration...");
+    // Execute migration with progress indicators
+    let total_steps = match strategy_str {
+        "rolling" => 4,
+        "blue-green" => 3,
+        _ => 2,
+    };
+    output::step(1, total_steps, "Preparing migration");
     let migration_start = std::time::Instant::now();
     let engine = MigrationEngine::new(StateStore::default_path());
+    let sp = output::spinner("Executing migration...");
     let result = engine.migrate(plan).await?;
     let migration_duration = migration_start.elapsed().as_secs_f64();
 
@@ -858,7 +1021,7 @@ pub(crate) async fn profile_command(spec_path: &PathBuf, name: Option<String>) -
     // If name is provided, look up runtime from state
     let (workload, runtime) = if let Some(ref workload_name) = name {
         let (state, _) = load_workload_state(workload_name)?;
-        let ws = state.get(workload_name).unwrap();
+        let ws = get_workload_state(&state, workload_name)?;
         let workload = Workload::from_file(&ws.spec_path)?;
         (workload, Some(ws.runtime))
     } else {
@@ -903,7 +1066,7 @@ pub(crate) async fn migration_advice_command(name: &str, target: &str) -> Result
     let advisor = MigrationAdvisor::new(config.migration);
 
     let (state, _) = load_workload_state(name)?;
-    let ws = state.get(name).unwrap();
+    let ws = get_workload_state(&state, name)?;
 
     let target_runtime: RuntimeKind = target.parse()?;
 
@@ -1063,11 +1226,11 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
     let sp = output::spinner(&format!("Checking drift for '{}'...", name));
 
     let (state, _) = load_workload_state(name)?;
-    let ws = state.get(name).unwrap();
+    let ws = get_workload_state(&state, name)?;
 
     let spec = Workload::from_file(&ws.spec_path)?;
     let detector = DriftDetector::new();
-    let report = detector.detect(&spec, ws);
+    let report = detector.detect(&spec, &ws);
 
     output::spinner_success(&sp, "Drift check complete");
 
@@ -1775,13 +1938,39 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
         }
         OrchestrateAction::HealthCheck => {
             let sp = output::spinner("Running health checks...");
-            let statuses = collect_health_statuses(
-                &orch,
-                &StateStore::load(&StateStore::default_path())?,
-            )
-            .await;
+            let state_store = StateStore::load(&StateStore::default_path())?;
+            let statuses = collect_health_statuses(&orch, &state_store).await;
             let actions = orch.run_health_checks_from_statuses(&statuses);
             orch.save(&path)?;
+
+            // Record health checks to history
+            {
+                use orchestr8::orchestrator::HealthStatus as OrcHealthStatus;
+                let health_path = orchestr8::health::HealthHistory::default_path();
+                let mut history = orchestr8::health::HealthHistory::load(&health_path)
+                    .unwrap_or_default();
+                let now = orchestr8::resources::now_rfc3339();
+                for (wl_name, hs) in &statuses {
+                    if let Some(ws) = state_store.get(wl_name) {
+                        let (inst_state, ready) = match hs {
+                            OrcHealthStatus::Healthy => (orchestr8::runtime::InstanceState::Running, true),
+                            OrcHealthStatus::Degraded => (orchestr8::runtime::InstanceState::Running, false),
+                            OrcHealthStatus::Unhealthy => (orchestr8::runtime::InstanceState::Failed, false),
+                            OrcHealthStatus::Unknown => (orchestr8::runtime::InstanceState::Unknown, false),
+                        };
+                        history.record(orchestr8::health::HealthRecord {
+                            timestamp: now.clone(),
+                            workload: wl_name.clone(),
+                            runtime: ws.runtime,
+                            state: inst_state,
+                            ready,
+                            restart_count: 0,
+                            latency_ms: None,
+                        });
+                    }
+                }
+                let _ = history.save(&health_path);
+            }
 
             output::spinner_success(&sp, "Health check complete");
 
@@ -2132,6 +2321,20 @@ pub(crate) async fn diff_command(name: &str) -> Result<()> {
 
     print!("{}", format_live_diff(&report));
 
+    // Show git-style colored changes for fields that differ
+    if has_differences {
+        output::section_with_icon("📝", "Changes");
+        for row in &report.rows {
+            if !row.matches {
+                output::change(
+                    &row.field,
+                    &row.spec_value,
+                    &row.live_value,
+                );
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -2460,6 +2663,708 @@ impl Drop for EventBatch {
     fn drop(&mut self) {
         let _ = self.bus.save(&self.path);
     }
+}
+
+// ─── dry-run: show what would happen without executing ───────────────
+pub(crate) async fn dry_run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> Result<()> {
+    let workload = Workload::from_file(spec_path)?;
+    let engine = Engine::new();
+
+    let runtime_kind = if let Some(override_str) = runtime_override {
+        override_str.parse::<RuntimeKind>()?
+    } else {
+        engine.decide(&workload)?
+    };
+
+    output::header("🔍", "Dry Run — Deploy Preview");
+
+    println!(
+        "{}",
+        output::property_table(&[
+            ("Workload", workload.metadata.name.clone()),
+            ("Runtime", output::runtime_display(&runtime_kind)),
+            ("Image", workload.image_name()),
+            ("CPU", workload.requirements.cpu.clone()),
+            ("Memory", workload.requirements.memory.clone()),
+            ("Storage", workload.requirements.storage.clone()),
+            ("Ports", workload.network.ports.iter()
+                .map(|p| format!("{}:{}", p.service_port, p.container_port))
+                .collect::<Vec<_>>()
+                .join(", ")),
+        ])
+    );
+
+    output::muted("\n[dry-run] No resources were created.");
+    Ok(())
+}
+
+// ─── exec: run a shell inside a workload ─────────────────────────────
+/// Run a subprocess with optional timeout (0 = no timeout).
+/// Uses tokio::process::Command for proper async child management.
+async fn run_with_timeout(cmd: std::process::Command, label: &str, timeout_secs: u64) -> Result<()> {
+    // Convert std::process::Command to tokio::process::Command for async wait
+    let mut tokio_cmd = tokio::process::Command::from(cmd);
+    let mut child = tokio_cmd.spawn()?;
+
+    if timeout_secs == 0 {
+        // No timeout — just await the child
+        let status = child.wait().await?;
+        if !status.success() {
+            anyhow::bail!("{} exited with status {}", label, status);
+        }
+        return Ok(());
+    }
+
+    // Await with timeout
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(timeout_secs),
+        child.wait(),
+    ).await {
+        Ok(Ok(status)) => {
+            if !status.success() {
+                anyhow::bail!("{} exited with status {}", label, status);
+            }
+            Ok(())
+        }
+        Ok(Err(e)) => Err(e.into()),
+        Err(_) => {
+            let _ = child.kill().await;
+            anyhow::bail!("{} timed out after {}s", label, timeout_secs);
+        }
+    }
+}
+
+pub(crate) async fn exec_command(name: &str, command: &str, interactive: bool, timeout: u64) -> Result<()> {
+    let (_state, ws, _rt) = load_state_and_runtime(name).await?;
+
+    output::header("🐚", &format!("Exec into {}", name));
+
+    match ws.runtime {
+        RuntimeKind::Podman => {
+            let mut cmd = std::process::Command::new("podman");
+            cmd.args(["exec"]);
+            if interactive {
+                cmd.args(["-it"]);
+            }
+            cmd.arg(&ws.instance.id).arg(command);
+            run_with_timeout(cmd, "podman exec", timeout).await?;
+        }
+        RuntimeKind::Kubernetes => {
+            let mut cmd = std::process::Command::new("kubectl");
+            cmd.args(["exec"]);
+            if interactive {
+                cmd.args(["-it"]);
+            }
+            cmd.arg(&ws.instance.name)
+                .arg("--")
+                .arg(command);
+            run_with_timeout(cmd, "kubectl exec", timeout).await?;
+        }
+        RuntimeKind::KubeVirt => {
+            let mut cmd = std::process::Command::new("virtctl");
+            cmd.args(["console", &ws.instance.name]);
+            run_with_timeout(cmd, "virtctl console", timeout).await?;
+        }
+        RuntimeKind::Metal3 => {
+            anyhow::bail!(
+                "Exec is not supported for Metal3 bare-metal hosts.\n\
+                 Hint: Use SSH or BMC console to access the host directly."
+            );
+        }
+    }
+    Ok(())
+}
+
+// ─── port-forward: forward local ports to workload ───────────────────
+pub(crate) async fn port_forward_command(name: &str, ports: &str, timeout: u64) -> Result<()> {
+    let (_state, ws, _rt) = load_state_and_runtime(name).await?;
+
+    output::header("🔀", &format!("Port-forward {}", name));
+
+    // Parse port mapping (local:remote)
+    let parts: Vec<&str> = ports.split(':').collect();
+    if parts.len() != 2 {
+        anyhow::bail!(
+            "Invalid port format '{}'. Expected local:remote (e.g., 8080:80)",
+            ports
+        );
+    }
+    let local_port: u16 = parts[0].parse().map_err(|_| {
+        anyhow::anyhow!("Invalid local port '{}'. Must be a number 1-65535", parts[0])
+    })?;
+    if local_port == 0 {
+        anyhow::bail!("Local port cannot be 0 (reserved for OS-assigned ports)");
+    }
+    let remote_port: u16 = parts[1].parse().map_err(|_| {
+        anyhow::anyhow!("Invalid remote port '{}'. Must be a number 1-65535", parts[1])
+    })?;
+    if remote_port == 0 {
+        anyhow::bail!("Remote port cannot be 0");
+    }
+
+    match ws.runtime {
+        RuntimeKind::Podman => {
+            output::info(&format!(
+                "Podman containers use direct port mapping. Port {}:{} was configured at deploy time.",
+                local_port, remote_port
+            ));
+            output::muted(&format!(
+                "Access your workload at http://localhost:{}",
+                local_port
+            ));
+        }
+        RuntimeKind::Kubernetes => {
+            output::info(&format!(
+                "Forwarding localhost:{} → {}:{}",
+                local_port, ws.instance.name, remote_port
+            ));
+            let mut cmd = std::process::Command::new("kubectl");
+            cmd.args([
+                "port-forward",
+                &format!("pod/{}", ws.instance.name),
+                &format!("{}:{}", local_port, remote_port),
+            ]);
+            run_with_timeout(cmd, "kubectl port-forward", timeout).await?;
+        }
+        RuntimeKind::KubeVirt => {
+            output::info(&format!(
+                "Forwarding localhost:{} → {}:{}",
+                local_port, ws.instance.name, remote_port
+            ));
+            let mut cmd = std::process::Command::new("virtctl");
+            cmd.args([
+                "port-forward",
+                &ws.instance.name,
+                &format!("{}:{}", local_port, remote_port),
+            ]);
+            run_with_timeout(cmd, "virtctl port-forward", timeout).await?;
+        }
+        RuntimeKind::Metal3 => {
+            anyhow::bail!(
+                "Port-forward is not supported for Metal3 bare-metal hosts.\n\
+                 Hint: Configure networking directly on the host."
+            );
+        }
+    }
+    Ok(())
+}
+
+// ─── watch: file-watch and auto-redeploy ─────────────────────────────
+pub(crate) async fn watch_command(spec_path: &PathBuf, runtime: Option<String>) -> Result<()> {
+    use std::time::{Instant, SystemTime};
+
+    output::header("👁", "Watch Mode");
+    output::info(&format!("Watching {} for changes...", spec_path.display()));
+    output::muted("Press Ctrl+C to stop");
+
+    let mut last_modified = std::fs::metadata(spec_path)
+        .and_then(|m| m.modified())
+        .unwrap_or(SystemTime::UNIX_EPOCH);
+
+    // Debounce: wait at least 1s after the last change before deploying,
+    // to avoid triggering on rapid successive saves (editors do tmp-write + rename).
+    let debounce_duration = std::time::Duration::from_secs(1);
+    let mut pending_change: Option<Instant> = None;
+    let mut deploy_count: u32 = 0;
+
+    loop {
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+
+        let current_modified = match std::fs::metadata(spec_path).and_then(|m| m.modified()) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+
+        if current_modified > last_modified {
+            last_modified = current_modified;
+            pending_change = Some(Instant::now());
+        }
+
+        // Deploy once the debounce window has elapsed
+        if let Some(changed_at) = pending_change {
+            if changed_at.elapsed() >= debounce_duration {
+                pending_change = None;
+                deploy_count += 1;
+                output::section_with_icon(
+                    "🔄",
+                    &format!("Change detected — redeploying (#{})...", deploy_count),
+                );
+
+                // Use non-interactive deploy (auto-select runtime)
+                let workload = match Workload::from_file(spec_path) {
+                    Ok(w) => w,
+                    Err(e) => {
+                        output::error(&format!("Failed to parse spec: {}", e));
+                        output::muted("Watching for more changes...");
+                        continue;
+                    }
+                };
+                match deploy_single_workload(&workload, spec_path, runtime.as_deref(), None).await {
+                    Ok(()) => output::success("Redeployment complete"),
+                    Err(e) => output::error(&format!("Redeployment failed: {}", e)),
+                }
+
+                output::muted("Watching for more changes...");
+            }
+        }
+    }
+}
+
+// ─── compare: cross-runtime comparison ───────────────────────────────
+pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
+    let workload = Workload::from_file(spec_path)?;
+    let engine = Engine::new();
+
+    output::header("⚖️", "Cross-Runtime Comparison");
+
+    let cpu = orchestr8::resources::parse_cpu(&workload.requirements.cpu);
+    let mem_gi = orchestr8::resources::parse_memory_gi(&workload.requirements.memory);
+
+    // Evaluate each runtime
+    let recommended = engine.decide(&workload).ok();
+    let mut rows = Vec::new();
+    for runtime in orchestr8::runtime::RuntimeKind::ALL {
+        let is_recommended = recommended.as_ref().map(|r| *r == runtime).unwrap_or(false);
+
+        let suitability = match runtime {
+            RuntimeKind::Podman => {
+                if workload.requirements.gpu.is_some() { "Limited (no GPU)" }
+                else if cpu > 8.0 { "Adequate" }
+                else { "Excellent" }
+            }
+            RuntimeKind::Kubernetes => {
+                if workload.network.service { "Excellent" }
+                else { "Good" }
+            }
+            RuntimeKind::KubeVirt => {
+                if workload.requirements.gpu.is_some() { "Excellent (GPU passthrough)" }
+                else if mem_gi > 16.0 { "Good (VM isolation)" }
+                else { "Adequate" }
+            }
+            RuntimeKind::Metal3 => {
+                if cpu > 16.0 || mem_gi > 64.0 { "Excellent (bare-metal perf)" }
+                else { "Over-provisioned" }
+            }
+        };
+
+        let limitations = match runtime {
+            RuntimeKind::Podman => "Single host, no HA, no service mesh",
+            RuntimeKind::Kubernetes => "Requires cluster, higher complexity",
+            RuntimeKind::KubeVirt => "Requires KubeVirt operator, VM overhead",
+            RuntimeKind::Metal3 => "Requires BMC, slow provisioning, no autoscale",
+        };
+
+        let marker = if is_recommended { "★ " } else { "  " };
+        rows.push(vec![
+            format!("{}{}", marker, output::runtime_display(&runtime)),
+            suitability.to_string(),
+            limitations.to_string(),
+        ]);
+    }
+
+    println!(
+        "{}",
+        output::table(
+            &["Runtime", "Suitability", "Limitations"],
+            rows,
+        )
+    );
+
+    // Cost comparison
+    let mut cost_rows = Vec::new();
+    if let Ok(estimates) = orchestr8::cost::estimate_all_providers(&workload) {
+        for estimate in &estimates {
+            cost_rows.push(vec![
+                format!("{:?}", estimate.provider),
+                format!("${:.2}/mo", estimate.total_monthly),
+                format!("${:.4}/hr", estimate.total_monthly / 730.0),
+            ]);
+        }
+    }
+
+    println!(
+        "\n{}",
+        output::table(
+            &["Provider", "Monthly", "Hourly"],
+            cost_rows,
+        )
+    );
+
+    output::muted("\n★ = AI-recommended runtime for this workload");
+    Ok(())
+}
+
+// ─── init: first-run onboarding wizard ───────────────────────────────
+pub(crate) async fn init_command() -> Result<()> {
+    output::banner("ORCHESTR8", "First-Time Setup Wizard");
+
+    // Step 1: Detect available runtimes
+    output::step(1, 4, "Detecting available runtimes");
+    let mut capabilities = Vec::new();
+
+    let podman_ok = which::which("podman").is_ok();
+    capabilities.push(("Podman", podman_ok, if podman_ok { "Ready" } else { "Not found — install with: sudo dnf install podman" }));
+
+    let kubectl_ok = which::which("kubectl").is_ok();
+    capabilities.push(("Kubernetes (kubectl)", kubectl_ok, if kubectl_ok { "Ready" } else { "Not found — install kubectl" }));
+
+    let virtctl_ok = which::which("virtctl").is_ok();
+    capabilities.push(("KubeVirt (virtctl)", virtctl_ok, if virtctl_ok { "Ready" } else { "Not found — install virtctl" }));
+
+    output::capabilities(&capabilities);
+
+    // Step 2: Create config directory
+    output::step(2, 4, "Initializing configuration");
+    orchestr8::state::StateStore::ensure_state_dir()?;
+    output::success("Created ~/.orchestr8/ directory");
+
+    // Step 3: Generate sample workload in current directory
+    output::step(3, 4, "Generating sample workload");
+    let cwd = std::env::current_dir().unwrap_or_default();
+    output::info(&format!("Target directory: {}", cwd.display()));
+    let sample_path = cwd.join("workload.yaml");
+    if sample_path.exists() {
+        output::info("workload.yaml already exists, skipping");
+    } else {
+        let sample = r#"apiVersion: orchestr8/v1
+kind: Workload
+
+metadata:
+  name: hello-world
+  owner: team
+  project: demo
+
+build:
+  context: "."
+  dockerfile: Dockerfile
+  registry: localhost
+
+requirements:
+  cpu: "1"
+  memory: 512Mi
+  storage: 1Gi
+
+runtime:
+  preferred: auto
+  allow: [container, kube]
+
+network:
+  service: true
+  serviceType: ClusterIP
+  ports:
+    - containerPort: 8080
+      servicePort: 8080
+      protocol: TCP
+"#;
+        std::fs::write(sample_path, sample)?;
+        output::success("Generated workload.yaml");
+    }
+
+    // Step 4: Summary
+    output::step(4, 4, "Setup complete");
+
+    let available_count = [podman_ok, kubectl_ok, virtctl_ok]
+        .iter()
+        .filter(|&&v| v)
+        .count();
+
+    output::summary_success(
+        "Setup Complete",
+        &[
+            ("Runtimes available", format!("{}/3", available_count)),
+            ("Config directory", "~/.orchestr8/".to_string()),
+            ("Sample workload", "workload.yaml".to_string()),
+        ],
+    );
+
+    output::section("Next Steps");
+    output::bullet_list(&[
+        "orchestr8 validate          — Validate the sample workload",
+        "orchestr8 recommend         — Get AI runtime recommendation",
+        "orchestr8 compare           — Compare runtimes for your workload",
+        "orchestr8 run               — Deploy the workload",
+        "orchestr8 tui               — Launch interactive dashboard",
+        "orchestr8 help-all          — View complete command reference",
+    ]);
+
+    Ok(())
+}
+
+// ─── Contextual error helpers ────────────────────────────────────────
+
+// ─── compose: multi-workload compose file ────────────────────────────
+pub(crate) async fn compose_command(action: ComposeAction) -> Result<()> {
+    use orchestr8::compose;
+
+    match action {
+        ComposeAction::Validate { file } => {
+            output::header("📋", "Compose Validate");
+            let spec = compose::load(&file)?;
+            compose::validate(&spec)?;
+
+            let order = compose::resolve_order(&spec)?;
+            output::success(&format!(
+                "Compose file valid: {} workloads",
+                spec.workloads.len()
+            ));
+            output::section("Deploy Order");
+            for (i, name) in order.iter().enumerate() {
+                let wl = &spec.workloads[name];
+                output::kv_tree(
+                    &format!("{}. {}", i + 1, name),
+                    &wl.spec.display().to_string(),
+                    i == order.len() - 1,
+                );
+            }
+            Ok(())
+        }
+        ComposeAction::Up { file, runtime, dry_run } => {
+            output::header("🚀", "Compose Up");
+            let spec = compose::load(&file)?;
+            compose::validate(&spec)?;
+
+            let order = compose::resolve_order(&spec)?;
+            output::info(&format!(
+                "Deploying {} workloads in dependency order",
+                order.len()
+            ));
+
+            for (i, name) in order.iter().enumerate() {
+                let wl = &spec.workloads[name];
+                output::step(i + 1, order.len(), &format!("Deploying {}", name));
+
+                if dry_run {
+                    output::muted(&format!(
+                        "  [dry-run] Would deploy {} from {}",
+                        name,
+                        wl.spec.display()
+                    ));
+                    continue;
+                }
+
+                let rt_override = wl.runtime.as_deref().or(runtime.as_deref());
+                let workload = Workload::from_file(&wl.spec)?;
+                deploy_single_workload(&workload, &wl.spec, rt_override, None).await?;
+            }
+
+            if dry_run {
+                output::muted("\n[dry-run] No resources were created.");
+            } else {
+                output::success(&format!("All {} workloads deployed", order.len()));
+            }
+            Ok(())
+        }
+        ComposeAction::Down { file } => {
+            output::header("🛑", "Compose Down");
+            let spec = compose::load(&file)?;
+
+            // Stop in reverse dependency order
+            let order = compose::resolve_order(&spec)?;
+            let reversed: Vec<_> = order.into_iter().rev().collect();
+
+            for name in &reversed {
+                output::info(&format!("Stopping {}", name));
+                match stop_command(name).await {
+                    Ok(()) => output::success(&format!("Stopped {}", name)),
+                    Err(e) => output::warning(&format!("Could not stop {}: {}", name, e)),
+                }
+            }
+
+            output::success("All workloads stopped");
+            Ok(())
+        }
+    }
+}
+
+// ─── plugin: runtime plugin management ───────────────────────────────
+pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
+    use orchestr8::plugin::PluginRegistry;
+
+    let path = PluginRegistry::default_path();
+
+    match action {
+        PluginAction::List => {
+            output::header("🔌", "Registered Plugins");
+            let reg = PluginRegistry::load(&path)?;
+            if reg.plugins.is_empty() {
+                output::muted("No plugins registered. Run `orchestr8 plugin discover` to scan for plugins.");
+                return Ok(());
+            }
+            let rows: Vec<Vec<String>> = reg.plugins.values().map(|p| {
+                vec![
+                    p.name.clone(),
+                    p.version.clone(),
+                    p.runtime_kind.clone(),
+                    p.capabilities.join(", "),
+                ]
+            }).collect();
+            println!("{}", output::table(&["Name", "Version", "Runtime", "Capabilities"], rows));
+            Ok(())
+        }
+        PluginAction::Discover => {
+            output::header("🔍", "Plugin Discovery");
+            let sp = output::spinner("Scanning ~/.orchestr8/plugins/...");
+            let mut reg = PluginRegistry::load(&path)?;
+            let count = reg.discover()?;
+            reg.save(&path)?;
+            output::spinner_success(&sp, &format!("Found {} plugin(s)", count));
+
+            if count > 0 {
+                let rows: Vec<Vec<String>> = reg.plugins.values().map(|p| {
+                    vec![p.name.clone(), p.runtime_kind.clone(), p.command.clone()]
+                }).collect();
+                println!("{}", output::table(&["Name", "Runtime", "Command"], rows));
+            }
+            Ok(())
+        }
+        PluginAction::Register { manifest } => {
+            output::header("📦", "Register Plugin");
+            let content = std::fs::read_to_string(&manifest)?;
+            let plugin: orchestr8::plugin::PluginManifest = serde_json::from_str(&content)?;
+            let mut reg = PluginRegistry::load(&path)?;
+            let name = plugin.name.clone();
+            reg.register(plugin);
+            reg.save(&path)?;
+            output::success(&format!("Registered plugin '{}'", name));
+            Ok(())
+        }
+        PluginAction::Remove { name } => {
+            let mut reg = PluginRegistry::load(&path)?;
+            match reg.unregister(&name) {
+                Some(_) => {
+                    reg.save(&path)?;
+                    output::success(&format!("Removed plugin '{}'", name));
+                }
+                None => {
+                    output::warning(&format!("Plugin '{}' not found", name));
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
+// ─── health: view health history and uptime ──────────────────────────
+pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) -> Result<()> {
+    use orchestr8::health::HealthHistory;
+
+    let health_path = HealthHistory::default_path();
+    let history = HealthHistory::load(&health_path)?;
+
+    if summary_only {
+        let summary = history.summary(name);
+
+        if output::is_json() {
+            println!("{}", serde_json::to_string_pretty(&summary)?);
+            return Ok(());
+        }
+
+        output::header("💓", &format!("Health Summary: {}", name));
+
+        if summary.total_checks == 0 {
+            output::muted(&format!(
+                "No health data for '{}'. Run `orchestr8 status {}` to record a check.",
+                name, name
+            ));
+            return Ok(());
+        }
+
+        let uptime_color = if summary.uptime_percent >= 99.0 { "🟢" }
+            else if summary.uptime_percent >= 95.0 { "🟡" }
+            else { "🔴" };
+
+        println!(
+            "{}",
+            output::property_table(&[
+                ("Total Checks", format!("{}", summary.total_checks)),
+                ("Ready Checks", format!("{}", summary.ready_checks)),
+                ("Uptime", format!("{} {:.2}%", uptime_color, summary.uptime_percent)),
+                ("Last State", summary.last_state.clone()),
+                ("Last Restart Count", format!("{}", summary.last_restart_count)),
+            ])
+        );
+        return Ok(());
+    }
+
+    // Timeline view
+    output::header("💓", &format!("Health Timeline: {} (last {})", name, last));
+
+    let timeline = history.timeline(name, last);
+
+    if timeline.is_empty() {
+        output::muted(&format!(
+            "No health data for '{}'. Run `orchestr8 status {}` to record a check.",
+            name, name
+        ));
+        return Ok(());
+    }
+
+    if output::is_json() {
+        println!("{}", serde_json::to_string_pretty(&timeline)?);
+        return Ok(());
+    }
+
+    let rows: Vec<Vec<String>> = timeline
+        .iter()
+        .map(|r| {
+            let ready_icon = if r.ready { "●" } else { "○" };
+            let latency = r.latency_ms
+                .map(|ms| format!("{:.0}ms", ms))
+                .unwrap_or_else(|| "-".to_string());
+            vec![
+                r.timestamp.chars().take(19).collect::<String>(),
+                format!("{}", r.state),
+                ready_icon.to_string(),
+                format!("{}", r.restart_count),
+                latency,
+            ]
+        })
+        .collect();
+
+    println!(
+        "{}",
+        output::table(&["Timestamp", "State", "Ready", "Restarts", "Latency"], rows)
+    );
+
+    // Show summary at bottom
+    let summary = history.summary(name);
+    output::muted(&format!(
+        "\n  Uptime: {:.2}%  |  {} / {} checks ready  |  {} restarts",
+        summary.uptime_percent, summary.ready_checks, summary.total_checks, summary.last_restart_count
+    ));
+
+    Ok(())
+}
+
+/// Wrap an error with a contextual suggestion for the user.
+pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
+    let msg = err.to_string();
+
+    if msg.contains("not found") && (msg.contains("Workload") || msg.contains("workload")) {
+        return err.context(
+            "Hint: Run `orchestr8 list` to see deployed workloads, \
+             or `orchestr8 run` to deploy one first."
+        );
+    }
+    if msg.contains("Podman not found") {
+        return err.context(
+            "Hint: Install podman with `sudo dnf install podman` (Fedora) \
+             or `sudo apt install podman` (Debian/Ubuntu)."
+        );
+    }
+    if msg.contains("error trying to connect") || msg.contains("connection refused") {
+        return err.context(
+            "Hint: Check your Kubernetes cluster with `kubectl cluster-info`, \
+             or set KUBECONFIG to point to a valid kubeconfig file."
+        );
+    }
+    if msg.contains("Unknown runtime") {
+        return err.context(
+            "Hint: Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm), metal3 (metal/bare-metal)."
+        );
+    }
+
+    err
 }
 
 #[cfg(test)]

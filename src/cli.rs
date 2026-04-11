@@ -31,9 +31,31 @@ pub(crate) struct Cli {
     #[arg(long, conflicts_with = "quiet")]
     pub(crate) json: bool,
 
+    /// Output format: table (default), json, yaml, wide
+    #[arg(short, long, default_value = "table")]
+    pub(crate) output: OutputFormat,
+
     /// Skip confirmation prompts (for automation/CI)
     #[arg(short, long)]
     pub(crate) yes: bool,
+
+    /// Show what would happen without executing (for mutating commands)
+    #[arg(long)]
+    pub(crate) dry_run: bool,
+}
+
+/// Output format for CLI results
+#[derive(Debug, Clone, Default, clap::ValueEnum)]
+pub(crate) enum OutputFormat {
+    /// Default table output
+    #[default]
+    Table,
+    /// JSON machine-readable output
+    Json,
+    /// YAML output
+    Yaml,
+    /// Wide table with extra columns
+    Wide,
 }
 
 /// Custom clap styles matching the orange vision-optimized theme
@@ -382,6 +404,76 @@ pub(crate) enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+
+    /// Execute a command inside a running workload
+    Exec {
+        /// Workload name
+        name: String,
+
+        /// Command to run (default: /bin/sh)
+        #[arg(default_value = "/bin/sh")]
+        command: String,
+
+        /// Pass stdin to the container
+        #[arg(short, long)]
+        interactive: bool,
+
+        /// Timeout in seconds (0 = no timeout)
+        #[arg(short, long, default_value = "0")]
+        timeout: u64,
+    },
+
+    /// Forward local ports to a running workload
+    PortForward {
+        /// Workload name
+        name: String,
+
+        /// Port mapping (local:remote, e.g. 8080:80)
+        ports: String,
+
+        /// Timeout in seconds (0 = no timeout, for scripting)
+        #[arg(short, long, default_value = "0")]
+        timeout: u64,
+    },
+
+    /// Watch spec file and auto-redeploy on changes
+    Watch {
+        /// Override runtime
+        #[arg(short, long)]
+        runtime: Option<String>,
+    },
+
+    /// Compare workload across runtimes (cost, capabilities, limitations)
+    Compare,
+
+    /// First-time setup wizard
+    Init,
+
+    /// Deploy workloads from a compose file
+    Compose {
+        #[command(subcommand)]
+        action: ComposeAction,
+    },
+
+    /// Manage runtime plugins
+    Plugin {
+        #[command(subcommand)]
+        action: PluginAction,
+    },
+
+    /// View workload health history and uptime
+    Health {
+        /// Workload name
+        name: String,
+
+        /// Show last N health records
+        #[arg(short, long, default_value = "20")]
+        last: usize,
+
+        /// Show summary only
+        #[arg(long)]
+        summary: bool,
+    },
 }
 
 impl Commands {
@@ -428,6 +520,14 @@ impl Commands {
             Self::Diff { .. } => "diff",
             Self::Rollback { .. } => "rollback",
             Self::Deploy { .. } => "deploy",
+            Self::Exec { .. } => "exec",
+            Self::PortForward { .. } => "port-forward",
+            Self::Watch { .. } => "watch",
+            Self::Compare => "compare",
+            Self::Init => "init",
+            Self::Compose { .. } => "compose",
+            Self::Plugin { .. } => "plugin",
+            Self::Health { .. } => "health",
         }
     }
 }
@@ -654,6 +754,54 @@ pub(crate) enum WebhookAction {
     /// Send a test notification to a channel
     Test {
         /// Channel name
+        name: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ComposeAction {
+    /// Validate a compose file
+    Validate {
+        /// Path to compose file
+        #[arg(default_value = "orchestr8-compose.yaml")]
+        file: PathBuf,
+    },
+    /// Deploy all workloads from a compose file
+    Up {
+        /// Path to compose file
+        #[arg(default_value = "orchestr8-compose.yaml")]
+        file: PathBuf,
+
+        /// Override runtime for all workloads
+        #[arg(short, long)]
+        runtime: Option<String>,
+
+        /// Show plan without executing
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Stop all workloads from a compose file
+    Down {
+        /// Path to compose file
+        #[arg(default_value = "orchestr8-compose.yaml")]
+        file: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum PluginAction {
+    /// List registered plugins
+    List,
+    /// Discover plugins from ~/.orchestr8/plugins/
+    Discover,
+    /// Register a plugin from a manifest file
+    Register {
+        /// Path to plugin manifest JSON
+        manifest: PathBuf,
+    },
+    /// Unregister a plugin
+    Remove {
+        /// Plugin name
         name: String,
     },
 }
