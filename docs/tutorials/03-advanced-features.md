@@ -390,6 +390,64 @@ Example `BuildResponse`:
 }
 ```
 
+### Plugin runtime lifecycle
+
+When a plugin is registered, it acts as a full runtime implementation. Orchestr8
+communicates with the plugin binary via JSON-RPC over stdin/stdout:
+
+```
+orchestr8 → stdin  → {"type":"RunRequest","image_json":"...","spec_json":"..."}
+plugin    → stdout → {"type":"RunResponse","instance_json":"..."}
+```
+
+Each IPC call has a **60-second timeout**. If the plugin binary doesn't respond
+in time, Orchestr8 terminates the process and returns an error.
+
+**Capability checking** runs before every operation. Calling `build` on a plugin
+that only supports `["run", "stop"]` produces:
+
+```
+Error: Plugin 'wasm-runtime' does not support 'build' (capabilities: run, stop)
+```
+
+---
+
+## 🚨 Alert Rules and Automated Alerting
+
+The `orchestrate watch` loop evaluates alert rules against live system metrics
+on every monitoring cycle. When conditions are met, events are emitted and
+notifications are sent via configured webhook channels.
+
+### Supported alert conditions
+
+| Condition | Triggers When |
+|---|---|
+| `SlaUptimeBelow(99.9)` | Any workload's uptime drops below the threshold |
+| `ExcessiveRestarts(5)` | Any workload exceeds the restart count |
+| `DriftDetected` | Configuration drift is found |
+| `PolicyViolation` | Active policy violations exist |
+| `SecretExpiring(14)` | Any secret expires within N days |
+
+### How it works
+
+Each watch cycle:
+
+1. Collects SLA uptimes and restart counts from health history
+2. Evaluates all enabled alert rules against current metrics
+3. Respects per-rule **cooldown** (prevents repeated firing)
+4. Emits events for triggered rules
+5. Sends webhook notifications for fired alerts
+
+### Viewing fired alerts
+
+```bash
+# View recent alert events
+orchestr8 events --severity warning
+
+# View event summary
+orchestr8 events --summary
+```
+
 ---
 
 ## 📡 Webhook Notifications with Retry Queue
@@ -457,9 +515,11 @@ This runs in the foreground and performs the following every interval:
 
 1. **Health check** all registered workloads
 2. **Record** health observations (uptime, latency, restart count)
-3. **Circuit breaker** detection -- if a workload fails repeatedly, the circuit
+3. **Evaluate alert rules** against current system metrics (SLA uptimes, restart
+   counts, drift, policy violations, secret expiry) with per-rule cooldown
+4. **Circuit breaker** detection -- if a workload fails repeatedly, the circuit
    opens and further attempts are paused
-4. **Auto-remediation** via rolling updates when health degrades
+5. **Auto-remediation** via rolling updates when health degrades
 
 ### Register workloads for orchestration
 

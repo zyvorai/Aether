@@ -148,13 +148,32 @@ impl std::str::FromStr for RuntimeKind {
 
 /// Create a runtime instance for the given RuntimeKind.
 pub async fn create_runtime(kind: &RuntimeKind) -> crate::Result<Box<dyn Runtime>> {
+    create_runtime_ns(kind, None).await
+}
+
+/// Create a runtime instance with an explicit namespace override.
+/// When `namespace` is `Some`, kube-based runtimes use it instead of the
+/// `ORCHESTR8_NAMESPACE` env var or the default `"default"`.
+pub async fn create_runtime_ns(
+    kind: &RuntimeKind,
+    namespace: Option<&str>,
+) -> crate::Result<Box<dyn Runtime>> {
     use crate::adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
 
     match kind {
         RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
-        RuntimeKind::Kubernetes => Ok(Box::new(KubernetesRuntime::new().await?)),
-        RuntimeKind::KubeVirt => Ok(Box::new(KubeVirtRuntime::new().await?)),
-        RuntimeKind::Metal3 => Ok(Box::new(Metal3Runtime::new().await?)),
+        RuntimeKind::Kubernetes => match namespace {
+            Some(ns) => Ok(Box::new(KubernetesRuntime::with_namespace(ns.to_string()).await?)),
+            None => Ok(Box::new(KubernetesRuntime::new().await?)),
+        },
+        RuntimeKind::KubeVirt => match namespace {
+            Some(ns) => Ok(Box::new(KubeVirtRuntime::with_namespace(ns.to_string()).await?)),
+            None => Ok(Box::new(KubeVirtRuntime::new().await?)),
+        },
+        RuntimeKind::Metal3 => match namespace {
+            Some(ns) => Ok(Box::new(Metal3Runtime::with_namespace(ns.to_string()).await?)),
+            None => Ok(Box::new(Metal3Runtime::new().await?)),
+        },
     }
 }
 

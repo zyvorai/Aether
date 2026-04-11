@@ -75,6 +75,30 @@ kind: Workload
 ...
 ```
 
+## Volume Mounting
+
+ConfigMaps and Secrets can be mounted as volumes in Kubernetes deployments by specifying a `mount_path` field:
+
+```yaml
+config:
+  configMaps:
+    - name: app-config
+      mount_path: /etc/app           # Optional: mount as read-only volume
+      data:
+        app.conf: "key=value"
+  secrets:
+    - name: tls-certs
+      mount_path: /etc/tls           # Optional: mount as read-only volume
+      data:
+        tls.crt: "<cert>"
+```
+
+When `mount_path` is specified, the ConfigMap or Secret is mounted as a read-only volume at that path inside the container. Without `mount_path`, values are injected as environment variables.
+
+PVCs are auto-mounted at `/data` when `persistence.enabled: true`.
+
+---
+
 ## Schema Features
 
 ### Field Validation

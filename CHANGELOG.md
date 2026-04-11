@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Namespace Override:** New `-n` / `--namespace` CLI flag and `ORCHESTR8_NAMESPACE` environment variable to override the Kubernetes namespace for all kube-based runtimes (Kubernetes, KubeVirt, Metal3). The flag takes precedence over the env var.
+- **Kubernetes Volume Mounts:** ConfigMaps, Secrets, and PVCs are now auto-mounted as volumes in pod manifests:
+  - ConfigMaps with `mount_path` are mounted as read-only volumes
+  - Secrets with `mount_path` are mounted as read-only volumes
+  - PVCs are auto-mounted at `/data` when `persistence.enabled: true`
+- **Podman Health Checks:** Workload health probes (HTTP, TCP, Exec) are now mapped to native Podman `--health-cmd` flags with configurable interval and start period. Containers use `--restart on-failure:3` for automatic restart resilience.
+- **Podman Health-Aware Status:** `orchestr8 status` now reports Podman health check status (healthy/unhealthy/starting), restart counts, and health-aware readiness from `podman inspect`.
+- **Alert Rule Evaluation:** The `orchestrate watch` loop now evaluates alert rules against live system metrics (SLA uptime, restart counts, drift, policy violations, secret expiry) each cycle, with per-rule cooldown support.
+- **Plugin Runtime IPC:** Plugins now fully implement the `Runtime` trait via stdin/stdout JSON-RPC. The `PluginRuntime` struct handles `build`, `run`, `stop`, `status`, `delete`, and `list` operations with 60-second timeout, capability checking, and structured error reporting.
 - **New CLI Commands:**
   - `exec` - Execute a command inside a running workload (Podman, Kubernetes, KubeVirt)
   - `port-forward` - Forward local ports to a running workload with port validation

@@ -221,6 +221,7 @@ orchestr8 config --init                 # Create default config file
 
 | Variable | Description | Default |
 |---|---|---|
+| `ORCHESTR8_NAMESPACE` | Kubernetes namespace for kube-based runtimes. Overridden by `-n` flag. | `default` |
 | `ORCHESTR8_SECRET_KEY` | Encryption key for secrets. Enables AES-256-GCM when set. | Built-in dev key (XOR obfuscation, NOT secure) |
 
 ### Setting the Secret Key
@@ -245,6 +246,7 @@ ORCHESTR8_SECRET_KEY="key" orchestr8 secrets set db-creds password "val"
 | Flag | Short | Default | Description |
 |---|---|---|---|
 | `--spec` | `-s` | `workload.yaml` | Workload spec file path |
+| `--namespace` | `-n` | -- | Kubernetes namespace override (or `ORCHESTR8_NAMESPACE` env var) |
 | `--verbose` | `-v` | off | Enable verbose logging |
 | `--quiet` | `-q` | off | Suppress output except errors |
 | `--json` | -- | off | Output as JSON |

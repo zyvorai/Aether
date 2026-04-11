@@ -581,6 +581,90 @@ pub fn format_event_summary(summary: &EventSummary) -> String {
     output
 }
 
+// ─── Alert Rule Evaluation ────────────────────────────────────────────
+
+/// Snapshot of current system metrics for alert evaluation.
+#[derive(Debug, Clone, Default)]
+pub struct SystemMetrics {
+    /// Per-workload uptime percentage (0.0 -- 100.0)
+    pub sla_uptimes: HashMap<String, f64>,
+    /// Per-workload restart counts
+    pub restart_counts: HashMap<String, u32>,
+    /// Whether drift was detected on any workload
+    pub drift_detected: bool,
+    /// Whether any policy violation was found
+    pub policy_violations: bool,
+    /// Per-secret days until expiry
+    pub secrets_expiring_days: HashMap<String, u32>,
+}
+
+impl EventBus {
+    /// Evaluate all enabled alert rules against current system metrics.
+    /// Emits events and triggers notifications for rules whose conditions are met.
+    /// Returns the IDs of any events that were emitted.
+    pub fn evaluate_rules(&mut self, metrics: &SystemMetrics) -> Vec<u64> {
+        let now = crate::resources::now_rfc3339();
+        let mut emitted_ids = Vec::new();
+
+        for i in 0..self.rules.len() {
+            if !self.rules[i].enabled {
+                continue;
+            }
+
+            // Check cooldown
+            if let Some(ref last) = self.rules[i].last_triggered {
+                if let (Ok(last_dt), Ok(now_dt)) = (
+                    chrono::DateTime::parse_from_rfc3339(last),
+                    chrono::DateTime::parse_from_rfc3339(&now),
+                ) {
+                    let elapsed = (now_dt - last_dt).num_seconds() as u64;
+                    if elapsed < self.rules[i].cooldown_seconds {
+                        continue;
+                    }
+                }
+            }
+
+            let triggered = match &self.rules[i].condition {
+                AlertCondition::SlaUptimeBelow(threshold) => {
+                    metrics.sla_uptimes.values().any(|u| *u < *threshold && *u > 0.0)
+                }
+                AlertCondition::ErrorRateAbove(_) => false, // No error rate data source yet
+                AlertCondition::CostExceeds(_) => false,    // No live cost data source yet
+                AlertCondition::ExcessiveRestarts(max) => {
+                    metrics.restart_counts.values().any(|c| *c > *max)
+                }
+                AlertCondition::DriftDetected => metrics.drift_detected,
+                AlertCondition::PolicyViolation => metrics.policy_violations,
+                AlertCondition::SecretExpiring(days) => {
+                    metrics.secrets_expiring_days.values().any(|d| *d <= *days)
+                }
+            };
+
+            if triggered {
+                let msg = self.rules[i].message_template.clone();
+                let severity = self.rules[i].severity.clone();
+                let category = match &self.rules[i].condition {
+                    AlertCondition::SlaUptimeBelow(_) => EventCategory::SlaViolation,
+                    AlertCondition::ErrorRateAbove(_) => EventCategory::SystemAlert,
+                    AlertCondition::CostExceeds(_) => EventCategory::CostAnomaly,
+                    AlertCondition::ExcessiveRestarts(_) => EventCategory::HealthCheck,
+                    AlertCondition::DriftDetected => EventCategory::DriftDetected,
+                    AlertCondition::PolicyViolation => EventCategory::PolicyViolation,
+                    AlertCondition::SecretExpiring(_) => EventCategory::SecretRotation,
+                };
+
+                let id = self.emit_simple(
+                    severity, category, "alert-evaluator", None, &msg, &msg,
+                );
+                emitted_ids.push(id);
+                self.rules[i].last_triggered = Some(now.clone());
+            }
+        }
+
+        emitted_ids
+    }
+}
+
 // ─── Webhook Retry Queue ──────────────────────────────────────────────
 
 /// A pending webhook delivery awaiting retry.
@@ -894,6 +978,180 @@ mod tests {
         bus.emit_simple(EventSeverity::Critical, EventCategory::SlaViolation, "test", None, "Critical", "bad");
 
         assert_eq!(bus.events().len(), 4);
+    }
+
+    // ── evaluate_rules() ────────────────────────────────────────────────
+
+    fn make_bus_with_rule(condition: AlertCondition, cooldown: u64) -> EventBus {
+        let mut bus = EventBus::new();
+        bus.rules = vec![AlertRule {
+            name: "test-rule".to_string(),
+            enabled: true,
+            condition,
+            severity: EventSeverity::Warning,
+            message_template: "Test alert fired".to_string(),
+            cooldown_seconds: cooldown,
+            last_triggered: None,
+        }];
+        bus
+    }
+
+    #[test]
+    fn test_evaluate_rules_sla_uptime_below() {
+        let mut bus = make_bus_with_rule(AlertCondition::SlaUptimeBelow(99.0), 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.sla_uptimes.insert("web".to_string(), 98.5);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
+        assert_eq!(bus.events().len(), 1);
+        assert!(bus.events()[0].message.contains("Test alert fired"));
+    }
+
+    #[test]
+    fn test_evaluate_rules_sla_above_threshold_does_not_fire() {
+        let mut bus = make_bus_with_rule(AlertCondition::SlaUptimeBelow(99.0), 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.sla_uptimes.insert("web".to_string(), 99.5);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert!(fired.is_empty());
+    }
+
+    #[test]
+    fn test_evaluate_rules_sla_zero_uptime_does_not_fire() {
+        let mut bus = make_bus_with_rule(AlertCondition::SlaUptimeBelow(99.0), 0);
+        let mut metrics = SystemMetrics::default();
+        // 0.0 uptime means no data yet, should not trigger
+        metrics.sla_uptimes.insert("web".to_string(), 0.0);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert!(fired.is_empty());
+    }
+
+    #[test]
+    fn test_evaluate_rules_excessive_restarts() {
+        let mut bus = make_bus_with_rule(AlertCondition::ExcessiveRestarts(3), 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.restart_counts.insert("api".to_string(), 5);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
+    }
+
+    #[test]
+    fn test_evaluate_rules_restarts_at_threshold_does_not_fire() {
+        let mut bus = make_bus_with_rule(AlertCondition::ExcessiveRestarts(5), 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.restart_counts.insert("api".to_string(), 5); // equal, not above
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert!(fired.is_empty());
+    }
+
+    #[test]
+    fn test_evaluate_rules_drift_detected() {
+        let mut bus = make_bus_with_rule(AlertCondition::DriftDetected, 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.drift_detected = true;
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
+    }
+
+    #[test]
+    fn test_evaluate_rules_policy_violation() {
+        let mut bus = make_bus_with_rule(AlertCondition::PolicyViolation, 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.policy_violations = true;
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
+    }
+
+    #[test]
+    fn test_evaluate_rules_secret_expiring() {
+        let mut bus = make_bus_with_rule(AlertCondition::SecretExpiring(14), 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.secrets_expiring_days.insert("db-creds".to_string(), 10);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
+    }
+
+    #[test]
+    fn test_evaluate_rules_disabled_rule_does_not_fire() {
+        let mut bus = EventBus::new();
+        bus.rules = vec![AlertRule {
+            name: "disabled-rule".to_string(),
+            enabled: false,
+            condition: AlertCondition::DriftDetected,
+            severity: EventSeverity::Warning,
+            message_template: "Should not fire".to_string(),
+            cooldown_seconds: 0,
+            last_triggered: None,
+        }];
+        let mut metrics = SystemMetrics::default();
+        metrics.drift_detected = true;
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert!(fired.is_empty());
+    }
+
+    #[test]
+    fn test_evaluate_rules_cooldown_prevents_repeated_firing() {
+        let mut bus = make_bus_with_rule(AlertCondition::DriftDetected, 3600);
+        let mut metrics = SystemMetrics::default();
+        metrics.drift_detected = true;
+
+        // First evaluation should fire
+        let fired1 = bus.evaluate_rules(&metrics);
+        assert_eq!(fired1.len(), 1);
+
+        // Second evaluation within cooldown should not fire
+        let fired2 = bus.evaluate_rules(&metrics);
+        assert!(fired2.is_empty());
+    }
+
+    #[test]
+    fn test_evaluate_rules_multiple_rules_fire_independently() {
+        let mut bus = EventBus::new();
+        bus.rules = vec![
+            AlertRule {
+                name: "drift-alert".to_string(),
+                enabled: true,
+                condition: AlertCondition::DriftDetected,
+                severity: EventSeverity::Warning,
+                message_template: "Drift alert".to_string(),
+                cooldown_seconds: 0,
+                last_triggered: None,
+            },
+            AlertRule {
+                name: "restart-alert".to_string(),
+                enabled: true,
+                condition: AlertCondition::ExcessiveRestarts(2),
+                severity: EventSeverity::Error,
+                message_template: "Restart alert".to_string(),
+                cooldown_seconds: 0,
+                last_triggered: None,
+            },
+        ];
+        let mut metrics = SystemMetrics::default();
+        metrics.drift_detected = true;
+        metrics.restart_counts.insert("svc".to_string(), 10);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 2);
+        assert_eq!(bus.events().len(), 2);
+    }
+
+    #[test]
+    fn test_evaluate_rules_empty_metrics_fires_nothing() {
+        let mut bus = EventBus::new(); // has default rules
+        let metrics = SystemMetrics::default();
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert!(fired.is_empty());
     }
 
     #[test]

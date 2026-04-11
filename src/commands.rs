@@ -21,6 +21,19 @@ pub(crate) fn set_skip_policy(enabled: bool) {
     SKIP_POLICY.store(enabled, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// Global namespace override (set via --namespace)
+static NAMESPACE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+
+/// Set the global namespace override
+pub(crate) fn set_namespace(ns: Option<String>) {
+    let _ = NAMESPACE.set(ns);
+}
+
+/// Get the current namespace override
+fn get_namespace() -> Option<&'static str> {
+    NAMESPACE.get().and_then(|n| n.as_deref())
+}
+
 /// Load the state store and look up a workload by name, returning a borrowed
 /// reference tied to the returned store. Avoids repeating the 3-line
 /// `StateStore::load` + `state.get` + `ok_or_else` pattern everywhere.
@@ -55,7 +68,7 @@ async fn load_state_and_runtime(
         .get(name)
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?
         .clone();
-    let rt = orchestr8::runtime::create_runtime(&ws.runtime).await?;
+    let rt = orchestr8::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await?;
     Ok((state, ws, rt))
 }
 
@@ -105,7 +118,7 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
     ));
 
     // Create runtime before spinner so failure doesn't leave orphan spinner
-    let rt = orchestr8::runtime::create_runtime(&runtime_kind).await?;
+    let rt = orchestr8::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
 
     let sp = output::spinner("Building workload...");
     let result = rt.build(&workload).await;
@@ -212,7 +225,7 @@ async fn deploy_workload_inner(
     ));
 
     // Build and run based on runtime
-    let rt = orchestr8::runtime::create_runtime(&runtime_kind).await?;
+    let rt = orchestr8::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
     let sp = output::spinner("Building and deploying workload...");
     let image = rt.build(workload).await?;
 
@@ -2156,6 +2169,52 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     }
                 }
 
+                // Evaluate alert rules against current metrics
+                {
+                    let events_path = orchestr8::events::EventBus::default_path();
+                    if let Ok(mut bus) = orchestr8::events::EventBus::load(&events_path) {
+                        let health_path = orchestr8::health::HealthHistory::default_path();
+                        let history = orchestr8::health::HealthHistory::load(&health_path)
+                            .unwrap_or_default();
+
+                        let mut metrics = orchestr8::events::SystemMetrics::default();
+                        let alert_policy_config = orchestr8::config::Config::load().policy;
+                        for ws in state_store.list() {
+                            let uptime = history.uptime_percent(&ws.name);
+                            if uptime > 0.0 {
+                                metrics.sla_uptimes.insert(ws.name.clone(), uptime);
+                            }
+                            metrics.restart_counts.insert(
+                                ws.name.clone(),
+                                history.restart_count(&ws.name),
+                            );
+
+                            // Check for drift on each workload
+                            if let Ok(spec) = orchestr8::spec::Workload::from_file(&ws.spec_path) {
+                                let detector = orchestr8::drift::DriftDetector::new();
+                                let report = detector.detect(&spec, ws);
+                                if report.has_drift {
+                                    metrics.drift_detected = true;
+                                }
+
+                                // Check for policy violations
+                                if orchestr8::policy::gate_deploy(&spec, &alert_policy_config).is_err() {
+                                    metrics.policy_violations = true;
+                                }
+                            }
+                        }
+
+                        let fired = bus.evaluate_rules(&metrics);
+                        if !fired.is_empty() {
+                            output::warning(&format!(
+                                "[{}] Alerts: {} rule(s) triggered",
+                                now_str, fired.len()
+                            ));
+                            let _ = bus.save(&events_path);
+                        }
+                    }
+                }
+
                 // Process webhook retry queue
                 orchestr8::events::WebhookQueue::process_queue_once();
             }
@@ -2247,7 +2306,6 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
 
 pub(crate) async fn rollback_command(name: &str) -> Result<()> {
     use orchestr8::backup::{Backup, SnapshotManager};
-    use orchestr8::runtime::create_runtime;
 
     output::section_with_icon("⏪", &format!("Rolling back workload '{}'", name));
 
@@ -2269,7 +2327,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
     // Stop current instance (best-effort)
     let mut state = StateStore::load(&StateStore::default_path())?;
     if let Some(current) = state.get(name) {
-        match create_runtime(&current.runtime).await {
+        match orchestr8::runtime::create_runtime_ns(&current.runtime, get_namespace()).await {
             Ok(runtime) => {
                 if let Err(e) = runtime.stop(&current.instance).await {
                     tracing::warn!("Failed to stop current instance: {}", e);
@@ -2281,7 +2339,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
 
     // Re-deploy from snapshot
     let sp = output::spinner("Re-deploying from snapshot...");
-    let runtime = create_runtime(&snapshot_ws.runtime).await?;
+    let runtime = orchestr8::runtime::create_runtime_ns(&snapshot_ws.runtime, get_namespace()).await?;
     let spec = Workload::from_file(&snapshot_ws.spec_path)?;
     let image = runtime.build(&spec).await?;
     let instance = runtime.run(&image, &spec).await?;
@@ -2328,7 +2386,7 @@ async fn collect_health_statuses(
     state: &StateStore,
 ) -> std::collections::HashMap<String, orchestr8::orchestrator::HealthStatus> {
     use orchestr8::orchestrator::HealthStatus;
-    use orchestr8::runtime::{create_runtime, InstanceState};
+    use orchestr8::runtime::InstanceState;
 
     let managed = orch.list_workloads();
     let mut statuses = std::collections::HashMap::new();
@@ -2346,7 +2404,7 @@ async fn collect_health_statuses(
     }
 
     for (kind, workloads) in by_runtime {
-        match create_runtime(&kind).await {
+        match orchestr8::runtime::create_runtime_ns(&kind, get_namespace()).await {
             Ok(runtime) => {
                 for (name, instance) in workloads {
                     let hs = match runtime.status(&instance).await {

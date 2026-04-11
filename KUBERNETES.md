@@ -26,18 +26,27 @@ This guide explains how to use Orchestr8 with Kubernetes clusters.
 
 ### 1. Configure Namespace (Optional)
 
-By default, Orchestr8 uses the `default` namespace. To use a different namespace:
+By default, Orchestr8 uses the `default` namespace. You can override it with the `-n` / `--namespace` CLI flag or the `ORCHESTR8_NAMESPACE` environment variable:
 
 ```bash
+# Option A: CLI flag (highest priority)
+orchestr8 -n my-namespace run --runtime kube
+
+# Option B: Environment variable
 export ORCHESTR8_NAMESPACE=my-namespace
+
+# Option C: Per-command environment variable
+ORCHESTR8_NAMESPACE=staging orchestr8 run --runtime kube
 ```
 
-Or create a custom namespace:
+Or create a custom namespace first:
 
 ```bash
 kubectl create namespace orchestr8-demo
-export ORCHESTR8_NAMESPACE=orchestr8-demo
+orchestr8 -n orchestr8-demo run --runtime kube
 ```
+
+**Namespace resolution order:** `--namespace` flag > `ORCHESTR8_NAMESPACE` env var > `"default"`.
 
 ### 2. Prepare Your Image
 
@@ -210,6 +219,104 @@ spec:
       storage: 5Gi
   storageClassName: standard
 ```
+
+When persistence is enabled, the PVC is automatically mounted at `/data` inside the container.
+
+### 4. Volume Mounts (ConfigMaps, Secrets, PVCs)
+
+Orchestr8 automatically creates volume mounts when `mount_path` is specified in ConfigMap or Secret definitions, or when persistence is enabled.
+
+**ConfigMap volume mount:**
+
+When a ConfigMap has a `mount_path` field, Orchestr8 creates a read-only volume mount:
+
+```yaml
+config:
+  configMaps:
+    - name: app-config
+      mount_path: /etc/app          # Mounted as read-only volume
+      data:
+        app.conf: |
+          server.port=8080
+          log.level=info
+```
+
+This generates a `Volume` + `VolumeMount` pair in the Pod spec:
+
+```yaml
+volumes:
+  - name: cm-app-config
+    configMap:
+      name: app-config
+containers:
+  - volumeMounts:
+      - name: cm-app-config
+        mountPath: /etc/app
+        readOnly: true
+```
+
+**Secret volume mount:**
+
+Similarly, Secrets with `mount_path` are mounted as read-only volumes:
+
+```yaml
+config:
+  secrets:
+    - name: tls-certs
+      mount_path: /etc/tls          # Mounted as read-only volume
+      data:
+        tls.crt: "<base64>"
+        tls.key: "<base64>"
+```
+
+```yaml
+volumes:
+  - name: secret-tls-certs
+    secret:
+      secretName: tls-certs
+containers:
+  - volumeMounts:
+      - name: secret-tls-certs
+        mountPath: /etc/tls
+        readOnly: true
+```
+
+**PVC auto-mount:**
+
+When `persistence.enabled: true`, a PVC volume is automatically mounted at `/data`:
+
+```yaml
+volumes:
+  - name: web-app-storage
+    persistentVolumeClaim:
+      claimName: web-app-pvc
+containers:
+  - volumeMounts:
+      - name: web-app-storage
+        mountPath: /data
+```
+
+**Combining multiple volume types:**
+
+All three volume types can be used together in a single workload:
+
+```yaml
+config:
+  configMaps:
+    - name: nginx-conf
+      mount_path: /etc/nginx/conf.d
+      data:
+        default.conf: "server { listen 80; }"
+  secrets:
+    - name: app-secrets
+      mount_path: /run/secrets
+
+persistence:
+  enabled: true
+  size: 50Gi
+```
+
+This creates three volumes: `cm-nginx-conf`, `secret-app-secrets`, and `web-app-storage`.
 
 ## Service Types
 
@@ -405,12 +512,14 @@ orchestr8 run --spec workload-k8s.yaml
 ### Namespace Isolation
 
 ```bash
-# Development
-export ORCHESTR8_NAMESPACE=dev
-orchestr8 run --spec workload-k8s.yaml
+# Development (using CLI flag)
+orchestr8 -n dev run --spec workload-k8s.yaml
 
-# Production
-export ORCHESTR8_NAMESPACE=prod
+# Production (using CLI flag)
+orchestr8 -n prod run --spec workload-k8s.yaml
+
+# Or using environment variable
+export ORCHESTR8_NAMESPACE=dev
 orchestr8 run --spec workload-k8s.yaml
 ```
 
@@ -515,7 +624,6 @@ kubectl delete namespace orchestr8-demo
 
 - **Horizontal Pod Autoscaler** - Auto-scale based on CPU/memory
 - **Ingress** - HTTP/HTTPS routing
-- **ConfigMaps & Secrets** - Configuration management
 - **StatefulSets** - For databases and stateful apps
 - **Jobs & CronJobs** - Batch workloads
 
@@ -542,6 +650,9 @@ orchestr8 delete web-app
 # List all
 orchestr8 list
 
-# With custom namespace
+# With custom namespace (CLI flag)
+orchestr8 -n production run --spec workload-k8s.yaml
+
+# Or using environment variable
 ORCHESTR8_NAMESPACE=production orchestr8 run --spec workload-k8s.yaml
 ```
