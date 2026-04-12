@@ -1,4 +1,4 @@
-# Multi-stage build for Orchestr8 CLI
+# Multi-stage build for Aether CLI
 FROM rust:1.75-slim as builder
 
 # Install dependencies
@@ -30,19 +30,19 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from builder
-COPY --from=builder /app/target/release/orchestr8 /usr/local/bin/orchestr8
+COPY --from=builder /app/target/release/aether /usr/local/bin/aether
 
 # Create state directory
-RUN mkdir -p /root/.orchestr8
+RUN mkdir -p /root/.aether
 
 # Set entrypoint
-ENTRYPOINT ["orchestr8"]
+ENTRYPOINT ["aether"]
 
 # Default command
 CMD ["--help"]
 
 # Labels
-LABEL org.opencontainers.image.title="Orchestr8"
+LABEL org.opencontainers.image.title="Aether"
 LABEL org.opencontainers.image.description="Universal Runtime Control Plane"
-LABEL org.opencontainers.image.source="https://github.com/ssahani/orchestr8"
+LABEL org.opencontainers.image.source="https://github.com/ssahani/aether"
 LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"

@@ -45,16 +45,16 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=edge,enable={{is_default_branch}}
           labels: |
-            org.opencontainers.image.title=Orchestr8
+            org.opencontainers.image.title=Aether
             org.opencontainers.image.description=Universal runtime control plane - One spec, four runtimes
-            org.opencontainers.image.vendor=Orchestr8
+            org.opencontainers.image.vendor=Aether
             org.opencontainers.image.licenses=MIT OR Apache-2.0
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.orchestr8
+          file: ./Dockerfile.aether
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -101,10 +101,3 @@ pub fn help_text() -> Line<'static> {
         Span::raw(" Quit"),
     ])
 }
-
-/// Create footer with help text
-pub fn footer<'a>() -> Block<'a> {
-    Block::default()
-        .borders(Borders::TOP)
-        .style(Style::default().fg(MUTED))
-}

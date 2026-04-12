@@ -6,7 +6,7 @@
 
 ## 📑 Table of Contents
 
-- [What is orchestr8-compose.yaml?](#-what-is-orchestr8-composeyaml)
+- [What is aether-compose.yaml?](#-what-is-aether-composeyaml)
 - [Compose Spec Format](#-compose-spec-format)
 - [Dependency Resolution](#-dependency-resolution)
 - [Commands](#-commands)
@@ -18,16 +18,16 @@
 
 ---
 
-## 📄 What is orchestr8-compose.yaml?
+## 📄 What is aether-compose.yaml?
 
-An `orchestr8-compose.yaml` file groups multiple workloads into a single deployment unit. Instead of deploying each service individually, you declare them all in one file with:
+An `aether-compose.yaml` file groups multiple workloads into a single deployment unit. Instead of deploying each service individually, you declare them all in one file with:
 
 - **Dependency ordering** -- workloads start in the correct sequence
 - **Runtime overrides** -- pin specific workloads to specific runtimes
 - **Environment injection** -- pass per-workload env vars at deploy time
 - **Validation** -- catch circular dependencies and missing references before anything runs
 
-The default file name is `orchestr8-compose.yaml`, but you can pass any path to the compose subcommands.
+The default file name is `aether-compose.yaml`, but you can pass any path to the compose subcommands.
 
 ---
 
@@ -104,7 +104,7 @@ workloads:
 
 ## 🔀 Dependency Resolution
 
-orchestr8 uses **Kahn's algorithm** (topological sort) to determine the correct startup order.
+aether uses **Kahn's algorithm** (topological sort) to determine the correct startup order.
 
 ### Algorithm Steps
 
@@ -152,8 +152,8 @@ database → api → web
 Validate a compose file for structural correctness without deploying anything.
 
 ```bash
-orchestr8 compose validate                           # default: orchestr8-compose.yaml
-orchestr8 compose validate ./my-stack.yaml           # explicit path
+aether compose validate                           # default: aether-compose.yaml
+aether compose validate ./my-stack.yaml           # explicit path
 ```
 
 **Checks performed:**
@@ -176,10 +176,10 @@ orchestr8 compose validate ./my-stack.yaml           # explicit path
 Deploy all workloads from a compose file in dependency order.
 
 ```bash
-orchestr8 compose up                                    # default file
-orchestr8 compose up ./production-stack.yaml            # explicit path
-orchestr8 compose up --runtime kube                     # override runtime for all
-orchestr8 compose up --dry-run                          # preview without executing
+aether compose up                                    # default file
+aether compose up ./production-stack.yaml            # explicit path
+aether compose up --runtime kube                     # override runtime for all
+aether compose up --dry-run                          # preview without executing
 ```
 
 | Flag | Short | Description |
@@ -194,8 +194,8 @@ orchestr8 compose up --dry-run                          # preview without execut
 Stop all workloads defined in a compose file in **reverse dependency order** (dependents stop first).
 
 ```bash
-orchestr8 compose down                                  # default file
-orchestr8 compose down ./production-stack.yaml          # explicit path
+aether compose down                                  # default file
+aether compose down ./production-stack.yaml          # explicit path
 ```
 
 ---
@@ -208,13 +208,13 @@ orchestr8 compose down ./production-stack.yaml          # explicit path
 
 ```
 my-app/
-├── orchestr8-compose.yaml
+├── aether-compose.yaml
 ├── db.yaml
 ├── api.yaml
 └── web.yaml
 ```
 
-**orchestr8-compose.yaml:**
+**aether-compose.yaml:**
 
 ```yaml
 version: "1"
@@ -250,18 +250,18 @@ workloads:
 
 ```bash
 # 1. Validate first
-orchestr8 compose validate
+aether compose validate
 # ✅ Valid compose file with 3 workloads
 # Deploy order: database → api → web
 
 # 2. Preview the plan
-orchestr8 compose up --dry-run
+aether compose up --dry-run
 
 # 3. Deploy the stack
-orchestr8 compose up
+aether compose up
 
 # 4. Tear down (web stops first, then api, then database)
-orchestr8 compose down
+aether compose down
 ```
 
 ---
@@ -336,7 +336,7 @@ workloads:
 Preview the deployment plan without executing anything:
 
 ```bash
-orchestr8 compose up --dry-run
+aether compose up --dry-run
 ```
 
 Dry-run output shows:
@@ -349,7 +349,7 @@ Dry-run output shows:
 Combine with the global `--dry-run` flag for consistent behavior:
 
 ```bash
-orchestr8 --dry-run compose up
+aether --dry-run compose up
 ```
 
 ---
@@ -360,10 +360,10 @@ When the policy gate is enabled, each workload in the compose file is evaluated 
 
 ```bash
 # Deploy with policy enforcement (default behavior)
-orchestr8 compose up
+aether compose up
 
 # Skip policy checks (use with caution)
-orchestr8 --skip-policy compose up
+aether --skip-policy compose up
 ```
 
 Policy checks evaluate each workload's spec individually against the configured rule set. See the [Security Guide](./security.md) for the full list of 10 policy rule types.
@@ -381,7 +381,7 @@ Validate a compose spec via the REST API.
 ```bash
 curl -X POST http://localhost:8080/api/compose/validate \
   -H "Content-Type: text/plain" \
-  -d @orchestr8-compose.yaml
+  -d @aether-compose.yaml
 ```
 
 **Response (valid):**

@@ -1,6 +1,6 @@
 # Performance Benchmarking Guide
 
-Comprehensive guide for benchmarking Orchestr8 deployments, load testing, and performance optimization.
+Comprehensive guide for benchmarking Aether deployments, load testing, and performance optimization.
 
 ## Overview
 
@@ -834,5 +834,5 @@ jobs:
 ## Support
 
 For performance questions:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `performance`

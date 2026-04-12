@@ -1,6 +1,6 @@
 # Microservices E-Commerce Example
 
-Complete e-commerce application demonstrating Orchestr8 multi-runtime deployment with microservices architecture.
+Complete e-commerce application demonstrating Aether multi-runtime deployment with microservices architecture.
 
 ## Architecture
 
@@ -96,10 +96,10 @@ Complete e-commerce application demonstrating Orchestr8 multi-runtime deployment
 ### Prerequisites
 
 ```bash
-# Install Orchestr8
-curl -LO https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-linux-amd64
-chmod +x orchestr8-linux-amd64
-sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+# Install Aether
+curl -LO https://github.com/ssahani/aether/releases/latest/download/aether-linux-amd64
+chmod +x aether-linux-amd64
+sudo mv aether-linux-amd64 /usr/local/bin/aether
 
 # Configure Kubernetes access
 export KUBECONFIG=~/.kube/config
@@ -112,16 +112,16 @@ kubectl create namespace ecommerce
 
 ```bash
 # 1. Deploy database
-orchestr8 -s infrastructure/postgres.yaml run
+aether -s infrastructure/postgres.yaml run
 
 # 2. Deploy cache
-orchestr8 -s infrastructure/redis.yaml run
+aether -s infrastructure/redis.yaml run
 
 # 3. Deploy message queue
-orchestr8 -s infrastructure/rabbitmq.yaml run
+aether -s infrastructure/rabbitmq.yaml run
 
 # 4. Deploy search
-orchestr8 -s infrastructure/elasticsearch.yaml run
+aether -s infrastructure/elasticsearch.yaml run
 
 # Wait for infrastructure
 kubectl wait --for=condition=ready pod -l tier=infrastructure -n ecommerce --timeout=600s
@@ -133,12 +133,12 @@ kubectl wait --for=condition=ready pod -l tier=infrastructure -n ecommerce --tim
 # Deploy all microservices
 for service in services/*.yaml; do
   echo "Deploying $service..."
-  orchestr8 -s "$service" run
+  aether -s "$service" run
   sleep 5
 done
 
 # Verify deployments
-orchestr8 list
+aether list
 kubectl get pods -n ecommerce
 ```
 
@@ -146,7 +146,7 @@ kubectl get pods -n ecommerce
 
 ```bash
 # Deploy API Gateway
-orchestr8 -s api-gateway.yaml run
+aether -s api-gateway.yaml run
 
 # Configure ingress
 kubectl apply -f ingress.yaml
@@ -266,7 +266,7 @@ Estimate monthly costs:
 # Per service
 for service in services/*.yaml infrastructure/*.yaml; do
   echo "=== $service ==="
-  orchestr8 -s "$service" cost --provider aws
+  aether -s "$service" cost --provider aws
 done
 
 # Total estimate
@@ -284,7 +284,7 @@ Expected monthly costs (AWS us-east-1):
 
 ```bash
 # Create backup
-orchestr8 backup -n "ecommerce-$(date +%Y%m%d)" \
+aether backup -n "ecommerce-$(date +%Y%m%d)" \
   -d "Daily backup of e-commerce platform"
 
 # Schedule daily backups
@@ -322,7 +322,7 @@ jobs:
       - name: Deploy services
         run: |
           for service in services/*.yaml; do
-            orchestr8 -s "$service" run
+            aether -s "$service" run
           done
 ```
 
@@ -399,7 +399,7 @@ kubectl top pods -n ecommerce
 kubectl get pods -n ecommerce -l app=user-service
 
 # View logs
-orchestr8 logs user-service
+aether logs user-service
 
 # Describe pod
 kubectl describe pod -n ecommerce -l app=user-service
@@ -440,11 +440,11 @@ Migrate services between runtimes:
 
 ```bash
 # Migrate to different runtime
-orchestr8 migrate product-service kubernetes \
+aether migrate product-service kubernetes \
   --strategy blue-green
 
 # Verify migration
-orchestr8 status product-service
+aether status product-service
 ```
 
 ## Security
@@ -482,7 +482,7 @@ kubectl apply -f security/certificate.yaml
 ```bash
 # Delete all services
 for service in services/*.yaml infrastructure/*.yaml; do
-  orchestr8 delete $(basename "$service" .yaml)
+  aether delete $(basename "$service" .yaml)
 done
 
 # Or use script
@@ -502,5 +502,5 @@ kubectl delete namespace ecommerce
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `example-microservices`

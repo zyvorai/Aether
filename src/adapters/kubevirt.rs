@@ -367,7 +367,7 @@ impl Runtime for KubeVirtRuntime {
     async fn list(&self) -> crate::Result<Vec<Instance>> {
         let api = self.get_virtualmachine_api().await?;
 
-        // List only VMs managed by orchestr8
+        // List only VMs managed by aether
         let lp = common::managed_list_params();
         let vm_list = api.list(&lp).await?;
 
@@ -426,7 +426,7 @@ mod tests {
     // ---------------------------------------------------------------
     fn make_workload(name: &str, cpu: &str, memory: &str, storage: &str) -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: name.to_string(),
@@ -504,7 +504,7 @@ mod tests {
         let vm = build_virtualmachine_json("default", &spec);
 
         assert_eq!(vm["metadata"]["labels"]["app"], "my-vm");
-        assert_eq!(vm["metadata"]["labels"]["managed-by"], "orchestr8");
+        assert_eq!(vm["metadata"]["labels"]["managed-by"], "aether");
     }
 
     #[test]
@@ -753,7 +753,7 @@ mod tests {
         let dv = build_datavolume_json("default", &image, &spec);
 
         assert_eq!(dv["metadata"]["labels"]["app"], "my-vm");
-        assert_eq!(dv["metadata"]["labels"]["managed-by"], "orchestr8");
+        assert_eq!(dv["metadata"]["labels"]["managed-by"], "aether");
     }
 
     #[test]

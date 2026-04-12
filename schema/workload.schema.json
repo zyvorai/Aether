@@ -1,14 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://orchestr8.io/schema/workload.schema.json",
-  "title": "Orchestr8 Workload Specification",
-  "description": "Universal workload specification for Orchestr8 - One spec, four runtimes",
+  "$id": "https://aether.io/schema/workload.schema.json",
+  "title": "Aether Workload Specification",
+  "description": "Universal workload specification for Aether - One spec, four runtimes",
   "type": "object",
   "required": ["apiVersion", "kind", "metadata", "build", "requirements", "runtime"],
   "properties": {
     "apiVersion": {
       "type": "string",
-      "const": "orchestr8/v1",
+      "const": "aether/v1",
       "description": "API version of the workload specification"
     },
     "kind": {

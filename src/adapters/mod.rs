@@ -19,10 +19,10 @@ macro_rules! impl_kube_adapter_new {
     ($ty:ty, $default_ns:expr) => {
         impl $ty {
             /// Create a new runtime, reading the namespace from
-            /// `ORCHESTR8_NAMESPACE` (falling back to the adapter default).
+            /// `AETHER_NAMESPACE` (falling back to the adapter default).
             pub async fn new() -> anyhow::Result<Self> {
                 let client = ::kube::Client::try_default().await?;
-                let namespace = std::env::var("ORCHESTR8_NAMESPACE")
+                let namespace = std::env::var("AETHER_NAMESPACE")
                     .unwrap_or_else(|_| $default_ns.to_string());
                 Ok(Self { client, namespace })
             }

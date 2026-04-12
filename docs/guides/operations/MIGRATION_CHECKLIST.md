@@ -3,7 +3,7 @@
 > **Audience:** SREs, DevOps engineers, platform operators
 > **License:** Proprietary HyperSDK
 
-A step-by-step operational checklist for migrating workloads between Orchestr8
+A step-by-step operational checklist for migrating workloads between Aether
 runtimes (Podman, Kubernetes, KubeVirt, Metal3).
 
 ---
@@ -29,7 +29,7 @@ Complete **every** item before executing a migration.
 ### 1. Source workload is running
 
 ```bash
-orchestr8 status <WORKLOAD>
+aether status <WORKLOAD>
 ```
 
 - [ ] State is `running`
@@ -40,7 +40,7 @@ orchestr8 status <WORKLOAD>
 
 ```bash
 # Verify the target runtime is reachable
-orchestr8 compare
+aether compare
 ```
 
 | Target        | Prerequisite                                  |
@@ -53,16 +53,16 @@ orchestr8 compare
 ### 3. Workload spec is valid
 
 ```bash
-orchestr8 validate
+aether validate
 ```
 
 - [ ] Validation passes with no errors
-- [ ] Spec file path matches `state.spec_path` (check with `orchestr8 diff <WORKLOAD>`)
+- [ ] Spec file path matches `state.spec_path` (check with `aether diff <WORKLOAD>`)
 
 ### 4. Policy check passes on target
 
 ```bash
-orchestr8 policy-check
+aether policy-check
 ```
 
 - [ ] No policy violations
@@ -71,21 +71,21 @@ orchestr8 policy-check
 ### 5. Create a backup
 
 ```bash
-orchestr8 backup --name "pre-migration-$(date +%Y%m%d)" \
+aether backup --name "pre-migration-$(date +%Y%m%d)" \
   --description "Before migrating <WORKLOAD> from <SOURCE> to <TARGET>"
 ```
 
-- [ ] Backup file created in `~/.orchestr8/backups/`
+- [ ] Backup file created in `~/.aether/backups/`
 - [ ] Verify backup contents:
 
 ```bash
-orchestr8 list-backups
+aether list-backups
 ```
 
 ### 6. Review AI migration advice
 
 ```bash
-orchestr8 migration-advice <WORKLOAD> <TARGET>
+aether migration-advice <WORKLOAD> <TARGET>
 ```
 
 - [ ] Review risk assessment
@@ -95,14 +95,14 @@ orchestr8 migration-advice <WORKLOAD> <TARGET>
 ### 7. Check drift (optional but recommended)
 
 ```bash
-orchestr8 drift <WORKLOAD>
+aether drift <WORKLOAD>
 ```
 
 - [ ] No critical drift detected
 - [ ] If drift exists, reconcile first:
 
 ```bash
-orchestr8 drift <WORKLOAD> --reconcile
+aether drift <WORKLOAD> --reconcile
 ```
 
 ### 8. Notify stakeholders
@@ -111,7 +111,7 @@ orchestr8 drift <WORKLOAD> --reconcile
 - [ ] Configure webhook notifications:
 
 ```bash
-orchestr8 webhook add migration-alerts \
+aether webhook add migration-alerts \
   "https://hooks.slack.com/services/..." \
   --severity info
 ```
@@ -168,13 +168,13 @@ Is downtime acceptable?
 is acceptable.
 
 ```bash
-orchestr8 migrate <WORKLOAD> <TARGET> --strategy immediate
+aether migrate <WORKLOAD> <TARGET> --strategy immediate
 ```
 
 **What happens step by step:**
 
 ```
-Step 1:  Load workload state from ~/.orchestr8/state.json
+Step 1:  Load workload state from ~/.aether/state.json
 Step 2:  Verify source runtime matches expected
 Step 3:  Stop source instance
 Step 4:  Wait for graceful shutdown (5 seconds)
@@ -195,7 +195,7 @@ Step 12: Done ✔
 **Example with full flags:**
 
 ```bash
-orchestr8 migrate api-service kube \
+aether migrate api-service kube \
   --strategy immediate \
   --no-validation    # Skip validation delay for fast dev migrations
 ```
@@ -208,7 +208,7 @@ orchestr8 migrate api-service kube \
 runs alongside the source (blue) until validated.
 
 ```bash
-orchestr8 migrate <WORKLOAD> <TARGET> --strategy blue-green
+aether migrate <WORKLOAD> <TARGET> --strategy blue-green
 ```
 
 **What happens step by step:**
@@ -234,7 +234,7 @@ Step 13: Done ✔
 **Example:**
 
 ```bash
-orchestr8 migrate web-frontend kubevirt --strategy blue-green
+aether migrate web-frontend kubevirt --strategy blue-green
 ```
 
 ---
@@ -245,7 +245,7 @@ orchestr8 migrate web-frontend kubevirt --strategy blue-green
 validation at each step.
 
 ```bash
-orchestr8 migrate <WORKLOAD> <TARGET> --strategy rolling
+aether migrate <WORKLOAD> <TARGET> --strategy rolling
 ```
 
 **What happens step by step:**
@@ -284,7 +284,7 @@ Phase 4 — Cleanup:
 **Example:**
 
 ```bash
-orchestr8 migrate payment-service kube --strategy rolling
+aether migrate payment-service kube --strategy rolling
 ```
 
 ---
@@ -296,7 +296,7 @@ After a successful migration, run through this checklist:
 ### 1. Verify workload status
 
 ```bash
-orchestr8 status <WORKLOAD>
+aether status <WORKLOAD>
 ```
 
 - [ ] State is `running`
@@ -306,7 +306,7 @@ orchestr8 status <WORKLOAD>
 ### 2. Check logs for errors
 
 ```bash
-orchestr8 logs <WORKLOAD>
+aether logs <WORKLOAD>
 ```
 
 - [ ] No crash loops
@@ -316,7 +316,7 @@ orchestr8 logs <WORKLOAD>
 ### 3. Verify health
 
 ```bash
-orchestr8 health <WORKLOAD> --summary
+aether health <WORKLOAD> --summary
 ```
 
 - [ ] Uptime percentage is acceptable
@@ -325,7 +325,7 @@ orchestr8 health <WORKLOAD> --summary
 ### 4. Run a drift check
 
 ```bash
-orchestr8 drift <WORKLOAD>
+aether drift <WORKLOAD>
 ```
 
 - [ ] No drift detected between spec and live state
@@ -334,7 +334,7 @@ orchestr8 drift <WORKLOAD>
 
 ```bash
 # Port forward and verify
-orchestr8 port-forward <WORKLOAD> 8080:80
+aether port-forward <WORKLOAD> 8080:80
 # Then curl http://localhost:8080 in another terminal
 ```
 
@@ -343,7 +343,7 @@ orchestr8 port-forward <WORKLOAD> 8080:80
 ### 6. Verify SLA compliance
 
 ```bash
-orchestr8 sla check <WORKLOAD> --uptime 99.9 --latency 100
+aether sla check <WORKLOAD> --uptime 99.9 --latency 100
 ```
 
 - [ ] SLA targets are met
@@ -351,7 +351,7 @@ orchestr8 sla check <WORKLOAD> --uptime 99.9 --latency 100
 ### 7. Review audit trail
 
 ```bash
-orchestr8 audit --last 10 --workload <WORKLOAD>
+aether audit --last 10 --workload <WORKLOAD>
 ```
 
 - [ ] Migration events are recorded
@@ -369,7 +369,7 @@ orchestr8 audit --last 10 --workload <WORKLOAD>
 
 ### Automatic rollback
 
-By default, Orchestr8 automatically rolls back on migration failure:
+By default, Aether automatically rolls back on migration failure:
 
 - **Immediate strategy:** Rebuilds and redeploys on the source runtime
 - **Blue-Green strategy:** Deletes the green deployment; blue remains running
@@ -378,7 +378,7 @@ By default, Orchestr8 automatically rolls back on migration failure:
 To disable automatic rollback:
 
 ```bash
-orchestr8 migrate <WORKLOAD> <TARGET> --strategy immediate --no-rollback
+aether migrate <WORKLOAD> <TARGET> --strategy immediate --no-rollback
 ```
 
 ### Manual rollback
@@ -389,7 +389,7 @@ post-migration:
 #### Option 1: Rollback to snapshot
 
 ```bash
-orchestr8 rollback <WORKLOAD>
+aether rollback <WORKLOAD>
 ```
 
 This restores the workload to its latest pre-deploy snapshot.
@@ -397,20 +397,20 @@ This restores the workload to its latest pre-deploy snapshot.
 #### Option 2: Reverse migration
 
 ```bash
-orchestr8 migrate <WORKLOAD> <ORIGINAL_RUNTIME> --strategy blue-green
+aether migrate <WORKLOAD> <ORIGINAL_RUNTIME> --strategy blue-green
 ```
 
 #### Option 3: Restore from backup
 
 ```bash
 # List available backups
-orchestr8 list-backups
+aether list-backups
 
 # Restore the pre-migration backup
-orchestr8 restore ~/.orchestr8/backups/pre-migration-20260411.json
+aether restore ~/.aether/backups/pre-migration-20260411.json
 
 # Then redeploy
-orchestr8 run --runtime <ORIGINAL_RUNTIME>
+aether run --runtime <ORIGINAL_RUNTIME>
 ```
 
 ### Rollback decision matrix
@@ -420,7 +420,7 @@ orchestr8 run --runtime <ORIGINAL_RUNTIME>
 | Migration failed, auto-rollback succeeded | Investigate root cause, retry           |
 | Migration failed, auto-rollback failed    | Manual rollback via snapshot or backup  |
 | Migration succeeded, issues found later   | Reverse migration or rollback           |
-| Migration succeeded, performance degraded | Review with `orchestr8 profile`, adjust |
+| Migration succeeded, performance degraded | Review with `aether profile`, adjust |
 | State is corrupted                        | Restore from backup                     |
 
 ---
@@ -432,11 +432,11 @@ orchestr8 run --runtime <ORIGINAL_RUNTIME>
 ```
 Error: Source and target runtimes are the same (podman).
        Migration is unnecessary.
-Hint: Use `orchestr8 rollback <NAME>` to redeploy on the same runtime.
+Hint: Use `aether rollback <NAME>` to redeploy on the same runtime.
 ```
 
 **Cause:** You tried to migrate a workload to the runtime it is already on.
-**Fix:** Check the current runtime with `orchestr8 status <NAME>`.
+**Fix:** Check the current runtime with `aether status <NAME>`.
 
 ---
 
@@ -447,7 +447,7 @@ Error: Workload 'my-app' not found
 ```
 
 **Cause:** The workload is not tracked in the state store.
-**Fix:** Run `orchestr8 list` to see all tracked workloads.
+**Fix:** Run `aether list` to see all tracked workloads.
 
 ---
 
@@ -457,8 +457,8 @@ Error: Workload 'my-app' not found
 Error: Source runtime mismatch: expected podman, found kubernetes
 ```
 
-**Cause:** The workload was migrated or redeployed outside of Orchestr8.
-**Fix:** Check the current state with `orchestr8 status <NAME>` and adjust
+**Cause:** The workload was migrated or redeployed outside of Aether.
+**Fix:** Check the current state with `aether status <NAME>` and adjust
 your migration command accordingly.
 
 ---
@@ -470,7 +470,7 @@ your migration command accordingly.
 
 1. Verify the registry is accessible from the target
 2. Check image pull credentials
-3. Rebuild with `orchestr8 build`
+3. Rebuild with `aether build`
 
 ---
 
@@ -484,13 +484,13 @@ validation window.
 2. Check resource availability on the target runtime:
 
    ```bash
-   orchestr8 schedule utilization
+   aether schedule utilization
    ```
 
 3. Review logs on the target:
 
    ```bash
-   orchestr8 logs <WORKLOAD>
+   aether logs <WORKLOAD>
    ```
 
 ---
@@ -503,19 +503,19 @@ validation window.
 1. Skip validation for dev environments:
 
    ```bash
-   orchestr8 migrate <WORKLOAD> <TARGET> --strategy immediate --no-validation
+   aether migrate <WORKLOAD> <TARGET> --strategy immediate --no-validation
    ```
 
 2. Check build cache:
 
    ```bash
-   orchestr8 build
+   aether build
    ```
 
 3. Review the migration advice:
 
    ```bash
-   orchestr8 migration-advice <WORKLOAD> <TARGET>
+   aether migration-advice <WORKLOAD> <TARGET>
    ```
 
 ---
@@ -528,8 +528,8 @@ validation window.
 1. Restore from the pre-migration backup:
 
    ```bash
-   orchestr8 list-backups
-   orchestr8 restore <BACKUP_PATH>
+   aether list-backups
+   aether restore <BACKUP_PATH>
    ```
 
 2. Manually check the target runtime for orphaned resources
@@ -545,13 +545,13 @@ check failures.
 
 ```bash
 # Check the health history
-orchestr8 health <WORKLOAD> --last 20
+aether health <WORKLOAD> --last 20
 
 # Reset the circuit breaker
-orchestr8 orchestrate reset-circuit <WORKLOAD>
+aether orchestrate reset-circuit <WORKLOAD>
 
 # Run a manual health check
-orchestr8 orchestrate health-check
+aether orchestrate health-check
 ```
 
 ---
@@ -562,26 +562,26 @@ orchestr8 orchestrate health-check
 # Full migration workflow in 6 commands:
 
 # 1. Pre-flight
-orchestr8 status my-app
-orchestr8 validate
-orchestr8 policy-check
+aether status my-app
+aether validate
+aether policy-check
 
 # 2. Backup
-orchestr8 backup --name pre-migration
+aether backup --name pre-migration
 
 # 3. Migrate
-orchestr8 migrate my-app kube --strategy blue-green
+aether migrate my-app kube --strategy blue-green
 
 # 4. Verify
-orchestr8 status my-app
-orchestr8 health my-app --summary
-orchestr8 drift my-app
+aether status my-app
+aether health my-app --summary
+aether drift my-app
 
 # 5. (If needed) Rollback
-orchestr8 rollback my-app
+aether rollback my-app
 
 # 6. Cleanup old backups (keep last 5)
-# Manual: review and delete from ~/.orchestr8/backups/
+# Manual: review and delete from ~/.aether/backups/
 ```
 
 ---

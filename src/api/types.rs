@@ -496,10 +496,10 @@ mod tests {
     #[test]
     fn test_validate_request_deserialize() {
         let json = serde_json::json!({
-            "yaml": "apiVersion: orchestr8/v1\nkind: Workload\n"
+            "yaml": "apiVersion: aether/v1\nkind: Workload\n"
         });
         let request: ValidateRequest = serde_json::from_value(json).unwrap();
-        assert!(request.yaml.contains("orchestr8/v1"));
+        assert!(request.yaml.contains("aether/v1"));
     }
 
     #[test]
@@ -631,7 +631,7 @@ mod tests {
     fn test_create_workload_request_deserialize_with_runtime() {
         let json = serde_json::json!({
             "spec": {
-                "apiVersion": "orchestr8/v1",
+                "apiVersion": "aether/v1",
                 "kind": "Workload",
                 "metadata": {
                     "name": "test-app",
@@ -665,7 +665,7 @@ mod tests {
     fn test_create_workload_request_deserialize_without_runtime() {
         let json = serde_json::json!({
             "spec": {
-                "apiVersion": "orchestr8/v1",
+                "apiVersion": "aether/v1",
                 "kind": "Workload",
                 "metadata": {
                     "name": "auto-app",
@@ -792,7 +792,7 @@ mod tests {
     fn test_policy_check_request_with_policy_set() {
         let json = serde_json::json!({
             "spec": {
-                "apiVersion": "orchestr8/v1",
+                "apiVersion": "aether/v1",
                 "kind": "Workload",
                 "metadata": {
                     "name": "policy-test",
@@ -826,7 +826,7 @@ mod tests {
     fn test_policy_check_request_without_policy_set() {
         let json = serde_json::json!({
             "spec": {
-                "apiVersion": "orchestr8/v1",
+                "apiVersion": "aether/v1",
                 "kind": "Workload",
                 "metadata": {
                     "name": "policy-test",

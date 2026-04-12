@@ -1,11 +1,11 @@
-# 🚀 Orchestr8 - Phase 1 Deliverables
+# 🚀 Aether - Phase 1 Deliverables
 
 ## ✅ What Was Built (Hybrid 1️⃣ + 2️⃣)
 
 ### 1. Complete Rust Project Skeleton
 
 ```
-orchestr8/
+aether/
 ├── Cargo.toml              ✅ Full workspace with all dependencies
 ├── Cargo.lock              ✅ Locked dependencies
 ├── README.md               ✅ Complete documentation
@@ -107,7 +107,7 @@ pub trait Runtime: Send + Sync {
 ### ✅ Local Database
 
 - Tracks all deployed workloads
-- Persists to `~/.orchestr8/state.json`
+- Persists to `~/.aether/state.json`
 - CRUD operations: upsert, get, remove, list
 - Stores runtime type + instance details
 - Auto-creates state directory
@@ -138,31 +138,31 @@ pub trait Runtime: Send + Sync {
 
 ```bash
 # Validate workload spec
-orchestr8 validate
+aether validate
 
 # Build image
-orchestr8 build
+aether build
 
 # Run workload (auto-selects runtime)
-orchestr8 run [--runtime podman|kube|kubevirt|metal]
+aether run [--runtime podman|kube|kubevirt|metal]
 
 # Stop instance
-orchestr8 stop <name>
+aether stop <name>
 
 # Get status
-orchestr8 status <name>
+aether status <name>
 
 # View logs
-orchestr8 logs <name> [--follow]
+aether logs <name> [--follow]
 
 # Delete instance
-orchestr8 delete <name>
+aether delete <name>
 
 # List all workloads
-orchestr8 list
+aether list
 
 # Migrate (stub)
-orchestr8 migrate <name> <target>
+aether migrate <name> <target>
 ```
 
 ### ✅ Features
@@ -335,7 +335,7 @@ cargo run -- delete my-app
 
 ## 🎉 Summary
 
-**Delivered:** Complete foundation for Orchestr8
+**Delivered:** Complete foundation for Aether
 
 - ✅ 1️⃣ Rust project skeleton
 - ✅ 2️⃣ workload.yaml schema (final version)

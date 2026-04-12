@@ -1,4 +1,4 @@
-# Orchestr8 Workload Templates
+# Aether Workload Templates
 
 Production-ready templates for common workload types.
 
@@ -31,13 +31,13 @@ vim my-app.yaml
 ### 3. Validate
 
 ```bash
-orchestr8 -s my-app.yaml validate
+aether -s my-app.yaml validate
 ```
 
 ### 4. Deploy
 
 ```bash
-orchestr8 -s my-app.yaml run
+aether -s my-app.yaml run
 ```
 
 ## Template Details
@@ -63,7 +63,7 @@ orchestr8 -s my-app.yaml run
 ```bash
 cp templates/web-app.yaml production-api.yaml
 # Edit: name, image, domain, resources
-orchestr8 -s production-api.yaml run
+aether -s production-api.yaml run
 ```
 
 ### Database (PostgreSQL)
@@ -93,7 +93,7 @@ kubectl create secret generic postgres-credentials \
 ```bash
 cp templates/database.yaml app-database.yaml
 # Edit: name, storage, database
-orchestr8 -s app-database.yaml run
+aether -s app-database.yaml run
 ```
 
 ### ML Training Job
@@ -123,7 +123,7 @@ kubectl create secret generic ml-secrets \
 ```bash
 cp templates/ml-training.yaml bert-training.yaml
 # Edit: name, GPUs, model config
-orchestr8 -s bert-training.yaml run
+aether -s bert-training.yaml run
 ```
 
 ### Redis Cache
@@ -152,7 +152,7 @@ kubectl create secret generic redis-credentials \
 ```bash
 cp templates/redis-cache.yaml session-cache.yaml
 # Edit: name, memory limit
-orchestr8 -s session-cache.yaml run
+aether -s session-cache.yaml run
 ```
 
 ### Batch Job
@@ -175,7 +175,7 @@ orchestr8 -s session-cache.yaml run
 ```bash
 cp templates/batch-job.yaml data-import.yaml
 # Edit: name, batch size, workers
-orchestr8 -s data-import.yaml run
+aether -s data-import.yaml run
 ```
 
 ### Microservice
@@ -204,7 +204,7 @@ kubectl create secret generic payment-secrets \
 ```bash
 cp templates/microservice.yaml user-service.yaml
 # Edit: name, ports, scaling
-orchestr8 -s user-service.yaml run
+aether -s user-service.yaml run
 ```
 
 ## Best Practices
@@ -253,10 +253,10 @@ cp templates/web-app.yaml dev-app.yaml
 #    - Use development image tag
 
 # 3. Validate
-orchestr8 -s dev-app.yaml validate
+aether -s dev-app.yaml validate
 
 # 4. Deploy
-orchestr8 -s dev-app.yaml run
+aether -s dev-app.yaml run
 ```
 
 ### Production Workflow
@@ -272,39 +272,39 @@ cp templates/web-app.yaml prod-app.yaml
 #    - Enable backups
 
 # 3. Cost estimate
-orchestr8 -s prod-app.yaml cost
+aether -s prod-app.yaml cost
 
 # 4. Validate
-orchestr8 -s prod-app.yaml validate
+aether -s prod-app.yaml validate
 
 # 5. Create backup
-orchestr8 backup -n pre-deployment
+aether backup -n pre-deployment
 
 # 6. Deploy
-orchestr8 -s prod-app.yaml run
+aether -s prod-app.yaml run
 
 # 7. Verify
-orchestr8 status prod-app
-orchestr8 logs prod-app
+aether status prod-app
+aether logs prod-app
 ```
 
 ### Migration Workflow
 ```bash
 # 1. Deploy to test environment
-orchestr8 -s app.yaml run
+aether -s app.yaml run
 
 # 2. Validate functionality
-orchestr8 status app
+aether status app
 curl https://test.example.com/health
 
 # 3. Create backup
-orchestr8 backup -n pre-migration
+aether backup -n pre-migration
 
 # 4. Migrate to production runtime
-orchestr8 migrate app kubernetes --strategy blue-green
+aether migrate app kubernetes --strategy blue-green
 
 # 5. Verify migration
-orchestr8 status app
+aether status app
 curl https://prod.example.com/health
 ```
 
@@ -393,9 +393,9 @@ To add a new template:
 ## Support
 
 Issues? Questions?
-- GitHub: https://github.com/ssahani/orchestr8/issues
+- GitHub: https://github.com/ssahani/aether/issues
 - Tag: `template`
 
 ## License
 
-Same as Orchestr8 project (Proprietary (HyperSDK))
+Same as Aether project (Proprietary (HyperSDK))

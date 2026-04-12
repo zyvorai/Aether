@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implemented a complete web-based dashboard and REST API for Orchestr8, providing browser-based workload management alongside the existing CLI.
+Implemented a complete web-based dashboard and REST API for Aether, providing browser-based workload management alongside the existing CLI.
 
 ## Features Implemented
 
@@ -60,7 +60,7 @@ Implemented a complete web-based dashboard and REST API for Orchestr8, providing
 
 **New Command:**
 ```bash
-orchestr8 serve [OPTIONS]
+aether serve [OPTIONS]
 ```
 
 **Options:**
@@ -241,14 +241,14 @@ curl -X POST http://localhost:8080/api/backups \
 
 ### Standalone
 ```bash
-orchestr8 serve --host 0.0.0.0 --port 8080
+aether serve --host 0.0.0.0 --port 8080
 ```
 
 ### Docker
 ```bash
 docker run -d -p 8080:8080 \
-  -v ~/.orchestr8:/root/.orchestr8 \
-  ghcr.io/ssahani/orchestr8:latest \
+  -v ~/.aether:/root/.aether \
+  ghcr.io/ssahani/aether:latest \
   serve --host 0.0.0.0
 ```
 
@@ -257,15 +257,15 @@ docker run -d -p 8080:8080 \
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: orchestr8-api
+  name: aether-api
 spec:
   replicas: 2
   template:
     spec:
       containers:
-      - name: orchestr8
-        image: ghcr.io/ssahani/orchestr8:latest
-        command: ["orchestr8", "serve", "--host", "0.0.0.0"]
+      - name: aether
+        image: ghcr.io/ssahani/aether:latest
+        command: ["aether", "serve", "--host", "0.0.0.0"]
         ports:
         - containerPort: 8080
 ```
@@ -281,7 +281,7 @@ spec:
 ```
 
 **Manual Testing:**
-1. Start server: `orchestr8 serve`
+1. Start server: `aether serve`
 2. Access dashboard: http://localhost:8080
 3. Test all API endpoints
 4. Verify workload operations
@@ -413,14 +413,14 @@ cargo test
 # Output: test result: ok. 32 passed; 0 failed
 
 # Server starts
-orchestr8 serve
+aether serve
 # Output: 🌐 Starting API server on http://127.0.0.1:8080
 ```
 
 ## Conclusion
 
 The WebUI and REST API feature has been fully implemented and tested. It provides:
-- Complete programmatic access to Orchestr8 functionality
+- Complete programmatic access to Aether functionality
 - Modern browser-based management interface
 - Production-ready API server
 - Comprehensive documentation

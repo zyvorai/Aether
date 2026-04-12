@@ -1,4 +1,4 @@
-# Loki Deployment for Orchestr8
+# Loki Deployment for Aether
 # Log aggregation system with Promtail for log collection
 
 ---
@@ -280,7 +280,7 @@ data:
       # Only collect logs from pods in certain namespaces
       - source_labels: [__meta_kubernetes_namespace]
         action: keep
-        regex: (orchestr8-.*|observability|default)
+        regex: (aether-.*|observability|default)
 
       # Add namespace label
       - source_labels: [__meta_kubernetes_namespace]

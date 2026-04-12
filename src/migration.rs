@@ -114,7 +114,7 @@ impl MigrationEngine {
         if plan.source_runtime == plan.target_runtime {
             return Err(anyhow::anyhow!(
                 "Source and target runtimes are the same ({}). Migration is unnecessary.\n\
-                 Hint: Use `orchestr8 rollback {}` to redeploy on the same runtime.",
+                 Hint: Use `aether rollback {}` to redeploy on the same runtime.",
                 plan.source_runtime,
                 plan.workload_name,
             ));
@@ -971,7 +971,7 @@ mod tests {
 
     #[test]
     fn test_engine_creation_with_nested_path() {
-        let path = PathBuf::from("/var/lib/orchestr8/data/state.json");
+        let path = PathBuf::from("/var/lib/aether/data/state.json");
         let engine = MigrationEngine::new(path.clone());
         assert_eq!(engine.state_path, path);
     }
@@ -1406,8 +1406,8 @@ mod tests {
     #[test]
     fn test_engine_state_path_preserved() {
         let paths = [
-            PathBuf::from("/home/user/.orchestr8/state.json"),
-            PathBuf::from("/etc/orchestr8/state.json"),
+            PathBuf::from("/home/user/.aether/state.json"),
+            PathBuf::from("/etc/aether/state.json"),
             PathBuf::from("./local-state.json"),
         ];
         for path in &paths {

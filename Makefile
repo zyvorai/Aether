@@ -1,7 +1,7 @@
 .PHONY: help build test lint clean install release docker run-dev
 
 help:
-	@echo "Orchestr8 - Universal Runtime Control Plane"
+	@echo "Aether - Universal Runtime Control Plane"
 	@echo ""
 	@echo "Available targets:"
 	@echo "  build      - Build debug binary"
@@ -21,7 +21,7 @@ build:
 release:
 	@echo "Building release binary..."
 	cargo build --release
-	@ls -lh target/release/orchestr8
+	@ls -lh target/release/aether
 
 test:
 	@echo "Running tests..."
@@ -35,22 +35,22 @@ lint:
 clean:
 	@echo "Cleaning build artifacts..."
 	cargo clean
-	rm -rf .orchestr8/
+	rm -rf .aether/
 	rm -f state.json
 
 install: release
-	@echo "Installing orchestr8 to /usr/local/bin..."
-	sudo cp target/release/orchestr8 /usr/local/bin/orchestr8
+	@echo "Installing aether to /usr/local/bin..."
+	sudo cp target/release/aether /usr/local/bin/aether
 	@echo "Installed successfully!"
-	@orchestr8 --version
+	@aether --version
 
 docker:
 	@echo "Building Docker image..."
-	docker build -f Dockerfile.orchestr8 -t orchestr8:latest .
-	@echo "Built: orchestr8:latest"
+	docker build -f Dockerfile.aether -t aether:latest .
+	@echo "Built: aether:latest"
 
 run-dev:
-	@echo "Running orchestr8 in development mode..."
+	@echo "Running aether in development mode..."
 	cargo run -- -v --help
 
 ci: test lint

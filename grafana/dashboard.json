@@ -83,7 +83,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(orchestr8_workload_running)",
+          "expr": "sum(aether_workload_running)",
           "refId": "A"
         }
       ],
@@ -153,7 +153,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(orchestr8_workload_deployments_total{status=\"success\"}[1h])) / sum(rate(orchestr8_workload_deployments_total[1h]))",
+          "expr": "sum(rate(aether_workload_deployments_total{status=\"success\"}[1h])) / sum(rate(aether_workload_deployments_total[1h]))",
           "refId": "A"
         }
       ],
@@ -213,7 +213,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(orchestr8_migrations_total)",
+          "expr": "sum(aether_migrations_total)",
           "refId": "A"
         }
       ],
@@ -283,7 +283,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(orchestr8_migrations_total{status=\"success\"}) / sum(orchestr8_migrations_total)",
+          "expr": "sum(aether_migrations_total{status=\"success\"}) / sum(aether_migrations_total)",
           "refId": "A"
         }
       ],
@@ -351,7 +351,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "rate(orchestr8_migration_duration_seconds_sum[5m]) / rate(orchestr8_migration_duration_seconds_count[5m])",
+          "expr": "rate(aether_migration_duration_seconds_sum[5m]) / rate(aether_migration_duration_seconds_count[5m])",
           "refId": "A"
         }
       ],
@@ -363,7 +363,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Orchestr8 version information",
+      "description": "Aether version information",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -410,7 +410,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "orchestr8_orchestr8_build_info",
+          "expr": "aether_aether_build_info",
           "format": "table",
           "refId": "A"
         }
@@ -475,7 +475,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (runtime) (orchestr8_workload_running)",
+          "expr": "sum by (runtime) (aether_workload_running)",
           "legendFormat": "{{runtime}}",
           "refId": "A"
         }
@@ -564,7 +564,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "rate(orchestr8_workload_deployments_total{status=\"success\"}[5m])",
+          "expr": "rate(aether_workload_deployments_total{status=\"success\"}[5m])",
           "legendFormat": "{{runtime}} - success",
           "refId": "A"
         },
@@ -573,7 +573,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "rate(orchestr8_workload_deployments_total{status=\"failure\"}[5m])",
+          "expr": "rate(aether_workload_deployments_total{status=\"failure\"}[5m])",
           "legendFormat": "{{runtime}} - failure",
           "refId": "B"
         }
@@ -693,7 +693,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "rate(orchestr8_migrations_total{status=\"success\"}[5m])",
+          "expr": "rate(aether_migrations_total{status=\"success\"}[5m])",
           "legendFormat": "{{source_runtime}} → {{target_runtime}} ({{strategy}}) - success",
           "refId": "A"
         },
@@ -702,7 +702,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "rate(orchestr8_migrations_total{status=\"failure\"}[5m])",
+          "expr": "rate(aether_migrations_total{status=\"failure\"}[5m])",
           "legendFormat": "{{source_runtime}} → {{target_runtime}} ({{strategy}}) - failure",
           "refId": "B"
         }
@@ -791,7 +791,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "histogram_quantile(0.95, rate(orchestr8_migration_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, rate(aether_migration_duration_seconds_bucket[5m]))",
           "legendFormat": "{{source_runtime}} → {{target_runtime}} ({{strategy}}) - p95",
           "refId": "A"
         },
@@ -800,7 +800,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "histogram_quantile(0.50, rate(orchestr8_migration_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, rate(aether_migration_duration_seconds_bucket[5m]))",
           "legendFormat": "{{source_runtime}} → {{target_runtime}} ({{strategy}}) - p50",
           "refId": "B"
         }
@@ -889,7 +889,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "histogram_quantile(0.95, rate(orchestr8_command_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, rate(aether_command_duration_seconds_bucket[5m]))",
           "legendFormat": "{{command}} - p95",
           "refId": "A"
         }
@@ -978,7 +978,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "rate(orchestr8_cli_commands_total[5m])",
+          "expr": "rate(aether_cli_commands_total[5m])",
           "legendFormat": "{{command}}",
           "refId": "A"
         }
@@ -1058,7 +1058,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "orchestr8_runtime_available",
+          "expr": "aether_runtime_available",
           "legendFormat": "{{runtime}}",
           "refId": "A"
         }
@@ -1147,7 +1147,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "increase(orchestr8_workload_builds_total{status=\"failure\"}[1h])",
+          "expr": "increase(aether_workload_builds_total{status=\"failure\"}[1h])",
           "legendFormat": "Build failures - {{runtime}}",
           "refId": "A"
         },
@@ -1156,7 +1156,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "increase(orchestr8_workload_deployments_total{status=\"failure\"}[1h])",
+          "expr": "increase(aether_workload_deployments_total{status=\"failure\"}[1h])",
           "legendFormat": "Deployment failures - {{runtime}}",
           "refId": "B"
         },
@@ -1165,7 +1165,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "increase(orchestr8_migrations_total{status=\"failure\"}[1h])",
+          "expr": "increase(aether_migrations_total{status=\"failure\"}[1h])",
           "legendFormat": "Migration failures - {{source_runtime}} → {{target_runtime}}",
           "refId": "C"
         },
@@ -1174,7 +1174,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "increase(orchestr8_migration_rollbacks_total[1h])",
+          "expr": "increase(aether_migration_rollbacks_total[1h])",
           "legendFormat": "Rollbacks - {{source_runtime}} → {{target_runtime}}",
           "refId": "D"
         }
@@ -1186,7 +1186,7 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["orchestr8", "workload", "kubernetes", "migration"],
+  "tags": ["aether", "workload", "kubernetes", "migration"],
   "templating": {
     "list": [
       {
@@ -1215,8 +1215,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Orchestr8 - Universal Runtime Control Plane",
-  "uid": "orchestr8-overview",
+  "title": "Aether - Universal Runtime Control Plane",
+  "uid": "aether-overview",
   "version": 1,
   "weekStart": ""
 }

@@ -1,9 +1,9 @@
-# 📖 Orchestr8 CLI Reference
+# 📖 Aether CLI Reference
 
-> **Version:** See `orchestr8 --version`
+> **Version:** See `aether --version`
 > **License:** Proprietary HyperSDK
 
-Orchestr8 is the Universal Runtime Control Plane. One spec, four runtimes:
+Aether is the Universal Runtime Control Plane. One spec, four runtimes:
 Podman, Kubernetes, KubeVirt, and Metal3.
 
 ---
@@ -84,7 +84,7 @@ These flags apply to **every** command:
 | Flag              | Short | Default          | Description                                      |
 |-------------------|-------|------------------|--------------------------------------------------|
 | `--spec <FILE>`   | `-s`  | `workload.yaml`  | Workload specification file                      |
-| `--namespace <NS>`| `-n`  |                  | Kubernetes namespace override (also `ORCHESTR8_NAMESPACE` env var) |
+| `--namespace <NS>`| `-n`  |                  | Kubernetes namespace override (also `AETHER_NAMESPACE` env var) |
 | `--verbose`       | `-v`  |                  | Enable debug-level logging                       |
 | `--quiet`         | `-q`  |                  | Suppress all output except errors                |
 | `--json`          |       |                  | Output results as JSON (conflicts with `--quiet`)|
@@ -93,15 +93,15 @@ These flags apply to **every** command:
 | `--dry-run`       |       |                  | Show what would happen without executing         |
 | `--skip-policy`   |       |                  | Skip policy checks on deploy (use with caution)  |
 
-**Namespace resolution order:** `--namespace` flag > `ORCHESTR8_NAMESPACE` env var > `"default"`.
+**Namespace resolution order:** `--namespace` flag > `AETHER_NAMESPACE` env var > `"default"`.
 
 ```bash
 # Deploy to a specific namespace
-orchestr8 -n staging run --runtime kube
+aether -n staging run --runtime kube
 
 # Or use the environment variable
-export ORCHESTR8_NAMESPACE=production
-orchestr8 run --runtime kube
+export AETHER_NAMESPACE=production
+aether run --runtime kube
 ```
 
 ---
@@ -113,15 +113,15 @@ orchestr8 run --runtime kube
 Validate a workload specification file against the schema.
 
 ```
-orchestr8 [OPTIONS] validate
+aether [OPTIONS] validate
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 validate
-orchestr8 --spec my-app.yaml validate
-orchestr8 --output json validate
+aether validate
+aether --spec my-app.yaml validate
+aether --output json validate
 ```
 
 ---
@@ -132,14 +132,14 @@ Build a container image from the workload spec. The runtime is selected
 automatically by the decision engine.
 
 ```
-orchestr8 [OPTIONS] build
+aether [OPTIONS] build
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 build
-orchestr8 --spec api.yaml build
+aether build
+aether --spec api.yaml build
 ```
 
 ---
@@ -150,7 +150,7 @@ Deploy a workload instance. Builds the image, starts the instance, and persists
 state. Shows an interactive runtime selector unless `--runtime` is provided.
 
 ```
-orchestr8 [OPTIONS] run [--runtime <RUNTIME>]
+aether [OPTIONS] run [--runtime <RUNTIME>]
 ```
 
 | Flag               | Short | Description                                        |
@@ -160,10 +160,10 @@ orchestr8 [OPTIONS] run [--runtime <RUNTIME>]
 **Examples:**
 
 ```bash
-orchestr8 run
-orchestr8 run --runtime podman
-orchestr8 --dry-run run
-orchestr8 --skip-policy run --runtime kube
+aether run
+aether run --runtime podman
+aether --dry-run run
+aether --skip-policy run --runtime kube
 ```
 
 ---
@@ -173,14 +173,14 @@ orchestr8 --skip-policy run --runtime kube
 Stop a running workload instance. The state is preserved for restart.
 
 ```
-orchestr8 [OPTIONS] stop <NAME>
+aether [OPTIONS] stop <NAME>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 stop hello-web
-orchestr8 --dry-run stop hello-web
+aether stop hello-web
+aether --dry-run stop hello-web
 ```
 
 ---
@@ -190,15 +190,15 @@ orchestr8 --dry-run stop hello-web
 Get the current status of a workload instance.
 
 ```
-orchestr8 [OPTIONS] status <NAME>
+aether [OPTIONS] status <NAME>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 status hello-web
-orchestr8 --output json status hello-web
-orchestr8 --output yaml status hello-web
+aether status hello-web
+aether --output json status hello-web
+aether --output yaml status hello-web
 ```
 
 ---
@@ -208,7 +208,7 @@ orchestr8 --output yaml status hello-web
 View logs from a workload instance.
 
 ```
-orchestr8 [OPTIONS] logs <NAME> [--follow]
+aether [OPTIONS] logs <NAME> [--follow]
 ```
 
 | Flag       | Short | Description                |
@@ -218,8 +218,8 @@ orchestr8 [OPTIONS] logs <NAME> [--follow]
 **Examples:**
 
 ```bash
-orchestr8 logs hello-web
-orchestr8 logs hello-web --follow
+aether logs hello-web
+aether logs hello-web --follow
 ```
 
 ---
@@ -229,15 +229,15 @@ orchestr8 logs hello-web --follow
 Delete a workload instance and remove it from state.
 
 ```
-orchestr8 [OPTIONS] delete <NAME>
+aether [OPTIONS] delete <NAME>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 delete hello-web
-orchestr8 --yes delete hello-web
-orchestr8 --dry-run delete hello-web
+aether delete hello-web
+aether --yes delete hello-web
+aether --dry-run delete hello-web
 ```
 
 ---
@@ -247,15 +247,15 @@ orchestr8 --dry-run delete hello-web
 List all tracked workload instances.
 
 ```
-orchestr8 [OPTIONS] list
+aether [OPTIONS] list
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 list
-orchestr8 --output wide list
-orchestr8 --json list
+aether list
+aether --output wide list
+aether --json list
 ```
 
 ---
@@ -267,7 +267,7 @@ orchestr8 --json list
 Migrate a workload from its current runtime to a different one.
 
 ```
-orchestr8 [OPTIONS] migrate <NAME> <TARGET> [--strategy <STRATEGY>] [--no-validation] [--no-rollback]
+aether [OPTIONS] migrate <NAME> <TARGET> [--strategy <STRATEGY>] [--no-validation] [--no-rollback]
 ```
 
 | Flag               | Default      | Description                              |
@@ -287,10 +287,10 @@ orchestr8 [OPTIONS] migrate <NAME> <TARGET> [--strategy <STRATEGY>] [--no-valida
 **Examples:**
 
 ```bash
-orchestr8 migrate hello-web kube
-orchestr8 migrate hello-web kube --strategy rolling
-orchestr8 migrate hello-web podman --strategy immediate --no-rollback
-orchestr8 --dry-run migrate hello-web kubevirt --strategy blue-green
+aether migrate hello-web kube
+aether migrate hello-web kube --strategy rolling
+aether migrate hello-web podman --strategy immediate --no-rollback
+aether --dry-run migrate hello-web kubevirt --strategy blue-green
 ```
 
 ---
@@ -300,13 +300,13 @@ orchestr8 --dry-run migrate hello-web kubevirt --strategy blue-green
 Rollback a workload to its latest pre-deploy snapshot.
 
 ```
-orchestr8 [OPTIONS] rollback <NAME>
+aether [OPTIONS] rollback <NAME>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 rollback hello-web
+aether rollback hello-web
 ```
 
 ---
@@ -318,7 +318,7 @@ orchestr8 rollback hello-web
 Execute a command inside a running workload container.
 
 ```
-orchestr8 [OPTIONS] exec <NAME> [COMMAND] [--interactive] [--timeout <SECS>]
+aether [OPTIONS] exec <NAME> [COMMAND] [--interactive] [--timeout <SECS>]
 ```
 
 | Flag              | Short | Default   | Description                      |
@@ -330,9 +330,9 @@ orchestr8 [OPTIONS] exec <NAME> [COMMAND] [--interactive] [--timeout <SECS>]
 **Examples:**
 
 ```bash
-orchestr8 exec hello-web
-orchestr8 exec hello-web "ls -la /app" --timeout 30
-orchestr8 exec hello-web "/bin/bash" --interactive
+aether exec hello-web
+aether exec hello-web "ls -la /app" --timeout 30
+aether exec hello-web "/bin/bash" --interactive
 ```
 
 ---
@@ -342,7 +342,7 @@ orchestr8 exec hello-web "/bin/bash" --interactive
 Forward local ports to a running workload.
 
 ```
-orchestr8 [OPTIONS] port-forward <NAME> <PORTS> [--timeout <SECS>]
+aether [OPTIONS] port-forward <NAME> <PORTS> [--timeout <SECS>]
 ```
 
 | Flag          | Short | Default | Description                      |
@@ -353,8 +353,8 @@ orchestr8 [OPTIONS] port-forward <NAME> <PORTS> [--timeout <SECS>]
 **Examples:**
 
 ```bash
-orchestr8 port-forward hello-web 8080:80
-orchestr8 port-forward hello-web 3000:3000 --timeout 300
+aether port-forward hello-web 8080:80
+aether port-forward hello-web 3000:3000 --timeout 300
 ```
 
 ---
@@ -364,14 +364,14 @@ orchestr8 port-forward hello-web 3000:3000 --timeout 300
 Watch the spec file and auto-redeploy on changes.
 
 ```
-orchestr8 [OPTIONS] watch [--runtime <RUNTIME>]
+aether [OPTIONS] watch [--runtime <RUNTIME>]
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 watch
-orchestr8 --spec api.yaml watch --runtime podman
+aether watch
+aether --spec api.yaml watch --runtime podman
 ```
 
 ---
@@ -381,14 +381,14 @@ orchestr8 --spec api.yaml watch --runtime podman
 Compare a workload across all four runtimes (cost, capabilities, limitations).
 
 ```
-orchestr8 [OPTIONS] compare
+aether [OPTIONS] compare
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 compare
-orchestr8 --output json compare
+aether compare
+aether --output json compare
 ```
 
 ---
@@ -398,7 +398,7 @@ orchestr8 --output json compare
 Run the first-time setup wizard. Detects runtimes, creates config, ensures directories.
 
 ```
-orchestr8 init
+aether init
 ```
 
 ---
@@ -408,7 +408,7 @@ orchestr8 init
 View health history and uptime statistics for a workload.
 
 ```
-orchestr8 [OPTIONS] health <NAME> [--last <N>] [--summary]
+aether [OPTIONS] health <NAME> [--last <N>] [--summary]
 ```
 
 | Flag        | Short | Default | Description                       |
@@ -419,9 +419,9 @@ orchestr8 [OPTIONS] health <NAME> [--last <N>] [--summary]
 **Examples:**
 
 ```bash
-orchestr8 health hello-web
-orchestr8 health hello-web --last 50
-orchestr8 health hello-web --summary
+aether health hello-web
+aether health hello-web --last 50
+aether health hello-web --summary
 ```
 
 ---
@@ -431,14 +431,14 @@ orchestr8 health hello-web --summary
 Three-way diff: spec file vs stored state vs live runtime.
 
 ```
-orchestr8 [OPTIONS] diff <NAME>
+aether [OPTIONS] diff <NAME>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 diff hello-web
-orchestr8 --output json diff hello-web
+aether diff hello-web
+aether --output json diff hello-web
 ```
 
 ---
@@ -451,14 +451,14 @@ Validate a compose file for structural correctness, dependency cycles, and
 missing references.
 
 ```
-orchestr8 compose validate [FILE]
+aether compose validate [FILE]
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 compose validate
-orchestr8 compose validate ./deploy/orchestr8-compose.yaml
+aether compose validate
+aether compose validate ./deploy/aether-compose.yaml
 ```
 
 ---
@@ -468,7 +468,7 @@ orchestr8 compose validate ./deploy/orchestr8-compose.yaml
 Deploy all workloads defined in a compose file, in dependency order.
 
 ```
-orchestr8 compose up [FILE] [--runtime <RUNTIME>] [--dry-run]
+aether compose up [FILE] [--runtime <RUNTIME>] [--dry-run]
 ```
 
 | Flag          | Short | Description                              |
@@ -479,10 +479,10 @@ orchestr8 compose up [FILE] [--runtime <RUNTIME>] [--dry-run]
 **Examples:**
 
 ```bash
-orchestr8 compose up
-orchestr8 compose up --runtime podman
-orchestr8 compose up --dry-run
-orchestr8 compose up ./deploy/orchestr8-compose.yaml
+aether compose up
+aether compose up --runtime podman
+aether compose up --dry-run
+aether compose up ./deploy/aether-compose.yaml
 ```
 
 ---
@@ -492,14 +492,14 @@ orchestr8 compose up ./deploy/orchestr8-compose.yaml
 Stop and remove all workloads from a compose file, in reverse dependency order.
 
 ```
-orchestr8 compose down [FILE]
+aether compose down [FILE]
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 compose down
-orchestr8 compose down ./deploy/orchestr8-compose.yaml
+aether compose down
+aether compose down ./deploy/aether-compose.yaml
 ```
 
 ---
@@ -511,17 +511,17 @@ orchestr8 compose down ./deploy/orchestr8-compose.yaml
 List all registered plugins.
 
 ```
-orchestr8 plugin list
+aether plugin list
 ```
 
 ---
 
 ### plugin discover
 
-Scan `~/.orchestr8/plugins/` for `*.json` manifest files and register them.
+Scan `~/.aether/plugins/` for `*.json` manifest files and register them.
 
 ```
-orchestr8 plugin discover
+aether plugin discover
 ```
 
 ---
@@ -531,13 +531,13 @@ orchestr8 plugin discover
 Register a plugin from a manifest file.
 
 ```
-orchestr8 plugin register <MANIFEST>
+aether plugin register <MANIFEST>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 plugin register ./wasm-runtime.json
+aether plugin register ./wasm-runtime.json
 ```
 
 ---
@@ -547,13 +547,13 @@ orchestr8 plugin register ./wasm-runtime.json
 Unregister a plugin by name.
 
 ```
-orchestr8 plugin remove <NAME>
+aether plugin remove <NAME>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 plugin remove wasm-runtime
+aether plugin remove wasm-runtime
 ```
 
 ---
@@ -565,7 +565,7 @@ orchestr8 plugin remove wasm-runtime
 Create a backup of the current workload state.
 
 ```
-orchestr8 [OPTIONS] backup [--name <NAME>] [--description <DESC>]
+aether [OPTIONS] backup [--name <NAME>] [--description <DESC>]
 ```
 
 | Flag              | Short | Description                                    |
@@ -576,8 +576,8 @@ orchestr8 [OPTIONS] backup [--name <NAME>] [--description <DESC>]
 **Examples:**
 
 ```bash
-orchestr8 backup
-orchestr8 backup --name pre-migration --description "Before kube migration"
+aether backup
+aether backup --name pre-migration --description "Before kube migration"
 ```
 
 ---
@@ -587,7 +587,7 @@ orchestr8 backup --name pre-migration --description "Before kube migration"
 Restore workload state from a backup file.
 
 ```
-orchestr8 [OPTIONS] restore <BACKUP> [--merge]
+aether [OPTIONS] restore <BACKUP> [--merge]
 ```
 
 | Flag      | Short | Description                                     |
@@ -597,8 +597,8 @@ orchestr8 [OPTIONS] restore <BACKUP> [--merge]
 **Examples:**
 
 ```bash
-orchestr8 restore ~/.orchestr8/backups/backup-20260411-103000.json
-orchestr8 restore backup.json --merge
+aether restore ~/.aether/backups/backup-20260411-103000.json
+aether restore backup.json --merge
 ```
 
 ---
@@ -608,7 +608,7 @@ orchestr8 restore backup.json --merge
 List all available backup files.
 
 ```
-orchestr8 list-backups
+aether list-backups
 ```
 
 ---
@@ -618,7 +618,7 @@ orchestr8 list-backups
 Deploy all workload specs from a directory.
 
 ```
-orchestr8 [OPTIONS] deploy <DIR> [--runtime <RUNTIME>] [--fail-fast] [--dry-run]
+aether [OPTIONS] deploy <DIR> [--runtime <RUNTIME>] [--fail-fast] [--dry-run]
 ```
 
 | Flag           | Short | Description                              |
@@ -630,9 +630,9 @@ orchestr8 [OPTIONS] deploy <DIR> [--runtime <RUNTIME>] [--fail-fast] [--dry-run]
 **Examples:**
 
 ```bash
-orchestr8 deploy ./specs/
-orchestr8 deploy ./specs/ --runtime podman --fail-fast
-orchestr8 deploy ./specs/ --dry-run
+aether deploy ./specs/
+aether deploy ./specs/ --runtime podman --fail-fast
+aether deploy ./specs/ --dry-run
 ```
 
 ---
@@ -642,7 +642,7 @@ orchestr8 deploy ./specs/ --dry-run
 Detect configuration drift between the desired spec and live state.
 
 ```
-orchestr8 [OPTIONS] drift <NAME> [--reconcile]
+aether [OPTIONS] drift <NAME> [--reconcile]
 ```
 
 | Flag           | Description                                     |
@@ -652,8 +652,8 @@ orchestr8 [OPTIONS] drift <NAME> [--reconcile]
 **Examples:**
 
 ```bash
-orchestr8 drift hello-web
-orchestr8 drift hello-web --reconcile
+aether drift hello-web
+aether drift hello-web --reconcile
 ```
 
 ---
@@ -665,7 +665,7 @@ orchestr8 drift hello-web --reconcile
 Evaluate a workload spec against deployment policies.
 
 ```
-orchestr8 [OPTIONS] policy-check [--policy <POLICY>]
+aether [OPTIONS] policy-check [--policy <POLICY>]
 ```
 
 | Flag        | Short | Default      | Description                                     |
@@ -675,19 +675,19 @@ orchestr8 [OPTIONS] policy-check [--policy <POLICY>]
 **Examples:**
 
 ```bash
-orchestr8 policy-check
-orchestr8 policy-check --policy development
-orchestr8 policy-check --policy ./custom-policies.yaml
+aether policy-check
+aether policy-check --policy development
+aether policy-check --policy ./custom-policies.yaml
 ```
 
 ---
 
 ### secrets
 
-Manage encrypted secrets (AES-256-GCM when `ORCHESTR8_SECRET_KEY` is set).
+Manage encrypted secrets (AES-256-GCM when `AETHER_SECRET_KEY` is set).
 
 ```
-orchestr8 secrets <SUBCOMMAND>
+aether secrets <SUBCOMMAND>
 ```
 
 | Subcommand                              | Description                          |
@@ -701,11 +701,11 @@ orchestr8 secrets <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 secrets create db-creds --namespace production
-orchestr8 secrets set db-creds password "s3cret"
-orchestr8 secrets get db-creds password
-orchestr8 secrets list
-orchestr8 secrets audit
+aether secrets create db-creds --namespace production
+aether secrets set db-creds password "s3cret"
+aether secrets get db-creds password
+aether secrets list
+aether secrets audit
 ```
 
 ---
@@ -715,7 +715,7 @@ orchestr8 secrets audit
 SLA compliance monitoring.
 
 ```
-orchestr8 sla <SUBCOMMAND>
+aether sla <SUBCOMMAND>
 ```
 
 | Subcommand                                                                   | Description              |
@@ -729,9 +729,9 @@ orchestr8 sla <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 sla add hello-web --tier high-availability
-orchestr8 sla check hello-web --uptime 99.9 --latency 50 --error-rate 0.01
-orchestr8 sla list
+aether sla add hello-web --tier high-availability
+aether sla check hello-web --uptime 99.9 --latency 50 --error-rate 0.01
+aether sla list
 ```
 
 ---
@@ -741,7 +741,7 @@ orchestr8 sla list
 View the audit trail of workload operations.
 
 ```
-orchestr8 [OPTIONS] audit [--last <N>] [--workload <NAME>] [--summary]
+aether [OPTIONS] audit [--last <N>] [--workload <NAME>] [--summary]
 ```
 
 | Flag           | Short | Default | Description                       |
@@ -753,9 +753,9 @@ orchestr8 [OPTIONS] audit [--last <N>] [--workload <NAME>] [--summary]
 **Examples:**
 
 ```bash
-orchestr8 audit
-orchestr8 audit --last 50 --workload hello-web
-orchestr8 audit --summary
+aether audit
+aether audit --last 50 --workload hello-web
+aether audit --summary
 ```
 
 ---
@@ -765,7 +765,7 @@ orchestr8 audit --summary
 View and manage the event stream.
 
 ```
-orchestr8 [OPTIONS] events [--last <N>] [--severity <LEVEL>] [--summary]
+aether [OPTIONS] events [--last <N>] [--severity <LEVEL>] [--summary]
 ```
 
 | Flag          | Default | Description                                            |
@@ -777,9 +777,9 @@ orchestr8 [OPTIONS] events [--last <N>] [--severity <LEVEL>] [--summary]
 **Examples:**
 
 ```bash
-orchestr8 events
-orchestr8 events --last 100 --severity error
-orchestr8 events --summary
+aether events
+aether events --last 100 --severity error
+aether events --summary
 ```
 
 ---
@@ -791,7 +791,7 @@ orchestr8 events --summary
 Estimate workload costs across cloud providers.
 
 ```
-orchestr8 [OPTIONS] cost [--provider <PROVIDER>]
+aether [OPTIONS] cost [--provider <PROVIDER>]
 ```
 
 | Flag          | Short | Default | Description                                       |
@@ -801,9 +801,9 @@ orchestr8 [OPTIONS] cost [--provider <PROVIDER>]
 **Examples:**
 
 ```bash
-orchestr8 cost
-orchestr8 cost --provider aws
-orchestr8 --output json cost --provider all
+aether cost
+aether cost --provider aws
+aether --output json cost --provider all
 ```
 
 ---
@@ -813,14 +813,14 @@ orchestr8 --output json cost --provider all
 AI-powered runtime recommendation with scoring.
 
 ```
-orchestr8 [OPTIONS] recommend [--runtime <RUNTIME>]
+aether [OPTIONS] recommend [--runtime <RUNTIME>]
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 recommend
-orchestr8 recommend --runtime kube
+aether recommend
+aether recommend --runtime kube
 ```
 
 ---
@@ -830,14 +830,14 @@ orchestr8 recommend --runtime kube
 Profile a workload and show optimization recommendations.
 
 ```
-orchestr8 [OPTIONS] profile [--name <NAME>]
+aether [OPTIONS] profile [--name <NAME>]
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 profile
-orchestr8 profile --name hello-web
+aether profile
+aether profile --name hello-web
 ```
 
 ---
@@ -847,13 +847,13 @@ orchestr8 profile --name hello-web
 Analyze workload logs for anomalies and patterns.
 
 ```
-orchestr8 [OPTIONS] analyze-logs <NAME>
+aether [OPTIONS] analyze-logs <NAME>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 analyze-logs hello-web
+aether analyze-logs hello-web
 ```
 
 ---
@@ -863,14 +863,14 @@ orchestr8 analyze-logs hello-web
 Get AI-powered migration advice for a workload.
 
 ```
-orchestr8 [OPTIONS] migration-advice <NAME> <TARGET>
+aether [OPTIONS] migration-advice <NAME> <TARGET>
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 migration-advice hello-web kube
-orchestr8 migration-advice api-service kubevirt
+aether migration-advice hello-web kube
+aether migration-advice api-service kubevirt
 ```
 
 ---
@@ -880,14 +880,14 @@ orchestr8 migration-advice api-service kubevirt
 Show predictive scaling recommendations based on historical data.
 
 ```
-orchestr8 [OPTIONS] scaling-advice
+aether [OPTIONS] scaling-advice
 ```
 
 **Examples:**
 
 ```bash
-orchestr8 scaling-advice
-orchestr8 --output json scaling-advice
+aether scaling-advice
+aether --output json scaling-advice
 ```
 
 ---
@@ -899,7 +899,7 @@ orchestr8 --output json scaling-advice
 Health-aware orchestration with circuit breakers and rolling updates.
 
 ```
-orchestr8 orchestrate <SUBCOMMAND>
+aether orchestrate <SUBCOMMAND>
 ```
 
 | Subcommand                                       | Description                                   |
@@ -915,12 +915,12 @@ orchestr8 orchestrate <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 orchestrate register api --runtime kubernetes
-orchestr8 orchestrate status
-orchestr8 orchestrate watch --interval 60
-orchestr8 orchestrate rolling-update api --replicas 5
-orchestr8 orchestrate reset-circuit api
-orchestr8 orchestrate health-check
+aether orchestrate register api --runtime kubernetes
+aether orchestrate status
+aether orchestrate watch --interval 60
+aether orchestrate rolling-update api --replicas 5
+aether orchestrate reset-circuit api
+aether orchestrate health-check
 ```
 
 ---
@@ -930,7 +930,7 @@ orchestr8 orchestrate health-check
 Workload scheduling and placement optimization.
 
 ```
-orchestr8 schedule <SUBCOMMAND>
+aether schedule <SUBCOMMAND>
 ```
 
 | Subcommand                                                                  | Description                  |
@@ -945,10 +945,10 @@ orchestr8 schedule <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 schedule place api --cpu 4 --memory 8192 --strategy cost
-orchestr8 schedule utilization
-orchestr8 schedule optimize
-orchestr8 schedule placements
+aether schedule place api --cpu 4 --memory 8192 --strategy cost
+aether schedule utilization
+aether schedule optimize
+aether schedule placements
 ```
 
 ---
@@ -958,7 +958,7 @@ orchestr8 schedule placements
 Runtime affinity learning and recommendations.
 
 ```
-orchestr8 affinity <SUBCOMMAND>
+aether affinity <SUBCOMMAND>
 ```
 
 | Subcommand             | Description                              |
@@ -973,9 +973,9 @@ orchestr8 affinity <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 affinity recommend web-service
-orchestr8 affinity matrix
-orchestr8 affinity stats
+aether affinity recommend web-service
+aether affinity matrix
+aether affinity stats
 ```
 
 ---
@@ -985,7 +985,7 @@ orchestr8 affinity stats
 Manage webhook notification channels with retry queue.
 
 ```
-orchestr8 webhook <SUBCOMMAND>
+aether webhook <SUBCOMMAND>
 ```
 
 | Subcommand                                                              | Description                        |
@@ -1000,12 +1000,12 @@ orchestr8 webhook <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 webhook add slack "https://hooks.slack.com/..." --severity warning
-orchestr8 webhook test slack
-orchestr8 webhook queue
-orchestr8 webhook flush
-orchestr8 webhook list
-orchestr8 webhook remove slack
+aether webhook add slack "https://hooks.slack.com/..." --severity warning
+aether webhook test slack
+aether webhook queue
+aether webhook flush
+aether webhook list
+aether webhook remove slack
 ```
 
 ---
@@ -1015,7 +1015,7 @@ orchestr8 webhook remove slack
 Manage deployment environments.
 
 ```
-orchestr8 env <SUBCOMMAND>
+aether env <SUBCOMMAND>
 ```
 
 | Subcommand                                  | Description                        |
@@ -1030,10 +1030,10 @@ orchestr8 env <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 env create staging --tier staging
-orchestr8 env list
-orchestr8 env promote hello-web staging production
-orchestr8 env parity staging production
+aether env create staging --tier staging
+aether env list
+aether env promote hello-web staging production
+aether env parity staging production
 ```
 
 ---
@@ -1043,7 +1043,7 @@ orchestr8 env parity staging production
 Generate a workload spec from a built-in template.
 
 ```
-orchestr8 template <NAME> [--workload-name <WN>] [--owner <O>] [--project <P>] [--registry <R>] [--output <FILE>] [--list]
+aether template <NAME> [--workload-name <WN>] [--owner <O>] [--project <P>] [--registry <R>] [--output <FILE>] [--list]
 ```
 
 **Templates:** `web-app`, `rest-api`, `database`, `cache`, `worker`, `cron-job`,
@@ -1061,10 +1061,10 @@ orchestr8 template <NAME> [--workload-name <WN>] [--owner <O>] [--project <P>] [
 **Examples:**
 
 ```bash
-orchestr8 template --list
-orchestr8 template web-app --workload-name my-site --output my-site.yaml
-orchestr8 template rest-api --registry docker.io/myorg --project backend
-orchestr8 template database --workload-name pg-primary
+aether template --list
+aether template web-app --workload-name my-site --output my-site.yaml
+aether template rest-api --registry docker.io/myorg --project backend
+aether template database --workload-name pg-primary
 ```
 
 ---
@@ -1074,7 +1074,7 @@ orchestr8 template database --workload-name pg-primary
 Manage workload dependencies and startup order.
 
 ```
-orchestr8 deps <SUBCOMMAND>
+aether deps <SUBCOMMAND>
 ```
 
 | Subcommand                         | Description                        |
@@ -1088,11 +1088,11 @@ orchestr8 deps <SUBCOMMAND>
 **Examples:**
 
 ```bash
-orchestr8 deps add web-frontend api-service
-orchestr8 deps show
-orchestr8 deps order
-orchestr8 deps impact api-service
-orchestr8 deps remove web-frontend api-service
+aether deps add web-frontend api-service
+aether deps show
+aether deps order
+aether deps impact api-service
+aether deps remove web-frontend api-service
 ```
 
 ---
@@ -1104,7 +1104,7 @@ orchestr8 deps remove web-frontend api-service
 Launch the interactive TUI dashboard with live workload status.
 
 ```
-orchestr8 tui
+aether tui
 ```
 
 ---
@@ -1114,7 +1114,7 @@ orchestr8 tui
 Start the API server and web dashboard.
 
 ```
-orchestr8 serve [--host <HOST>] [--port <PORT>]
+aether serve [--host <HOST>] [--port <PORT>]
 ```
 
 | Flag      | Default       | Description    |
@@ -1125,8 +1125,8 @@ orchestr8 serve [--host <HOST>] [--port <PORT>]
 **Examples:**
 
 ```bash
-orchestr8 serve
-orchestr8 serve --host 0.0.0.0 --port 9090
+aether serve
+aether serve --host 0.0.0.0 --port 9090
 ```
 
 ---
@@ -1136,7 +1136,7 @@ orchestr8 serve --host 0.0.0.0 --port 9090
 Show detailed command reference with examples for all commands.
 
 ```
-orchestr8 help-all
+aether help-all
 ```
 
 ---
@@ -1146,7 +1146,7 @@ orchestr8 help-all
 Generate shell completions.
 
 ```
-orchestr8 completions <SHELL>
+aether completions <SHELL>
 ```
 
 **Shells:** `bash`, `zsh`, `fish`, `powershell`, `elvish`
@@ -1154,9 +1154,9 @@ orchestr8 completions <SHELL>
 **Examples:**
 
 ```bash
-orchestr8 completions bash > ~/.local/share/bash-completion/completions/orchestr8
-orchestr8 completions zsh > ~/.zsh/completions/_orchestr8
-orchestr8 completions fish > ~/.config/fish/completions/orchestr8.fish
+aether completions bash > ~/.local/share/bash-completion/completions/aether
+aether completions zsh > ~/.zsh/completions/_aether
+aether completions fish > ~/.config/fish/completions/aether.fish
 ```
 
 ---
@@ -1166,7 +1166,7 @@ orchestr8 completions fish > ~/.config/fish/completions/orchestr8.fish
 Show or initialize configuration.
 
 ```
-orchestr8 config [--show] [--init]
+aether config [--show] [--init]
 ```
 
 | Flag      | Description                          |
@@ -1177,8 +1177,8 @@ orchestr8 config [--show] [--init]
 **Examples:**
 
 ```bash
-orchestr8 config --show
-orchestr8 config --init
+aether config --show
+aether config --init
 ```
 
 ---
@@ -1188,7 +1188,7 @@ orchestr8 config --init
 Export Prometheus-format metrics for all recorded operations.
 
 ```
-orchestr8 metrics
+aether metrics
 ```
 
 ---

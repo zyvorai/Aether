@@ -1,4 +1,4 @@
-//! Orchestr8 CLI entrypoint
+//! Aether CLI entrypoint
 
 mod cli;
 mod commands;
@@ -6,7 +6,7 @@ mod commands;
 use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
-use orchestr8::state::StateStore;
+use aether::state::StateStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use cli::{Cli, Commands};
@@ -28,17 +28,17 @@ async fn main() -> Result<()> {
         .init();
 
     // Set output modes
-    orchestr8::output::set_quiet(cli.quiet);
+    aether::output::set_quiet(cli.quiet);
     let json_mode = cli.json || matches!(cli.output, cli::OutputFormat::Json);
-    orchestr8::output::set_json(json_mode);
-    orchestr8::output::set_yaml(matches!(cli.output, cli::OutputFormat::Yaml));
-    orchestr8::output::set_wide(matches!(cli.output, cli::OutputFormat::Wide));
-    orchestr8::output::set_yes(cli.yes);
+    aether::output::set_json(json_mode);
+    aether::output::set_yaml(matches!(cli.output, cli::OutputFormat::Yaml));
+    aether::output::set_wide(matches!(cli.output, cli::OutputFormat::Wide));
+    aether::output::set_yes(cli.yes);
     commands::set_skip_policy(cli.skip_policy);
     commands::set_namespace(cli.namespace.clone());
 
     // Initialize metrics
-    orchestr8::metrics::init();
+    aether::metrics::init();
 
     // Ensure state directory exists
     StateStore::ensure_state_dir()?;
@@ -59,7 +59,7 @@ async fn main() -> Result<()> {
         }
         Commands::Stop { name } => {
             if cli.dry_run {
-                orchestr8::output::info(&format!("[dry-run] Would stop workload '{}'", name));
+                aether::output::info(&format!("[dry-run] Would stop workload '{}'", name));
                 return Ok(());
             }
             commands::stop_command(&name).await
@@ -68,7 +68,7 @@ async fn main() -> Result<()> {
         Commands::Logs { name, follow } => commands::logs_command(&name, follow).await,
         Commands::Delete { name } => {
             if cli.dry_run {
-                orchestr8::output::info(&format!("[dry-run] Would delete workload '{}'", name));
+                aether::output::info(&format!("[dry-run] Would delete workload '{}'", name));
                 return Ok(());
             }
             commands::delete_command(&name).await
@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
             no_rollback,
         } => {
             if cli.dry_run {
-                orchestr8::output::info(&format!(
+                aether::output::info(&format!(
                     "[dry-run] Would migrate '{}' to {} using {} strategy",
                     name, target, strategy
                 ));
@@ -171,7 +171,7 @@ async fn main() -> Result<()> {
             commands::webhook_command(action).await
         }
         Commands::HelpAll => {
-            orchestr8::completions::show_help();
+            aether::completions::show_help();
             Ok(())
         }
         Commands::Diff { name } => {
@@ -211,7 +211,7 @@ async fn main() -> Result<()> {
 
     // Record command execution time
     let duration = start.elapsed().as_secs_f64();
-    orchestr8::metrics::record_command(command_name, duration);
+    aether::metrics::record_command(command_name, duration);
 
     // Show elapsed time for commands that take noticeable time
     if duration >= 0.1 && !cli.quiet && !cli.json {
@@ -228,9 +228,9 @@ async fn main() -> Result<()> {
             "\n{}",
             format!("  ⏱ {} | {}", elapsed, command_name)
                 .truecolor(
-                    orchestr8::output::COLOR_MUTED.0,
-                    orchestr8::output::COLOR_MUTED.1,
-                    orchestr8::output::COLOR_MUTED.2,
+                    aether::output::COLOR_MUTED.0,
+                    aether::output::COLOR_MUTED.1,
+                    aether::output::COLOR_MUTED.2,
                 )
         );
     }
@@ -253,16 +253,16 @@ async fn main() -> Result<()> {
                     "\n{} {} {}\n",
                     "Error:"
                         .truecolor(
-                            orchestr8::output::COLOR_ERROR.0,
-                            orchestr8::output::COLOR_ERROR.1,
-                            orchestr8::output::COLOR_ERROR.2,
+                            aether::output::COLOR_ERROR.0,
+                            aether::output::COLOR_ERROR.1,
+                            aether::output::COLOR_ERROR.2,
                         )
                         .bold(),
                     e,
                     format!("({})", command_name).truecolor(
-                        orchestr8::output::COLOR_MUTED.0,
-                        orchestr8::output::COLOR_MUTED.1,
-                        orchestr8::output::COLOR_MUTED.2,
+                        aether::output::COLOR_MUTED.0,
+                        aether::output::COLOR_MUTED.1,
+                        aether::output::COLOR_MUTED.2,
                     ),
                 );
             }

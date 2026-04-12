@@ -1,8 +1,8 @@
-# 🎉 Orchestr8 - Complete Build Summary
+# 🎉 Aether - Complete Build Summary
 
 ## Project Overview
 
-**Orchestr8** is a universal runtime control plane that deploys the same workload to:
+**Aether** is a universal runtime control plane that deploys the same workload to:
 - 🐳 **Podman** (containers)
 - ☸️ **Kubernetes** (pods)
 - 🖥️ **KubeVirt** (VMs) - coming soon
@@ -26,7 +26,7 @@
 ## File Structure
 
 ```
-orchestr8/
+aether/
 ├── Cargo.toml                    # Dependencies & workspace config
 ├── Cargo.lock                    # Locked dependencies (324 crates)
 ├── README.md                     # Main documentation
@@ -71,7 +71,7 @@ orchestr8/
 | Workload spec parser | ✅ | Full YAML schema with validation |
 | Runtime trait | ✅ | Unified interface for all runtimes |
 | Decision engine | ✅ | Auto-select runtime based on requirements |
-| State management | ✅ | Local database (~/.orchestr8/state.json) |
+| State management | ✅ | Local database (~/.aether/state.json) |
 | CLI framework | ✅ | 8 commands with clap |
 | Podman adapter | ✅ | Full container lifecycle |
 
@@ -87,7 +87,7 @@ orchestr8/
 | Logs streaming | ✅ | With --follow support |
 | Status checking | ✅ | Pod phase + conditions |
 | Multi-runtime CLI | ✅ | Seamless Podman ↔ Kubernetes |
-| Namespace support | ✅ | Via ORCHESTR8_NAMESPACE env var |
+| Namespace support | ✅ | Via AETHER_NAMESPACE env var |
 | Label management | ✅ | Auto + custom labels |
 
 ---
@@ -98,41 +98,41 @@ orchestr8/
 
 ```bash
 # Validate workload spec
-orchestr8 validate [--spec workload.yaml]
+aether validate [--spec workload.yaml]
 
 # Build image
-orchestr8 build [--spec workload.yaml]
+aether build [--spec workload.yaml]
 
 # Run workload
-orchestr8 run [--spec workload.yaml] [--runtime podman|kube]
+aether run [--spec workload.yaml] [--runtime podman|kube]
 
 # Get status
-orchestr8 status <name>
+aether status <name>
 
 # View logs
-orchestr8 logs <name> [--follow]
+aether logs <name> [--follow]
 
 # Stop instance
-orchestr8 stop <name>
+aether stop <name>
 
 # Delete instance & resources
-orchestr8 delete <name>
+aether delete <name>
 
 # List all workloads
-orchestr8 list
+aether list
 ```
 
 ### Runtime Selection
 
 ```bash
 # Auto-select (based on workload.yaml)
-orchestr8 run
+aether run
 
 # Force Podman
-orchestr8 run --runtime podman
+aether run --runtime podman
 
 # Force Kubernetes
-orchestr8 run --runtime kube
+aether run --runtime kube
 ```
 
 ---
@@ -142,7 +142,7 @@ orchestr8 run --runtime kube
 ### Complete Schema
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -221,14 +221,14 @@ The decision engine automatically selects the best runtime:
 
 **Override with:**
 ```bash
-orchestr8 run --runtime kube
+aether run --runtime kube
 ```
 
 ---
 
 ## Kubernetes Integration
 
-### What Orchestr8 Generates
+### What Aether Generates
 
 #### 1. Pod
 
@@ -240,7 +240,7 @@ metadata:
   namespace: default
   labels:
     app: web-app
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   containers:
   - name: web-app
@@ -304,7 +304,7 @@ spec:
 ```bash
 # Create workload
 cat > workload.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: dev-app
@@ -322,16 +322,16 @@ network:
 EOF
 
 # Run locally
-orchestr8 run
+aether run
 
 # Test
 curl http://localhost:8080
 
 # Check logs
-orchestr8 logs dev-app
+aether logs dev-app
 
 # Stop
-orchestr8 stop dev-app
+aether stop dev-app
 ```
 
 ### 2. Deploy to Kubernetes
@@ -343,7 +343,7 @@ podman push ghcr.io/yourorg/app:latest
 
 # Create k8s workload
 cat > workload-k8s.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: prod-app
@@ -369,10 +369,10 @@ health:
 EOF
 
 # Deploy
-orchestr8 run --spec workload-k8s.yaml
+aether run --spec workload-k8s.yaml
 
 # Check status
-orchestr8 status prod-app
+aether status prod-app
 
 # Get external IP
 kubectl get svc prod-app-service
@@ -381,23 +381,23 @@ kubectl get svc prod-app-service
 curl http://<EXTERNAL-IP>
 
 # View logs
-orchestr8 logs prod-app --follow
+aether logs prod-app --follow
 
 # Delete
-orchestr8 delete prod-app
+aether delete prod-app
 ```
 
 ### 3. Multi-Environment
 
 ```bash
 # Development
-ORCHESTR8_NAMESPACE=dev orchestr8 run --spec app.yaml
+AETHER_NAMESPACE=dev aether run --spec app.yaml
 
 # Staging
-ORCHESTR8_NAMESPACE=staging orchestr8 run --spec app.yaml
+AETHER_NAMESPACE=staging aether run --spec app.yaml
 
 # Production
-ORCHESTR8_NAMESPACE=prod orchestr8 run --spec app.yaml
+AETHER_NAMESPACE=prod aether run --spec app.yaml
 ```
 
 ---
@@ -501,14 +501,14 @@ Finished release [optimized] target(s) in 28.5s
 ### Binary Size
 
 ```bash
-$ ls -lh target/release/orchestr8
--rwxr-xr-x 1 user user 12M orchestr8
+$ ls -lh target/release/aether
+-rwxr-xr-x 1 user user 12M aether
 ```
 
 ### Startup Time
 
 ```bash
-$ time orchestr8 validate
+$ time aether validate
 real    0m0.15s
 ```
 
@@ -592,7 +592,7 @@ Choose one:
 ```bash
 # Clone repository
 git clone <your-repo>
-cd orchestr8
+cd aether
 
 # Build
 cargo build --release
@@ -649,7 +649,7 @@ Proprietary (HyperSDK)
 
 ## Summary
 
-🎉 **Orchestr8 is production-ready for Podman + Kubernetes workloads!**
+🎉 **Aether is production-ready for Podman + Kubernetes workloads!**
 
 - ✅ 2,400+ lines of code
 - ✅ 9/9 tests passing

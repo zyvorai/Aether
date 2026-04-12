@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implemented comprehensive CI/CD integration examples and documentation for Orchestr8, enabling automated deployment workflows across major CI/CD platforms.
+Implemented comprehensive CI/CD integration examples and documentation for Aether, enabling automated deployment workflows across major CI/CD platforms.
 
 ## Pipeline Examples Created
 
@@ -83,7 +83,7 @@ review:start:
 **Declarative Production Pipeline (250+ lines)**
 
 **Stages:**
-1. **Setup** - Initialize pipeline and install Orchestr8
+1. **Setup** - Initialize pipeline and install Aether
 2. **Validate & Analyze** - Parallel validation, cost analysis, security scan
 3. **Build** - Build and push container image
 4. **Create Backup** - Production backup before deployment
@@ -111,7 +111,7 @@ review:start:
 stage('Deploy to Production') {
     steps {
         input message: 'Deploy to production?', ok: 'Deploy', submitter: 'admin,devops'
-        sh 'orchestr8 -s ${WORKLOAD_SPEC} run --runtime kubernetes'
+        sh 'aether -s ${WORKLOAD_SPEC} run --runtime kubernetes'
     }
 }
 ```
@@ -189,7 +189,7 @@ stage('Deploy to Production') {
 **Use Case:** Development environments, non-critical services
 
 ```bash
-orchestr8 -s workload.yaml run --runtime kubernetes
+aether -s workload.yaml run --runtime kubernetes
 ```
 
 **Characteristics:**
@@ -203,7 +203,7 @@ orchestr8 -s workload.yaml run --runtime kubernetes
 **Use Case:** Production services with gradual rollout
 
 ```bash
-orchestr8 migrate app kubernetes --strategy rolling
+aether migrate app kubernetes --strategy rolling
 ```
 
 **Characteristics:**
@@ -217,7 +217,7 @@ orchestr8 migrate app kubernetes --strategy rolling
 **Use Case:** Critical services requiring zero downtime
 
 ```bash
-orchestr8 migrate app kubernetes --strategy blue-green
+aether migrate app kubernetes --strategy blue-green
 ```
 
 **Characteristics:**
@@ -234,7 +234,7 @@ orchestr8 migrate app kubernetes --strategy blue-green
 ```yaml
 - name: Estimate costs
   id: cost
-  run: orchestr8 -s workload.yaml cost --provider all
+  run: aether -s workload.yaml cost --provider all
 
 - name: Comment on PR
   uses: actions/github-script@v7
@@ -249,7 +249,7 @@ orchestr8 migrate app kubernetes --strategy blue-green
 ```yaml
 cost:estimate:
   script:
-    - orchestr8 -s workload.yaml cost --provider all | tee cost-report.txt
+    - aether -s workload.yaml cost --provider all | tee cost-report.txt
   artifacts:
     reports:
       dotenv: cost-report.txt
@@ -260,16 +260,16 @@ cost:estimate:
 **Standard Pattern:**
 ```bash
 # Create timestamped backup
-orchestr8 backup -n "pre-deploy-$(date +%Y%m%d-%H%M%S)" \
+aether backup -n "pre-deploy-$(date +%Y%m%d-%H%M%S)" \
   -d "Automated backup before deployment"
 
 # Deploy
-orchestr8 -s workload.yaml run
+aether -s workload.yaml run
 
 # On failure, restore
 if [ $? -ne 0 ]; then
-  LATEST_BACKUP=$(orchestr8 list-backups | head -1)
-  orchestr8 restore $LATEST_BACKUP
+  LATEST_BACKUP=$(aether list-backups | head -1)
+  aether restore $LATEST_BACKUP
 fi
 ```
 
@@ -354,7 +354,7 @@ kubectl create secret generic db-credentials \
 
 **Prometheus Push:**
 ```bash
-orchestr8 metrics > /tmp/metrics.txt
+aether metrics > /tmp/metrics.txt
 curl -X POST http://pushgateway:9091/metrics/job/deployment < /tmp/metrics.txt
 ```
 

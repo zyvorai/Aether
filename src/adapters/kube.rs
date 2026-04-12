@@ -117,7 +117,7 @@ fn sanitize_volume_name(name: &str) -> String {
 fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
 
     // Add user labels
     for (k, v) in &spec.metadata.labels {
@@ -346,7 +346,7 @@ fn build_service_manifest(namespace: &str, spec: &Workload) -> Option<Service> {
 
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
 
     let ports: Vec<ServicePort> = spec
         .network
@@ -394,7 +394,7 @@ fn build_pvc_manifest(namespace: &str, spec: &Workload) -> Option<PersistentVolu
 
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
 
     let access_mode = match spec.persistence.access_mode {
         AccessMode::ReadWriteOnce => "ReadWriteOnce",
@@ -434,7 +434,7 @@ fn build_configmap_manifests(namespace: &str, spec: &Workload) -> Vec<ConfigMap>
 
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
 
     config
         .config_maps
@@ -461,7 +461,7 @@ fn build_secret_manifests(namespace: &str, spec: &Workload) -> Vec<Secret> {
 
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
 
     config
         .secrets
@@ -495,7 +495,7 @@ fn build_ingress_manifest(namespace: &str, spec: &Workload) -> Option<Ingress> {
 
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
 
     let annotations: BTreeMap<String, String> =
         ingress_spec.annotations.clone().into_iter().collect();
@@ -561,7 +561,7 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
 
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
 
     // Build metrics
     let metrics: Vec<MetricSpec> = scaling_spec
@@ -631,8 +631,9 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
 
     // Validate min/max replicas
     if scaling_spec.min_replicas > scaling_spec.max_replicas {
-        tracing::warn!(
-            "Invalid scaling spec for '{}': min_replicas ({}) > max_replicas ({}), skipping HPA",
+        tracing::error!(
+            "Invalid scaling spec for '{}': min_replicas ({}) > max_replicas ({}). \
+             Fix the workload spec. Skipping HPA creation.",
             spec.metadata.name, scaling_spec.min_replicas, scaling_spec.max_replicas
         );
         return None;
@@ -861,11 +862,11 @@ impl Runtime for KubernetesRuntime {
             Err(e) => tracing::debug!("PVC deletion failed (may not exist): {}", e),
         }
 
-        // Delete ConfigMaps and Secrets managed by orchestr8
+        // Delete ConfigMaps and Secrets managed by aether
         // We'll use label selectors to find and delete them
         validate_kube_name(&instance.name)?;
         let lp = ListParams::default().labels(&format!(
-            "app={},managed-by=orchestr8",
+            "app={},managed-by=aether",
             instance.name
         ));
 
@@ -905,8 +906,8 @@ impl Runtime for KubernetesRuntime {
     async fn list(&self) -> crate::Result<Vec<Instance>> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
 
-        // List only pods managed by orchestr8
-        let lp = ListParams::default().labels("managed-by=orchestr8");
+        // List only pods managed by aether
+        let lp = ListParams::default().labels("managed-by=aether");
         let pod_list = pods.list(&lp).await?;
 
         let instances: Vec<Instance> = pod_list
@@ -982,7 +983,7 @@ mod tests {
 
     fn create_test_workload() -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),
@@ -1069,7 +1070,7 @@ mod tests {
         let labels = pod.metadata.labels.as_ref().unwrap();
 
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(labels.get("managed-by"), Some(&"orchestr8".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
     }
 
     #[test]
@@ -1085,7 +1086,7 @@ mod tests {
 
         // Default labels still present
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(labels.get("managed-by"), Some(&"orchestr8".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
         // User labels merged in
         assert_eq!(labels.get("env"), Some(&"staging".to_string()));
         assert_eq!(labels.get("team"), Some(&"backend".to_string()));
@@ -1596,7 +1597,7 @@ mod tests {
         let labels = service.metadata.labels.as_ref().unwrap();
 
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(labels.get("managed-by"), Some(&"orchestr8".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
         assert_eq!(service.metadata.namespace, Some("staging".to_string()));
     }
 
@@ -1724,7 +1725,7 @@ mod tests {
         let labels = pvc.metadata.labels.as_ref().unwrap();
 
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(labels.get("managed-by"), Some(&"orchestr8".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
         assert_eq!(pvc.metadata.namespace, Some("production".to_string()));
     }
 
@@ -1789,7 +1790,7 @@ mod tests {
 
         let labels = cm.metadata.labels.as_ref().unwrap();
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(labels.get("managed-by"), Some(&"orchestr8".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
     }
 
     #[test]
@@ -2101,7 +2102,7 @@ mod tests {
         let ingress = build_ingress_manifest("production", &spec).unwrap();
         let labels = ingress.metadata.labels.as_ref().unwrap();
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(labels.get("managed-by"), Some(&"orchestr8".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
         assert_eq!(ingress.metadata.namespace, Some("production".to_string()));
     }
 
@@ -2276,7 +2277,7 @@ mod tests {
         let hpa = build_hpa_manifest("staging", &spec).unwrap();
         let labels = hpa.metadata.labels.as_ref().unwrap();
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(labels.get("managed-by"), Some(&"orchestr8".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
         assert_eq!(hpa.metadata.namespace, Some("staging".to_string()));
     }
 

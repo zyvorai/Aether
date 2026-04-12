@@ -1,6 +1,6 @@
-//! Integration tests for Orchestr8
+//! Integration tests for Aether
 
-use orchestr8::{
+use aether::{
     engine::Engine,
     runtime::RuntimeKind,
     spec::Workload,
@@ -15,7 +15,7 @@ use tempfile::TempDir;
 fn create_test_workload(name: &str, temp_dir: &TempDir) -> (Workload, PathBuf) {
     let spec_content = format!(
         r#"
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -94,8 +94,8 @@ fn test_decision_engine_auto_selection() {
 
 #[test]
 fn test_state_store_operations() {
-    use orchestr8::runtime::Instance;
-    use orchestr8::state::WorkloadState;
+    use aether::runtime::Instance;
+    use aether::state::WorkloadState;
 
     let temp_dir = TempDir::new().unwrap();
     let state_path = temp_dir.path().join("state.json");
@@ -155,7 +155,7 @@ fn test_runtime_selection_with_gpu() {
     let temp_dir = TempDir::new().unwrap();
 
     let spec_content = r#"
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -213,8 +213,8 @@ persistence:
 
 #[test]
 fn test_multiple_workloads_in_state() {
-    use orchestr8::runtime::Instance;
-    use orchestr8::state::WorkloadState;
+    use aether::runtime::Instance;
+    use aether::state::WorkloadState;
 
     let temp_dir = TempDir::new().unwrap();
     let state_path = temp_dir.path().join("state.json");
@@ -269,7 +269,7 @@ fn test_workload_spec_validation_errors() {
 
     // Invalid spec: missing required fields
     let invalid_spec = r#"
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: invalid-app
@@ -285,7 +285,7 @@ metadata:
 
 #[test]
 fn test_migration_plan_structure() {
-    use orchestr8::migration::{MigrationPlan, MigrationStrategy};
+    use aether::migration::{MigrationPlan, MigrationStrategy};
     use std::time::Duration;
 
     let plan = MigrationPlan::new(
@@ -307,9 +307,9 @@ fn test_migration_plan_structure() {
 
 #[test]
 fn test_backup_create_list_restore() {
-    use orchestr8::backup::BackupManager;
-    use orchestr8::runtime::Instance;
-    use orchestr8::state::WorkloadState;
+    use aether::backup::BackupManager;
+    use aether::runtime::Instance;
+    use aether::state::WorkloadState;
 
     let temp_dir = TempDir::new().unwrap();
     let state_path = temp_dir.path().join("state.json");
@@ -358,7 +358,7 @@ fn test_backup_create_list_restore() {
 
     // Restore to a new state path
     let restore_path = temp_dir.path().join("restored_state.json");
-    let backup = orchestr8::backup::Backup::load(&backup_path).unwrap();
+    let backup = aether::backup::Backup::load(&backup_path).unwrap();
     backup.restore(&restore_path).unwrap();
 
     // Verify restored state
@@ -370,7 +370,7 @@ fn test_backup_create_list_restore() {
 
 #[test]
 fn test_cost_estimation_for_workload() {
-    use orchestr8::cost::{estimate_cost, estimate_all_providers, CloudProvider, CostComparison};
+    use aether::cost::{estimate_cost, estimate_all_providers, CloudProvider, CostComparison};
 
     let temp_dir = TempDir::new().unwrap();
     let (workload, _) = create_test_workload("cost-test", &temp_dir);
@@ -395,9 +395,9 @@ fn test_cost_estimation_for_workload() {
 
 #[test]
 fn test_backup_merge() {
-    use orchestr8::backup::BackupManager;
-    use orchestr8::runtime::Instance;
-    use orchestr8::state::WorkloadState;
+    use aether::backup::BackupManager;
+    use aether::runtime::Instance;
+    use aether::state::WorkloadState;
 
     let temp_dir = TempDir::new().unwrap();
     let state_path = temp_dir.path().join("state.json");
@@ -450,7 +450,7 @@ fn test_backup_merge() {
         .unwrap();
 
     // Merge backup into existing state
-    let backup = orchestr8::backup::Backup::load(&backup_path).unwrap();
+    let backup = aether::backup::Backup::load(&backup_path).unwrap();
     backup.merge(&state_path).unwrap();
 
     // Verify merged state has both workloads
@@ -464,7 +464,7 @@ fn test_backup_merge() {
 
 #[test]
 fn test_secrets_crud_and_encryption() {
-    use orchestr8::secrets::SecretStore;
+    use aether::secrets::SecretStore;
 
     let temp_dir = TempDir::new().unwrap();
     let store_path = temp_dir.path().join("secrets.json");
@@ -520,7 +520,7 @@ fn test_secrets_crud_and_encryption() {
 
 #[test]
 fn test_events_emit_filter_acknowledge() {
-    use orchestr8::events::{EventBus, EventCategory, EventSeverity};
+    use aether::events::{EventBus, EventCategory, EventSeverity};
 
     let temp_dir = TempDir::new().unwrap();
     let events_path = temp_dir.path().join("events.json");
@@ -592,7 +592,7 @@ fn test_events_emit_filter_acknowledge() {
 
 #[test]
 fn test_scheduler_placement_and_release() {
-    use orchestr8::scheduler::{
+    use aether::scheduler::{
         Priority, ScheduleConstraint, ScheduleRequest, ScheduleStrategy, Scheduler,
     };
 
@@ -688,7 +688,7 @@ fn test_scheduler_placement_and_release() {
 
 #[test]
 fn test_orchestrator_health_lifecycle() {
-    use orchestr8::orchestrator::{
+    use aether::orchestrator::{
         CheckResult, CircuitState, HealthCheck, HealthConfig, HealthStatus, Orchestrator,
         OrchestratorAction, UpdatePhase,
     };
@@ -780,7 +780,7 @@ fn test_orchestrator_health_lifecycle() {
 
 #[test]
 fn test_environment_promotion_and_parity() {
-    use orchestr8::environments::{
+    use aether::environments::{
         EnvTier, EnvWorkload, EnvironmentManager, PromotionRequest, PromotionStrategy,
     };
 
@@ -883,7 +883,7 @@ fn test_environment_promotion_and_parity() {
 
 #[test]
 fn test_affinity_learning_and_recommendation() {
-    use orchestr8::ai::affinity::{AffinityEngine, DeploymentOutcome, WorkloadClass};
+    use aether::ai::affinity::{AffinityEngine, DeploymentOutcome, WorkloadClass};
 
     let temp_dir = TempDir::new().unwrap();
     let affinity_path = temp_dir.path().join("affinity.json");
@@ -986,7 +986,7 @@ fn test_affinity_learning_and_recommendation() {
 
 #[test]
 fn test_scheduler_save_load() {
-    use orchestr8::scheduler::{Priority, ScheduleRequest, Scheduler};
+    use aether::scheduler::{Priority, ScheduleRequest, Scheduler};
 
     let temp_dir = TempDir::new().unwrap();
     let sched_path = temp_dir.path().join("scheduler.json");
@@ -1014,7 +1014,7 @@ fn test_scheduler_save_load() {
 
 #[test]
 fn test_orchestrator_save_load() {
-    use orchestr8::orchestrator::Orchestrator;
+    use aether::orchestrator::Orchestrator;
 
     let temp_dir = TempDir::new().unwrap();
     let orch_path = temp_dir.path().join("orchestrator.json");
@@ -1032,7 +1032,7 @@ fn test_orchestrator_save_load() {
 
 #[test]
 fn test_template_generation_and_validation() {
-    use orchestr8::templates::{generate, TemplateKind, TemplateParams};
+    use aether::templates::{generate, TemplateKind, TemplateParams};
 
     let templates = vec![
         TemplateKind::WebApp,
@@ -1062,13 +1062,13 @@ fn test_template_generation_and_validation() {
 
 #[test]
 fn test_template_kind_from_str_roundtrip() {
-    use orchestr8::templates::TemplateKind;
+    use aether::templates::TemplateKind;
 
     for name in &["web-app", "rest-api", "database", "cache", "worker", "cron-job", "ml-training", "microservice"] {
         let kind: TemplateKind = name.parse().expect(name);
         // Generate from parsed kind to verify it works end-to-end
-        let params = orchestr8::templates::TemplateParams::default();
-        let spec = orchestr8::templates::generate(&kind, &params);
+        let params = aether::templates::TemplateParams::default();
+        let spec = aether::templates::generate(&kind, &params);
         assert!(spec.validate().is_ok());
     }
 }
@@ -1077,9 +1077,9 @@ fn test_template_kind_from_str_roundtrip() {
 
 #[test]
 fn test_drift_detection_full_cycle() {
-    use orchestr8::drift::{DriftDetector, DriftCategory};
-    use orchestr8::runtime::Instance;
-    use orchestr8::state::WorkloadState;
+    use aether::drift::{DriftDetector, DriftCategory};
+    use aether::runtime::Instance;
+    use aether::state::WorkloadState;
 
     let temp_dir = TempDir::new().unwrap();
     let (spec, _) = create_test_workload("drift-test", &temp_dir);
@@ -1113,7 +1113,7 @@ fn test_drift_detection_full_cycle() {
 
 #[test]
 fn test_policy_engine_production_rules() {
-    use orchestr8::policy::PolicyEngine;
+    use aether::policy::PolicyEngine;
 
     let temp_dir = TempDir::new().unwrap();
     let (spec, _) = create_test_workload("policy-test", &temp_dir);
@@ -1128,7 +1128,7 @@ fn test_policy_engine_production_rules() {
 
 #[test]
 fn test_policy_engine_dev_cpu_exceeded() {
-    use orchestr8::policy::{Policy, PolicyEngine, PolicyRule, PolicySeverity, RuleCheck};
+    use aether::policy::{Policy, PolicyEngine, PolicyRule, PolicySeverity, RuleCheck};
 
     let temp_dir = TempDir::new().unwrap();
     let (spec, _) = create_test_workload("policy-test", &temp_dir);
@@ -1155,7 +1155,7 @@ fn test_policy_engine_dev_cpu_exceeded() {
 
 #[test]
 fn test_dependency_graph_save_load_cycle() {
-    use orchestr8::dependencies::DependencyGraph;
+    use aether::dependencies::DependencyGraph;
 
     let temp_dir = TempDir::new().unwrap();
     let path = temp_dir.path().join("deps.json");
@@ -1185,7 +1185,7 @@ fn test_dependency_graph_save_load_cycle() {
 
 #[test]
 fn test_audit_log_save_load_prune() {
-    use orchestr8::audit::{ActionResult, AuditAction, AuditLog};
+    use aether::audit::{ActionResult, AuditAction, AuditLog};
 
     let temp_dir = TempDir::new().unwrap();
     let path = temp_dir.path().join("audit.json");
@@ -1216,7 +1216,7 @@ fn test_audit_log_save_load_prune() {
 
 #[test]
 fn test_sla_engine_compliance_check() {
-    use orchestr8::sla::{ComplianceStatus, SlaEngine, SlaObservation, SlaTarget};
+    use aether::sla::{ComplianceStatus, SlaEngine, SlaObservation, SlaTarget};
 
     let mut engine = SlaEngine::new();
     engine.add_target(SlaTarget::standard("web-app"));
@@ -1253,13 +1253,13 @@ fn test_sla_engine_compliance_check() {
 
 #[test]
 fn test_resources_json_load_save_roundtrip() {
-    use orchestr8::resources::{json_load, json_save, orchestr8_path};
+    use aether::resources::{json_load, json_save, aether_path};
 
-    // Verify orchestr8_path is deterministic
-    let p1 = orchestr8_path("test.json");
-    let p2 = orchestr8_path("test.json");
+    // Verify aether_path is deterministic
+    let p1 = aether_path("test.json");
+    let p2 = aether_path("test.json");
     assert_eq!(p1, p2);
-    assert!(p1.ends_with(".orchestr8/test.json"));
+    assert!(p1.ends_with(".aether/test.json"));
 
     // JSON roundtrip with a real type
     let temp_dir = TempDir::new().unwrap();
@@ -1268,10 +1268,10 @@ fn test_resources_json_load_save_roundtrip() {
     let mut store = StateStore::new();
     store.upsert(
         "rt-test".to_string(),
-        orchestr8::state::WorkloadState {
+        aether::state::WorkloadState {
             name: "rt-test".to_string(),
             runtime: RuntimeKind::Kubernetes,
-            instance: orchestr8::runtime::Instance {
+            instance: aether::runtime::Instance {
                 id: "k-1".to_string(),
                 name: "rt-test".to_string(),
                 runtime: RuntimeKind::Kubernetes,
@@ -1309,7 +1309,7 @@ fn test_runtime_kind_from_str_used_in_engine_context() {
 
 #[test]
 fn test_migration_strategy_from_str_integration() {
-    use orchestr8::migration::MigrationStrategy;
+    use aether::migration::MigrationStrategy;
 
     // All strategies parse correctly
     let strategies = vec!["immediate", "blue-green", "rolling"];
@@ -1326,10 +1326,10 @@ fn test_migration_strategy_from_str_integration() {
 
 #[test]
 fn test_compose_load_and_validate() {
-    use orchestr8::compose;
+    use aether::compose;
 
     let dir = TempDir::new().unwrap();
-    let compose_path = dir.path().join("orchestr8-compose.yaml");
+    let compose_path = dir.path().join("aether-compose.yaml");
 
     // Create a minimal compose file
     let yaml = r#"
@@ -1359,10 +1359,10 @@ workloads:
 
 #[test]
 fn test_compose_circular_dependency_detected() {
-    use orchestr8::compose;
+    use aether::compose;
 
     let dir = TempDir::new().unwrap();
-    let compose_path = dir.path().join("orchestr8-compose.yaml");
+    let compose_path = dir.path().join("aether-compose.yaml");
 
     let yaml = r#"
 version: "1"
@@ -1386,7 +1386,7 @@ workloads:
 
 #[test]
 fn test_plugin_registry_roundtrip() {
-    use orchestr8::plugin::{PluginManifest, PluginRegistry};
+    use aether::plugin::{PluginManifest, PluginRegistry};
 
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("plugins.json");
@@ -1412,8 +1412,8 @@ fn test_plugin_registry_roundtrip() {
 
 #[test]
 fn test_health_history_integration() {
-    use orchestr8::health::{HealthHistory, HealthRecord};
-    use orchestr8::runtime::{InstanceState, RuntimeKind};
+    use aether::health::{HealthHistory, HealthRecord};
+    use aether::runtime::{InstanceState, RuntimeKind};
 
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("health.json");
@@ -1452,7 +1452,7 @@ fn test_health_history_integration() {
 
 #[tokio::test]
 async fn test_migration_rejects_same_runtime_integration() {
-    use orchestr8::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
+    use aether::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
 
     let dir = TempDir::new().unwrap();
     let state_path = dir.path().join("state.json");
@@ -1474,7 +1474,7 @@ async fn test_migration_rejects_same_runtime_integration() {
 
 #[tokio::test]
 async fn test_migration_rejects_empty_name_integration() {
-    use orchestr8::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
+    use aether::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
 
     let dir = TempDir::new().unwrap();
     let state_path = dir.path().join("state.json");
@@ -1497,7 +1497,7 @@ async fn test_migration_rejects_empty_name_integration() {
 
 #[test]
 fn test_migration_plan_configurable_delays() {
-    use orchestr8::migration::{MigrationPlan, MigrationStrategy};
+    use aether::migration::{MigrationPlan, MigrationStrategy};
     use std::time::Duration;
 
     let mut plan = MigrationPlan::new(
@@ -1530,11 +1530,11 @@ struct OutputModeGuard;
 
 impl Drop for OutputModeGuard {
     fn drop(&mut self) {
-        orchestr8::output::set_yaml(false);
-        orchestr8::output::set_wide(false);
-        orchestr8::output::set_quiet(false);
-        orchestr8::output::set_json(false);
-        orchestr8::output::set_yes(false);
+        aether::output::set_yaml(false);
+        aether::output::set_wide(false);
+        aether::output::set_quiet(false);
+        aether::output::set_json(false);
+        aether::output::set_yes(false);
     }
 }
 
@@ -1543,31 +1543,31 @@ fn test_output_modes_default_state() {
     let _guard = OutputModeGuard;
     // Modes are global static — other tests may have set them,
     // so we just verify the getters don't panic.
-    let _ = orchestr8::output::is_json();
-    let _ = orchestr8::output::is_yaml();
-    let _ = orchestr8::output::is_wide();
-    let _ = orchestr8::output::is_quiet();
+    let _ = aether::output::is_json();
+    let _ = aether::output::is_yaml();
+    let _ = aether::output::is_wide();
+    let _ = aether::output::is_quiet();
 }
 
 #[test]
 fn test_output_set_and_check_yaml() {
     let _guard = OutputModeGuard;
-    orchestr8::output::set_yaml(true);
-    assert!(orchestr8::output::is_yaml());
+    aether::output::set_yaml(true);
+    assert!(aether::output::is_yaml());
 }
 
 #[test]
 fn test_output_set_and_check_wide() {
     let _guard = OutputModeGuard;
-    orchestr8::output::set_wide(true);
-    assert!(orchestr8::output::is_wide());
+    aether::output::set_wide(true);
+    assert!(aether::output::is_wide());
 }
 
 #[test]
 fn test_select_runtime_returns_none_in_quiet_mode() {
     let _guard = OutputModeGuard;
-    orchestr8::output::set_quiet(true);
-    let result = orchestr8::output::select_runtime(&[
+    aether::output::set_quiet(true);
+    let result = aether::output::select_runtime(&[
         ("🐳", "Podman", "test"),
     ]);
     assert!(result.is_none());
@@ -1577,7 +1577,7 @@ fn test_select_runtime_returns_none_in_quiet_mode() {
 
 #[test]
 fn test_health_summary_for_unknown_workload() {
-    use orchestr8::health::HealthHistory;
+    use aether::health::HealthHistory;
 
     let history = HealthHistory::default();
     let summary = history.summary("nonexistent");
@@ -1589,10 +1589,10 @@ fn test_health_summary_for_unknown_workload() {
 
 #[test]
 fn test_compose_missing_dependency() {
-    use orchestr8::compose;
+    use aether::compose;
 
     let dir = TempDir::new().unwrap();
-    let compose_path = dir.path().join("orchestr8-compose.yaml");
+    let compose_path = dir.path().join("aether-compose.yaml");
 
     let yaml = r#"
 version: "1"
@@ -1613,7 +1613,7 @@ workloads:
 
 #[test]
 fn test_plugin_protocol_serialization() {
-    use orchestr8::plugin::PluginProtocol;
+    use aether::plugin::PluginProtocol;
 
     let msg = PluginProtocol::BuildRequest {
         spec_json: r#"{"name":"test"}"#.to_string(),

@@ -195,9 +195,9 @@ impl SlaEngine {
             let margin = if max_error_rate > 0.0 {
                 ((max_error_rate - observation.error_rate_pct) / max_error_rate) * 100.0
             } else if observation.error_rate_pct == 0.0 {
-                100.0
+                100.0 // both zero — perfect
             } else {
-                -100.0
+                0.0 // target is zero but actual > 0 — no margin remaining
             };
             if !error_passed {
                 all_passed = false;
@@ -219,9 +219,9 @@ impl SlaEngine {
             let margin = if max_restarts > 0 {
                 ((max_restarts as f64 - observation.restarts as f64) / max_restarts as f64) * 100.0
             } else if observation.restarts == 0 {
-                100.0
+                100.0 // both zero — perfect
             } else {
-                -100.0
+                0.0 // target is zero but actual > 0 — no margin remaining
             };
             if !restart_passed {
                 all_passed = false;

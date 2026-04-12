@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orchestr8 — Universal Runtime Control Plane</title>
+    <title>Aether — Universal Runtime Control Plane</title>
     <style>
         :root {
             --bg-primary: #0a0e1a;
@@ -284,7 +284,7 @@
         <div class="login-container">
             <div class="login-logo">
                 <div class="icon">O8</div>
-                <h1>Orchestr8</h1>
+                <h1>Aether</h1>
                 <p>Universal Runtime Control Plane</p>
                 <div class="version">v0.3.0 &mdash; HyperSDK</div>
             </div>
@@ -326,7 +326,7 @@
         <div class="container">
             <header>
                 <div class="left">
-                    <h1>Orchestr8</h1>
+                    <h1>Aether</h1>
                     <span class="tagline">One spec. Four runtimes. One dashboard.</span>
                 </div>
                 <div class="right">
@@ -382,9 +382,9 @@
 
     <script>
         // ═══ AUTH ═══
-        const SESSION_KEY = 'orchestr8_session';
+        const SESSION_KEY = 'aether_session';
         const DEFAULT_USER = 'admin';
-        const DEFAULT_PASS = 'orchestr8';
+        const DEFAULT_PASS = 'aether';
 
         function handleLogin(e) {
             e.preventDefault();
@@ -460,7 +460,7 @@
         async function loadWorkloads() {
             const data = await apiFetch('/workloads');
             const el = document.getElementById('workload-list');
-            if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state"><div class="icon">&#x1F4E6;</div><p>No workloads deployed. Use <code>orchestr8 run</code> to deploy your first workload.</p></div>'; document.getElementById('total-workloads').textContent = '0'; return; }
+            if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state"><div class="icon">&#x1F4E6;</div><p>No workloads deployed. Use <code>aether run</code> to deploy your first workload.</p></div>'; document.getElementById('total-workloads').textContent = '0'; return; }
             document.getElementById('total-workloads').textContent = data.length;
             const rc = r => { const l = r.toLowerCase(); if (l.includes('podman')) return 'badge-blue'; if (l.includes('kube') && !l.includes('virt')) return 'badge-green'; if (l.includes('virt')) return 'badge-yellow'; return 'badge-red'; };
             el.innerHTML = `<table><thead><tr><th>Name</th><th>Runtime</th><th>Image</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>${data.map(w=>`<tr><td><strong>${w.name}</strong></td><td><span class="badge ${rc(w.runtime)}">${w.runtime}</span></td><td><code>${w.image}</code></td><td><span class="badge badge-green">${w.status}</span></td><td>${w.created_at.substring(0,19).replace('T',' ')}</td><td class="actions"><button onclick="viewLogs('${w.name}')">Logs</button><button class="btn-success" onclick="startWorkload('${w.name}')">Start</button><button class="btn-warn" onclick="stopWorkload('${w.name}')">Stop</button><button class="btn-danger" onclick="deleteWorkload('${w.name}')">Delete</button></td></tr>`).join('')}</tbody></table>`;
@@ -487,7 +487,7 @@
             if(!events||events.length===0){eel.innerHTML='<div class="empty-state">No events</div>';}else{const sb=s=>s==='CRITICAL'||s==='ERROR'?'badge-red':s==='WARN'?'badge-yellow':'badge-gray';eel.innerHTML=events.map(e=>`<div class="event-item"><span class="event-time">${(e.timestamp||'').substring(0,19).replace('T',' ')}</span><span class="badge ${sb(e.severity)}">${e.severity}</span><span class="badge badge-purple">${e.category}</span><span><strong>${e.title}</strong> - ${e.message}</span></div>`).join('');}
         }
 
-        async function loadSla() { document.getElementById('sla-content').innerHTML=`<div class="empty-state"><div class="icon">&#x1F4CA;</div><p>SLA Compliance</p><pre style="margin-top:10px;text-align:left;display:inline-block">orchestr8 sla add web-app --tier standard\norcheastr8 sla check web-app --uptime 99.95\norcheastr8 sla list</pre></div>`; }
+        async function loadSla() { document.getElementById('sla-content').innerHTML=`<div class="empty-state"><div class="icon">&#x1F4CA;</div><p>SLA Compliance</p><pre style="margin-top:10px;text-align:left;display:inline-block">aether sla add web-app --tier standard\norcheastr8 sla check web-app --uptime 99.95\norcheastr8 sla list</pre></div>`; }
         async function loadEnvironments() { const d=await apiFetch('/environments');const el=document.getElementById('env-content');if(!d||d.length===0){el.innerHTML='<div class="empty-state">No environments configured</div>';}else{const tb=t=>t==='Production'?'badge-red':t==='Staging'?'badge-yellow':'badge-green';el.innerHTML=`<table><thead><tr><th>Name</th><th>Tier</th><th>Workloads</th><th>Variables</th><th>Updated</th></tr></thead><tbody>${d.map(e=>`<tr><td><strong>${e.name}</strong></td><td><span class="badge ${tb(e.tier)}">${e.tier}</span></td><td>${Object.keys(e.workloads||{}).length}</td><td>${Object.keys(e.variables||{}).length}</td><td>${(e.updated_at||'').substring(0,19).replace('T',' ')}</td></tr>`).join('')}</tbody></table>`;} }
         async function loadSecrets() { const d=await apiFetch('/secrets');const el=document.getElementById('secrets-content');document.getElementById('secrets-count').textContent=(d&&d.length)||0;if(!d||d.length===0){el.innerHTML='<div class="empty-state">No secrets stored</div>';}else{el.innerHTML=`<table><thead><tr><th>Name</th><th>Namespace</th><th>Keys</th><th>Rotation</th><th>Updated</th></tr></thead><tbody>${d.map(s=>`<tr><td><strong>${s.name}</strong></td><td>${s.namespace}</td><td>${s.key_count}</td><td>${s.needs_rotation?'<span class="badge badge-red">Needs Rotation</span>':'<span class="badge badge-green">OK</span>'}</td><td>${(s.updated_at||'').substring(0,19).replace('T',' ')}</td></tr>`).join('')}</tbody></table>`;} }
         async function loadAffinity() { const classes=[{key:'web-service',el:'affinity-web'},{key:'database',el:'affinity-db'},{key:'ml-training',el:'affinity-ml'},{key:'microservice',el:'affinity-micro'}];for(const c of classes){const d=await apiFetch('/affinity/'+c.key);const el=document.getElementById(c.el);if(!d||d.length===0){el.innerHTML='<div class="empty-state">No data</div>';}else{el.innerHTML=d.map((s,i)=>{const star=i===0?' (recommended)':'',cp=Math.round(s.confidence*100),sp=Math.round(s.composite_score*100);return`<div style="margin-bottom:10px;padding:8px;background:rgba(42,48,80,0.5);border-radius:8px"><strong>${s.runtime}</strong>${star}<span style="float:right;color:var(--text-muted)">Score: ${sp}% | Confidence: ${cp}%</span><div class="util-bar" style="margin-top:6px"><div class="util-fill ${sp>70?'util-low':sp>40?'util-mid':'util-high'}" style="width:${Math.max(sp,2)}%">${sp}%</div></div>${s.total_deployments>0?`<div style="font-size:0.75em;color:var(--text-muted);margin-top:4px">Success: ${Math.round(s.success_rate*100)}% | Uptime: ${s.avg_uptime.toFixed(1)}%</div>`:'<div style="font-size:0.75em;color:var(--text-muted);margin-top:4px">Heuristic estimation</div>'}</div>`;}).join('');}}}

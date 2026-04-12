@@ -428,16 +428,16 @@ kubectl create secret generic db-credentials \
   --from-literal=password=secure-password
 
 # 4. Validate
-orchestr8 -s production-api.yaml validate
+aether -s production-api.yaml validate
 
 # 5. Estimate costs
-orchestr8 -s production-api.yaml cost
+aether -s production-api.yaml cost
 
 # 6. Deploy
-orchestr8 -s production-api.yaml run
+aether -s production-api.yaml run
 
 # 7. Verify
-orchestr8 status production-api
+aether status production-api
 curl https://api.example.com/health
 ```
 
@@ -457,10 +457,10 @@ kubectl create configmap training-config \
   --from-file=training-params.yaml
 
 # 4. Deploy
-orchestr8 -s bert-training.yaml run
+aether -s bert-training.yaml run
 
 # 5. Monitor
-orchestr8 logs bert-training --follow
+aether logs bert-training --follow
 # Access TensorBoard at tensorboard.ml.example.com
 ```
 
@@ -480,10 +480,10 @@ kubectl create configmap postgres-config \
   --from-file=pg_hba.conf
 
 # 4. Deploy
-orchestr8 -s app-db.yaml run
+aether -s app-db.yaml run
 
 # 5. Verify
-orchestr8 status app-db
+aether status app-db
 kubectl exec -it app-db-0 -- psql -U appuser -d appdb
 ```
 
@@ -494,7 +494,7 @@ kubectl exec -it app-db-0 -- psql -U appuser -d appdb
 # Syntax validation
 for template in templates/*.yaml; do
   echo "Validating $template..."
-  orchestr8 -s "$template" validate
+  aether -s "$template" validate
 done
 ```
 
@@ -503,7 +503,7 @@ done
 # Estimate costs for all templates
 for template in templates/*.yaml; do
   echo "=== Cost for $template ==="
-  orchestr8 -s "$template" cost --provider aws
+  aether -s "$template" cost --provider aws
 done
 ```
 
@@ -647,7 +647,7 @@ annotations:
 
 ## Comparison with Other Tools
 
-| Feature | Orchestr8 Templates | Helm Charts | Kustomize |
+| Feature | Aether Templates | Helm Charts | Kustomize |
 |---------|-------------------|-------------|-----------|
 | Format | YAML | Charts | YAML |
 | Complexity | Simple | Complex | Medium |
@@ -680,6 +680,6 @@ annotations:
 
 The template library provides production-ready starting points for common workload types. Each template incorporates best practices for security, scalability, and observability. Comprehensive documentation enables users to quickly deploy and customize templates for their specific needs.
 
-The templates cover a wide range of use cases from simple web applications to complex ML training jobs, making Orchestr8 immediately useful for diverse deployment scenarios.
+The templates cover a wide range of use cases from simple web applications to complex ML training jobs, making Aether immediately useful for diverse deployment scenarios.
 
 **Status: COMPLETE ✅**
