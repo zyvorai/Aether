@@ -2,9 +2,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "orchestr8.fullname" . }}
+  name: {{ include "aether.fullname" . }}
   labels:
-    {{- include "orchestr8.labels" . | nindent 4 }}
+    {{- include "aether.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -33,7 +33,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ include "orchestr8.fullname" $ }}
+                name: {{ include "aether.fullname" $ }}
                 port:
                   number: {{ $.Values.service.port }}
           {{- end }}

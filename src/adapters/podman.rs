@@ -108,7 +108,17 @@ impl Runtime for PodmanRuntime {
                         format!("bash -c '</dev/tcp/localhost/{}' || exit 1", port)
                     }
                     crate::spec::ProbeType::Exec { command } => {
-                        command.join(" ")
+                        // Shell-escape each argument to prevent command injection
+                        command.iter()
+                            .map(|arg| {
+                                if arg.contains(|c: char| c.is_whitespace() || c == '\'' || c == '"' || c == '\\' || c == '$' || c == '`' || c == '!' || c == ';' || c == '&' || c == '|') {
+                                    format!("'{}'", arg.replace('\'', "'\\''"))
+                                } else {
+                                    arg.clone()
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" ")
                     }
                 };
                 cmd.arg("--health-cmd").arg(&health_cmd);
@@ -273,7 +283,7 @@ mod tests {
 
     fn test_workload() -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),

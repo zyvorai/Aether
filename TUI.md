@@ -1,6 +1,6 @@
-# 🖥️ Orchestr8 TUI - Terminal User Interface
+# 🖥️ Aether TUI - Terminal User Interface
 
-The Orchestr8 TUI provides an interactive dashboard for managing workloads across multiple runtimes.
+The Aether TUI provides an interactive dashboard for managing workloads across multiple runtimes.
 
 ## Features
 
@@ -20,7 +20,7 @@ The Orchestr8 TUI provides an interactive dashboard for managing workloads acros
 Launch the TUI:
 
 ```bash
-orchestr8 tui
+aether tui
 ```
 
 That's it! The dashboard will load automatically.
@@ -33,7 +33,7 @@ That's it! The dashboard will load automatically.
 
 ```
 ┌────────────────────────────────────────────┐
-│         ORCHESTR8 - Universal Runtime      │
+│         AETHER - Universal Runtime      │
 │      Workloads: 3 | Last refresh: 2s ago   │
 └────────────────────────────────────────────┘
 ┌─ Workloads ───────┬─ Detail ──────────────┐
@@ -187,7 +187,7 @@ Press `r` to force an immediate refresh.
 ### 1. Launch TUI
 
 ```bash
-orchestr8 tui
+aether tui
 ```
 
 ### 2. Navigate Dashboard
@@ -223,11 +223,11 @@ Monitor workloads across Podman and Kubernetes simultaneously:
 
 ```bash
 # Deploy to both runtimes
-orchestr8 run --spec app1.yaml --runtime podman
-orchestr8 run --spec app2.yaml --runtime kube
+aether run --spec app1.yaml --runtime podman
+aether run --spec app2.yaml --runtime kube
 
 # Monitor both
-orchestr8 tui
+aether tui
 ```
 
 View both at once in the dashboard.
@@ -237,7 +237,7 @@ View both at once in the dashboard.
 Quick log access without typing commands:
 
 ```bash
-orchestr8 tui
+aether tui
 # Navigate to failed workload
 # Press Enter
 # Read error logs
@@ -249,7 +249,7 @@ orchestr8 tui
 Visual health check for all deployments:
 
 ```bash
-orchestr8 tui
+aether tui
 # See all statuses at a glance
 # Green ● = healthy
 # Red ○ = unhealthy
@@ -261,11 +261,11 @@ Keep TUI open while developing:
 
 ```bash
 # Terminal 1
-orchestr8 tui
+aether tui
 
 # Terminal 2
 vim src/main.rs
-orchestr8 run --runtime podman
+aether run --runtime podman
 
 # Watch status change in TUI automatically
 ```
@@ -281,7 +281,7 @@ If no workloads are running:
 │                                             │
 │           No workloads running              │
 │                                             │
-│     Run 'orchestr8 run' to deploy           │
+│     Run 'aether run' to deploy           │
 │                                             │
 └────────────────────────────────────────────┘
 ```
@@ -292,7 +292,7 @@ If no workloads are running:
 
 ### TUI Won't Launch
 
-**Issue:** `orchestr8 tui` fails
+**Issue:** `aether tui` fails
 
 **Solution:**
 ```bash
@@ -300,7 +300,7 @@ If no workloads are running:
 echo $TERM
 
 # Try with explicit terminal
-TERM=xterm-256color orchestr8 tui
+TERM=xterm-256color aether tui
 ```
 
 ### Colors Not Showing
@@ -319,10 +319,10 @@ TERM=xterm-256color orchestr8 tui
 **Solution:**
 ```bash
 # Verify state file
-cat ~/.orchestr8/state.json
+cat ~/.aether/state.json
 
 # Check CLI list
-orchestr8 list
+aether list
 
 # Force refresh in TUI (press 'r')
 ```
@@ -345,7 +345,7 @@ kubectl get pods
 podman ps
 
 # Check logs
-orchestr8 -v list
+aether -v list
 ```
 
 ---
@@ -365,11 +365,11 @@ Keep TUI open in a dedicated terminal or tmux pane:
 
 ```bash
 # In tmux
-tmux new -s orchestr8
-orchestr8 tui
+tmux new -s aether
+aether tui
 
 # Detach: Ctrl+B, D
-# Reattach: tmux attach -t orchestr8
+# Reattach: tmux attach -t aether
 ```
 
 ### 3. Combine with Watch
@@ -378,7 +378,7 @@ Monitor specific workload in parallel:
 
 ```bash
 # Terminal 1: TUI
-orchestr8 tui
+aether tui
 
 # Terminal 2: Watch specific pod
 watch -n1 kubectl get pod my-app
@@ -390,10 +390,10 @@ While TUI is for interactive use, use CLI in scripts:
 
 ```bash
 # Deploy
-orchestr8 run --spec app.yaml
+aether run --spec app.yaml
 
 # Monitor interactively
-orchestr8 tui
+aether tui
 ```
 
 ---
@@ -419,7 +419,7 @@ orchestr8 tui
 
 ```
 ┌─────────────────────────────────────┐
-│      ORCHESTR8 TUI SHORTCUTS        │
+│      AETHER TUI SHORTCUTS        │
 ├─────────────────────────────────────┤
 │  NAVIGATION                         │
 │  ↑/k ............... Select previous│
@@ -504,7 +504,7 @@ App State
 ssh prod-server
 
 # Launch TUI
-orchestr8 tui
+aether tui
 
 # Watch all services
 # Press Enter on failing service
@@ -517,14 +517,14 @@ orchestr8 tui
 ```bash
 # Start TUI in tmux
 tmux new -s dev
-orchestr8 tui
+aether tui
 
 # Split pane (Ctrl+B, ")
 # Bottom pane: edit code
 vim src/app.rs
 
 # Deploy changes
-orchestr8 run --runtime podman
+aether run --runtime podman
 
 # Watch status update in top pane automatically
 ```
@@ -534,11 +534,11 @@ orchestr8 run --runtime podman
 ```bash
 # Context 1: Dev cluster
 kubectl config use-context dev
-ORCHESTR8_NAMESPACE=dev orchestr8 tui &
+AETHER_NAMESPACE=dev aether tui &
 
 # Context 2: Prod cluster
 kubectl config use-context prod
-ORCHESTR8_NAMESPACE=prod orchestr8 tui
+AETHER_NAMESPACE=prod aether tui
 ```
 
 ---
@@ -554,7 +554,7 @@ ORCHESTR8_NAMESPACE=prod orchestr8 tui
 
 ## Summary
 
-The Orchestr8 TUI provides:
+The Aether TUI provides:
 
 ✅ **Visual monitoring** of all workloads
 ✅ **Multi-runtime** support (Podman + Kubernetes)
@@ -573,5 +573,5 @@ Perfect for:
 
 **Try it now:**
 ```bash
-orchestr8 tui
+aether tui
 ```

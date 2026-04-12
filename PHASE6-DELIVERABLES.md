@@ -229,29 +229,29 @@ Complete migration guide covering:
 
 **Container → Kubernetes:**
 ```bash
-orchestr8 run --spec app.yaml --runtime podman
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether run --spec app.yaml --runtime podman
+aether migrate my-app kubernetes --strategy blue-green
 ```
 
 **Kubernetes → KubeVirt:**
 ```bash
-orchestr8 run --spec app.yaml --runtime kubernetes
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether run --spec app.yaml --runtime kubernetes
+aether migrate my-app kubevirt --strategy rolling
 ```
 
 **KubeVirt → Metal3:**
 ```bash
-orchestr8 run --spec app.yaml --runtime kubevirt
-orchestr8 migrate my-app metal --strategy immediate
+aether run --spec app.yaml --runtime kubevirt
+aether migrate my-app metal --strategy immediate
 ```
 
 **With Options:**
 ```bash
 # Fast migration without validation
-orchestr8 migrate my-app kubernetes --strategy immediate --no-validation
+aether migrate my-app kubernetes --strategy immediate --no-validation
 
 # No automatic rollback
-orchestr8 migrate my-app kubernetes --strategy blue-green --no-rollback
+aether migrate my-app kubernetes --strategy blue-green --no-rollback
 ```
 
 ---
@@ -438,23 +438,23 @@ test result: ok. 11 passed; 0 failed; 0 ignored
 **Test 1: Immediate Migration**
 ```bash
 # Deploy to Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Migrate to Kubernetes
-orchestr8 migrate my-app kubernetes --strategy immediate
+aether migrate my-app kubernetes --strategy immediate
 
 # Verify
-orchestr8 status my-app
+aether status my-app
 # Should show: Runtime: kubernetes
 ```
 
 **Test 2: Blue-Green Migration**
 ```bash
 # Deploy to Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Migrate with blue-green
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # During migration, both instances should run briefly
 # After migration, only Kubernetes instance remains
@@ -463,10 +463,10 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 **Test 3: Rolling Migration**
 ```bash
 # Deploy to Kubernetes
-orchestr8 run --spec app.yaml --runtime kubernetes
+aether run --spec app.yaml --runtime kubernetes
 
 # Migrate to KubeVirt with rolling strategy
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 
 # Observe gradual traffic shift in logs
 ```
@@ -474,10 +474,10 @@ orchestr8 migrate my-app kubevirt --strategy rolling
 **Test 4: Rollback on Failure**
 ```bash
 # Deploy to Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Simulate failure (invalid target)
-orchestr8 migrate my-app invalid --strategy blue-green
+aether migrate my-app invalid --strategy blue-green
 
 # Should rollback and restore Podman instance
 ```
@@ -581,27 +581,27 @@ orchestr8 migrate my-app invalid --strategy blue-green
 
 ```bash
 # Development on Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Production on Kubernetes
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 ```
 
 ### Example 2: Container to VM
 
 ```bash
 # Container on Kubernetes
-orchestr8 run --spec app.yaml --runtime kubernetes
+aether run --spec app.yaml --runtime kubernetes
 
 # VM on KubeVirt
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 ```
 
 ### Example 3: Fast Migration
 
 ```bash
 # Quick switch without validation
-orchestr8 migrate my-app kubernetes \
+aether migrate my-app kubernetes \
   --strategy immediate \
   --no-validation
 ```
@@ -610,7 +610,7 @@ orchestr8 migrate my-app kubernetes \
 
 ```bash
 # No rollback on failure (manual intervention required)
-orchestr8 migrate my-app kubernetes \
+aether migrate my-app kubernetes \
   --strategy blue-green \
   --no-rollback
 ```
@@ -667,7 +667,7 @@ Inline code comments explain:
 
 **Phase 6 Complete! ALL PHASES COMPLETE! 🎉**
 
-Added full migration engine to Orchestr8:
+Added full migration engine to Aether:
 
 ### What Works
 
@@ -706,18 +706,18 @@ Added full migration engine to Orchestr8:
 
 ```bash
 # Migrate workloads between any runtimes
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # Monitor with TUI
-orchestr8 tui
+aether tui
 
 # All 9 commands fully operational
-orchestr8 --help
+aether --help
 ```
 
 ---
 
-**🔄 Orchestr8 is Complete!**
+**🔄 Aether is Complete!**
 
 **One spec. Four runtimes. One tool. Seamless migration.**
 

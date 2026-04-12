@@ -1,8 +1,8 @@
-# GitLab CI/CD Pipeline for Orchestr8
+# GitLab CI/CD Pipeline for Aether
 # Demonstrates multi-stage deployment with cost analysis and automated rollback
 
 variables:
-  ORCHESTR8_VERSION: "0.1.0"
+  AETHER_VERSION: "0.1.0"
   WORKLOAD_SPEC: "workloads/app.yaml"
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
@@ -16,11 +16,11 @@ stages:
   - cleanup
 
 # Reusable configuration
-.install_orchestr8: &install_orchestr8
-  - curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
-  - chmod +x orchestr8-linux-amd64
-  - mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
-  - orchestr8 --version
+.install_aether: &install_aether
+  - curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+  - chmod +x aether-linux-amd64
+  - mv aether-linux-amd64 /usr/local/bin/aether
+  - aether --version
 
 # Stage 1: Validate workload specification
 validate:spec:
@@ -28,10 +28,10 @@ validate:spec:
   image: alpine:latest
   before_script:
     - apk add --no-cache curl yq
-    - *install_orchestr8
+    - *install_aether
   script:
     - echo "Validating workload specification..."
-    - orchestr8 -s $WORKLOAD_SPEC validate
+    - aether -s $WORKLOAD_SPEC validate
     - yq eval $WORKLOAD_SPEC > /dev/null
     - echo "✅ Validation successful"
   only:
@@ -44,10 +44,10 @@ cost:estimate:
   image: alpine:latest
   before_script:
     - apk add --no-cache curl
-    - *install_orchestr8
+    - *install_aether
   script:
     - echo "Estimating deployment costs..."
-    - orchestr8 -s $WORKLOAD_SPEC cost --provider all | tee cost-report.txt
+    - aether -s $WORKLOAD_SPEC cost --provider all | tee cost-report.txt
     - echo "Cost estimation completed"
   artifacts:
     reports:
@@ -123,24 +123,24 @@ deploy:staging:
     on_stop: stop:staging
   before_script:
     - apk add --no-cache curl kubectl yq
-    - *install_orchestr8
+    - *install_aether
     - mkdir -p $HOME/.kube
     - echo "$KUBE_CONFIG_STAGING" | base64 -d > $HOME/.kube/config
   script:
     - echo "Creating pre-deployment backup..."
-    - orchestr8 backup -n "staging-pre-deploy-$(date +%Y%m%d-%H%M%S)"
+    - aether backup -n "staging-pre-deploy-$(date +%Y%m%d-%H%M%S)"
 
     - echo "Updating workload spec with new image..."
     - yq eval ".image.tag = \"$CI_COMMIT_SHORT_SHA\"" -i $WORKLOAD_SPEC
 
     - echo "Deploying to staging..."
-    - orchestr8 -s $WORKLOAD_SPEC run --runtime kubernetes
+    - aether -s $WORKLOAD_SPEC run --runtime kubernetes
 
     - echo "Waiting for deployment..."
     - kubectl wait --for=condition=ready pod -l app=myapp --timeout=300s
 
     - echo "Checking deployment status..."
-    - orchestr8 status myapp
+    - aether status myapp
 
     - echo "Running health checks..."
     - apk add --no-cache curl
@@ -160,9 +160,9 @@ stop:staging:
     action: stop
   before_script:
     - apk add --no-cache curl
-    - *install_orchestr8
+    - *install_aether
   script:
-    - orchestr8 delete myapp
+    - aether delete myapp
   when: manual
   only:
     - develop
@@ -197,21 +197,21 @@ deploy:production:
     on_stop: rollback:production
   before_script:
     - apk add --no-cache curl kubectl yq
-    - *install_orchestr8
+    - *install_aether
     - mkdir -p $HOME/.kube
     - echo "$KUBE_CONFIG_PRODUCTION" | base64 -d > $HOME/.kube/config
   script:
     - echo "Creating production backup..."
-    - orchestr8 backup -n "prod-pre-deploy-$(date +%Y%m%d-%H%M%S)" -d "Pre-deployment backup for commit $CI_COMMIT_SHORT_SHA"
+    - aether backup -n "prod-pre-deploy-$(date +%Y%m%d-%H%M%S)" -d "Pre-deployment backup for commit $CI_COMMIT_SHORT_SHA"
 
     - echo "Updating workload spec..."
     - yq eval ".image.tag = \"$CI_COMMIT_SHORT_SHA\"" -i $WORKLOAD_SPEC
 
     - echo "Deploying to production with blue-green strategy..."
-    - orchestr8 migrate myapp kubernetes --strategy blue-green
+    - aether migrate myapp kubernetes --strategy blue-green
 
     - echo "Verifying production deployment..."
-    - orchestr8 status myapp
+    - aether status myapp
     - kubectl get pods -l app=myapp
 
     - echo "Running smoke tests..."
@@ -232,11 +232,11 @@ rollback:production:
     action: rollback
   before_script:
     - apk add --no-cache curl
-    - *install_orchestr8
+    - *install_aether
   script:
     - echo "Rolling back production deployment..."
-    - LATEST_BACKUP=$(orchestr8 list-backups | grep prod-pre-deploy | head -1 | awk '{print $2}')
-    - orchestr8 restore $LATEST_BACKUP
+    - LATEST_BACKUP=$(aether list-backups | grep prod-pre-deploy | head -1 | awk '{print $2}')
+    - aether restore $LATEST_BACKUP
     - echo "✅ Rollback completed"
   when: manual
   only:
@@ -248,11 +248,11 @@ cleanup:backups:
   image: alpine:latest
   before_script:
     - apk add --no-cache curl findutils
-    - *install_orchestr8
+    - *install_aether
   script:
     - echo "Cleaning up old backups (keeping last 7 days)..."
-    - find ~/.orchestr8/backups -name "*.json" -mtime +7 -delete
-    - orchestr8 list-backups
+    - find ~/.aether/backups -name "*.json" -mtime +7 -delete
+    - aether list-backups
   only:
     - schedules
   when: always
@@ -288,7 +288,7 @@ performance:benchmark:
   image: alpine:latest
   before_script:
     - apk add --no-cache curl apache2-utils
-    - *install_orchestr8
+    - *install_aether
   script:
     - echo "Running performance benchmarks..."
     - ab -n 10000 -c 100 https://staging.example.com/ > benchmark.txt
@@ -312,11 +312,11 @@ review:start:
     auto_stop_in: 1 week
   before_script:
     - apk add --no-cache curl kubectl yq
-    - *install_orchestr8
+    - *install_aether
   script:
     - yq eval ".metadata.name = \"app-$CI_COMMIT_REF_SLUG\"" -i $WORKLOAD_SPEC
     - yq eval ".image.tag = \"$CI_COMMIT_SHORT_SHA\"" -i $WORKLOAD_SPEC
-    - orchestr8 -s $WORKLOAD_SPEC run --runtime kubernetes
+    - aether -s $WORKLOAD_SPEC run --runtime kubernetes
   only:
     - merge_requests
   when: manual
@@ -329,9 +329,9 @@ review:stop:
     action: stop
   before_script:
     - apk add --no-cache curl
-    - *install_orchestr8
+    - *install_aether
   script:
-    - orchestr8 delete app-$CI_COMMIT_REF_SLUG
+    - aether delete app-$CI_COMMIT_REF_SLUG
   only:
     - merge_requests
   when: manual

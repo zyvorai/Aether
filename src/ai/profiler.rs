@@ -553,7 +553,7 @@ mod tests {
 
     fn create_test_workload() -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),

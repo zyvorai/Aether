@@ -1,4 +1,4 @@
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -16,7 +16,7 @@ metadata:
 build:
   context: .
   dockerfile: Dockerfile
-  registry: docker.io/yourorg/orchestr8
+  registry: docker.io/yourorg/aether
   buildArgs:
     VERSION: "2.0.0"
     BUILD_DATE: "2024-02-06"

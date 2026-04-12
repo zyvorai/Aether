@@ -153,7 +153,7 @@ pub async fn create_runtime(kind: &RuntimeKind) -> crate::Result<Box<dyn Runtime
 
 /// Create a runtime instance with an explicit namespace override.
 /// When `namespace` is `Some`, kube-based runtimes use it instead of the
-/// `ORCHESTR8_NAMESPACE` env var or the default `"default"`.
+/// `AETHER_NAMESPACE` env var or the default `"default"`.
 pub async fn create_runtime_ns(
     kind: &RuntimeKind,
     namespace: Option<&str>,

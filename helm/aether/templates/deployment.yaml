@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "orchestr8.fullname" . }}
+  name: {{ include "aether.fullname" . }}
   labels:
-    {{- include "orchestr8.labels" . | nindent 4 }}
+    {{- include "aether.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "orchestr8.selectorLabels" . | nindent 6 }}
+      {{- include "aether.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -19,13 +19,13 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "orchestr8.selectorLabels" . | nindent 8 }}
+        {{- include "aether.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "orchestr8.serviceAccountName" . }}
+      serviceAccountName: {{ include "aether.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -41,12 +41,12 @@ spec:
             # Keep container running (operator mode)
             tail -f /dev/null
         env:
-        - name: ORCHESTR8_NAMESPACE
-          value: {{ .Values.orchestr8.namespace | quote }}
+        - name: AETHER_NAMESPACE
+          value: {{ .Values.aether.namespace | quote }}
         - name: RUST_LOG
-          value: {{ .Values.orchestr8.logging.level | quote }}
-        {{- if .Values.orchestr8.metrics.enabled }}
-        - name: ORCHESTR8_METRICS_ENABLED
+          value: {{ .Values.aether.logging.level | quote }}
+        {{- if .Values.aether.metrics.enabled }}
+        - name: AETHER_METRICS_ENABLED
           value: "true"
         {{- end }}
         ports:
@@ -61,14 +61,14 @@ spec:
         livenessProbe:
           exec:
             command:
-            - /usr/local/bin/orchestr8
+            - /usr/local/bin/aether
             - --help
           initialDelaySeconds: 10
           periodSeconds: 30
         readinessProbe:
           exec:
             command:
-            - /usr/local/bin/orchestr8
+            - /usr/local/bin/aether
             - --help
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -76,10 +76,10 @@ spec:
           {{- toYaml .Values.resources | nindent 12 }}
         volumeMounts:
         - name: state
-          mountPath: {{ .Values.orchestr8.stateStorage.mountPath }}
+          mountPath: {{ .Values.aether.stateStorage.mountPath }}
         {{- if .Values.config.files }}
         - name: config
-          mountPath: /etc/orchestr8/config
+          mountPath: /etc/aether/config
           readOnly: true
         {{- end }}
         - name: tmp
@@ -88,14 +88,14 @@ spec:
       - name: state
         {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ include "orchestr8.fullname" . }}-state
+          claimName: {{ include "aether.fullname" . }}-state
         {{- else }}
         emptyDir: {}
         {{- end }}
       {{- if .Values.config.files }}
       - name: config
         configMap:
-          name: {{ include "orchestr8.fullname" . }}-config
+          name: {{ include "aether.fullname" . }}-config
       {{- end }}
       - name: tmp
         emptyDir: {}

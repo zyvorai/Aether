@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Orchestr8 will be documented in this file.
+All notable changes to Aether will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,13 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Namespace Override:** New `-n` / `--namespace` CLI flag and `ORCHESTR8_NAMESPACE` environment variable to override the Kubernetes namespace for all kube-based runtimes (Kubernetes, KubeVirt, Metal3). The flag takes precedence over the env var.
+- **Namespace Override:** New `-n` / `--namespace` CLI flag and `AETHER_NAMESPACE` environment variable to override the Kubernetes namespace for all kube-based runtimes (Kubernetes, KubeVirt, Metal3). The flag takes precedence over the env var.
 - **Kubernetes Volume Mounts:** ConfigMaps, Secrets, and PVCs are now auto-mounted as volumes in pod manifests:
   - ConfigMaps with `mount_path` are mounted as read-only volumes
   - Secrets with `mount_path` are mounted as read-only volumes
   - PVCs are auto-mounted at `/data` when `persistence.enabled: true`
 - **Podman Health Checks:** Workload health probes (HTTP, TCP, Exec) are now mapped to native Podman `--health-cmd` flags with configurable interval and start period. Containers use `--restart on-failure:3` for automatic restart resilience.
-- **Podman Health-Aware Status:** `orchestr8 status` now reports Podman health check status (healthy/unhealthy/starting), restart counts, and health-aware readiness from `podman inspect`.
+- **Podman Health-Aware Status:** `aether status` now reports Podman health check status (healthy/unhealthy/starting), restart counts, and health-aware readiness from `podman inspect`.
 - **Alert Rule Evaluation:** The `orchestrate watch` loop now evaluates alert rules against live system metrics (SLA uptime, restart counts, drift, policy violations, secret expiry) each cycle, with per-rule cooldown support.
 - **Plugin Runtime IPC:** Plugins now fully implement the `Runtime` trait via stdin/stdout JSON-RPC. The `PluginRuntime` struct handles `build`, `run`, `stop`, `status`, `delete`, and `list` operations with 60-second timeout, capability checking, and structured error reporting.
 - **New CLI Commands:**
@@ -27,11 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `plugin list/discover/register/remove` - Runtime plugin management system
   - `health` - View workload health history, uptime percentage, and timeline
 - **Compose Module (`compose`):** Multi-workload compose file with topological dependency resolution (Kahn's algorithm), circular dependency detection, and per-workload runtime overrides
-- **Plugin Module (`plugin`):** Runtime extension system with JSON manifest discovery from `~/.orchestr8/plugins/`, JSON-RPC style protocol for plugin communication, and persistent registry
+- **Plugin Module (`plugin`):** Runtime extension system with JSON manifest discovery from `~/.aether/plugins/`, JSON-RPC style protocol for plugin communication, and persistent registry
 - **Health Module (`health`):** Workload health history tracking with bounded ring buffer (max 1000 records), uptime calculation, restart tracking, and timeline views
 - **Output Formats:** New `--output` flag supporting `table` (default), `json`, `yaml`, and `wide` formats for `list`, `status`, and `health` commands
 - **Dry Run Mode:** Global `--dry-run` flag for `run`, `stop`, `delete`, and `migrate` commands shows what would happen without executing
-- **Interactive Runtime Selector:** `orchestr8 run` now shows an interactive menu for manual runtime selection when no `--runtime` is specified
+- **Interactive Runtime Selector:** `aether run` now shows an interactive menu for manual runtime selection when no `--runtime` is specified
 - **TUI Search/Filter:** Press `/` in the TUI dashboard to filter workloads by name or runtime; `Esc` to clear
 - **TUI Resource Panel:** Detail panel now shows CPU, memory, storage, and GPU requirements from the workload spec
 - **REST API Endpoints:**
@@ -77,8 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Orchestrator:** Corrupted `circuit_opened_at` timestamps no longer silently reset the cooldown timer; circuit remains Open and requires manual reset
 - **Orchestrator:** Clarified history trimming to prevent unbounded growth
 - **KubeVirt Adapter:** Replaced hard-coded 5-second sleep with proper DataVolume polling loop (2s interval, 60s timeout)
-- **Metal3 Adapter:** MAC address and image URL now read from workload annotations (`orchestr8.io/boot-mac-address`, `orchestr8.io/image-url`, `orchestr8.io/image-checksum-url`) with fallback to placeholders and warnings
-- **Secrets:** Added explicit warnings that XOR obfuscation is NOT cryptographically secure, even when a custom key is set via `ORCHESTR8_SECRET_KEY`
+- **Metal3 Adapter:** MAC address and image URL now read from workload annotations (`aether.io/boot-mac-address`, `aether.io/image-url`, `aether.io/image-checksum-url`) with fallback to placeholders and warnings
+- **Secrets:** Added explicit warnings that XOR obfuscation is NOT cryptographically secure, even when a custom key is set via `AETHER_SECRET_KEY`
 - **Scheduler:** Over-committed placements now rejected with error instead of logging a warning and proceeding
 - **API Handlers:** State reload failure after migration now returns HTTP 500 error instead of silent HTTP 200
 - **API Handlers:** `ai_analyze_logs` properly handles serialization errors instead of `unwrap_or_default()`
@@ -118,7 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Access audit logging with timestamps and actors
   - Rotation policy enforcement with configurable intervals
   - Rotation audit alerts (warning/critical severity)
-  - Persistence to `~/.orchestr8/secrets.json`
+  - Persistence to `~/.aether/secrets.json`
   - CLI commands: `secrets create|set|get|list|audit`
   - API endpoint: `GET /api/secrets`
 
@@ -176,14 +176,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - API endpoint: `GET /api/affinity/:class`
 
 - **Metrics Expansion:**
-  - Scheduler placement metrics (`orchestr8_scheduler_placements_total`)
-  - Health check metrics (`orchestr8_health_checks_total`)
-  - Circuit breaker event metrics (`orchestr8_circuit_breaker_events_total`)
-  - Orchestrator restart metrics (`orchestr8_orchestrator_restarts_total`)
-  - Secret operation metrics (`orchestr8_secret_operations_total`)
-  - Event emission metrics (`orchestr8_events_emitted_total`)
-  - Environment promotion metrics (`orchestr8_env_promotions_total`)
-  - Affinity recommendation metrics (`orchestr8_affinity_recommendations_total`)
+  - Scheduler placement metrics (`aether_scheduler_placements_total`)
+  - Health check metrics (`aether_health_checks_total`)
+  - Circuit breaker event metrics (`aether_circuit_breaker_events_total`)
+  - Orchestrator restart metrics (`aether_orchestrator_restarts_total`)
+  - Secret operation metrics (`aether_secret_operations_total`)
+  - Event emission metrics (`aether_events_emitted_total`)
+  - Environment promotion metrics (`aether_env_promotions_total`)
+  - Affinity recommendation metrics (`aether_affinity_recommendations_total`)
 
 - **Web Dashboard:**
   - Complete rewrite with 10-tab navigation
@@ -392,7 +392,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Podman runtime adapter
   - Runtime trait system
   - Decision engine for automatic runtime selection
-  - State management (~/.orchestr8/state.json)
+  - State management (~/.aether/state.json)
   - CLI with 8 commands (validate, build, run, stop, status, logs, delete, list)
   - Comprehensive tests (9 tests passing)
 
@@ -486,7 +486,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory usage: 5-15MB
 - TUI refresh: 450ms for 10 workloads
 
-[0.3.0]: https://github.com/ssahani/orchestr8/compare/v0.2.1...v0.3.0
-[0.2.1]: https://github.com/ssahani/orchestr8/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/ssahani/orchestr8/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/ssahani/orchestr8/releases/tag/v0.1.0
+[0.3.0]: https://github.com/ssahani/aether/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/ssahani/aether/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/ssahani/aether/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/ssahani/aether/releases/tag/v0.1.0

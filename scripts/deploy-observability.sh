@@ -1,5 +1,5 @@
 #!/bin/bash
-# Deploy Observability Stack for Orchestr8
+# Deploy Observability Stack for Aether
 # Complete monitoring, logging, and alerting infrastructure
 
 set -e
@@ -145,7 +145,7 @@ echo ""
 print_header "Next Steps"
 echo ""
 echo "1. Access Grafana and change the default admin password"
-echo "2. Import Orchestr8 dashboard:"
+echo "2. Import Aether dashboard:"
 echo "   - Navigate to Dashboards → Import"
 echo "   - Upload grafana/dashboard.json"
 echo "   - Select Prometheus data source"
@@ -157,7 +157,7 @@ echo "   - Reload: kubectl rollout restart deployment/alertmanager -n ${NAMESPAC
 echo ""
 echo "4. Verify metrics collection:"
 echo "   - Check Prometheus targets: http://localhost:9090/targets"
-echo "   - Verify Orchestr8 metrics are being scraped"
+echo "   - Verify Aether metrics are being scraped"
 echo ""
 
 print_status "success" "Observability stack deployed successfully!"

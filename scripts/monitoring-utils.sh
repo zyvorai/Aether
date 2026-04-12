@@ -1,5 +1,5 @@
 #!/bin/bash
-# Monitoring Utilities for Orchestr8
+# Monitoring Utilities for Aether
 # Common operations for observability stack management
 
 set -e
@@ -243,7 +243,7 @@ send_test_alert() {
         "labels": {
             "alertname": "TestAlert",
             "severity": "warning",
-            "component": "orchestr8"
+            "component": "aether"
         },
         "annotations": {
             "summary": "This is a test alert",
@@ -315,7 +315,7 @@ case ${1} in
         show_urls
         ;;
     *)
-        echo "Orchestr8 Monitoring Utilities"
+        echo "Aether Monitoring Utilities"
         echo ""
         echo "Usage: $0 <command> [options]"
         echo ""

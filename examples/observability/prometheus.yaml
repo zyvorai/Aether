@@ -1,4 +1,4 @@
-# Prometheus Deployment for Orchestr8
+# Prometheus Deployment for Aether
 # Complete monitoring solution with service discovery and persistent storage
 
 ---
@@ -59,7 +59,7 @@ data:
       external_labels:
         cluster: 'production'
         environment: 'prod'
-        monitor: 'orchestr8-monitor'
+        monitor: 'aether-monitor'
 
     # AlertManager configuration
     alerting:
@@ -81,18 +81,18 @@ data:
         static_configs:
         - targets: ['localhost:9090']
 
-      # Orchestr8 API server metrics
-      - job_name: 'orchestr8-api'
+      # Aether API server metrics
+      - job_name: 'aether-api'
         kubernetes_sd_configs:
         - role: pod
           namespaces:
             names:
-            - orchestr8-production
-            - orchestr8-staging
+            - aether-production
+            - aether-staging
         relabel_configs:
         - source_labels: [__meta_kubernetes_pod_label_app]
           action: keep
-          regex: orchestr8
+          regex: aether
         - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
           action: keep
           regex: true
@@ -226,55 +226,55 @@ metadata:
   name: prometheus-rules
   namespace: observability
 data:
-  orchestr8.yml: |
+  aether.yml: |
     groups:
-    - name: orchestr8
+    - name: aether
       interval: 30s
       rules:
       # Recording rules for aggregations
-      - record: orchestr8:workload_operations:rate5m
-        expr: rate(orchestr8_workload_operations_total[5m])
+      - record: aether:workload_operations:rate5m
+        expr: rate(aether_workload_operations_total[5m])
 
-      - record: orchestr8:workload_operations:failure_ratio
+      - record: aether:workload_operations:failure_ratio
         expr: |
-          sum(rate(orchestr8_workload_operations_total{status="failed"}[5m])) by (operation)
-          / sum(rate(orchestr8_workload_operations_total[5m])) by (operation)
+          sum(rate(aether_workload_operations_total{status="failed"}[5m])) by (operation)
+          / sum(rate(aether_workload_operations_total[5m])) by (operation)
 
-      - record: orchestr8:migration:success_ratio
+      - record: aether:migration:success_ratio
         expr: |
-          sum(rate(orchestr8_migration_total{status="success"}[5m]))
-          / sum(rate(orchestr8_migration_total[5m]))
+          sum(rate(aether_migration_total{status="success"}[5m]))
+          / sum(rate(aether_migration_total[5m]))
 
       # Alerting rules
       - alert: WorkloadDeploymentFailed
         expr: |
-          increase(orchestr8_workload_operations_total{operation="run", status="failed"}[5m]) > 0
+          increase(aether_workload_operations_total{operation="run", status="failed"}[5m]) > 0
         for: 2m
         labels:
           severity: critical
-          component: orchestr8
+          component: aether
         annotations:
           summary: "Workload deployment failure detected"
           description: "Workload {{ $labels.workload }} failed to deploy in namespace {{ $labels.namespace }}"
-          runbook_url: "https://github.com/ssahani/orchestr8/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
+          runbook_url: "https://github.com/ssahani/aether/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
 
       - alert: MigrationFailureRateHigh
         expr: |
-          orchestr8:workload_operations:failure_ratio{operation="migrate"} > 0.1
+          aether:workload_operations:failure_ratio{operation="migrate"} > 0.1
         for: 10m
         labels:
           severity: warning
-          component: orchestr8
+          component: aether
         annotations:
           summary: "High migration failure rate"
           description: "Migration failure rate is {{ $value | humanizePercentage }}"
 
       - alert: RuntimeUnavailable
-        expr: orchestr8_runtime_available{runtime!=""} == 0
+        expr: aether_runtime_available{runtime!=""} == 0
         for: 5m
         labels:
           severity: critical
-          component: orchestr8
+          component: aether
         annotations:
           summary: "Runtime {{ $labels.runtime }} is unavailable"
           description: "Runtime {{ $labels.runtime }} has been unavailable for 5 minutes"

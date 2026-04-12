@@ -1,6 +1,6 @@
 # ML Training Pipeline Example
 
-Complete machine learning pipeline demonstrating GPU-accelerated training, distributed computing, and model deployment using Orchestr8.
+Complete machine learning pipeline demonstrating GPU-accelerated training, distributed computing, and model deployment using Aether.
 
 ## Architecture
 
@@ -114,13 +114,13 @@ kubectl create namespace ml-pipeline
 
 ```bash
 # 1. Deploy feature store (Redis)
-orchestr8 -s infrastructure/redis.yaml run
+aether -s infrastructure/redis.yaml run
 
 # 2. Deploy model registry (MinIO)
-orchestr8 -s infrastructure/minio.yaml run
+aether -s infrastructure/minio.yaml run
 
 # 3. Deploy experiment tracking (MLflow)
-orchestr8 -s infrastructure/mlflow.yaml run
+aether -s infrastructure/mlflow.yaml run
 
 # 4. Deploy monitoring
 kubectl apply -f monitoring/prometheus.yaml
@@ -131,16 +131,16 @@ kubectl apply -f monitoring/grafana.yaml
 
 ```bash
 # 1. Data ingestion job
-orchestr8 -s pipeline/data-ingestion.yaml run
+aether -s pipeline/data-ingestion.yaml run
 
 # 2. Data processing (Spark)
-orchestr8 -s pipeline/spark-processing.yaml run
+aether -s pipeline/spark-processing.yaml run
 
 # 3. Training cluster
-orchestr8 -s training/bert-training.yaml run
+aether -s training/bert-training.yaml run
 
 # 4. Model serving
-orchestr8 -s serving/torchserve.yaml run
+aether -s serving/torchserve.yaml run
 ```
 
 ## Training Workflows
@@ -149,10 +149,10 @@ orchestr8 -s serving/torchserve.yaml run
 
 ```bash
 # Train on single GPU
-orchestr8 -s training/single-gpu-training.yaml run
+aether -s training/single-gpu-training.yaml run
 
 # Monitor progress
-orchestr8 logs bert-training --follow
+aether logs bert-training --follow
 
 # Access TensorBoard
 kubectl port-forward -n ml-pipeline svc/tensorboard 6006:6006
@@ -163,7 +163,7 @@ kubectl port-forward -n ml-pipeline svc/tensorboard 6006:6006
 
 ```bash
 # Deploy distributed training
-orchestr8 -s training/distributed-training.yaml run
+aether -s training/distributed-training.yaml run
 
 # Monitor all workers
 kubectl logs -n ml-pipeline -l job=training --all-containers=true -f
@@ -176,7 +176,7 @@ kubectl exec -n ml-pipeline bert-training-master-0 -- nvidia-smi
 
 ```bash
 # Launch Optuna study
-orchestr8 -s training/hyperparameter-search.yaml run
+aether -s training/hyperparameter-search.yaml run
 
 # Monitor study progress
 kubectl logs -n ml-pipeline -l app=optuna-study -f
@@ -205,7 +205,7 @@ kubectl apply -f pipeline/data-ingestion-cron.yaml
 
 ```bash
 # Run Spark job
-orchestr8 -s pipeline/feature-engineering.yaml run
+aether -s pipeline/feature-engineering.yaml run
 
 # Monitor Spark UI
 kubectl port-forward -n ml-pipeline svc/spark-ui 4040:4040
@@ -282,7 +282,7 @@ yq eval '.env.MODEL_URI = "models:/bert-classifier/production"' \
   -i serving/torchserve.yaml
 
 # Deploy
-orchestr8 -s serving/torchserve.yaml run
+aether -s serving/torchserve.yaml run
 
 # Wait for ready
 kubectl wait --for=condition=ready pod -l app=model-server -n ml-pipeline
@@ -363,7 +363,7 @@ groups:
 
 ```bash
 # Training cluster cost
-orchestr8 -s training/distributed-training.yaml cost --provider aws
+aether -s training/distributed-training.yaml cost --provider aws
 # Expected: ~$50/hour (4x V100 instances)
 
 # Total pipeline cost
@@ -530,7 +530,7 @@ jobs:
     steps:
       - name: Trigger training
         run: |
-          orchestr8 -s training/weekly-training.yaml run
+          aether -s training/weekly-training.yaml run
 
       - name: Monitor training
         run: |
@@ -539,7 +539,7 @@ jobs:
       - name: Deploy if improved
         run: |
           if [ $(check-metrics.sh) -eq 0 ]; then
-            orchestr8 -s serving/torchserve.yaml run
+            aether -s serving/torchserve.yaml run
           fi
 ```
 
@@ -576,7 +576,7 @@ kubectl exec -n ml-pipeline training-pod-0 -- \
 
 ```bash
 # Check model server logs
-orchestr8 logs model-server
+aether logs model-server
 
 # Test health endpoint
 curl http://model-server/ping
@@ -631,5 +631,5 @@ kubectl top pod -n ml-pipeline -l app=model-server
 ## Support
 
 For ML pipeline questions:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `example-ml-pipeline`

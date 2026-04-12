@@ -1,6 +1,6 @@
-# Orchestr8 Packaging
+# Aether Packaging
 
-This directory contains packaging specifications for distributing Orchestr8 across different Linux distributions.
+This directory contains packaging specifications for distributing Aether across different Linux distributions.
 
 ## Supported Formats
 
@@ -14,36 +14,36 @@ This directory contains packaging specifications for distributing Orchestr8 acro
 
 ```bash
 # Download DEB package
-wget https://github.com/ssahani/orchestr8/releases/download/v0.1.0/orchestr8_0.1.0-1_amd64.deb
+wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether_0.1.0-1_amd64.deb
 
 # Install
-sudo dpkg -i orchestr8_0.1.0-1_amd64.deb
+sudo dpkg -i aether_0.1.0-1_amd64.deb
 
 # Or use apt
-sudo apt install ./orchestr8_0.1.0-1_amd64.deb
+sudo apt install ./aether_0.1.0-1_amd64.deb
 ```
 
 ### Fedora/RHEL/CentOS
 
 ```bash
 # Download RPM package
-wget https://github.com/ssahani/orchestr8/releases/download/v0.1.0/orchestr8-0.1.0-1.x86_64.rpm
+wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install
-sudo rpm -ivh orchestr8-0.1.0-1.x86_64.rpm
+sudo rpm -ivh aether-0.1.0-1.x86_64.rpm
 
 # Or use dnf/yum
-sudo dnf install orchestr8-0.1.0-1.x86_64.rpm
+sudo dnf install aether-0.1.0-1.x86_64.rpm
 ```
 
 ### openSUSE
 
 ```bash
 # Download RPM package
-wget https://github.com/ssahani/orchestr8/releases/download/v0.1.0/orchestr8-0.1.0-1.x86_64.rpm
+wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install
-sudo zypper install orchestr8-0.1.0-1.x86_64.rpm
+sudo zypper install aether-0.1.0-1.x86_64.rpm
 ```
 
 ## Building Packages
@@ -70,7 +70,7 @@ sudo dnf install rpm-build rpmdevtools cargo rust
 dpkg-buildpackage -us -uc -b
 
 # Package will be created in parent directory
-ls ../orchestr8_0.1.0-1_amd64.deb
+ls ../aether_0.1.0-1_amd64.deb
 ```
 
 ### Build RPM Package
@@ -80,13 +80,13 @@ ls ../orchestr8_0.1.0-1_amd64.deb
 rpmdev-setuptree
 
 # Copy source
-tar czf ~/rpmbuild/SOURCES/orchestr8-0.1.0.tar.gz .
+tar czf ~/rpmbuild/SOURCES/aether-0.1.0.tar.gz .
 
 # Build package
-rpmbuild -bb rpm/orchestr8.spec
+rpmbuild -bb rpm/aether.spec
 
 # Package will be in
-ls ~/rpmbuild/RPMS/x86_64/orchestr8-0.1.0-1.*.x86_64.rpm
+ls ~/rpmbuild/RPMS/x86_64/aether-0.1.0-1.*.x86_64.rpm
 ```
 
 ## Package Contents
@@ -94,22 +94,22 @@ ls ~/rpmbuild/RPMS/x86_64/orchestr8-0.1.0-1.*.x86_64.rpm
 Both DEB and RPM packages include:
 
 ### Binaries
-- `/usr/bin/orchestr8` - Main executable
+- `/usr/bin/aether` - Main executable
 
 ### Data Files
-- `/usr/share/orchestr8/schema/workload.schema.json` - JSON Schema
+- `/usr/share/aether/schema/workload.schema.json` - JSON Schema
 
 ### Shell Completions
-- `/usr/share/bash-completion/completions/orchestr8` - Bash
-- `/usr/share/zsh/site-functions/_orchestr8` - Zsh
-- `/usr/share/fish/vendor_completions.d/orchestr8.fish` - Fish
+- `/usr/share/bash-completion/completions/aether` - Bash
+- `/usr/share/zsh/site-functions/_aether` - Zsh
+- `/usr/share/fish/vendor_completions.d/aether.fish` - Fish
 
 ### Documentation
-- `/usr/share/doc/orchestr8/README.md`
-- `/usr/share/doc/orchestr8/CHANGELOG.md`
-- `/usr/share/doc/orchestr8/METRICS.md`
-- `/usr/share/doc/orchestr8/SCHEMA.md`
-- `/usr/share/doc/orchestr8/examples/`
+- `/usr/share/doc/aether/README.md`
+- `/usr/share/doc/aether/CHANGELOG.md`
+- `/usr/share/doc/aether/METRICS.md`
+- `/usr/share/doc/aether/SCHEMA.md`
+- `/usr/share/doc/aether/examples/`
 
 ## Continuous Integration
 
@@ -129,36 +129,36 @@ Artifacts are attached to GitHub releases.
 
 ```bash
 # Add GPG key
-wget -O- https://packagecloud.io/orchestr8/stable/gpgkey | sudo apt-key add -
+wget -O- https://packagecloud.io/aether/stable/gpgkey | sudo apt-key add -
 
 # Add repository
-echo "deb https://packagecloud.io/orchestr8/stable/ubuntu/ jammy main" | \
-  sudo tee /etc/apt/sources.list.d/orchestr8.list
+echo "deb https://packagecloud.io/aether/stable/ubuntu/ jammy main" | \
+  sudo tee /etc/apt/sources.list.d/aether.list
 
 # Update and install
 sudo apt update
-sudo apt install orchestr8
+sudo apt install aether
 ```
 
 ### YUM/DNF Repository (Fedora/RHEL)
 
 ```bash
 # Add repository
-sudo tee /etc/yum.repos.d/orchestr8.repo <<EOF
-[orchestr8]
-name=Orchestr8 Repository
-baseurl=https://packagecloud.io/orchestr8/stable/rpm_any/rpm_any/\$basearch
+sudo tee /etc/yum.repos.d/aether.repo <<EOF
+[aether]
+name=Aether Repository
+baseurl=https://packagecloud.io/aether/stable/rpm_any/rpm_any/\$basearch
 repo_gpgcheck=1
 gpgcheck=0
 enabled=1
-gpgkey=https://packagecloud.io/orchestr8/stable/gpgkey
+gpgkey=https://packagecloud.io/aether/stable/gpgkey
 sslverify=1
 sslcacert=/etc/pki/tls/certs/ca-bundle.crt
 metadata_expire=300
 EOF
 
 # Install
-sudo dnf install orchestr8
+sudo dnf install aether
 ```
 
 ## Verification
@@ -167,28 +167,28 @@ sudo dnf install orchestr8
 
 #### DEB
 ```bash
-dpkg -c orchestr8_0.1.0-1_amd64.deb  # List contents
-dpkg -I orchestr8_0.1.0-1_amd64.deb  # Show info
+dpkg -c aether_0.1.0-1_amd64.deb  # List contents
+dpkg -I aether_0.1.0-1_amd64.deb  # Show info
 ```
 
 #### RPM
 ```bash
-rpm -qpl orchestr8-0.1.0-1.x86_64.rpm  # List contents
-rpm -qpi orchestr8-0.1.0-1.x86_64.rpm  # Show info
+rpm -qpl aether-0.1.0-1.x86_64.rpm  # List contents
+rpm -qpi aether-0.1.0-1.x86_64.rpm  # Show info
 ```
 
 ### Verify Installation
 
 ```bash
 # Check binary
-which orchestr8
-orchestr8 --version
+which aether
+aether --version
 
 # Check completions
-ls /usr/share/bash-completion/completions/orchestr8
+ls /usr/share/bash-completion/completions/aether
 
 # Check documentation
-ls /usr/share/doc/orchestr8/
+ls /usr/share/doc/aether/
 ```
 
 ## Uninstallation
@@ -196,17 +196,17 @@ ls /usr/share/doc/orchestr8/
 ### Debian/Ubuntu
 
 ```bash
-sudo apt remove orchestr8
+sudo apt remove aether
 # or
-sudo dpkg -r orchestr8
+sudo dpkg -r aether
 ```
 
 ### Fedora/RHEL
 
 ```bash
-sudo dnf remove orchestr8
+sudo dnf remove aether
 # or
-sudo rpm -e orchestr8
+sudo rpm -e aether
 ```
 
 ## Troubleshooting
@@ -220,7 +220,7 @@ sudo apt install -f
 ### Missing Dependencies (RPM)
 
 ```bash
-sudo dnf install --allowerasing orchestr8
+sudo dnf install --allowerasing aether
 ```
 
 ### Permission Issues
@@ -235,20 +235,20 @@ sudo -v
 To improve packaging:
 
 1. Test on target distribution
-2. Update `debian/control` or `rpm/orchestr8.spec`
+2. Update `debian/control` or `rpm/aether.spec`
 3. Rebuild and test package
 4. Submit pull request
 
 ## Package Hosting
 
 Packages are hosted on:
-- GitHub Releases: https://github.com/ssahani/orchestr8/releases
-- PackageCloud (optional): https://packagecloud.io/orchestr8/stable
+- GitHub Releases: https://github.com/ssahani/aether/releases
+- PackageCloud (optional): https://packagecloud.io/aether/stable
 
 ## Support
 
 For packaging issues:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `packaging`
 
 ## References

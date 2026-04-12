@@ -1,4 +1,4 @@
-//! Prometheus metrics for Orchestr8
+//! Prometheus metrics for Aether
 //!
 //! Tracks workload deployments, runtime distribution, and migration operations.
 
@@ -14,8 +14,8 @@ pub static REGISTRY: LazyLock<Registry> = LazyLock::new(Registry::new);
 /// Total number of workload build operations
 pub static WORKLOAD_BUILDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("orchestr8_workload_builds_total", "Total number of workload builds")
-            .namespace("orchestr8"),
+        Opts::new("aether_workload_builds_total", "Total number of workload builds")
+            .namespace("aether"),
         &["runtime", "status"],
     )
     .expect("metric can be created")
@@ -25,10 +25,10 @@ pub static WORKLOAD_BUILDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 pub static WORKLOAD_DEPLOYMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
         Opts::new(
-            "orchestr8_workload_deployments_total",
+            "aether_workload_deployments_total",
             "Total number of workload deployments",
         )
-        .namespace("orchestr8"),
+        .namespace("aether"),
         &["runtime", "status"],
     )
     .expect("metric can be created")
@@ -37,8 +37,8 @@ pub static WORKLOAD_DEPLOYMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Currently running workloads
 pub static WORKLOAD_RUNNING: LazyLock<GaugeVec> = LazyLock::new(|| {
     GaugeVec::new(
-        Opts::new("orchestr8_workload_running", "Number of currently running workloads")
-            .namespace("orchestr8"),
+        Opts::new("aether_workload_running", "Number of currently running workloads")
+            .namespace("aether"),
         &["runtime"],
     )
     .expect("metric can be created")
@@ -47,8 +47,8 @@ pub static WORKLOAD_RUNNING: LazyLock<GaugeVec> = LazyLock::new(|| {
 /// Workload state distribution
 pub static WORKLOAD_STATE: LazyLock<GaugeVec> = LazyLock::new(|| {
     GaugeVec::new(
-        Opts::new("orchestr8_workload_state", "Workload state distribution")
-            .namespace("orchestr8"),
+        Opts::new("aether_workload_state", "Workload state distribution")
+            .namespace("aether"),
         &["runtime", "state"],
     )
     .expect("metric can be created")
@@ -58,8 +58,8 @@ pub static WORKLOAD_STATE: LazyLock<GaugeVec> = LazyLock::new(|| {
 /// Total number of migrations
 pub static MIGRATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("orchestr8_migrations_total", "Total number of migrations")
-            .namespace("orchestr8"),
+        Opts::new("aether_migrations_total", "Total number of migrations")
+            .namespace("aether"),
         &["source_runtime", "target_runtime", "strategy", "status"],
     )
     .expect("metric can be created")
@@ -69,10 +69,10 @@ pub static MIGRATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 pub static MIGRATION_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(|| {
     HistogramVec::new(
         HistogramOpts::new(
-            "orchestr8_migration_duration_seconds",
+            "aether_migration_duration_seconds",
             "Migration duration in seconds",
         )
-        .namespace("orchestr8")
+        .namespace("aether")
         .buckets(vec![1.0, 5.0, 10.0, 30.0, 60.0, 120.0, 300.0, 600.0]),
         &["source_runtime", "target_runtime", "strategy"],
     )
@@ -83,10 +83,10 @@ pub static MIGRATION_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(||
 pub static MIGRATION_ROLLBACKS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
         Opts::new(
-            "orchestr8_migration_rollbacks_total",
+            "aether_migration_rollbacks_total",
             "Total number of migration rollbacks",
         )
-        .namespace("orchestr8"),
+        .namespace("aether"),
         &["source_runtime", "target_runtime", "strategy"],
     )
     .expect("metric can be created")
@@ -97,10 +97,10 @@ pub static MIGRATION_ROLLBACKS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 pub static RUNTIME_AVAILABLE: LazyLock<GaugeVec> = LazyLock::new(|| {
     GaugeVec::new(
         Opts::new(
-            "orchestr8_runtime_available",
+            "aether_runtime_available",
             "Runtime availability (1=available, 0=unavailable)",
         )
-        .namespace("orchestr8"),
+        .namespace("aether"),
         &["runtime"],
     )
     .expect("metric can be created")
@@ -110,21 +110,21 @@ pub static RUNTIME_AVAILABLE: LazyLock<GaugeVec> = LazyLock::new(|| {
 pub static RUNTIME_DECISION_SECONDS: LazyLock<Histogram> = LazyLock::new(|| {
     Histogram::with_opts(
         HistogramOpts::new(
-            "orchestr8_runtime_decision_seconds",
+            "aether_runtime_decision_seconds",
             "Runtime decision time in seconds",
         )
-        .namespace("orchestr8")
+        .namespace("aether")
         .buckets(vec![0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0]),
     )
     .expect("metric can be created")
 });
 
 // System metrics
-/// Orchestr8 version info
-pub static ORCHESTR8_INFO: LazyLock<Counter> = LazyLock::new(|| {
+/// Aether version info
+pub static AETHER_INFO: LazyLock<Counter> = LazyLock::new(|| {
     Counter::with_opts(
-        Opts::new("orchestr8_build_info", "Orchestr8 version and build information")
-            .namespace("orchestr8")
+        Opts::new("aether_build_info", "Aether version and build information")
+            .namespace("aether")
             .const_label("version", env!("CARGO_PKG_VERSION")),
     )
     .expect("metric can be created")
@@ -133,8 +133,8 @@ pub static ORCHESTR8_INFO: LazyLock<Counter> = LazyLock::new(|| {
 /// Total CLI commands executed
 pub static CLI_COMMANDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("orchestr8_cli_commands_total", "Total CLI commands executed")
-            .namespace("orchestr8"),
+        Opts::new("aether_cli_commands_total", "Total CLI commands executed")
+            .namespace("aether"),
         &["command"],
     )
     .expect("metric can be created")
@@ -144,10 +144,10 @@ pub static CLI_COMMANDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 pub static COMMAND_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(|| {
     HistogramVec::new(
         HistogramOpts::new(
-            "orchestr8_command_duration_seconds",
+            "aether_command_duration_seconds",
             "Command execution duration in seconds",
         )
-        .namespace("orchestr8")
+        .namespace("aether")
         .buckets(vec![0.1, 0.5, 1.0, 5.0, 10.0, 30.0, 60.0]),
         &["command"],
     )
@@ -159,10 +159,10 @@ pub static COMMAND_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(|| {
 pub static SCHEDULER_PLACEMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
         Opts::new(
-            "orchestr8_scheduler_placements_total",
+            "aether_scheduler_placements_total",
             "Total scheduler placement decisions",
         )
-        .namespace("orchestr8"),
+        .namespace("aether"),
         &["runtime", "strategy", "status"],
     )
     .expect("metric can be created")
@@ -172,8 +172,8 @@ pub static SCHEDULER_PLACEMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Health check results
 pub static HEALTH_CHECKS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("orchestr8_health_checks_total", "Total health check results")
-            .namespace("orchestr8"),
+        Opts::new("aether_health_checks_total", "Total health check results")
+            .namespace("aether"),
         &["workload", "status"],
     )
     .expect("metric can be created")
@@ -183,10 +183,10 @@ pub static HEALTH_CHECKS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 pub static CIRCUIT_BREAKER_EVENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
         Opts::new(
-            "orchestr8_circuit_breaker_events_total",
+            "aether_circuit_breaker_events_total",
             "Circuit breaker state change events",
         )
-        .namespace("orchestr8"),
+        .namespace("aether"),
         &["workload", "state"],
     )
     .expect("metric can be created")
@@ -196,10 +196,10 @@ pub static CIRCUIT_BREAKER_EVENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(||
 pub static ORCHESTRATOR_RESTARTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
         Opts::new(
-            "orchestr8_orchestrator_restarts_total",
+            "aether_orchestrator_restarts_total",
             "Auto-restarts triggered by orchestrator",
         )
-        .namespace("orchestr8"),
+        .namespace("aether"),
         &["workload", "runtime"],
     )
     .expect("metric can be created")
@@ -209,8 +209,8 @@ pub static ORCHESTRATOR_RESTARTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| 
 /// Secret operations
 pub static SECRET_OPERATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("orchestr8_secret_operations_total", "Secret management operations")
-            .namespace("orchestr8"),
+        Opts::new("aether_secret_operations_total", "Secret management operations")
+            .namespace("aether"),
         &["operation"],
     )
     .expect("metric can be created")
@@ -220,8 +220,8 @@ pub static SECRET_OPERATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Events emitted by category
 pub static EVENTS_EMITTED_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("orchestr8_events_emitted_total", "Events emitted by category")
-            .namespace("orchestr8"),
+        Opts::new("aether_events_emitted_total", "Events emitted by category")
+            .namespace("aether"),
         &["category", "severity"],
     )
     .expect("metric can be created")
@@ -231,8 +231,8 @@ pub static EVENTS_EMITTED_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Environment promotions
 pub static ENV_PROMOTIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("orchestr8_env_promotions_total", "Environment promotion operations")
-            .namespace("orchestr8"),
+        Opts::new("aether_env_promotions_total", "Environment promotion operations")
+            .namespace("aether"),
         &["from_tier", "to_tier", "status"],
     )
     .expect("metric can be created")
@@ -243,10 +243,10 @@ pub static ENV_PROMOTIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 pub static AFFINITY_RECOMMENDATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
         Opts::new(
-            "orchestr8_affinity_recommendations_total",
+            "aether_affinity_recommendations_total",
             "Affinity recommendations served",
         )
-        .namespace("orchestr8"),
+        .namespace("aether"),
         &["workload_class", "recommended_runtime"],
     )
     .expect("metric can be created")
@@ -264,7 +264,7 @@ pub fn init() {
     let _ = REGISTRY.register(Box::new(MIGRATION_ROLLBACKS_TOTAL.clone()));
     let _ = REGISTRY.register(Box::new(RUNTIME_AVAILABLE.clone()));
     let _ = REGISTRY.register(Box::new(RUNTIME_DECISION_SECONDS.clone()));
-    let _ = REGISTRY.register(Box::new(ORCHESTR8_INFO.clone()));
+    let _ = REGISTRY.register(Box::new(AETHER_INFO.clone()));
     let _ = REGISTRY.register(Box::new(CLI_COMMANDS_TOTAL.clone()));
     let _ = REGISTRY.register(Box::new(COMMAND_DURATION_SECONDS.clone()));
     let _ = REGISTRY.register(Box::new(SCHEDULER_PLACEMENTS_TOTAL.clone()));
@@ -285,10 +285,14 @@ pub fn gather() -> String {
     let encoder = prometheus::TextEncoder::new();
     let metric_families = REGISTRY.gather();
     let mut buffer = vec![];
-    encoder
-        .encode(&metric_families, &mut buffer)
-        .expect("metrics encoded");
-    String::from_utf8(buffer).expect("metrics are valid UTF-8")
+    if let Err(e) = encoder.encode(&metric_families, &mut buffer) {
+        tracing::error!("Failed to encode metrics: {}", e);
+        return format!("# Error encoding metrics: {}\n", e);
+    }
+    String::from_utf8(buffer).unwrap_or_else(|e| {
+        tracing::error!("Metrics contain invalid UTF-8: {}", e);
+        "# Error: metrics contained invalid UTF-8\n".to_string()
+    })
 }
 
 /// Record a workload build
@@ -442,7 +446,7 @@ mod tests {
     fn test_metrics_initialization() {
         init();
         let output = gather();
-        assert!(output.contains("orchestr8_build_info"));
+        assert!(output.contains("aether_build_info"));
         assert!(output.contains(env!("CARGO_PKG_VERSION")));
     }
 
@@ -452,7 +456,7 @@ mod tests {
         record_build("podman", true);
         record_build("kubernetes", false);
         let output = gather();
-        assert!(output.contains("orchestr8_workload_builds_total"));
+        assert!(output.contains("aether_workload_builds_total"));
     }
 
     #[test]
@@ -460,8 +464,8 @@ mod tests {
         init();
         record_deployment("podman", true);
         let output = gather();
-        assert!(output.contains("orchestr8_workload_deployments_total"));
-        assert!(output.contains("orchestr8_workload_running"));
+        assert!(output.contains("aether_workload_deployments_total"));
+        assert!(output.contains("aether_workload_running"));
     }
 
     #[test]
@@ -469,8 +473,8 @@ mod tests {
         init();
         record_migration("podman", "kubernetes", "blue-green", 45.2, true, false);
         let output = gather();
-        assert!(output.contains("orchestr8_migrations_total"));
-        assert!(output.contains("orchestr8_migration_duration_seconds"));
+        assert!(output.contains("aether_migrations_total"));
+        assert!(output.contains("aether_migration_duration_seconds"));
     }
 
     #[test]
@@ -479,7 +483,7 @@ mod tests {
         record_scheduler_placement("kubernetes", "balanced", true);
         record_scheduler_placement("podman", "cost-optimized", false);
         let output = gather();
-        assert!(output.contains("orchestr8_scheduler_placements_total"));
+        assert!(output.contains("aether_scheduler_placements_total"));
     }
 
     #[test]
@@ -488,7 +492,7 @@ mod tests {
         record_health_check("web-app", "healthy");
         record_health_check("worker", "unhealthy");
         let output = gather();
-        assert!(output.contains("orchestr8_health_checks_total"));
+        assert!(output.contains("aether_health_checks_total"));
     }
 
     #[test]
@@ -497,7 +501,7 @@ mod tests {
         record_circuit_breaker_event("web-app", "open");
         record_circuit_breaker_event("web-app", "closed");
         let output = gather();
-        assert!(output.contains("orchestr8_circuit_breaker_events_total"));
+        assert!(output.contains("aether_circuit_breaker_events_total"));
     }
 
     #[test]
@@ -506,7 +510,7 @@ mod tests {
         record_secret_operation("create");
         record_secret_operation("rotate");
         let output = gather();
-        assert!(output.contains("orchestr8_secret_operations_total"));
+        assert!(output.contains("aether_secret_operations_total"));
     }
 
     #[test]
@@ -515,7 +519,7 @@ mod tests {
         record_event_emitted("deployment", "info");
         record_event_emitted("sla_violation", "critical");
         let output = gather();
-        assert!(output.contains("orchestr8_events_emitted_total"));
+        assert!(output.contains("aether_events_emitted_total"));
     }
 
     #[test]
@@ -523,7 +527,7 @@ mod tests {
         init();
         record_env_promotion("development", "staging", true);
         let output = gather();
-        assert!(output.contains("orchestr8_env_promotions_total"));
+        assert!(output.contains("aether_env_promotions_total"));
     }
 
     #[test]
@@ -531,6 +535,6 @@ mod tests {
         init();
         record_affinity_recommendation("web_service", "kubernetes");
         let output = gather();
-        assert!(output.contains("orchestr8_affinity_recommendations_total"));
+        assert!(output.contains("aether_affinity_recommendations_total"));
     }
 }

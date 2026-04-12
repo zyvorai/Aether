@@ -90,6 +90,13 @@ impl App {
         }
 
         self.workloads = updated_workloads;
+        // Clamp selected_index to new list bounds to prevent out-of-bounds panics
+        let len = self.filtered_workloads().len();
+        if len == 0 {
+            self.selected_index = 0;
+        } else if self.selected_index >= len {
+            self.selected_index = len - 1;
+        }
         self.last_refresh = Instant::now();
 
         Ok(())
@@ -125,7 +132,8 @@ impl App {
 
     pub fn selected_workload(&self) -> Option<&WorkloadInfo> {
         let filtered = self.filtered_workloads();
-        filtered.get(self.selected_index).copied()
+        filtered.get(self.selected_index)
+            .copied()
     }
 
     /// Return workloads matching the current search filter

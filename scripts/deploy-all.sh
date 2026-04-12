@@ -6,7 +6,7 @@ set -e
 
 ENVIRONMENT=${1:-staging}
 WORKLOADS_DIR="workloads"
-NAMESPACE="orchestr8-${ENVIRONMENT}"
+NAMESPACE="aether-${ENVIRONMENT}"
 
 echo "🚀 Deploying all services to ${ENVIRONMENT}"
 echo "Namespace: ${NAMESPACE}"
@@ -84,9 +84,9 @@ if ! command -v kubectl &> /dev/null; then
     exit 1
 fi
 
-# Check if orchestr8 is installed
-if ! command -v orchestr8 &> /dev/null; then
-    print_status "error" "orchestr8 not found. Please install orchestr8."
+# Check if aether is installed
+if ! command -v aether &> /dev/null; then
+    print_status "error" "aether not found. Please install aether."
     exit 1
 fi
 
@@ -99,7 +99,7 @@ fi
 # Create backup before deployment
 print_status "info" "Creating pre-deployment backup..."
 BACKUP_NAME="pre-deploy-all-$(date +%Y%m%d-%H%M%S)"
-orchestr8 backup -n "${BACKUP_NAME}" -d "Pre-deployment backup for ${ENVIRONMENT}"
+aether backup -n "${BACKUP_NAME}" -d "Pre-deployment backup for ${ENVIRONMENT}"
 print_status "success" "Backup created: ${BACKUP_NAME}"
 
 # Define deployment order (infrastructure first, then services)
@@ -128,7 +128,7 @@ for workload in "${INFRASTRUCTURE[@]}"; do
     service_name=$(basename "${workload}" .yaml)
     print_status "info" "Deploying ${service_name}..."
 
-    if orchestr8 -s "${WORKLOADS_DIR}/${workload}" run; then
+    if aether -s "${WORKLOADS_DIR}/${workload}" run; then
         print_status "success" "${service_name} deployed"
 
         # Wait for infrastructure to be ready
@@ -161,7 +161,7 @@ for workload in "${SERVICES[@]}"; do
     service_name=$(basename "${workload}" .yaml)
     print_status "info" "Deploying ${service_name}..."
 
-    if orchestr8 -s "${WORKLOADS_DIR}/${workload}" run; then
+    if aether -s "${WORKLOADS_DIR}/${workload}" run; then
         print_status "success" "${service_name} deployed"
 
         # Wait for service to be ready
@@ -203,6 +203,6 @@ else
         echo "  - ${service}"
     done
     print_status "info" "Backup available for rollback: ${BACKUP_NAME}"
-    print_status "info" "To rollback: orchestr8 restore ~/.orchestr8/backups/${BACKUP_NAME}.json"
+    print_status "info" "To rollback: aether restore ~/.aether/backups/${BACKUP_NAME}.json"
     exit 1
 fi

@@ -1,6 +1,6 @@
-//! Configuration system for Orchestr8
+//! Configuration system for Aether
 //!
-//! Loads tunable parameters from `~/.orchestr8/config.yaml`
+//! Loads tunable parameters from `~/.aether/config.yaml`
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -77,7 +77,7 @@ impl Config {
 
     /// Default config file path
     pub fn default_path() -> PathBuf {
-        crate::resources::orchestr8_path("config.yaml")
+        crate::resources::aether_path("config.yaml")
     }
 }
 
@@ -337,7 +337,7 @@ impl Default for WebhookConfig {
             enabled: true,
             timeout_secs: 10,
             max_retries: 3,
-            user_agent: format!("orchestr8/{}", env!("CARGO_PKG_VERSION")),
+            user_agent: format!("aether/{}", env!("CARGO_PKG_VERSION")),
         }
     }
 }
@@ -434,6 +434,6 @@ mod tests {
         assert!(config.enabled);
         assert_eq!(config.timeout_secs, 10);
         assert_eq!(config.max_retries, 3);
-        assert!(config.user_agent.starts_with("orchestr8/"));
+        assert!(config.user_agent.starts_with("aether/"));
     }
 }

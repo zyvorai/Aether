@@ -1,6 +1,6 @@
-# Orchestr8 Grafana Dashboard
+# Aether Grafana Dashboard
 
-This directory contains a pre-built Grafana dashboard for monitoring Orchestr8 workloads, migrations, and system health.
+This directory contains a pre-built Grafana dashboard for monitoring Aether workloads, migrations, and system health.
 
 ## Features
 
@@ -12,7 +12,7 @@ The dashboard includes:
 - **Total Migrations**: Cumulative migration count
 - **Migration Success Rate**: Overall migration reliability
 - **Avg Migration Duration**: Performance metric for migrations
-- **Version**: Current Orchestr8 version
+- **Version**: Current Aether version
 
 ### Visualization Panels
 
@@ -60,7 +60,7 @@ The dashboard includes:
 
 - Grafana 8.0+ installed
 - Prometheus datasource configured in Grafana
-- Orchestr8 metrics being scraped by Prometheus
+- Aether metrics being scraped by Prometheus
 
 ### Import Dashboard
 
@@ -93,25 +93,25 @@ curl -X POST \
 For automated deployments, add to Grafana provisioning:
 
 ```yaml
-# /etc/grafana/provisioning/dashboards/orchestr8.yaml
+# /etc/grafana/provisioning/dashboards/aether.yaml
 apiVersion: 1
 
 providers:
-  - name: 'Orchestr8'
+  - name: 'Aether'
     orgId: 1
-    folder: 'Orchestr8'
+    folder: 'Aether'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 10
     allowUiUpdates: true
     options:
-      path: /var/lib/grafana/dashboards/orchestr8
+      path: /var/lib/grafana/dashboards/aether
 ```
 
 Copy dashboard:
 ```bash
-sudo mkdir -p /var/lib/grafana/dashboards/orchestr8
-sudo cp grafana/dashboard.json /var/lib/grafana/dashboards/orchestr8/
+sudo mkdir -p /var/lib/grafana/dashboards/aether
+sudo cp grafana/dashboard.json /var/lib/grafana/dashboards/aether/
 sudo chown -R grafana:grafana /var/lib/grafana/dashboards
 ```
 
@@ -151,24 +151,24 @@ Common ranges:
 
 ## Prometheus Configuration
 
-Ensure Prometheus is scraping Orchestr8 metrics:
+Ensure Prometheus is scraping Aether metrics:
 
 ### Node Exporter Textfile Collector
 
 ```bash
 # Create metrics exporter script
-cat > /usr/local/bin/orchestr8-metrics.sh <<'EOF'
+cat > /usr/local/bin/aether-metrics.sh <<'EOF'
 #!/bin/bash
 METRICS_DIR="/var/lib/node_exporter/textfile_collector"
 mkdir -p "${METRICS_DIR}"
-orchestr8 metrics > "${METRICS_DIR}/orchestr8.prom.$$"
-mv "${METRICS_DIR}/orchestr8.prom.$$" "${METRICS_DIR}/orchestr8.prom"
+aether metrics > "${METRICS_DIR}/aether.prom.$$"
+mv "${METRICS_DIR}/aether.prom.$$" "${METRICS_DIR}/aether.prom"
 EOF
 
-chmod +x /usr/local/bin/orchestr8-metrics.sh
+chmod +x /usr/local/bin/aether-metrics.sh
 
 # Add to cron (every 5 minutes)
-echo "*/5 * * * * /usr/local/bin/orchestr8-metrics.sh" | crontab -
+echo "*/5 * * * * /usr/local/bin/aether-metrics.sh" | crontab -
 ```
 
 ### Prometheus prometheus.yml
@@ -180,7 +180,7 @@ scrape_configs:
       - targets: ['localhost:9100']
     metric_relabel_configs:
       - source_labels: [__name__]
-        regex: 'orchestr8_.*'
+        regex: 'aether_.*'
         action: keep
 ```
 
@@ -214,21 +214,21 @@ Example alert integration with this dashboard:
 
 **Deployment success rate by runtime:**
 ```promql
-rate(orchestr8_workload_deployments_total{status="success"}[5m])
+rate(aether_workload_deployments_total{status="success"}[5m])
 /
-rate(orchestr8_workload_deployments_total[5m])
+rate(aether_workload_deployments_total[5m])
 ```
 
 **Migration rollback rate:**
 ```promql
-rate(orchestr8_migration_rollbacks_total[5m])
+rate(aether_migration_rollbacks_total[5m])
 /
-rate(orchestr8_migrations_total[5m])
+rate(aether_migrations_total[5m])
 ```
 
 **Runtime decision latency:**
 ```promql
-histogram_quantile(0.99, rate(orchestr8_runtime_decision_seconds_bucket[5m]))
+histogram_quantile(0.99, rate(aether_runtime_decision_seconds_bucket[5m]))
 ```
 
 ### Panel Colors
@@ -256,12 +256,12 @@ Suggested thresholds for panels:
 
 1. **Check Prometheus scraping:**
    ```bash
-   curl http://localhost:9090/api/v1/query?query=orchestr8_build_info
+   curl http://localhost:9090/api/v1/query?query=aether_build_info
    ```
 
 2. **Verify metrics are being generated:**
    ```bash
-   orchestr8 metrics | grep orchestr8_
+   aether metrics | grep aether_
    ```
 
 3. **Check Prometheus targets:**
@@ -290,12 +290,12 @@ Suggested thresholds for panels:
 Ensure all operations are tracked:
 ```bash
 # Run some operations
-orchestr8 -s workload.yaml build
-orchestr8 -s workload.yaml run
-orchestr8 list
+aether -s workload.yaml build
+aether -s workload.yaml run
+aether list
 
 # Check metrics updated
-orchestr8 metrics | grep -E "(builds|deployments|commands)_total"
+aether metrics | grep -E "(builds|deployments|commands)_total"
 ```
 
 ## Screenshots
@@ -348,12 +348,12 @@ Requires Grafana Enterprise or Image Renderer plugin:
 ## Support
 
 For issues or feature requests:
-- GitHub: https://github.com/ssahani/orchestr8/issues
+- GitHub: https://github.com/ssahani/aether/issues
 - Documentation: `docs/METRICS.md`
 
 ## Related Resources
 
 - [Prometheus Metrics Documentation](../docs/METRICS.md)
-- [Orchestr8 README](../README.md)
+- [Aether README](../README.md)
 - [Grafana Documentation](https://grafana.com/docs/)
 - [PromQL Examples](https://prometheus.io/docs/prometheus/latest/querying/examples/)

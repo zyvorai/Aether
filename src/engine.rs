@@ -70,8 +70,11 @@ impl Engine {
         let cpu = self.parse_cpu(&spec.requirements.cpu);
         let memory = self.parse_memory(&spec.requirements.memory);
 
-        // Large resources threshold
-        cpu > 16.0 || memory > 64.0 * 1024.0 * 1024.0 * 1024.0 // 64Gi
+        // Large resources threshold — workloads exceeding these are candidates
+        // for bare-metal provisioning via Metal3.
+        const BARE_METAL_CPU_THRESHOLD: f64 = 16.0;    // cores
+        const BARE_METAL_MEM_THRESHOLD: f64 = 64.0 * 1024.0 * 1024.0 * 1024.0; // 64 GiB
+        cpu > BARE_METAL_CPU_THRESHOLD || memory > BARE_METAL_MEM_THRESHOLD
     }
 
     /// Parse CPU string (e.g., "2", "2000m"), defaulting to 1.0 on bad input
@@ -171,7 +174,7 @@ mod tests {
         allow: Vec<RuntimeType>,
     ) -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test".to_string(),

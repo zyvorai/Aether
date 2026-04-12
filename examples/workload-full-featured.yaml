@@ -1,4 +1,4 @@
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:

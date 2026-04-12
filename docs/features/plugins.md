@@ -1,6 +1,6 @@
 # 🔌 Plugin System: Custom Runtime Extensions
 
-> Extend orchestr8 with third-party runtimes via a JSON manifest and JSON-RPC protocol.
+> Extend aether with third-party runtimes via a JSON manifest and JSON-RPC protocol.
 
 ---
 
@@ -20,17 +20,17 @@
 
 ## 🏗️ Architecture Overview
 
-The orchestr8 plugin system enables any external binary to act as a runtime adapter. The architecture follows a straightforward pattern:
+The aether plugin system enables any external binary to act as a runtime adapter. The architecture follows a straightforward pattern:
 
 ```
 ┌──────────────┐     JSON-RPC      ┌──────────────────┐
-│  orchestr8   │  ─────────────►   │  Plugin Binary   │
+│  aether   │  ─────────────►   │  Plugin Binary   │
 │  (CLI/API)   │  ◄─────────────   │  (any language)  │
 └──────────────┘    stdin/stdout    └──────────────────┘
         │
         ▼
 ┌──────────────────────────────┐
-│  ~/.orchestr8/plugins.json   │   Persistent registry
+│  ~/.aether/plugins.json   │   Persistent registry
 └──────────────────────────────┘
 ```
 
@@ -38,7 +38,7 @@ The orchestr8 plugin system enables any external binary to act as a runtime adap
 
 | Aspect | Decision |
 |---|---|
-| Discovery | Scan `~/.orchestr8/plugins/` for `*.json` manifest files |
+| Discovery | Scan `~/.aether/plugins/` for `*.json` manifest files |
 | Communication | JSON-RPC style messages over stdin/stdout |
 | Registry | Persistent `plugins.json` keyed by plugin name |
 | Capabilities | Each plugin declares which operations it supports |
@@ -112,12 +112,12 @@ A plugin manifest is a JSON file that describes the plugin binary and its capabi
 
 ## 🔍 Plugin Discovery
 
-orchestr8 discovers plugins by scanning `~/.orchestr8/plugins/` for `*.json` manifest files.
+aether discovers plugins by scanning `~/.aether/plugins/` for `*.json` manifest files.
 
 ### Directory Structure
 
 ```
-~/.orchestr8/
+~/.aether/
 ├── plugins/
 │   ├── wasm-runtime.json        # ✅ manifest for WASM plugin
 │   ├── firecracker.json         # ✅ manifest for Firecracker plugin
@@ -141,7 +141,7 @@ orchestr8 discovers plugins by scanning `~/.orchestr8/plugins/` for `*.json` man
 
 ```bash
 # Discover plugins from the default directory
-orchestr8 plugin discover
+aether plugin discover
 # ✅ Discovered 2 plugins (3 total registered)
 ```
 
@@ -152,7 +152,7 @@ orchestr8 plugin discover
 ### List Registered Plugins
 
 ```bash
-orchestr8 plugin list
+aether plugin list
 ```
 
 Displays a table of all registered plugins:
@@ -171,7 +171,7 @@ Displays a table of all registered plugins:
 ### Register a Plugin from a Manifest File
 
 ```bash
-orchestr8 plugin register ./my-plugin.json
+aether plugin register ./my-plugin.json
 ```
 
 This reads the manifest file and adds it to the persistent registry. If a plugin with the same `name` already exists, it is **overwritten** with the new manifest (useful for upgrades).
@@ -181,7 +181,7 @@ This reads the manifest file and adds it to the persistent registry. If a plugin
 ### Unregister a Plugin
 
 ```bash
-orchestr8 plugin remove my-runtime
+aether plugin remove my-runtime
 ```
 
 Removes the plugin from the registry by name. Returns the removed manifest if present, or a warning if the plugin was not found.
@@ -191,16 +191,16 @@ Removes the plugin from the registry by name. Returns the removed manifest if pr
 ### Discover Plugins
 
 ```bash
-orchestr8 plugin discover
+aether plugin discover
 ```
 
-Scans `~/.orchestr8/plugins/` and merges all valid manifests into the registry.
+Scans `~/.aether/plugins/` and merges all valid manifests into the registry.
 
 ---
 
 ## 📡 Plugin Protocol (JSON-RPC Style)
 
-Plugins communicate with orchestr8 via a tagged JSON protocol over stdin/stdout. Each message includes a `type` field that identifies the request or response kind.
+Plugins communicate with aether via a tagged JSON protocol over stdin/stdout. Each message includes a `type` field that identifies the request or response kind.
 
 ### Request/Response Summary
 
@@ -319,10 +319,10 @@ Plugins communicate with orchestr8 via a tagged JSON protocol over stdin/stdout.
 ### Protocol Flow
 
 ```
-orchestr8 ──stdin──►  {"type":"BuildRequest","spec_json":"{...}"}
+aether ──stdin──►  {"type":"BuildRequest","spec_json":"{...}"}
 plugin    ──stdout──► {"type":"BuildResponse","image_json":"{...}"}
 
-orchestr8 ──stdin──►  {"type":"RunRequest","image_json":"{...}","spec_json":"{...}"}
+aether ──stdin──►  {"type":"RunRequest","image_json":"{...}","spec_json":"{...}"}
 plugin    ──stdout──► {"type":"RunResponse","instance_json":"{...}"}
 ```
 
@@ -336,7 +336,7 @@ plugin    ──stdout──► {"type":"RunResponse","instance_json":"{...}"}
 
 ## 🏗️ Plugin Runtime Implementation
 
-When a plugin is registered, Orchestr8 can use it as a full `Runtime` implementation via the `PluginRuntime` struct. This means plugins participate in the same lifecycle as built-in runtimes (Podman, Kubernetes, KubeVirt, Metal3).
+When a plugin is registered, Aether can use it as a full `Runtime` implementation via the `PluginRuntime` struct. This means plugins participate in the same lifecycle as built-in runtimes (Podman, Kubernetes, KubeVirt, Metal3).
 
 ### How It Works
 
@@ -349,7 +349,7 @@ When a plugin is registered, Orchestr8 can use it as a full `Runtime` implementa
 ### Operation Flow
 
 ```
-orchestr8 CLI
+aether CLI
      │
      ▼
 PluginRuntime::build(spec)
@@ -382,7 +382,7 @@ The `create_plugin_runtime()` function searches the plugin registry for a plugin
 ```bash
 # Use a plugin-provided runtime in compose files
 # runtime: wasm  ←  matches a plugin with runtime_kind: "wasm"
-orchestr8 compose up
+aether compose up
 ```
 
 ### Unsupported Operations
@@ -436,7 +436,7 @@ chmod +x /usr/local/bin/my-custom-runtime
 
 ### Step 2: Create the Manifest
 
-Save to `~/.orchestr8/plugins/my-custom-runtime.json`:
+Save to `~/.aether/plugins/my-custom-runtime.json`:
 
 ```json
 {
@@ -452,14 +452,14 @@ Save to `~/.orchestr8/plugins/my-custom-runtime.json`:
 
 ```bash
 # Create the plugins directory if needed
-mkdir -p ~/.orchestr8/plugins
+mkdir -p ~/.aether/plugins
 
 # Discover the plugin
-orchestr8 plugin discover
+aether plugin discover
 # ✅ Discovered 1 plugin
 
 # Verify it's registered
-orchestr8 plugin list
+aether plugin list
 # ╭─────────────────────┬─────────┬──────────────┬───────────────────────────────────╮
 # │ Name                │ Version │ Runtime Kind │ Command                           │
 # ├─────────────────────┼─────────┼──────────────┼───────────────────────────────────┤
@@ -484,9 +484,9 @@ To upgrade, update the manifest file and re-discover:
 ```bash
 # Update version in the manifest
 # Then:
-orchestr8 plugin discover
+aether plugin discover
 # or:
-orchestr8 plugin register ~/.orchestr8/plugins/my-custom-runtime.json
+aether plugin register ~/.aether/plugins/my-custom-runtime.json
 ```
 
 ---
@@ -542,7 +542,7 @@ curl -X POST http://localhost:8080/api/plugins/discover
 
 ## 💾 Persistent Registry
 
-The plugin registry is stored at `~/.orchestr8/plugins.json`. It persists across CLI invocations and API server restarts.
+The plugin registry is stored at `~/.aether/plugins.json`. It persists across CLI invocations and API server restarts.
 
 ### Registry Structure
 

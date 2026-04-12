@@ -18,8 +18,8 @@ pub struct BackupMetadata {
     pub workload_count: usize,
     /// Backup description
     pub description: Option<String>,
-    /// Orchestr8 version
-    pub orchestr8_version: String,
+    /// Aether version
+    pub aether_version: String,
 }
 
 /// Complete backup including metadata and state
@@ -43,7 +43,7 @@ impl Backup {
                 created_at: crate::resources::now_rfc3339(),
                 workload_count: workloads.len(),
                 description,
-                orchestr8_version: env!("CARGO_PKG_VERSION").to_string(),
+                aether_version: env!("CARGO_PKG_VERSION").to_string(),
             },
             workloads,
         }
@@ -133,7 +133,7 @@ impl BackupManager {
             tracing::warn!("Could not determine home directory, using current directory for backups");
             std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
         });
-        path.push(".orchestr8");
+        path.push(".aether");
         path.push("backups");
         path
     }
@@ -277,7 +277,7 @@ impl SnapshotManager {
             tracing::warn!("Could not determine home directory, using current directory for snapshots");
             std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
         });
-        path.push(".orchestr8");
+        path.push(".aether");
         path.push("snapshots");
         Self { snapshot_dir: path }
     }
@@ -305,7 +305,7 @@ impl SnapshotManager {
                 created_at: crate::resources::now_rfc3339(),
                 workload_count: 1,
                 description: Some(format!("Pre-deploy snapshot of {}", ws.name)),
-                orchestr8_version: env!("CARGO_PKG_VERSION").to_string(),
+                aether_version: env!("CARGO_PKG_VERSION").to_string(),
             },
             workloads: vec![ws.clone()],
         };

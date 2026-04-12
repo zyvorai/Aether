@@ -2,24 +2,24 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "orchestr8.fullname" . }}
+  name: {{ include "aether.fullname" . }}
   labels:
-    {{- include "orchestr8.labels" . | nindent 4 }}
+    {{- include "aether.labels" . | nindent 4 }}
 rules:
 {{- toYaml .Values.rbac.rules | nindent 2 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "orchestr8.fullname" . }}
+  name: {{ include "aether.fullname" . }}
   labels:
-    {{- include "orchestr8.labels" . | nindent 4 }}
+    {{- include "aether.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "orchestr8.fullname" . }}
+  name: {{ include "aether.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "orchestr8.serviceAccountName" . }}
+    name: {{ include "aether.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}

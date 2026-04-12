@@ -84,7 +84,7 @@ impl StateStore {
             .open(&lock_path)
             .with_context(|| format!("failed to create lock file: {}", lock_path.display()))?;
         Self::flock_exclusive(&lock_file)
-            .with_context(|| "failed to acquire state file lock (is another orchestr8 process running?)")?;
+            .with_context(|| "failed to acquire state file lock (is another aether process running?)")?;
 
         // Write to a temporary file in the same directory, then rename.
         // This ensures the state file is never left in a half-written state.
@@ -140,12 +140,12 @@ impl StateStore {
 
     /// Get default state file path
     pub fn default_path() -> PathBuf {
-        crate::resources::orchestr8_path("state.json")
+        crate::resources::aether_path("state.json")
     }
 
     /// Ensure state directory exists
     pub fn ensure_state_dir() -> anyhow::Result<()> {
-        std::fs::create_dir_all(crate::resources::orchestr8_dir())?;
+        std::fs::create_dir_all(crate::resources::aether_dir())?;
         Ok(())
     }
 }
@@ -207,7 +207,7 @@ mod tests {
     #[test]
     fn test_default_path_ends_with_state_json() {
         let path = StateStore::default_path();
-        assert!(path.ends_with(".orchestr8/state.json"));
+        assert!(path.ends_with(".aether/state.json"));
     }
 
     #[test]
@@ -233,7 +233,7 @@ mod tests {
                 image: "ghcr.io/org/my-service:v2".to_string(),
                 created_at: "2025-03-01T08:30:00Z".to_string(),
             },
-            spec_path: PathBuf::from("/etc/orchestr8/my-service.yaml"),
+            spec_path: PathBuf::from("/etc/aether/my-service.yaml"),
             created_at: "2025-03-01T08:30:00Z".to_string(),
             updated_at: "2025-03-02T10:00:00Z".to_string(),
         };
@@ -243,7 +243,7 @@ mod tests {
         assert_eq!(state.instance.image, "ghcr.io/org/my-service:v2");
         assert_eq!(
             state.spec_path,
-            PathBuf::from("/etc/orchestr8/my-service.yaml")
+            PathBuf::from("/etc/aether/my-service.yaml")
         );
         assert_eq!(state.created_at, "2025-03-01T08:30:00Z");
         assert_eq!(state.updated_at, "2025-03-02T10:00:00Z");
@@ -428,7 +428,7 @@ mod tests {
 
     #[test]
     fn test_load_nonexistent_file_returns_empty_store() {
-        let path = PathBuf::from("/tmp/orchestr8_test_does_not_exist_98765.json");
+        let path = PathBuf::from("/tmp/aether_test_does_not_exist_98765.json");
         let store = StateStore::load(&path).unwrap();
         assert!(store.workloads.is_empty());
     }

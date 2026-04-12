@@ -1,6 +1,6 @@
 # Production Runbook
 
-Operational procedures, incident response, and troubleshooting guide for Orchestr8 deployments.
+Operational procedures, incident response, and troubleshooting guide for Aether deployments.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ Operational procedures, incident response, and troubleshooting guide for Orchest
 
 ## Overview
 
-This runbook provides step-by-step procedures for managing Orchestr8 deployments in production environments.
+This runbook provides step-by-step procedures for managing Aether deployments in production environments.
 
 ### On-Call Contact Information
 
@@ -29,8 +29,8 @@ Escalation: Platform Team Lead
 Emergency: CTO
 
 Slack Channels:
-- #orchestr8-alerts
-- #orchestr8-incidents
+- #aether-alerts
+- #aether-incidents
 - #platform-team
 ```
 
@@ -48,7 +48,7 @@ Slack Channels:
 
 ### Before Any Deployment
 
-- [ ] Create backup: `orchestr8 backup -n pre-deploy-$(date +%Y%m%d)`
+- [ ] Create backup: `aether backup -n pre-deploy-$(date +%Y%m%d)`
 - [ ] Verify health checks pass
 - [ ] Review recent alerts and metrics
 - [ ] Check resource capacity
@@ -84,18 +84,18 @@ echo "Starting deployment of $SERVICE_NAME v$VERSION"
 
 # 1. Pre-deployment checks
 echo "Running pre-deployment checks..."
-orchestr8 -s workloads/$SERVICE_NAME.yaml validate
+aether -s workloads/$SERVICE_NAME.yaml validate
 kubectl get nodes
 kubectl get pods -n production
 
 # 2. Create backup
 echo "Creating backup..."
 BACKUP_NAME="pre-deploy-$SERVICE_NAME-$(date +%Y%m%d-%H%M%S)"
-orchestr8 backup -n "$BACKUP_NAME" -d "Pre-deployment backup for $SERVICE_NAME v$VERSION"
+aether backup -n "$BACKUP_NAME" -d "Pre-deployment backup for $SERVICE_NAME v$VERSION"
 
 # 3. Deploy with blue-green strategy
 echo "Deploying $SERVICE_NAME v$VERSION..."
-orchestr8 migrate $SERVICE_NAME kubernetes --strategy blue-green
+aether migrate $SERVICE_NAME kubernetes --strategy blue-green
 
 # 4. Wait for deployment
 echo "Waiting for deployment to stabilize..."
@@ -110,7 +110,7 @@ echo "Checking service health..."
 HEALTH_URL=$(kubectl get svc $SERVICE_NAME -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 curl -f https://$HEALTH_URL/health || {
     echo "Health check failed! Initiating rollback..."
-    orchestr8 restore $(orchestr8 list-backups | grep $BACKUP_NAME | awk '{print $2}')
+    aether restore $(aether list-backups | grep $BACKUP_NAME | awk '{print $2}')
     exit 1
 }
 
@@ -120,7 +120,7 @@ for i in {1..30}; do
     ERROR_RATE=$(curl -s http://prometheus:9090/api/v1/query?query=rate(http_requests_total{status=~"5.."}[1m]) | jq -r '.data.result[0].value[1]')
     if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
         echo "Error rate too high! Rolling back..."
-        orchestr8 restore $(orchestr8 list-backups | grep $BACKUP_NAME | awk '{print $2}')
+        aether restore $(aether list-backups | grep $BACKUP_NAME | awk '{print $2}')
         exit 1
     fi
     sleep 10
@@ -142,10 +142,10 @@ echo "Backup available: $BACKUP_NAME"
 echo "🚨 EMERGENCY HOTFIX DEPLOYMENT"
 
 # Quick validation
-orchestr8 -s workloads/$SERVICE_NAME.yaml validate
+aether -s workloads/$SERVICE_NAME.yaml validate
 
 # Deploy immediately
-orchestr8 migrate $SERVICE_NAME kubernetes --strategy immediate
+aether migrate $SERVICE_NAME kubernetes --strategy immediate
 
 # Monitor closely
 watch -n 5 kubectl get pods -l app=$SERVICE_NAME
@@ -159,7 +159,7 @@ watch -n 5 kubectl get pods -l app=$SERVICE_NAME
 
 # Deploy to 10% of traffic
 yq eval '.scaling.minReplicas = 1' -i workloads/$SERVICE_NAME-canary.yaml
-orchestr8 -s workloads/$SERVICE_NAME-canary.yaml run
+aether -s workloads/$SERVICE_NAME-canary.yaml run
 
 # Monitor for 15 minutes
 sleep 900
@@ -168,11 +168,11 @@ sleep 900
 ERROR_RATE=$(get-error-rate.sh $SERVICE_NAME-canary)
 if [ $(echo "$ERROR_RATE < 0.01" | bc) -eq 1 ]; then
     # Promote canary
-    orchestr8 -s workloads/$SERVICE_NAME.yaml run
-    orchestr8 delete $SERVICE_NAME-canary
+    aether -s workloads/$SERVICE_NAME.yaml run
+    aether delete $SERVICE_NAME-canary
 else
     # Rollback canary
-    orchestr8 delete $SERVICE_NAME-canary
+    aether delete $SERVICE_NAME-canary
     echo "Canary failed - not promoting"
 fi
 ```
@@ -267,13 +267,13 @@ Database Performance:  https://grafana.company.com/d/database
 ```bash
 # STEP 1: Acknowledge incident
 # - Page acknowledged in PagerDuty
-# - Post in #orchestr8-incidents
+# - Post in #aether-incidents
 # - Start war room if needed
 
 # STEP 2: Quick assessment
 kubectl get pods -n production
 kubectl get events --sort-by='.lastTimestamp' | tail -20
-orchestr8 list
+aether list
 
 # STEP 3: Check recent changes
 git log --since="1 hour ago" --oneline
@@ -285,8 +285,8 @@ kubectl rollout history deployment/$SERVICE_NAME
 
 # STEP 5: Immediate mitigation
 # Option A: Rollback recent deployment
-LAST_BACKUP=$(orchestr8 list-backups | head -2 | tail -1 | awk '{print $2}')
-orchestr8 restore $LAST_BACKUP
+LAST_BACKUP=$(aether list-backups | head -2 | tail -1 | awk '{print $2}')
+aether restore $LAST_BACKUP
 
 # Option B: Scale up resources
 kubectl scale deployment/$SERVICE_NAME --replicas=10
@@ -295,7 +295,7 @@ kubectl scale deployment/$SERVICE_NAME --replicas=10
 kubectl patch ingress $SERVICE_NAME -p '{"spec":{"rules":[]}}'
 
 # STEP 6: Communicate
-# Post updates every 15 minutes in #orchestr8-incidents
+# Post updates every 15 minutes in #aether-incidents
 # Update status page if customer-facing
 
 # STEP 7: Verify resolution
@@ -334,7 +334,7 @@ curl -f https://redis:6379/health
 **Resolution:**
 ```bash
 # If recent deployment:
-orchestr8 restore $(orchestr8 list-backups | head -2 | tail -1 | awk '{print $2}')
+aether restore $(aether list-backups | head -2 | tail -1 | awk '{print $2}')
 
 # If resource exhaustion:
 kubectl scale deployment/$SERVICE_NAME --replicas=$(($(kubectl get deployment $SERVICE_NAME -o jsonpath='{.spec.replicas}') * 2))
@@ -380,7 +380,7 @@ kubectl scale deployment/$SERVICE_NAME --replicas=10
 # (requires code changes)
 
 # Add read replicas
-orchestr8 -s workloads/database-replica.yaml run
+aether -s workloads/database-replica.yaml run
 ```
 
 ### Out of Memory (OOM)
@@ -406,7 +406,7 @@ kubectl get deployment $SERVICE_NAME -o yaml | grep -A 5 resources
 ```bash
 # Increase memory limits
 yq eval '.resources.limits.memory = "4Gi"' -i workloads/$SERVICE_NAME.yaml
-orchestr8 -s workloads/$SERVICE_NAME.yaml run
+aether -s workloads/$SERVICE_NAME.yaml run
 
 # Or fix memory leak
 # (requires code changes and redeployment)
@@ -446,7 +446,7 @@ kubectl exec -it postgres-0 -- psql -U postgres -c "
 kubectl set env deployment/$SERVICE_NAME DB_POOL_SIZE=20 DB_POOL_MAX_OVERFLOW=10
 
 # Add connection pooler (PgBouncer)
-orchestr8 -s workloads/pgbouncer.yaml run
+aether -s workloads/pgbouncer.yaml run
 ```
 
 ### Certificate Expiration
@@ -492,22 +492,22 @@ set -e
 echo "🔄 Starting rollback of $SERVICE_NAME"
 
 # 1. Identify backup to restore
-orchestr8 list-backups
+aether list-backups
 read -p "Enter backup name to restore: " BACKUP_NAME
 
 # 2. Verify backup
-orchestr8 list-backups | grep $BACKUP_NAME || {
+aether list-backups | grep $BACKUP_NAME || {
     echo "Backup not found!"
     exit 1
 }
 
 # 3. Announce rollback
-echo "Announcing rollback in #orchestr8-incidents..."
+echo "Announcing rollback in #aether-incidents..."
 # Post to Slack
 
 # 4. Execute rollback
 echo "Restoring from backup: $BACKUP_NAME"
-orchestr8 restore ~/.orchestr8/backups/$BACKUP_NAME.json
+aether restore ~/.aether/backups/$BACKUP_NAME.json
 
 # 5. Verify rollback
 echo "Verifying rollback..."
@@ -530,8 +530,8 @@ echo "Previous version restored from $BACKUP_NAME"
 
 ```bash
 # Fastest possible rollback
-LAST_BACKUP=$(orchestr8 list-backups | head -2 | tail -1 | awk '{print $2}')
-orchestr8 restore $LAST_BACKUP
+LAST_BACKUP=$(aether list-backups | head -2 | tail -1 | awk '{print $2}')
+aether restore $LAST_BACKUP
 ```
 
 ### Database Rollback
@@ -590,7 +590,7 @@ kubectl get events | grep HorizontalPodAutoscaler
 
 ```bash
 # Add read replica
-orchestr8 -s workloads/database-replica.yaml run
+aether -s workloads/database-replica.yaml run
 
 # Update application to use replica for reads
 kubectl set env deployment/$SERVICE_NAME \
@@ -611,8 +611,8 @@ kubectl exec -it postgres-replica-0 -- psql -U postgres -c "
 
 DATE=$(date +%Y%m%d)
 
-# Orchestr8 state backup
-orchestr8 backup -n "daily-$DATE" -d "Automated daily backup"
+# Aether state backup
+aether backup -n "daily-$DATE" -d "Automated daily backup"
 
 # Database backup
 kubectl exec -it postgres-0 -- pg_dump \
@@ -622,11 +622,11 @@ kubectl exec -it postgres-0 -- pg_dump \
 
 # Upload to S3
 aws s3 cp /backups/database-$DATE.dump \
-  s3://company-backups/orchestr8/database-$DATE.dump
+  s3://company-backups/aether/database-$DATE.dump
 
 # Cleanup old backups (keep 30 days)
 find /backups -name "*.dump" -mtime +30 -delete
-orchestr8 list-backups | tail -n +32 | awk '{print $2}' | xargs -I {} rm {}
+aether list-backups | tail -n +32 | awk '{print $2}' | xargs -I {} rm {}
 ```
 
 ### Disaster Recovery Test
@@ -641,8 +641,8 @@ orchestr8 list-backups | tail -n +32 | awk '{print $2}' | xargs -I {} rm {}
 kubectl create namespace dr-test
 
 # 2. Restore from backup
-LATEST_BACKUP=$(orchestr8 list-backups | head -1 | awk '{print $2}')
-orchestr8 restore $LATEST_BACKUP --namespace dr-test
+LATEST_BACKUP=$(aether list-backups | head -1 | awk '{print $2}')
+aether restore $LATEST_BACKUP --namespace dr-test
 
 # 3. Restore database
 kubectl exec -it postgres-0 -n dr-test -- pg_restore \
@@ -697,7 +697,7 @@ kubectl delete serviceaccount $COMPROMISED_SA
 
 # 4. RECOVERY
 # - Deploy patched versions
-orchestr8 -s workloads-patched/$SERVICE_NAME.yaml run
+aether -s workloads-patched/$SERVICE_NAME.yaml run
 
 # - Verify integrity
 ./scripts/verify-checksums.sh
@@ -732,7 +732,7 @@ docker push ghcr.io/company/app:patched
 # 4. Deploy updates
 yq eval '.image.tag = "patched"' -i workloads/*.yaml
 for service in workloads/*.yaml; do
-    orchestr8 -s "$service" run
+    aether -s "$service" run
 done
 
 # 5. Verify patches
@@ -801,7 +801,7 @@ kubectl set env deployment/$SERVICE_NAME WORKERS=4
 
 # 1. Pre-maintenance
 echo "Starting pre-maintenance checks..."
-orchestr8 backup -n "pre-maintenance-$(date +%Y%m%d)"
+aether backup -n "pre-maintenance-$(date +%Y%m%d)"
 ./scripts/smoke-test-all.sh
 
 # 2. Announce maintenance
@@ -900,5 +900,5 @@ Vendor Support:
 ## Support
 
 For runbook questions or updates:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `runbook`

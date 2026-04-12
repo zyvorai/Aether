@@ -1,10 +1,10 @@
 # Workload Schema Documentation
 
-This document describes how to use the Orchestr8 workload JSON Schema for IDE autocomplete and validation.
+This document describes how to use the Aether workload JSON Schema for IDE autocomplete and validation.
 
 ## Overview
 
-The Orchestr8 workload schema (`schema/workload.schema.json`) provides:
+The Aether workload schema (`schema/workload.schema.json`) provides:
 - **Autocomplete**: IDE suggestions for fields and values
 - **Validation**: Real-time error checking in your editor
 - **Documentation**: Inline field descriptions
@@ -40,7 +40,7 @@ Add to your workspace or user `settings.json`:
 1. Open **Settings** → **Languages & Frameworks** → **Schemas and DTDs** → **JSON Schema Mappings**
 2. Click **+** to add a new schema
 3. Set:
-   - **Name**: Orchestr8 Workload
+   - **Name**: Aether Workload
    - **Schema file or URL**: `<project-path>/schema/workload.schema.json`
    - **Schema version**: JSON Schema version 7
 4. Add file path pattern: `workload*.yaml` or specific files
@@ -70,7 +70,7 @@ For online YAML editors that support JSON Schema, reference the schema URL:
 ```yaml
 # yaml-language-server: $schema=./schema/workload.schema.json
 
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 ...
 ```
@@ -143,7 +143,7 @@ When you type in a workload YAML file, the IDE will suggest:
 
 1. **Top-level fields**:
    ```yaml
-   apiVersion: orchestr8/v1
+   apiVersion: aether/v1
    kind: Workload
    metadata:  # ← Autocomplete suggests: metadata, build, requirements, runtime
    ```
@@ -168,7 +168,7 @@ When you type in a workload YAML file, the IDE will suggest:
 ### Valid Workload
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -197,7 +197,7 @@ runtime:
 
 **Missing Required Field:**
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: my-app
@@ -236,10 +236,10 @@ npm install -g ajv-cli
 ajv validate -s schema/workload.schema.json -d workload.yaml
 ```
 
-Or use the built-in Orchestr8 validation:
+Or use the built-in Aether validation:
 
 ```bash
-orchestr8 -s workload.yaml validate
+aether -s workload.yaml validate
 ```
 
 ## Schema Updates
@@ -264,4 +264,4 @@ When adding new fields:
 - [JSON Schema Specification](https://json-schema.org/)
 - [YAML Language Server](https://github.com/redhat-developer/yaml-language-server)
 - [VS Code YAML Extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
-- [Orchestr8 Documentation](../README.md)
+- [Aether Documentation](../README.md)

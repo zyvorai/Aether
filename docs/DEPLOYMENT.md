@@ -1,10 +1,10 @@
-# Orchestr8 Deployment Guide
+# Aether Deployment Guide
 
-This guide covers all deployment options for Orchestr8across different environments and use cases.
+This guide covers all deployment options for Aetheracross different environments and use cases.
 
 ## Deployment Options
 
-Orchestr8 can be deployed in multiple ways:
+Aether can be deployed in multiple ways:
 
 1. **Container** - Docker/Podman (recommended for quick start)
 2. **Binary** - Direct installation from GitHub releases
@@ -23,17 +23,17 @@ Orchestr8 can be deployed in multiple ways:
 
 ```bash
 # Pull latest image
-docker pull ghcr.io/ssahani/orchestr8:latest
+docker pull ghcr.io/ssahani/aether:latest
 
 # Create alias for convenience
-alias orchestr8='docker run --rm \
-  -v ~/.orchestr8:/root/.orchestr8 \
+alias aether='docker run --rm \
+  -v ~/.aether:/root/.aether \
   -v ~/.kube:/root/.kube \
-  ghcr.io/ssahani/orchestr8:latest'
+  ghcr.io/ssahani/aether:latest'
 
 # Use normally
-orchestr8 --help
-orchestr8 -s workload.yaml validate
+aether --help
+aether -s workload.yaml validate
 ```
 
 ### Persistent Data
@@ -42,11 +42,11 @@ Mount state directory for persistence:
 
 ```bash
 docker run --rm \
-  -v ~/.orchestr8:/root/.orchestr8 \
+  -v ~/.aether:/root/.aether \
   -v ~/.kube:/root/.kube \
   -v $(pwd):/workspace \
   -w /workspace \
-  ghcr.io/ssahani/orchestr8:latest \
+  ghcr.io/ssahani/aether:latest \
   run -s workload.yaml
 ```
 
@@ -55,15 +55,15 @@ docker run --rm \
 ```yaml
 version: '3.8'
 services:
-  orchestr8:
-    image: ghcr.io/ssahani/orchestr8:latest
+  aether:
+    image: ghcr.io/ssahani/aether:latest
     volumes:
-      - orchestr8-state:/root/.orchestr8
+      - aether-state:/root/.aether
       - ~/.kube:/root/.kube:ro
     command: tail -f /dev/null  # Keep running
 
 volumes:
-  orchestr8-state:
+  aether-state:
 ```
 
 ---
@@ -74,26 +74,26 @@ volumes:
 
 ```bash
 # Linux (amd64)
-curl -L https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-linux-amd64 -o orchestr8
+curl -L https://github.com/ssahani/aether/releases/latest/download/aether-linux-amd64 -o aether
 
 # macOS (amd64)
-curl -L https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-macos-amd64 -o orchestr8
+curl -L https://github.com/ssahani/aether/releases/latest/download/aether-macos-amd64 -o aether
 
 # macOS (ARM64)
-curl -L https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-macos-arm64 -o orchestr8
+curl -L https://github.com/ssahani/aether/releases/latest/download/aether-macos-arm64 -o aether
 
 # Make executable
-chmod +x orchestr8
+chmod +x aether
 
 # Move to PATH
-sudo mv orchestr8 /usr/local/bin/
+sudo mv aether /usr/local/bin/
 ```
 
 ### Verify Installation
 
 ```bash
-orchestr8 --version
-orchestr8 --help
+aether --version
+aether --help
 ```
 
 ---
@@ -106,29 +106,29 @@ orchestr8 --help
 
 ```bash
 # Download package
-wget https://github.com/ssahani/orchestr8/releases/download/v0.1.0/orchestr8_0.1.0-1_amd64.deb
+wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether_0.1.0-1_amd64.deb
 
 # Install
-sudo apt install ./orchestr8_0.1.0-1_amd64.deb
+sudo apt install ./aether_0.1.0-1_amd64.deb
 
 # Or use dpkg
-sudo dpkg -i orchestr8_0.1.0-1_amd64.deb
+sudo dpkg -i aether_0.1.0-1_amd64.deb
 sudo apt install -f  # Fix dependencies
 ```
 
 #### Verify Installation
 
 ```bash
-which orchestr8
-dpkg -L orchestr8  # List installed files
+which aether
+dpkg -L aether  # List installed files
 ```
 
 #### Shell Completions
 
 Automatically installed to:
-- Bash: `/usr/share/bash-completion/completions/orchestr8`
-- Zsh: `/usr/share/zsh/site-functions/_orchestr8`
-- Fish: `/usr/share/fish/vendor_completions.d/orchestr8.fish`
+- Bash: `/usr/share/bash-completion/completions/aether`
+- Zsh: `/usr/share/zsh/site-functions/_aether`
+- Fish: `/usr/share/fish/vendor_completions.d/aether.fish`
 
 ### Fedora/RHEL/CentOS (RPM)
 
@@ -136,33 +136,33 @@ Automatically installed to:
 
 ```bash
 # Download package
-wget https://github.com/ssahani/orchestr8/releases/download/v0.1.0/orchestr8-0.1.0-1.x86_64.rpm
+wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install with DNF (Fedora/RHEL 8+)
-sudo dnf install orchestr8-0.1.0-1.x86_64.rpm
+sudo dnf install aether-0.1.0-1.x86_64.rpm
 
 # Or with YUM (RHEL 7)
-sudo yum install orchestr8-0.1.0-1.x86_64.rpm
+sudo yum install aether-0.1.0-1.x86_64.rpm
 
 # Or with RPM
-sudo rpm -ivh orchestr8-0.1.0-1.x86_64.rpm
+sudo rpm -ivh aether-0.1.0-1.x86_64.rpm
 ```
 
 #### Verify Installation
 
 ```bash
-which orchestr8
-rpm -ql orchestr8  # List installed files
+which aether
+rpm -ql aether  # List installed files
 ```
 
 ### openSUSE (RPM)
 
 ```bash
 # Download package
-wget https://github.com/ssahani/orchestr8/releases/download/v0.1.0/orchestr8-0.1.0-1.x86_64.rpm
+wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install
-sudo zypper install orchestr8-0.1.0-1.x86_64.rpm
+sudo zypper install aether-0.1.0-1.x86_64.rpm
 ```
 
 ---
@@ -181,18 +181,18 @@ sudo zypper install orchestr8-0.1.0-1.x86_64.rpm
 
 ```bash
 # From repository
-git clone https://github.com/ssahani/orchestr8
-cd orchestr8
+git clone https://github.com/ssahani/aether
+cd aether
 
 # Install with default values
-helm install orchestr8 ./helm/orchestr8
+helm install aether ./helm/aether
 ```
 
 #### Custom Values
 
 ```bash
 # Install with custom configuration
-helm install orchestr8 ./helm/orchestr8 -f - <<EOF
+helm install aether ./helm/aether -f - <<EOF
 replicaCount: 1
 
 persistence:
@@ -204,7 +204,7 @@ metrics:
   serviceMonitor:
     enabled: true
 
-orchestr8:
+aether:
   runtimes:
     kubernetes:
       enabled: true
@@ -216,8 +216,8 @@ EOF
 #### Production Configuration
 
 ```bash
-helm install orchestr8 ./helm/orchestr8 \
-  --namespace orchestr8-system \
+helm install aether ./helm/aether \
+  --namespace aether-system \
   --create-namespace \
   --set replicaCount=3 \
   --set autoscaling.enabled=true \
@@ -227,35 +227,35 @@ helm install orchestr8 ./helm/orchestr8 \
   --set persistence.size=20Gi \
   --set metrics.serviceMonitor.enabled=true \
   --set ingress.enabled=true \
-  --set ingress.hosts[0].host=orchestr8.example.com
+  --set ingress.hosts[0].host=aether.example.com
 ```
 
 ### Verification
 
 ```bash
 # Check deployment
-helm status orchestr8
-kubectl get pods -l app.kubernetes.io/name=orchestr8
+helm status aether
+kubectl get pods -l app.kubernetes.io/name=aether
 
 # View logs
-kubectl logs -l app.kubernetes.io/name=orchestr8
+kubectl logs -l app.kubernetes.io/name=aether
 
 # Access metrics
-kubectl port-forward service/orchestr8 9090:9090
+kubectl port-forward service/aether 9090:9090
 curl http://localhost:9090/metrics
 ```
 
 ### Upgrade
 
 ```bash
-helm upgrade orchestr8 ./helm/orchestr8 -f custom-values.yaml
+helm upgrade aether ./helm/aether -f custom-values.yaml
 ```
 
 ### Uninstall
 
 ```bash
-helm uninstall orchestr8
-kubectl delete pvc -l app.kubernetes.io/instance=orchestr8
+helm uninstall aether
+kubectl delete pvc -l app.kubernetes.io/instance=aether
 ```
 
 ---
@@ -271,8 +271,8 @@ kubectl delete pvc -l app.kubernetes.io/instance=orchestr8
 
 ```bash
 # Clone repository
-git clone https://github.com/ssahani/orchestr8
-cd orchestr8
+git clone https://github.com/ssahani/aether
+cd aether
 
 # Build release binary
 cargo build --release
@@ -281,17 +281,17 @@ cargo build --release
 cargo test --all
 
 # Install
-sudo cp target/release/orchestr8 /usr/local/bin/
+sudo cp target/release/aether /usr/local/bin/
 
 # Generate shell completions
-orchestr8 completions bash > orchestr8.bash
-orchestr8 completions zsh > _orchestr8
-orchestr8 completions fish > orchestr8.fish
+aether completions bash > aether.bash
+aether completions zsh > _aether
+aether completions fish > aether.fish
 
 # Install completions
-sudo cp orchestr8.bash /etc/bash_completion.d/
-sudo cp _orchestr8 /usr/share/zsh/site-functions/
-sudo cp orchestr8.fish /usr/share/fish/vendor_completions.d/
+sudo cp aether.bash /etc/bash_completion.d/
+sudo cp _aether /usr/share/zsh/site-functions/
+sudo cp aether.fish /usr/share/fish/vendor_completions.d/
 ```
 
 ---
@@ -304,18 +304,18 @@ sudo cp orchestr8.fish /usr/share/fish/vendor_completions.d/
 
 ```bash
 # Create metrics export script
-sudo tee /usr/local/bin/orchestr8-metrics.sh <<'EOF'
+sudo tee /usr/local/bin/aether-metrics.sh <<'EOF'
 #!/bin/bash
 METRICS_DIR="/var/lib/node_exporter/textfile_collector"
 mkdir -p "${METRICS_DIR}"
-orchestr8 metrics > "${METRICS_DIR}/orchestr8.prom.$$"
-mv "${METRICS_DIR}/orchestr8.prom.$$" "${METRICS_DIR}/orchestr8.prom"
+aether metrics > "${METRICS_DIR}/aether.prom.$$"
+mv "${METRICS_DIR}/aether.prom.$$" "${METRICS_DIR}/aether.prom"
 EOF
 
-sudo chmod +x /usr/local/bin/orchestr8-metrics.sh
+sudo chmod +x /usr/local/bin/aether-metrics.sh
 
 # Add to cron (every 5 minutes)
-echo "*/5 * * * * /usr/local/bin/orchestr8-metrics.sh" | sudo crontab -
+echo "*/5 * * * * /usr/local/bin/aether-metrics.sh" | sudo crontab -
 ```
 
 #### Prometheus Configuration
@@ -366,7 +366,7 @@ kubectl get nodes
 # Copy to container (if using Docker)
 docker run --rm \
   -v ~/.kube:/root/.kube \
-  ghcr.io/ssahani/orchestr8:latest \
+  ghcr.io/ssahani/aether:latest \
   kubectl get nodes
 ```
 
@@ -403,7 +403,7 @@ sudo apt install -f
 
 **Missing Dependencies (RPM):**
 ```bash
-sudo dnf install --allowerasing orchestr8
+sudo dnf install --allowerasing aether
 ```
 
 ### Helm Issues
@@ -411,17 +411,17 @@ sudo dnf install --allowerasing orchestr8
 **RBAC Errors:**
 ```bash
 # Verify RBAC is enabled
-kubectl get clusterrole orchestr8
-kubectl get clusterrolebinding orchestr8
+kubectl get clusterrole aether
+kubectl get clusterrolebinding aether
 
 # Check service account
-kubectl get serviceaccount -n orchestr8-system
+kubectl get serviceaccount -n aether-system
 ```
 
 **Pod Not Starting:**
 ```bash
-kubectl describe pod -l app.kubernetes.io/name=orchestr8
-kubectl logs -l app.kubernetes.io/name=orchestr8
+kubectl describe pod -l app.kubernetes.io/name=aether
+kubectl logs -l app.kubernetes.io/name=aether
 ```
 
 ---
@@ -445,20 +445,20 @@ After deployment:
 
 1. **Validate Installation:**
    ```bash
-   orchestr8 --version
-   orchestr8 --help
+   aether --version
+   aether --help
    ```
 
 2. **Create First Workload:**
    ```bash
-   orchestr8 -s examples/workload-full-featured.yaml validate
-   orchestr8 -s examples/workload-full-featured.yaml run
+   aether -s examples/workload-full-featured.yaml validate
+   aether -s examples/workload-full-featured.yaml run
    ```
 
 3. **Monitor Operations:**
    ```bash
-   orchestr8 list
-   orchestr8 metrics
+   aether list
+   aether metrics
    ```
 
 4. **Set Up Monitoring:**
@@ -475,6 +475,6 @@ After deployment:
 
 ## Support
 
-- **Documentation**: https://github.com/ssahani/orchestr8
-- **Issues**: https://github.com/ssahani/orchestr8/issues
-- **Discussions**: https://github.com/ssahani/orchestr8/discussions
+- **Documentation**: https://github.com/ssahani/aether
+- **Issues**: https://github.com/ssahani/aether/issues
+- **Discussions**: https://github.com/ssahani/aether/discussions

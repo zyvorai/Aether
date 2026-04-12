@@ -1,8 +1,8 @@
-# 📘 Orchestr8 Documentation
+# 📘 Aether Documentation
 
 > **One spec. Four runtimes. One tool.**
 >
-> Orchestr8 is a Universal Runtime Control Plane that deploys workloads to
+> Aether is a Universal Runtime Control Plane that deploys workloads to
 > Podman, Kubernetes, KubeVirt, and Metal3 from a single YAML specification.
 
 ---
@@ -11,7 +11,7 @@
 
 | Link | Description |
 |------|-------------|
-| [Installation Guide](getting-started/01-Installation.md) | Install orchestr8 from source, packages, or containers |
+| [Installation Guide](getting-started/01-Installation.md) | Install aether from source, packages, or containers |
 | [Quick Start (5 min)](getting-started/02-Quick-Start.md) | Deploy your first workload in under five minutes |
 | [Complete Documentation Index](index.md) | Every page in the docs, organized by topic |
 
@@ -20,23 +20,23 @@
 ## 🆕 Latest Features (v0.3.0)
 
 ### 🎼 Compose Files
-Deploy multi-workload stacks from a single `orchestr8-compose.yaml` with dependency ordering,
+Deploy multi-workload stacks from a single `aether-compose.yaml` with dependency ordering,
 runtime overrides, and per-workload environment variables.
 
 ```bash
-orchestr8 compose up
-orchestr8 compose down
-orchestr8 compose validate
+aether compose up
+aether compose down
+aether compose validate
 ```
 
 ### 🔌 Plugin System
-Extend orchestr8 with third-party runtimes via a JSON-RPC plugin protocol. Plugins are
-auto-discovered from `~/.orchestr8/plugins/`.
+Extend aether with third-party runtimes via a JSON-RPC plugin protocol. Plugins are
+auto-discovered from `~/.aether/plugins/`.
 
 ```bash
-orchestr8 plugin discover
-orchestr8 plugin list
-orchestr8 plugin register my-runtime.json
+aether plugin discover
+aether plugin list
+aether plugin register my-runtime.json
 ```
 
 ### 💓 Health Tracking
@@ -44,9 +44,9 @@ Per-workload health history with uptime calculations, restart tracking, and hist
 Background health-check loops with circuit-breaker protection.
 
 ```bash
-orchestr8 health my-app --summary
-orchestr8 orchestrate health-check
-orchestr8 orchestrate watch --interval 30
+aether health my-app --summary
+aether orchestrate health-check
+aether orchestrate watch --interval 30
 ```
 
 ### 🛡️ Policy Gate
@@ -54,8 +54,8 @@ Enforce production and development policies before deployment. Configurable poli
 with dry-run support.
 
 ```bash
-orchestr8 policy-check --policy production
-orchestr8 run --skip-policy          # bypass (CI only)
+aether policy-check --policy production
+aether run --skip-policy          # bypass (CI only)
 ```
 
 ### 🔐 AES-256 Secrets
@@ -63,33 +63,33 @@ Encrypted secrets management with rotation policies, access auditing, and namesp
 Values are encrypted at rest using AES-256-GCM.
 
 ```bash
-orchestr8 secrets create my-secret
-orchestr8 secrets set my-secret DB_PASSWORD hunter2
-orchestr8 secrets audit
+aether secrets create my-secret
+aether secrets set my-secret DB_PASSWORD hunter2
+aether secrets audit
 ```
 
 ### 🔄 Drift Detection & Reconciliation
 Detect when running workloads diverge from their spec and auto-reconcile drifted state.
 
 ```bash
-orchestr8 drift my-app
-orchestr8 drift my-app --reconcile
+aether drift my-app
+aether drift my-app --reconcile
 ```
 
 ### 🔁 Background Health Loop
 Continuously monitor workloads with configurable intervals and circuit-breaker thresholds.
 
 ```bash
-orchestr8 orchestrate watch --interval 30
-orchestr8 orchestrate rolling-update my-app --replicas 3
-orchestr8 orchestrate reset-circuit my-app
+aether orchestrate watch --interval 30
+aether orchestrate rolling-update my-app --replicas 3
+aether orchestrate reset-circuit my-app
 ```
 
 ### 🖥️ TUI Dashboard
 Interactive terminal UI with real-time workload status, log streaming, and keyboard navigation.
 
 ```bash
-orchestr8 tui
+aether tui
 ```
 
 ---
@@ -105,7 +105,7 @@ orchestr8 tui
 ## 👥 Quick Access by Role
 
 ### 🔧 SysAdmin / Ops
-- [Installation](getting-started/01-Installation.md) -- Get orchestr8 running on your infrastructure
+- [Installation](getting-started/01-Installation.md) -- Get aether running on your infrastructure
 - [Backup & Restore](BACKUP.md) -- State backup and disaster recovery procedures
 - [Deployment Guide](DEPLOYMENT.md) -- Kubernetes, Helm, and container-based deployment
 - [Runbook](RUNBOOK.md) -- Operational playbooks for common scenarios
@@ -130,18 +130,18 @@ orchestr8 tui
 
 | Task | Command | Docs |
 |------|---------|------|
-| Deploy a workload | `orchestr8 run` | [Quick Start](getting-started/02-Quick-Start.md) |
-| Deploy a directory of workloads | `orchestr8 deploy ./specs/` | [Quick Start](getting-started/02-Quick-Start.md) |
-| Deploy a compose stack | `orchestr8 compose up` | [Index](index.md#features) |
-| Migrate between runtimes | `orchestr8 migrate my-app kube` | [Index](index.md#guides) |
-| Monitor workloads | `orchestr8 tui` | [Web UI](WEBUI.md) |
-| Manage plugins | `orchestr8 plugin list` | [Index](index.md#features) |
-| Check health history | `orchestr8 health my-app` | [Index](index.md#features) |
-| Manage secrets | `orchestr8 secrets list` | [Index](index.md#features) |
-| Detect drift | `orchestr8 drift my-app` | [Index](index.md#features) |
-| Estimate costs | `orchestr8 cost` | [Cost Estimation](COST.md) |
-| Generate shell completions | `orchestr8 completions bash` | [Installation](getting-started/01-Installation.md) |
-| Start API server | `orchestr8 serve` | [Web UI](WEBUI.md) |
+| Deploy a workload | `aether run` | [Quick Start](getting-started/02-Quick-Start.md) |
+| Deploy a directory of workloads | `aether deploy ./specs/` | [Quick Start](getting-started/02-Quick-Start.md) |
+| Deploy a compose stack | `aether compose up` | [Index](index.md#features) |
+| Migrate between runtimes | `aether migrate my-app kube` | [Index](index.md#guides) |
+| Monitor workloads | `aether tui` | [Web UI](WEBUI.md) |
+| Manage plugins | `aether plugin list` | [Index](index.md#features) |
+| Check health history | `aether health my-app` | [Index](index.md#features) |
+| Manage secrets | `aether secrets list` | [Index](index.md#features) |
+| Detect drift | `aether drift my-app` | [Index](index.md#features) |
+| Estimate costs | `aether cost` | [Cost Estimation](COST.md) |
+| Generate shell completions | `aether completions bash` | [Installation](getting-started/01-Installation.md) |
+| Start API server | `aether serve` | [Web UI](WEBUI.md) |
 
 ---
 
@@ -194,4 +194,4 @@ Proprietary -- HyperSDK. See [LICENSE](../LICENSE) for details.
 
 ---
 
-*Generated for orchestr8 v0.3.0. See the [Complete Index](index.md) for all documentation.*
+*Generated for aether v0.3.0. See the [Complete Index](index.md) for all documentation.*

@@ -1,4 +1,4 @@
-# 🎨 Orchestr8 Phase 3 - TUI Dashboard COMPLETE
+# 🎨 Aether Phase 3 - TUI Dashboard COMPLETE
 
 ## ✅ What Was Built (5️⃣ TUI Dashboard)
 
@@ -42,7 +42,7 @@
 **Visual Layout:**
 ```
 ┌────────────────────────────────────────────┐
-│         ORCHESTR8 Dashboard                 │
+│         AETHER Dashboard                 │
 │      Workloads: 3 | Last refresh: 2s       │
 └────────────────────────────────────────────┘
 ┌─ Workloads ────────────────────────────────┐
@@ -182,13 +182,13 @@ pub struct App {
 
 ```bash
 # Launch interactive dashboard
-orchestr8 tui
+aether tui
 ```
 
 ### Updated Help
 
 ```bash
-$ orchestr8 --help
+$ aether --help
 
 Commands:
   validate  Validate workload specification
@@ -235,11 +235,11 @@ Commands:
 
 ```bash
 # 1. Deploy some workloads
-orchestr8 run --spec app1.yaml --runtime podman
-orchestr8 run --spec app2.yaml --runtime kube
+aether run --spec app1.yaml --runtime podman
+aether run --spec app2.yaml --runtime kube
 
 # 2. Launch TUI
-orchestr8 tui
+aether tui
 
 # 3. See both workloads in dashboard
 #    - my-app  🐳 podman    Status: ● running
@@ -344,25 +344,25 @@ While TUI is primarily visual (requires manual testing), the underlying logic is
 
 ```bash
 # Check each workload individually
-orchestr8 status my-app
-orchestr8 status web-app
-orchestr8 status db
+aether status my-app
+aether status web-app
+aether status db
 
 # View logs separately
-orchestr8 logs my-app | less
-orchestr8 logs web-app | less
+aether logs my-app | less
+aether logs web-app | less
 
 # Refresh manually
-orchestr8 status my-app
+aether status my-app
 # ... wait ...
-orchestr8 status my-app
+aether status my-app
 ```
 
 ### After (TUI)
 
 ```bash
 # Launch once
-orchestr8 tui
+aether tui
 
 # See all workloads
 # Auto-refreshes every 5s
@@ -404,10 +404,10 @@ orchestr8 tui
 vim src/main.rs
 
 # Terminal 2: TUI
-orchestr8 tui
+aether tui
 
 # Deploy changes
-orchestr8 run --runtime podman
+aether run --runtime podman
 
 # Watch status update automatically in TUI
 ```
@@ -419,7 +419,7 @@ orchestr8 run --runtime podman
 ssh prod-server
 
 # Launch TUI
-orchestr8 tui
+aether tui
 
 # See failing service (red status)
 # Select it
@@ -432,11 +432,11 @@ orchestr8 tui
 
 ```bash
 # Deploy to both runtimes
-orchestr8 run --spec local.yaml --runtime podman
-orchestr8 run --spec cloud.yaml --runtime kube
+aether run --spec local.yaml --runtime podman
+aether run --spec cloud.yaml --runtime kube
 
 # View both at once
-orchestr8 tui
+aether tui
 
 # See side-by-side:
 #   local-app  🐳 podman
@@ -447,7 +447,7 @@ orchestr8 tui
 
 ```bash
 # Launch TUI for impressive visual
-orchestr8 tui
+aether tui
 
 # Show live workload management
 # Color-coded status
@@ -522,7 +522,7 @@ Planned for future versions:
 
 ```
 ┌───────────────────────────────────┐
-│     ORCHESTR8 TUI CONTROLS        │
+│     AETHER TUI CONTROLS        │
 ├───────────────────────────────────┤
 │  NAVIGATION                       │
 │  ↑, k ............. Previous item │
@@ -646,11 +646,11 @@ All errors are displayed in the TUI:
 cargo build --release
 
 # Deploy some workloads
-./target/release/orchestr8 run --spec workload.yaml --runtime podman
-./target/release/orchestr8 run --spec workload-k8s.yaml --runtime kube
+./target/release/aether run --spec workload.yaml --runtime podman
+./target/release/aether run --spec workload-k8s.yaml --runtime kube
 
 # Launch TUI
-./target/release/orchestr8 tui
+./target/release/aether tui
 
 # Navigate:
 # - Use ↑↓ to select
@@ -700,4 +700,4 @@ cargo build --release
 - 📊 Production health checks
 - 🎨 Demo presentations
 
-**Try it:** `orchestr8 tui` 🚀
+**Try it:** `aether tui` 🚀

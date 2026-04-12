@@ -500,7 +500,7 @@ pub fn format_env_list(envs: &[&Environment]) -> String {
             format!("{}", e.tier),
             e.workloads.len().to_string(),
             e.variables.len().to_string(),
-            e.updated_at[..19].to_string(),
+            e.updated_at.get(..19).unwrap_or(&e.updated_at).to_string(),
         ])
         .collect();
     out.push_str(&format!(

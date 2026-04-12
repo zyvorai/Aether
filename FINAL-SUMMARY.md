@@ -1,4 +1,4 @@
-# 🎉 Orchestr8 - Complete Project Summary
+# 🎉 Aether - Complete Project Summary
 
 ## Project Status: **PRODUCTION READY** ✅
 
@@ -66,7 +66,7 @@
 ## 📁 Complete File Structure
 
 ```
-orchestr8/
+aether/
 ├── Cargo.toml                    # Project manifest
 ├── Cargo.lock                    # Locked dependencies
 ├── README.md                     # Main documentation
@@ -117,7 +117,7 @@ orchestr8/
 | **Workload Spec** | ✅ | Complete YAML schema |
 | **Multi-Runtime** | ✅ | Podman + Kubernetes |
 | **Auto-Selection** | ✅ | Intelligent runtime choice |
-| **State Management** | ✅ | Persistent state (~/.orchestr8) |
+| **State Management** | ✅ | Persistent state (~/.aether) |
 | **CLI** | ✅ | 9 commands |
 | **TUI** | ✅ | Interactive dashboard |
 
@@ -164,39 +164,39 @@ orchestr8/
 
 ```bash
 # Validate spec
-orchestr8 validate [--spec workload.yaml]
+aether validate [--spec workload.yaml]
 
 # Build image
-orchestr8 build [--spec workload.yaml]
+aether build [--spec workload.yaml]
 
 # Run workload (auto-select runtime)
-orchestr8 run [--spec workload.yaml]
+aether run [--spec workload.yaml]
 
 # Run with specific runtime
-orchestr8 run --runtime podman
-orchestr8 run --runtime kube
+aether run --runtime podman
+aether run --runtime kube
 
 # Get status
-orchestr8 status <name>
+aether status <name>
 
 # View logs
-orchestr8 logs <name> [--follow]
+aether logs <name> [--follow]
 
 # Stop workload
-orchestr8 stop <name>
+aether stop <name>
 
 # Delete workload
-orchestr8 delete <name>
+aether delete <name>
 
 # List all workloads
-orchestr8 list
+aether list
 ```
 
 ### Interactive Dashboard
 
 ```bash
 # Launch TUI
-orchestr8 tui
+aether tui
 
 # Keyboard shortcuts:
 #   ↑↓  - Navigate
@@ -209,14 +209,14 @@ orchestr8 tui
 
 ```bash
 # Verbose logging
-orchestr8 -v <command>
+aether -v <command>
 
 # Custom spec file
-orchestr8 --spec custom.yaml <command>
+aether --spec custom.yaml <command>
 
 # Help
-orchestr8 --help
-orchestr8 <command> --help
+aether --help
+aether <command> --help
 ```
 
 ---
@@ -286,7 +286,7 @@ test result: ok. 9 passed; 0 failed; 0 ignored
 
 ```
 ┌─────────────────────────────────────────────┐
-│              Orchestr8 CLI/TUI             │
+│              Aether CLI/TUI             │
 ├─────────────────────────────────────────────┤
 │  CLI Commands          TUI Dashboard        │
 │  - validate            - Live status        │
@@ -372,7 +372,7 @@ Finished in 2m 13s
 ```bash
 # 1. Create spec
 cat > app.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: my-app
@@ -380,26 +380,26 @@ metadata:
 EOF
 
 # 2. Validate
-orchestr8 validate --spec app.yaml
+aether validate --spec app.yaml
 
 # 3. Deploy
-orchestr8 run --spec app.yaml
+aether run --spec app.yaml
 
 # 4. Check
-orchestr8 status my-app
+aether status my-app
 
 # 5. Monitor
-orchestr8 logs my-app --follow
+aether logs my-app --follow
 
 # 6. Cleanup
-orchestr8 delete my-app
+aether delete my-app
 ```
 
 ### TUI Workflow
 
 ```bash
 # 1. Launch
-orchestr8 tui
+aether tui
 
 # 2. See all workloads
 #    - my-app  🐳 podman    ● running
@@ -423,17 +423,17 @@ orchestr8 tui
 vim src/main.rs
 
 # Build and run locally
-orchestr8 build
-orchestr8 run --runtime podman
+aether build
+aether run --runtime podman
 
 # Test
 curl http://localhost:8080
 
 # Check logs
-orchestr8 logs my-app
+aether logs my-app
 
 # Monitor with TUI
-orchestr8 tui
+aether tui
 ```
 
 ### 2. Cloud Deployment
@@ -446,10 +446,10 @@ podman build -t ghcr.io/org/app:latest .
 podman push ghcr.io/org/app:latest
 
 # Deploy to Kubernetes
-orchestr8 run --spec workload-k8s.yaml --runtime kube
+aether run --spec workload-k8s.yaml --runtime kube
 
 # Monitor
-orchestr8 tui
+aether tui
 
 # Get external IP
 kubectl get svc my-app-service
@@ -462,30 +462,30 @@ curl http://<EXTERNAL-IP>
 
 ```bash
 # Development
-ORCHESTR8_NAMESPACE=dev orchestr8 run --spec app.yaml
+AETHER_NAMESPACE=dev aether run --spec app.yaml
 
 # Staging
-ORCHESTR8_NAMESPACE=staging orchestr8 run --spec app.yaml
+AETHER_NAMESPACE=staging aether run --spec app.yaml
 
 # Production
-ORCHESTR8_NAMESPACE=prod orchestr8 run --spec app.yaml
+AETHER_NAMESPACE=prod aether run --spec app.yaml
 
 # Monitor all
-orchestr8 tui
+aether tui
 ```
 
 ### 4. Hybrid Deployment
 
 ```bash
 # Local testing
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # If tests pass, deploy to cloud
-orchestr8 delete my-app
-orchestr8 run --spec app.yaml --runtime kube
+aether delete my-app
+aether run --spec app.yaml --runtime kube
 
 # Compare in TUI
-orchestr8 tui
+aether tui
 # See both: local (Podman) and cloud (Kubernetes)
 ```
 
@@ -493,7 +493,7 @@ orchestr8 tui
 
 ## 🌟 Unique Features
 
-### What Makes Orchestr8 Special
+### What Makes Aether Special
 
 1. **One Spec, Multiple Runtimes**
    - Write once, run anywhere
@@ -629,7 +629,7 @@ orchestr8 tui
 ```bash
 # Clone repo
 git clone <repo>
-cd orchestr8
+cd aether
 
 # Build
 cargo build
@@ -706,7 +706,7 @@ Total             27     4951    4700        150
 
 ## 🎉 Summary
 
-**Orchestr8 is a production-ready universal runtime control plane** that successfully delivers:
+**Aether is a production-ready universal runtime control plane** that successfully delivers:
 
 ### Core Value
 
@@ -744,7 +744,7 @@ cargo build --release
 
 # 2. Create spec
 cat > app.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: my-app
@@ -758,10 +758,10 @@ runtime:
 EOF
 
 # 3. Deploy
-./target/release/orchestr8 run
+./target/release/aether run
 
 # 4. Monitor
-./target/release/orchestr8 tui
+./target/release/aether tui
 
 # 5. Enjoy! 🎉
 ```
@@ -778,4 +778,4 @@ EOF
 - **5️⃣** Metal3 - Bare metal
 - **6️⃣** Migration - Runtime switching
 
-**Orchestr8 is ready for real-world use! 🚀**
+**Aether is ready for real-world use! 🚀**

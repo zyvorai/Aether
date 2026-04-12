@@ -62,15 +62,15 @@ pub fn parse_memory_gi(memory: &str) -> f64 {
     }
 }
 
-/// Return the orchestr8 home directory (`~/.orchestr8`).
-pub fn orchestr8_dir() -> PathBuf {
+/// Return the aether home directory (`~/.aether`).
+pub fn aether_dir() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".orchestr8")
+    PathBuf::from(home).join(".aether")
 }
 
-/// Return a path inside the orchestr8 home directory.
-pub fn orchestr8_path(filename: &str) -> PathBuf {
-    orchestr8_dir().join(filename)
+/// Return a path inside the aether home directory.
+pub fn aether_path(filename: &str) -> PathBuf {
+    aether_dir().join(filename)
 }
 
 /// Load a JSON-serialisable value from a file.
@@ -120,7 +120,7 @@ macro_rules! impl_json_store {
         impl $ty {
             /// Return the default on-disk path for this store.
             pub fn default_path() -> std::path::PathBuf {
-                $crate::resources::orchestr8_path($filename)
+                $crate::resources::aether_path($filename)
             }
 
             /// Load from disk, returning `Default` if the file does not exist.
@@ -170,9 +170,9 @@ mod tests {
     }
 
     #[test]
-    fn test_orchestr8_path() {
-        let p = orchestr8_path("state.json");
-        assert!(p.ends_with(".orchestr8/state.json"));
+    fn test_aether_path() {
+        let p = aether_path("state.json");
+        assert!(p.ends_with(".aether/state.json"));
     }
 
     #[test]
@@ -181,7 +181,7 @@ mod tests {
         struct Dummy {
             x: i32,
         }
-        let path = std::path::Path::new("/tmp/orchestr8_test_nonexistent_file.json");
+        let path = std::path::Path::new("/tmp/aether_test_nonexistent_file.json");
         let v: Dummy = json_load(path).unwrap();
         assert_eq!(v.x, 0);
     }

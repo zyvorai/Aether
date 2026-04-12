@@ -1,6 +1,6 @@
 # 🖧 Metal3 Bare Metal Deployment Guide
 
-Complete guide for provisioning bare metal servers using Orchestr8's Metal3 runtime.
+Complete guide for provisioning bare metal servers using Aether's Metal3 runtime.
 
 ---
 
@@ -30,9 +30,9 @@ Complete guide for provisioning bare metal servers using Orchestr8's Metal3 runt
 - **Unified Platform**: Manage containers, VMs, and bare metal together
 - **Cloud-Native**: Native Kubernetes APIs and workflows
 
-### Why Use Orchestr8 with Metal3?
+### Why Use Aether with Metal3?
 
-Orchestr8 simplifies bare metal provisioning:
+Aether simplifies bare metal provisioning:
 
 ✅ **One Spec Format**: Same YAML for containers, VMs, and bare metal
 ✅ **Auto-Generation**: Creates BareMetalHost CRDs
@@ -115,18 +115,18 @@ kubectl get baremetalhosts -A
 
 ## Installation
 
-### Install Orchestr8
+### Install Aether
 
 ```bash
 # Clone repository
-git clone https://github.com/ssahani/orchestr8
-cd orchestr8
+git clone https://github.com/ssahani/aether
+cd aether
 
 # Build release binary
 cargo build --release
 
 # Install (optional)
-sudo cp target/release/orchestr8 /usr/local/bin/
+sudo cp target/release/aether /usr/local/bin/
 ```
 
 ### Configure kubectl
@@ -138,7 +138,7 @@ Ensure kubectl is configured to access your cluster:
 kubectl get nodes
 
 # Set namespace (optional)
-export ORCHESTR8_NAMESPACE=metal3-system
+export AETHER_NAMESPACE=metal3-system
 ```
 
 ---
@@ -162,7 +162,7 @@ IMAGE_URL="https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/38
 Create `bare-metal-workload.yaml`:
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -171,11 +171,11 @@ metadata:
   project: infrastructure
   annotations:
     # Required for production: set the boot MAC address of your target server
-    orchestr8.io/boot-mac-address: "52:54:00:12:34:56"
+    aether.io/boot-mac-address: "52:54:00:12:34:56"
     # Required for production: HTTP URL of the bootable disk image
-    orchestr8.io/image-url: "http://image-server.local/coreos-stable.img"
+    aether.io/image-url: "http://image-server.local/coreos-stable.img"
     # Optional: checksum URL for image verification
-    orchestr8.io/image-checksum-url: "http://image-server.local/coreos-stable.img.sha256sum"
+    aether.io/image-checksum-url: "http://image-server.local/coreos-stable.img.sha256sum"
 
 build:
   registry: image-server.local
@@ -204,19 +204,19 @@ persistence:
   access_mode: ReadWriteOnce
 ```
 
-> **Note:** The `orchestr8.io/boot-mac-address` and `orchestr8.io/image-url` annotations are required for production deployments. Without them, Orchestr8 uses placeholder values and logs warnings.
+> **Note:** The `aether.io/boot-mac-address` and `aether.io/image-url` annotations are required for production deployments. Without them, Aether uses placeholder values and logs warnings.
 
 ### 3. Validate Spec
 
 ```bash
-orchestr8 validate --spec bare-metal-workload.yaml
+aether validate --spec bare-metal-workload.yaml
 ```
 
 ### 4. Provision Server
 
 ```bash
 # Deploy using Metal3 runtime
-orchestr8 run --spec bare-metal-workload.yaml --runtime metal
+aether run --spec bare-metal-workload.yaml --runtime metal
 
 # Output:
 # 🚀 Running workload...
@@ -230,7 +230,7 @@ orchestr8 run --spec bare-metal-workload.yaml --runtime metal
 
 ```bash
 # Get host status
-orchestr8 status edge-server
+aether status edge-server
 
 # Output:
 # 📊 Status for 'edge-server':
@@ -249,7 +249,7 @@ kubectl get bmh edge-server -n metal3-system -w
 kubectl describe bmh edge-server -n metal3-system
 
 # View hardware details
-orchestr8 logs edge-server
+aether logs edge-server
 ```
 
 ---
@@ -260,7 +260,7 @@ orchestr8 logs edge-server
 
 ```
 ┌─────────────────────────────────────────┐
-│         Orchestr8 workload.yaml        │
+│         Aether workload.yaml        │
 └───────────────┬─────────────────────────┘
                 │
                 ▼
@@ -318,19 +318,19 @@ deprovisioning ←────────────────────�
 
 ### Metal3 Annotations
 
-Orchestr8 uses workload annotations to configure bare metal provisioning:
+Aether uses workload annotations to configure bare metal provisioning:
 
 | Annotation | Required | Description |
 |-----------|----------|-------------|
-| `orchestr8.io/boot-mac-address` | **Yes** (production) | Boot MAC address of the target server |
-| `orchestr8.io/image-url` | **Yes** (production) | HTTP URL of the bootable disk image |
-| `orchestr8.io/image-checksum-url` | No | URL of the image checksum file |
+| `aether.io/boot-mac-address` | **Yes** (production) | Boot MAC address of the target server |
+| `aether.io/image-url` | **Yes** (production) | HTTP URL of the bootable disk image |
+| `aether.io/image-checksum-url` | No | URL of the image checksum file |
 
-If these annotations are not set, Orchestr8 uses placeholder values and logs warnings. This is acceptable for development/testing but must be configured for production.
+If these annotations are not set, Aether uses placeholder values and logs warnings. This is acceptable for development/testing but must be configured for production.
 
 ### Resources Created
 
-For each bare metal deployment, Orchestr8 creates:
+For each bare metal deployment, Aether creates:
 
 1. **BareMetalHost** (Metal3 resource)
    - Server specification
@@ -355,22 +355,22 @@ metadata:
   namespace: metal3-system
   labels:
     app: edge-server
-    managed-by: orchestr8
+    managed-by: aether
   annotations:
-    orchestr8.io/cpu-cores: "16"
-    orchestr8.io/memory-mb: "65536"
-    orchestr8.io/gpu-vendor: "nvidia"
-    orchestr8.io/gpu-count: "2"
+    aether.io/cpu-cores: "16"
+    aether.io/memory-mb: "65536"
+    aether.io/gpu-vendor: "nvidia"
+    aether.io/gpu-count: "2"
 spec:
   online: true
-  bootMACAddress: "52:54:00:12:34:56"  # from orchestr8.io/boot-mac-address annotation
+  bootMACAddress: "52:54:00:12:34:56"  # from aether.io/boot-mac-address annotation
   bootMode: UEFI
   bmc:
     address: redfish://192.168.1.100
     credentialsName: edge-server-bmc-secret
   image:
-    url: http://image-server/edge-server.img         # from orchestr8.io/image-url annotation
-    checksum: http://image-server/edge-server.img.sha256sum  # from orchestr8.io/image-checksum-url
+    url: http://image-server/edge-server.img         # from aether.io/image-url annotation
+    checksum: http://image-server/edge-server.img.sha256sum  # from aether.io/image-checksum-url
   rootDeviceHints:
     deviceName: /dev/sda
     minSizeGigabytes: 500
@@ -395,7 +395,7 @@ requirements:
   cpu: "16000m"    # 16 cores (16000 millicores)
 ```
 
-Orchestr8 adds CPU requirements as annotations for hardware matching.
+Aether adds CPU requirements as annotations for hardware matching.
 
 ### Memory Configuration
 
@@ -418,7 +418,7 @@ persistence:
   access_mode: ReadWriteOnce
 ```
 
-Orchestr8 sets `rootDeviceHints.minSizeGigabytes` based on storage requirement.
+Aether sets `rootDeviceHints.minSizeGigabytes` based on storage requirement.
 
 ### Network Configuration
 
@@ -446,8 +446,8 @@ requirements:
 ```
 
 GPU requirements stored as annotations for matching:
-- `orchestr8.io/gpu-vendor: nvidia`
-- `orchestr8.io/gpu-count: 4`
+- `aether.io/gpu-vendor: nvidia`
+- `aether.io/gpu-count: 4`
 
 ---
 
@@ -577,7 +577,7 @@ spec:
 
 **Provision Server:**
 ```bash
-orchestr8 run --spec bare-metal-workload.yaml --runtime metal
+aether run --spec bare-metal-workload.yaml --runtime metal
 ```
 
 This creates BareMetalHost with `spec.online: true`, triggering:
@@ -589,14 +589,14 @@ This creates BareMetalHost with `spec.online: true`, triggering:
 
 **Power Off Server:**
 ```bash
-orchestr8 stop edge-server
+aether stop edge-server
 ```
 
 Sets `spec.online: false`, powering off the server via BMC.
 
 **Deprovision Server:**
 ```bash
-orchestr8 delete edge-server
+aether delete edge-server
 ```
 
 Triggers deprovisioning:
@@ -607,7 +607,7 @@ Triggers deprovisioning:
 
 **List Servers:**
 ```bash
-orchestr8 list
+aether list
 
 # Output:
 # 📋 Running workloads:
@@ -618,7 +618,7 @@ orchestr8 list
 
 **CLI Status:**
 ```bash
-orchestr8 status edge-server
+aether status edge-server
 
 # Shows:
 # - Provisioning state
@@ -628,7 +628,7 @@ orchestr8 status edge-server
 
 **Interactive TUI:**
 ```bash
-orchestr8 tui
+aether tui
 
 # Navigate with arrow keys
 # Press Enter to view BMC info and hardware details
@@ -651,7 +651,7 @@ kubectl get bmh edge-server -n metal3-system -o yaml | yq '.status.hardware'
 **IPMI Serial Console:**
 ```bash
 # Get BMC info
-orchestr8 logs edge-server
+aether logs edge-server
 
 # Connect via IPMI
 ipmitool -I lanplus -H 192.168.1.100 -U admin -P password sol activate
@@ -985,7 +985,7 @@ annotations:
 ### Example 1: Edge Computing Server
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: edge-node-01
@@ -1017,7 +1017,7 @@ persistence:
 ### Example 2: GPU Compute Server
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: ml-server-gpu
@@ -1052,7 +1052,7 @@ persistence:
 ### Example 3: Database Server
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: postgres-primary
@@ -1152,16 +1152,16 @@ kubectl get bmh
 # All servers should reach "available" state
 ```
 
-**Step 5: Deploy Workloads via Orchestr8**
+**Step 5: Deploy Workloads via Aether**
 ```bash
-orchestr8 run --spec workload-metal.yaml --runtime metal
+aether run --spec workload-metal.yaml --runtime metal
 ```
 
 ---
 
 ## Summary
 
-**Orchestr8 + Metal3** provides:
+**Aether + Metal3** provides:
 
 ✅ **Easy Bare Metal Provisioning**: One command to provision servers
 ✅ **Kubernetes Integration**: Servers as native K8s resources
@@ -1184,4 +1184,4 @@ orchestr8 run --spec workload-metal.yaml --runtime metal
 
 ---
 
-**🖧 Start provisioning bare metal with Orchestr8 + Metal3 today!**
+**🖧 Start provisioning bare metal with Aether + Metal3 today!**

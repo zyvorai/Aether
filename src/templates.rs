@@ -178,7 +178,7 @@ pub fn generate(kind: &TemplateKind, params: &TemplateParams) -> Workload {
 
 fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<RuntimeType>) -> Workload {
     Workload {
-        api_version: "orchestr8/v1".to_string(),
+        api_version: "aether/v1".to_string(),
         kind: "Workload".to_string(),
         metadata: Metadata {
             name: params.name.clone(),
@@ -524,7 +524,7 @@ pub fn format_template_list() -> String {
         "\n{}\n",
         output::table(&["Template", "Description", "Tags", "Runtime"], rows),
     ));
-    out.push_str("  Usage: orchestr8 template <name> --name <workload-name>\n");
+    out.push_str("  Usage: aether template <name> --name <workload-name>\n");
     out
 }
 

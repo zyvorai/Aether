@@ -1,4 +1,4 @@
-# 📑 Orchestr8 -- Complete Documentation Index
+# 📑 Aether -- Complete Documentation Index
 
 > **Universal Runtime Control Plane** -- One spec, four runtimes, one tool.
 >
@@ -70,107 +70,107 @@
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 init` | First-time setup wizard |
-| `orchestr8 validate` | Validate workload YAML specification |
-| `orchestr8 build` | Build workload container image |
-| `orchestr8 run [--runtime <rt>]` | Deploy a workload (optional runtime override) |
-| `orchestr8 stop <name>` | Stop a running workload |
-| `orchestr8 status <name>` | Get workload instance status |
-| `orchestr8 logs <name> [--follow]` | View workload logs |
-| `orchestr8 delete <name>` | Delete a workload instance |
-| `orchestr8 list` | List all deployed workloads |
-| `orchestr8 exec <name> [cmd]` | Execute a command inside a running workload |
-| `orchestr8 port-forward <name> <local:remote>` | Forward local ports to a workload |
-| `orchestr8 watch [--runtime <rt>]` | Watch spec file and auto-redeploy on changes |
+| `aether init` | First-time setup wizard |
+| `aether validate` | Validate workload YAML specification |
+| `aether build` | Build workload container image |
+| `aether run [--runtime <rt>]` | Deploy a workload (optional runtime override) |
+| `aether stop <name>` | Stop a running workload |
+| `aether status <name>` | Get workload instance status |
+| `aether logs <name> [--follow]` | View workload logs |
+| `aether delete <name>` | Delete a workload instance |
+| `aether list` | List all deployed workloads |
+| `aether exec <name> [cmd]` | Execute a command inside a running workload |
+| `aether port-forward <name> <local:remote>` | Forward local ports to a workload |
+| `aether watch [--runtime <rt>]` | Watch spec file and auto-redeploy on changes |
 
 #### Batch Operations
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 deploy <dir> [--runtime <rt>] [--fail-fast] [--dry-run]` | Deploy all workloads from a directory |
-| `orchestr8 compose up [file] [--runtime <rt>] [--dry-run]` | Deploy all workloads from a compose file |
-| `orchestr8 compose down [file]` | Stop all workloads from a compose file |
-| `orchestr8 compose validate [file]` | Validate a compose file |
+| `aether deploy <dir> [--runtime <rt>] [--fail-fast] [--dry-run]` | Deploy all workloads from a directory |
+| `aether compose up [file] [--runtime <rt>] [--dry-run]` | Deploy all workloads from a compose file |
+| `aether compose down [file]` | Stop all workloads from a compose file |
+| `aether compose validate [file]` | Validate a compose file |
 
 #### Migration
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 migrate <name> <target> [--strategy <s>]` | Migrate workload to a different runtime |
-| `orchestr8 migration-advice <name> <target>` | AI-powered migration path recommendations |
-| `orchestr8 rollback <name>` | Rollback to the latest snapshot |
-| `orchestr8 diff <name>` | Compare spec vs stored vs live state |
+| `aether migrate <name> <target> [--strategy <s>]` | Migrate workload to a different runtime |
+| `aether migration-advice <name> <target>` | AI-powered migration path recommendations |
+| `aether rollback <name>` | Rollback to the latest snapshot |
+| `aether diff <name>` | Compare spec vs stored vs live state |
 
 #### AI & Analysis
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 recommend` | AI-powered runtime recommendation with scoring |
-| `orchestr8 profile [--name <n>]` | Workload profiling and optimization recommendations |
-| `orchestr8 analyze-logs <name>` | Anomaly and pattern detection in logs |
-| `orchestr8 scaling-advice` | Predictive scaling recommendations |
-| `orchestr8 compare` | Compare workload across runtimes (cost, capabilities) |
-| `orchestr8 affinity recommend <class>` | Runtime affinity for a workload class |
-| `orchestr8 affinity matrix` | Full compatibility matrix |
+| `aether recommend` | AI-powered runtime recommendation with scoring |
+| `aether profile [--name <n>]` | Workload profiling and optimization recommendations |
+| `aether analyze-logs <name>` | Anomaly and pattern detection in logs |
+| `aether scaling-advice` | Predictive scaling recommendations |
+| `aether compare` | Compare workload across runtimes (cost, capabilities) |
+| `aether affinity recommend <class>` | Runtime affinity for a workload class |
+| `aether affinity matrix` | Full compatibility matrix |
 
 #### Infrastructure & Scheduling
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 cost [--provider <p>]` | Multi-cloud cost estimation |
-| `orchestr8 config [--show] [--init]` | Show or initialize configuration |
-| `orchestr8 template <name> [--output <file>]` | Generate workload from template |
-| `orchestr8 env create <name> [--tier <t>]` | Create deployment environment |
-| `orchestr8 env promote <workload> <from> <to>` | Promote workload between environments |
-| `orchestr8 schedule place <name> [--strategy <s>]` | Schedule workload placement |
-| `orchestr8 schedule utilization` | Show runtime utilization |
+| `aether cost [--provider <p>]` | Multi-cloud cost estimation |
+| `aether config [--show] [--init]` | Show or initialize configuration |
+| `aether template <name> [--output <file>]` | Generate workload from template |
+| `aether env create <name> [--tier <t>]` | Create deployment environment |
+| `aether env promote <workload> <from> <to>` | Promote workload between environments |
+| `aether schedule place <name> [--strategy <s>]` | Schedule workload placement |
+| `aether schedule utilization` | Show runtime utilization |
 
 #### Observability
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 tui` | Interactive TUI dashboard |
-| `orchestr8 serve [--host <h>] [--port <p>]` | Start API server and web dashboard |
-| `orchestr8 metrics` | Export Prometheus metrics |
-| `orchestr8 health <name> [--summary]` | View workload health history and uptime |
-| `orchestr8 events [--last <n>] [--severity <s>]` | View and filter events |
-| `orchestr8 audit [--last <n>] [--workload <w>]` | View audit trail |
-| `orchestr8 sla check <workload> --uptime <u>` | Check SLA compliance |
+| `aether tui` | Interactive TUI dashboard |
+| `aether serve [--host <h>] [--port <p>]` | Start API server and web dashboard |
+| `aether metrics` | Export Prometheus metrics |
+| `aether health <name> [--summary]` | View workload health history and uptime |
+| `aether events [--last <n>] [--severity <s>]` | View and filter events |
+| `aether audit [--last <n>] [--workload <w>]` | View audit trail |
+| `aether sla check <workload> --uptime <u>` | Check SLA compliance |
 
 #### Security & Compliance
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 secrets create <name>` | Create a new encrypted secret |
-| `orchestr8 secrets set <secret> <key> <value>` | Set a key-value pair (AES-256 encrypted) |
-| `orchestr8 secrets get <secret> <key>` | Retrieve a decrypted value |
-| `orchestr8 secrets list` | List all secrets |
-| `orchestr8 secrets audit` | Check rotation status |
-| `orchestr8 policy-check [--policy <p>]` | Check workload against policies |
-| `orchestr8 drift <name> [--reconcile]` | Detect and reconcile configuration drift |
+| `aether secrets create <name>` | Create a new encrypted secret |
+| `aether secrets set <secret> <key> <value>` | Set a key-value pair (AES-256 encrypted) |
+| `aether secrets get <secret> <key>` | Retrieve a decrypted value |
+| `aether secrets list` | List all secrets |
+| `aether secrets audit` | Check rotation status |
+| `aether policy-check [--policy <p>]` | Check workload against policies |
+| `aether drift <name> [--reconcile]` | Detect and reconcile configuration drift |
 
 #### Operations
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 backup [--name <n>]` | Backup workload state |
-| `orchestr8 restore <backup> [--merge]` | Restore state from backup |
-| `orchestr8 list-backups` | List available backups |
-| `orchestr8 deps show` | Show dependency graph |
-| `orchestr8 deps impact <workload>` | Show impact of stopping a workload |
-| `orchestr8 webhook add <name> <url>` | Add webhook notification channel |
-| `orchestr8 webhook test <name>` | Send test notification |
+| `aether backup [--name <n>]` | Backup workload state |
+| `aether restore <backup> [--merge]` | Restore state from backup |
+| `aether list-backups` | List available backups |
+| `aether deps show` | Show dependency graph |
+| `aether deps impact <workload>` | Show impact of stopping a workload |
+| `aether webhook add <name> <url>` | Add webhook notification channel |
+| `aether webhook test <name>` | Send test notification |
 
 #### Health-Aware Orchestration
 
 | Command | Description |
 |---------|-------------|
-| `orchestr8 orchestrate register <name>` | Register workload for health monitoring |
-| `orchestr8 orchestrate status` | Health status of all managed workloads |
-| `orchestr8 orchestrate health-check` | Run a single round of health checks |
-| `orchestr8 orchestrate watch [--interval <s>]` | Continuous health monitoring loop |
-| `orchestr8 orchestrate rolling-update <name>` | Rolling update with configurable replicas |
-| `orchestr8 orchestrate reset-circuit <name>` | Reset circuit breaker |
+| `aether orchestrate register <name>` | Register workload for health monitoring |
+| `aether orchestrate status` | Health status of all managed workloads |
+| `aether orchestrate health-check` | Run a single round of health checks |
+| `aether orchestrate watch [--interval <s>]` | Continuous health monitoring loop |
+| `aether orchestrate rolling-update <name>` | Rolling update with configurable replicas |
+| `aether orchestrate reset-circuit <name>` | Reset circuit breaker |
 
 ### Global Flags
 
@@ -305,7 +305,7 @@
 | **Instance** | A running workload on a specific runtime |
 | **Migration** | Moving a workload from one runtime to another |
 | **Drift** | Divergence between declared spec and actual live state |
-| **Compose** | A multi-workload deployment defined in `orchestr8-compose.yaml` |
+| **Compose** | A multi-workload deployment defined in `aether-compose.yaml` |
 | **Plugin** | A third-party runtime extension registered via JSON manifest |
 | **Policy** | A set of rules evaluated before deployment is allowed |
 | **SLA Target** | Uptime/latency/error-rate thresholds for a workload |
@@ -317,19 +317,19 @@
 ### FAQ
 
 **Q: Which runtime should I use?**
-A: Run `orchestr8 recommend` for AI-powered scoring, or set `runtime.preferred: auto` in your spec for automatic selection.
+A: Run `aether recommend` for AI-powered scoring, or set `runtime.preferred: auto` in your spec for automatic selection.
 
 **Q: Can I migrate between any two runtimes?**
 A: Yes. All 12 runtime-pair combinations are supported (4 source x 3 target).
 
 **Q: Is the spec format compatible with Kubernetes YAML?**
-A: The orchestr8 spec is its own format (`apiVersion: orchestr8/v1`). Use `orchestr8 template` to generate specs from common patterns.
+A: The aether spec is its own format (`apiVersion: aether/v1`). Use `aether template` to generate specs from common patterns.
 
-**Q: How do I run orchestr8 in CI/CD?**
+**Q: How do I run aether in CI/CD?**
 A: Use `--yes --quiet --json` flags for non-interactive, machine-readable output. See the [CI/CD Guide](CICD.md).
 
 **Q: Where is state stored?**
-A: In `~/.orchestr8/` by default. Use `orchestr8 backup` and `orchestr8 restore` for portability.
+A: In `~/.aether/` by default. Use `aether backup` and `aether restore` for portability.
 
 ---
 
@@ -341,7 +341,7 @@ A: In `~/.orchestr8/` by default. Use `orchestr8 backup` and `orchestr8 restore`
 Installation  -->  Quick Start  -->  First Deployment  -->  Quick Reference
 ```
 
-1. [Install orchestr8](getting-started/01-Installation.md)
+1. [Install aether](getting-started/01-Installation.md)
 2. [Deploy your first workload](getting-started/02-Quick-Start.md)
 3. [First Deployment Tutorial](tutorials/01-beginner-deployment.md)
 4. [Quick Reference Card](quick-reference/QUICK_REFERENCE.md)

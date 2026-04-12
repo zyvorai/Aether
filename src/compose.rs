@@ -360,7 +360,7 @@ workloads:
 
     #[test]
     fn test_load_nonexistent_file() {
-        let result = load(Path::new("/tmp/does-not-exist-orchestr8.yaml"));
+        let result = load(Path::new("/tmp/does-not-exist-aether.yaml"));
         assert!(result.is_err());
     }
 

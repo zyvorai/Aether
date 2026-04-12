@@ -1,6 +1,6 @@
 # 🛠️ Installation Guide
 
-> Install orchestr8 -- the Universal Runtime Control Plane -- from source, packages, containers, or Helm.
+> Install aether -- the Universal Runtime Control Plane -- from source, packages, containers, or Helm.
 
 ---
 
@@ -43,7 +43,7 @@ Install the runtimes you plan to target. You only need the ones you will use:
 | 🔩 **Metal3** | `kubectl` | [metal3.io/documentation](https://metal3.io/) |
 
 > **Tip:** For local development, start with Podman only. You can add Kubernetes
-> and other runtimes later without reinstalling orchestr8.
+> and other runtimes later without reinstalling aether.
 
 ### Verify Prerequisites
 
@@ -65,23 +65,23 @@ Building from source gives you the latest features and lets you customize the bu
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/ssahani/orchestr8.git
-cd orchestr8
+git clone https://github.com/ssahani/aether.git
+cd aether
 
 # 2. Build the release binary (optimized)
 cargo build --release
 
 # 3. Install to your PATH
-sudo install -m 0755 target/release/orchestr8 /usr/local/bin/orchestr8
+sudo install -m 0755 target/release/aether /usr/local/bin/aether
 
 # 4. Verify
-orchestr8 --version
+aether --version
 ```
 
 **Expected output:**
 
 ```
-orchestr8 0.3.0
+aether 0.3.0
 ```
 
 ### Build Options
@@ -112,33 +112,33 @@ cargo build --release
 
 ```bash
 # Download the latest release
-wget https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8_0.3.0-1_amd64.deb
+wget https://github.com/ssahani/aether/releases/latest/download/aether_0.3.0-1_amd64.deb
 
 # Install
-sudo apt install ./orchestr8_0.3.0-1_amd64.deb
+sudo apt install ./aether_0.3.0-1_amd64.deb
 
 # Verify
-orchestr8 --version
+aether --version
 ```
 
 ### Fedora / RHEL / CentOS (.rpm)
 
 ```bash
 # Download the latest release
-wget https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-0.3.0-1.x86_64.rpm
+wget https://github.com/ssahani/aether/releases/latest/download/aether-0.3.0-1.x86_64.rpm
 
 # Install
-sudo dnf install ./orchestr8-0.3.0-1.x86_64.rpm
+sudo dnf install ./aether-0.3.0-1.x86_64.rpm
 
 # Verify
-orchestr8 --version
+aether --version
 ```
 
 ### Arch Linux (AUR)
 
 ```bash
 # Via yay or paru
-yay -S orchestr8
+yay -S aether
 ```
 
 ---
@@ -152,10 +152,10 @@ If you have the Rust toolchain installed, you can install directly from crates.i
 cargo install --path .
 
 # Or install from a git URL
-cargo install --git https://github.com/ssahani/orchestr8.git
+cargo install --git https://github.com/ssahani/aether.git
 
 # Verify
-orchestr8 --version
+aether --version
 ```
 
 > **Note:** `cargo install` places the binary in `~/.cargo/bin/`. Make sure this
@@ -165,14 +165,14 @@ orchestr8 --version
 
 ## 🐳 Option 4: Container Image
 
-Run orchestr8 as a container without installing anything on the host:
+Run aether as a container without installing anything on the host:
 
 ```bash
 # Pull from GitHub Container Registry
-podman pull ghcr.io/ssahani/orchestr8:latest
+podman pull ghcr.io/ssahani/aether:latest
 
 # Or with Docker
-docker pull ghcr.io/ssahani/orchestr8:latest
+docker pull ghcr.io/ssahani/aether:latest
 ```
 
 ### Create a Shell Alias
@@ -180,22 +180,22 @@ docker pull ghcr.io/ssahani/orchestr8:latest
 Add this to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-alias orchestr8='podman run --rm -it \
-  -v ~/.orchestr8:/root/.orchestr8 \
+alias aether='podman run --rm -it \
+  -v ~/.aether:/root/.aether \
   -v ~/.kube:/root/.kube:ro \
   -v /run/podman/podman.sock:/run/podman/podman.sock \
   -v "$(pwd):/work" -w /work \
-  ghcr.io/ssahani/orchestr8:latest'
+  ghcr.io/ssahani/aether:latest'
 ```
 
 ### Verify
 
 ```bash
 source ~/.bashrc
-orchestr8 --version
+aether --version
 ```
 
-> **Note:** When running in a container, orchestr8 needs access to the host's
+> **Note:** When running in a container, aether needs access to the host's
 > runtime sockets (e.g., Podman socket) and kubeconfig. The volume mounts above
 > handle the common cases.
 
@@ -203,18 +203,18 @@ orchestr8 --version
 
 ## ⎈ Option 5: Helm Chart (Kubernetes)
 
-Deploy orchestr8 as a Kubernetes service with the API server and web dashboard:
+Deploy aether as a Kubernetes service with the API server and web dashboard:
 
 ```bash
 # Add the Helm repository
-helm repo add orchestr8 https://ssahani.github.io/orchestr8/charts
+helm repo add aether https://ssahani.github.io/aether/charts
 helm repo update
 
 # Install with default values
-helm install orchestr8 orchestr8/orchestr8
+helm install aether aether/aether
 
 # Or install from a local chart directory
-helm install orchestr8 ./helm/orchestr8
+helm install aether ./helm/aether
 ```
 
 ### Custom Values
@@ -242,14 +242,14 @@ resources:
 ```
 
 ```bash
-helm install orchestr8 orchestr8/orchestr8 -f values.yaml
+helm install aether aether/aether -f values.yaml
 ```
 
 ### Verify Helm Deployment
 
 ```bash
-kubectl get pods -l app=orchestr8
-kubectl port-forward svc/orchestr8 8080:8080
+kubectl get pods -l app=aether
+kubectl port-forward svc/aether 8080:8080
 curl http://localhost:8080/health
 ```
 
@@ -257,20 +257,20 @@ curl http://localhost:8080/health
 
 ## 🐚 Shell Completions
 
-Enable tab completion for faster command entry. Orchestr8 supports five shells:
+Enable tab completion for faster command entry. Aether supports five shells:
 
 ### Bash
 
 ```bash
 # System-wide (requires root)
-orchestr8 completions bash | sudo tee /etc/bash_completion.d/orchestr8 > /dev/null
+aether completions bash | sudo tee /etc/bash_completion.d/aether > /dev/null
 
 # User-only
 mkdir -p ~/.local/share/bash-completion/completions
-orchestr8 completions bash > ~/.local/share/bash-completion/completions/orchestr8
+aether completions bash > ~/.local/share/bash-completion/completions/aether
 
 # Activate in current session
-source <(orchestr8 completions bash)
+source <(aether completions bash)
 ```
 
 ### Zsh
@@ -280,7 +280,7 @@ source <(orchestr8 completions bash)
 mkdir -p ~/.zsh/completion
 
 # Generate completions
-orchestr8 completions zsh > ~/.zsh/completion/_orchestr8
+aether completions zsh > ~/.zsh/completion/_aether
 
 # Add to .zshrc (if not already present)
 echo 'fpath=(~/.zsh/completion $fpath)' >> ~/.zshrc
@@ -294,26 +294,26 @@ source ~/.zshrc
 
 ```bash
 # Generate and install
-orchestr8 completions fish > ~/.config/fish/completions/orchestr8.fish
+aether completions fish > ~/.config/fish/completions/aether.fish
 
 # Activate immediately
-source ~/.config/fish/completions/orchestr8.fish
+source ~/.config/fish/completions/aether.fish
 ```
 
 ### PowerShell
 
 ```powershell
 # Generate completions
-orchestr8 completions powershell > $HOME\.config\orchestr8.ps1
+aether completions powershell > $HOME\.config\aether.ps1
 
 # Add to PowerShell profile
-echo '. $HOME\.config\orchestr8.ps1' >> $PROFILE
+echo '. $HOME\.config\aether.ps1' >> $PROFILE
 ```
 
 ### Elvish
 
 ```bash
-orchestr8 completions elvish > ~/.elvish/lib/orchestr8.elv
+aether completions elvish > ~/.elvish/lib/aether.elv
 ```
 
 ### Test Completions
@@ -321,7 +321,7 @@ orchestr8 completions elvish > ~/.elvish/lib/orchestr8.elv
 After installing, test by typing:
 
 ```bash
-orchestr8 <TAB><TAB>
+aether <TAB><TAB>
 ```
 
 You should see all available subcommands listed.
@@ -330,16 +330,16 @@ You should see all available subcommands listed.
 
 ## 🧙 First-Time Setup Wizard
 
-After installing orchestr8, run the setup wizard to configure your environment:
+After installing aether, run the setup wizard to configure your environment:
 
 ```bash
-orchestr8 init
+aether init
 ```
 
 The wizard will:
 
 1. **Detect available runtimes** -- scans for `podman`, `kubectl`, `virtctl` on your `$PATH`
-2. **Create the state directory** -- initializes `~/.orchestr8/` with default configuration
+2. **Create the state directory** -- initializes `~/.aether/` with default configuration
 3. **Generate a sample workload** -- creates `workload.yaml` in the current directory
 4. **Show next steps** -- recommendations based on your detected runtimes
 
@@ -349,22 +349,22 @@ If you prefer to configure manually:
 
 ```bash
 # Initialize configuration only
-orchestr8 config --init
+aether config --init
 
 # View current configuration
-orchestr8 config --show
+aether config --show
 ```
 
 ### Configuration Location
 
 | File | Purpose |
 |------|---------|
-| `~/.orchestr8/config.yaml` | Global configuration |
-| `~/.orchestr8/state.json` | Workload state database |
-| `~/.orchestr8/audit.json` | Audit trail |
-| `~/.orchestr8/plugins/` | Plugin manifest directory |
-| `~/.orchestr8/secrets.json` | Encrypted secrets store |
-| `~/.orchestr8/health.json` | Health history records |
+| `~/.aether/config.yaml` | Global configuration |
+| `~/.aether/state.json` | Workload state database |
+| `~/.aether/audit.json` | Audit trail |
+| `~/.aether/plugins/` | Plugin manifest directory |
+| `~/.aether/secrets.json` | Encrypted secrets store |
+| `~/.aether/health.json` | Health history records |
 
 ---
 
@@ -374,25 +374,25 @@ Run through this checklist to confirm everything is working:
 
 ```bash
 # 1. Check the binary version
-orchestr8 --version
-# Expected: orchestr8 0.3.0
+aether --version
+# Expected: aether 0.3.0
 
 # 2. Run the setup wizard
-orchestr8 init
+aether init
 
 # 3. Validate the generated sample workload
-orchestr8 validate
+aether validate
 # Expected: Validation passed
 
 # 4. View all available commands
-orchestr8 help-all
+aether help-all
 
 # 5. Check runtime detection
-orchestr8 recommend
+aether recommend
 # Shows AI-scored runtime recommendations for workload.yaml
 
 # 6. Test JSON output mode
-orchestr8 list --output json
+aether list --output json
 # Expected: JSON array (empty if no workloads deployed)
 ```
 
@@ -418,13 +418,13 @@ kubectl get baremetalhosts -A
 
 ## 🔧 Troubleshooting
 
-### "command not found: orchestr8"
+### "command not found: aether"
 
 Ensure the binary is in your `$PATH`:
 
 ```bash
 # Check where it was installed
-which orchestr8
+which aether
 
 # If using cargo install, add cargo bin to PATH
 export PATH="$HOME/.cargo/bin:$PATH"
@@ -467,6 +467,6 @@ minikube start
 |------|------|
 | Deploy your first workload | [Quick Start Guide](02-Quick-Start.md) |
 | Detailed walkthrough tutorial | [Beginner Tutorial](../tutorials/01-beginner-deployment.md) |
-| Explore all commands | `orchestr8 help-all` |
+| Explore all commands | `aether help-all` |
 | Full documentation index | [Documentation Index](../index.md) |
 | Documentation hub | [README](../README.md) |

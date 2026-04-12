@@ -543,7 +543,7 @@ pub fn format_event_list(events: &[&Event], limit: usize) -> String {
         }
         output.push_str(&format!(
             "    Time: {}\n\n",
-            &event.timestamp[..19]
+            event.timestamp.get(..19).unwrap_or(&event.timestamp)
         ));
     }
 

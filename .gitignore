@@ -15,8 +15,8 @@ Cargo.lock
 .DS_Store
 Thumbs.db
 
-# Orchestr8
-.orchestr8/
+# Aether
+.aether/
 state.json
 
 # Claude

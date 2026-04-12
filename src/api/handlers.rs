@@ -16,12 +16,42 @@ use axum::{
 use axum::http::header;
 use std::path::PathBuf;
 
+/// Validate a workload name from API input.
+/// Rejects empty names and names containing path traversal characters.
+fn validate_api_name<T: serde::Serialize>(name: &str) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
+    if name.is_empty()
+        || name.contains('/')
+        || name.contains('\\')
+        || name.contains("..")
+        || name.contains('\0')
+    {
+        return Err(err_bad_request(format!("Invalid workload name: '{}'", name)));
+    }
+    Ok(())
+}
+
+/// Validate that a spec_path does not contain path traversal sequences.
+fn validate_spec_path<T: serde::Serialize>(path: &std::path::Path) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
+    let path_str = path.to_string_lossy();
+    if path_str.contains("..") {
+        return Err(err_bad_request("spec_path contains path traversal sequence"));
+    }
+    Ok(())
+}
+
+/// Load a workload spec from a validated path, or return an HTTP error.
+fn load_spec_safe<T: serde::Serialize>(path: &PathBuf) -> Result<Workload, (StatusCode, Json<ApiResponse<T>>)> {
+    validate_spec_path(path)?;
+    Workload::from_file(path).map_err(|e| err_internal(format!("Failed to load workload spec: {}", e)))
+}
+
 /// Look up a workload by name from state, returning a cloned WorkloadState
 /// or an HTTP 404 error response.
 async fn lookup_workload<T: serde::Serialize>(
     app_state: &AppState,
     name: &str,
 ) -> Result<WorkloadState, (StatusCode, Json<ApiResponse<T>>)> {
+    validate_api_name(name)?;
     let state = app_state.state.read().await;
     state
         .get(name)
@@ -243,12 +273,10 @@ pub(crate) async fn start_workload(
         Err(e) => return e,
     };
 
-    // Load workload spec from the stored path
-    let spec = match Workload::from_file(&workload_state.spec_path) {
+    // Load workload spec (validates path against traversal)
+    let spec = match load_spec_safe::<String>(&workload_state.spec_path) {
         Ok(s) => s,
-        Err(e) => {
-            return err_internal::<String>(format!("Failed to load workload spec: {}", e))
-        }
+        Err(e) => return e,
     };
 
     // Build and run on the same runtime
@@ -390,11 +418,9 @@ pub(crate) async fn ai_profile(
         Err(e) => return e,
     };
 
-    let spec = match Workload::from_file(&workload_state.spec_path) {
+    let spec = match load_spec_safe::<serde_json::Value>(&workload_state.spec_path) {
         Ok(s) => s,
-        Err(e) => {
-            return err_internal::<serde_json::Value>(format!("Failed to load spec: {}", e))
-        }
+        Err(e) => return e,
     };
 
     let config = Config::load();
@@ -465,11 +491,9 @@ pub(crate) async fn ai_migration_advice(
         }
     };
 
-    let spec = match Workload::from_file(&workload_state.spec_path) {
+    let spec = match load_spec_safe::<MigrationAdviceResponse>(&workload_state.spec_path) {
         Ok(s) => s,
-        Err(e) => {
-            return err_internal::<MigrationAdviceResponse>(format!("Failed to load workload spec: {}", e))
-        }
+        Err(e) => return e,
     };
 
     let config = Config::load();
@@ -564,11 +588,9 @@ pub(crate) async fn api_drift_check(
         Err(e) => return e,
     };
 
-    let spec = match Workload::from_file(&workload_state.spec_path) {
+    let spec = match load_spec_safe::<serde_json::Value>(&workload_state.spec_path) {
         Ok(s) => s,
-        Err(e) => {
-            return err_internal::<serde_json::Value>(format!("Failed to load spec: {}", e))
-        }
+        Err(e) => return e,
     };
 
     let detector = DriftDetector::new();
@@ -577,7 +599,10 @@ pub(crate) async fn api_drift_check(
     (
         StatusCode::OK,
         Json(ApiResponse::success(
-            serde_json::to_value(report).unwrap_or_default(),
+            match serde_json::to_value(report) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
         )),
     )
 }
@@ -596,7 +621,10 @@ pub(crate) async fn api_policy_check(Json(request): Json<PolicyCheckRequest>) ->
     (
         StatusCode::OK,
         Json(ApiResponse::success(
-            serde_json::to_value(result).unwrap_or_default(),
+            match serde_json::to_value(result) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
         )),
     )
 }
@@ -674,7 +702,10 @@ pub(crate) async fn api_template_list() -> impl IntoResponse {
     (
         StatusCode::OK,
         Json(ApiResponse::success(
-            serde_json::to_value(templates).unwrap_or_default(),
+            match serde_json::to_value(templates) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
         )),
     )
 }
@@ -715,7 +746,10 @@ pub(crate) async fn api_template_generate(
     (
         StatusCode::OK,
         Json(ApiResponse::success(
-            serde_json::to_value(spec).unwrap_or_default(),
+            match serde_json::to_value(spec) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
         )),
     )
 }
@@ -724,7 +758,7 @@ pub(crate) async fn api_template_generate(
 pub(crate) async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResponse {
     use crate::sla::{SlaEngine, SlaTarget};
 
-    let sla_path = crate::resources::orchestr8_path("sla.json");
+    let sla_path = crate::resources::aether_path("sla.json");
 
     if !sla_path.exists() {
         return (
@@ -758,7 +792,10 @@ pub(crate) async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResp
         Some(target) => (
             StatusCode::OK,
             Json(ApiResponse::success(
-                serde_json::to_value(target).unwrap_or_default(),
+                match serde_json::to_value(target) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
             )),
         ),
         None => (
@@ -782,7 +819,10 @@ pub(crate) async fn api_secrets_list() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(summaries).unwrap_or_default(),
+                    match serde_json::to_value(summaries) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -801,7 +841,10 @@ pub(crate) async fn api_events_list() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(events).unwrap_or_default(),
+                    match serde_json::to_value(events) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -820,7 +863,10 @@ pub(crate) async fn api_events_summary() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(summary).unwrap_or_default(),
+                    match serde_json::to_value(summary) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -839,7 +885,10 @@ pub(crate) async fn api_env_list() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(envs).unwrap_or_default(),
+                    match serde_json::to_value(envs) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -858,7 +907,10 @@ pub(crate) async fn api_scheduler_utilization() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(utils).unwrap_or_default(),
+                    match serde_json::to_value(utils) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -877,7 +929,10 @@ pub(crate) async fn api_scheduler_optimize() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(suggestions).unwrap_or_default(),
+                    match serde_json::to_value(suggestions) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -896,7 +951,10 @@ pub(crate) async fn api_orchestrator_status() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(list).unwrap_or_default(),
+                    match serde_json::to_value(list) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -915,7 +973,10 @@ pub(crate) async fn api_orchestrator_summary() -> impl IntoResponse {
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(summary).unwrap_or_default(),
+                    match serde_json::to_value(summary) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -938,12 +999,10 @@ pub(crate) async fn api_affinity_recommend(Path(class): Path<String>) -> impl In
     match AffinityEngine::load(&path) {
         Ok(engine) => {
             let scores = engine.recommend(&wl_class);
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(
-                    serde_json::to_value(scores).unwrap_or_default(),
-                )),
-            )
+            match serde_json::to_value(scores) {
+                Ok(v) => (StatusCode::OK, Json(ApiResponse::success(v))),
+                Err(e) => err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            }
         }
         Err(e) => err_internal::<serde_json::Value>(e),
     }
@@ -955,12 +1014,10 @@ pub(crate) async fn api_plugins_list() -> impl IntoResponse {
     match crate::plugin::PluginRegistry::load(&path) {
         Ok(reg) => {
             let plugins: Vec<&crate::plugin::PluginManifest> = reg.plugins.values().collect();
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(
-                    serde_json::to_value(plugins).unwrap_or_default(),
-                )),
-            )
+            match serde_json::to_value(plugins) {
+                Ok(v) => (StatusCode::OK, Json(ApiResponse::success(v))),
+                Err(e) => err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            }
         }
         Err(e) => err_internal::<serde_json::Value>(e),
     }
@@ -996,7 +1053,10 @@ pub(crate) async fn api_health_summary(Path(workload): Path<String>) -> impl Int
             (
                 StatusCode::OK,
                 Json(ApiResponse::success(
-                    serde_json::to_value(summary).unwrap_or_default(),
+                    match serde_json::to_value(summary) {
+                Ok(v) => v,
+                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+            },
                 )),
             )
         }
@@ -1149,12 +1209,10 @@ pub(crate) async fn build_workload(
         Err(e) => return e,
     };
 
-    // Load workload spec from the stored path
-    let spec = match Workload::from_file(&workload_state.spec_path) {
+    // Load workload spec (validates path against traversal)
+    let spec = match load_spec_safe::<BuildResponse>(&workload_state.spec_path) {
         Ok(s) => s,
-        Err(e) => {
-            return err_internal::<BuildResponse>(format!("Failed to load workload spec: {}", e))
-        }
+        Err(e) => return e,
     };
 
     // Build based on runtime
@@ -1247,12 +1305,10 @@ pub(crate) async fn get_secret(
                         needs_rotation: store.needs_rotation(secret),
                         rotation_policy: rotation_info,
                     };
-                    (
-                        StatusCode::OK,
-                        Json(ApiResponse::success(
-                            serde_json::to_value(response).unwrap_or_default(),
-                        )),
-                    )
+                    match serde_json::to_value(response) {
+                        Ok(v) => (StatusCode::OK, Json(ApiResponse::success(v))),
+                        Err(e) => err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+                    }
                 }
                 None => (
                     StatusCode::NOT_FOUND,
@@ -1339,7 +1395,7 @@ mod tests {
     #[test]
     fn test_dashboard_html_has_title() {
         assert!(DASHBOARD_HTML.contains("<title>"));
-        assert!(DASHBOARD_HTML.contains("Orchestr8"));
+        assert!(DASHBOARD_HTML.contains("Aether"));
     }
 
     #[test]
