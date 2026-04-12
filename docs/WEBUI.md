@@ -1,6 +1,6 @@
 # WebUI and REST API Guide
 
-Orchestr8 provides a modern web dashboard and REST API for managing workloads through your browser.
+Aether provides a modern web dashboard and REST API for managing workloads through your browser.
 
 ## Overview
 
@@ -16,7 +16,7 @@ The WebUI provides:
 ### Start the Server
 
 ```bash
-orchestr8 serve
+aether serve
 ```
 
 The server starts on `http://127.0.0.1:8080` by default.
@@ -24,7 +24,7 @@ The server starts on `http://127.0.0.1:8080` by default.
 ### Custom Host and Port
 
 ```bash
-orchestr8 serve --host 0.0.0.0 --port 3000
+aether serve --host 0.0.0.0 --port 3000
 ```
 
 ### Access the Dashboard
@@ -255,8 +255,8 @@ Response:
 {
   "success": true,
   "data": [
-    "/home/user/.orchestr8/backups/backup-20240206-143052.json",
-    "/home/user/.orchestr8/backups/production-2024-02-06.json"
+    "/home/user/.aether/backups/backup-20240206-143052.json",
+    "/home/user/.aether/backups/production-2024-02-06.json"
   ]
 }
 ```
@@ -279,7 +279,7 @@ Response:
 ```json
 {
   "success": true,
-  "data": "Backup created: /home/user/.orchestr8/backups/my-backup.json"
+  "data": "Backup created: /home/user/.aether/backups/my-backup.json"
 }
 ```
 
@@ -534,10 +534,10 @@ For production use:
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name orchestr8.example.com;
+    server_name aether.example.com;
 
-    ssl_certificate /etc/ssl/certs/orchestr8.crt;
-    ssl_certificate_key /etc/ssl/private/orchestr8.key;
+    ssl_certificate /etc/ssl/certs/aether.crt;
+    ssl_certificate_key /etc/ssl/private/aether.key;
 
     location / {
         proxy_pass http://127.0.0.1:8080;
@@ -548,7 +548,7 @@ server {
     }
 
     # Authentication
-    auth_basic "Orchestr8 Dashboard";
+    auth_basic "Aether Dashboard";
     auth_basic_user_file /etc/nginx/.htpasswd;
 }
 ```
@@ -561,47 +561,47 @@ Deploy the API server in Kubernetes:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: orchestr8-api
+  name: aether-api
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: orchestr8-api
+      app: aether-api
   template:
     metadata:
       labels:
-        app: orchestr8-api
+        app: aether-api
     spec:
       containers:
-      - name: orchestr8
-        image: ghcr.io/ssahani/orchestr8:latest
-        command: ["orchestr8", "serve", "--host", "0.0.0.0", "--port", "8080"]
+      - name: aether
+        image: ghcr.io/ssahani/aether:latest
+        command: ["aether", "serve", "--host", "0.0.0.0", "--port", "8080"]
         ports:
         - containerPort: 8080
         volumeMounts:
         - name: state
-          mountPath: /root/.orchestr8
+          mountPath: /root/.aether
       volumes:
       - name: state
         persistentVolumeClaim:
-          claimName: orchestr8-state
+          claimName: aether-state
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: orchestr8-api
+  name: aether-api
 spec:
   type: LoadBalancer
   ports:
   - port: 80
     targetPort: 8080
   selector:
-    app: orchestr8-api
+    app: aether-api
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: orchestr8-state
+  name: aether-state
 spec:
   accessModes:
   - ReadWriteOnce
@@ -612,7 +612,7 @@ spec:
 
 Apply:
 ```bash
-kubectl apply -f orchestr8-api-deployment.yaml
+kubectl apply -f aether-api-deployment.yaml
 ```
 
 ## Docker Deployment
@@ -621,10 +621,10 @@ Run the API server in Docker:
 
 ```bash
 docker run -d \
-  --name orchestr8-api \
+  --name aether-api \
   -p 8080:8080 \
-  -v ~/.orchestr8:/root/.orchestr8 \
-  ghcr.io/ssahani/orchestr8:latest \
+  -v ~/.aether:/root/.aether \
+  ghcr.io/ssahani/aether:latest \
   serve --host 0.0.0.0 --port 8080
 ```
 
@@ -634,17 +634,17 @@ With docker-compose:
 version: '3.8'
 
 services:
-  orchestr8-api:
-    image: ghcr.io/ssahani/orchestr8:latest
+  aether-api:
+    image: ghcr.io/ssahani/aether:latest
     command: serve --host 0.0.0.0 --port 8080
     ports:
       - "8080:8080"
     volumes:
-      - orchestr8-state:/root/.orchestr8
+      - aether-state:/root/.aether
     restart: unless-stopped
 
 volumes:
-  orchestr8-state:
+  aether-state:
 ```
 
 Start:
@@ -695,7 +695,7 @@ readinessProbe:
 **Solution**: Change the port or stop the conflicting process:
 ```bash
 # Use different port
-orchestr8 serve --port 3000
+aether serve --port 3000
 
 # Or find and kill the process using port 8080
 lsof -ti:8080 | xargs kill
@@ -718,7 +718,7 @@ sudo firewall-cmd --reload
 
 **Solution**: Start the server:
 ```bash
-orchestr8 serve
+aether serve
 ```
 
 ### CORS errors in browser
@@ -729,7 +729,7 @@ orchestr8 serve
 
 ## Best Practices
 
-1. **State Persistence**: Mount `/root/.orchestr8` volume for state persistence
+1. **State Persistence**: Mount `/root/.aether` volume for state persistence
 2. **Logging**: Use `-v` flag for verbose logging
 3. **Backups**: Regular automated backups via API
 4. **Monitoring**: Integrate with Prometheus/Grafana
@@ -754,7 +754,7 @@ Future enhancements planned:
 ## Support
 
 For WebUI/API issues:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `webui` or `api`
 
 ## Related Documentation
@@ -762,4 +762,4 @@ For WebUI/API issues:
 - [Deployment Guide](DEPLOYMENT.md)
 - [Metrics Guide](METRICS.md)
 - [Backup Guide](BACKUP.md)
-- [Helm Chart](../helm/orchestr8/README.md)
+- [Helm Chart](../helm/aether/README.md)

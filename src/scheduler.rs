@@ -364,8 +364,12 @@ impl Scheduler {
             });
         }
 
-        // Sort by score descending (all scores are finite after the retain above)
-        scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        // Sort by score descending with deterministic tie-breaking by runtime name
+        scored.sort_by(|a, b| {
+            b.1.partial_cmp(&a.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.to_string().cmp(&b.0.to_string()))
+        });
 
         let (selected, score, reasons) = scored[0].clone();
         let capacity = &self.capacities[&selected];
@@ -403,24 +407,12 @@ impl Scheduler {
             ));
         }
 
-        // Record placement
-        let placement = Placement {
-            workload_name: request.workload_name.clone(),
-            runtime: selected,
-            cpu_reserved: request.cpu_required,
-            memory_reserved_mb: request.memory_required_mb,
-            placed_at: crate::resources::now_rfc3339(),
-        };
-        self.placements.push(placement);
-
-        // Update capacity — reject placement if resources are insufficient
+        // Verify capacity BEFORE recording placement to avoid phantom placements
         if let Some(cap) = self.capacities.get_mut(&selected) {
             if request.cpu_required > cap.available_cpu
                 || request.memory_required_mb > cap.available_memory_mb
                 || request.storage_required_mb > cap.available_storage_mb
             {
-                // Remove the placement we just recorded
-                self.placements.pop();
                 return Err(ScheduleError::NoFeasibleRuntime {
                     workload: request.workload_name.clone(),
                     reason: format!(
@@ -437,6 +429,16 @@ impl Scheduler {
             cap.available_storage_mb = cap.available_storage_mb.saturating_sub(request.storage_required_mb);
             cap.current_workloads += 1;
         }
+
+        // Record placement after capacity is confirmed
+        let placement = Placement {
+            workload_name: request.workload_name.clone(),
+            runtime: selected,
+            cpu_reserved: request.cpu_required,
+            memory_reserved_mb: request.memory_required_mb,
+            placed_at: crate::resources::now_rfc3339(),
+        };
+        self.placements.push(placement);
 
         Ok(ScheduleDecision {
             workload_name: request.workload_name.clone(),

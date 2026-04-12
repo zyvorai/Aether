@@ -1,4 +1,4 @@
-//! REST API Server for Orchestr8
+//! REST API Server for Aether
 //!
 //! Provides HTTP endpoints for workload management
 
@@ -11,6 +11,7 @@ use types::AppState;
 use handlers::*;
 use crate::state::StateStore;
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{delete, get, post},
     Router,
 };
@@ -72,6 +73,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/plugins/discover", post(api_plugins_discover))
         .route("/api/health/:workload", get(api_health_summary))
         .route("/api/compose/validate", post(api_compose_validate))
+        .layer(DefaultBodyLimit::max(2 * 1024 * 1024)) // 2 MB max request body
         .with_state(app_state);
 
     // Start server

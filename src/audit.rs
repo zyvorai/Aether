@@ -252,7 +252,7 @@ pub fn format_audit_report(log: &AuditLog, limit: usize) -> String {
         for event in recent {
             output.push_str(&format!(
                 "  [{}] {} {} {} - {}\n",
-                event.timestamp.chars().take(19).collect::<String>(),
+                event.timestamp.get(..19).unwrap_or(&event.timestamp),
                 event.result,
                 event.action,
                 event.workload,

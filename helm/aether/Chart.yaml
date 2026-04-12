@@ -1,5 +1,5 @@
 apiVersion: v2
-name: orchestr8
+name: aether
 description: Universal runtime control plane - One spec, four runtimes
 type: application
 version: 0.1.0
@@ -12,10 +12,10 @@ keywords:
   - metal3
   - runtime
   - workload
-home: https://github.com/ssahani/orchestr8
+home: https://github.com/ssahani/aether
 sources:
-  - https://github.com/ssahani/orchestr8
+  - https://github.com/ssahani/aether
 maintainers:
   - name: Susant Sahani
     email: ssahani@gmail.com
-icon: https://raw.githubusercontent.com/ssahani/orchestr8/main/docs/logo.png
+icon: https://raw.githubusercontent.com/ssahani/aether/main/docs/logo.png

@@ -32,19 +32,19 @@ jobs:
       - name: Build DEB package
         run: |
           dpkg-buildpackage -us -uc -b
-          mv ../orchestr8_*.deb .
+          mv ../aether_*.deb .
 
       - name: Upload DEB artifact
         uses: actions/upload-artifact@v3
         with:
           name: deb-packages
-          path: orchestr8_*.deb
+          path: aether_*.deb
 
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: orchestr8_*.deb
+          files: aether_*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -67,24 +67,24 @@ jobs:
       - name: Set up RPM build tree
         run: |
           rpmdev-setuptree
-          tar czf ~/rpmbuild/SOURCES/orchestr8-${GITHUB_REF_NAME#v}.tar.gz .
+          tar czf ~/rpmbuild/SOURCES/aether-${GITHUB_REF_NAME#v}.tar.gz .
 
       - name: Build RPM package
         run: |
-          rpmbuild -bb rpm/orchestr8.spec
-          cp ~/rpmbuild/RPMS/${{ matrix.arch }}/orchestr8-*.rpm .
+          rpmbuild -bb rpm/aether.spec
+          cp ~/rpmbuild/RPMS/${{ matrix.arch }}/aether-*.rpm .
 
       - name: Upload RPM artifact
         uses: actions/upload-artifact@v3
         with:
           name: rpm-packages
-          path: orchestr8-*.rpm
+          path: aether-*.rpm
 
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: orchestr8-*.rpm
+          files: aether-*.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -100,19 +100,19 @@ jobs:
 
       - name: Install package
         run: |
-          sudo apt install ./orchestr8_*_amd64.deb
+          sudo apt install ./aether_*_amd64.deb
 
       - name: Test installation
         run: |
-          which orchestr8
-          orchestr8 --version
-          orchestr8 --help
+          which aether
+          aether --version
+          aether --help
 
       - name: Test shell completions
         run: |
-          test -f /usr/share/bash-completion/completions/orchestr8
-          test -f /usr/share/zsh/site-functions/_orchestr8
-          test -f /usr/share/fish/vendor_completions.d/orchestr8.fish
+          test -f /usr/share/bash-completion/completions/aether
+          test -f /usr/share/zsh/site-functions/_aether
+          test -f /usr/share/fish/vendor_completions.d/aether.fish
 
   test-rpm:
     name: Test RPM Installation
@@ -128,16 +128,16 @@ jobs:
 
       - name: Install package
         run: |
-          dnf install -y ./orchestr8-*.x86_64.rpm
+          dnf install -y ./aether-*.x86_64.rpm
 
       - name: Test installation
         run: |
-          which orchestr8
-          orchestr8 --version
-          orchestr8 --help
+          which aether
+          aether --version
+          aether --help
 
       - name: Test shell completions
         run: |
-          test -f /usr/share/bash-completion/completions/orchestr8
-          test -f /usr/share/zsh/site-functions/_orchestr8
-          test -f /usr/share/fish/vendor_completions.d/orchestr8.fish
+          test -f /usr/share/bash-completion/completions/aether
+          test -f /usr/share/zsh/site-functions/_aether
+          test -f /usr/share/fish/vendor_completions.d/aether.fish

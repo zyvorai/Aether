@@ -1,6 +1,6 @@
-# Orchestr8 Helm Chart
+# Aether Helm Chart
 
-This Helm chart deploys Orchestr8 as a Kubernetes operator for managing workloads across multiple runtimes (Podman, Kubernetes, KubeVirt, Metal3).
+This Helm chart deploys Aether as a Kubernetes operator for managing workloads across multiple runtimes (Podman, Kubernetes, KubeVirt, Metal3).
 
 ## Prerequisites
 
@@ -14,8 +14,8 @@ This Helm chart deploys Orchestr8 as a Kubernetes operator for managing workload
 ### Add Helm Repository
 
 ```bash
-# Add the Orchestr8 Helm repository (when published)
-helm repo add orchestr8 https://ssahani.github.io/orchestr8/charts
+# Add the Aether Helm repository (when published)
+helm repo add aether https://ssahani.github.io/aether/charts
 helm repo update
 ```
 
@@ -23,17 +23,17 @@ helm repo update
 
 ```bash
 # From the repository root
-helm install orchestr8 ./helm/orchestr8
+helm install aether ./helm/aether
 
 # Or with custom values
-helm install orchestr8 ./helm/orchestr8 -f custom-values.yaml
+helm install aether ./helm/aether -f custom-values.yaml
 ```
 
 ### Install with Custom Namespace
 
 ```bash
-helm install orchestr8 ./helm/orchestr8 \
-  --namespace orchestr8-system \
+helm install aether ./helm/aether \
+  --namespace aether-system \
   --create-namespace
 ```
 
@@ -46,7 +46,7 @@ helm install orchestr8 ./helm/orchestr8 \
 replicaCount: 1
 
 image:
-  repository: ghcr.io/ssahani/orchestr8
+  repository: ghcr.io/ssahani/aether
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
@@ -79,20 +79,20 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: orchestr8.example.com
+    - host: aether.example.com
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: orchestr8-tls
+    - secretName: aether-tls
       hosts:
-        - orchestr8.example.com
+        - aether.example.com
 ```
 
 ### Runtime Configuration
 
 ```yaml
-orchestr8:
+aether:
   namespace: default
 
   logging:
@@ -158,7 +158,7 @@ rbac:
 ```bash
 # Create workload specification
 cat > workload.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: my-app
@@ -180,8 +180,8 @@ runtime:
 EOF
 
 # Deploy using kubectl exec
-kubectl exec -it deployment/orchestr8 -- \
-  orchestr8 -s /tmp/workload.yaml run
+kubectl exec -it deployment/aether -- \
+  aether -s /tmp/workload.yaml run
 ```
 
 ### Monitor with Prometheus
@@ -192,29 +192,29 @@ Manual Prometheus configuration:
 
 ```yaml
 scrape_configs:
-  - job_name: 'orchestr8'
+  - job_name: 'aether'
     kubernetes_sd_configs:
       - role: service
         namespaces:
           names:
-            - orchestr8-system
+            - aether-system
     relabel_configs:
       - source_labels: [__meta_kubernetes_service_name]
         action: keep
-        regex: orchestr8
+        regex: aether
 ```
 
 ### View Logs
 
 ```bash
-kubectl logs -f deployment/orchestr8
+kubectl logs -f deployment/aether
 ```
 
 ### Access Metrics
 
 ```bash
 # Port forward metrics endpoint
-kubectl port-forward service/orchestr8 9090:9090
+kubectl port-forward service/aether 9090:9090
 
 # Fetch metrics
 curl http://localhost:9090/metrics
@@ -225,7 +225,7 @@ curl http://localhost:9090/metrics
 ### Example 1: Basic Installation
 
 ```bash
-helm install orchestr8 ./helm/orchestr8 \
+helm install aether ./helm/aether \
   --set replicaCount=1 \
   --set persistence.enabled=true \
   --set persistence.size=5Gi
@@ -234,7 +234,7 @@ helm install orchestr8 ./helm/orchestr8 \
 ### Example 2: With Metrics and Monitoring
 
 ```bash
-helm install orchestr8 ./helm/orchestr8 \
+helm install aether ./helm/aether \
   --set metrics.enabled=true \
   --set metrics.serviceMonitor.enabled=true \
   --set metrics.serviceMonitor.interval=15s
@@ -243,7 +243,7 @@ helm install orchestr8 ./helm/orchestr8 \
 ### Example 3: Production Configuration
 
 ```bash
-helm install orchestr8 ./helm/orchestr8 -f - <<EOF
+helm install aether ./helm/aether -f - <<EOF
 replicaCount: 3
 
 resources:
@@ -274,12 +274,12 @@ ingress:
   enabled: true
   className: nginx
   hosts:
-    - host: orchestr8.prod.example.com
+    - host: aether.prod.example.com
       paths:
         - path: /
           pathType: Prefix
 
-orchestr8:
+aether:
   logging:
     level: info
     format: json
@@ -305,7 +305,7 @@ affinity:
               - key: app.kubernetes.io/name
                 operator: In
                 values:
-                  - orchestr8
+                  - aether
           topologyKey: kubernetes.io/hostname
 EOF
 ```
@@ -313,8 +313,8 @@ EOF
 ### Example 4: Enable All Runtimes
 
 ```bash
-helm install orchestr8 ./helm/orchestr8 -f - <<EOF
-orchestr8:
+helm install aether ./helm/aether -f - <<EOF
+aether:
   runtimes:
     podman:
       enabled: true
@@ -344,39 +344,39 @@ EOF
 ### Upgrade to New Version
 
 ```bash
-helm upgrade orchestr8 ./helm/orchestr8
+helm upgrade aether ./helm/aether
 ```
 
 ### Upgrade with New Values
 
 ```bash
-helm upgrade orchestr8 ./helm/orchestr8 -f new-values.yaml
+helm upgrade aether ./helm/aether -f new-values.yaml
 ```
 
 ### Rollback
 
 ```bash
-helm rollback orchestr8
+helm rollback aether
 ```
 
 ## Uninstallation
 
 ```bash
-helm uninstall orchestr8
+helm uninstall aether
 ```
 
 To also delete PVCs:
 
 ```bash
-kubectl delete pvc -l app.kubernetes.io/instance=orchestr8
+kubectl delete pvc -l app.kubernetes.io/instance=aether
 ```
 
 ## Values Reference
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `replicaCount` | Number of Orchestr8 replicas | `1` |
-| `image.repository` | Container image repository | `ghcr.io/ssahani/orchestr8` |
+| `replicaCount` | Number of Aether replicas | `1` |
+| `image.repository` | Container image repository | `ghcr.io/ssahani/aether` |
 | `image.tag` | Container image tag | `Chart.appVersion` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `serviceAccount.create` | Create service account | `true` |
@@ -399,11 +399,11 @@ kubectl delete pvc -l app.kubernetes.io/instance=orchestr8
 | `persistence.enabled` | Enable persistence | `true` |
 | `persistence.size` | PVC size | `5Gi` |
 | `persistence.storageClass` | Storage class | `""` |
-| `orchestr8.namespace` | Default workload namespace | `default` |
-| `orchestr8.logging.level` | Log level | `info` |
-| `orchestr8.runtimes.kubernetes.enabled` | Enable Kubernetes runtime | `true` |
-| `orchestr8.runtimes.kubevirt.enabled` | Enable KubeVirt runtime | `false` |
-| `orchestr8.runtimes.metal3.enabled` | Enable Metal3 runtime | `false` |
+| `aether.namespace` | Default workload namespace | `default` |
+| `aether.logging.level` | Log level | `info` |
+| `aether.runtimes.kubernetes.enabled` | Enable Kubernetes runtime | `true` |
+| `aether.runtimes.kubevirt.enabled` | Enable KubeVirt runtime | `false` |
+| `aether.runtimes.metal3.enabled` | Enable Metal3 runtime | `false` |
 
 For a complete list, see [`values.yaml`](values.yaml).
 
@@ -413,27 +413,27 @@ For a complete list, see [`values.yaml`](values.yaml).
 
 Check pod status:
 ```bash
-kubectl describe pod -l app.kubernetes.io/name=orchestr8
+kubectl describe pod -l app.kubernetes.io/name=aether
 ```
 
 Check logs:
 ```bash
-kubectl logs -l app.kubernetes.io/name=orchestr8
+kubectl logs -l app.kubernetes.io/name=aether
 ```
 
 ### Permission Errors
 
 Verify RBAC is enabled:
 ```bash
-kubectl get clusterrole orchestr8
-kubectl get clusterrolebinding orchestr8
+kubectl get clusterrole aether
+kubectl get clusterrolebinding aether
 ```
 
 ### Metrics Not Available
 
 Check metrics endpoint:
 ```bash
-kubectl port-forward service/orchestr8 9090:9090
+kubectl port-forward service/aether 9090:9090
 curl http://localhost:9090/metrics
 ```
 
@@ -448,19 +448,19 @@ kubectl get servicemonitor
 
 ```bash
 # Lint chart
-helm lint ./helm/orchestr8
+helm lint ./helm/aether
 
 # Dry run
-helm install orchestr8 ./helm/orchestr8 --dry-run --debug
+helm install aether ./helm/aether --dry-run --debug
 
 # Template and review
-helm template orchestr8 ./helm/orchestr8
+helm template aether ./helm/aether
 ```
 
 ### Package Chart
 
 ```bash
-helm package ./helm/orchestr8
+helm package ./helm/aether
 ```
 
 ## Contributing
@@ -473,5 +473,5 @@ Proprietary (HyperSDK)
 
 ## Support
 
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
-- Documentation: https://github.com/ssahani/orchestr8
+- GitHub Issues: https://github.com/ssahani/aether/issues
+- Documentation: https://github.com/ssahani/aether

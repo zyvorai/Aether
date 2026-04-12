@@ -1,6 +1,6 @@
 # 🌐 REST API Reference
 
-> Complete reference for the orchestr8 REST API -- 43 endpoints across workloads, AI, security, and operations.
+> Complete reference for the aether REST API -- 43 endpoints across workloads, AI, security, and operations.
 
 ---
 
@@ -42,10 +42,10 @@ Start the API server and embedded web dashboard:
 
 ```bash
 # Default: localhost:8080
-orchestr8 serve
+aether serve
 
 # Custom host and port
-orchestr8 serve --host 0.0.0.0 --port 3000
+aether serve --host 0.0.0.0 --port 3000
 ```
 
 | Flag | Default | Description |
@@ -61,7 +61,7 @@ On startup, the server prints:
 📋 API Health: http://127.0.0.1:8080/health
 ```
 
-The server uses Axum with Tokio for async request handling and loads workload state from `~/.orchestr8/state.json` into a shared `Arc<RwLock<StateStore>>`.
+The server uses Axum with Tokio for async request handling and loads workload state from `~/.aether/state.json` into a shared `Arc<RwLock<StateStore>>`.
 
 ---
 
@@ -188,7 +188,7 @@ curl -X POST http://localhost:8080/api/workloads \
   -H "Content-Type: application/json" \
   -d '{
     "spec": {
-      "apiVersion": "orchestr8/v1",
+      "apiVersion": "aether/v1",
       "kind": "Workload",
       "metadata": { "name": "my-app", "owner": "team", "project": "demo" },
       "build": { "context": ".", "dockerfile": "Dockerfile", "registry": "ghcr.io/org" },
@@ -324,7 +324,7 @@ Validates YAML without deploying.
 ```bash
 curl -X POST http://localhost:8080/api/validate \
   -H "Content-Type: application/json" \
-  -d '{"yaml": "apiVersion: orchestr8/v1\nkind: Workload\n..."}'
+  -d '{"yaml": "apiVersion: aether/v1\nkind: Workload\n..."}'
 ```
 
 **Response (valid):**
@@ -447,7 +447,7 @@ curl http://localhost:8080/api/plugins
 
 ### POST `/api/plugins/discover` -- Discover Plugins
 
-Scans `~/.orchestr8/plugins/` for manifest files and updates the registry.
+Scans `~/.aether/plugins/` for manifest files and updates the registry.
 
 ```bash
 curl -X POST http://localhost:8080/api/plugins/discover
@@ -501,7 +501,7 @@ Validates a compose YAML for structural correctness, dependency cycles, and miss
 ```bash
 curl -X POST http://localhost:8080/api/compose/validate \
   -H "Content-Type: text/plain" \
-  -d @orchestr8-compose.yaml
+  -d @aether-compose.yaml
 ```
 
 **Response (valid):**

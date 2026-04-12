@@ -1,6 +1,6 @@
 # 🖥️ KubeVirt Deployment Guide
 
-Complete guide for deploying Virtual Machines using Orchestr8's KubeVirt runtime.
+Complete guide for deploying Virtual Machines using Aether's KubeVirt runtime.
 
 ---
 
@@ -30,9 +30,9 @@ Complete guide for deploying Virtual Machines using Orchestr8's KubeVirt runtime
 - **Cloud-Native**: Native Kubernetes APIs and tooling
 - **Hardware Access**: Direct GPU and device passthrough
 
-### Why Use Orchestr8 with KubeVirt?
+### Why Use Aether with KubeVirt?
 
-Orchestr8 simplifies KubeVirt VM deployment:
+Aether simplifies KubeVirt VM deployment:
 
 ✅ **One Spec Format**: Same YAML for containers and VMs
 ✅ **Auto-Generation**: Creates VirtualMachine and DataVolume CRDs
@@ -116,18 +116,18 @@ kubectl get crds | grep kubevirt
 
 ## Installation
 
-### Install Orchestr8
+### Install Aether
 
 ```bash
 # Clone repository
-git clone https://github.com/ssahani/orchestr8
-cd orchestr8
+git clone https://github.com/ssahani/aether
+cd aether
 
 # Build release binary
 cargo build --release
 
 # Install (optional)
-sudo cp target/release/orchestr8 /usr/local/bin/
+sudo cp target/release/aether /usr/local/bin/
 ```
 
 ### Configure kubectl
@@ -139,7 +139,7 @@ Ensure kubectl is configured to access your cluster:
 kubectl get nodes
 
 # Set namespace (optional)
-export ORCHESTR8_NAMESPACE=default
+export AETHER_NAMESPACE=default
 ```
 
 ---
@@ -151,7 +151,7 @@ export ORCHESTR8_NAMESPACE=default
 Create `vm-workload.yaml`:
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -190,14 +190,14 @@ persistence:
 ### 2. Validate Spec
 
 ```bash
-orchestr8 validate --spec vm-workload.yaml
+aether validate --spec vm-workload.yaml
 ```
 
 ### 3. Deploy VM
 
 ```bash
 # Deploy using KubeVirt runtime
-orchestr8 run --spec vm-workload.yaml --runtime kubevirt
+aether run --spec vm-workload.yaml --runtime kubevirt
 
 # Output:
 # 🚀 Running workload...
@@ -210,7 +210,7 @@ orchestr8 run --spec vm-workload.yaml --runtime kubevirt
 
 ```bash
 # Get VM status
-orchestr8 status ubuntu-vm
+aether status ubuntu-vm
 
 # Output:
 # 📊 Status for 'ubuntu-vm':
@@ -223,7 +223,7 @@ orchestr8 status ubuntu-vm
 
 ```bash
 # View console access instructions
-orchestr8 logs ubuntu-vm
+aether logs ubuntu-vm
 
 # Output shows virtctl commands:
 # Serial Console:  virtctl console ubuntu-vm
@@ -252,7 +252,7 @@ ssh user@<VM-IP>
 
 ```
 ┌─────────────────────────────────────────┐
-│         Orchestr8 workload.yaml        │
+│         Aether workload.yaml        │
 └───────────────┬─────────────────────────┘
                 │
                 ▼
@@ -289,13 +289,13 @@ ssh user@<VM-IP>
 
 ### Resources Created
 
-For each VM deployment, Orchestr8 creates:
+For each VM deployment, Aether creates:
 
 1. **DataVolume** (CDI resource)
    - Imports container image to PVC
    - Converts to bootable disk
    - Manages storage lifecycle
-   - Orchestr8 polls for DataVolume registration (up to 60s) before proceeding with VM creation
+   - Aether polls for DataVolume registration (up to 60s) before proceeding with VM creation
 
 2. **VirtualMachine** (KubeVirt resource)
    - Defines VM configuration
@@ -487,7 +487,7 @@ podman push myregistry/ubuntu-vm:latest
 
 ### Cloud-Init Configuration
 
-While Orchestr8 doesn't directly support cloud-init in the workload spec, you can add it via annotations:
+While Aether doesn't directly support cloud-init in the workload spec, you can add it via annotations:
 
 ```yaml
 metadata:
@@ -537,26 +537,26 @@ kubectl virt restore my-snapshot ubuntu-vm-restored
 
 **Start VM:**
 ```bash
-orchestr8 run --spec vm-workload.yaml --runtime kubevirt
+aether run --spec vm-workload.yaml --runtime kubevirt
 ```
 
 **Stop VM:**
 ```bash
-orchestr8 stop ubuntu-vm
+aether stop ubuntu-vm
 ```
 
 This sets `spec.running: false`, gracefully shutting down the VM.
 
 **Delete VM:**
 ```bash
-orchestr8 delete ubuntu-vm
+aether delete ubuntu-vm
 ```
 
 Deletes both VirtualMachine and DataVolume resources.
 
 **List VMs:**
 ```bash
-orchestr8 list
+aether list
 
 # Output:
 # 📋 Running workloads:
@@ -567,12 +567,12 @@ orchestr8 list
 
 **CLI Status:**
 ```bash
-orchestr8 status ubuntu-vm
+aether status ubuntu-vm
 ```
 
 **Interactive TUI:**
 ```bash
-orchestr8 tui
+aether tui
 
 # Navigate with arrow keys
 # Press Enter to view VM console access info
@@ -634,7 +634,7 @@ kubectl get events --field-selector involvedObject.name=ubuntu-vm
 
 **Symptoms:**
 ```bash
-orchestr8 status ubuntu-vm
+aether status ubuntu-vm
 # State: pending
 # Ready: false
 ```
@@ -685,8 +685,8 @@ kubectl logs <importer-pod>
 **Fix:**
 ```bash
 # Delete and recreate
-orchestr8 delete ubuntu-vm
-orchestr8 run --spec vm-workload.yaml --runtime kubevirt
+aether delete ubuntu-vm
+aether run --spec vm-workload.yaml --runtime kubevirt
 ```
 
 #### 3. GPU Passthrough Not Working
@@ -755,7 +755,7 @@ ssh -p 2222 user@localhost
    ```
 
 3. **Use virtio devices:**
-   - Orchestr8 automatically uses `bus: virtio` for disks
+   - Aether automatically uses `bus: virtio` for disks
    - Provides best performance
 
 4. **Check storage class:**
@@ -865,7 +865,7 @@ virtctl image-upload dv ubuntu-vm-disk \
 ### Example 1: Simple Ubuntu VM
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: ubuntu-basic
@@ -896,7 +896,7 @@ persistence:
 ### Example 2: High-Performance GPU VM
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: ml-gpu-vm
@@ -935,7 +935,7 @@ persistence:
 ### Example 3: Windows VM
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: windows-server
@@ -998,7 +998,7 @@ persistence:
 
 ## Migration Path
 
-### From VMs to Orchestr8/KubeVirt
+### From VMs to Aether/KubeVirt
 
 **Step 1: Export existing VM disk**
 ```bash
@@ -1017,9 +1017,9 @@ podman build -t myregistry/my-vm:latest .
 podman push myregistry/my-vm:latest
 ```
 
-**Step 3: Create Orchestr8 spec**
+**Step 3: Create Aether spec**
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: migrated-vm
@@ -1037,14 +1037,14 @@ runtime:
 
 **Step 4: Deploy**
 ```bash
-orchestr8 run --spec migrated-vm.yaml --runtime kubevirt
+aether run --spec migrated-vm.yaml --runtime kubevirt
 ```
 
 ---
 
 ## Summary
 
-**Orchestr8 + KubeVirt** provides:
+**Aether + KubeVirt** provides:
 
 ✅ **Easy VM Deployment**: One command to launch VMs
 ✅ **Kubernetes Integration**: VMs as native K8s resources
@@ -1067,4 +1067,4 @@ orchestr8 run --spec migrated-vm.yaml --runtime kubevirt
 
 ---
 
-**🚀 Start deploying VMs with Orchestr8 + KubeVirt today!**
+**🚀 Start deploying VMs with Aether + KubeVirt today!**

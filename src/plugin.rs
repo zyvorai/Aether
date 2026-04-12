@@ -1,7 +1,7 @@
 //! Plugin/extension system for custom runtimes
 //!
 //! Allows third-party runtimes to be registered and invoked via a JSON-RPC
-//! style protocol.  Plugins are discovered from `~/.orchestr8/plugins/` as
+//! style protocol.  Plugins are discovered from `~/.aether/plugins/` as
 //! `*.json` manifest files and tracked in a persistent registry.
 
 use serde::{Deserialize, Serialize};
@@ -38,7 +38,7 @@ impl PluginRegistry {
         Self::default()
     }
 
-    /// Discover plugin manifests by scanning `~/.orchestr8/plugins/` for
+    /// Discover plugin manifests by scanning `~/.aether/plugins/` for
     /// `*.json` files.  Each valid manifest is merged into the registry,
     /// keyed by its `name` field.
     pub fn discover(&mut self) -> anyhow::Result<usize> {
@@ -99,7 +99,7 @@ impl PluginRegistry {
 
     /// Return the directory where plugin manifests are discovered.
     fn plugins_dir() -> PathBuf {
-        crate::resources::orchestr8_dir().join("plugins")
+        crate::resources::aether_dir().join("plugins")
     }
 
     /// Parse a single manifest file.
@@ -518,7 +518,7 @@ mod tests {
 
     #[test]
     fn test_registry_load_missing_file_returns_default() {
-        let path = std::path::Path::new("/tmp/orchestr8_test_no_such_plugins.json");
+        let path = std::path::Path::new("/tmp/aether_test_no_such_plugins.json");
         let reg = PluginRegistry::load(path).unwrap();
         assert!(reg.plugins.is_empty());
     }
@@ -526,7 +526,7 @@ mod tests {
     #[test]
     fn test_registry_default_path_ends_with_plugins_json() {
         let path = PluginRegistry::default_path();
-        assert!(path.ends_with(".orchestr8/plugins.json"));
+        assert!(path.ends_with(".aether/plugins.json"));
     }
 
     // ── Discovery from temp dir ───────────────────────────────────────

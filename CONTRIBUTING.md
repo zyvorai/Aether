@@ -1,6 +1,6 @@
-# Contributing to Orchestr8
+# Contributing to Aether
 
-Thank you for your interest in contributing to Orchestr8! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Aether! This document provides guidelines and instructions for contributing.
 
 ## Getting Started
 
@@ -15,8 +15,8 @@ Thank you for your interest in contributing to Orchestr8! This document provides
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ssahani/orchestr8
-   cd orchestr8
+   git clone https://github.com/ssahani/aether
+   cd aether
    ```
 
 2. **Build the project**
@@ -135,7 +135,7 @@ mod tests {
 /// # Examples
 ///
 /// ```
-/// use orchestr8::spec::Workload;
+/// use aether::spec::Workload;
 ///
 /// let workload = Workload::from_file("workload.yaml")?;
 /// validate(&workload)?;
@@ -254,7 +254,7 @@ pub fn validate(spec: &Workload) -> Result<()> {
 ### Project Structure
 
 ```
-orchestr8/
+aether/
 ├── src/
 │   ├── main.rs           # CLI entrypoint
 │   ├── cli.rs            # CLI framework (commands, args)
@@ -416,7 +416,7 @@ All PRs must pass:
 ### Bug Reports
 
 Include:
-- Orchestr8 version (`orchestr8 --version`)
+- Aether version (`aether --version`)
 - Operating system
 - Steps to reproduce
 - Expected behavior
@@ -457,4 +457,4 @@ If you have questions:
 2. Search closed issues
 3. Open a new issue with the "question" label
 
-Thank you for contributing to Orchestr8! 🚀
+Thank you for contributing to Aether! 🚀

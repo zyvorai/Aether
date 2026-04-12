@@ -39,13 +39,13 @@ requirements, and compliance checks.
 
 ```bash
 # Check against production policies (default)
-orchestr8 policy-check
+aether policy-check
 
 # Check against development policies
-orchestr8 policy-check --policy development
+aether policy-check --policy development
 
 # Check against a custom policy file
-orchestr8 policy-check --policy ./my-policies.yaml
+aether policy-check --policy ./my-policies.yaml
 ```
 
 Sample output:
@@ -116,7 +116,7 @@ rules:
 ### Policy gate on deploy
 
 Policies can be enforced automatically on every `run` and `deploy` command.
-This is configured in `~/.orchestr8/config.yaml`:
+This is configured in `~/.aether/config.yaml`:
 
 ```yaml
 policy:
@@ -135,51 +135,51 @@ Hint: Add health.liveness and health.readiness to your workload spec,
 To bypass in development:
 
 ```bash
-orchestr8 --skip-policy run
+aether --skip-policy run
 ```
 
 ---
 
 ## 🔐 Secrets Management (AES-256-GCM)
 
-Orchestr8 includes a built-in secrets manager with AES-256-GCM encryption,
+Aether includes a built-in secrets manager with AES-256-GCM encryption,
 access auditing, rotation policies, and expiry alerts.
 
 ### Set the encryption key
 
 ```bash
 # Production: set a strong key via environment variable
-export ORCHESTR8_SECRET_KEY="your-32-char-production-key-here!"
+export AETHER_SECRET_KEY="your-32-char-production-key-here!"
 ```
 
-> ⚠️ **Without `ORCHESTR8_SECRET_KEY`**, secrets are stored with XOR obfuscation
+> ⚠️ **Without `AETHER_SECRET_KEY`**, secrets are stored with XOR obfuscation
 > (dev-only). A warning is displayed on every operation. **Never use the default
 > key in production.**
 
 | Encryption Mode   | When Active                        | Security Level |
 |-------------------|------------------------------------|----------------|
-| AES-256-GCM       | `ORCHESTR8_SECRET_KEY` is set      | Production     |
+| AES-256-GCM       | `AETHER_SECRET_KEY` is set      | Production     |
 | XOR Obfuscation   | No key set (dev-only)              | Insecure       |
 | Vault Reference   | External vault integration         | Enterprise     |
 
 ### Create a secret
 
 ```bash
-orchestr8 secrets create db-credentials --namespace production
+aether secrets create db-credentials --namespace production
 ```
 
 ### Set key-value pairs
 
 ```bash
-orchestr8 secrets set db-credentials username admin
-orchestr8 secrets set db-credentials password "s3cur3-p@ssw0rd!"
-orchestr8 secrets set db-credentials connection-string "postgres://admin:s3cur3@db:5432/app"
+aether secrets set db-credentials username admin
+aether secrets set db-credentials password "s3cur3-p@ssw0rd!"
+aether secrets set db-credentials connection-string "postgres://admin:s3cur3@db:5432/app"
 ```
 
 ### Retrieve a secret value
 
 ```bash
-orchestr8 secrets get db-credentials password
+aether secrets get db-credentials password
 ```
 
 The value is decrypted on-the-fly and the access is logged in the audit trail.
@@ -187,7 +187,7 @@ The value is decrypted on-the-fly and the access is logged in the audit trail.
 ### List all secrets
 
 ```bash
-orchestr8 secrets list
+aether secrets list
 ```
 
 ```
@@ -202,7 +202,7 @@ orchestr8 secrets list
 ### Rotation audit
 
 ```bash
-orchestr8 secrets audit
+aether secrets audit
 ```
 
 Checks all secrets against their rotation policies and reports:
@@ -221,7 +221,7 @@ Checks all secrets against their rotation policies and reports:
 
 ### How encryption works under the hood
 
-1. **Key derivation:** The `ORCHESTR8_SECRET_KEY` value is hashed with SHA-256
+1. **Key derivation:** The `AETHER_SECRET_KEY` value is hashed with SHA-256
    to produce a 32-byte AES key
 2. **Nonce generation:** A random 12-byte nonce is generated for each encrypt
    operation using `OsRng`
@@ -243,7 +243,7 @@ Common causes include manual changes, runtime updates, or resource reclamation.
 ### Detect drift
 
 ```bash
-orchestr8 drift hello-web
+aether drift hello-web
 ```
 
 Sample output:
@@ -278,7 +278,7 @@ Drift Report: hello-web
 ### Auto-reconcile drift
 
 ```bash
-orchestr8 drift hello-web --reconcile
+aether drift hello-web --reconcile
 ```
 
 This generates and executes a reconciliation plan to bring the workload back
@@ -294,14 +294,14 @@ in sync with the desired spec. Actions may include:
 For a three-way diff (spec file vs stored state vs live runtime):
 
 ```bash
-orchestr8 diff hello-web
+aether diff hello-web
 ```
 
 ---
 
 ## 🧩 Plugin System
 
-Extend Orchestr8 with custom runtimes through the plugin system. Plugins
+Extend Aether with custom runtimes through the plugin system. Plugins
 communicate via a JSON-RPC style protocol over stdin/stdout.
 
 ### Plugin manifest format
@@ -313,7 +313,7 @@ Plugins are described by a JSON manifest:
   "name": "wasm-runtime",
   "version": "1.0.0",
   "runtime_kind": "wasm",
-  "command": "/usr/local/bin/orchestr8-wasm-plugin",
+  "command": "/usr/local/bin/aether-wasm-plugin",
   "capabilities": ["build", "run", "stop", "status", "delete", "list"]
 }
 ```
@@ -328,10 +328,10 @@ Plugins are described by a JSON manifest:
 
 ### Discover plugins
 
-Place manifests in `~/.orchestr8/plugins/` as `*.json` files:
+Place manifests in `~/.aether/plugins/` as `*.json` files:
 
 ```bash
-orchestr8 plugin discover
+aether plugin discover
 ```
 
 ```
@@ -343,19 +343,19 @@ Discovered 2 plugins:
 ### Register a plugin manually
 
 ```bash
-orchestr8 plugin register ./my-plugin-manifest.json
+aether plugin register ./my-plugin-manifest.json
 ```
 
 ### List registered plugins
 
 ```bash
-orchestr8 plugin list
+aether plugin list
 ```
 
 ### Remove a plugin
 
 ```bash
-orchestr8 plugin remove wasm-runtime
+aether plugin remove wasm-runtime
 ```
 
 ### Plugin protocol
@@ -377,7 +377,7 @@ Example `BuildRequest`:
 ```json
 {
   "type": "BuildRequest",
-  "spec_json": "{\"apiVersion\":\"orchestr8/v1\",\"kind\":\"Workload\",...}"
+  "spec_json": "{\"apiVersion\":\"aether/v1\",\"kind\":\"Workload\",...}"
 }
 ```
 
@@ -392,16 +392,16 @@ Example `BuildResponse`:
 
 ### Plugin runtime lifecycle
 
-When a plugin is registered, it acts as a full runtime implementation. Orchestr8
+When a plugin is registered, it acts as a full runtime implementation. Aether
 communicates with the plugin binary via JSON-RPC over stdin/stdout:
 
 ```
-orchestr8 → stdin  → {"type":"RunRequest","image_json":"...","spec_json":"..."}
+aether → stdin  → {"type":"RunRequest","image_json":"...","spec_json":"..."}
 plugin    → stdout → {"type":"RunResponse","instance_json":"..."}
 ```
 
 Each IPC call has a **60-second timeout**. If the plugin binary doesn't respond
-in time, Orchestr8 terminates the process and returns an error.
+in time, Aether terminates the process and returns an error.
 
 **Capability checking** runs before every operation. Calling `build` on a plugin
 that only supports `["run", "stop"]` produces:
@@ -442,10 +442,10 @@ Each watch cycle:
 
 ```bash
 # View recent alert events
-orchestr8 events --severity warning
+aether events --severity warning
 
 # View event summary
-orchestr8 events --summary
+aether events --summary
 ```
 
 ---
@@ -457,7 +457,7 @@ Configure webhook endpoints to receive notifications about workload events.
 ### Add a webhook channel
 
 ```bash
-orchestr8 webhook add slack-alerts \
+aether webhook add slack-alerts \
   "https://hooks.slack.com/services/T00/B00/xxx" \
   --method POST \
   --severity warning
@@ -471,13 +471,13 @@ orchestr8 webhook add slack-alerts \
 ### List channels
 
 ```bash
-orchestr8 webhook list
+aether webhook list
 ```
 
 ### Test a channel
 
 ```bash
-orchestr8 webhook test slack-alerts
+aether webhook test slack-alerts
 ```
 
 ### View the retry queue
@@ -485,19 +485,19 @@ orchestr8 webhook test slack-alerts
 Failed webhook deliveries are placed in a retry queue with exponential backoff:
 
 ```bash
-orchestr8 webhook queue
+aether webhook queue
 ```
 
 ### Force-retry all queued webhooks
 
 ```bash
-orchestr8 webhook flush
+aether webhook flush
 ```
 
 ### Remove a channel
 
 ```bash
-orchestr8 webhook remove slack-alerts
+aether webhook remove slack-alerts
 ```
 
 ---
@@ -508,7 +508,7 @@ The `orchestrate watch` command runs a continuous health monitoring loop with
 automatic healing:
 
 ```bash
-orchestr8 orchestrate watch --interval 30
+aether orchestrate watch --interval 30
 ```
 
 This runs in the foreground and performs the following every interval:
@@ -524,26 +524,26 @@ This runs in the foreground and performs the following every interval:
 ### Register workloads for orchestration
 
 ```bash
-orchestr8 orchestrate register api-service --runtime kubernetes
-orchestr8 orchestrate register web-frontend --runtime podman
+aether orchestrate register api-service --runtime kubernetes
+aether orchestrate register web-frontend --runtime podman
 ```
 
 ### View orchestration status
 
 ```bash
-orchestr8 orchestrate status
+aether orchestrate status
 ```
 
 ### Rolling update through the orchestrator
 
 ```bash
-orchestr8 orchestrate rolling-update api-service --replicas 3
+aether orchestrate rolling-update api-service --replicas 3
 ```
 
 ### Reset a tripped circuit breaker
 
 ```bash
-orchestr8 orchestrate reset-circuit api-service
+aether orchestrate reset-circuit api-service
 ```
 
 ---
@@ -553,7 +553,7 @@ orchestr8 orchestrate reset-circuit api-service
 Estimate what your workload would cost across major cloud providers:
 
 ```bash
-orchestr8 cost
+aether cost
 ```
 
 ```
@@ -573,22 +573,22 @@ Cost Estimation for 'hello-web' (2 CPU, 4Gi RAM, 20Gi storage)
 Filter by provider:
 
 ```bash
-orchestr8 cost --provider aws
-orchestr8 cost --provider gcp
-orchestr8 cost --provider all      # default
+aether cost --provider aws
+aether cost --provider gcp
+aether cost --provider all      # default
 ```
 
 ---
 
 ## 🤖 AI-Powered Recommendations
 
-Orchestr8 includes an AI recommendation engine that analyzes your workload
+Aether includes an AI recommendation engine that analyzes your workload
 spec and provides actionable advice.
 
 ### Runtime recommendation
 
 ```bash
-orchestr8 recommend
+aether recommend
 ```
 
 Scores each runtime (0--100) based on resource requirements, networking needs,
@@ -597,7 +597,7 @@ persistence, GPU, and cost optimization.
 ### Workload profiling
 
 ```bash
-orchestr8 profile --name hello-web
+aether profile --name hello-web
 ```
 
 Analyzes a deployed workload and suggests optimization opportunities for
@@ -606,7 +606,7 @@ resource usage, scaling, and cost.
 ### Log analysis
 
 ```bash
-orchestr8 analyze-logs hello-web
+aether analyze-logs hello-web
 ```
 
 Scans workload logs for anomalies, error patterns, and recurring issues.
@@ -614,7 +614,7 @@ Scans workload logs for anomalies, error patterns, and recurring issues.
 ### Migration advice
 
 ```bash
-orchestr8 migration-advice hello-web kube
+aether migration-advice hello-web kube
 ```
 
 Provides tailored guidance for migrating a specific workload to a target
@@ -628,7 +628,7 @@ runtime, including:
 ### Scaling advice
 
 ```bash
-orchestr8 scaling-advice
+aether scaling-advice
 ```
 
 Predicts scaling needs based on historical health data and resource utilization
@@ -638,13 +638,13 @@ patterns.
 
 ```bash
 # Get recommendations for a workload class
-orchestr8 affinity recommend web-service
+aether affinity recommend web-service
 
 # View the compatibility matrix
-orchestr8 affinity matrix
+aether affinity matrix
 
 # View learning statistics
-orchestr8 affinity stats
+aether affinity stats
 ```
 
 Supported workload classes: `web-service`, `api-backend`, `database`, `cache`,
@@ -654,7 +654,7 @@ Supported workload classes: `web-service`, `api-backend`, `database`, `cache`,
 
 ## 🎯 Next Steps
 
-You have now explored the full depth of Orchestr8's advanced features. Here
+You have now explored the full depth of Aether's advanced features. Here
 are the reference documents:
 
 | Document                                                                 | Description                                     |
@@ -666,34 +666,34 @@ are the reference documents:
 
 ```bash
 # Manage deployment environments
-orchestr8 env create staging --tier staging
-orchestr8 env promote hello-web development staging
-orchestr8 env parity staging production
+aether env create staging --tier staging
+aether env promote hello-web development staging
+aether env parity staging production
 
 # SLA compliance monitoring
-orchestr8 sla add hello-web --tier high-availability
-orchestr8 sla check hello-web --uptime 99.95 --latency 20
+aether sla add hello-web --tier high-availability
+aether sla check hello-web --uptime 99.95 --latency 20
 
 # Workload dependency management
-orchestr8 deps add web-frontend api-service
-orchestr8 deps show
-orchestr8 deps order
-orchestr8 deps impact api-service
+aether deps add web-frontend api-service
+aether deps show
+aether deps order
+aether deps impact api-service
 
 # Scheduling and placement optimization
-orchestr8 schedule place hello-web --cpu 4 --memory 8192 --strategy balanced
-orchestr8 schedule utilization
-orchestr8 schedule optimize
+aether schedule place hello-web --cpu 4 --memory 8192 --strategy balanced
+aether schedule utilization
+aether schedule optimize
 
 # Audit trail
-orchestr8 audit --last 50 --workload hello-web
+aether audit --last 50 --workload hello-web
 
 # Event stream
-orchestr8 events --last 20 --severity warning
+aether events --last 20 --severity warning
 
 # Templates
-orchestr8 template --list
-orchestr8 template rest-api --workload-name my-api --registry ghcr.io/org
+aether template --list
+aether template rest-api --workload-name my-api --registry ghcr.io/org
 ```
 
 ---

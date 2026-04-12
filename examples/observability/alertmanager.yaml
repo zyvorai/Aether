@@ -1,4 +1,4 @@
-# AlertManager Deployment for Orchestr8
+# AlertManager Deployment for Aether
 # Alert routing, grouping, silencing, and notification management
 
 ---
@@ -42,10 +42,10 @@ data:
         group_wait: 30s
         repeat_interval: 1h
 
-      # Orchestr8-specific alerts
+      # Aether-specific alerts
       - match_re:
-          component: orchestr8
-        receiver: 'orchestr8-team'
+          component: aether
+        receiver: 'aether-team'
         routes:
         # Migration failures need immediate attention
         - match:
@@ -127,12 +127,12 @@ data:
         text: '{{ .CommonAnnotations.description }}'
         send_resolved: true
 
-    # Orchestr8 team
-    - name: 'orchestr8-team'
+    # Aether team
+    - name: 'aether-team'
       slack_configs:
-      - channel: '#orchestr8-alerts'
+      - channel: '#aether-alerts'
         color: '{{ if eq .CommonLabels.severity "critical" }}danger{{ else }}warning{{ end }}'
-        title: 'Orchestr8: {{ .GroupLabels.alertname }}'
+        title: 'Aether: {{ .GroupLabels.alertname }}'
         text: |
           *Component:* {{ .CommonLabels.component }}
           *Severity:* {{ .CommonLabels.severity }}

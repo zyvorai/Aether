@@ -91,7 +91,7 @@ fn render_logs_content(f: &mut Frame, area: Rect, app: &App) {
     }
 
     // Show last N lines that fit in the area
-    let max_lines = (area.height as usize).saturating_sub(2);
+    let max_lines = (area.height as usize).saturating_sub(2).max(1);
     let start_idx = app.logs_buffer.len().saturating_sub(max_lines);
 
     let log_lines: Vec<Line> = app.logs_buffer[start_idx..]

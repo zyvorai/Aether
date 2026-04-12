@@ -22,7 +22,7 @@
 
 ## 🔎 Overview
 
-orchestr8's health monitoring system records periodic health check observations for each workload, building a historical timeline that enables:
+aether's health monitoring system records periodic health check observations for each workload, building a historical timeline that enables:
 
 - 📈 **Uptime percentage** calculations (ratio of ready checks to total checks)
 - 🔄 **Restart tracking** across time
@@ -30,7 +30,7 @@ orchestr8's health monitoring system records periodic health check observations 
 - 📋 **Summary statistics** per workload
 - 🗂️ **Bounded storage** with automatic pruning of old records
 
-Health data is stored in `~/.orchestr8/health.json` and is updated whenever you run status checks, background watches, or orchestration health checks.
+Health data is stored in `~/.aether/health.json` and is updated whenever you run status checks, background watches, or orchestration health checks.
 
 ---
 
@@ -106,9 +106,9 @@ uptime_percent = (ready_checks / total_checks) * 100.0
 The timeline view shows the most recent health records for a workload in chronological order (oldest first).
 
 ```bash
-orchestr8 health api-service                  # Default: last 20 records
-orchestr8 health api-service --last 10        # Last 10 records
-orchestr8 health api-service --last 50        # Last 50 records
+aether health api-service                  # Default: last 20 records
+aether health api-service --last 10        # Last 10 records
+aether health api-service --last 50        # Last 50 records
 ```
 
 ### Example Timeline Output
@@ -141,7 +141,7 @@ orchestr8 health api-service --last 50        # Last 50 records
 Get a high-level summary of a workload's health without individual records.
 
 ```bash
-orchestr8 health api-service --summary
+aether health api-service --summary
 ```
 
 ### Summary Fields
@@ -182,7 +182,7 @@ orchestr8 health api-service --summary
 
 ## 🐳 Podman Native Health Checks
 
-When deploying to Podman, Orchestr8 automatically maps workload health probes to native Podman health check flags. This enables container-level health monitoring without external tooling.
+When deploying to Podman, Aether automatically maps workload health probes to native Podman health check flags. This enables container-level health monitoring without external tooling.
 
 ### Probe Type Mapping
 
@@ -207,7 +207,7 @@ All Podman containers are started with `--restart on-failure:3`, providing autom
 
 ### Health-Aware Status
 
-The `orchestr8 status` command queries Podman's health subsystem and returns enriched status information:
+The `aether status` command queries Podman's health subsystem and returns enriched status information:
 
 | Field | Source | Description |
 |---|---|---|
@@ -251,14 +251,14 @@ Restarts:  0
 
 ## 🔄 Integration with Status Command
 
-The `orchestr8 status <name>` command automatically records a health check when it queries a workload's status. This means every status check contributes to the health history.
+The `aether status <name>` command automatically records a health check when it queries a workload's status. This means every status check contributes to the health history.
 
 ```bash
 # This queries status AND records a health check
-orchestr8 status my-app
+aether status my-app
 
 # View the accumulated history
-orchestr8 health my-app
+aether health my-app
 ```
 
 The recorded health check captures:
@@ -278,17 +278,17 @@ The recorded health check captures:
 
 ### Continuous Monitoring
 
-Use `orchestr8 orchestrate watch` to run continuous health monitoring at a configurable interval.
+Use `aether orchestrate watch` to run continuous health monitoring at a configurable interval.
 
 ```bash
 # Check every 30 seconds (default)
-orchestr8 orchestrate watch
+aether orchestrate watch
 
 # Check every 10 seconds
-orchestr8 orchestrate watch --interval 10
+aether orchestrate watch --interval 10
 
 # Check every 5 minutes
-orchestr8 orchestrate watch --interval 300
+aether orchestrate watch --interval 300
 ```
 
 Each watch cycle:
@@ -305,23 +305,23 @@ Each watch cycle:
 Run a single round of health checks against all live runtimes without entering a continuous loop:
 
 ```bash
-orchestr8 orchestrate health-check
+aether orchestrate health-check
 ```
 
 ### Other Orchestration Commands
 
 ```bash
-orchestr8 orchestrate register my-app --runtime kubernetes  # Register for monitoring
-orchestr8 orchestrate status                                 # Show all health statuses
-orchestr8 orchestrate summary                                # Health summary
-orchestr8 orchestrate reset-circuit my-app                   # Reset circuit breaker
+aether orchestrate register my-app --runtime kubernetes  # Register for monitoring
+aether orchestrate status                                 # Show all health statuses
+aether orchestrate summary                                # Health summary
+aether orchestrate reset-circuit my-app                   # Reset circuit breaker
 ```
 
 ---
 
 ## 🖥️ Health in the TUI Dashboard
 
-Launch the TUI with `orchestr8 tui` to see a real-time dashboard with health information.
+Launch the TUI with `aether tui` to see a real-time dashboard with health information.
 
 ### Dashboard Layout
 
@@ -411,7 +411,7 @@ curl http://localhost:8080/api/health/api-service
 ### Storage Location
 
 ```
-~/.orchestr8/health.json
+~/.aether/health.json
 ```
 
 ### Retention Policy
@@ -437,7 +437,7 @@ When a new record is added and the buffer is at capacity:
 | Save after health check | Records written to disk as JSON |
 | Load from existing file | Deserializes with full fidelity |
 | Load from missing file | Returns empty history with `max_records: 1000` (no error) |
-| Default path | `~/.orchestr8/health.json` (auto-detected from `$HOME`) |
+| Default path | `~/.aether/health.json` (auto-detected from `$HOME`) |
 
 ### Storage Format
 
@@ -498,16 +498,16 @@ Alert evaluation happens automatically during each `orchestrate watch` cycle:
 
 ```bash
 # Alerts are evaluated every 30 seconds (default interval)
-orchestr8 orchestrate watch
+aether orchestrate watch
 
 # Alerts are evaluated every 10 seconds
-orchestr8 orchestrate watch --interval 10
+aether orchestrate watch --interval 10
 ```
 
 When alerts fire, they appear in the event stream:
 
 ```bash
-orchestr8 events --severity warning
+aether events --severity warning
 ```
 
 Alerts also trigger any configured webhook notification channels.

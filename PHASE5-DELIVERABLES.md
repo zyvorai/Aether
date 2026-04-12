@@ -85,7 +85,7 @@ impl Runtime for Metal3Runtime {
 - **status**: Monitors provisioning state (available/inspecting/provisioning/provisioned)
 - **logs**: Returns BMC access info and hardware details
 - **delete**: Deprovisions server and returns to available pool
-- **list**: Queries all hosts with `managed-by=orchestr8` label
+- **list**: Queries all hosts with `managed-by=aether` label
 
 ### 3. CLI Integration
 
@@ -94,7 +94,7 @@ impl Runtime for Metal3Runtime {
 Added Metal3 support to all CLI commands:
 
 ```rust
-use orchestr8::adapters::{Metal3Runtime, KubeVirtRuntime, KubernetesRuntime, PodmanRuntime};
+use aether::adapters::{Metal3Runtime, KubeVirtRuntime, KubernetesRuntime, PodmanRuntime};
 
 // In build_command()
 RuntimeKind::Metal3 => {
@@ -115,14 +115,14 @@ RuntimeKind::Metal3 => {
 ```
 
 **Commands now supporting Metal3:**
-- `orchestr8 build --runtime metal`
-- `orchestr8 run --runtime metal`
-- `orchestr8 stop <server-name>`
-- `orchestr8 status <server-name>`
-- `orchestr8 logs <server-name>`
-- `orchestr8 delete <server-name>`
-- `orchestr8 list` (shows servers alongside containers/VMs)
-- `orchestr8 tui` (displays servers with 🖧 icon)
+- `aether build --runtime metal`
+- `aether run --runtime metal`
+- `aether stop <server-name>`
+- `aether status <server-name>`
+- `aether logs <server-name>`
+- `aether delete <server-name>`
+- `aether list` (shows servers alongside containers/VMs)
+- `aether tui` (displays servers with 🖧 icon)
 
 ### 4. Example Workload
 
@@ -131,7 +131,7 @@ RuntimeKind::Metal3 => {
 Complete bare metal server specification:
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -251,12 +251,12 @@ metadata:
   namespace: metal3-system
   labels:
     app: edge-server
-    managed-by: orchestr8
+    managed-by: aether
   annotations:
-    orchestr8.io/cpu-cores: "32"
-    orchestr8.io/memory-mb: "131072"
-    orchestr8.io/gpu-vendor: "nvidia"
-    orchestr8.io/gpu-count: "4"
+    aether.io/cpu-cores: "32"
+    aether.io/memory-mb: "131072"
+    aether.io/gpu-vendor: "nvidia"
+    aether.io/gpu-count: "4"
 spec:
   online: true
   bootMACAddress: "00:00:00:00:00:00"
@@ -363,14 +363,14 @@ bmh["metadata"]["annotations"]
     .as_object_mut()
     .unwrap()
     .insert(
-        "orchestr8.io/cpu-cores".to_string(),
+        "aether.io/cpu-cores".to_string(),
         json!(cpu_cores.to_string()),
     );
 bmh["metadata"]["annotations"]
     .as_object_mut()
     .unwrap()
     .insert(
-        "orchestr8.io/memory-mb".to_string(),
+        "aether.io/memory-mb".to_string(),
         json!(memory_mb.to_string()),
     );
 ```
@@ -379,7 +379,7 @@ This allows operators to match workloads to appropriate hardware.
 
 ### Provisioning State Mapping
 
-Maps Metal3 provisioning states to Orchestr8 states:
+Maps Metal3 provisioning states to Aether states:
 
 ```rust
 let state = match provisioning_state {
@@ -401,7 +401,7 @@ let state = match provisioning_state {
 
 ```bash
 $ cargo build
-   Compiling orchestr8 v0.1.0
+   Compiling aether v0.1.0
     Finished `dev` profile in 4.39s
 
 $ cargo test
@@ -416,10 +416,10 @@ test result: ok. 9 passed; 0 failed; 0 ignored
 **Test 1: Basic Server Provisioning**
 ```bash
 # Validate spec
-orchestr8 validate --spec workload-metal.yaml
+aether validate --spec workload-metal.yaml
 
 # Provision server
-orchestr8 run --spec workload-metal.yaml --runtime metal
+aether run --spec workload-metal.yaml --runtime metal
 
 # Verify BareMetalHost created
 kubectl get bmh -n metal3-system
@@ -428,20 +428,20 @@ kubectl get bmh -n metal3-system
 **Test 2: Server Lifecycle**
 ```bash
 # Create
-orchestr8 run --spec workload-metal.yaml --runtime metal
+aether run --spec workload-metal.yaml --runtime metal
 
 # Status (should show "pending" while provisioning)
-orchestr8 status edge-server
+aether status edge-server
 
 # Power off
-orchestr8 stop edge-server
+aether stop edge-server
 
 # Verify powered off
 kubectl get bmh edge-server -n metal3-system -o jsonpath='{.spec.online}'
 # Should show: false
 
 # Deprovision
-orchestr8 delete edge-server
+aether delete edge-server
 
 # Verify deprovisioning
 kubectl get bmh edge-server -n metal3-system
@@ -451,10 +451,10 @@ kubectl get bmh edge-server -n metal3-system
 **Test 3: BMC Console Access**
 ```bash
 # Provision server
-orchestr8 run --spec workload-metal.yaml --runtime metal
+aether run --spec workload-metal.yaml --runtime metal
 
 # Get BMC access info
-orchestr8 logs edge-server
+aether logs edge-server
 
 # Shows:
 # - BMC address
@@ -555,7 +555,7 @@ orchestr8 logs edge-server
 ```bash
 # Create spec
 cat > edge-server.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: edge-compute
@@ -578,10 +578,10 @@ persistence:
 EOF
 
 # Provision
-orchestr8 run --spec edge-server.yaml --runtime metal
+aether run --spec edge-server.yaml --runtime metal
 
 # Monitor
-orchestr8 tui
+aether tui
 ```
 
 ### Example 2: GPU Compute Server
@@ -589,7 +589,7 @@ orchestr8 tui
 ```bash
 # Create GPU server spec
 cat > gpu-server.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: ml-server
@@ -607,7 +607,7 @@ runtime:
 EOF
 
 # Provision
-orchestr8 run --spec gpu-server.yaml --runtime metal
+aether run --spec gpu-server.yaml --runtime metal
 
 # Verify GPU annotations
 kubectl get bmh ml-server -n metal3-system -o yaml | grep gpu
@@ -617,13 +617,13 @@ kubectl get bmh ml-server -n metal3-system -o yaml | grep gpu
 
 ```bash
 # Same workload on different runtimes
-orchestr8 run --spec app.yaml --runtime podman    # Container
-orchestr8 run --spec app.yaml --runtime kube      # Pod
-orchestr8 run --spec app.yaml --runtime kubevirt  # VM
-orchestr8 run --spec app.yaml --runtime metal     # Bare metal
+aether run --spec app.yaml --runtime podman    # Container
+aether run --spec app.yaml --runtime kube      # Pod
+aether run --spec app.yaml --runtime kubevirt  # VM
+aether run --spec app.yaml --runtime metal     # Bare metal
 
 # Compare in TUI
-orchestr8 tui
+aether tui
 # See:
 #   app-container 🐳 podman     ● running
 #   app-pod       ☸️ kubernetes ● running
@@ -710,7 +710,7 @@ Display servers with distinct icon:
 
 **Phase 5 Complete!**
 
-Added full Metal3 support to Orchestr8:
+Added full Metal3 support to Aether:
 
 ### What Works
 
@@ -749,13 +749,13 @@ Added full Metal3 support to Orchestr8:
 
 ### Ready to Use
 
-- Provision servers today with `orchestr8 run --runtime metal`
+- Provision servers today with `aether run --runtime metal`
 - Monitor with TUI dashboard
 - Manage full server lifecycle
 - True multi-runtime platform complete!
 
 ---
 
-**🖧 Orchestr8 now manages Containers, Pods, VMs, AND Bare Metal! 🚀**
+**🖧 Aether now manages Containers, Pods, VMs, AND Bare Metal! 🚀**
 
 **One spec. Four runtimes. One tool.**

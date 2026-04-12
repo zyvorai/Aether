@@ -1,10 +1,10 @@
 #!/bin/bash
-# Orchestr8 Demo Script
+# Aether Demo Script
 # Shows all features of the system
 
 set -e
 
-echo "🎉 ORCHESTR8 DEMO"
+echo "🎉 AETHER DEMO"
 echo "================="
 echo ""
 
@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-BINARY="./target/release/orchestr8"
+BINARY="./target/release/aether"
 
 # Check if binary exists
 if [ ! -f "$BINARY" ]; then
@@ -50,7 +50,7 @@ echo -e "${BLUE}5. Project Statistics${NC}"
 echo "  - Rust Code: $(wc -l src/**/*.rs src/ui/*.rs 2>/dev/null | tail -1 | awk '{print $1}') lines"
 echo "  - Documentation: $(wc -l *.md 2>/dev/null | tail -1 | awk '{print $1}') lines"
 echo "  - Tests: 9/9 passing ✅"
-echo "  - Binary Size: $(ls -lh target/release/orchestr8 2>/dev/null | awk '{print $5}')"
+echo "  - Binary Size: $(ls -lh target/release/aether 2>/dev/null | awk '{print $5}')"
 echo ""
 
 echo -e "${GREEN}✅ All demos completed!${NC}"

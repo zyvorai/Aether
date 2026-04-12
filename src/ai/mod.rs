@@ -1,4 +1,4 @@
-//! AI-powered intelligence modules for Orchestr8
+//! AI-powered intelligence modules for Aether
 //!
 //! Provides scoring-based decisions, predictive scaling, workload profiling,
 //! log analysis, and intelligent migration advisory.

@@ -456,7 +456,7 @@ mod tests {
 
     #[test]
     fn test_load_nonexistent_returns_default() {
-        let path = std::path::Path::new("/tmp/orchestr8_test_health_does_not_exist.json");
+        let path = std::path::Path::new("/tmp/aether_test_health_does_not_exist.json");
         let history = HealthHistory::load(path).unwrap();
         assert!(history.records.is_empty());
         assert_eq!(history.max_records, 1000);
@@ -465,7 +465,7 @@ mod tests {
     #[test]
     fn test_default_path_ends_with_health_json() {
         let path = HealthHistory::default_path();
-        assert!(path.ends_with(".orchestr8/health.json"));
+        assert!(path.ends_with(".aether/health.json"));
     }
 
     // ── Multiple workloads ────────────────────────────────────────────

@@ -65,6 +65,30 @@ pub struct RotationPolicy {
     pub notify_before_days: u32,
 }
 
+impl RotationPolicy {
+    /// Validate that the policy fields are consistent.
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.interval_days == 0 {
+            anyhow::bail!("rotation interval_days must be > 0");
+        }
+        if self.max_age_days < self.interval_days {
+            anyhow::bail!(
+                "max_age_days ({}) must be >= interval_days ({})",
+                self.max_age_days,
+                self.interval_days
+            );
+        }
+        if self.notify_before_days > self.max_age_days {
+            anyhow::bail!(
+                "notify_before_days ({}) must be <= max_age_days ({})",
+                self.notify_before_days,
+                self.max_age_days
+            );
+        }
+        Ok(())
+    }
+}
+
 impl Default for RotationPolicy {
     fn default() -> Self {
         Self {
@@ -161,12 +185,6 @@ impl SecretStore {
             .map(|v| v.version + 1)
             .unwrap_or(1);
 
-        if method == EncryptionMethod::Obfuscate {
-            output::warning(
-                "Secret stored with XOR obfuscation (dev-only). \
-                 Set ORCHESTR8_SECRET_KEY for AES-256 encryption.",
-            );
-        }
         secret.data.insert(
             key.to_string(),
             SecretValue {
@@ -352,7 +370,7 @@ impl SecretStore {
 
     /// Default path for secrets store
     pub fn default_path() -> PathBuf {
-        crate::resources::orchestr8_path("secrets.json")
+        crate::resources::aether_path("secrets.json")
     }
 
     /// Load from disk
@@ -370,66 +388,44 @@ impl SecretStore {
     // --- Private ---
 
     fn default_key() -> Vec<u8> {
-        match std::env::var("ORCHESTR8_SECRET_KEY") {
+        match std::env::var("AETHER_SECRET_KEY") {
             Ok(key) if !key.is_empty() => key.into_bytes(),
             _ => {
                 tracing::warn!(
-                    "ORCHESTR8_SECRET_KEY not set — using built-in dev key. \
-                     Do NOT use this in production!"
+                    "AETHER_SECRET_KEY not set — generating ephemeral key from machine identity. \
+                     Set AETHER_SECRET_KEY for stable production encryption."
                 );
-                b"orchestr8-dev-key-do-not-use-prod".to_vec()
+                // Derive a machine-specific key from hostname + uid rather than
+                // using a hardcoded constant that any source reader can extract.
+                use sha2::{Digest, Sha256};
+                let hostname = std::env::var("HOSTNAME")
+                    .or_else(|_| std::env::var("USER"))
+                    .unwrap_or_else(|_| "aether-local".to_string());
+                let seed = format!("aether-ephemeral-{}-{}", hostname, std::process::id());
+                Sha256::digest(seed.as_bytes()).to_vec()
             }
         }
     }
 
-    /// Returns true if the encryption key is a user-provided production key
-    /// (not the built-in dev key).
-    fn is_production_key(&self) -> bool {
-        self.encryption_key != b"orchestr8-dev-key-do-not-use-prod"
-    }
-
-    /// Encrypt a plaintext value. Uses AES-256-GCM when a production key is
-    /// set, otherwise falls back to XOR obfuscation for local dev.
+    /// Encrypt a plaintext value. Always uses AES-256-GCM regardless of key source.
     fn encrypt(&self, plaintext: &str) -> (String, EncryptionMethod) {
-        if self.is_production_key() {
-            (self.aes_encrypt(plaintext), EncryptionMethod::Aes256)
-        } else {
-            tracing::debug!("Using XOR obfuscation (dev-only, NOT secure for production)");
-            (self.xor_encrypt(plaintext), EncryptionMethod::Obfuscate)
-        }
+        (self.aes_encrypt(plaintext), EncryptionMethod::Aes256)
     }
 
     /// Decrypt a ciphertext value, dispatching by encryption method.
     fn decrypt(&self, ciphertext: &str, method: &EncryptionMethod) -> anyhow::Result<String> {
         match method {
             EncryptionMethod::Aes256 => self.aes_decrypt(ciphertext),
-            EncryptionMethod::Obfuscate => self.xor_decrypt(ciphertext),
+            EncryptionMethod::Obfuscate => {
+                anyhow::bail!(
+                    "XOR-obfuscated secrets are no longer supported. \
+                     Re-encrypt with `aether secrets set` to upgrade to AES-256-GCM."
+                )
+            }
             EncryptionMethod::VaultRef => {
                 anyhow::bail!("VaultRef secrets are stored externally and cannot be decrypted locally")
             }
         }
-    }
-
-    fn xor_encrypt(&self, plaintext: &str) -> String {
-        let key = &self.encryption_key;
-        let encrypted: Vec<u8> = plaintext
-            .as_bytes()
-            .iter()
-            .enumerate()
-            .map(|(i, b)| b ^ key[i % key.len()])
-            .collect();
-        base64_encode(&encrypted)
-    }
-
-    fn xor_decrypt(&self, ciphertext: &str) -> anyhow::Result<String> {
-        let encrypted = base64_decode(ciphertext)?;
-        let key = &self.encryption_key;
-        let decrypted: Vec<u8> = encrypted
-            .iter()
-            .enumerate()
-            .map(|(i, b)| b ^ key[i % key.len()])
-            .collect();
-        String::from_utf8(decrypted).map_err(|e| anyhow::anyhow!("Decryption failed: {}", e))
     }
 
     fn aes_encrypt(&self, plaintext: &str) -> String {
@@ -617,7 +613,7 @@ pub fn format_secrets_list(summaries: &[SecretSummary]) -> String {
             s.name.clone(),
             s.namespace.clone(),
             s.key_count.to_string(),
-            s.updated_at[..19].to_string(),
+            s.updated_at.get(..19).unwrap_or(&s.updated_at).to_string(),
             if s.needs_rotation { "⚠ Yes" } else { "OK" }.to_string(),
         ])
         .collect();
@@ -644,13 +640,38 @@ mod tests {
     }
 
     #[test]
-    fn test_encrypt_decrypt_roundtrip_xor() {
+    fn test_encrypt_decrypt_roundtrip_default_key() {
         let store = SecretStore::new();
         let plaintext = "hello-world-secret-value";
         let (encrypted, method) = store.encrypt(plaintext);
-        assert_eq!(method, EncryptionMethod::Obfuscate);
+        assert_eq!(method, EncryptionMethod::Aes256);
         let decrypted = store.decrypt(&encrypted, &method).unwrap();
         assert_eq!(decrypted, plaintext);
+    }
+
+    #[test]
+    fn test_xor_obfuscate_decrypt_rejected() {
+        let store = SecretStore::new();
+        let result = store.decrypt("dGVzdA==", &EncryptionMethod::Obfuscate);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("no longer supported"));
+    }
+
+    #[test]
+    fn test_rotation_policy_validation() {
+        let mut policy = RotationPolicy::default();
+        assert!(policy.validate().is_ok());
+
+        policy.interval_days = 0;
+        assert!(policy.validate().is_err());
+
+        policy.interval_days = 90;
+        policy.max_age_days = 30; // less than interval
+        assert!(policy.validate().is_err());
+
+        policy.max_age_days = 365;
+        policy.notify_before_days = 400; // more than max_age
+        assert!(policy.validate().is_err());
     }
 
     #[test]

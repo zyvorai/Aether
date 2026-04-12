@@ -1,11 +1,11 @@
-// Jenkins Pipeline for Orchestr8 Deployment
+// Jenkins Pipeline for Aether Deployment
 // Demonstrates declarative pipeline with parallel stages and deployment strategies
 
 pipeline {
     agent any
 
     environment {
-        ORCHESTR8_VERSION = '0.1.0'
+        AETHER_VERSION = '0.1.0'
         WORKLOAD_SPEC = 'workloads/app.yaml'
         DOCKER_REGISTRY = 'ghcr.io'
         IMAGE_NAME = "${DOCKER_REGISTRY}/${env.GIT_OWNER}/${env.JOB_NAME}"
@@ -54,16 +54,16 @@ pipeline {
             }
         }
 
-        stage('Install Orchestr8') {
+        stage('Install Aether') {
             steps {
                 script {
                     sh '''
-                        if ! command -v orchestr8 &> /dev/null; then
-                            curl -LO https://github.com/ssahani/orchestr8/releases/download/v${ORCHESTR8_VERSION}/orchestr8-linux-amd64
-                            chmod +x orchestr8-linux-amd64
-                            sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+                        if ! command -v aether &> /dev/null; then
+                            curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+                            chmod +x aether-linux-amd64
+                            sudo mv aether-linux-amd64 /usr/local/bin/aether
                         fi
-                        orchestr8 --version
+                        aether --version
                     '''
                 }
             }
@@ -76,7 +76,7 @@ pipeline {
                         script {
                             echo "📋 Validating workload specification..."
                             sh '''
-                                orchestr8 -s ${WORKLOAD_SPEC} validate
+                                aether -s ${WORKLOAD_SPEC} validate
                                 yq eval ${WORKLOAD_SPEC} > /dev/null
                             '''
                             echo "✅ Validation successful"
@@ -92,7 +92,7 @@ pipeline {
                         script {
                             echo "💰 Estimating deployment costs..."
                             sh '''
-                                orchestr8 -s ${WORKLOAD_SPEC} cost --provider all | tee cost-report.txt
+                                aether -s ${WORKLOAD_SPEC} cost --provider all | tee cost-report.txt
                             '''
                             archiveArtifacts artifacts: 'cost-report.txt', fingerprint: true
                         }
@@ -133,11 +133,11 @@ pipeline {
                 script {
                     echo "💾 Creating pre-deployment backup..."
                     sh '''
-                        orchestr8 backup \\
+                        aether backup \\
                             -n "prod-pre-deploy-${BUILD_NUMBER}" \\
                             -d "Automated backup before deployment from build ${BUILD_NUMBER}"
                     '''
-                    sh 'orchestr8 list-backups | head -5'
+                    sh 'aether list-backups | head -5'
                 }
             }
         }
@@ -160,13 +160,13 @@ pipeline {
                         yq eval ".image.tag = \\"${IMAGE_TAG}\\"" -i ${WORKLOAD_SPEC}
 
                         # Deploy workload
-                        orchestr8 -s ${WORKLOAD_SPEC} run --runtime kubernetes
+                        aether -s ${WORKLOAD_SPEC} run --runtime kubernetes
 
                         # Wait for deployment
                         kubectl wait --for=condition=ready pod -l app=myapp --timeout=300s
 
                         # Check status
-                        orchestr8 status myapp
+                        aether status myapp
                     '''
                 }
             }
@@ -217,13 +217,13 @@ pipeline {
 
                         # Deploy with selected strategy
                         if [ "${DEPLOYMENT_STRATEGY}" = "blue-green" ] || [ "${DEPLOYMENT_STRATEGY}" = "rolling" ]; then
-                            orchestr8 migrate myapp kubernetes --strategy ${DEPLOYMENT_STRATEGY}
+                            aether migrate myapp kubernetes --strategy ${DEPLOYMENT_STRATEGY}
                         else
-                            orchestr8 -s ${WORKLOAD_SPEC} run --runtime kubernetes
+                            aether -s ${WORKLOAD_SPEC} run --runtime kubernetes
                         fi
 
                         # Verify deployment
-                        orchestr8 status myapp
+                        aether status myapp
                         kubectl get pods -l app=myapp
                     '''
                 }
@@ -281,9 +281,9 @@ pipeline {
                 if (params.ENVIRONMENT == 'production') {
                     echo "🔄 Initiating automatic rollback..."
                     sh '''
-                        LATEST_BACKUP=$(orchestr8 list-backups | grep prod-pre-deploy | head -1 | awk '{print $2}')
+                        LATEST_BACKUP=$(aether list-backups | grep prod-pre-deploy | head -1 | awk '{print $2}')
                         if [ -n "$LATEST_BACKUP" ]; then
-                            orchestr8 restore $LATEST_BACKUP
+                            aether restore $LATEST_BACKUP
                             echo "✅ Rollback completed"
                         else
                             echo "⚠️ No backup found for rollback"
@@ -304,7 +304,7 @@ pipeline {
                 echo "🧹 Cleaning up..."
                 sh '''
                     # Clean old backups (keep last 7 days)
-                    find ~/.orchestr8/backups -name "*.json" -mtime +7 -delete || true
+                    find ~/.aether/backups -name "*.json" -mtime +7 -delete || true
                 '''
 
                 // Archive logs

@@ -1,6 +1,6 @@
-# Observability Stack Setup for Orchestr8
+# Observability Stack Setup for Aether
 
-Complete guide to deploying and configuring a production-grade observability stack for Orchestr8 workloads.
+Complete guide to deploying and configuring a production-grade observability stack for Aether workloads.
 
 ## Overview
 
@@ -19,7 +19,7 @@ This guide covers setting up a complete observability stack including:
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────┐    ┌──────────┐    ┌──────────────┐          │
-│  │ Orchestr8│───>│Prometheus│───>│ AlertManager │          │
+│  │ Aether│───>│Prometheus│───>│ AlertManager │          │
 │  │  Metrics │    │          │    │              │          │
 │  └──────────┘    └────┬─────┘    └──────┬───────┘          │
 │                       │                   │                  │
@@ -72,7 +72,7 @@ kubectl port-forward -n observability svc/grafana 3000:3000
 # Default credentials: admin / admin
 ```
 
-### 3. Import Orchestr8 Dashboard
+### 3. Import Aether Dashboard
 
 1. Open Grafana at http://localhost:3000
 2. Login with default credentials (admin/admin)
@@ -116,17 +116,17 @@ data:
       - /etc/prometheus/rules/*.yml
 
     scrape_configs:
-      # Orchestr8 metrics
-      - job_name: 'orchestr8'
+      # Aether metrics
+      - job_name: 'aether'
         kubernetes_sd_configs:
         - role: pod
           namespaces:
             names:
-            - orchestr8-production
+            - aether-production
         relabel_configs:
         - source_labels: [__meta_kubernetes_pod_label_app]
           action: keep
-          regex: orchestr8
+          regex: aether
         - source_labels: [__meta_kubernetes_pod_name]
           target_label: pod
         - source_labels: [__meta_kubernetes_namespace]
@@ -255,9 +255,9 @@ data:
   dashboards.yaml: |
     apiVersion: 1
     providers:
-    - name: 'Orchestr8'
+    - name: 'Aether'
       orgId: 1
-      folder: 'Orchestr8'
+      folder: 'Aether'
       type: file
       disableDeletion: false
       updateIntervalSeconds: 10
@@ -350,7 +350,7 @@ data:
       # Workload alerts
       - match_re:
           alertname: ^(WorkloadFailed|WorkloadCrashLoop)$
-        receiver: 'orchestr8-team'
+        receiver: 'aether-team'
 
     # Inhibition rules (suppress alerts)
     inhibit_rules:
@@ -395,10 +395,10 @@ data:
       slack_configs:
       - channel: '#database-team'
 
-    - name: 'orchestr8-team'
+    - name: 'aether-team'
       slack_configs:
-      - channel: '#orchestr8-alerts'
-        title: 'Orchestr8 Alert'
+      - channel: '#aether-alerts'
+        title: 'Aether Alert'
 ```
 
 **Alert Templates:**
@@ -430,34 +430,34 @@ data:
 
 ### Alert Rules
 
-**Orchestr8-Specific Alerts:**
+**Aether-Specific Alerts:**
 
 ```yaml
-# examples/observability/orchestr8-alerts.yaml
+# examples/observability/aether-alerts.yaml
 groups:
-- name: orchestr8
+- name: aether
   interval: 30s
   rules:
   # Workload failures
   - alert: WorkloadFailed
     expr: |
-      orchestr8_workload_operations_total{operation="run", status="failed"} > 0
+      aether_workload_operations_total{operation="run", status="failed"} > 0
     for: 5m
     labels:
       severity: critical
-      component: orchestr8
+      component: aether
     annotations:
       summary: "Workload deployment failed"
       description: "Workload {{ $labels.workload }} failed to deploy"
-      runbook_url: "https://github.com/ssahani/orchestr8/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
+      runbook_url: "https://github.com/ssahani/aether/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
 
   - alert: WorkloadCrashLoop
     expr: |
-      rate(orchestr8_workload_operations_total{operation="stop", status="failed"}[5m]) > 0.1
+      rate(aether_workload_operations_total{operation="stop", status="failed"}[5m]) > 0.1
     for: 10m
     labels:
       severity: critical
-      component: orchestr8
+      component: aether
     annotations:
       summary: "Workload in crash loop"
       description: "Workload {{ $labels.workload }} is crash looping"
@@ -465,22 +465,22 @@ groups:
   # Migration issues
   - alert: MigrationFailed
     expr: |
-      orchestr8_migration_total{status="failed"} > 0
+      aether_migration_total{status="failed"} > 0
     for: 1m
     labels:
       severity: critical
-      component: orchestr8
+      component: aether
     annotations:
       summary: "Workload migration failed"
       description: "Migration from {{ $labels.source_runtime }} to {{ $labels.target_runtime }} failed"
 
   - alert: HighMigrationRollbackRate
     expr: |
-      rate(orchestr8_migration_rollbacks_total[30m]) > 0.2
+      rate(aether_migration_rollbacks_total[30m]) > 0.2
     for: 10m
     labels:
       severity: warning
-      component: orchestr8
+      component: aether
     annotations:
       summary: "High migration rollback rate"
       description: "More than 20% of migrations are being rolled back"
@@ -488,11 +488,11 @@ groups:
   # Runtime availability
   - alert: RuntimeUnavailable
     expr: |
-      orchestr8_runtime_available == 0
+      aether_runtime_available == 0
     for: 5m
     labels:
       severity: critical
-      component: orchestr8
+      component: aether
     annotations:
       summary: "Runtime unavailable"
       description: "Runtime {{ $labels.runtime }} is unavailable"
@@ -501,12 +501,12 @@ groups:
   - alert: HighMigrationDuration
     expr: |
       histogram_quantile(0.95,
-        rate(orchestr8_migration_duration_seconds_bucket[5m])
+        rate(aether_migration_duration_seconds_bucket[5m])
       ) > 300
     for: 10m
     labels:
       severity: warning
-      component: orchestr8
+      component: aether
     annotations:
       summary: "Migrations taking longer than expected"
       description: "p95 migration duration is {{ $value }}s (threshold: 300s)"
@@ -514,12 +514,12 @@ groups:
   # CLI command failures
   - alert: HighCLIFailureRate
     expr: |
-      rate(orchestr8_cli_commands_total{status="failed"}[5m])
-      / rate(orchestr8_cli_commands_total[5m]) > 0.1
+      rate(aether_cli_commands_total{status="failed"}[5m])
+      / rate(aether_cli_commands_total[5m]) > 0.1
     for: 15m
     labels:
       severity: warning
-      component: orchestr8
+      component: aether
     annotations:
       summary: "High CLI command failure rate"
       description: "More than 10% of CLI commands are failing"
@@ -917,12 +917,12 @@ echo "  Jaeger:       kubectl port-forward -n ${NAMESPACE} svc/jaeger-query 1668
 Follow Prometheus naming conventions:
 
 ```
-orchestr8_<subsystem>_<metric_name>_<unit>
+aether_<subsystem>_<metric_name>_<unit>
 
 Examples:
-- orchestr8_workload_operations_total (counter)
-- orchestr8_migration_duration_seconds (histogram)
-- orchestr8_runtime_available (gauge)
+- aether_workload_operations_total (counter)
+- aether_migration_duration_seconds (histogram)
+- aether_runtime_available (gauge)
 ```
 
 ### 2. Label Usage
@@ -931,10 +931,10 @@ Use labels for dimensions, not for high-cardinality data:
 
 ```promql
 # Good - bounded labels
-orchestr8_workload_operations_total{operation="run", status="success", runtime="kubernetes"}
+aether_workload_operations_total{operation="run", status="success", runtime="kubernetes"}
 
 # Bad - unbounded labels
-orchestr8_workload_operations_total{workload_name="user-123-app"}
+aether_workload_operations_total{workload_name="user-123-app"}
 ```
 
 ### 3. Alert Design
@@ -1159,6 +1159,6 @@ rules:
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `observability` or `monitoring`
-- Documentation: https://github.com/ssahani/orchestr8/tree/main/docs
+- Documentation: https://github.com/ssahani/aether/tree/main/docs

@@ -1,4 +1,4 @@
-# 🚀 Orchestr8 Phase 2 - Kubernetes Adapter COMPLETE
+# 🚀 Aether Phase 2 - Kubernetes Adapter COMPLETE
 
 ## ✅ What Was Built (3️⃣ Kubernetes Adapter)
 
@@ -23,7 +23,7 @@
 | `status()` | ✅ | Parse Pod phase & readiness conditions |
 | `logs()` | ✅ | Stream logs with --follow support |
 | `delete()` | ✅ | Clean up all resources (Pod, Service, PVC) |
-| `list()` | ✅ | List all Pods managed by Orchestr8 |
+| `list()` | ✅ | List all Pods managed by Aether |
 
 ### Manifest Generation
 
@@ -35,7 +35,7 @@ Automatically creates Kubernetes Pods from `workload.yaml` with:
 - ✅ Resource limits & requests (CPU, memory)
 - ✅ Liveness probes (HTTP health checks)
 - ✅ Readiness probes (readiness checks)
-- ✅ Labels (`app`, `managed-by: orchestr8`)
+- ✅ Labels (`app`, `managed-by: aether`)
 - ✅ Annotations from spec
 
 **Example Generated Pod:**
@@ -48,7 +48,7 @@ metadata:
   namespace: default
   labels:
     app: web-app
-    managed-by: orchestr8
+    managed-by: aether
     env: production  # from workload.yaml
 spec:
   containers:
@@ -95,7 +95,7 @@ metadata:
   name: web-app-service
   labels:
     app: web-app
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   type: LoadBalancer
   selector:
@@ -123,7 +123,7 @@ metadata:
   name: web-app-pvc
   labels:
     app: web-app
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   accessModes:
   - ReadWriteOnce
@@ -143,15 +143,15 @@ Updated all CLI commands to support Kubernetes:
 
 ```bash
 # Auto-select runtime (Kubernetes chosen if service enabled)
-orchestr8 run --spec workload-k8s.yaml
+aether run --spec workload-k8s.yaml
 
 # Explicitly use Kubernetes
-orchestr8 run --spec workload-k8s.yaml --runtime kube
+aether run --spec workload-k8s.yaml --runtime kube
 
 # Works with all commands
-orchestr8 status web-app    # Auto-detects runtime
-orchestr8 logs web-app      # Works for both Podman & Kubernetes
-orchestr8 delete web-app    # Cleans up all k8s resources
+aether status web-app    # Auto-detects runtime
+aether logs web-app      # Works for both Podman & Kubernetes
+aether delete web-app    # Cleans up all k8s resources
 ```
 
 ### ✅ Multi-Runtime Operations
@@ -182,7 +182,7 @@ match workload_state.runtime {
 
 - **Prerequisites** - Cluster setup, kubectl, registry access
 - **Quick Start** - 7-step deployment guide
-- **Manifest Details** - What Orchestr8 generates
+- **Manifest Details** - What Aether generates
 - **Service Types** - ClusterIP, NodePort, LoadBalancer
 - **Persistence** - PVC configuration, storage classes
 - **Health Checks** - Liveness & readiness probes
@@ -248,7 +248,7 @@ test state::tests::test_state_store_operations ... ok
 | Get status | ✅ | Phase + conditions |
 | Stream logs | ✅ | With --follow |
 | Delete resources | ✅ | Pod + Service + PVC |
-| List workloads | ✅ | Filtered by `managed-by=orchestr8` |
+| List workloads | ✅ | Filtered by `managed-by=aether` |
 | **Resource Management** | | |
 | CPU limits | ✅ | Supports "1", "500m", etc. |
 | Memory limits | ✅ | Supports "4Gi", "2048Mi", etc. |
@@ -264,7 +264,7 @@ test state::tests::test_state_store_operations ... ok
 | **Metadata** | | |
 | Labels | ✅ | User + auto (`managed-by`) |
 | Annotations | ✅ | Pass-through from spec |
-| Namespaces | ✅ | Via `ORCHESTR8_NAMESPACE` |
+| Namespaces | ✅ | Via `AETHER_NAMESPACE` |
 
 ---
 
@@ -322,7 +322,7 @@ podman push docker.io/yourorg/web-app:latest
 
 # 3. Create workload spec
 cat > workload-k8s.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: web-app
@@ -340,7 +340,7 @@ network:
 EOF
 
 # 4. Deploy
-orchestr8 run --spec workload-k8s.yaml
+aether run --spec workload-k8s.yaml
 
 # Output:
 # 🚀 Running workload...
@@ -352,7 +352,7 @@ orchestr8 run --spec workload-k8s.yaml
 # ✅ Started instance: web-app (uid-abc123)
 
 # 5. Check status
-orchestr8 status web-app
+aether status web-app
 
 # Output:
 # 📊 Status for 'web-app':
@@ -368,10 +368,10 @@ kubectl get svc web-app-service
 curl http://<EXTERNAL-IP>
 
 # 8. View logs
-orchestr8 logs web-app --follow
+aether logs web-app --follow
 
 # 9. Clean up
-orchestr8 delete web-app
+aether delete web-app
 ```
 
 ---
@@ -389,29 +389,29 @@ orchestr8 delete web-app
    podman push ghcr.io/yourorg/my-app:latest
 
    # Deploy to k8s
-   orchestr8 run --runtime kube
+   aether run --runtime kube
    ```
 
 2. **Multi-Environment**
    ```bash
    # Dev
-   ORCHESTR8_NAMESPACE=dev orchestr8 run
+   AETHER_NAMESPACE=dev aether run
 
    # Staging
-   ORCHESTR8_NAMESPACE=staging orchestr8 run
+   AETHER_NAMESPACE=staging aether run
 
    # Production
-   ORCHESTR8_NAMESPACE=prod orchestr8 run
+   AETHER_NAMESPACE=prod aether run
    ```
 
 3. **Hybrid Deployments**
    ```bash
    # Try locally first
-   orchestr8 run --runtime podman
+   aether run --runtime podman
 
    # Then deploy to cluster
-   orchestr8 delete my-app
-   orchestr8 run --runtime kube
+   aether delete my-app
+   aether run --runtime kube
    ```
 
 ---
@@ -506,16 +506,16 @@ Now that Kubernetes is complete, you can choose:
 cargo build --release
 
 # Deploy to Kubernetes
-./target/release/orchestr8 run --spec workload-k8s.yaml --runtime kube
+./target/release/aether run --spec workload-k8s.yaml --runtime kube
 
 # Check status
-./target/release/orchestr8 status web-app
+./target/release/aether status web-app
 
 # View logs
-./target/release/orchestr8 logs web-app
+./target/release/aether logs web-app
 
 # Clean up
-./target/release/orchestr8 delete web-app
+./target/release/aether delete web-app
 ```
 
 ---
@@ -528,4 +528,4 @@ cargo build --release
 - **5️⃣** TUI dashboard (ratatui interface)
 - **6️⃣** Migration engine (runtime switching)
 
-Or start using Orchestr8 with your real workloads! 🎯
+Or start using Aether with your real workloads! 🎯

@@ -409,23 +409,31 @@ impl Orchestrator {
                                         }
                                     }
                                     Err(e) => {
-                                        // Corrupted timestamp: log an error and leave the
-                                        // circuit Open without resetting the cooldown timer.
-                                        // The operator should investigate and manually reset
-                                        // via `reset_circuit()` if needed.
+                                        // Corrupted timestamp: transition to HalfOpen to
+                                        // allow automatic recovery rather than permanently
+                                        // locking the circuit in Open state.
                                         tracing::error!(
                                             "Failed to parse circuit_opened_at '{}': {}; \
-                                             circuit remains Open — manual reset required",
+                                             forcing transition to HalfOpen for recovery",
                                             opened_at, e
                                         );
+                                        workload.circuit = CircuitState::HalfOpen;
+                                        workload.restart_count = 0;
+                                        workload.consecutive_failures = 0;
 
                                         workload.history.push(HealthEvent {
                                             timestamp: now.clone(),
-                                            event_type: HealthEventType::CircuitOpened,
+                                            event_type: HealthEventType::CircuitHalfOpen,
                                             message: format!(
-                                                "Corrupted circuit_opened_at timestamp — manual reset required: {}",
+                                                "Corrupted circuit_opened_at timestamp — forced HalfOpen for recovery: {}",
                                                 e
                                             ),
+                                        });
+
+                                        actions.push(OrchestratorAction::Restart {
+                                            workload: check.workload.clone(),
+                                            runtime: workload.runtime,
+                                            reason: "Circuit forced HalfOpen after corrupted timestamp".to_string(),
                                         });
                                     }
                                 }

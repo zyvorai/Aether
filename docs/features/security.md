@@ -20,7 +20,7 @@
 
 ## 🔒 AES-256-GCM Encryption
 
-orchestr8 encrypts all secret values at rest using **AES-256-GCM** (Galois/Counter Mode), a widely trusted authenticated encryption algorithm.
+aether encrypts all secret values at rest using **AES-256-GCM** (Galois/Counter Mode), a widely trusted authenticated encryption algorithm.
 
 ### How It Works
 
@@ -66,18 +66,18 @@ User Key (any length)
 
 ### Development Fallback
 
-When `ORCHESTR8_SECRET_KEY` is **not set**, orchestr8 falls back to **XOR obfuscation** with a built-in dev key. This is **NOT secure** and is designed only for local development convenience.
+When `AETHER_SECRET_KEY` is **not set**, aether falls back to **XOR obfuscation** with a built-in dev key. This is **NOT secure** and is designed only for local development convenience.
 
 ```
 ⚠️  Secret stored with XOR obfuscation (dev-only).
-    Set ORCHESTR8_SECRET_KEY for AES-256 encryption.
+    Set AETHER_SECRET_KEY for AES-256 encryption.
 ```
 
 ### Encryption Methods
 
 | Method | When Used | Security Level | Icon |
 |---|---|---|---|
-| `Aes256` | Production key set via `ORCHESTR8_SECRET_KEY` | 🟢 Production-grade | 🔒 |
+| `Aes256` | Production key set via `AETHER_SECRET_KEY` | 🟢 Production-grade | 🔒 |
 | `Obfuscate` | No key set (built-in dev key) | 🔴 Dev-only, NOT secure | ⚠️ |
 | `VaultRef` | External vault reference (not stored locally) | 🟢 Delegated to vault | 🏛️ |
 
@@ -87,17 +87,17 @@ The `SecretValue.method` field tracks which encryption was used per key, allowin
 
 ## 🔑 Setting the Encryption Key
 
-Set the `ORCHESTR8_SECRET_KEY` environment variable to enable AES-256-GCM encryption.
+Set the `AETHER_SECRET_KEY` environment variable to enable AES-256-GCM encryption.
 
 ```bash
 # Set for the current session
-export ORCHESTR8_SECRET_KEY="my-production-secret-key-at-least-16-chars"
+export AETHER_SECRET_KEY="my-production-secret-key-at-least-16-chars"
 
 # Or in your shell profile (~/.bashrc, ~/.zshrc)
-echo 'export ORCHESTR8_SECRET_KEY="your-key-here"' >> ~/.bashrc
+echo 'export AETHER_SECRET_KEY="your-key-here"' >> ~/.bashrc
 
 # Or per-command
-ORCHESTR8_SECRET_KEY="key" orchestr8 secrets set db-creds password "s3cret"
+AETHER_SECRET_KEY="key" aether secrets set db-creds password "s3cret"
 ```
 
 ### Key Requirements
@@ -127,7 +127,7 @@ ORCHESTR8_SECRET_KEY="key" orchestr8 secrets set db-creds password "s3cret"
 ### Create a Secret
 
 ```bash
-orchestr8 secrets create db-credentials --namespace production
+aether secrets create db-credentials --namespace production
 ```
 
 Creates an empty secret container with a **default rotation policy**:
@@ -143,8 +143,8 @@ Creates an empty secret container with a **default rotation policy**:
 ### Set a Key-Value Pair
 
 ```bash
-orchestr8 secrets set db-credentials password "s3cret123"
-orchestr8 secrets set db-credentials username "admin"
+aether secrets set db-credentials password "s3cret123"
+aether secrets set db-credentials username "admin"
 ```
 
 Each `set` operation:
@@ -161,7 +161,7 @@ If the key already exists, its value is updated and the version increments.
 ### Get a Decrypted Value
 
 ```bash
-orchestr8 secrets get db-credentials password
+aether secrets get db-credentials password
 # Output: s3cret123
 ```
 
@@ -176,7 +176,7 @@ Each `get` operation:
 ### Rotate a Secret Value
 
 ```bash
-orchestr8 secrets set db-credentials password "new-s3cret-456"
+aether secrets set db-credentials password "new-s3cret-456"
 ```
 
 Rotation is equivalent to a `set` with the same key name. The operation:
@@ -207,7 +207,7 @@ Removing the entire secret container removes all keys, the rotation policy, and 
 ### Audit Rotation Status
 
 ```bash
-orchestr8 secrets audit
+aether secrets audit
 ```
 
 Checks all secrets against their rotation policies and produces alerts:
@@ -222,7 +222,7 @@ Checks all secrets against their rotation policies and produces alerts:
 ### List All Secrets
 
 ```bash
-orchestr8 secrets list
+aether secrets list
 ```
 
 Displays a table with name, namespace, key count, last updated, and rotation status. **Values are never exposed in list output.**
@@ -286,18 +286,18 @@ The policy engine evaluates workload specs against a set of rules before deploym
 
 ```bash
 # Check against production policies (default)
-orchestr8 policy-check
-orchestr8 -s ./my-app.yaml policy-check
+aether policy-check
+aether -s ./my-app.yaml policy-check
 
 # Check against development policies
-orchestr8 policy-check --policy development
+aether policy-check --policy development
 ```
 
 ---
 
 ## 🚦 Policy Gate on Deploy
 
-When you run a deploy command (`orchestr8 run`, `orchestr8 compose up`, `orchestr8 deploy`), the policy engine **automatically evaluates** the workload spec before proceeding.
+When you run a deploy command (`aether run`, `aether compose up`, `aether deploy`), the policy engine **automatically evaluates** the workload spec before proceeding.
 
 ### Gate Behavior
 
@@ -312,13 +312,13 @@ When you run a deploy command (`orchestr8 run`, `orchestr8 compose up`, `orchest
 
 ```bash
 # Skip policy gate (use with caution)
-orchestr8 --skip-policy run --runtime kube
+aether --skip-policy run --runtime kube
 
 # Also works with compose
-orchestr8 --skip-policy compose up
+aether --skip-policy compose up
 
 # And batch deploy
-orchestr8 --skip-policy deploy ./specs/
+aether --skip-policy deploy ./specs/
 ```
 
 ### REST API Policy Check
@@ -341,7 +341,7 @@ curl -X POST http://localhost:8080/api/policy/check \
 
 ## 🔐 State File Locking
 
-orchestr8 uses **advisory file locking** (Unix `flock`) to prevent concurrent write corruption when multiple CLI processes or the API server modify state simultaneously.
+aether uses **advisory file locking** (Unix `flock`) to prevent concurrent write corruption when multiple CLI processes or the API server modify state simultaneously.
 
 ### How It Works
 
@@ -367,7 +367,7 @@ orchestr8 uses **advisory file locking** (Unix `flock`) to prevent concurrent wr
 If the lock cannot be acquired:
 
 ```
-Error: failed to acquire state file lock (is another orchestr8 process running?)
+Error: failed to acquire state file lock (is another aether process running?)
 ```
 
 ### Platform Support
@@ -407,15 +407,15 @@ State writes use an **atomic write pattern** (write-to-temp + rename) to prevent
 
 | File | Purpose |
 |---|---|
-| `~/.orchestr8/state.json` | Current workload state (the source of truth) |
-| `~/.orchestr8/state.json.tmp` | Temporary write target (renamed on success) |
-| `~/.orchestr8/state.json.lock` | Advisory lock file (prevents concurrent writes) |
+| `~/.aether/state.json` | Current workload state (the source of truth) |
+| `~/.aether/state.json.tmp` | Temporary write target (renamed on success) |
+| `~/.aether/state.json.lock` | Advisory lock file (prevents concurrent writes) |
 
 ---
 
 ## 📡 Webhook Delivery Security
 
-orchestr8 supports webhook notifications for events. Channels are managed with `orchestr8 webhook` commands.
+aether supports webhook notifications for events. Channels are managed with `aether webhook` commands.
 
 ### Security Considerations
 
@@ -431,24 +431,24 @@ orchestr8 supports webhook notifications for events. Channels are managed with `
 
 ```bash
 # Add a webhook channel
-orchestr8 webhook add alerts https://hooks.example.com/notify \
+aether webhook add alerts https://hooks.example.com/notify \
   --method POST \
   --severity warning
 
 # List all channels
-orchestr8 webhook list
+aether webhook list
 
 # Send a test notification
-orchestr8 webhook test alerts
+aether webhook test alerts
 
 # View pending deliveries in the retry queue
-orchestr8 webhook queue
+aether webhook queue
 
 # Force-retry all queued webhooks now
-orchestr8 webhook flush
+aether webhook flush
 
 # Remove a channel
-orchestr8 webhook remove alerts
+aether webhook remove alerts
 ```
 
 ### Severity Levels

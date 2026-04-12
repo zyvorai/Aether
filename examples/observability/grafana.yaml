@@ -1,4 +1,4 @@
-# Grafana Deployment for Orchestr8
+# Grafana Deployment for Aether
 # Visualization platform with pre-configured dashboards and data sources
 
 ---
@@ -40,9 +40,9 @@ data:
   dashboards.yaml: |
     apiVersion: 1
     providers:
-    - name: 'Orchestr8'
+    - name: 'Aether'
       orgId: 1
-      folder: 'Orchestr8'
+      folder: 'Aether'
       type: file
       disableDeletion: false
       updateIntervalSeconds: 10
@@ -208,7 +208,7 @@ spec:
           name: grafana-dashboards-provider
       - name: dashboards
         configMap:
-          name: orchestr8-dashboard
+          name: aether-dashboard
       - name: storage
         persistentVolumeClaim:
           claimName: grafana-storage

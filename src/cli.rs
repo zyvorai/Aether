@@ -1,13 +1,13 @@
-//! CLI argument definitions for Orchestr8
+//! CLI argument definitions for Aether
 
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "orchestr8")]
+#[command(name = "aether")]
 #[command(
     about = "Universal runtime control plane - One spec, four runtimes",
-    long_about = "Orchestr8 deploys workloads across four runtimes (Podman, Kubernetes, KubeVirt, Metal3)\nfrom a single YAML specification with AI-powered runtime selection, zero-downtime\nmigration, and built-in observability.",
+    long_about = "Aether deploys workloads across four runtimes (Podman, Kubernetes, KubeVirt, Metal3)\nfrom a single YAML specification with AI-powered runtime selection, zero-downtime\nmigration, and built-in observability.",
 )]
 #[command(version)]
 #[command(styles = get_styles())]
@@ -47,8 +47,8 @@ pub(crate) struct Cli {
     #[arg(long)]
     pub(crate) skip_policy: bool,
 
-    /// Kubernetes namespace (overrides ORCHESTR8_NAMESPACE env var)
-    #[arg(short = 'n', long, env = "ORCHESTR8_NAMESPACE")]
+    /// Kubernetes namespace (overrides AETHER_NAMESPACE env var)
+    #[arg(short = 'n', long, env = "AETHER_NAMESPACE")]
     pub(crate) namespace: Option<String>,
 }
 
@@ -775,13 +775,13 @@ pub(crate) enum ComposeAction {
     /// Validate a compose file
     Validate {
         /// Path to compose file
-        #[arg(default_value = "orchestr8-compose.yaml")]
+        #[arg(default_value = "aether-compose.yaml")]
         file: PathBuf,
     },
     /// Deploy all workloads from a compose file
     Up {
         /// Path to compose file
-        #[arg(default_value = "orchestr8-compose.yaml")]
+        #[arg(default_value = "aether-compose.yaml")]
         file: PathBuf,
 
         /// Override runtime for all workloads
@@ -795,7 +795,7 @@ pub(crate) enum ComposeAction {
     /// Stop all workloads from a compose file
     Down {
         /// Path to compose file
-        #[arg(default_value = "orchestr8-compose.yaml")]
+        #[arg(default_value = "aether-compose.yaml")]
         file: PathBuf,
     },
 }
@@ -804,7 +804,7 @@ pub(crate) enum ComposeAction {
 pub(crate) enum PluginAction {
     /// List registered plugins
     List,
-    /// Discover plugins from ~/.orchestr8/plugins/
+    /// Discover plugins from ~/.aether/plugins/
     Discover,
     /// Register a plugin from a manifest file
     Register {

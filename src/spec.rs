@@ -190,7 +190,7 @@ impl Workload {
     /// Validate workload specification
     pub fn validate(&self) -> anyhow::Result<()> {
         // Check API version
-        if self.api_version != "orchestr8/v1" {
+        if self.api_version != "aether/v1" {
             anyhow::bail!("Unsupported apiVersion: {}", self.api_version);
         }
 
@@ -490,7 +490,7 @@ mod tests {
     #[test]
     fn test_workload_validation() {
         let workload = Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),
@@ -529,7 +529,7 @@ mod tests {
     #[test]
     fn test_image_name() {
         let workload = Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "my-app".to_string(),
@@ -568,7 +568,7 @@ mod tests {
     #[test]
     fn test_invalid_api_version() {
         let workload = Workload {
-            api_version: "orchestr8/v2".to_string(),
+            api_version: "aether/v2".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),
@@ -609,7 +609,7 @@ mod tests {
     #[test]
     fn test_invalid_kind() {
         let workload = Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Service".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),
@@ -650,7 +650,7 @@ mod tests {
     #[test]
     fn test_empty_name() {
         let workload = Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "".to_string(),
@@ -691,7 +691,7 @@ mod tests {
     #[test]
     fn test_preferred_not_in_allow() {
         let workload = Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),
@@ -735,7 +735,7 @@ mod tests {
 
     fn make_valid_workload() -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),

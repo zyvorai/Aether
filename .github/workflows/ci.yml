@@ -79,8 +79,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: orchestr8-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/orchestr8
+          name: aether-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/aether
 
   coverage:
     name: Code Coverage

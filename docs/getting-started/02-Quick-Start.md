@@ -8,7 +8,7 @@
 ## 📖 Table of Contents
 
 - [Prerequisites Checklist](#-prerequisites-checklist)
-- [Step 1: Install orchestr8](#-step-1-install-orchestr8)
+- [Step 1: Install aether](#-step-1-install-aether)
 - [Step 2: Create Your First Workload Spec](#-step-2-create-your-first-workload-spec)
 - [Step 3: Validate the Spec](#-step-3-validate-the-spec)
 - [Step 4: Build the Image](#-step-4-build-the-image)
@@ -26,7 +26,7 @@
 
 Before you begin, make sure you have:
 
-- [ ] **orchestr8** installed ([Installation Guide](01-Installation.md))
+- [ ] **aether** installed ([Installation Guide](01-Installation.md))
 - [ ] **Podman** available (recommended for local dev): `podman --version`
 - [ ] A text editor for YAML files
 - [ ] A simple `Dockerfile` in your project directory (or use the example below)
@@ -36,26 +36,26 @@ Before you begin, make sure you have:
 
 ---
 
-## 📥 Step 1: Install orchestr8
+## 📥 Step 1: Install aether
 
 If you haven't installed yet:
 
 ```bash
 # Build from source (fastest path)
-git clone https://github.com/ssahani/orchestr8.git
-cd orchestr8
+git clone https://github.com/ssahani/aether.git
+cd aether
 cargo build --release
-sudo install -m 0755 target/release/orchestr8 /usr/local/bin/orchestr8
+sudo install -m 0755 target/release/aether /usr/local/bin/aether
 
 # Run the setup wizard
-orchestr8 init
+aether init
 ```
 
 Verify:
 
 ```bash
-orchestr8 --version
-# orchestr8 0.3.0
+aether --version
+# aether 0.3.0
 ```
 
 ---
@@ -65,7 +65,7 @@ orchestr8 --version
 Create a file called `workload.yaml` in your project directory:
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -125,7 +125,7 @@ CMD ["nginx", "-g", "daemon off;"]
 > **Tip:** You can also generate a spec from a built-in template:
 >
 > ```bash
-> orchestr8 template web-app --workload-name hello-web --output workload.yaml
+> aether template web-app --workload-name hello-web --output workload.yaml
 > ```
 
 ---
@@ -135,7 +135,7 @@ CMD ["nginx", "-g", "daemon off;"]
 Check that your YAML is structurally correct:
 
 ```bash
-orchestr8 validate
+aether validate
 ```
 
 **Expected output:**
@@ -153,7 +153,7 @@ Validation checks:
 ### Validate with a Specific File
 
 ```bash
-orchestr8 validate --spec path/to/my-workload.yaml
+aether validate --spec path/to/my-workload.yaml
 ```
 
 ---
@@ -163,7 +163,7 @@ orchestr8 validate --spec path/to/my-workload.yaml
 Build the container image from your Dockerfile:
 
 ```bash
-orchestr8 build
+aether build
 ```
 
 **Expected output:**
@@ -173,7 +173,7 @@ orchestr8 build
   Build complete  localhost/hello-web:latest (podman)
 ```
 
-Orchestr8 uses the runtime's native build tooling:
+Aether uses the runtime's native build tooling:
 - **Podman** -- `podman build`
 - **Kubernetes** -- builds locally and pushes to the configured registry
 
@@ -185,13 +185,13 @@ Deploy your workload to a runtime:
 
 ```bash
 # Auto-select the best runtime (AI-scored)
-orchestr8 run
+aether run
 
 # Or specify a runtime explicitly
-orchestr8 run --runtime podman
+aether run --runtime podman
 
 # Preview without deploying (dry run)
-orchestr8 run --dry-run
+aether run --dry-run
 ```
 
 **Expected output:**
@@ -205,14 +205,14 @@ orchestr8 run --dry-run
 
 ### Runtime Selection
 
-When you use `--runtime auto` (the default for `preferred: auto`), orchestr8's
+When you use `--runtime auto` (the default for `preferred: auto`), aether's
 AI scoring engine evaluates all allowed runtimes and picks the best match based
 on your resource requirements, runtime availability, and workload characteristics.
 
 You can see the full scoring breakdown with:
 
 ```bash
-orchestr8 recommend
+aether recommend
 ```
 
 ---
@@ -222,7 +222,7 @@ orchestr8 recommend
 ### Status
 
 ```bash
-orchestr8 status hello-web
+aether status hello-web
 ```
 
 **Expected output:**
@@ -239,26 +239,26 @@ orchestr8 status hello-web
 
 ```bash
 # View recent logs
-orchestr8 logs hello-web
+aether logs hello-web
 
 # Follow logs in real time
-orchestr8 logs hello-web --follow
+aether logs hello-web --follow
 ```
 
 ### List All Workloads
 
 ```bash
 # Table format (default)
-orchestr8 list
+aether list
 
 # JSON for scripting
-orchestr8 list --output json
+aether list --output json
 
 # YAML format
-orchestr8 list --output yaml
+aether list --output yaml
 
 # Wide table with extra columns
-orchestr8 list --output wide
+aether list --output wide
 ```
 
 **Example table output:**
@@ -276,13 +276,13 @@ Move your workload from one runtime to another with zero downtime:
 
 ```bash
 # Blue-green migration (recommended for production)
-orchestr8 migrate hello-web kubernetes --strategy blue-green
+aether migrate hello-web kubernetes --strategy blue-green
 
 # Rolling migration (gradual traffic shift)
-orchestr8 migrate hello-web kube --strategy rolling
+aether migrate hello-web kube --strategy rolling
 
 # Immediate migration (brief downtime, fastest)
-orchestr8 migrate hello-web kube --strategy immediate
+aether migrate hello-web kube --strategy immediate
 ```
 
 **Expected output (blue-green):**
@@ -308,7 +308,7 @@ orchestr8 migrate hello-web kube --strategy immediate
 Before migrating, ask for recommendations:
 
 ```bash
-orchestr8 migration-advice hello-web kubernetes
+aether migration-advice hello-web kubernetes
 ```
 
 This shows recommended strategy, estimated downtime, risk level, and timing advice.
@@ -316,10 +316,10 @@ This shows recommended strategy, estimated downtime, risk level, and timing advi
 ### Verify After Migration
 
 ```bash
-orchestr8 status hello-web
+aether status hello-web
 # Runtime should now show "kubernetes"
 
-orchestr8 diff hello-web
+aether diff hello-web
 # Compare spec vs stored vs live state
 ```
 
@@ -330,7 +330,7 @@ orchestr8 diff hello-web
 Open the interactive terminal UI for a real-time view of all workloads:
 
 ```bash
-orchestr8 tui
+aether tui
 ```
 
 ### TUI Keyboard Shortcuts
@@ -347,7 +347,7 @@ orchestr8 tui
 > **Alternative:** Start the web dashboard instead:
 >
 > ```bash
-> orchestr8 serve --port 8080
+> aether serve --port 8080
 > # Open http://localhost:8080 in your browser
 > ```
 
@@ -361,39 +361,39 @@ Now that you have a running workload, try these features:
 
 ```bash
 # Compare costs across cloud providers
-orchestr8 cost --provider all
+aether cost --provider all
 ```
 
 ### Health Check History
 
 ```bash
 # View health timeline
-orchestr8 health hello-web
+aether health hello-web
 
 # Summary only
-orchestr8 health hello-web --summary
+aether health hello-web --summary
 ```
 
 ### Drift Detection
 
 ```bash
 # Check if live state matches spec
-orchestr8 drift hello-web
+aether drift hello-web
 
 # Auto-reconcile any drift
-orchestr8 drift hello-web --reconcile
+aether drift hello-web --reconcile
 ```
 
 ### Policy Check
 
 ```bash
 # Check against production policies
-orchestr8 policy-check --policy production
+aether policy-check --policy production
 ```
 
 ### Deploy Multiple Workloads with Compose
 
-Create `orchestr8-compose.yaml`:
+Create `aether-compose.yaml`:
 
 ```yaml
 version: "1"
@@ -421,43 +421,43 @@ workloads:
 
 ```bash
 # Validate the compose file
-orchestr8 compose validate
+aether compose validate
 
 # Deploy all workloads in dependency order
-orchestr8 compose up
+aether compose up
 
 # Tear down everything
-orchestr8 compose down
+aether compose down
 ```
 
 ### Backup State
 
 ```bash
 # Create a named backup
-orchestr8 backup --name before-upgrade --description "Pre-upgrade snapshot"
+aether backup --name before-upgrade --description "Pre-upgrade snapshot"
 
 # List backups
-orchestr8 list-backups
+aether list-backups
 
 # Restore if needed
-orchestr8 restore ~/.orchestr8/backups/before-upgrade.json
+aether restore ~/.aether/backups/before-upgrade.json
 ```
 
 ### Secrets Management
 
 ```bash
 # Create a secret namespace
-orchestr8 secrets create app-secrets --namespace production
+aether secrets create app-secrets --namespace production
 
 # Store encrypted values (AES-256)
-orchestr8 secrets set app-secrets DB_PASSWORD "s3cure-p@ss"
-orchestr8 secrets set app-secrets API_KEY "sk-12345"
+aether secrets set app-secrets DB_PASSWORD "s3cure-p@ss"
+aether secrets set app-secrets API_KEY "sk-12345"
 
 # Retrieve a value
-orchestr8 secrets get app-secrets DB_PASSWORD
+aether secrets get app-secrets DB_PASSWORD
 
 # Audit rotation status
-orchestr8 secrets audit
+aether secrets audit
 ```
 
 ---
@@ -468,13 +468,13 @@ When you're done experimenting:
 
 ```bash
 # Stop the workload
-orchestr8 stop hello-web
+aether stop hello-web
 
 # Delete the workload and clean up
-orchestr8 delete hello-web
+aether delete hello-web
 
 # Verify
-orchestr8 list
+aether list
 # (empty)
 ```
 
@@ -486,7 +486,7 @@ orchestr8 list
 |------|-------|
 | Detailed beginner tutorial | [Beginner Tutorial](../tutorials/01-beginner-deployment.md) |
 | Multi-workload compose | [Compose Guide](../features/compose.md) |
-| All CLI commands | [CLI Reference](../guides/cli/CLI-Reference.md) or `orchestr8 help-all` |
+| All CLI commands | [CLI Reference](../guides/cli/CLI-Reference.md) or `aether help-all` |
 | Migration checklist | [Migration Checklist](../guides/operations/MIGRATION_CHECKLIST.md) |
 | REST API and web dashboard | [Web UI Guide](../WEBUI.md) |
 | Security and secrets | [Security Guide](../features/security.md) |
@@ -500,35 +500,35 @@ orchestr8 list
 
 ```bash
 # Lifecycle
-orchestr8 init                          # Setup wizard
-orchestr8 validate                      # Validate spec
-orchestr8 build                         # Build image
-orchestr8 run [--runtime <rt>]          # Deploy
-orchestr8 status <name>                 # Check status
-orchestr8 logs <name> [--follow]        # View logs
-orchestr8 stop <name>                   # Stop
-orchestr8 delete <name>                 # Delete
-orchestr8 list                          # List all
+aether init                          # Setup wizard
+aether validate                      # Validate spec
+aether build                         # Build image
+aether run [--runtime <rt>]          # Deploy
+aether status <name>                 # Check status
+aether logs <name> [--follow]        # View logs
+aether stop <name>                   # Stop
+aether delete <name>                 # Delete
+aether list                          # List all
 
 # Migration
-orchestr8 migrate <name> <target> --strategy blue-green
-orchestr8 migration-advice <name> <target>
-orchestr8 rollback <name>
+aether migrate <name> <target> --strategy blue-green
+aether migration-advice <name> <target>
+aether rollback <name>
 
 # Observability
-orchestr8 tui                           # Terminal dashboard
-orchestr8 serve                         # Web dashboard + API
-orchestr8 health <name>                 # Health history
-orchestr8 metrics                       # Prometheus export
+aether tui                           # Terminal dashboard
+aether serve                         # Web dashboard + API
+aether health <name>                 # Health history
+aether metrics                       # Prometheus export
 
 # Operations
-orchestr8 compose up                    # Deploy stack
-orchestr8 backup                        # Backup state
-orchestr8 secrets list                  # List secrets
-orchestr8 drift <name>                  # Detect drift
-orchestr8 policy-check                  # Check policies
+aether compose up                    # Deploy stack
+aether backup                        # Backup state
+aether secrets list                  # List secrets
+aether drift <name>                  # Detect drift
+aether policy-check                  # Check policies
 ```
 
 ---
 
-*orchestr8 v0.3.0 -- Universal Runtime Control Plane*
+*aether v0.3.0 -- Universal Runtime Control Plane*

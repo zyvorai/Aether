@@ -1,10 +1,10 @@
-# Orchestr8 Project Summary
+# Aether Project Summary
 
 **One spec. Four runtimes. One tool.**
 
 ## Executive Summary
 
-Orchestr8 is a universal runtime control plane that enables deploying and managing workloads across multiple runtime environments (Podman, Kubernetes, KubeVirt, Metal3) using a single workload specification. The project has evolved from a basic runtime abstraction tool to a complete, production-ready platform with comprehensive features for deployment automation, cost optimization, and operational management.
+Aether is a universal runtime control plane that enables deploying and managing workloads across multiple runtime environments (Podman, Kubernetes, KubeVirt, Metal3) using a single workload specification. The project has evolved from a basic runtime abstraction tool to a complete, production-ready platform with comprehensive features for deployment automation, cost optimization, and operational management.
 
 ## Project Statistics
 
@@ -334,7 +334,7 @@ Six production-ready workload templates:
 ## Community & Support
 
 ### Resources
-- **GitHub Repository:** https://github.com/ssahani/orchestr8
+- **GitHub Repository:** https://github.com/ssahani/aether
 - **Documentation:** Complete guides for all features
 - **Examples:** Production-ready templates and applications
 - **CI/CD Pipelines:** Ready-to-use workflows
@@ -443,7 +443,7 @@ Six production-ready workload templates:
 
 ## Conclusion
 
-Orchestr8 has evolved from a basic runtime abstraction concept to a comprehensive, production-ready platform for universal workload management. With support for four diverse runtimes, advanced migration capabilities, integrated cost analysis, comprehensive monitoring, and production-ready examples, Orchestr8 provides a complete solution for modern infrastructure management.
+Aether has evolved from a basic runtime abstraction concept to a comprehensive, production-ready platform for universal workload management. With support for four diverse runtimes, advanced migration capabilities, integrated cost analysis, comprehensive monitoring, and production-ready examples, Aether provides a complete solution for modern infrastructure management.
 
 The project demonstrates:
 - **Technical Excellence:** Clean architecture, comprehensive testing, zero warnings
@@ -452,47 +452,47 @@ The project demonstrates:
 - **Enterprise Features:** CI/CD integration, security best practices, disaster recovery
 - **Operational Excellence:** Incident response, troubleshooting guides, maintenance procedures
 
-Orchestr8 is ready for production use across development, testing, and production environments, with comprehensive documentation and examples to support teams of all sizes.
+Aether is ready for production use across development, testing, and production environments, with comprehensive documentation and examples to support teams of all sizes.
 
 ## Quick Start
 
 ```bash
-# Install Orchestr8
-curl -LO https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-linux-amd64
-chmod +x orchestr8-linux-amd64
-sudo mv orchestr8-linux-amd64 /usr/local/bin/orchestr8
+# Install Aether
+curl -LO https://github.com/ssahani/aether/releases/latest/download/aether-linux-amd64
+chmod +x aether-linux-amd64
+sudo mv aether-linux-amd64 /usr/local/bin/aether
 
 # Create workload from template
 cp templates/web-app.yaml my-app.yaml
 
 # Validate
-orchestr8 -s my-app.yaml validate
+aether -s my-app.yaml validate
 
 # Estimate costs
-orchestr8 -s my-app.yaml cost
+aether -s my-app.yaml cost
 
 # Deploy
-orchestr8 -s my-app.yaml run
+aether -s my-app.yaml run
 
 # Monitor
-orchestr8 status my-app
-orchestr8 logs my-app
+aether status my-app
+aether logs my-app
 
 # Backup before changes
-orchestr8 backup -n pre-update-$(date +%Y%m%d)
+aether backup -n pre-update-$(date +%Y%m%d)
 
 # Migrate to different runtime
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 ```
 
 ## Project Links
 
-- **Repository:** https://github.com/ssahani/orchestr8
-- **Documentation:** https://github.com/ssahani/orchestr8/tree/main/docs
-- **Templates:** https://github.com/ssahani/orchestr8/tree/main/templates
-- **Examples:** https://github.com/ssahani/orchestr8/tree/main/examples
-- **Issues:** https://github.com/ssahani/orchestr8/issues
-- **Releases:** https://github.com/ssahani/orchestr8/releases
+- **Repository:** https://github.com/ssahani/aether
+- **Documentation:** https://github.com/ssahani/aether/tree/main/docs
+- **Templates:** https://github.com/ssahani/aether/tree/main/templates
+- **Examples:** https://github.com/ssahani/aether/tree/main/examples
+- **Issues:** https://github.com/ssahani/aether/issues
+- **Releases:** https://github.com/ssahani/aether/releases
 
 ---
 

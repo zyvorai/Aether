@@ -1,4 +1,4 @@
-# ⚡ orchestr8 Quick Reference Card
+# ⚡ aether Quick Reference Card
 
 > One-page cheat sheet for the Universal Runtime Control Plane.
 
@@ -28,74 +28,74 @@
 ### Workload Lifecycle
 
 ```bash
-orchestr8 validate                      # Validate workload spec
-orchestr8 build                         # Build container image
-orchestr8 run                           # Deploy (auto-select runtime)
-orchestr8 run --runtime kube            # Deploy to specific runtime
-orchestr8 status my-app                 # Check status
-orchestr8 logs my-app                   # View logs
-orchestr8 logs my-app --follow          # Stream logs in real-time
-orchestr8 stop my-app                   # Stop workload
-orchestr8 delete my-app                 # Delete workload
-orchestr8 list                          # List all workloads
+aether validate                      # Validate workload spec
+aether build                         # Build container image
+aether run                           # Deploy (auto-select runtime)
+aether run --runtime kube            # Deploy to specific runtime
+aether status my-app                 # Check status
+aether logs my-app                   # View logs
+aether logs my-app --follow          # Stream logs in real-time
+aether stop my-app                   # Stop workload
+aether delete my-app                 # Delete workload
+aether list                          # List all workloads
 ```
 
 ### Migration
 
 ```bash
-orchestr8 migrate my-app kube                     # Migrate (default: blue-green)
-orchestr8 migrate my-app kube -s immediate        # Immediate migration
-orchestr8 migrate my-app kube -s rolling          # Rolling migration
-orchestr8 migrate my-app metal --no-rollback      # Disable automatic rollback
-orchestr8 migrate my-app kube --no-validation     # Skip validation delay
+aether migrate my-app kube                     # Migrate (default: blue-green)
+aether migrate my-app kube -s immediate        # Immediate migration
+aether migrate my-app kube -s rolling          # Rolling migration
+aether migrate my-app metal --no-rollback      # Disable automatic rollback
+aether migrate my-app kube --no-validation     # Skip validation delay
 ```
 
 ### Custom Spec File
 
 ```bash
-orchestr8 -s ./my-app.yaml validate              # Use custom spec file
-orchestr8 -s ./my-app.yaml run --runtime podman   # Deploy custom spec
+aether -s ./my-app.yaml validate              # Use custom spec file
+aether -s ./my-app.yaml run --runtime podman   # Deploy custom spec
 ```
 
 ### Dashboard and API
 
 ```bash
-orchestr8 tui                           # Launch interactive TUI dashboard
-orchestr8 serve                         # Start REST API server (localhost:8080)
-orchestr8 serve --host 0.0.0.0 -p 3000 # Bind to all interfaces, custom port
+aether tui                           # Launch interactive TUI dashboard
+aether serve                         # Start REST API server (localhost:8080)
+aether serve --host 0.0.0.0 -p 3000 # Bind to all interfaces, custom port
 ```
 
 ### Backup and Restore
 
 ```bash
-orchestr8 backup                        # Create backup (auto-named)
-orchestr8 backup -n pre-deploy          # Named backup
-orchestr8 backup -d "Before migration"  # Backup with description
-orchestr8 list-backups                  # List all backups
-orchestr8 restore ./backup.json         # Restore from backup
-orchestr8 restore ./backup.json --merge # Merge with existing state
+aether backup                        # Create backup (auto-named)
+aether backup -n pre-deploy          # Named backup
+aether backup -d "Before migration"  # Backup with description
+aether list-backups                  # List all backups
+aether restore ./backup.json         # Restore from backup
+aether restore ./backup.json --merge # Merge with existing state
 ```
 
 ### Batch Operations
 
 ```bash
-orchestr8 deploy ./specs/               # Deploy all YAML in directory
-orchestr8 deploy ./specs/ --fail-fast   # Stop on first failure
-orchestr8 deploy ./specs/ --dry-run     # Preview deployment plan
-orchestr8 deploy ./specs/ -r kube       # Override runtime for all
+aether deploy ./specs/               # Deploy all YAML in directory
+aether deploy ./specs/ --fail-fast   # Stop on first failure
+aether deploy ./specs/ --dry-run     # Preview deployment plan
+aether deploy ./specs/ -r kube       # Override runtime for all
 ```
 
 ### Advanced Operations
 
 ```bash
-orchestr8 exec my-app                   # Shell into workload (/bin/sh)
-orchestr8 exec my-app "ls -la"          # Run command in workload
-orchestr8 port-forward my-app 8080:80   # Forward local:remote ports
-orchestr8 watch                         # Auto-redeploy on spec changes
-orchestr8 diff my-app                   # Compare spec vs live state
-orchestr8 rollback my-app               # Rollback to latest snapshot
-orchestr8 compare                       # Compare runtimes for spec
-orchestr8 init                          # First-time setup wizard
+aether exec my-app                   # Shell into workload (/bin/sh)
+aether exec my-app "ls -la"          # Run command in workload
+aether port-forward my-app 8080:80   # Forward local:remote ports
+aether watch                         # Auto-redeploy on spec changes
+aether diff my-app                   # Compare spec vs live state
+aether rollback my-app               # Rollback to latest snapshot
+aether compare                       # Compare runtimes for spec
+aether init                          # First-time setup wizard
 ```
 
 ---
@@ -114,11 +114,11 @@ orchestr8 init                          # First-time setup wizard
 ### Examples
 
 ```bash
-orchestr8 list -o json                  # JSON output
-orchestr8 list -o yaml                  # YAML output
-orchestr8 list -o wide                  # Wide table with extra columns
-orchestr8 list --quiet                  # Errors only
-orchestr8 list --json                   # Shorthand JSON
+aether list -o json                  # JSON output
+aether list -o yaml                  # YAML output
+aether list -o wide                  # Wide table with extra columns
+aether list --quiet                  # Errors only
+aether list --json                   # Shorthand JSON
 ```
 
 ---
@@ -193,27 +193,27 @@ orchestr8 list --json                   # Shorthand JSON
 ### Config File Location
 
 ```
-~/.orchestr8/config.yaml
+~/.aether/config.yaml
 ```
 
 ### Config Commands
 
 ```bash
-orchestr8 config --show                 # Display current configuration
-orchestr8 config --init                 # Create default config file
+aether config --show                 # Display current configuration
+aether config --init                 # Create default config file
 ```
 
 ### State and Data Files
 
 | File | Purpose |
 |---|---|
-| `~/.orchestr8/config.yaml` | Configuration file |
-| `~/.orchestr8/state.json` | Workload state database (file-locked, atomic writes) |
-| `~/.orchestr8/health.json` | Health check history (bounded ring buffer, max 1000) |
-| `~/.orchestr8/secrets.json` | Encrypted secrets store (AES-256-GCM) |
-| `~/.orchestr8/plugins.json` | Plugin registry |
-| `~/.orchestr8/plugins/` | Plugin manifest directory (discovery source) |
-| `~/.orchestr8/backups/` | Backup directory |
+| `~/.aether/config.yaml` | Configuration file |
+| `~/.aether/state.json` | Workload state database (file-locked, atomic writes) |
+| `~/.aether/health.json` | Health check history (bounded ring buffer, max 1000) |
+| `~/.aether/secrets.json` | Encrypted secrets store (AES-256-GCM) |
+| `~/.aether/plugins.json` | Plugin registry |
+| `~/.aether/plugins/` | Plugin manifest directory (discovery source) |
+| `~/.aether/backups/` | Backup directory |
 
 ---
 
@@ -221,20 +221,20 @@ orchestr8 config --init                 # Create default config file
 
 | Variable | Description | Default |
 |---|---|---|
-| `ORCHESTR8_NAMESPACE` | Kubernetes namespace for kube-based runtimes. Overridden by `-n` flag. | `default` |
-| `ORCHESTR8_SECRET_KEY` | Encryption key for secrets. Enables AES-256-GCM when set. | Built-in dev key (XOR obfuscation, NOT secure) |
+| `AETHER_NAMESPACE` | Kubernetes namespace for kube-based runtimes. Overridden by `-n` flag. | `default` |
+| `AETHER_SECRET_KEY` | Encryption key for secrets. Enables AES-256-GCM when set. | Built-in dev key (XOR obfuscation, NOT secure) |
 
 ### Setting the Secret Key
 
 ```bash
 # For the session
-export ORCHESTR8_SECRET_KEY="my-production-secret-key-at-least-16-chars"
+export AETHER_SECRET_KEY="my-production-secret-key-at-least-16-chars"
 
 # In your shell profile
-echo 'export ORCHESTR8_SECRET_KEY="your-key-here"' >> ~/.bashrc
+echo 'export AETHER_SECRET_KEY="your-key-here"' >> ~/.bashrc
 
 # Per-command
-ORCHESTR8_SECRET_KEY="key" orchestr8 secrets set db-creds password "val"
+AETHER_SECRET_KEY="key" aether secrets set db-creds password "val"
 ```
 
 ---
@@ -246,7 +246,7 @@ ORCHESTR8_SECRET_KEY="key" orchestr8 secrets set db-creds password "val"
 | Flag | Short | Default | Description |
 |---|---|---|---|
 | `--spec` | `-s` | `workload.yaml` | Workload spec file path |
-| `--namespace` | `-n` | -- | Kubernetes namespace override (or `ORCHESTR8_NAMESPACE` env var) |
+| `--namespace` | `-n` | -- | Kubernetes namespace override (or `AETHER_NAMESPACE` env var) |
 | `--verbose` | `-v` | off | Enable verbose logging |
 | `--quiet` | `-q` | off | Suppress output except errors |
 | `--json` | -- | off | Output as JSON |
@@ -260,15 +260,15 @@ ORCHESTR8_SECRET_KEY="key" orchestr8 secrets set db-creds password "val"
 ## 🎼 Compose Commands
 
 ```bash
-orchestr8 compose validate                          # Validate compose file
-orchestr8 compose validate ./stack.yaml             # Validate specific file
-orchestr8 compose up                                # Deploy all workloads in dependency order
-orchestr8 compose up --runtime kube                 # Override runtime for all workloads
-orchestr8 compose up --dry-run                      # Preview deployment plan
-orchestr8 compose down                              # Stop all workloads (reverse order)
+aether compose validate                          # Validate compose file
+aether compose validate ./stack.yaml             # Validate specific file
+aether compose up                                # Deploy all workloads in dependency order
+aether compose up --runtime kube                 # Override runtime for all workloads
+aether compose up --dry-run                      # Preview deployment plan
+aether compose down                              # Stop all workloads (reverse order)
 ```
 
-**Default compose file:** `orchestr8-compose.yaml`
+**Default compose file:** `aether-compose.yaml`
 
 ### Compose File Quick Reference
 
@@ -290,10 +290,10 @@ workloads:
 ## 🔌 Plugin Commands
 
 ```bash
-orchestr8 plugin list                               # List registered plugins
-orchestr8 plugin discover                           # Scan ~/.orchestr8/plugins/
-orchestr8 plugin register ./manifest.json           # Register from manifest file
-orchestr8 plugin remove my-runtime                  # Unregister plugin by name
+aether plugin list                               # List registered plugins
+aether plugin discover                           # Scan ~/.aether/plugins/
+aether plugin register ./manifest.json           # Register from manifest file
+aether plugin remove my-runtime                  # Unregister plugin by name
 ```
 
 ---
@@ -301,14 +301,14 @@ orchestr8 plugin remove my-runtime                  # Unregister plugin by name
 ## 🏥 Health Commands
 
 ```bash
-orchestr8 health my-app                             # Show health timeline (last 20)
-orchestr8 health my-app --last 50                   # Show last 50 records
-orchestr8 health my-app --summary                   # Summary only (uptime %, restarts)
-orchestr8 orchestrate health-check                  # One-shot health check (all workloads)
-orchestr8 orchestrate watch                         # Continuous monitoring (30s default)
-orchestr8 orchestrate watch --interval 10           # Custom interval (seconds)
-orchestr8 orchestrate status                        # All workload health statuses
-orchestr8 orchestrate summary                       # Aggregated health summary
+aether health my-app                             # Show health timeline (last 20)
+aether health my-app --last 50                   # Show last 50 records
+aether health my-app --summary                   # Summary only (uptime %, restarts)
+aether orchestrate health-check                  # One-shot health check (all workloads)
+aether orchestrate watch                         # Continuous monitoring (30s default)
+aether orchestrate watch --interval 10           # Custom interval (seconds)
+aether orchestrate status                        # All workload health statuses
+aether orchestrate summary                       # Aggregated health summary
 ```
 
 ---
@@ -316,12 +316,12 @@ orchestr8 orchestrate summary                       # Aggregated health summary
 ## 🔐 Secrets Commands
 
 ```bash
-orchestr8 secrets create db-creds                   # Create secret (default namespace)
-orchestr8 secrets create db-creds --namespace prod  # Create with namespace
-orchestr8 secrets set db-creds password "s3cret"    # Set (or update) key-value
-orchestr8 secrets get db-creds password             # Get decrypted value
-orchestr8 secrets list                              # List all secrets (no values shown)
-orchestr8 secrets audit                             # Check rotation status
+aether secrets create db-creds                   # Create secret (default namespace)
+aether secrets create db-creds --namespace prod  # Create with namespace
+aether secrets set db-creds password "s3cret"    # Set (or update) key-value
+aether secrets get db-creds password             # Get decrypted value
+aether secrets list                              # List all secrets (no values shown)
+aether secrets audit                             # Check rotation status
 ```
 
 ---
@@ -329,15 +329,15 @@ orchestr8 secrets audit                             # Check rotation status
 ## 🧠 AI and Intelligence
 
 ```bash
-orchestr8 recommend                                 # AI runtime recommendation with scoring
-orchestr8 profile                                   # Resource profiling and waste detection
-orchestr8 analyze-logs my-app                       # Log anomaly detection
-orchestr8 migration-advice my-app kube              # Migration risk assessment
-orchestr8 scaling-advice                            # Predictive scaling recommendation
-orchestr8 drift my-app                              # Configuration drift detection
-orchestr8 drift my-app --reconcile                  # Auto-reconcile detected drift
-orchestr8 policy-check                              # Check spec against policies
-orchestr8 policy-check --policy development         # Use development policy set
+aether recommend                                 # AI runtime recommendation with scoring
+aether profile                                   # Resource profiling and waste detection
+aether analyze-logs my-app                       # Log anomaly detection
+aether migration-advice my-app kube              # Migration risk assessment
+aether scaling-advice                            # Predictive scaling recommendation
+aether drift my-app                              # Configuration drift detection
+aether drift my-app --reconcile                  # Auto-reconcile detected drift
+aether policy-check                              # Check spec against policies
+aether policy-check --policy development         # Use development policy set
 ```
 
 ---

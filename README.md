@@ -1,15 +1,15 @@
-# 🔷 Orchestr8
+# 🔷 Aether
 
 **Universal Runtime Control Plane**
 
 > One spec. Four runtimes. One tool. Seamless migration.
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ssahani/orchestr8)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/ssahani/orchestr8)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ssahani/aether)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/ssahani/aether)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-Proprietary-red)](LICENSE)
 
-Orchestr8 is a **production-ready universal runtime control plane** that deploys the same workload to multiple runtimes:
+Aether is a **production-ready universal runtime control plane** that deploys the same workload to multiple runtimes:
 
 - 🐳 **Podman** - Local containers
 - ☸️ **Kubernetes** - Orchestrated pods
@@ -55,7 +55,7 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - Ingress with TLS support
 - Horizontal Pod Autoscaling (HPA)
 - Environment variables from ConfigMaps/Secrets
-- Namespace override via `-n` flag or `ORCHESTR8_NAMESPACE` env var
+- Namespace override via `-n` flag or `AETHER_NAMESPACE` env var
 
 **Podman Production Features**
 - Native health checks mapped from workload spec (HTTP, TCP, Exec probes)
@@ -106,40 +106,40 @@ Deploy once. Run anywhere. Migrate seamlessly.
 
 ```bash
 # Pull from GitHub Container Registry
-docker pull ghcr.io/ssahani/orchestr8:latest
+docker pull ghcr.io/ssahani/aether:latest
 
 # Run with alias
-alias orchestr8='docker run --rm -v ~/.orchestr8:/root/.orchestr8 -v ~/.kube:/root/.kube ghcr.io/ssahani/orchestr8:latest'
+alias aether='docker run --rm -v ~/.aether:/root/.aether -v ~/.kube:/root/.kube ghcr.io/ssahani/aether:latest'
 
 # Use normally
-orchestr8 --help
+aether --help
 ```
 
 #### Option 2: Binary from Release
 
 ```bash
 # Download latest release
-curl -L https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-linux-amd64 -o orchestr8
+curl -L https://github.com/ssahani/aether/releases/latest/download/aether-linux-amd64 -o aether
 
 # Make executable
-chmod +x orchestr8
+chmod +x aether
 
 # Move to PATH
-sudo mv orchestr8 /usr/local/bin/
+sudo mv aether /usr/local/bin/
 ```
 
 #### Option 3: Build from Source
 
 ```bash
 # Clone repository
-git clone https://github.com/ssahani/orchestr8
-cd orchestr8
+git clone https://github.com/ssahani/aether
+cd aether
 
 # Build release binary
 cargo build --release
 
 # Install
-sudo cp target/release/orchestr8 /usr/local/bin/
+sudo cp target/release/aether /usr/local/bin/
 ```
 
 #### Option 4: Package Managers
@@ -147,32 +147,32 @@ sudo cp target/release/orchestr8 /usr/local/bin/
 **Debian/Ubuntu:**
 ```bash
 # Download DEB package
-wget https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8_0.1.0-1_amd64.deb
+wget https://github.com/ssahani/aether/releases/latest/download/aether_0.1.0-1_amd64.deb
 
 # Install
-sudo apt install ./orchestr8_0.1.0-1_amd64.deb
+sudo apt install ./aether_0.1.0-1_amd64.deb
 ```
 
 **Fedora/RHEL/CentOS:**
 ```bash
 # Download RPM package
-wget https://github.com/ssahani/orchestr8/releases/latest/download/orchestr8-0.1.0-1.x86_64.rpm
+wget https://github.com/ssahani/aether/releases/latest/download/aether-0.1.0-1.x86_64.rpm
 
 # Install
-sudo dnf install orchestr8-0.1.0-1.x86_64.rpm
+sudo dnf install aether-0.1.0-1.x86_64.rpm
 ```
 
 #### Option 5: Helm (Kubernetes)
 
 ```bash
 # Add Helm repository (when published)
-helm repo add orchestr8 https://ssahani.github.io/orchestr8/charts
+helm repo add aether https://ssahani.github.io/aether/charts
 
 # Install
-helm install orchestr8 orchestr8/orchestr8
+helm install aether aether/aether
 
 # Or from local chart
-helm install orchestr8 ./helm/orchestr8
+helm install aether ./helm/aether
 ```
 
 ### Create Workload Spec
@@ -180,7 +180,7 @@ helm install orchestr8 ./helm/orchestr8
 Create `my-app.yaml`:
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -222,44 +222,44 @@ persistence:
 
 ```bash
 # Validate spec
-orchestr8 validate --spec my-app.yaml
+aether validate --spec my-app.yaml
 
 # Deploy to Podman (local development)
-orchestr8 run --spec my-app.yaml --runtime podman
+aether run --spec my-app.yaml --runtime podman
 
 # Deploy to Kubernetes (production)
-orchestr8 run --spec my-app.yaml --runtime kubernetes
+aether run --spec my-app.yaml --runtime kubernetes
 
 # Deploy to KubeVirt (VM isolation)
-orchestr8 run --spec my-app.yaml --runtime kubevirt
+aether run --spec my-app.yaml --runtime kubevirt
 
 # Deploy to Metal3 (bare metal performance)
-orchestr8 run --spec my-app.yaml --runtime metal
+aether run --spec my-app.yaml --runtime metal
 ```
 
 ### Migrate Between Runtimes
 
 ```bash
 # Migrate from Podman to Kubernetes (zero downtime)
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # Migrate from Kubernetes to KubeVirt (gradual)
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 
 # Migrate from KubeVirt to Metal3 (fast)
-orchestr8 migrate my-app metal --strategy immediate
+aether migrate my-app metal --strategy immediate
 ```
 
 ### Monitor Everything
 
 ```bash
 # Interactive dashboard
-orchestr8 tui
+aether tui
 
 # CLI status
-orchestr8 status my-app
-orchestr8 logs my-app
-orchestr8 list
+aether status my-app
+aether logs my-app
+aether list
 ```
 
 ---
@@ -270,11 +270,11 @@ orchestr8 list
 
 ```bash
 # Develop locally with Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 curl http://localhost:8080
 
 # Migrate to Kubernetes for staging
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # Production deployment ready!
 ```
@@ -283,13 +283,13 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 
 ```bash
 # Start with container
-orchestr8 run --spec app.yaml --runtime kubernetes
+aether run --spec app.yaml --runtime kubernetes
 
 # Need VM isolation? Migrate to KubeVirt
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 
 # Access VM console
-orchestr8 logs my-app
+aether logs my-app
 # Shows: virtctl console my-app
 ```
 
@@ -297,10 +297,10 @@ orchestr8 logs my-app
 
 ```bash
 # Start with VM
-orchestr8 run --spec ml-workload.yaml --runtime kubevirt
+aether run --spec ml-workload.yaml --runtime kubevirt
 
 # Need GPU passthrough? Migrate to bare metal
-orchestr8 migrate ml-workload metal --strategy immediate
+aether migrate ml-workload metal --strategy immediate
 
 # Monitor provisioning
 kubectl get bmh ml-workload -w
@@ -314,7 +314,7 @@ kubectl get bmh ml-workload -w
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│              ORCHESTR8 CLI + TUI                    │
+│              AETHER CLI + TUI                    │
 │  - Workload Validation                              │
 │  - Runtime Selection                                │
 │  - Interactive Dashboard                            │
@@ -322,7 +322,7 @@ kubectl get bmh ml-workload -w
 └───────────────────┬─────────────────────────────────┘
                     │
 ┌───────────────────┴─────────────────────────────────┐
-│              ORCHESTR8 CORE ENGINE                  │
+│              AETHER CORE ENGINE                  │
 │  - Spec Parser & Validator                          │
 │  - Decision Engine (Auto-Selection)                 │
 │  - State Store (Persistence)                        │
@@ -363,112 +363,112 @@ Source Runtime                    Target Runtime
 
 ```bash
 # First-time setup wizard
-orchestr8 init
+aether init
 
 # Validate workload spec
-orchestr8 validate [--spec workload.yaml]
+aether validate [--spec workload.yaml]
 
 # Build image for target runtime
-orchestr8 build [--spec workload.yaml]
+aether build [--spec workload.yaml]
 
 # Deploy workload (interactive runtime selector)
-orchestr8 run [--spec workload.yaml] [--runtime podman|kube|kubevirt|metal]
+aether run [--spec workload.yaml] [--runtime podman|kube|kubevirt|metal]
 
 # Deploy with dry-run preview
-orchestr8 run --spec workload.yaml --dry-run
+aether run --spec workload.yaml --dry-run
 
 # Get workload status
-orchestr8 status <name>
+aether status <name>
 
 # View logs/console
-orchestr8 logs <name> [--follow]
+aether logs <name> [--follow]
 
 # Stop workload
-orchestr8 stop <name>
+aether stop <name>
 
 # Delete workload
-orchestr8 delete <name>
+aether delete <name>
 
 # List all workloads
-orchestr8 list
+aether list
 
 # List with extra columns
-orchestr8 list --output wide
+aether list --output wide
 
 # List as JSON/YAML
-orchestr8 list --output json
-orchestr8 list --output yaml
+aether list --output json
+aether list --output yaml
 ```
 
 ### Developer Workflow
 
 ```bash
 # Execute command inside a running workload
-orchestr8 exec <name> [command] [-i] [-t timeout]
+aether exec <name> [command] [-i] [-t timeout]
 
 # Forward local ports to a workload
-orchestr8 port-forward <name> <local:remote>
+aether port-forward <name> <local:remote>
 
 # Watch spec and auto-redeploy on changes
-orchestr8 watch [--runtime podman]
+aether watch [--runtime podman]
 
 # Compare workload across all runtimes
-orchestr8 compare
+aether compare
 
 # View health history and uptime
-orchestr8 health <name> [--last 20] [--summary]
+aether health <name> [--last 20] [--summary]
 ```
 
 ### Multi-Workload Compose
 
 ```bash
 # Validate compose file
-orchestr8 compose validate [file]
+aether compose validate [file]
 
 # Deploy all workloads in dependency order
-orchestr8 compose up [file] [--runtime kube] [--dry-run]
+aether compose up [file] [--runtime kube] [--dry-run]
 
 # Stop all workloads in reverse order
-orchestr8 compose down [file]
+aether compose down [file]
 ```
 
 ### Runtime Plugins
 
 ```bash
 # List registered plugins
-orchestr8 plugin list
+aether plugin list
 
-# Discover plugins from ~/.orchestr8/plugins/
-orchestr8 plugin discover
+# Discover plugins from ~/.aether/plugins/
+aether plugin discover
 
 # Register a plugin from manifest
-orchestr8 plugin register <manifest.json>
+aether plugin register <manifest.json>
 
 # Remove a plugin
-orchestr8 plugin remove <name>
+aether plugin remove <name>
 ```
 
 ### Migration
 
 ```bash
 # Migrate to different runtime
-orchestr8 migrate <name> <target> [--strategy immediate|blue-green|rolling]
+aether migrate <name> <target> [--strategy immediate|blue-green|rolling]
 
 # Dry-run migration preview
-orchestr8 migrate <name> <target> --dry-run
+aether migrate <name> <target> --dry-run
 
 # Fast migration (skip validation)
-orchestr8 migrate <name> <target> --strategy immediate --no-validation
+aether migrate <name> <target> --strategy immediate --no-validation
 
 # Disable automatic rollback
-orchestr8 migrate <name> <target> --strategy blue-green --no-rollback
+aether migrate <name> <target> --strategy blue-green --no-rollback
 ```
 
 ### Interactive Dashboard
 
 ```bash
 # Launch TUI
-orchestr8 tui
+aether tui
 
 # Keyboard shortcuts:
 #   ↑/↓   - Navigate workloads
@@ -484,23 +484,23 @@ orchestr8 tui
 
 ```bash
 # Verbose logging
-orchestr8 -v <command>
+aether -v <command>
 
 # Custom spec file
-orchestr8 --spec custom.yaml <command>
+aether --spec custom.yaml <command>
 
 # Output format
-orchestr8 --output table|json|yaml|wide <command>
+aether --output table|json|yaml|wide <command>
 
 # Dry-run mode (mutating commands)
-orchestr8 --dry-run <command>
+aether --dry-run <command>
 
 # Skip confirmation prompts
-orchestr8 --yes <command>
+aether --yes <command>
 
 # Help
-orchestr8 --help
-orchestr8 <command> --help
+aether --help
+aether <command> --help
 ```
 
 ---
@@ -509,7 +509,7 @@ orchestr8 <command> --help
 
 ### ConfigMaps and Secrets
 
-Orchestr8 supports Kubernetes ConfigMaps and Secrets for configuration management:
+Aether supports Kubernetes ConfigMaps and Secrets for configuration management:
 
 ```yaml
 config:
@@ -587,19 +587,19 @@ Generate shell completions for your favorite shell:
 
 ```bash
 # Bash
-orchestr8 completions bash > /etc/bash_completion.d/orchestr8
+aether completions bash > /etc/bash_completion.d/aether
 
 # Zsh
-orchestr8 completions zsh > ~/.zsh/completion/_orchestr8
+aether completions zsh > ~/.zsh/completion/_aether
 
 # Fish
-orchestr8 completions fish > ~/.config/fish/completions/orchestr8.fish
+aether completions fish > ~/.config/fish/completions/aether.fish
 
 # PowerShell
-orchestr8 completions powershell > orchestr8.ps1
+aether completions powershell > aether.ps1
 
 # Elvish
-orchestr8 completions elvish > ~/.elvish/lib/orchestr8.elv
+aether completions elvish > ~/.elvish/lib/aether.elv
 ```
 
 ### Complete Example
@@ -624,7 +624,7 @@ See `examples/workload-full-featured.yaml` for a complete example showcasing all
 
 **Example:**
 ```bash
-orchestr8 migrate my-app kubernetes --strategy immediate
+aether migrate my-app kubernetes --strategy immediate
 ```
 
 ### Blue-Green
@@ -641,7 +641,7 @@ orchestr8 migrate my-app kubernetes --strategy immediate
 
 **Example:**
 ```bash
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 ```
 
 ### Rolling
@@ -658,7 +658,7 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 
 **Example:**
 ```bash
-orchestr8 migrate my-app kubernetes --strategy rolling
+aether migrate my-app kubernetes --strategy rolling
 ```
 
 ---
@@ -694,7 +694,7 @@ orchestr8 migrate my-app kubernetes --strategy rolling
 - ✅ Podman adapter (build, run, stop, status, logs, delete, list)
 - ✅ Runtime trait definition
 - ✅ Decision engine with auto-selection
-- ✅ Local state store (~/.orchestr8/state.json)
+- ✅ Local state store (~/.aether/state.json)
 - ✅ CLI with 8 commands
 - ✅ Comprehensive tests
 
@@ -813,7 +813,7 @@ test result: ok. 884 passed; 0 failed; 0 ignored
 ## 🗂️ Project Structure
 
 ```
-orchestr8/
+aether/
 ├── src/
 │   ├── main.rs           # CLI entrypoint
 │   ├── cli.rs            # CLI framework (commands, args, subcommands)
@@ -882,7 +882,7 @@ The decision engine chooses the best runtime based on your requirements:
 
 ### State Management
 
-Orchestr8 maintains persistent state in `~/.orchestr8/state.json`:
+Aether maintains persistent state in `~/.aether/state.json`:
 
 ```json
 {
@@ -926,32 +926,32 @@ Each direction independently supported with all three strategies.
 
 ```bash
 # 1. Develop locally
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 curl http://localhost:8080
 
 # 2. Test in Kubernetes
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 kubectl port-forward pod/my-app 8080:8080
 curl http://localhost:8080
 
 # 3. Production: Need VM isolation
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 
 # 4. Monitor everything
-orchestr8 tui
+aether tui
 ```
 
 ### Example 2: GPU Workload Migration
 
 ```bash
 # Start development with container
-orchestr8 run --spec ml-model.yaml --runtime podman
+aether run --spec ml-model.yaml --runtime podman
 
 # Migrate to VM for GPU passthrough
-orchestr8 migrate ml-model kubevirt --strategy blue-green
+aether migrate ml-model kubevirt --strategy blue-green
 
 # Need bare metal for best performance
-orchestr8 migrate ml-model metal --strategy immediate
+aether migrate ml-model metal --strategy immediate
 
 # Check GPU availability
 kubectl get bmh ml-model -o yaml | grep gpu
@@ -961,19 +961,19 @@ kubectl get bmh ml-model -o yaml | grep gpu
 
 ```bash
 # Development namespace
-export ORCHESTR8_NAMESPACE=dev
-orchestr8 run --spec app.yaml --runtime kubernetes
+export AETHER_NAMESPACE=dev
+aether run --spec app.yaml --runtime kubernetes
 
 # Staging namespace
-export ORCHESTR8_NAMESPACE=staging
-orchestr8 run --spec app.yaml --runtime kubernetes
+export AETHER_NAMESPACE=staging
+aether run --spec app.yaml --runtime kubernetes
 
 # Production namespace
-export ORCHESTR8_NAMESPACE=prod
-orchestr8 run --spec app.yaml --runtime kubernetes
+export AETHER_NAMESPACE=prod
+aether run --spec app.yaml --runtime kubernetes
 
 # Monitor all environments
-orchestr8 tui
+aether tui
 ```
 
 ---
@@ -1013,7 +1013,7 @@ Built with:
 
 ## 🚀 Status
 
-**Orchestr8 is PRODUCTION READY!**
+**Aether is PRODUCTION READY!**
 
 ✅ All 6 phases complete
 ✅ All 4 runtimes working
@@ -1034,7 +1034,7 @@ Built with:
 </p>
 
 <p align="center">
-  <a href="https://github.com/ssahani/orchestr8">GitHub</a> •
+  <a href="https://github.com/ssahani/aether">GitHub</a> •
   <a href="KUBERNETES.md">Kubernetes Guide</a> •
   <a href="MIGRATION.md">Migration Guide</a> •
   <a href="FINAL-SUMMARY.md">Project Summary</a>

@@ -1,7 +1,7 @@
-//! Command handler implementations for Orchestr8 CLI
+//! Command handler implementations for Aether CLI
 
 use anyhow::Result;
-use orchestr8::{
+use aether::{
     engine::Engine,
     output,
     runtime::RuntimeKind,
@@ -40,14 +40,14 @@ fn get_namespace() -> Option<&'static str> {
 fn load_workload_state(name: &str) -> Result<(StateStore, String)> {
     let state = StateStore::load(&StateStore::default_path())?;
     if state.get(name).is_none() {
-        anyhow::bail!("Workload '{}' not found.\nHint: Run `orchestr8 list` to see deployed workloads.", name);
+        anyhow::bail!("Workload '{}' not found.\nHint: Run `aether list` to see deployed workloads.", name);
     }
     Ok((state, name.to_string()))
 }
 
 /// Convenience: load state and get a cloned WorkloadState, avoiding the
 /// `state.get(name).unwrap()` pattern after `load_workload_state`.
-fn get_workload_state(state: &StateStore, name: &str) -> Result<orchestr8::state::WorkloadState> {
+fn get_workload_state(state: &StateStore, name: &str) -> Result<aether::state::WorkloadState> {
     state.get(name)
         .cloned()
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' disappeared from state", name))
@@ -60,15 +60,15 @@ async fn load_state_and_runtime(
     name: &str,
 ) -> Result<(
     StateStore,
-    orchestr8::state::WorkloadState,
-    Box<dyn orchestr8::Runtime>,
+    aether::state::WorkloadState,
+    Box<dyn aether::Runtime>,
 )> {
     let state = StateStore::load(&StateStore::default_path())?;
     let ws = state
         .get(name)
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", name))?
         .clone();
-    let rt = orchestr8::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await?;
+    let rt = aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await?;
     Ok((state, ws, rt))
 }
 
@@ -118,7 +118,7 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
     ));
 
     // Create runtime before spinner so failure doesn't leave orphan spinner
-    let rt = orchestr8::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
+    let rt = aether::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
 
     let sp = output::spinner("Building workload...");
     let result = rt.build(&workload).await;
@@ -127,10 +127,10 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
         Ok(image) => {
             output::spinner_success(&sp, "Build completed");
             output::success(&format!("Built image: {}", image.full_name()));
-            orchestr8::metrics::record_build(&runtime_kind.to_string(), true);
+            aether::metrics::record_build(&runtime_kind.to_string(), true);
             emit_event(
-                orchestr8::events::EventSeverity::Info,
-                orchestr8::events::EventCategory::Deployment,
+                aether::events::EventSeverity::Info,
+                aether::events::EventCategory::Deployment,
                 "cli",
                 Some(&workload.metadata.name),
                 "Build completed",
@@ -141,10 +141,10 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
         Err(e) => {
             output::spinner_fail(&sp, "Build failed");
             output::error(&format!("Build failed: {}", e));
-            orchestr8::metrics::record_build(&runtime_kind.to_string(), false);
+            aether::metrics::record_build(&runtime_kind.to_string(), false);
             emit_event(
-                orchestr8::events::EventSeverity::Error,
-                orchestr8::events::EventCategory::Deployment,
+                aether::events::EventSeverity::Error,
+                aether::events::EventCategory::Deployment,
                 "cli",
                 Some(&workload.metadata.name),
                 "Build failed",
@@ -189,9 +189,9 @@ async fn deploy_workload_inner(
     interactive: bool,
 ) -> Result<()> {
     // Policy gate: evaluate workload against configured policies
-    let config = orchestr8::config::Config::load();
+    let config = aether::config::Config::load();
     if config.policy.enforce_on_deploy && !SKIP_POLICY.load(std::sync::atomic::Ordering::Relaxed) {
-        orchestr8::policy::gate_deploy(workload, &config.policy)?;
+        aether::policy::gate_deploy(workload, &config.policy)?;
     }
 
     let engine = Engine::new();
@@ -225,7 +225,7 @@ async fn deploy_workload_inner(
     ));
 
     // Build and run based on runtime
-    let rt = orchestr8::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
+    let rt = aether::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
     let sp = output::spinner("Building and deploying workload...");
     let image = rt.build(workload).await?;
 
@@ -245,14 +245,14 @@ async fn deploy_workload_inner(
     // Save state (auto-snapshot existing workload if present)
     let mut state = StateStore::load(&StateStore::default_path())?;
     if let Some(existing) = state.get(&workload.metadata.name) {
-        let snap_mgr = orchestr8::backup::SnapshotManager::new();
+        let snap_mgr = aether::backup::SnapshotManager::new();
         if let Err(e) = snap_mgr.create_snapshot(existing) {
             tracing::warn!("Failed to create pre-deploy snapshot: {}", e);
         }
     }
     state.upsert(
         workload.metadata.name.clone(),
-        orchestr8::state::WorkloadState::new(
+        aether::state::WorkloadState::new(
             workload.metadata.name.clone(),
             runtime_kind,
             instance,
@@ -262,11 +262,11 @@ async fn deploy_workload_inner(
     state.save(&StateStore::default_path())?;
 
     // Record metrics
-    orchestr8::metrics::record_deployment(&runtime_kind.to_string(), true);
+    aether::metrics::record_deployment(&runtime_kind.to_string(), true);
 
     // Emit event — use batch if provided, otherwise single disk round-trip
-    let sev = orchestr8::events::EventSeverity::Info;
-    let cat = orchestr8::events::EventCategory::Deployment;
+    let sev = aether::events::EventSeverity::Info;
+    let cat = aether::events::EventCategory::Deployment;
     let msg = format!("Deployed on {} (instance: {})", runtime_kind, instance_name);
     if let Some(batch) = event_batch {
         batch.emit(sev, cat, "cli", Some(&workload.metadata.name), "Workload deployed", &msg);
@@ -287,8 +287,8 @@ pub(crate) async fn stop_command(name: &str) -> Result<()> {
     output::success(&format!("Stopped instance: {}", name));
 
     emit_event(
-        orchestr8::events::EventSeverity::Info,
-        orchestr8::events::EventCategory::Deployment,
+        aether::events::EventSeverity::Info,
+        aether::events::EventCategory::Deployment,
         "cli",
         Some(name),
         "Workload stopped",
@@ -308,11 +308,11 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
 
     // Record health check (side-effect: status queries feed the health timeline)
     if !output::is_quiet() {
-        let health_path = orchestr8::health::HealthHistory::default_path();
-        let mut history = orchestr8::health::HealthHistory::load(&health_path)
+        let health_path = aether::health::HealthHistory::default_path();
+        let mut history = aether::health::HealthHistory::load(&health_path)
             .unwrap_or_default();
-        history.record(orchestr8::health::HealthRecord {
-            timestamp: orchestr8::resources::now_rfc3339(),
+        history.record(aether::health::HealthRecord {
+            timestamp: aether::resources::now_rfc3339(),
             workload: name.to_string(),
             runtime: ws.runtime,
             state: status.state.clone(),
@@ -373,8 +373,8 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
 
     // Show health history summary if available
     {
-        let health_path = orchestr8::health::HealthHistory::default_path();
-        if let Ok(history) = orchestr8::health::HealthHistory::load(&health_path) {
+        let health_path = aether::health::HealthHistory::default_path();
+        if let Ok(history) = aether::health::HealthHistory::load(&health_path) {
             let summary = history.summary(name);
             if summary.total_checks > 1 {
                 pairs.push(("Uptime", format!("{:.1}% ({}/{} checks)",
@@ -423,11 +423,11 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
     cascade_delete(name);
 
     // Record metrics
-    orchestr8::metrics::record_deletion(&ws.runtime.to_string());
+    aether::metrics::record_deletion(&ws.runtime.to_string());
 
     emit_event(
-        orchestr8::events::EventSeverity::Warning,
-        orchestr8::events::EventCategory::Deployment,
+        aether::events::EventSeverity::Warning,
+        aether::events::EventCategory::Deployment,
         "cli",
         Some(name),
         "Workload deleted",
@@ -444,8 +444,8 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
 /// Best-effort: errors are logged but do not block the deletion.
 fn cascade_delete(name: &str) {
     // 1. Remove from orchestrator
-    let orch_path = orchestr8::orchestrator::Orchestrator::default_path();
-    if let Ok(mut orch) = orchestr8::orchestrator::Orchestrator::load(&orch_path) {
+    let orch_path = aether::orchestrator::Orchestrator::default_path();
+    if let Ok(mut orch) = aether::orchestrator::Orchestrator::load(&orch_path) {
         if orch.unregister(name).is_some() {
             let _ = orch.save(&orch_path);
             tracing::debug!("Cascade: removed '{}' from orchestrator", name);
@@ -453,24 +453,24 @@ fn cascade_delete(name: &str) {
     }
 
     // 2. Remove from dependency graph
-    let deps_path = orchestr8::dependencies::DependencyGraph::default_path();
-    if let Ok(mut deps) = orchestr8::dependencies::DependencyGraph::load(&deps_path) {
+    let deps_path = aether::dependencies::DependencyGraph::default_path();
+    if let Ok(mut deps) = aether::dependencies::DependencyGraph::load(&deps_path) {
         deps.remove_workload(name);
         let _ = deps.save(&deps_path);
         tracing::debug!("Cascade: removed '{}' from dependency graph", name);
     }
 
     // 3. Remove from scheduler placements
-    let sched_path = orchestr8::scheduler::Scheduler::default_path();
-    if let Ok(mut sched) = orchestr8::scheduler::Scheduler::load(&sched_path) {
+    let sched_path = aether::scheduler::Scheduler::default_path();
+    if let Ok(mut sched) = aether::scheduler::Scheduler::load(&sched_path) {
         sched.release(name);
         let _ = sched.save(&sched_path);
         tracing::debug!("Cascade: released '{}' from scheduler", name);
     }
 
     // 4. Prune health records for this workload
-    let health_path = orchestr8::health::HealthHistory::default_path();
-    if let Ok(mut history) = orchestr8::health::HealthHistory::load(&health_path) {
+    let health_path = aether::health::HealthHistory::default_path();
+    if let Ok(mut history) = aether::health::HealthHistory::load(&health_path) {
         let before = history.records.len();
         history.records.retain(|r| r.workload != name);
         if history.records.len() < before {
@@ -572,7 +572,7 @@ pub(crate) async fn migrate_command(
     no_validation: bool,
     no_rollback: bool,
 ) -> Result<()> {
-    use orchestr8::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
+    use aether::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
     use std::time::Duration;
 
     // Load current state
@@ -589,7 +589,7 @@ pub(crate) async fn migrate_command(
 
     // Auto-snapshot before migration
     {
-        let snap_mgr = orchestr8::backup::SnapshotManager::new();
+        let snap_mgr = aether::backup::SnapshotManager::new();
         if let Err(e) = snap_mgr.create_snapshot(&workload_state) {
             tracing::warn!("Failed to create pre-migrate snapshot: {}", e);
         }
@@ -635,7 +635,7 @@ pub(crate) async fn migrate_command(
     let migration_duration = migration_start.elapsed().as_secs_f64();
 
     // Record metrics
-    orchestr8::metrics::record_migration(
+    aether::metrics::record_migration(
         &source_runtime.to_string(),
         &target_runtime.to_string(),
         strategy_str,
@@ -666,8 +666,8 @@ pub(crate) async fn migrate_command(
         output::summary_success("Migration Successful", &summary_items);
 
         emit_event(
-            orchestr8::events::EventSeverity::Info,
-            orchestr8::events::EventCategory::Migration,
+            aether::events::EventSeverity::Info,
+            aether::events::EventCategory::Migration,
             "cli",
             Some(name),
             "Migration completed",
@@ -696,8 +696,8 @@ pub(crate) async fn migrate_command(
         output::summary_error("Migration Failed", &error_items);
 
         emit_event(
-            orchestr8::events::EventSeverity::Error,
-            orchestr8::events::EventCategory::Migration,
+            aether::events::EventSeverity::Error,
+            aether::events::EventCategory::Migration,
             "cli",
             Some(name),
             "Migration failed",
@@ -717,7 +717,7 @@ pub(crate) async fn tui_command() -> Result<()> {
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     };
-    use orchestr8::ui::App;
+    use aether::ui::App;
     use ratatui::{backend::CrosstermBackend, Terminal};
     use std::io;
 
@@ -747,9 +747,9 @@ pub(crate) async fn tui_command() -> Result<()> {
 
 async fn run_tui<B: ratatui::backend::Backend>(
     terminal: &mut ratatui::Terminal<B>,
-    app: &mut orchestr8::ui::App,
+    app: &mut aether::ui::App,
 ) -> Result<()> {
-    use orchestr8::ui::{render_dashboard, render_logs, Screen};
+    use aether::ui::{render_dashboard, render_logs, Screen};
 
     loop {
         // Render
@@ -763,7 +763,7 @@ async fn run_tui<B: ratatui::backend::Backend>(
         })?;
 
         // Handle events
-        orchestr8::ui::handle_events(app).await?;
+        aether::ui::handle_events(app).await?;
 
         // Check if should quit
         if app.should_quit {
@@ -785,19 +785,19 @@ pub(crate) fn completions_command(shell_str: &str) -> Result<()> {
         "powershell" | "ps1" => Shell::PowerShell,
         "elvish" => Shell::Elvish,
         _ => {
-            orchestr8::completions::list_shells();
+            aether::completions::list_shells();
             anyhow::bail!("Unknown shell: '{}'. See list above.", shell_str);
         }
     };
 
     let mut cmd = Cli::command();
-    orchestr8::completions::generate_completions(shell, &mut cmd);
+    aether::completions::generate_completions(shell, &mut cmd);
     Ok(())
 }
 
 pub(crate) async fn metrics_command() {
-    output::section_with_icon("📊", "Orchestr8 Metrics");
-    output::muted(&format!("Updated: {}", orchestr8::resources::now_rfc3339()));
+    output::section_with_icon("📊", "Aether Metrics");
+    output::muted(&format!("Updated: {}", aether::resources::now_rfc3339()));
     println!();
 
     // Update workload state metrics from state store
@@ -807,7 +807,7 @@ pub(crate) async fn metrics_command() {
             .iter()
             .map(|w| (w.runtime.to_string(), "running".to_string()))
             .collect();
-        orchestr8::metrics::update_workload_states(&states);
+        aether::metrics::update_workload_states(&states);
 
         // Update running workload count
         let mut runtime_counts = std::collections::HashMap::new();
@@ -817,14 +817,14 @@ pub(crate) async fn metrics_command() {
     }
 
     // Gather and print metrics
-    print!("{}", orchestr8::metrics::gather());
+    print!("{}", aether::metrics::gather());
 }
 
 pub(crate) async fn backup_command(
     name: Option<String>,
     description: Option<String>,
 ) -> Result<()> {
-    use orchestr8::backup::BackupManager;
+    use aether::backup::BackupManager;
 
     let sp = output::spinner("Creating backup...");
 
@@ -853,7 +853,7 @@ pub(crate) async fn backup_command(
 }
 
 pub(crate) async fn restore_command(backup_path: &Path, merge: bool) -> Result<()> {
-    use orchestr8::backup::Backup;
+    use aether::backup::Backup;
 
     let sp = output::spinner("Loading backup...");
 
@@ -868,7 +868,7 @@ pub(crate) async fn restore_command(backup_path: &Path, merge: bool) -> Result<(
         output::property_table(&[
             ("Created", backup.metadata.created_at.clone()),
             ("Workloads", backup.metadata.workload_count.to_string()),
-            ("Version", backup.metadata.orchestr8_version.clone()),
+            ("Version", backup.metadata.aether_version.clone()),
             (
                 "Description",
                 backup
@@ -904,7 +904,7 @@ pub(crate) async fn restore_command(backup_path: &Path, merge: bool) -> Result<(
 }
 
 pub(crate) async fn list_backups_command() -> Result<()> {
-    use orchestr8::backup::BackupManager;
+    use aether::backup::BackupManager;
 
     let manager = BackupManager::new(BackupManager::default_dir());
     let backups = manager.list_backups()?;
@@ -932,7 +932,7 @@ pub(crate) async fn list_backups_command() -> Result<()> {
                 output::kv_tree("File", &fname, false);
                 output::kv_tree("Created", &info.created_at, false);
                 output::kv_tree("Workloads", &info.workload_count.to_string(), false);
-                output::kv_tree("Version", &info.orchestr8_version, info.description.is_none());
+                output::kv_tree("Version", &info.aether_version, info.description.is_none());
                 if let Some(desc) = info.description {
                     output::kv_tree("Description", &desc, true);
                 }
@@ -953,7 +953,7 @@ pub(crate) async fn list_backups_command() -> Result<()> {
 }
 
 pub(crate) async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<()> {
-    use orchestr8::cost::{estimate_cost, CloudProvider, CostComparison};
+    use aether::cost::{estimate_cost, CloudProvider, CostComparison};
 
     output::section_with_icon("💰", "Cost Estimation");
 
@@ -1001,10 +1001,10 @@ pub(crate) async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<
 }
 
 pub(crate) async fn serve_command(host: String, port: u16) -> Result<()> {
-    use orchestr8::api::{start_server, ApiConfig};
+    use aether::api::{start_server, ApiConfig};
 
     output::logo();
-    output::banner("ORCHESTR8 API SERVER", "Universal Runtime Control Plane");
+    output::banner("AETHER API SERVER", "Universal Runtime Control Plane");
 
     let config = ApiConfig {
         host,
@@ -1065,8 +1065,8 @@ pub(crate) async fn serve_command(host: String, port: u16) -> Result<()> {
 }
 
 pub(crate) async fn recommend_command(spec_path: &PathBuf) -> Result<()> {
-    use orchestr8::ai::scoring::{format_scoring_report, ScoringEngine};
-    use orchestr8::config::Config;
+    use aether::ai::scoring::{format_scoring_report, ScoringEngine};
+    use aether::config::Config;
 
     output::section_with_icon("🤖", "AI-Powered Runtime Recommendation");
 
@@ -1081,8 +1081,8 @@ pub(crate) async fn recommend_command(spec_path: &PathBuf) -> Result<()> {
 }
 
 pub(crate) async fn profile_command(spec_path: &PathBuf, name: Option<String>) -> Result<()> {
-    use orchestr8::ai::profiler::{format_profile_report, Profiler};
-    use orchestr8::config::Config;
+    use aether::ai::profiler::{format_profile_report, Profiler};
+    use aether::config::Config;
 
     output::section_with_icon("🔍", "Workload Profiler");
 
@@ -1107,8 +1107,8 @@ pub(crate) async fn profile_command(spec_path: &PathBuf, name: Option<String>) -
 }
 
 pub(crate) async fn analyze_logs_command(name: &str) -> Result<()> {
-    use orchestr8::ai::analyzer::{format_analysis_report, LogAnalyzer};
-    use orchestr8::config::Config;
+    use aether::ai::analyzer::{format_analysis_report, LogAnalyzer};
+    use aether::config::Config;
 
     output::section_with_icon("📊", &format!("Log Analysis for '{}'", name));
 
@@ -1128,8 +1128,8 @@ pub(crate) async fn analyze_logs_command(name: &str) -> Result<()> {
 }
 
 pub(crate) async fn migration_advice_command(name: &str, target: &str) -> Result<()> {
-    use orchestr8::ai::migration::{format_migration_advice, MigrationAdvisor};
-    use orchestr8::config::Config;
+    use aether::ai::migration::{format_migration_advice, MigrationAdvisor};
+    use aether::config::Config;
 
     output::section_with_icon("🔄", &format!("Migration Advisor for '{}'", name));
 
@@ -1149,8 +1149,8 @@ pub(crate) async fn migration_advice_command(name: &str, target: &str) -> Result
 }
 
 pub(crate) async fn scaling_advice_command() -> Result<()> {
-    use orchestr8::ai::scaling::{format_scaling_report, ScalingEngine, TimeSeries};
-    use orchestr8::config::Config;
+    use aether::ai::scaling::{format_scaling_report, ScalingEngine, TimeSeries};
+    use aether::config::Config;
 
     output::section_with_icon("📈", "Predictive Scaling Advisor");
 
@@ -1184,14 +1184,14 @@ pub(crate) async fn scaling_advice_command() -> Result<()> {
 }
 
 pub(crate) async fn config_command(show: bool, init: bool) -> Result<()> {
-    use orchestr8::config::Config;
+    use aether::config::Config;
 
     if init {
         let config = Config::default();
         let path = Config::default_path();
         config.save_to(&path)?;
         output::success(&format!("Configuration initialized: {}", path.display()));
-        output::detail("Edit this file to customize Orchestr8 behavior.");
+        output::detail("Edit this file to customize Aether behavior.");
         return Ok(());
     }
 
@@ -1211,7 +1211,7 @@ pub(crate) async fn config_command(show: bool, init: bool) -> Result<()> {
     let path = Config::default_path();
     let exists = path.exists();
 
-    output::section_with_icon("⚙️", "Orchestr8 Configuration");
+    output::section_with_icon("⚙️", "Aether Configuration");
 
     println!(
         "{}",
@@ -1285,14 +1285,14 @@ pub(crate) async fn config_command(show: bool, init: bool) -> Result<()> {
 
     if !exists {
         println!();
-        output::info("Run 'orchestr8 config --init' to create a config file");
+        output::info("Run 'aether config --init' to create a config file");
     }
 
     Ok(())
 }
 
 pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
-    use orchestr8::drift::{format_drift_report, DriftDetector};
+    use aether::drift::{format_drift_report, DriftDetector};
 
     let sp = output::spinner(&format!("Checking drift for '{}'...", name));
 
@@ -1315,7 +1315,7 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
 
         output::section_with_icon("🔧", "Executing Reconciliation");
         let mut state = StateStore::load(&StateStore::default_path())?;
-        let results = orchestr8::drift::execute_reconciliation(&report, &mut state).await?;
+        let results = aether::drift::execute_reconciliation(&report, &mut state).await?;
         state.save(&StateStore::default_path())?;
 
         for r in &results {
@@ -1327,8 +1327,8 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
         }
 
         emit_event(
-            orchestr8::events::EventSeverity::Info,
-            orchestr8::events::EventCategory::DriftDetected,
+            aether::events::EventSeverity::Info,
+            aether::events::EventCategory::DriftDetected,
             "cli",
             Some(name),
             "Drift reconciled",
@@ -1340,7 +1340,7 @@ pub(crate) async fn drift_command(name: &str, reconcile: bool) -> Result<()> {
 }
 
 pub(crate) async fn policy_check_command(spec_path: &PathBuf, policy_name: &str) -> Result<()> {
-    use orchestr8::policy::{format_policy_report, PolicyEngine};
+    use aether::policy::{format_policy_report, PolicyEngine};
 
     output::section_with_icon("📋", "Policy Check");
 
@@ -1377,7 +1377,7 @@ pub(crate) async fn policy_check_command(spec_path: &PathBuf, policy_name: &str)
 }
 
 pub(crate) async fn deps_command(action: DepsAction) -> Result<()> {
-    use orchestr8::dependencies::{format_dependency_report, DependencyGraph};
+    use aether::dependencies::{format_dependency_report, DependencyGraph};
 
     let graph_path = DependencyGraph::default_path();
     let mut graph = DependencyGraph::load(&graph_path)?;
@@ -1455,7 +1455,7 @@ pub(crate) async fn audit_command(
     workload: Option<String>,
     summary: bool,
 ) -> Result<()> {
-    use orchestr8::audit::{format_audit_report, AuditLog};
+    use aether::audit::{format_audit_report, AuditLog};
 
     let audit_path = AuditLog::default_path();
     let log = AuditLog::load(&audit_path)?;
@@ -1518,7 +1518,7 @@ pub(crate) async fn template_command(
     output_path: Option<PathBuf>,
     list: bool,
 ) -> Result<()> {
-    use orchestr8::templates::{self, TemplateKind, TemplateParams};
+    use aether::templates::{self, TemplateKind, TemplateParams};
 
     if list || name == "list" {
         print!("{}", templates::format_template_list());
@@ -1541,6 +1541,11 @@ pub(crate) async fn template_command(
     let yaml = serde_yaml::to_string(&spec)?;
 
     if let Some(path) = output_path {
+        // Validate output path is not outside the current directory tree
+        let canonical = path.canonicalize().unwrap_or_else(|_| path.clone());
+        if canonical.starts_with("/etc") || canonical.starts_with("/proc") || canonical.starts_with("/sys") {
+            anyhow::bail!("Refusing to write to system path: {}", canonical.display());
+        }
         std::fs::write(&path, &yaml)?;
         output::success(&format!("Generated {} template: {}", name, path.display()));
         output::kv_tree("Workload name", &wl_name, true);
@@ -1553,10 +1558,10 @@ pub(crate) async fn template_command(
 }
 
 pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
-    use orchestr8::sla::{format_sla_report, SlaEngine, SlaObservation, SlaTarget};
+    use aether::sla::{format_sla_report, SlaEngine, SlaObservation, SlaTarget};
 
     // Persist SLA targets via a simple JSON file
-    let sla_path = orchestr8::resources::orchestr8_path("sla.json");
+    let sla_path = aether::resources::aether_path("sla.json");
 
     let load_engine = || -> Result<SlaEngine> {
         if sla_path.exists() {
@@ -1627,7 +1632,7 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
                 }
                 None => {
                     output::error(&format!(
-                        "No SLA target found for '{}'. Add one with: orchestr8 sla add {}",
+                        "No SLA target found for '{}'. Add one with: aether sla add {}",
                         workload, workload
                     ));
                 }
@@ -1638,7 +1643,7 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
             let targets = engine.list_targets();
             if targets.is_empty() {
                 output::muted("No SLA targets defined.");
-                output::detail("Add one with: orchestr8 sla add <workload> --tier standard");
+                output::detail("Add one with: aether sla add <workload> --tier standard");
             } else {
                 output::section_with_icon("📋", "SLA Targets");
                 for target in targets {
@@ -1666,7 +1671,7 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
 }
 
 pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
-    use orchestr8::secrets::{format_secrets_list, SecretStore};
+    use aether::secrets::{format_secrets_list, SecretStore};
 
     let path = SecretStore::default_path();
     let mut store = SecretStore::load(&path)?;
@@ -1675,10 +1680,10 @@ pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
         SecretsAction::Create { name, namespace } => {
             store.create_secret(&name, &namespace);
             store.save(&path)?;
-            orchestr8::metrics::record_secret_operation("create");
+            aether::metrics::record_secret_operation("create");
             emit_event(
-                orchestr8::events::EventSeverity::Info,
-                orchestr8::events::EventCategory::SecretRotation,
+                aether::events::EventSeverity::Info,
+                aether::events::EventCategory::SecretRotation,
                 "cli",
                 None,
                 "Secret created",
@@ -1692,10 +1697,10 @@ pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
         SecretsAction::Set { secret, key, value } => {
             store.set(&secret, &key, &value)?;
             store.save(&path)?;
-            orchestr8::metrics::record_secret_operation("set");
+            aether::metrics::record_secret_operation("set");
             emit_event(
-                orchestr8::events::EventSeverity::Info,
-                orchestr8::events::EventCategory::SecretRotation,
+                aether::events::EventSeverity::Info,
+                aether::events::EventCategory::SecretRotation,
                 "cli",
                 None,
                 "Secret updated",
@@ -1705,7 +1710,7 @@ pub(crate) async fn secrets_command(action: SecretsAction) -> Result<()> {
         }
         SecretsAction::Get { secret, key } => {
             let value = store.get(&secret, &key)?;
-            orchestr8::metrics::record_secret_operation("get");
+            aether::metrics::record_secret_operation("get");
             println!("{}", value);
         }
         SecretsAction::List => {
@@ -1733,7 +1738,7 @@ pub(crate) async fn events_command(
     severity: Option<String>,
     summary: bool,
 ) -> Result<()> {
-    use orchestr8::events::{format_event_list, format_event_summary, EventBus, EventSeverity};
+    use aether::events::{format_event_list, format_event_summary, EventBus, EventSeverity};
 
     let path = EventBus::default_path();
     let bus = EventBus::load(&path)?;
@@ -1757,7 +1762,7 @@ pub(crate) async fn events_command(
 }
 
 pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
-    use orchestr8::environments::{
+    use aether::environments::{
         format_env_list, EnvTier, EnvironmentManager, PromotionRequest, PromotionStrategy,
     };
 
@@ -1791,10 +1796,10 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
             };
             let result = manager.promote(&request)?;
             manager.save(&path)?;
-            orchestr8::metrics::record_env_promotion(&from, &to, true);
+            aether::metrics::record_env_promotion(&from, &to, true);
             emit_event(
-                orchestr8::events::EventSeverity::Info,
-                orchestr8::events::EventCategory::Deployment,
+                aether::events::EventSeverity::Info,
+                aether::events::EventCategory::Deployment,
                 "cli",
                 Some(&workload),
                 "Environment promotion",
@@ -1868,7 +1873,7 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
 }
 
 pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
-    use orchestr8::scheduler::{
+    use aether::scheduler::{
         format_schedule_decision, format_utilization, Priority, ScheduleRequest, ScheduleStrategy,
         Scheduler,
     };
@@ -1888,10 +1893,10 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
             scheduler.set_strategy(sched_strategy);
 
             // Load affinity scores to inform scheduling decisions
-            if let Ok(affinity_engine) = orchestr8::ai::affinity::AffinityEngine::load(
-                &orchestr8::ai::affinity::AffinityEngine::default_path(),
+            if let Ok(affinity_engine) = aether::ai::affinity::AffinityEngine::load(
+                &aether::ai::affinity::AffinityEngine::default_path(),
             ) {
-                use orchestr8::ai::affinity::WorkloadClass;
+                use aether::ai::affinity::WorkloadClass;
                 let class = WorkloadClass::Microservice;
                 let scores = affinity_engine.recommend(&class);
                 let affinity_map: std::collections::HashMap<RuntimeKind, f64> = scores
@@ -1918,14 +1923,14 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
                 Ok(decision) => {
                     print!("{}", format_schedule_decision(&decision));
                     scheduler.save(&path)?;
-                    orchestr8::metrics::record_scheduler_placement(
+                    aether::metrics::record_scheduler_placement(
                         &decision.selected_runtime.to_string(),
                         &strategy,
                         true,
                     );
                 }
                 Err(e) => {
-                    orchestr8::metrics::record_scheduler_placement("none", &strategy, false);
+                    aether::metrics::record_scheduler_placement("none", &strategy, false);
                     output::error(&format!("{}", e));
                 }
             }
@@ -1976,7 +1981,7 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
 }
 
 pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()> {
-    use orchestr8::orchestrator::{
+    use aether::orchestrator::{
         format_health_summary, format_rolling_update, format_workload_list, Orchestrator,
     };
 
@@ -2027,20 +2032,20 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
 
             // Record health checks to history
             {
-                use orchestr8::orchestrator::HealthStatus as OrcHealthStatus;
-                let health_path = orchestr8::health::HealthHistory::default_path();
-                let mut history = orchestr8::health::HealthHistory::load(&health_path)
+                use aether::orchestrator::HealthStatus as OrcHealthStatus;
+                let health_path = aether::health::HealthHistory::default_path();
+                let mut history = aether::health::HealthHistory::load(&health_path)
                     .unwrap_or_default();
-                let now = orchestr8::resources::now_rfc3339();
+                let now = aether::resources::now_rfc3339();
                 for (wl_name, hs) in &statuses {
                     if let Some(ws) = state_store.get(wl_name) {
                         let (inst_state, ready) = match hs {
-                            OrcHealthStatus::Healthy => (orchestr8::runtime::InstanceState::Running, true),
-                            OrcHealthStatus::Degraded => (orchestr8::runtime::InstanceState::Running, false),
-                            OrcHealthStatus::Unhealthy => (orchestr8::runtime::InstanceState::Failed, false),
-                            OrcHealthStatus::Unknown => (orchestr8::runtime::InstanceState::Unknown, false),
+                            OrcHealthStatus::Healthy => (aether::runtime::InstanceState::Running, true),
+                            OrcHealthStatus::Degraded => (aether::runtime::InstanceState::Running, false),
+                            OrcHealthStatus::Unhealthy => (aether::runtime::InstanceState::Failed, false),
+                            OrcHealthStatus::Unknown => (aether::runtime::InstanceState::Unknown, false),
                         };
-                        history.record(orchestr8::health::HealthRecord {
+                        history.record(aether::health::HealthRecord {
                             timestamp: now.clone(),
                             workload: wl_name.clone(),
                             runtime: ws.runtime,
@@ -2066,7 +2071,7 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
             }
         }
         OrchestrateAction::Watch { interval } => {
-            let recon_config = orchestr8::config::Config::load().reconciliation;
+            let recon_config = aether::config::Config::load().reconciliation;
             output::info(&format!(
                 "Reconciliation daemon: health={}s, drift={}s, sla={}s (Ctrl+C to stop)",
                 recon_config.health_interval_secs,
@@ -2111,7 +2116,7 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                 // Drift checks
                 if drift_elapsed >= recon_config.drift_interval_secs {
                     drift_elapsed = 0;
-                    let detector = orchestr8::drift::DriftDetector::new();
+                    let detector = aether::drift::DriftDetector::new();
                     let mut drift_count = 0usize;
                     for ws in state_store.list() {
                         if let Ok(spec) = Workload::from_file(&ws.spec_path) {
@@ -2123,8 +2128,8 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                                     now_str, ws.name, report.drifts.len()
                                 ));
                                 emit_event(
-                                    orchestr8::events::EventSeverity::Warning,
-                                    orchestr8::events::EventCategory::DriftDetected,
+                                    aether::events::EventSeverity::Warning,
+                                    aether::events::EventCategory::DriftDetected,
                                     "reconciliation-loop",
                                     Some(&ws.name),
                                     "Drift detected",
@@ -2141,8 +2146,8 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                 // SLA checks — verify health-based uptime against baseline
                 if sla_elapsed >= recon_config.sla_interval_secs {
                     sla_elapsed = 0;
-                    let health_path = orchestr8::health::HealthHistory::default_path();
-                    let history = orchestr8::health::HealthHistory::load(&health_path)
+                    let health_path = aether::health::HealthHistory::default_path();
+                    let history = aether::health::HealthHistory::load(&health_path)
                         .unwrap_or_default();
                     let mut at_risk = 0usize;
                     for ws in state_store.list() {
@@ -2155,8 +2160,8 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                                 now_str, ws.name, uptime
                             ));
                             emit_event(
-                                orchestr8::events::EventSeverity::Warning,
-                                orchestr8::events::EventCategory::SlaViolation,
+                                aether::events::EventSeverity::Warning,
+                                aether::events::EventCategory::SlaViolation,
                                 "reconciliation-loop",
                                 Some(&ws.name),
                                 "SLA at risk",
@@ -2171,14 +2176,14 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
 
                 // Evaluate alert rules against current metrics
                 {
-                    let events_path = orchestr8::events::EventBus::default_path();
-                    if let Ok(mut bus) = orchestr8::events::EventBus::load(&events_path) {
-                        let health_path = orchestr8::health::HealthHistory::default_path();
-                        let history = orchestr8::health::HealthHistory::load(&health_path)
+                    let events_path = aether::events::EventBus::default_path();
+                    if let Ok(mut bus) = aether::events::EventBus::load(&events_path) {
+                        let health_path = aether::health::HealthHistory::default_path();
+                        let history = aether::health::HealthHistory::load(&health_path)
                             .unwrap_or_default();
 
-                        let mut metrics = orchestr8::events::SystemMetrics::default();
-                        let alert_policy_config = orchestr8::config::Config::load().policy;
+                        let mut metrics = aether::events::SystemMetrics::default();
+                        let alert_policy_config = aether::config::Config::load().policy;
                         for ws in state_store.list() {
                             let uptime = history.uptime_percent(&ws.name);
                             if uptime > 0.0 {
@@ -2190,15 +2195,15 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                             );
 
                             // Check for drift on each workload
-                            if let Ok(spec) = orchestr8::spec::Workload::from_file(&ws.spec_path) {
-                                let detector = orchestr8::drift::DriftDetector::new();
+                            if let Ok(spec) = aether::spec::Workload::from_file(&ws.spec_path) {
+                                let detector = aether::drift::DriftDetector::new();
                                 let report = detector.detect(&spec, ws);
                                 if report.has_drift {
                                     metrics.drift_detected = true;
                                 }
 
                                 // Check for policy violations
-                                if orchestr8::policy::gate_deploy(&spec, &alert_policy_config).is_err() {
+                                if aether::policy::gate_deploy(&spec, &alert_policy_config).is_err() {
                                     metrics.policy_violations = true;
                                 }
                             }
@@ -2216,7 +2221,7 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                 }
 
                 // Process webhook retry queue
-                orchestr8::events::WebhookQueue::process_queue_once();
+                aether::events::WebhookQueue::process_queue_once();
             }
         }
     }
@@ -2225,7 +2230,7 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
 }
 
 pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
-    use orchestr8::ai::affinity::{format_affinity_report, AffinityEngine, WorkloadClass};
+    use aether::ai::affinity::{format_affinity_report, AffinityEngine, WorkloadClass};
 
     let path = AffinityEngine::default_path();
     let engine = AffinityEngine::load(&path)?;
@@ -2235,7 +2240,7 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
             let wl_class: WorkloadClass = class.parse()?;
             let scores = engine.recommend(&wl_class);
             if let Some(top) = scores.first() {
-                orchestr8::metrics::record_affinity_recommendation(
+                aether::metrics::record_affinity_recommendation(
                     &class,
                     &top.runtime.to_string(),
                 );
@@ -2305,7 +2310,7 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
 }
 
 pub(crate) async fn rollback_command(name: &str) -> Result<()> {
-    use orchestr8::backup::{Backup, SnapshotManager};
+    use aether::backup::{Backup, SnapshotManager};
 
     output::section_with_icon("⏪", &format!("Rolling back workload '{}'", name));
 
@@ -2327,7 +2332,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
     // Stop current instance (best-effort)
     let mut state = StateStore::load(&StateStore::default_path())?;
     if let Some(current) = state.get(name) {
-        match orchestr8::runtime::create_runtime_ns(&current.runtime, get_namespace()).await {
+        match aether::runtime::create_runtime_ns(&current.runtime, get_namespace()).await {
             Ok(runtime) => {
                 if let Err(e) = runtime.stop(&current.instance).await {
                     tracing::warn!("Failed to stop current instance: {}", e);
@@ -2339,7 +2344,7 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
 
     // Re-deploy from snapshot
     let sp = output::spinner("Re-deploying from snapshot...");
-    let runtime = orchestr8::runtime::create_runtime_ns(&snapshot_ws.runtime, get_namespace()).await?;
+    let runtime = aether::runtime::create_runtime_ns(&snapshot_ws.runtime, get_namespace()).await?;
     let spec = Workload::from_file(&snapshot_ws.spec_path)?;
     let image = runtime.build(&spec).await?;
     let instance = runtime.run(&image, &spec).await?;
@@ -2354,20 +2359,20 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
     // Update state (reuse the already-loaded store)
     state.upsert(
         name.to_string(),
-        orchestr8::state::WorkloadState {
+        aether::state::WorkloadState {
             name: name.to_string(),
             runtime: snapshot_ws.runtime,
             instance,
             spec_path: snapshot_ws.spec_path.clone(),
             created_at: snapshot_ws.created_at.clone(),
-            updated_at: orchestr8::resources::now_rfc3339(),
+            updated_at: aether::resources::now_rfc3339(),
         },
     );
     state.save(&StateStore::default_path())?;
 
     emit_event(
-        orchestr8::events::EventSeverity::Warning,
-        orchestr8::events::EventCategory::Deployment,
+        aether::events::EventSeverity::Warning,
+        aether::events::EventCategory::Deployment,
         "cli",
         Some(name),
         "Workload rolled back",
@@ -2382,11 +2387,11 @@ pub(crate) async fn rollback_command(name: &str) -> Result<()> {
 /// Collect live HealthStatus for all managed workloads, grouping by runtime
 /// to avoid creating duplicate runtime clients (N+1).
 async fn collect_health_statuses(
-    orch: &orchestr8::orchestrator::Orchestrator,
+    orch: &aether::orchestrator::Orchestrator,
     state: &StateStore,
-) -> std::collections::HashMap<String, orchestr8::orchestrator::HealthStatus> {
-    use orchestr8::orchestrator::HealthStatus;
-    use orchestr8::runtime::InstanceState;
+) -> std::collections::HashMap<String, aether::orchestrator::HealthStatus> {
+    use aether::orchestrator::HealthStatus;
+    use aether::runtime::InstanceState;
 
     let managed = orch.list_workloads();
     let mut statuses = std::collections::HashMap::new();
@@ -2404,7 +2409,7 @@ async fn collect_health_statuses(
     }
 
     for (kind, workloads) in by_runtime {
-        match orchestr8::runtime::create_runtime_ns(&kind, get_namespace()).await {
+        match aether::runtime::create_runtime_ns(&kind, get_namespace()).await {
             Ok(runtime) => {
                 for (name, instance) in workloads {
                     let hs = match runtime.status(&instance).await {
@@ -2435,7 +2440,7 @@ async fn collect_health_statuses(
 }
 
 pub(crate) async fn diff_command(name: &str) -> Result<()> {
-    use orchestr8::drift::{format_live_diff, DiffRow, LiveDiffReport};
+    use aether::drift::{format_live_diff, DiffRow, LiveDiffReport};
 
     output::section_with_icon(
         "🔍",
@@ -2481,7 +2486,7 @@ pub(crate) async fn diff_command(name: &str) -> Result<()> {
             spec_value: "running".to_string(),
             stored_value: "-".to_string(),
             live_value: format!("{}", live_status.state),
-            matches: live_status.state == orchestr8::runtime::InstanceState::Running,
+            matches: live_status.state == aether::runtime::InstanceState::Running,
         },
         DiffRow {
             field: "ready".to_string(),
@@ -2541,7 +2546,7 @@ pub(crate) async fn diff_command(name: &str) -> Result<()> {
 }
 
 pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
-    use orchestr8::events::{
+    use aether::events::{
         ChannelType, EventBus, EventCategory, EventSeverity, NotificationChannel,
     };
 
@@ -2631,8 +2636,8 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
             output::success(&format!("Test notification sent to channel '{}'", name));
         }
         WebhookAction::Queue => {
-            let queue = orchestr8::events::WebhookQueue::load(
-                &orchestr8::events::WebhookQueue::default_path(),
+            let queue = aether::events::WebhookQueue::load(
+                &aether::events::WebhookQueue::default_path(),
             )?;
             if queue.pending.is_empty() {
                 output::muted("No pending webhook deliveries.");
@@ -2658,14 +2663,14 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
         }
         WebhookAction::Flush => {
             output::header("📤", "Flushing Webhook Queue");
-            let before = orchestr8::events::WebhookQueue::load(
-                &orchestr8::events::WebhookQueue::default_path(),
+            let before = aether::events::WebhookQueue::load(
+                &aether::events::WebhookQueue::default_path(),
             )
             .map(|q| q.pending.len())
             .unwrap_or(0);
-            orchestr8::events::WebhookQueue::process_queue_once();
-            let after = orchestr8::events::WebhookQueue::load(
-                &orchestr8::events::WebhookQueue::default_path(),
+            aether::events::WebhookQueue::process_queue_once();
+            let after = aether::events::WebhookQueue::load(
+                &aether::events::WebhookQueue::default_path(),
             )
             .map(|q| q.pending.len())
             .unwrap_or(0);
@@ -2718,7 +2723,7 @@ fn discover_workloads(dir: &Path) -> Result<Vec<(PathBuf, Workload)>> {
 /// workloads not in the graph are appended in discovery order.
 fn order_workloads_by_deps(
     workloads: Vec<(PathBuf, Workload)>,
-    graph: &orchestr8::dependencies::DependencyGraph,
+    graph: &aether::dependencies::DependencyGraph,
 ) -> Vec<(PathBuf, Workload)> {
     let order = graph.startup_order().unwrap_or_default();
 
@@ -2757,8 +2762,8 @@ pub(crate) async fn deploy_command(
     let workloads = discover_workloads(dir)?;
 
     // Load dependency graph for ordering
-    let graph_path = orchestr8::dependencies::DependencyGraph::default_path();
-    let graph = orchestr8::dependencies::DependencyGraph::load(&graph_path).unwrap_or_default();
+    let graph_path = aether::dependencies::DependencyGraph::default_path();
+    let graph = aether::dependencies::DependencyGraph::load(&graph_path).unwrap_or_default();
 
     let ordered = order_workloads_by_deps(workloads, &graph);
 
@@ -2858,18 +2863,20 @@ pub(crate) async fn deploy_command(
 /// Emit an event and save to the event bus (best-effort, errors are logged).
 /// For single operations. Use `EventBatch` for loops to avoid N disk round-trips.
 pub(crate) fn emit_event(
-    severity: orchestr8::events::EventSeverity,
-    category: orchestr8::events::EventCategory,
+    severity: aether::events::EventSeverity,
+    category: aether::events::EventCategory,
     source: &str,
     workload: Option<&str>,
     title: &str,
     message: &str,
 ) {
-    let path = orchestr8::events::EventBus::default_path();
-    match orchestr8::events::EventBus::load(&path) {
+    let path = aether::events::EventBus::default_path();
+    match aether::events::EventBus::load(&path) {
         Ok(mut bus) => {
             bus.emit_simple(severity, category, source, workload, title, message);
-            let _ = bus.save(&path);
+            if let Err(e) = bus.save(&path) {
+                tracing::warn!("Failed to save event bus: {}", e);
+            }
         }
         Err(e) => {
             tracing::warn!("Failed to emit event: {}", e);
@@ -2879,23 +2886,24 @@ pub(crate) fn emit_event(
 
 /// Batched event emitter — loads once, accumulates events, saves once on drop.
 pub(crate) struct EventBatch {
-    bus: orchestr8::events::EventBus,
+    bus: aether::events::EventBus,
     path: std::path::PathBuf,
 }
 
 impl EventBatch {
     pub(crate) fn new() -> Self {
-        let path = orchestr8::events::EventBus::default_path();
-        let bus = orchestr8::events::EventBus::load(&path).unwrap_or_else(|_| {
-            orchestr8::events::EventBus::new()
+        let path = aether::events::EventBus::default_path();
+        let bus = aether::events::EventBus::load(&path).unwrap_or_else(|e| {
+            tracing::warn!("Failed to load event bus, starting fresh: {}", e);
+            aether::events::EventBus::new()
         });
         Self { bus, path }
     }
 
     pub(crate) fn emit(
         &mut self,
-        severity: orchestr8::events::EventSeverity,
-        category: orchestr8::events::EventCategory,
+        severity: aether::events::EventSeverity,
+        category: aether::events::EventCategory,
         source: &str,
         workload: Option<&str>,
         title: &str,
@@ -2907,7 +2915,9 @@ impl EventBatch {
 
 impl Drop for EventBatch {
     fn drop(&mut self) {
-        let _ = self.bus.save(&self.path);
+        if let Err(e) = self.bus.save(&self.path) {
+            tracing::warn!("Failed to save event batch: {}", e);
+        }
     }
 }
 
@@ -3105,7 +3115,7 @@ pub(crate) async fn watch_command(spec_path: &PathBuf, runtime: Option<String>) 
 
     let mut last_modified = std::fs::metadata(spec_path)
         .and_then(|m| m.modified())
-        .unwrap_or(SystemTime::UNIX_EPOCH);
+        .unwrap_or_else(|_| SystemTime::now());
 
     // Debounce: wait at least 1s after the last change before deploying,
     // to avoid triggering on rapid successive saves (editors do tmp-write + rename).
@@ -3163,13 +3173,13 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
 
     output::header("⚖️", "Cross-Runtime Comparison");
 
-    let cpu = orchestr8::resources::parse_cpu(&workload.requirements.cpu);
-    let mem_gi = orchestr8::resources::parse_memory_gi(&workload.requirements.memory);
+    let cpu = aether::resources::parse_cpu(&workload.requirements.cpu);
+    let mem_gi = aether::resources::parse_memory_gi(&workload.requirements.memory);
 
     // Evaluate each runtime
     let recommended = engine.decide(&workload).ok();
     let mut rows = Vec::new();
-    for runtime in orchestr8::runtime::RuntimeKind::ALL {
+    for runtime in aether::runtime::RuntimeKind::ALL {
         let is_recommended = recommended.as_ref().map(|r| *r == runtime).unwrap_or(false);
 
         let suitability = match runtime {
@@ -3218,7 +3228,7 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
 
     // Cost comparison
     let mut cost_rows = Vec::new();
-    if let Ok(estimates) = orchestr8::cost::estimate_all_providers(&workload) {
+    if let Ok(estimates) = aether::cost::estimate_all_providers(&workload) {
         for estimate in &estimates {
             cost_rows.push(vec![
                 format!("{:?}", estimate.provider),
@@ -3242,7 +3252,7 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
 
 // ─── init: first-run onboarding wizard ───────────────────────────────
 pub(crate) async fn init_command() -> Result<()> {
-    output::banner("ORCHESTR8", "First-Time Setup Wizard");
+    output::banner("AETHER", "First-Time Setup Wizard");
 
     // Step 1: Detect available runtimes
     output::step(1, 4, "Detecting available runtimes");
@@ -3261,8 +3271,8 @@ pub(crate) async fn init_command() -> Result<()> {
 
     // Step 2: Create config directory
     output::step(2, 4, "Initializing configuration");
-    orchestr8::state::StateStore::ensure_state_dir()?;
-    output::success("Created ~/.orchestr8/ directory");
+    aether::state::StateStore::ensure_state_dir()?;
+    output::success("Created ~/.aether/ directory");
 
     // Step 3: Generate sample workload in current directory
     output::step(3, 4, "Generating sample workload");
@@ -3272,7 +3282,7 @@ pub(crate) async fn init_command() -> Result<()> {
     if sample_path.exists() {
         output::info("workload.yaml already exists, skipping");
     } else {
-        let sample = r#"apiVersion: orchestr8/v1
+        let sample = r#"apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -3318,19 +3328,19 @@ network:
         "Setup Complete",
         &[
             ("Runtimes available", format!("{}/3", available_count)),
-            ("Config directory", "~/.orchestr8/".to_string()),
+            ("Config directory", "~/.aether/".to_string()),
             ("Sample workload", "workload.yaml".to_string()),
         ],
     );
 
     output::section("Next Steps");
     output::bullet_list(&[
-        "orchestr8 validate          — Validate the sample workload",
-        "orchestr8 recommend         — Get AI runtime recommendation",
-        "orchestr8 compare           — Compare runtimes for your workload",
-        "orchestr8 run               — Deploy the workload",
-        "orchestr8 tui               — Launch interactive dashboard",
-        "orchestr8 help-all          — View complete command reference",
+        "aether validate          — Validate the sample workload",
+        "aether recommend         — Get AI runtime recommendation",
+        "aether compare           — Compare runtimes for your workload",
+        "aether run               — Deploy the workload",
+        "aether tui               — Launch interactive dashboard",
+        "aether help-all          — View complete command reference",
     ]);
 
     Ok(())
@@ -3340,7 +3350,7 @@ network:
 
 // ─── compose: multi-workload compose file ────────────────────────────
 pub(crate) async fn compose_command(action: ComposeAction) -> Result<()> {
-    use orchestr8::compose;
+    use aether::compose;
 
     match action {
         ComposeAction::Validate { file } => {
@@ -3424,7 +3434,7 @@ pub(crate) async fn compose_command(action: ComposeAction) -> Result<()> {
 
 // ─── plugin: runtime plugin management ───────────────────────────────
 pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
-    use orchestr8::plugin::PluginRegistry;
+    use aether::plugin::PluginRegistry;
 
     let path = PluginRegistry::default_path();
 
@@ -3433,7 +3443,7 @@ pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
             output::header("🔌", "Registered Plugins");
             let reg = PluginRegistry::load(&path)?;
             if reg.plugins.is_empty() {
-                output::muted("No plugins registered. Run `orchestr8 plugin discover` to scan for plugins.");
+                output::muted("No plugins registered. Run `aether plugin discover` to scan for plugins.");
                 return Ok(());
             }
             let rows: Vec<Vec<String>> = reg.plugins.values().map(|p| {
@@ -3449,7 +3459,7 @@ pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
         }
         PluginAction::Discover => {
             output::header("🔍", "Plugin Discovery");
-            let sp = output::spinner("Scanning ~/.orchestr8/plugins/...");
+            let sp = output::spinner("Scanning ~/.aether/plugins/...");
             let mut reg = PluginRegistry::load(&path)?;
             let count = reg.discover()?;
             reg.save(&path)?;
@@ -3466,7 +3476,7 @@ pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
         PluginAction::Register { manifest } => {
             output::header("📦", "Register Plugin");
             let content = std::fs::read_to_string(&manifest)?;
-            let plugin: orchestr8::plugin::PluginManifest = serde_json::from_str(&content)?;
+            let plugin: aether::plugin::PluginManifest = serde_json::from_str(&content)?;
             let mut reg = PluginRegistry::load(&path)?;
             let name = plugin.name.clone();
             reg.register(plugin);
@@ -3492,7 +3502,7 @@ pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
 
 // ─── health: view health history and uptime ──────────────────────────
 pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) -> Result<()> {
-    use orchestr8::health::HealthHistory;
+    use aether::health::HealthHistory;
 
     let health_path = HealthHistory::default_path();
     let history = HealthHistory::load(&health_path)?;
@@ -3509,7 +3519,7 @@ pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) 
 
         if summary.total_checks == 0 {
             output::muted(&format!(
-                "No health data for '{}'. Run `orchestr8 status {}` to record a check.",
+                "No health data for '{}'. Run `aether status {}` to record a check.",
                 name, name
             ));
             return Ok(());
@@ -3539,7 +3549,7 @@ pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) 
 
     if timeline.is_empty() {
         output::muted(&format!(
-            "No health data for '{}'. Run `orchestr8 status {}` to record a check.",
+            "No health data for '{}'. Run `aether status {}` to record a check.",
             name, name
         ));
         return Ok(());
@@ -3588,8 +3598,8 @@ pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
 
     if msg.contains("not found") && (msg.contains("Workload") || msg.contains("workload")) {
         return err.context(
-            "Hint: Run `orchestr8 list` to see deployed workloads, \
-             or `orchestr8 run` to deploy one first."
+            "Hint: Run `aether list` to see deployed workloads, \
+             or `aether run` to deploy one first."
         );
     }
     if msg.contains("Podman not found") {
@@ -3616,8 +3626,8 @@ pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use orchestr8::runtime::RuntimeKind;
-    use orchestr8::spec::*;
+    use aether::runtime::RuntimeKind;
+    use aether::spec::*;
     use std::collections::HashMap;
 
     // ---------------------------------------------------------------
@@ -3626,7 +3636,7 @@ mod tests {
 
     fn make_valid_workload() -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: "test-app".to_string(),
@@ -3691,7 +3701,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_command_missing_file() {
-        let path = PathBuf::from("/tmp/nonexistent_orchestr8_test.yaml");
+        let path = PathBuf::from("/tmp/nonexistent_aether_test.yaml");
         let result = validate_command(&path).await;
         assert!(result.is_err());
     }
@@ -3701,7 +3711,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("invalid.yaml");
         let mut spec = make_valid_workload();
-        spec.api_version = "orchestr8/v99".to_string();
+        spec.api_version = "aether/v99".to_string();
         let yaml = serde_yaml::to_string(&spec).unwrap();
         std::fs::write(&path, yaml).unwrap();
         let result = validate_command(&path).await;
@@ -3782,7 +3792,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_policy_check_command_invalid_spec() {
-        let path = PathBuf::from("/tmp/nonexistent_orchestr8_policy.yaml");
+        let path = PathBuf::from("/tmp/nonexistent_aether_policy.yaml");
         let result = policy_check_command(&path, "production").await;
         assert!(result.is_err());
     }
@@ -3876,12 +3886,12 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let state_path = dir.path().join("state.json");
         // Create an empty state file
-        let store = orchestr8::state::StateStore::new();
+        let store = aether::state::StateStore::new();
         store.save(&state_path).unwrap();
 
         // list_command uses StateStore::default_path() so we can't easily
         // redirect it. Instead, test the underlying StateStore directly.
-        let loaded = orchestr8::state::StateStore::load(&state_path).unwrap();
+        let loaded = aether::state::StateStore::load(&state_path).unwrap();
         assert!(loaded.list().is_empty());
     }
 
@@ -3891,8 +3901,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_metrics_gather_not_empty() {
-        orchestr8::metrics::init();
-        let output = orchestr8::metrics::gather();
+        aether::metrics::init();
+        let output = aether::metrics::gather();
         // Metrics output should contain at least the HELP/TYPE headers
         assert!(!output.is_empty());
     }
@@ -3904,7 +3914,7 @@ mod tests {
     #[tokio::test]
     async fn test_config_show() {
         // The show branch serializes Config to YAML and prints it
-        let config = orchestr8::config::Config::default();
+        let config = aether::config::Config::default();
         let yaml = serde_yaml::to_string(&config).unwrap();
         assert!(yaml.contains("engine"));
         assert!(yaml.contains("migration"));
@@ -3915,19 +3925,19 @@ mod tests {
     async fn test_config_init_and_load() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("config.yaml");
-        let config = orchestr8::config::Config::default();
+        let config = aether::config::Config::default();
         config.save_to(&path).unwrap();
         assert!(path.exists());
 
-        let loaded = orchestr8::config::Config::load_from(&path);
+        let loaded = aether::config::Config::load_from(&path);
         assert_eq!(loaded.engine.enable_scoring, config.engine.enable_scoring);
     }
 
     #[tokio::test]
     async fn test_config_load_nonexistent_returns_default() {
-        let path = PathBuf::from("/tmp/nonexistent_orchestr8_config.yaml");
-        let config = orchestr8::config::Config::load_from(&path);
-        let default = orchestr8::config::Config::default();
+        let path = PathBuf::from("/tmp/nonexistent_aether_config.yaml");
+        let config = aether::config::Config::load_from(&path);
+        let default = aether::config::Config::default();
         assert_eq!(config.engine.enable_scoring, default.engine.enable_scoring);
     }
 
@@ -3939,17 +3949,17 @@ mod tests {
     async fn test_audit_list_empty() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("audit.json");
-        let log = orchestr8::audit::AuditLog::new();
+        let log = aether::audit::AuditLog::new();
         log.save(&path).unwrap();
 
-        let loaded = orchestr8::audit::AuditLog::load(&path).unwrap();
+        let loaded = aether::audit::AuditLog::load(&path).unwrap();
         let summary = loaded.summary();
         assert_eq!(summary.total_events, 0);
     }
 
     #[tokio::test]
     async fn test_audit_record_and_summary() {
-        use orchestr8::audit::{ActionResult, AuditAction, AuditLog};
+        use aether::audit::{ActionResult, AuditAction, AuditLog};
 
         let mut log = AuditLog::new();
         log.record(
@@ -3981,7 +3991,7 @@ mod tests {
 
     #[test]
     fn test_event_bus_emit_and_summary() {
-        use orchestr8::events::{EventBus, EventCategory, EventSeverity};
+        use aether::events::{EventBus, EventCategory, EventSeverity};
 
         let mut bus = EventBus::new();
         bus.emit_simple(
@@ -4007,7 +4017,7 @@ mod tests {
 
     #[test]
     fn test_event_bus_save_and_load() {
-        use orchestr8::events::{EventBus, EventCategory, EventSeverity};
+        use aether::events::{EventBus, EventCategory, EventSeverity};
 
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("events.json");
@@ -4033,11 +4043,11 @@ mod tests {
 
     #[test]
     fn test_state_store_upsert_get_remove() {
-        use orchestr8::runtime::Instance;
+        use aether::runtime::Instance;
 
-        let mut store = orchestr8::state::StateStore::new();
+        let mut store = aether::state::StateStore::new();
 
-        let ws = orchestr8::state::WorkloadState {
+        let ws = aether::state::WorkloadState {
             name: "web".to_string(),
             runtime: RuntimeKind::Podman,
             instance: Instance {
@@ -4063,15 +4073,15 @@ mod tests {
 
     #[test]
     fn test_state_store_save_and_load() {
-        use orchestr8::runtime::Instance;
+        use aether::runtime::Instance;
 
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("state.json");
 
-        let mut store = orchestr8::state::StateStore::new();
+        let mut store = aether::state::StateStore::new();
         store.upsert(
             "svc".to_string(),
-            orchestr8::state::WorkloadState {
+            aether::state::WorkloadState {
                 name: "svc".to_string(),
                 runtime: RuntimeKind::Kubernetes,
                 instance: Instance {
@@ -4088,7 +4098,7 @@ mod tests {
         );
         store.save(&path).unwrap();
 
-        let loaded = orchestr8::state::StateStore::load(&path).unwrap();
+        let loaded = aether::state::StateStore::load(&path).unwrap();
         assert_eq!(loaded.list().len(), 1);
         assert_eq!(loaded.get("svc").unwrap().name, "svc");
     }
@@ -4099,7 +4109,7 @@ mod tests {
 
     #[test]
     fn test_template_generate_all_kinds() {
-        use orchestr8::templates::{generate, TemplateKind, TemplateParams};
+        use aether::templates::{generate, TemplateKind, TemplateParams};
 
         let kinds = vec![
             TemplateKind::WebApp,
@@ -4116,7 +4126,7 @@ mod tests {
 
         for kind in kinds {
             let spec = generate(&kind, &params);
-            assert_eq!(spec.api_version, "orchestr8/v1");
+            assert_eq!(spec.api_version, "aether/v1");
             assert_eq!(spec.kind, "Workload");
             assert!(
                 spec.validate().is_ok(),
@@ -4133,7 +4143,7 @@ mod tests {
     #[test]
     fn test_cost_estimate_all_providers() {
         let spec = make_valid_workload();
-        let estimates = orchestr8::cost::estimate_all_providers(&spec).unwrap();
+        let estimates = aether::cost::estimate_all_providers(&spec).unwrap();
         assert_eq!(estimates.len(), 5); // AWS, Azure, GCP, DigitalOcean, Linode
         for est in &estimates {
             assert!(est.total_monthly > 0.0);
@@ -4146,7 +4156,7 @@ mod tests {
 
     #[test]
     fn test_policy_production_evaluates() {
-        let engine = orchestr8::policy::PolicyEngine::production();
+        let engine = aether::policy::PolicyEngine::production();
         let spec = make_valid_workload();
         let result = engine.evaluate(&spec);
         // Result should have at least some rules evaluated
@@ -4155,7 +4165,7 @@ mod tests {
 
     #[test]
     fn test_policy_development_evaluates() {
-        let engine = orchestr8::policy::PolicyEngine::development();
+        let engine = aether::policy::PolicyEngine::development();
         let spec = make_valid_workload();
         let result = engine.evaluate(&spec);
         assert!(result.policies_evaluated > 0);
@@ -4167,7 +4177,7 @@ mod tests {
 
     #[test]
     fn test_scoring_engine_recommends_runtime() {
-        let engine = orchestr8::ai::scoring::ScoringEngine::with_defaults();
+        let engine = aether::ai::scoring::ScoringEngine::with_defaults();
         let spec = make_valid_workload();
         let result = engine.score(&spec);
         // Should recommend some runtime
@@ -4181,7 +4191,7 @@ mod tests {
 
     #[test]
     fn test_profiler_profiles_workload() {
-        let profiler = orchestr8::ai::profiler::Profiler::with_defaults();
+        let profiler = aether::ai::profiler::Profiler::with_defaults();
         let spec = make_valid_workload();
         let profile = profiler.profile(&spec, None);
         assert_eq!(profile.name, "test-app");
@@ -4190,7 +4200,7 @@ mod tests {
 
     #[test]
     fn test_profiler_with_runtime() {
-        let profiler = orchestr8::ai::profiler::Profiler::with_defaults();
+        let profiler = aether::ai::profiler::Profiler::with_defaults();
         let spec = make_valid_workload();
         let profile = profiler.profile(&spec, Some(RuntimeKind::Podman));
         assert_eq!(profile.name, "test-app");
@@ -4202,7 +4212,7 @@ mod tests {
 
     #[test]
     fn test_scaling_engine_recommend() {
-        use orchestr8::ai::scaling::{ScalingEngine, TimeSeries};
+        use aether::ai::scaling::{ScalingEngine, TimeSeries};
 
         let engine = ScalingEngine::with_defaults();
 
@@ -4228,7 +4238,7 @@ mod tests {
 
     #[test]
     fn test_diff_report_formatting() {
-        use orchestr8::drift::{format_live_diff, DiffRow, LiveDiffReport};
+        use aether::drift::{format_live_diff, DiffRow, LiveDiffReport};
 
         let report = LiveDiffReport {
             workload_name: "test-app".to_string(),
@@ -4263,7 +4273,7 @@ mod tests {
 
     #[test]
     fn test_webhook_channel_add_remove_list() {
-        use orchestr8::events::{ChannelType, EventBus, EventSeverity, NotificationChannel};
+        use aether::events::{ChannelType, EventBus, EventSeverity, NotificationChannel};
 
         let mut bus = EventBus::new();
         let initial = bus.channels().len();
@@ -4378,7 +4388,7 @@ mod tests {
 
     #[test]
     fn test_order_workloads_with_graph() {
-        use orchestr8::dependencies::DependencyGraph;
+        use aether::dependencies::DependencyGraph;
 
         let mut graph = DependencyGraph::new();
         // api depends on db
@@ -4403,7 +4413,7 @@ mod tests {
 
     #[test]
     fn test_order_workloads_without_graph() {
-        use orchestr8::dependencies::DependencyGraph;
+        use aether::dependencies::DependencyGraph;
 
         let graph = DependencyGraph::new();
 
@@ -4425,7 +4435,7 @@ mod tests {
 
     #[test]
     fn test_order_workloads_partial_graph() {
-        use orchestr8::dependencies::DependencyGraph;
+        use aether::dependencies::DependencyGraph;
 
         let mut graph = DependencyGraph::new();
         // Only db-svc is in the graph

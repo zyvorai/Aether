@@ -1,6 +1,6 @@
 # Workload Templates Guide
 
-Orchestr8 provides production-ready workload templates for common use cases. These templates follow best practices for security, scalability, and reliability.
+Aether provides production-ready workload templates for common use cases. These templates follow best practices for security, scalability, and reliability.
 
 ## Overview
 
@@ -41,10 +41,10 @@ vim my-web-app.yaml
 # Update: metadata.name, image details, ingress host
 
 # Validate
-orchestr8 -s my-web-app.yaml validate
+aether -s my-web-app.yaml validate
 
 # Deploy
-orchestr8 -s my-web-app.yaml run
+aether -s my-web-app.yaml run
 ```
 
 **Customization Points:**
@@ -87,10 +87,10 @@ kubectl create secret generic postgres-credentials \
   --from-literal=password=your-secure-password
 
 # Validate
-orchestr8 -s my-database.yaml validate
+aether -s my-database.yaml validate
 
 # Deploy
-orchestr8 -s my-database.yaml run
+aether -s my-database.yaml run
 ```
 
 **Customization Points:**
@@ -138,10 +138,10 @@ kubectl create secret generic ml-secrets \
   --from-literal=huggingface-token=your-token
 
 # Validate
-orchestr8 -s my-training-job.yaml validate
+aether -s my-training-job.yaml validate
 
 # Deploy
-orchestr8 -s my-training-job.yaml run
+aether -s my-training-job.yaml run
 ```
 
 **Customization Points:**
@@ -189,10 +189,10 @@ kubectl create secret generic redis-credentials \
   --from-literal=password=your-redis-password
 
 # Validate
-orchestr8 -s my-redis.yaml validate
+aether -s my-redis.yaml validate
 
 # Deploy
-orchestr8 -s my-redis.yaml run
+aether -s my-redis.yaml run
 ```
 
 **Customization Points:**
@@ -235,16 +235,16 @@ vim my-batch-job.yaml
 # Update: metadata.name, processing parameters
 
 # Validate
-orchestr8 -s my-batch-job.yaml validate
+aether -s my-batch-job.yaml validate
 
 # Run job
-orchestr8 -s my-batch-job.yaml run
+aether -s my-batch-job.yaml run
 
 # Check status
-orchestr8 status my-batch-job
+aether status my-batch-job
 
 # View logs
-orchestr8 logs my-batch-job
+aether logs my-batch-job
 ```
 
 **Customization Points:**
@@ -293,10 +293,10 @@ kubectl create secret generic payment-secrets \
   --from-file=jwt-private-key=jwt.pem
 
 # Validate
-orchestr8 -s my-service.yaml validate
+aether -s my-service.yaml validate
 
 # Deploy
-orchestr8 -s my-service.yaml run
+aether -s my-service.yaml run
 ```
 
 **Customization Points:**
@@ -584,12 +584,12 @@ env:
 
 ### 7. Validate
 ```bash
-orchestr8 -s my-application.yaml validate
+aether -s my-application.yaml validate
 ```
 
 ### 8. Deploy
 ```bash
-orchestr8 -s my-application.yaml run
+aether -s my-application.yaml run
 ```
 
 ## Creating Custom Templates
@@ -684,13 +684,13 @@ Add a header comment:
 
 ```bash
 # Validate syntax
-orchestr8 -s template.yaml validate
+aether -s template.yaml validate
 
 # Dry-run (if supported)
 kubectl apply -f template.yaml --dry-run=client
 
 # Cost estimate
-orchestr8 -s template.yaml cost
+aether -s template.yaml cost
 
 # Schema validation
 yq eval template.yaml
@@ -702,8 +702,8 @@ yq eval template.yaml
 
 ```bash
 # Initialize repository
-git init orchestr8-templates
-cd orchestr8-templates
+git init aether-templates
+cd aether-templates
 
 # Organize by category
 mkdir -p templates/{web,database,ml,batch,microservices}
@@ -732,7 +732,7 @@ metadata:
 ## Support
 
 For template-related issues:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `template`
 - Include: Template name, error message, YAML content
 

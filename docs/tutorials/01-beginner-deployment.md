@@ -1,4 +1,4 @@
-# 🚀 Tutorial 1: Your First Deployment with Orchestr8
+# 🚀 Tutorial 1: Your First Deployment with Aether
 
 > **Estimated time:** 30--45 minutes
 > **Level:** Beginner
@@ -46,46 +46,46 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 ```
 
-### 2. Clone and build Orchestr8
+### 2. Clone and build Aether
 
 ```bash
-git clone https://github.com/example/orchestr8.git
-cd orchestr8
+git clone https://github.com/example/aether.git
+cd aether
 cargo build --release
 ```
 
 ### 3. Add to your PATH
 
 ```bash
-sudo cp target/release/orchestr8 /usr/local/bin/
+sudo cp target/release/aether /usr/local/bin/
 ```
 
 ### 4. Verify the installation
 
 ```bash
-orchestr8 --version
+aether --version
 ```
 
 ### 5. Run the first-time setup wizard
 
 ```bash
-orchestr8 init
+aether init
 ```
 
 The wizard detects available runtimes, creates the default config at
-`~/.orchestr8/config.yaml`, and ensures the state directory exists.
+`~/.aether/config.yaml`, and ensures the state directory exists.
 
 ### 6. Install shell completions *(optional)*
 
 ```bash
 # Bash
-orchestr8 completions bash > ~/.local/share/bash-completion/completions/orchestr8
+aether completions bash > ~/.local/share/bash-completion/completions/aether
 
 # Zsh
-orchestr8 completions zsh > ~/.zsh/completions/_orchestr8
+aether completions zsh > ~/.zsh/completions/_aether
 
 # Fish
-orchestr8 completions fish > ~/.config/fish/completions/orchestr8.fish
+aether completions fish > ~/.config/fish/completions/aether.fish
 ```
 
 ---
@@ -95,8 +95,8 @@ orchestr8 completions fish > ~/.config/fish/completions/orchestr8.fish
 Create a file named `workload.yaml` in your project directory:
 
 ```yaml
-# workload.yaml — Orchestr8 Universal Workload Specification
-apiVersion: orchestr8/v1
+# workload.yaml — Aether Universal Workload Specification
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -172,14 +172,14 @@ health:
 Before deploying, always validate:
 
 ```bash
-orchestr8 validate
+aether validate
 ```
 
-By default, Orchestr8 looks for `workload.yaml` in the current directory.
+By default, Aether looks for `workload.yaml` in the current directory.
 To use a different file:
 
 ```bash
-orchestr8 --spec my-workload.yaml validate
+aether --spec my-workload.yaml validate
 ```
 
 A successful validation prints a property table:
@@ -204,27 +204,27 @@ A successful validation prints a property table:
 ### Deploy the workload
 
 ```bash
-orchestr8 run
+aether run
 ```
 
-Orchestr8 will:
+Aether will:
 
 1. Evaluate the runtime decision engine (rule-based + AI scoring)
 2. Show an interactive runtime selector (unless `--runtime` is passed)
 3. Build the container image via Podman
 4. Start the workload instance
-5. Persist the state to `~/.orchestr8/state.json`
+5. Persist the state to `~/.aether/state.json`
 
 #### Override the runtime explicitly
 
 ```bash
-orchestr8 run --runtime podman
+aether run --runtime podman
 ```
 
 #### Dry-run mode (preview without executing)
 
 ```bash
-orchestr8 --dry-run run
+aether --dry-run run
 ```
 
 This prints what *would* happen without creating any resources.
@@ -236,7 +236,7 @@ This prints what *would* happen without creating any resources.
 ### Check status
 
 ```bash
-orchestr8 status hello-web
+aether status hello-web
 ```
 
 Sample output:
@@ -252,19 +252,19 @@ Sample output:
 ### View logs
 
 ```bash
-orchestr8 logs hello-web
+aether logs hello-web
 ```
 
 #### Follow logs in real-time
 
 ```bash
-orchestr8 logs hello-web --follow
+aether logs hello-web --follow
 ```
 
 ### List all running workloads
 
 ```bash
-orchestr8 list
+aether list
 ```
 
 ```
@@ -279,13 +279,13 @@ orchestr8 list
 
 ```bash
 # JSON (machine-readable, great for scripting)
-orchestr8 --output json list
+aether --output json list
 
 # YAML
-orchestr8 --output yaml status hello-web
+aether --output yaml status hello-web
 
 # Wide table (extra columns)
-orchestr8 --output wide list
+aether --output wide list
 ```
 
 ---
@@ -295,25 +295,25 @@ orchestr8 --output wide list
 ### Stop a workload (preserves state)
 
 ```bash
-orchestr8 stop hello-web
+aether stop hello-web
 ```
 
 ### Delete a workload (removes state and resources)
 
 ```bash
-orchestr8 delete hello-web
+aether delete hello-web
 ```
 
 > ⚠️ **Warning:** `delete` is irreversible. Use `--dry-run` to preview:
 >
 > ```bash
-> orchestr8 --dry-run delete hello-web
+> aether --dry-run delete hello-web
 > ```
 
 ### Automatic confirmation for CI/CD
 
 ```bash
-orchestr8 --yes delete hello-web
+aether --yes delete hello-web
 ```
 
 ---
@@ -323,7 +323,7 @@ orchestr8 --yes delete hello-web
 Launch the interactive terminal dashboard:
 
 ```bash
-orchestr8 tui
+aether tui
 ```
 
 The TUI provides a live view of all deployed workloads with:
@@ -354,11 +354,11 @@ The TUI provides a live view of all deployed workloads with:
 
 ```
 Error: Workload 'hello-web' not found.
-Hint: Run `orchestr8 list` to see deployed workloads.
+Hint: Run `aether list` to see deployed workloads.
 ```
 
 **Cause:** The workload has not been deployed yet, or was deleted.
-**Fix:** Run `orchestr8 list` and verify the name. Redeploy with `orchestr8 run`.
+**Fix:** Run `aether list` and verify the name. Redeploy with `aether run`.
 
 ---
 
@@ -400,7 +400,7 @@ sudo apt install podman
 
 ### Validation failures
 
-Run `orchestr8 validate` and read the error message carefully. Common issues:
+Run `aether validate` and read the error message carefully. Common issues:
 
 | Error                            | Fix                                          |
 |----------------------------------|----------------------------------------------|
@@ -420,7 +420,7 @@ Error: Policy violation: CPU exceeds maximum allowed (16 cores)
 **Fix:** Either reduce resources in your spec, or skip policy checks:
 
 ```bash
-orchestr8 --skip-policy run
+aether --skip-policy run
 ```
 
 > ⚠️ Use `--skip-policy` only in development. Production policies exist for a reason.
@@ -429,7 +429,7 @@ orchestr8 --skip-policy run
 
 ## 🎯 Next Steps
 
-Congratulations -- you have deployed your first workload with Orchestr8! Here is where to go next:
+Congratulations -- you have deployed your first workload with Aether! Here is where to go next:
 
 | Tutorial                                                                 | Topics                                          |
 |--------------------------------------------------------------------------|------------------------------------------------|
@@ -442,19 +442,19 @@ Congratulations -- you have deployed your first workload with Orchestr8! Here is
 
 ```bash
 # Compare your workload across all runtimes
-orchestr8 compare
+aether compare
 
 # Get AI-powered runtime recommendations
-orchestr8 recommend
+aether recommend
 
 # Estimate deployment costs across cloud providers
-orchestr8 cost
+aether cost
 
 # Generate a workload from a template
-orchestr8 template web-app --workload-name my-app --output my-app.yaml
+aether template web-app --workload-name my-app --output my-app.yaml
 
 # Run a policy check
-orchestr8 policy-check
+aether policy-check
 ```
 
 ---

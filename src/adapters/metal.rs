@@ -76,33 +76,33 @@ fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Val
         "spec": {
             "online": true,
             "bootMACAddress": spec.metadata.annotations
-                .get("orchestr8.io/boot-mac-address")
+                .get("aether.io/boot-mac-address")
                 .cloned()
                 .unwrap_or_else(|| {
-                    tracing::warn!(
-                        "No 'orchestr8.io/boot-mac-address' annotation set for '{}'; \
-                         using placeholder MAC '00:00:00:00:00:00'. \
-                         Set the annotation in metadata.annotations to match real hardware."
-                        , spec.metadata.name
+                    tracing::error!(
+                        "REQUIRED: 'aether.io/boot-mac-address' annotation not set for '{}'. \
+                         Metal3 provisioning WILL FAIL without a valid MAC address. \
+                         Set the annotation in metadata.annotations to match real hardware.",
+                        spec.metadata.name
                     );
                     "00:00:00:00:00:00".to_string()
                 }),
             "bootMode": "UEFI",
             "image": {
                 "url": spec.metadata.annotations
-                    .get("orchestr8.io/image-url")
+                    .get("aether.io/image-url")
                     .cloned()
                     .unwrap_or_else(|| {
                         let fallback = format!("http://image-server/{}.img", spec.image_name());
                         tracing::warn!(
-                            "No 'orchestr8.io/image-url' annotation set for '{}'; \
+                            "No 'aether.io/image-url' annotation set for '{}'; \
                              using fallback URL '{}'. Set the annotation for production use.",
                             spec.metadata.name, fallback
                         );
                         fallback
                     }),
                 "checksum": spec.metadata.annotations
-                    .get("orchestr8.io/image-checksum-url")
+                    .get("aether.io/image-checksum-url")
                     .cloned()
                     .unwrap_or_else(|| {
                         format!("http://image-server/{}.img.sha256sum", spec.image_name())
@@ -130,22 +130,22 @@ fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Val
     // Add hardware requirements as annotations for matching
     if let Some(annotations) = bmh["metadata"]["annotations"].as_object_mut() {
         annotations.insert(
-            "orchestr8.io/cpu-cores".to_string(),
+            "aether.io/cpu-cores".to_string(),
             json!(cpu_cores.to_string()),
         );
         annotations.insert(
-            "orchestr8.io/memory-mb".to_string(),
+            "aether.io/memory-mb".to_string(),
             json!(memory_mb.to_string()),
         );
 
         // Add GPU requirements if specified
         if let Some(ref gpu_req) = spec.requirements.gpu {
             annotations.insert(
-                "orchestr8.io/gpu-vendor".to_string(),
+                "aether.io/gpu-vendor".to_string(),
                 json!(gpu_req.vendor.clone()),
             );
             annotations.insert(
-                "orchestr8.io/gpu-count".to_string(),
+                "aether.io/gpu-count".to_string(),
                 json!(gpu_req.count.to_string()),
             );
         }
@@ -376,7 +376,7 @@ impl Runtime for Metal3Runtime {
     async fn list(&self) -> crate::Result<Vec<Instance>> {
         let api = self.get_baremetalhost_api().await?;
 
-        // List only hosts managed by orchestr8
+        // List only hosts managed by aether
         let lp = common::managed_list_params();
         let host_list = api.list(&lp).await?;
 
@@ -434,7 +434,7 @@ mod tests {
     // ---------------------------------------------------------------
     fn make_workload(name: &str, cpu: &str, memory: &str, storage: &str) -> Workload {
         Workload {
-            api_version: "orchestr8/v1".to_string(),
+            api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
             metadata: Metadata {
                 name: name.to_string(),
@@ -648,7 +648,7 @@ mod tests {
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         assert_eq!(bmh["metadata"]["labels"]["app"], "my-host");
-        assert_eq!(bmh["metadata"]["labels"]["managed-by"], "orchestr8");
+        assert_eq!(bmh["metadata"]["labels"]["managed-by"], "aether");
     }
 
     #[test]
@@ -761,7 +761,7 @@ mod tests {
         let spec = make_workload("my-host", "8", "64Gi", "500Gi");
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
-        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "8");
+        assert_eq!(bmh["metadata"]["annotations"]["aether.io/cpu-cores"], "8");
     }
 
     #[test]
@@ -769,7 +769,7 @@ mod tests {
         let spec = make_workload("my-host", "4000m", "64Gi", "500Gi");
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
-        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "4");
+        assert_eq!(bmh["metadata"]["annotations"]["aether.io/cpu-cores"], "4");
     }
 
     #[test]
@@ -778,7 +778,7 @@ mod tests {
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         // 500m / 1000 = 0, clamped to 1
-        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "1");
+        assert_eq!(bmh["metadata"]["annotations"]["aether.io/cpu-cores"], "1");
     }
 
     #[test]
@@ -788,7 +788,7 @@ mod tests {
 
         // 64 Gi = 65536 MB
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/memory-mb"],
+            bmh["metadata"]["annotations"]["aether.io/memory-mb"],
             "65536"
         );
     }
@@ -799,7 +799,7 @@ mod tests {
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/memory-mb"],
+            bmh["metadata"]["annotations"]["aether.io/memory-mb"],
             "2048"
         );
     }
@@ -812,8 +812,8 @@ mod tests {
         let spec = make_workload("my-host", "8", "64Gi", "500Gi");
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
-        assert!(bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"].is_null());
-        assert!(bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"].is_null());
+        assert!(bmh["metadata"]["annotations"]["aether.io/gpu-vendor"].is_null());
+        assert!(bmh["metadata"]["annotations"]["aether.io/gpu-count"].is_null());
     }
 
     #[test]
@@ -827,7 +827,7 @@ mod tests {
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"],
+            bmh["metadata"]["annotations"]["aether.io/gpu-vendor"],
             "nvidia"
         );
     }
@@ -843,7 +843,7 @@ mod tests {
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"],
+            bmh["metadata"]["annotations"]["aether.io/gpu-count"],
             "4"
         );
     }
@@ -859,11 +859,11 @@ mod tests {
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"],
+            bmh["metadata"]["annotations"]["aether.io/gpu-vendor"],
             "amd"
         );
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"],
+            bmh["metadata"]["annotations"]["aether.io/gpu-count"],
             "1"
         );
     }
@@ -879,11 +879,11 @@ mod tests {
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/gpu-vendor"],
+            bmh["metadata"]["annotations"]["aether.io/gpu-vendor"],
             "intel"
         );
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/gpu-count"],
+            bmh["metadata"]["annotations"]["aether.io/gpu-count"],
             "3"
         );
     }
@@ -907,9 +907,9 @@ mod tests {
             "production bare metal worker"
         );
         // Hardware annotations should also be present
-        assert_eq!(bmh["metadata"]["annotations"]["orchestr8.io/cpu-cores"], "4");
+        assert_eq!(bmh["metadata"]["annotations"]["aether.io/cpu-cores"], "4");
         assert_eq!(
-            bmh["metadata"]["annotations"]["orchestr8.io/memory-mb"],
+            bmh["metadata"]["annotations"]["aether.io/memory-mb"],
             "32768"
         );
     }

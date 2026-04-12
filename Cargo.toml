@@ -1,5 +1,5 @@
 [package]
-name = "orchestr8"
+name = "aether"
 version = "0.3.0"
 edition = "2021"
 authors = ["Susant Sahani <ssahani@gmail.com>"]
@@ -75,9 +75,9 @@ hyper = "1"
 bytes = "1"
 
 [[bin]]
-name = "orchestr8"
+name = "aether"
 path = "src/main.rs"
 
 [lib]
-name = "orchestr8"
+name = "aether"
 path = "src/lib.rs"

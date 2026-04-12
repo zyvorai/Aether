@@ -6,7 +6,7 @@ use std::io;
 
 /// Generate shell completions
 pub fn generate_completions(shell: Shell, cmd: &mut Command) {
-    let bin_name = "orchestr8";
+    let bin_name = "aether";
     generate(shell, cmd, bin_name, &mut io::stdout());
 }
 
@@ -31,15 +31,15 @@ pub fn show_help() {
         output::table(
             &["📋 Core Operations", "Description", "Example"],
             vec![
-                vec!["validate".into(), "Validate workload spec".into(), "orchestr8 validate".into()],
-                vec!["build".into(), "Build workload image".into(), "orchestr8 build".into()],
-                vec!["run".into(), "Deploy workload".into(), "orchestr8 run".into()],
-                vec!["stop <name>".into(), "Stop running instance".into(), "orchestr8 stop my-app".into()],
-                vec!["status <name>".into(), "Get instance status".into(), "orchestr8 status my-app".into()],
-                vec!["logs <name>".into(), "View instance logs".into(), "orchestr8 logs my-app -f".into()],
-                vec!["delete <name>".into(), "Delete instance".into(), "orchestr8 delete my-app".into()],
-                vec!["list".into(), "List all instances".into(), "orchestr8 list".into()],
-                vec!["deploy <dir>".into(), "Deploy all specs in dir".into(), "orchestr8 deploy ./specs".into()],
+                vec!["validate".into(), "Validate workload spec".into(), "aether validate".into()],
+                vec!["build".into(), "Build workload image".into(), "aether build".into()],
+                vec!["run".into(), "Deploy workload".into(), "aether run".into()],
+                vec!["stop <name>".into(), "Stop running instance".into(), "aether stop my-app".into()],
+                vec!["status <name>".into(), "Get instance status".into(), "aether status my-app".into()],
+                vec!["logs <name>".into(), "View instance logs".into(), "aether logs my-app -f".into()],
+                vec!["delete <name>".into(), "Delete instance".into(), "aether delete my-app".into()],
+                vec!["list".into(), "List all instances".into(), "aether list".into()],
+                vec!["deploy <dir>".into(), "Deploy all specs in dir".into(), "aether deploy ./specs".into()],
             ],
         )
     );
@@ -50,10 +50,10 @@ pub fn show_help() {
         output::table(
             &["🔄 Migration & Rollback", "Description", "Example"],
             vec![
-                vec!["migrate <name>".into(), "Migrate to new runtime".into(), "orchestr8 migrate app -t kube".into()],
-                vec!["rollback <name>".into(), "Rollback to snapshot".into(), "orchestr8 rollback my-app".into()],
-                vec!["diff <name>".into(), "Compare spec vs live".into(), "orchestr8 diff my-app".into()],
-                vec!["drift <name>".into(), "Detect config drift".into(), "orchestr8 drift my-app".into()],
+                vec!["migrate <name>".into(), "Migrate to new runtime".into(), "aether migrate app -t kube".into()],
+                vec!["rollback <name>".into(), "Rollback to snapshot".into(), "aether rollback my-app".into()],
+                vec!["diff <name>".into(), "Compare spec vs live".into(), "aether diff my-app".into()],
+                vec!["drift <name>".into(), "Detect config drift".into(), "aether drift my-app".into()],
             ],
         )
     );
@@ -64,12 +64,12 @@ pub fn show_help() {
         output::table(
             &["🤖 AI Intelligence", "Description", "Example"],
             vec![
-                vec!["recommend".into(), "AI runtime recommendation".into(), "orchestr8 recommend".into()],
-                vec!["profile".into(), "Workload profiling".into(), "orchestr8 profile".into()],
-                vec!["analyze-logs <name>".into(), "Log anomaly detection".into(), "orchestr8 analyze-logs app".into()],
-                vec!["migration-advice".into(), "Migration risk analysis".into(), "orchestr8 migration-advice app kube".into()],
-                vec!["scaling-advice".into(), "Predictive scaling".into(), "orchestr8 scaling-advice".into()],
-                vec!["affinity".into(), "Runtime affinity learning".into(), "orchestr8 affinity recommend web-service".into()],
+                vec!["recommend".into(), "AI runtime recommendation".into(), "aether recommend".into()],
+                vec!["profile".into(), "Workload profiling".into(), "aether profile".into()],
+                vec!["analyze-logs <name>".into(), "Log anomaly detection".into(), "aether analyze-logs app".into()],
+                vec!["migration-advice".into(), "Migration risk analysis".into(), "aether migration-advice app kube".into()],
+                vec!["scaling-advice".into(), "Predictive scaling".into(), "aether scaling-advice".into()],
+                vec!["affinity".into(), "Runtime affinity learning".into(), "aether affinity recommend web-service".into()],
             ],
         )
     );
@@ -80,13 +80,13 @@ pub fn show_help() {
         output::table(
             &["📊 Operations & Monitoring", "Description", "Example"],
             vec![
-                vec!["tui".into(), "Interactive dashboard".into(), "orchestr8 tui".into()],
-                vec!["metrics".into(), "Prometheus metrics".into(), "orchestr8 metrics".into()],
-                vec!["audit".into(), "Audit trail".into(), "orchestr8 audit --summary".into()],
-                vec!["events".into(), "Event log".into(), "orchestr8 events --last 10".into()],
-                vec!["orchestrate".into(), "Health monitoring".into(), "orchestr8 orchestrate watch".into()],
-                vec!["schedule".into(), "Workload scheduling".into(), "orchestr8 schedule place app".into()],
-                vec!["sla".into(), "SLA compliance".into(), "orchestr8 sla check app --uptime 99.9".into()],
+                vec!["tui".into(), "Interactive dashboard".into(), "aether tui".into()],
+                vec!["metrics".into(), "Prometheus metrics".into(), "aether metrics".into()],
+                vec!["audit".into(), "Audit trail".into(), "aether audit --summary".into()],
+                vec!["events".into(), "Event log".into(), "aether events --last 10".into()],
+                vec!["orchestrate".into(), "Health monitoring".into(), "aether orchestrate watch".into()],
+                vec!["schedule".into(), "Workload scheduling".into(), "aether schedule place app".into()],
+                vec!["sla".into(), "SLA compliance".into(), "aether sla check app --uptime 99.9".into()],
             ],
         )
     );
@@ -97,12 +97,12 @@ pub fn show_help() {
         output::table(
             &["⚙️  Configuration", "Description", "Example"],
             vec![
-                vec!["config".into(), "Show/init configuration".into(), "orchestr8 config --init".into()],
-                vec!["template".into(), "Generate from template".into(), "orchestr8 template web-app".into()],
-                vec!["policy-check".into(), "Policy compliance".into(), "orchestr8 policy-check -p production".into()],
-                vec!["deps".into(), "Dependency management".into(), "orchestr8 deps show".into()],
-                vec!["secrets".into(), "Secret management".into(), "orchestr8 secrets list".into()],
-                vec!["env".into(), "Environment management".into(), "orchestr8 env list".into()],
+                vec!["config".into(), "Show/init configuration".into(), "aether config --init".into()],
+                vec!["template".into(), "Generate from template".into(), "aether template web-app".into()],
+                vec!["policy-check".into(), "Policy compliance".into(), "aether policy-check -p production".into()],
+                vec!["deps".into(), "Dependency management".into(), "aether deps show".into()],
+                vec!["secrets".into(), "Secret management".into(), "aether secrets list".into()],
+                vec!["env".into(), "Environment management".into(), "aether env list".into()],
             ],
         )
     );
@@ -113,14 +113,14 @@ pub fn show_help() {
         output::table(
             &["🔧 Infrastructure", "Description", "Example"],
             vec![
-                vec!["serve".into(), "Start API server".into(), "orchestr8 serve --port 8080".into()],
-                vec!["backup".into(), "Backup state".into(), "orchestr8 backup -n pre-deploy".into()],
-                vec!["restore".into(), "Restore from backup".into(), "orchestr8 restore backup.tar.gz".into()],
-                vec!["cost".into(), "Cost estimation".into(), "orchestr8 cost -p all".into()],
-                vec!["webhook".into(), "Webhook notifications".into(), "orchestr8 webhook list".into()],
-                vec!["completions".into(), "Shell completions".into(), "orchestr8 completions bash".into()],
-                vec!["list-backups".into(), "List available backups".into(), "orchestr8 list-backups".into()],
-                vec!["help-all".into(), "This command reference".into(), "orchestr8 help-all".into()],
+                vec!["serve".into(), "Start API server".into(), "aether serve --port 8080".into()],
+                vec!["backup".into(), "Backup state".into(), "aether backup -n pre-deploy".into()],
+                vec!["restore".into(), "Restore from backup".into(), "aether restore backup.tar.gz".into()],
+                vec!["cost".into(), "Cost estimation".into(), "aether cost -p all".into()],
+                vec!["webhook".into(), "Webhook notifications".into(), "aether webhook list".into()],
+                vec!["completions".into(), "Shell completions".into(), "aether completions bash".into()],
+                vec!["list-backups".into(), "List available backups".into(), "aether list-backups".into()],
+                vec!["help-all".into(), "This command reference".into(), "aether help-all".into()],
             ],
         )
     );
@@ -131,16 +131,16 @@ pub fn show_help() {
         output::table(
             &["🚀 Developer Workflow", "Description", "Example"],
             vec![
-                vec!["exec <name>".into(), "Shell into workload".into(), "orchestr8 exec my-app".into()],
-                vec!["port-forward <name>".into(), "Forward local ports".into(), "orchestr8 port-forward my-app 8080:80".into()],
-                vec!["watch".into(), "Auto-redeploy on changes".into(), "orchestr8 watch".into()],
-                vec!["compare".into(), "Cross-runtime comparison".into(), "orchestr8 compare".into()],
-                vec!["init".into(), "First-time setup wizard".into(), "orchestr8 init".into()],
-                vec!["compose up".into(), "Deploy from compose file".into(), "orchestr8 compose up".into()],
-                vec!["compose down".into(), "Stop compose workloads".into(), "orchestr8 compose down".into()],
-                vec!["plugin list".into(), "List runtime plugins".into(), "orchestr8 plugin list".into()],
-                vec!["plugin discover".into(), "Scan for plugins".into(), "orchestr8 plugin discover".into()],
-                vec!["health <name>".into(), "Health timeline & uptime".into(), "orchestr8 health my-app".into()],
+                vec!["exec <name>".into(), "Shell into workload".into(), "aether exec my-app".into()],
+                vec!["port-forward <name>".into(), "Forward local ports".into(), "aether port-forward my-app 8080:80".into()],
+                vec!["watch".into(), "Auto-redeploy on changes".into(), "aether watch".into()],
+                vec!["compare".into(), "Cross-runtime comparison".into(), "aether compare".into()],
+                vec!["init".into(), "First-time setup wizard".into(), "aether init".into()],
+                vec!["compose up".into(), "Deploy from compose file".into(), "aether compose up".into()],
+                vec!["compose down".into(), "Stop compose workloads".into(), "aether compose down".into()],
+                vec!["plugin list".into(), "List runtime plugins".into(), "aether plugin list".into()],
+                vec!["plugin discover".into(), "Scan for plugins".into(), "aether plugin discover".into()],
+                vec!["health <name>".into(), "Health timeline & uptime".into(), "aether health my-app".into()],
             ],
         )
     );

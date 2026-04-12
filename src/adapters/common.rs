@@ -22,7 +22,7 @@ pub fn build_managed_labels(
     }
     // Managed labels always win — insert after user labels to prevent overrides
     labels.insert("app".to_string(), name.to_string());
-    labels.insert("managed-by".to_string(), "orchestr8".to_string());
+    labels.insert("managed-by".to_string(), "aether".to_string());
     labels
 }
 
@@ -63,9 +63,9 @@ pub fn validate_kube_name(name: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Build ListParams that filter to orchestr8-managed resources
+/// Build ListParams that filter to aether-managed resources
 pub fn managed_list_params() -> ListParams {
-    ListParams::default().labels("managed-by=orchestr8")
+    ListParams::default().labels("managed-by=aether")
 }
 
 /// Build a "not found" Status for a missing resource
@@ -149,7 +149,7 @@ mod tests {
     fn test_build_managed_labels_base() {
         let labels = build_managed_labels("my-app", &HashMap::new());
         assert_eq!(labels.get("app").unwrap(), "my-app");
-        assert_eq!(labels.get("managed-by").unwrap(), "orchestr8");
+        assert_eq!(labels.get("managed-by").unwrap(), "aether");
         assert_eq!(labels.len(), 2);
     }
 
@@ -161,7 +161,7 @@ mod tests {
 
         let labels = build_managed_labels("my-app", &user);
         assert_eq!(labels.get("app").unwrap(), "my-app");
-        assert_eq!(labels.get("managed-by").unwrap(), "orchestr8");
+        assert_eq!(labels.get("managed-by").unwrap(), "aether");
         assert_eq!(labels.get("env").unwrap(), "production");
         assert_eq!(labels.get("team").unwrap(), "infra");
         assert_eq!(labels.len(), 4);
@@ -175,7 +175,7 @@ mod tests {
         let labels = build_managed_labels("my-app", &user);
         // Managed labels are inserted after user labels, so they take precedence.
         // Users cannot override reserved keys like "managed-by".
-        assert_eq!(labels.get("managed-by").unwrap(), "orchestr8");
+        assert_eq!(labels.get("managed-by").unwrap(), "aether");
     }
 
     // ── managed_list_params ─────────────────────────────────────────
@@ -183,7 +183,7 @@ mod tests {
     #[test]
     fn test_managed_list_params_has_label_selector() {
         let lp = managed_list_params();
-        assert_eq!(lp.label_selector.as_deref(), Some("managed-by=orchestr8"));
+        assert_eq!(lp.label_selector.as_deref(), Some("managed-by=aether"));
     }
 
     // ── not_found_status ────────────────────────────────────────────

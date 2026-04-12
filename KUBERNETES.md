@@ -1,6 +1,6 @@
 # Kubernetes Runtime Guide
 
-This guide explains how to use Orchestr8 with Kubernetes clusters.
+This guide explains how to use Aether with Kubernetes clusters.
 
 ## Prerequisites
 
@@ -26,27 +26,27 @@ This guide explains how to use Orchestr8 with Kubernetes clusters.
 
 ### 1. Configure Namespace (Optional)
 
-By default, Orchestr8 uses the `default` namespace. You can override it with the `-n` / `--namespace` CLI flag or the `ORCHESTR8_NAMESPACE` environment variable:
+By default, Aether uses the `default` namespace. You can override it with the `-n` / `--namespace` CLI flag or the `AETHER_NAMESPACE` environment variable:
 
 ```bash
 # Option A: CLI flag (highest priority)
-orchestr8 -n my-namespace run --runtime kube
+aether -n my-namespace run --runtime kube
 
 # Option B: Environment variable
-export ORCHESTR8_NAMESPACE=my-namespace
+export AETHER_NAMESPACE=my-namespace
 
 # Option C: Per-command environment variable
-ORCHESTR8_NAMESPACE=staging orchestr8 run --runtime kube
+AETHER_NAMESPACE=staging aether run --runtime kube
 ```
 
 Or create a custom namespace first:
 
 ```bash
-kubectl create namespace orchestr8-demo
-orchestr8 -n orchestr8-demo run --runtime kube
+kubectl create namespace aether-demo
+aether -n aether-demo run --runtime kube
 ```
 
-**Namespace resolution order:** `--namespace` flag > `ORCHESTR8_NAMESPACE` env var > `"default"`.
+**Namespace resolution order:** `--namespace` flag > `AETHER_NAMESPACE` env var > `"default"`.
 
 ### 2. Prepare Your Image
 
@@ -72,7 +72,7 @@ docker push docker.io/yourorg/web-app:latest
 See `workload-k8s.yaml` for a complete example:
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -81,7 +81,7 @@ metadata:
   project: demo
 
 build:
-  registry: docker.io/yourorg/orchestr8
+  registry: docker.io/yourorg/aether
 
 runtime:
   preferred: kube
@@ -100,20 +100,20 @@ network:
 
 ```bash
 # Validate spec
-orchestr8 validate --spec workload-k8s.yaml
+aether validate --spec workload-k8s.yaml
 
 # Deploy to cluster
-orchestr8 run --spec workload-k8s.yaml
+aether run --spec workload-k8s.yaml
 
 # Or explicitly select Kubernetes runtime
-orchestr8 run --spec workload-k8s.yaml --runtime kube
+aether run --spec workload-k8s.yaml --runtime kube
 ```
 
 ### 5. Check Status
 
 ```bash
 # Get workload status
-orchestr8 status web-app
+aether status web-app
 
 # Or use kubectl directly
 kubectl get pods -l app=web-app
@@ -124,7 +124,7 @@ kubectl get svc web-app-service
 
 ```bash
 # Stream logs
-orchestr8 logs web-app --follow
+aether logs web-app --follow
 
 # Or use kubectl
 kubectl logs -l app=web-app -f
@@ -134,15 +134,15 @@ kubectl logs -l app=web-app -f
 
 ```bash
 # Clean up all resources (Pod, Service, PVC)
-orchestr8 delete web-app
+aether delete web-app
 
 # Verify deletion
-kubectl get all -l managed-by=orchestr8
+kubectl get all -l managed-by=aether
 ```
 
-## What Orchestr8 Creates
+## What Aether Creates
 
-When you deploy a workload to Kubernetes, Orchestr8 automatically creates:
+When you deploy a workload to Kubernetes, Aether automatically creates:
 
 ### 1. Pod
 
@@ -153,7 +153,7 @@ metadata:
   name: web-app
   labels:
     app: web-app
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   containers:
   - name: web-app
@@ -190,7 +190,7 @@ metadata:
   name: web-app-service
   labels:
     app: web-app
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   type: ClusterIP  # or NodePort, LoadBalancer
   selector:
@@ -210,7 +210,7 @@ metadata:
   name: web-app-pvc
   labels:
     app: web-app
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   accessModes:
   - ReadWriteOnce
@@ -224,11 +224,11 @@ When persistence is enabled, the PVC is automatically mounted at `/data` inside 
 
 ### 4. Volume Mounts (ConfigMaps, Secrets, PVCs)
 
-Orchestr8 automatically creates volume mounts when `mount_path` is specified in ConfigMap or Secret definitions, or when persistence is enabled.
+Aether automatically creates volume mounts when `mount_path` is specified in ConfigMap or Secret definitions, or when persistence is enabled.
 
 **ConfigMap volume mount:**
 
-When a ConfigMap has a `mount_path` field, Orchestr8 creates a read-only volume mount:
+When a ConfigMap has a `mount_path` field, Aether creates a read-only volume mount:
 
 ```yaml
 config:
@@ -406,7 +406,7 @@ kubectl get storageclass
 
 ## Health Checks
 
-Orchestr8 automatically configures Kubernetes probes:
+Aether automatically configures Kubernetes probes:
 
 ### Liveness Probe
 
@@ -462,16 +462,16 @@ requirements:
   memory: 4Gi
 ```
 
-Orchestr8 sets both `requests` and `limits` to the same value for guaranteed QoS.
+Aether sets both `requests` and `limits` to the same value for guaranteed QoS.
 
 ## Labels and Annotations
 
 ### Automatic Labels
 
-Orchestr8 adds these labels to all resources:
+Aether adds these labels to all resources:
 
 - `app: <workload-name>` - Application identifier
-- `managed-by: orchestr8` - Management tool
+- `managed-by: aether` - Management tool
 
 ### Custom Labels
 
@@ -506,21 +506,21 @@ kubectl config get-contexts
 kubectl config use-context gke-production
 
 # Deploy to new cluster
-orchestr8 run --spec workload-k8s.yaml
+aether run --spec workload-k8s.yaml
 ```
 
 ### Namespace Isolation
 
 ```bash
 # Development (using CLI flag)
-orchestr8 -n dev run --spec workload-k8s.yaml
+aether -n dev run --spec workload-k8s.yaml
 
 # Production (using CLI flag)
-orchestr8 -n prod run --spec workload-k8s.yaml
+aether -n prod run --spec workload-k8s.yaml
 
 # Or using environment variable
-export ORCHESTR8_NAMESPACE=dev
-orchestr8 run --spec workload-k8s.yaml
+export AETHER_NAMESPACE=dev
+aether run --spec workload-k8s.yaml
 ```
 
 ## Troubleshooting
@@ -604,20 +604,20 @@ kubectl cp web-app:/app/output.log ./output.log
 ### Delete Specific Workload
 
 ```bash
-orchestr8 delete web-app
+aether delete web-app
 ```
 
-### Delete All Orchestr8 Resources
+### Delete All Aether Resources
 
 ```bash
-kubectl delete all -l managed-by=orchestr8
-kubectl delete pvc -l managed-by=orchestr8
+kubectl delete all -l managed-by=aether
+kubectl delete pvc -l managed-by=aether
 ```
 
 ### Delete Namespace
 
 ```bash
-kubectl delete namespace orchestr8-demo
+kubectl delete namespace aether-demo
 ```
 
 ## Next Steps
@@ -633,26 +633,26 @@ kubectl delete namespace orchestr8-demo
 
 ```bash
 # Validate
-orchestr8 validate --spec workload-k8s.yaml
+aether validate --spec workload-k8s.yaml
 
 # Deploy
-orchestr8 run --spec workload-k8s.yaml --runtime kube
+aether run --spec workload-k8s.yaml --runtime kube
 
 # Status
-orchestr8 status web-app
+aether status web-app
 
 # Logs
-orchestr8 logs web-app --follow
+aether logs web-app --follow
 
 # Delete
-orchestr8 delete web-app
+aether delete web-app
 
 # List all
-orchestr8 list
+aether list
 
 # With custom namespace (CLI flag)
-orchestr8 -n production run --spec workload-k8s.yaml
+aether -n production run --spec workload-k8s.yaml
 
 # Or using environment variable
-ORCHESTR8_NAMESPACE=production orchestr8 run --spec workload-k8s.yaml
+AETHER_NAMESPACE=production aether run --spec workload-k8s.yaml
 ```

@@ -84,7 +84,7 @@ impl Runtime for KubeVirtRuntime {
 - **status**: Monitors VM running and ready state
 - **logs**: Returns virtctl console access commands
 - **delete**: Removes VirtualMachine and DataVolume
-- **list**: Queries all VMs with `managed-by=orchestr8` label
+- **list**: Queries all VMs with `managed-by=aether` label
 
 ### 3. CLI Integration
 
@@ -93,7 +93,7 @@ impl Runtime for KubeVirtRuntime {
 Added KubeVirt support to all CLI commands:
 
 ```rust
-use orchestr8::adapters::{KubeVirtRuntime, KubernetesRuntime, PodmanRuntime};
+use aether::adapters::{KubeVirtRuntime, KubernetesRuntime, PodmanRuntime};
 
 // In build_command()
 RuntimeKind::KubeVirt => {
@@ -114,14 +114,14 @@ RuntimeKind::KubeVirt => {
 ```
 
 **Commands now supporting KubeVirt:**
-- `orchestr8 build --runtime kubevirt`
-- `orchestr8 run --runtime kubevirt`
-- `orchestr8 stop <vm-name>`
-- `orchestr8 status <vm-name>`
-- `orchestr8 logs <vm-name>`
-- `orchestr8 delete <vm-name>`
-- `orchestr8 list` (shows VMs alongside containers)
-- `orchestr8 tui` (displays VMs with 🖥️ icon)
+- `aether build --runtime kubevirt`
+- `aether run --runtime kubevirt`
+- `aether stop <vm-name>`
+- `aether status <vm-name>`
+- `aether logs <vm-name>`
+- `aether delete <vm-name>`
+- `aether list` (shows VMs alongside containers)
+- `aether tui` (displays VMs with 🖥️ icon)
 
 ### 4. Example Workload
 
@@ -130,7 +130,7 @@ RuntimeKind::KubeVirt => {
 Complete VM specification example:
 
 ```yaml
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 
 metadata:
@@ -238,7 +238,7 @@ metadata:
   name: ubuntu-vm-disk
   labels:
     app: ubuntu-vm
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   source:
     registry:
@@ -259,7 +259,7 @@ metadata:
   name: ubuntu-vm
   labels:
     app: ubuntu-vm
-    managed-by: orchestr8
+    managed-by: aether
 spec:
   running: true
   template:
@@ -441,10 +441,10 @@ When `network.service: false`:
 **Test 1: Basic VM Deployment**
 ```bash
 # Validate
-orchestr8 validate --spec workload-kubevirt.yaml
+aether validate --spec workload-kubevirt.yaml
 
 # Deploy
-orchestr8 run --spec workload-kubevirt.yaml --runtime kubevirt
+aether run --spec workload-kubevirt.yaml --runtime kubevirt
 
 # Verify
 kubectl get vm
@@ -455,20 +455,20 @@ kubectl get vmi
 **Test 2: VM Lifecycle**
 ```bash
 # Create
-orchestr8 run --spec workload-kubevirt.yaml --runtime kubevirt
+aether run --spec workload-kubevirt.yaml --runtime kubevirt
 
 # Status
-orchestr8 status ubuntu-vm
+aether status ubuntu-vm
 
 # Stop
-orchestr8 stop ubuntu-vm
+aether stop ubuntu-vm
 
 # Verify stopped
 kubectl get vm ubuntu-vm -o jsonpath='{.spec.running}'
 # Should show: false
 
 # Delete
-orchestr8 delete ubuntu-vm
+aether delete ubuntu-vm
 
 # Verify deleted
 kubectl get vm
@@ -478,10 +478,10 @@ kubectl get dv
 **Test 3: Console Access**
 ```bash
 # Deploy VM
-orchestr8 run --spec workload-kubevirt.yaml --runtime kubevirt
+aether run --spec workload-kubevirt.yaml --runtime kubevirt
 
 # Get console commands
-orchestr8 logs ubuntu-vm
+aether logs ubuntu-vm
 
 # Access console
 virtctl console ubuntu-vm
@@ -494,11 +494,11 @@ virtctl vnc ubuntu-vm
 
 ```bash
 $ cargo build
-   Compiling orchestr8 v0.1.0
+   Compiling aether v0.1.0
     Finished `dev` profile in 4.94s
 
 $ cargo build --release
-   Compiling orchestr8 v0.1.0
+   Compiling aether v0.1.0
     Finished `release` profile in 2m 13s
 ```
 
@@ -596,7 +596,7 @@ $ cargo build --release
 ```bash
 # Create spec
 cat > simple-vm.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: test-vm
@@ -619,10 +619,10 @@ persistence:
 EOF
 
 # Deploy
-orchestr8 run --spec simple-vm.yaml --runtime kubevirt
+aether run --spec simple-vm.yaml --runtime kubevirt
 
 # Monitor
-orchestr8 tui
+aether tui
 ```
 
 ### Example 2: GPU VM
@@ -630,7 +630,7 @@ orchestr8 tui
 ```bash
 # Create GPU VM spec
 cat > gpu-vm.yaml <<EOF
-apiVersion: orchestr8/v1
+apiVersion: aether/v1
 kind: Workload
 metadata:
   name: ml-vm
@@ -649,7 +649,7 @@ runtime:
 EOF
 
 # Deploy
-orchestr8 run --spec gpu-vm.yaml --runtime kubevirt
+aether run --spec gpu-vm.yaml --runtime kubevirt
 
 # Verify GPU
 kubectl get vm ml-vm -o yaml | grep -A5 gpus
@@ -659,12 +659,12 @@ kubectl get vm ml-vm -o yaml | grep -A5 gpus
 
 ```bash
 # Deploy same app to different runtimes
-orchestr8 run --spec app.yaml --runtime podman
-orchestr8 run --spec app.yaml --runtime kube
-orchestr8 run --spec app.yaml --runtime kubevirt
+aether run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime kube
+aether run --spec app.yaml --runtime kubevirt
 
 # Compare in TUI
-orchestr8 tui
+aether tui
 # See:
 #   app-container 🐳 podman     ● running
 #   app-pod       ☸️ kubernetes ● running
@@ -752,7 +752,7 @@ Display VMs with distinct icon:
 
 **Phase 4 Complete!**
 
-Added full KubeVirt support to Orchestr8:
+Added full KubeVirt support to Aether:
 
 ### What Works
 
@@ -786,10 +786,10 @@ Added full KubeVirt support to Orchestr8:
 - Phase 6: Migration engine (runtime switching)
 
 **Ready to use:**
-- Deploy VMs today with `orchestr8 run --runtime kubevirt`
+- Deploy VMs today with `aether run --runtime kubevirt`
 - Monitor with TUI dashboard
 - Manage full VM lifecycle
 
 ---
 
-**🖥️ Orchestr8 now manages Containers, Pods, and VMs! 🚀**
+**🖥️ Aether now manages Containers, Pods, and VMs! 🚀**

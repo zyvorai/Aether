@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# deploy-remote.sh — Full orchestr8 deployment to a remote server
+# deploy-remote.sh — Full aether deployment to a remote server
 # ============================================================================
 # One command to fully set up a remote server:
 #   1. Rsync repo to remote
@@ -17,13 +17,13 @@
 #   ./scripts/deploy-remote.sh 185.165.240.5 sus mypassword
 #   ./scripts/deploy-remote.sh 10.0.0.1 root                  # SSH key auth
 #   ./scripts/deploy-remote.sh 10.0.0.1 root pass --quick     # skip deps, just rebuild + install
-#   ./scripts/deploy-remote.sh 10.0.0.1 root pass --uninstall # remove orchestr8
+#   ./scripts/deploy-remote.sh 10.0.0.1 root pass --uninstall # remove aether
 #
 # Environment variables:
 #   DEPLOY_HOST=185.165.240.5
 #   DEPLOY_USER=sus
 #   DEPLOY_PASS=mypassword
-#   DEPLOY_DIR=/home/sus/orchestr8  (auto-detected from login user)
+#   DEPLOY_DIR=/home/sus/aether  (auto-detected from login user)
 # ============================================================================
 
 set -euo pipefail
@@ -45,7 +45,7 @@ for arg in "$@"; do
             echo "Usage: $0 <host> [user] [password] [--quick|--uninstall]"
             echo ""
             echo "  --quick      Skip deps install (only rsync + cargo build + install)"
-            echo "  --uninstall  Remove orchestr8 from remote server"
+            echo "  --uninstall  Remove aether from remote server"
             echo ""
             echo "Full mode installs: Rust toolchain, podman, kubectl, builds from"
             echo "source, installs binary, sets up systemd service on port 5090."
@@ -67,7 +67,7 @@ if [ "$USER" = "root" ]; then
 else
     REMOTE_HOME="/home/${USER}"
 fi
-REMOTE_DIR="${DEPLOY_DIR:-${REMOTE_HOME}/orchestr8}"
+REMOTE_DIR="${DEPLOY_DIR:-${REMOTE_HOME}/aether}"
 
 # Use sudo when not deploying as root
 SUDO=""
@@ -76,7 +76,7 @@ SUDO=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-[ -f "$REPO_DIR/Cargo.toml" ] || error "Not in orchestr8 repo: $REPO_DIR"
+[ -f "$REPO_DIR/Cargo.toml" ] || error "Not in aether repo: $REPO_DIR"
 
 # ── SSH/rsync wrappers (SSHPASS env var — no password in ps) ──
 _ssh() {
@@ -117,24 +117,24 @@ fi
 if $UNINSTALL_MODE; then
     echo ""
     echo "  ╔══════════════════════════════════════════════════════╗"
-    echo "  ║     🗑️  Orchestr8 Remote Uninstall                   ║"
+    echo "  ║     🗑️  Aether Remote Uninstall                   ║"
     echo "  ╚══════════════════════════════════════════════════════╝"
     echo ""
     echo "  Host: ${USER}@${HOST}"
     echo ""
 
-    step "Uninstalling orchestr8"
+    step "Uninstalling aether"
     _ssh "
-        $SUDO systemctl stop orchestr8.service 2>/dev/null || true
-        $SUDO systemctl disable orchestr8.service 2>/dev/null || true
-        $SUDO rm -f /etc/systemd/system/orchestr8.service
+        $SUDO systemctl stop aether.service 2>/dev/null || true
+        $SUDO systemctl disable aether.service 2>/dev/null || true
+        $SUDO rm -f /etc/systemd/system/aether.service
         $SUDO systemctl daemon-reload
-        $SUDO rm -f /usr/local/bin/orchestr8
+        $SUDO rm -f /usr/local/bin/aether
         rm -rf $REMOTE_DIR
-        rm -rf ${REMOTE_HOME}/.orchestr8
+        rm -rf ${REMOTE_HOME}/.aether
         echo 'Done'
     " 2>&1
-    info "orchestr8 removed from ${HOST}"
+    info "aether removed from ${HOST}"
     echo ""
     echo "  📁 Kept: Rust toolchain (~/.cargo, ~/.rustup)"
     echo "  📁 Kept: system packages (podman, kubectl)"
@@ -147,7 +147,7 @@ $QUICK_MODE && TOTAL_STEPS=4
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║     🚀 Orchestr8 Remote Deployment                   ║"
+echo "  ║     🚀 Aether Remote Deployment                   ║"
 echo "  ║     Universal Runtime Control Plane                  ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
@@ -210,43 +210,43 @@ if ! $QUICK_MODE; then
     # ── Step 5: Install binary ──
     step "Step 5/${TOTAL_STEPS}: 📥 Installing to /usr/local/bin"
     _ssh "
-        $SUDO install -m 0755 $REMOTE_DIR/target/release/orchestr8 /usr/local/bin/orchestr8
-        echo \"Installed: \$(orchestr8 --version)\"
-        orchestr8 init --yes 2>&1 || true
+        $SUDO install -m 0755 $REMOTE_DIR/target/release/aether /usr/local/bin/aether
+        echo \"Installed: \$(aether --version)\"
+        aether init --yes 2>&1 || true
     " 2>&1
     info "Binary installed"
 
     # ── Step 6: Set up systemd service ──
     step "Step 6/${TOTAL_STEPS}: ⚙️  Setting up systemd service (port 5090)"
     _ssh "
-        $SUDO tee /etc/systemd/system/orchestr8.service > /dev/null << 'SVCEOF'
+        $SUDO tee /etc/systemd/system/aether.service > /dev/null << 'SVCEOF'
 [Unit]
-Description=Orchestr8 Universal Runtime Control Plane
-Documentation=https://github.com/ssahani/orchestr8
+Description=Aether Universal Runtime Control Plane
+Documentation=https://github.com/ssahani/aether
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/orchestr8 serve --host 0.0.0.0 --port 5090
+ExecStart=/usr/local/bin/aether serve --host 0.0.0.0 --port 5090
 Restart=on-failure
 RestartSec=5s
 WorkingDirectory=${REMOTE_HOME}
-Environment=ORCHESTR8_SECRET_KEY=orchestr8-production-key
+Environment=AETHER_SECRET_KEY=aether-production-key
 
 [Install]
 WantedBy=multi-user.target
 SVCEOF
 
         $SUDO systemctl daemon-reload
-        $SUDO systemctl enable orchestr8.service 2>/dev/null
-        $SUDO systemctl restart orchestr8.service
+        $SUDO systemctl enable aether.service 2>/dev/null
+        $SUDO systemctl restart aether.service
         sleep 2
 
-        if $SUDO systemctl is-active orchestr8 &>/dev/null; then
-            echo 'orchestr8 service: running'
+        if $SUDO systemctl is-active aether &>/dev/null; then
+            echo 'aether service: running'
         else
-            echo 'orchestr8 service: FAILED TO START'
-            $SUDO journalctl -u orchestr8 --no-pager -n 5
+            echo 'aether service: FAILED TO START'
+            $SUDO journalctl -u aether --no-pager -n 5
         fi
     " 2>&1
     info "Systemd service configured"
@@ -275,19 +275,19 @@ else
 
     step "Step 3/${TOTAL_STEPS}: 📥 Installing to /usr/local/bin"
     _ssh "
-        $SUDO install -m 0755 $REMOTE_DIR/target/release/orchestr8 /usr/local/bin/orchestr8
-        echo \"Installed: \$(orchestr8 --version)\"
+        $SUDO install -m 0755 $REMOTE_DIR/target/release/aether /usr/local/bin/aether
+        echo \"Installed: \$(aether --version)\"
     " 2>&1
     info "Binary installed"
 
     step "Step 4/${TOTAL_STEPS}: 🔄 Restarting service"
     _ssh "
-        $SUDO systemctl restart orchestr8.service 2>/dev/null || true
+        $SUDO systemctl restart aether.service 2>/dev/null || true
         sleep 1
-        if $SUDO systemctl is-active orchestr8 &>/dev/null; then
-            echo 'orchestr8 service: running'
+        if $SUDO systemctl is-active aether &>/dev/null; then
+            echo 'aether service: running'
         else
-            echo 'orchestr8 service: not running (start with: sudo systemctl start orchestr8)'
+            echo 'aether service: not running (start with: sudo systemctl start aether)'
         fi
     " 2>&1
     info "Service restarted"
@@ -296,8 +296,8 @@ fi
 # ── Verify ──
 step "Verifying installation"
 _ssh "
-    echo \"📍 binary:   \$(which orchestr8 2>/dev/null || echo NOT_FOUND)\"
-    echo \"📍 version:  \$(orchestr8 --version 2>/dev/null || echo FAILED)\"
+    echo \"📍 binary:   \$(which aether 2>/dev/null || echo NOT_FOUND)\"
+    echo \"📍 version:  \$(aether --version 2>/dev/null || echo FAILED)\"
 
     # Check runtimes
     for tool in podman kubectl virtctl; do
@@ -309,7 +309,7 @@ _ssh "
     done
 
     # Check service
-    state=\$(systemctl is-active orchestr8 2>/dev/null || echo 'not-found')
+    state=\$(systemctl is-active aether 2>/dev/null || echo 'not-found')
     echo \"📍 service:  \$state\"
 
     # Check port
@@ -320,7 +320,7 @@ _ssh "
     fi
 
     # Check state dir
-    [ -d ${REMOTE_HOME}/.orchestr8 ] && echo '📍 state dir: OK' || echo '⚠️  state dir: missing'
+    [ -d ${REMOTE_HOME}/.aether ] && echo '📍 state dir: OK' || echo '⚠️  state dir: missing'
 " 2>&1
 
 # ── Smoke test ──
@@ -358,13 +358,13 @@ echo "    ssh ${USER}@${HOST}"
 echo ""
 echo "  🌐 Web Dashboard:"
 echo "    http://${HOST}:5090"
-echo "    Login: admin / orchestr8"
+echo "    Login: admin / aether"
 echo ""
 echo "  🚀 CLI commands:"
-echo "    orchestr8 init              # Setup wizard"
-echo "    orchestr8 run --spec app.yaml --runtime podman"
-echo "    orchestr8 tui               # Interactive dashboard"
-echo "    orchestr8 help-all          # Full command reference"
+echo "    aether init              # Setup wizard"
+echo "    aether run --spec app.yaml --runtime podman"
+echo "    aether tui               # Interactive dashboard"
+echo "    aether help-all          # Full command reference"
 echo ""
 echo "  🔄 Redeploy (quick):"
 echo "    $0 ${HOST} ${USER} ${PASS:+***} --quick"

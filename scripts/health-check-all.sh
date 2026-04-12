@@ -4,7 +4,7 @@
 
 set -e
 
-NAMESPACE=${1:-orchestr8-production}
+NAMESPACE=${1:-aether-production}
 
 # Colors
 GREEN='\033[0;32m'

@@ -39,7 +39,7 @@ pub fn render_dashboard(f: &mut Frame, app: &App) {
 fn render_header(f: &mut Frame, area: Rect, _app: &App) {
     let title = vec![Line::from(vec![
         Span::styled(
-            " ⚡ ORCHESTR8 ",
+            " ⚡ AETHER ",
             Style::default()
                 .fg(Color::Black)
                 .bg(PRIMARY)
@@ -81,7 +81,7 @@ fn render_stats_bar(f: &mut Frame, area: Rect, app: &App) {
             if matches!(s.state, crate::runtime::InstanceState::Failed) {
                 failed += 1;
             }
-            restarts += s.restart_count;
+            restarts = restarts.saturating_add(s.restart_count);
         }
     }
 
@@ -187,7 +187,7 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
         )),
         Line::from(""),
         Line::from(Span::styled(
-            "Run 'orchestr8 run' to deploy a workload",
+            "Run 'aether run' to deploy a workload",
             Style::default().fg(WARNING),
         )),
     ])

@@ -1,6 +1,6 @@
 # CI/CD Integration Guide
 
-Orchestr8 integrates seamlessly with popular CI/CD platforms for automated deployments, cost analysis, and workflow orchestration.
+Aether integrates seamlessly with popular CI/CD platforms for automated deployments, cost analysis, and workflow orchestration.
 
 ## Overview
 
@@ -17,19 +17,19 @@ This guide covers:
 
 ```bash
 # 1. Validate workload specification
-orchestr8 -s workload.yaml validate
+aether -s workload.yaml validate
 
 # 2. Estimate costs
-orchestr8 -s workload.yaml cost --provider aws
+aether -s workload.yaml cost --provider aws
 
 # 3. Create backup before deployment
-orchestr8 backup -n pre-deploy-$(date +%Y%m%d)
+aether backup -n pre-deploy-$(date +%Y%m%d)
 
 # 4. Deploy workload
-orchestr8 -s workload.yaml run --runtime kubernetes
+aether -s workload.yaml run --runtime kubernetes
 
 # 5. Verify deployment
-orchestr8 status my-app
+aether status my-app
 
 # 6. Check health
 curl -f https://app.example.com/health
@@ -57,7 +57,7 @@ See [`examples/cicd/github-actions.yml`](../examples/cicd/github-actions.yml) fo
 ```yaml
 - name: Estimate deployment costs
   run: |
-    orchestr8 -s $WORKLOAD_SPEC cost --provider all | tee cost-report.txt
+    aether -s $WORKLOAD_SPEC cost --provider all | tee cost-report.txt
 
 - name: Comment cost on PR
   if: github.event_name == 'pull_request'
@@ -76,7 +76,7 @@ See [`examples/cicd/github-actions.yml`](../examples/cicd/github-actions.yml) fo
 ```yaml
 - name: Deploy with blue-green strategy
   run: |
-    orchestr8 migrate myapp kubernetes --strategy blue-green
+    aether migrate myapp kubernetes --strategy blue-green
 ```
 
 **Automatic Rollback:**
@@ -84,8 +84,8 @@ See [`examples/cicd/github-actions.yml`](../examples/cicd/github-actions.yml) fo
 - name: Rollback on failure
   if: failure()
   run: |
-    LATEST_BACKUP=$(orchestr8 list-backups | grep pre-deploy | head -1 | awk '{print $2}')
-    orchestr8 restore $LATEST_BACKUP
+    LATEST_BACKUP=$(aether list-backups | grep pre-deploy | head -1 | awk '{print $2}')
+    aether restore $LATEST_BACKUP
 ```
 
 ### Secrets Configuration
@@ -141,7 +141,7 @@ review:start:
     auto_stop_in: 1 week
   script:
     - yq eval ".metadata.name = \"app-$CI_COMMIT_REF_SLUG\"" -i $WORKLOAD_SPEC
-    - orchestr8 -s $WORKLOAD_SPEC run --runtime kubernetes
+    - aether -s $WORKLOAD_SPEC run --runtime kubernetes
   only:
     - merge_requests
 ```
@@ -150,18 +150,18 @@ review:start:
 ```yaml
 validate:spec:
   script:
-    - orchestr8 -s $WORKLOAD_SPEC validate
+    - aether -s $WORKLOAD_SPEC validate
 
 cost:estimate:
   script:
-    - orchestr8 -s $WORKLOAD_SPEC cost --provider all
+    - aether -s $WORKLOAD_SPEC cost --provider all
 ```
 
 **Scheduled Jobs:**
 ```yaml
 cleanup:backups:
   script:
-    - find ~/.orchestr8/backups -name "*.json" -mtime +7 -delete
+    - find ~/.aether/backups -name "*.json" -mtime +7 -delete
   only:
     - schedules
 ```
@@ -197,7 +197,7 @@ pipeline {
     agent any
 
     environment {
-        ORCHESTR8_VERSION = '0.1.0'
+        AETHER_VERSION = '0.1.0'
         WORKLOAD_SPEC = 'workloads/app.yaml'
     }
 
@@ -215,12 +215,12 @@ stage('Validate & Analyze') {
     parallel {
         stage('Validate Workload Spec') {
             steps {
-                sh 'orchestr8 -s ${WORKLOAD_SPEC} validate'
+                sh 'aether -s ${WORKLOAD_SPEC} validate'
             }
         }
         stage('Cost Estimation') {
             steps {
-                sh 'orchestr8 -s ${WORKLOAD_SPEC} cost --provider all'
+                sh 'aether -s ${WORKLOAD_SPEC} cost --provider all'
             }
         }
     }
@@ -232,7 +232,7 @@ stage('Validate & Analyze') {
 stage('Deploy to Production') {
     steps {
         input message: 'Deploy to production?', ok: 'Deploy', submitter: 'admin,devops'
-        sh 'orchestr8 -s ${WORKLOAD_SPEC} run --runtime kubernetes'
+        sh 'aether -s ${WORKLOAD_SPEC} run --runtime kubernetes'
     }
 }
 ```
@@ -245,8 +245,8 @@ post {
     }
     failure {
         sh '''
-            LATEST_BACKUP=$(orchestr8 list-backups | head -1)
-            orchestr8 restore $LATEST_BACKUP
+            LATEST_BACKUP=$(aether list-backups | head -1)
+            aether restore $LATEST_BACKUP
         '''
         slackSend color: 'danger', message: "Deployment failed - rolled back"
     }
@@ -266,7 +266,7 @@ Jenkins credentials needed:
 
 Always validate before deploying:
 ```bash
-orchestr8 -s workload.yaml validate || exit 1
+aether -s workload.yaml validate || exit 1
 ```
 
 ### 2. Cost Analysis on PRs
@@ -276,30 +276,30 @@ Estimate costs for pull requests:
 - name: Cost Analysis
   if: github.event_name == 'pull_request'
   run: |
-    orchestr8 -s workload.yaml cost --provider all
+    aether -s workload.yaml cost --provider all
 ```
 
 ### 3. Pre-Deployment Backups
 
 Create backups before production deployments:
 ```bash
-orchestr8 backup -n "pre-deploy-$(date +%Y%m%d-%H%M%S)"
+aether backup -n "pre-deploy-$(date +%Y%m%d-%H%M%S)"
 ```
 
 ### 4. Blue-Green Deployments
 
 Use blue-green strategy for zero-downtime:
 ```bash
-orchestr8 migrate app kubernetes --strategy blue-green
+aether migrate app kubernetes --strategy blue-green
 ```
 
 ### 5. Automatic Rollback
 
 Implement rollback on failure:
 ```bash
-if ! orchestr8 status app; then
-  LATEST_BACKUP=$(orchestr8 list-backups | head -1 | awk '{print $2}')
-  orchestr8 restore $LATEST_BACKUP
+if ! aether status app; then
+  LATEST_BACKUP=$(aether list-backups | head -1 | awk '{print $2}')
+  aether restore $LATEST_BACKUP
 fi
 ```
 
@@ -316,7 +316,7 @@ curl -f https://app.example.com/health || exit 1
 Clean old resources regularly:
 ```bash
 # Old backups
-find ~/.orchestr8/backups -name "*.json" -mtime +7 -delete
+find ~/.aether/backups -name "*.json" -mtime +7 -delete
 
 # Old images
 docker image prune -a --filter "until=720h"
@@ -328,7 +328,7 @@ docker image prune -a --filter "until=720h"
 
 Fastest, but with downtime:
 ```bash
-orchestr8 -s workload.yaml run --runtime kubernetes
+aether -s workload.yaml run --runtime kubernetes
 ```
 
 **Use When:**
@@ -340,7 +340,7 @@ orchestr8 -s workload.yaml run --runtime kubernetes
 
 Gradual update with minimal impact:
 ```bash
-orchestr8 migrate app kubernetes --strategy rolling
+aether migrate app kubernetes --strategy rolling
 ```
 
 **Use When:**
@@ -352,7 +352,7 @@ orchestr8 migrate app kubernetes --strategy rolling
 
 Zero-downtime with instant rollback:
 ```bash
-orchestr8 migrate app kubernetes --strategy blue-green
+aether migrate app kubernetes --strategy blue-green
 ```
 
 **Use When:**
@@ -481,7 +481,7 @@ network:
 
 Export metrics during deployment:
 ```bash
-orchestr8 metrics > /tmp/metrics.txt
+aether metrics > /tmp/metrics.txt
 curl -X POST http://pushgateway:9091/metrics/job/deployment < /tmp/metrics.txt
 ```
 
@@ -526,7 +526,7 @@ curl -X POST http://grafana:3000/api/annotations \
 yq eval workload.yaml
 
 # Validate schema
-orchestr8 -s workload.yaml validate -v
+aether -s workload.yaml validate -v
 ```
 
 ### Deployment Timeout
@@ -542,7 +542,7 @@ kubectl get pods -l app=myapp
 kubectl get events --sort-by='.lastTimestamp'
 
 # Check logs
-orchestr8 logs myapp
+aether logs myapp
 ```
 
 ### Image Pull Failure
@@ -571,13 +571,13 @@ kubectl create secret docker-registry regcred \
 **Solution:**
 ```bash
 # List available backups
-orchestr8 list-backups
+aether list-backups
 
 # Create backup manually
-orchestr8 backup -n manual-backup
+aether backup -n manual-backup
 
 # Restore specific backup
-orchestr8 restore ~/.orchestr8/backups/backup-20240206.json
+aether restore ~/.aether/backups/backup-20240206.json
 ```
 
 ## Advanced Patterns
@@ -591,7 +591,7 @@ REGIONS=("us-east-1" "us-west-2" "eu-west-1")
 for region in "${REGIONS[@]}"; do
   echo "Deploying to $region..."
   export KUBECONFIG=~/.kube/config-$region
-  orchestr8 -s workload.yaml run --runtime kubernetes
+  aether -s workload.yaml run --runtime kubernetes
 done
 ```
 
@@ -600,7 +600,7 @@ done
 ```bash
 # Deploy canary (10% traffic)
 yq eval '.scaling.minReplicas = 1' -i workload-canary.yaml
-orchestr8 -s workload-canary.yaml run
+aether -s workload-canary.yaml run
 
 # Monitor metrics
 sleep 300
@@ -608,11 +608,11 @@ sleep 300
 # Check error rate
 if [ $(curl -s http://metrics/error_rate) -lt 1 ]; then
   # Promote canary to full deployment
-  orchestr8 -s workload.yaml run
-  orchestr8 delete workload-canary
+  aether -s workload.yaml run
+  aether delete workload-canary
 else
   # Rollback canary
-  orchestr8 delete workload-canary
+  aether delete workload-canary
   exit 1
 fi
 ```
@@ -622,7 +622,7 @@ fi
 ```bash
 # Deploy with feature flag
 yq eval '.env += [{"name": "FEATURE_NEW_UI", "value": "false"}]' -i workload.yaml
-orchestr8 -s workload.yaml run
+aether -s workload.yaml run
 
 # Enable feature
 kubectl set env deployment/myapp FEATURE_NEW_UI=true
@@ -639,24 +639,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to us-east-1
-        run: orchestr8 -s workload.yaml run
+        run: aether -s workload.yaml run
 
   deploy-region-2:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to us-west-2
-        run: orchestr8 -s workload.yaml run
+        run: aether -s workload.yaml run
 ```
 
 ### Caching
 
 ```yaml
-# Cache Orchestr8 binary
-- name: Cache Orchestr8
+# Cache Aether binary
+- name: Cache Aether
   uses: actions/cache@v3
   with:
-    path: /usr/local/bin/orchestr8
-    key: orchestr8-${{ env.ORCHESTR8_VERSION }}
+    path: /usr/local/bin/aether
+    key: aether-${{ env.AETHER_VERSION }}
 ```
 
 ### Incremental Deployments
@@ -664,7 +664,7 @@ jobs:
 ```bash
 # Only deploy if workload spec changed
 if git diff --name-only HEAD~1 | grep -q "workload.yaml"; then
-  orchestr8 -s workload.yaml run
+  aether -s workload.yaml run
 else
   echo "No changes to workload spec, skipping deployment"
 fi
@@ -672,14 +672,14 @@ fi
 
 ## Example Repositories
 
-- [orchestr8-demo-app](https://github.com/ssahani/orchestr8-demo-app) - Sample application with full CI/CD
-- [orchestr8-templates](https://github.com/ssahani/orchestr8-templates) - Template repository with pipelines
-- [orchestr8-kubernetes](https://github.com/ssahani/orchestr8-kubernetes) - Kubernetes-focused examples
+- [aether-demo-app](https://github.com/ssahani/aether-demo-app) - Sample application with full CI/CD
+- [aether-templates](https://github.com/ssahani/aether-templates) - Template repository with pipelines
+- [aether-kubernetes](https://github.com/ssahani/aether-kubernetes) - Kubernetes-focused examples
 
 ## Support
 
 For CI/CD integration help:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `cicd`
 - Include: Platform name, pipeline config, error message
 

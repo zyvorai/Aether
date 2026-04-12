@@ -1,6 +1,6 @@
 # Backup and Restore Guide
 
-Orchestr8 provides comprehensive backup and restore functionality for workload state management.
+Aether provides comprehensive backup and restore functionality for workload state management.
 
 ## Overview
 
@@ -17,19 +17,19 @@ The backup system allows you to:
 
 ```bash
 # Simple backup (auto-generated name)
-orchestr8 backup
+aether backup
 
 # Named backup
-orchestr8 backup -n production-2024-02-06
+aether backup -n production-2024-02-06
 
 # Backup with description
-orchestr8 backup -n weekly-backup -d "Weekly production backup before deploy"
+aether backup -n weekly-backup -d "Weekly production backup before deploy"
 ```
 
 ### List Backups
 
 ```bash
-orchestr8 list-backups
+aether list-backups
 ```
 
 Output:
@@ -47,17 +47,17 @@ Output:
      Version: 0.1.0
      Description: Weekly production backup
 
-Backup directory: /home/user/.orchestr8/backups
+Backup directory: /home/user/.aether/backups
 ```
 
 ### Restore a Backup
 
 ```bash
 # Replace current state (with confirmation)
-orchestr8 restore ~/.orchestr8/backups/backup-20240206-143052.json
+aether restore ~/.aether/backups/backup-20240206-143052.json
 
 # Merge with existing state (no overwrite)
-orchestr8 restore ~/.orchestr8/backups/production-2024-02-06.json --merge
+aether restore ~/.aether/backups/production-2024-02-06.json --merge
 ```
 
 ## Backup Format
@@ -71,7 +71,7 @@ Backups are stored as JSON files with the following structure:
     "createdAt": "2024-02-06T14:30:52Z",
     "workloadCount": 5,
     "description": "Weekly production backup",
-    "orchestr8Version": "0.1.0"
+    "aetherVersion": "0.1.0"
   },
   "workloads": [
     {
@@ -94,15 +94,15 @@ Backups are stored as JSON files with the following structure:
 
 ## Backup Directory
 
-Default location: `~/.orchestr8/backups/`
+Default location: `~/.aether/backups/`
 
 ### Custom Backup Directory
 
-Set the `ORCHESTR8_BACKUP_DIR` environment variable:
+Set the `AETHER_BACKUP_DIR` environment variable:
 
 ```bash
-export ORCHESTR8_BACKUP_DIR=/mnt/backups/orchestr8
-orchestr8 backup
+export AETHER_BACKUP_DIR=/mnt/backups/aether
+aether backup
 ```
 
 ## Use Cases
@@ -113,13 +113,13 @@ Create a backup before performing a migration:
 
 ```bash
 # Backup current state
-orchestr8 backup -n pre-migration -d "Before migrating to Kubernetes"
+aether backup -n pre-migration -d "Before migrating to Kubernetes"
 
 # Perform migration
-orchestr8 migrate my-app kubernetes
+aether migrate my-app kubernetes
 
 # If something goes wrong, restore
-orchestr8 restore ~/.orchestr8/backups/pre-migration.json
+aether restore ~/.aether/backups/pre-migration.json
 ```
 
 ### Disaster Recovery
@@ -132,10 +132,10 @@ Regular backups for disaster recovery:
 
 # Create daily backup
 DATE=$(date +%Y%m%d)
-orchestr8 backup -n "daily-${DATE}" -d "Automated daily backup"
+aether backup -n "daily-${DATE}" -d "Automated daily backup"
 
 # Keep only last 7 days
-find ~/.orchestr8/backups/ -name "daily-*.json" -mtime +7 -delete
+find ~/.aether/backups/ -name "daily-*.json" -mtime +7 -delete
 ```
 
 Add to crontab:
@@ -149,13 +149,13 @@ Promote workloads from dev to prod:
 
 ```bash
 # On dev environment
-orchestr8 backup -n dev-snapshot -d "Tested workloads ready for prod"
+aether backup -n dev-snapshot -d "Tested workloads ready for prod"
 
 # Transfer backup to prod
-scp ~/.orchestr8/backups/dev-snapshot.json prod-server:~/
+scp ~/.aether/backups/dev-snapshot.json prod-server:~/
 
 # On prod environment
-orchestr8 restore ~/dev-snapshot.json --merge
+aether restore ~/dev-snapshot.json --merge
 ```
 
 ### Version Control Integration
@@ -164,10 +164,10 @@ Store backups in version control:
 
 ```bash
 # Create backup
-orchestr8 backup -n release-v1.2.0
+aether backup -n release-v1.2.0
 
 # Commit to git
-cp ~/.orchestr8/backups/release-v1.2.0.json ./backups/
+cp ~/.aether/backups/release-v1.2.0.json ./backups/
 git add backups/release-v1.2.0.json
 git commit -m "Backup: release v1.2.0"
 git push
@@ -181,10 +181,10 @@ Delete old backups manually:
 
 ```bash
 # List backups
-orchestr8 list-backups
+aether list-backups
 
 # Delete specific backup
-rm ~/.orchestr8/backups/old-backup.json
+rm ~/.aether/backups/old-backup.json
 ```
 
 ### Automated Cleanup Script
@@ -193,7 +193,7 @@ rm ~/.orchestr8/backups/old-backup.json
 #!/bin/bash
 # cleanup-backups.sh
 
-BACKUP_DIR="$HOME/.orchestr8/backups"
+BACKUP_DIR="$HOME/.aether/backups"
 KEEP_DAYS=30
 
 echo "Cleaning backups older than ${KEEP_DAYS} days..."
@@ -230,7 +230,7 @@ echo "Cleanup complete"
    - Document restore process
 
 6. **Version Compatibility**
-   - Backups include Orchestr8 version
+   - Backups include Aether version
    - Test compatibility when upgrading
    - Keep backups for version rollback
 
@@ -242,13 +242,13 @@ Inspect backup without restoring:
 
 ```bash
 # Using jq
-cat ~/.orchestr8/backups/backup.json | jq '.metadata'
+cat ~/.aether/backups/backup.json | jq '.metadata'
 
 # View workload names
-cat ~/.orchestr8/backups/backup.json | jq '.workloads[].name'
+cat ~/.aether/backups/backup.json | jq '.workloads[].name'
 
 # Count workloads
-cat ~/.orchestr8/backups/backup.json | jq '.workloads | length'
+cat ~/.aether/backups/backup.json | jq '.workloads | length'
 ```
 
 ### Selective Restore
@@ -283,7 +283,7 @@ print(f"Filtered backup saved: filtered-backup.json")
 Usage:
 ```bash
 python3 filter-backup.py backup.json my-app
-orchestr8 restore filtered-backup.json
+aether restore filtered-backup.json
 ```
 
 ### Cloud Storage Integration
@@ -295,10 +295,10 @@ orchestr8 restore filtered-backup.json
 # backup-to-s3.sh
 
 # Create backup
-orchestr8 backup -n "$(date +%Y%m%d-%H%M%S)"
+aether backup -n "$(date +%Y%m%d-%H%M%S)"
 
 # Upload to S3
-aws s3 sync ~/.orchestr8/backups/ s3://my-bucket/orchestr8-backups/
+aws s3 sync ~/.aether/backups/ s3://my-bucket/aether-backups/
 
 echo "Backup uploaded to S3"
 ```
@@ -310,13 +310,13 @@ echo "Backup uploaded to S3"
 # backup-to-azure.sh
 
 # Create backup
-orchestr8 backup -n "$(date +%Y%m%d-%H%M%S)"
+aether backup -n "$(date +%Y%m%d-%H%M%S)"
 
 # Upload to Azure
 az storage blob upload-batch \
   --account-name myaccount \
-  --destination orchestr8-backups \
-  --source ~/.orchestr8/backups/
+  --destination aether-backups \
+  --source ~/.aether/backups/
 
 echo "Backup uploaded to Azure Blob Storage"
 ```
@@ -328,7 +328,7 @@ echo "Backup uploaded to Azure Blob Storage"
 Replaces entire state:
 
 ```bash
-orchestr8 restore backup.json
+aether restore backup.json
 ```
 
 **Caution:** This will delete all current workload state and replace with backup.
@@ -338,7 +338,7 @@ orchestr8 restore backup.json
 Adds missing workloads without overwriting:
 
 ```bash
-orchestr8 restore backup.json --merge
+aether restore backup.json --merge
 ```
 
 **Use Case:**
@@ -354,7 +354,7 @@ orchestr8 restore backup.json --merge
 
 **Solution:**
 ```bash
-orchestr8 list  # Verify no workloads exist
+aether list  # Verify no workloads exist
 ```
 
 ### Restore Fails with "Failed to parse backup"
@@ -367,7 +367,7 @@ orchestr8 list  # Verify no workloads exist
 cat backup.json | jq .
 
 # Check backup version
-cat backup.json | jq '.metadata.orchestr8Version'
+cat backup.json | jq '.metadata.aetherVersion'
 ```
 
 ### Backup Directory Not Found
@@ -382,14 +382,14 @@ cat backup.json | jq '.metadata.orchestr8Version'
 
 **Solution:**
 ```bash
-chmod 755 ~/.orchestr8/backups
+chmod 755 ~/.aether/backups
 ```
 
 ## Backup Security
 
 ### Symlink Protection
 
-Orchestr8 protects against path traversal attacks via symlinks in the backup directory:
+Aether protects against path traversal attacks via symlinks in the backup directory:
 
 - **Listing backups:** Symlinks are skipped with a warning
 - **Reading backup info:** Symlinks are rejected with an error
@@ -407,7 +407,7 @@ gpg --encrypt --recipient your-email@example.com backup.json
 
 # Decrypt for restore
 gpg --decrypt backup.json.gpg > backup.json
-orchestr8 restore backup.json
+aether restore backup.json
 rm backup.json  # Clean up decrypted file
 ```
 
@@ -416,7 +416,7 @@ rm backup.json  # Clean up decrypted file
 Protect backup directory:
 
 ```bash
-chmod 700 ~/.orchestr8/backups
+chmod 700 ~/.aether/backups
 ```
 
 ## Monitoring
@@ -427,7 +427,7 @@ chmod 700 ~/.orchestr8/backups
 #!/bin/bash
 # monitored-backup.sh
 
-if orchestr8 backup -n "daily-$(date +%Y%m%d)"; then
+if aether backup -n "daily-$(date +%Y%m%d)"; then
   echo "[SUCCESS] Backup completed at $(date)"
   # Send success notification
   curl -X POST https://monitoring.example.com/backup-success
@@ -444,7 +444,7 @@ fi
 Track backup operations via metrics:
 
 ```bash
-orchestr8 metrics | grep orchestr8_cli_commands_total{command="backup"}
+aether metrics | grep aether_cli_commands_total{command="backup"}
 ```
 
 ## API Integration
@@ -452,8 +452,8 @@ orchestr8 metrics | grep orchestr8_cli_commands_total{command="backup"}
 For programmatic backup management, use the Rust library:
 
 ```rust
-use orchestr8::backup::{Backup, BackupManager};
-use orchestr8::state::StateStore;
+use aether::backup::{Backup, BackupManager};
+use aether::state::StateStore;
 
 async fn create_backup() -> anyhow::Result<()> {
     let state = StateStore::load(&StateStore::default_path())?;
@@ -473,5 +473,5 @@ async fn create_backup() -> anyhow::Result<()> {
 ## Support
 
 For backup-related issues:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `backup`

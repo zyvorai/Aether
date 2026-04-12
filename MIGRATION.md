@@ -1,6 +1,6 @@
 # 🔄 Migration Guide
 
-Complete guide for migrating workloads between runtimes using Orchestr8's Migration Engine.
+Complete guide for migrating workloads between runtimes using Aether's Migration Engine.
 
 ---
 
@@ -81,7 +81,7 @@ The **Migration Engine** enables seamless workload migration between different r
 
 **Example:**
 ```bash
-orchestr8 migrate my-app kubernetes --strategy immediate
+aether migrate my-app kubernetes --strategy immediate
 ```
 
 ### 2. Blue-Green Migration
@@ -113,7 +113,7 @@ orchestr8 migrate my-app kubernetes --strategy immediate
 
 **Example:**
 ```bash
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 ```
 
 ### 3. Rolling Migration
@@ -147,7 +147,7 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 
 **Example:**
 ```bash
-orchestr8 migrate my-app kubernetes --strategy rolling
+aether migrate my-app kubernetes --strategy rolling
 ```
 
 ---
@@ -158,7 +158,7 @@ orchestr8 migrate my-app kubernetes --strategy rolling
 
 1. **Source workload running**
    ```bash
-   orchestr8 list
+   aether list
    # Should show your workload
    ```
 
@@ -181,14 +181,14 @@ orchestr8 migrate my-app kubernetes --strategy rolling
 
 **Step 1: Check current state**
 ```bash
-orchestr8 status my-app
+aether status my-app
 # Note current runtime
 ```
 
 **Step 2: Execute migration**
 ```bash
 # Blue-green migration (recommended)
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # Output:
 # 🔄 Migrating workload 'my-app'...
@@ -202,10 +202,10 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 
 **Step 3: Verify**
 ```bash
-orchestr8 status my-app
+aether status my-app
 # Should show new runtime
 
-orchestr8 tui
+aether tui
 # Visualize runtime change
 ```
 
@@ -220,10 +220,10 @@ orchestr8 tui
 **Example:**
 ```bash
 # Start on Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Migrate to Kubernetes
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 ```
 
 **What Happens:**
@@ -245,10 +245,10 @@ orchestr8 migrate my-app kubernetes --strategy blue-green
 **Example:**
 ```bash
 # Start on Kubernetes
-orchestr8 run --spec app.yaml --runtime kubernetes
+aether run --spec app.yaml --runtime kubernetes
 
 # Migrate to KubeVirt
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 ```
 
 **What Happens:**
@@ -270,10 +270,10 @@ orchestr8 migrate my-app kubevirt --strategy rolling
 **Example:**
 ```bash
 # Start on KubeVirt
-orchestr8 run --spec app.yaml --runtime kubevirt
+aether run --spec app.yaml --runtime kubevirt
 
 # Migrate to Metal3
-orchestr8 migrate my-app metal --strategy immediate
+aether migrate my-app metal --strategy immediate
 ```
 
 **What Happens:**
@@ -295,10 +295,10 @@ orchestr8 migrate my-app metal --strategy immediate
 **Example:**
 ```bash
 # Start on Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Migrate to Metal3
-orchestr8 migrate my-app metal --strategy blue-green
+aether migrate my-app metal --strategy blue-green
 ```
 
 **What Happens:**
@@ -323,13 +323,13 @@ Control how long to wait before considering target healthy:
 
 ```bash
 # Default: 30 seconds
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # No validation (fast but risky)
-orchestr8 migrate my-app kubernetes --strategy blue-green --no-validation
+aether migrate my-app kubernetes --strategy blue-green --no-validation
 ```
 
-The migration engine uses configurable timing parameters with sensible defaults. Configure via `MigrationPlan::new()` in the API or `~/.orchestr8/config.yaml`:
+The migration engine uses configurable timing parameters with sensible defaults. Configure via `MigrationPlan::new()` in the API or `~/.aether/config.yaml`:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -353,9 +353,9 @@ migration:
 Migrating to the same runtime is rejected with a helpful error:
 
 ```bash
-$ orchestr8 migrate my-app podman
+$ aether migrate my-app podman
 # Error: Source and target runtimes are the same (podman). Migration is unnecessary.
-# Hint: Use `orchestr8 rollback my-app` to redeploy on the same runtime.
+# Hint: Use `aether rollback my-app` to redeploy on the same runtime.
 ```
 
 ### Dry Run
@@ -363,7 +363,7 @@ $ orchestr8 migrate my-app podman
 Preview what a migration would do without executing:
 
 ```bash
-orchestr8 migrate my-app kubernetes --strategy blue-green --dry-run
+aether migrate my-app kubernetes --strategy blue-green --dry-run
 ```
 
 ### Automatic Rollback
@@ -372,10 +372,10 @@ Enable/disable rollback on failure:
 
 ```bash
 # Rollback enabled (default)
-orchestr8 migrate my-app kubernetes --strategy immediate
+aether migrate my-app kubernetes --strategy immediate
 
 # Rollback disabled
-orchestr8 migrate my-app kubernetes --strategy immediate --no-rollback
+aether migrate my-app kubernetes --strategy immediate --no-rollback
 ```
 
 **With Rollback:**
@@ -460,7 +460,7 @@ Migration engine automatically:
 
 **1. Verify Source Health**
 ```bash
-orchestr8 status my-app
+aether status my-app
 # Ensure: State=running, Ready=true
 ```
 
@@ -479,12 +479,12 @@ kubectl get bmh -A
 
 **3. Backup State**
 ```bash
-cp ~/.orchestr8/state.json ~/.orchestr8/state.json.backup
+cp ~/.aether/state.json ~/.aether/state.json.backup
 ```
 
 **4. Review Workload Spec**
 ```bash
-orchestr8 validate --spec workload.yaml
+aether validate --spec workload.yaml
 ```
 
 **5. Test in Non-Production First**
@@ -493,16 +493,16 @@ orchestr8 validate --spec workload.yaml
 cp workload.yaml workload-test.yaml
 
 # Deploy test instance
-orchestr8 run --spec workload-test.yaml --runtime podman
+aether run --spec workload-test.yaml --runtime podman
 
 # Test migration
-orchestr8 migrate test-app kubernetes --strategy blue-green
+aether migrate test-app kubernetes --strategy blue-green
 
 # Verify
-orchestr8 status test-app
+aether status test-app
 
 # Cleanup
-orchestr8 delete test-app
+aether delete test-app
 ```
 
 ### During Migration
@@ -510,16 +510,16 @@ orchestr8 delete test-app
 **Monitor Progress:**
 ```bash
 # In separate terminal
-watch -n 2 'orchestr8 list'
+watch -n 2 'aether list'
 
 # Or use TUI
-orchestr8 tui
+aether tui
 ```
 
 **Check Logs:**
 ```bash
 # Run with verbose logging
-orchestr8 -v migrate my-app kubernetes --strategy blue-green
+aether -v migrate my-app kubernetes --strategy blue-green
 ```
 
 **Prepare for Rollback:**
@@ -532,7 +532,7 @@ orchestr8 -v migrate my-app kubernetes --strategy blue-green
 
 **1. Verify Instance**
 ```bash
-orchestr8 status my-app
+aether status my-app
 # Ensure: State=running, Ready=true
 ```
 
@@ -564,30 +564,30 @@ If migration fails or issues detected:
 **Automatic Rollback:**
 ```bash
 # With --no-rollback NOT set
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 # On failure, automatic rollback to source
 ```
 
 **Manual Rollback:**
 ```bash
 # If already migrated and need to go back
-orchestr8 migrate my-app podman --strategy immediate
+aether migrate my-app podman --strategy immediate
 
 # Verify
-orchestr8 status my-app
+aether status my-app
 ```
 
 **Emergency Rollback:**
 ```bash
 # Restore from backup state
-cp ~/.orchestr8/state.json.backup ~/.orchestr8/state.json
+cp ~/.aether/state.json.backup ~/.aether/state.json
 
 # Verify source still running
 kubectl get pods my-app  # or
 podman ps | grep my-app
 
 # Delete target if created
-orchestr8 delete my-app --runtime kubernetes
+aether delete my-app --runtime kubernetes
 ```
 
 ---
@@ -607,11 +607,11 @@ orchestr8 delete my-app --runtime kubernetes
 **Fix:**
 ```bash
 # List workloads
-orchestr8 list
+aether list
 
 # Check name spelling
 # Re-deploy if needed
-orchestr8 run --spec workload.yaml
+aether run --spec workload.yaml
 ```
 
 ### Target Instance Not Ready
@@ -654,7 +654,7 @@ Error: Source runtime mismatch: expected podman, found kubernetes
 **Fix:**
 ```bash
 # Check actual runtime
-orchestr8 status my-app
+aether status my-app
 
 # Use correct source runtime in migration plan
 # Or specify target only (auto-detects source)
@@ -712,13 +712,13 @@ kubectl run -it --rm debug --image=busybox --restart=Never -- wget -O- my-app:80
 
 ```bash
 # Development: Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Test locally
 curl http://localhost:8080
 
 # Migrate to Kubernetes (production)
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # Verify in production
 kubectl get pods
@@ -729,10 +729,10 @@ curl http://my-app.example.com
 
 ```bash
 # Start with container
-orchestr8 run --spec app.yaml --runtime kubernetes
+aether run --spec app.yaml --runtime kubernetes
 
 # Need VM for Windows dependency
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 
 # Access VM
 virtctl console my-app
@@ -742,10 +742,10 @@ virtctl console my-app
 
 ```bash
 # Start with VM
-orchestr8 run --spec ml-workload.yaml --runtime kubevirt
+aether run --spec ml-workload.yaml --runtime kubevirt
 
 # Need GPU passthrough - migrate to bare metal
-orchestr8 migrate ml-workload metal --strategy immediate
+aether migrate ml-workload metal --strategy immediate
 
 # Monitor provisioning
 kubectl get bmh ml-workload -w
@@ -755,17 +755,17 @@ kubectl get bmh ml-workload -w
 
 ```bash
 # Migrate to new runtime
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # Detect issues
 curl http://my-app:8080/health
 # Error: 500 Internal Server Error
 
 # Rollback immediately
-orchestr8 migrate my-app podman --strategy immediate
+aether migrate my-app podman --strategy immediate
 
 # Verify rollback successful
-orchestr8 status my-app
+aether status my-app
 # Runtime: podman, State: running
 ```
 
@@ -773,38 +773,38 @@ orchestr8 status my-app
 
 ```bash
 # Stage 1: Local to Kubernetes
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 sleep 60  # Monitor
 
 # Stage 2: Kubernetes to KubeVirt (need better isolation)
-orchestr8 migrate my-app kubevirt --strategy rolling
+aether migrate my-app kubevirt --strategy rolling
 sleep 120  # Monitor
 
 # Stage 3: KubeVirt to Metal3 (need max performance)
-orchestr8 migrate my-app metal --strategy immediate
+aether migrate my-app metal --strategy immediate
 ```
 
 ### Example 6: Canary Migration
 
 ```bash
 # Main workload on Podman
-orchestr8 run --spec app.yaml --runtime podman
+aether run --spec app.yaml --runtime podman
 
 # Create test instance for canary
 cp workload.yaml workload-canary.yaml
 # Edit: Change name to "my-app-canary"
 
 # Deploy canary to Kubernetes
-orchestr8 run --spec workload-canary.yaml --runtime kubernetes
+aether run --spec workload-canary.yaml --runtime kubernetes
 
 # Test canary
 # ... monitor metrics ...
 
 # If successful, migrate main workload
-orchestr8 migrate my-app kubernetes --strategy blue-green
+aether migrate my-app kubernetes --strategy blue-green
 
 # Cleanup canary
-orchestr8 delete my-app-canary
+aether delete my-app-canary
 ```
 
 ---
@@ -886,4 +886,4 @@ The Migration Engine provides:
 
 ---
 
-**🔄 Seamless runtime switching with Orchestr8 Migration Engine!**
+**🔄 Seamless runtime switching with Aether Migration Engine!**

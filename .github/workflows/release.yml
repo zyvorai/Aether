@@ -22,7 +22,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Orchestr8 ${{ github.ref }}
+          release_name: Aether ${{ github.ref }}
           draft: false
           prerelease: false
 
@@ -35,16 +35,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: orchestr8
-            asset_name: orchestr8-linux-amd64
+            artifact_name: aether
+            asset_name: aether-linux-amd64
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: orchestr8
-            asset_name: orchestr8-macos-amd64
+            artifact_name: aether
+            asset_name: aether-macos-amd64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: orchestr8
-            asset_name: orchestr8-macos-arm64
+            artifact_name: aether
+            asset_name: aether-macos-arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -106,16 +106,16 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
           labels: |
-            org.opencontainers.image.title=Orchestr8
+            org.opencontainers.image.title=Aether
             org.opencontainers.image.description=Universal runtime control plane - One spec, four runtimes
-            org.opencontainers.image.vendor=Orchestr8
+            org.opencontainers.image.vendor=Aether
             org.opencontainers.image.licenses=MIT OR Apache-2.0
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.orchestr8
+          file: ./Dockerfile.aether
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -1,6 +1,6 @@
 # Cost Estimation Guide
 
-Orchestr8 provides cost estimation for workloads across multiple cloud providers, helping you optimize spending and make informed deployment decisions.
+Aether provides cost estimation for workloads across multiple cloud providers, helping you optimize spending and make informed deployment decisions.
 
 ## Overview
 
@@ -15,7 +15,7 @@ Cost estimation features:
 ### Estimate Costs for All Providers
 
 ```bash
-orchestr8 -s workload.yaml cost
+aether -s workload.yaml cost
 ```
 
 Output:
@@ -49,19 +49,19 @@ Monthly Cost Estimates:
 
 ```bash
 # AWS
-orchestr8 -s workload.yaml cost --provider aws
+aether -s workload.yaml cost --provider aws
 
 # Azure
-orchestr8 -s workload.yaml cost -p azure
+aether -s workload.yaml cost -p azure
 
 # GCP
-orchestr8 -s workload.yaml cost -p gcp
+aether -s workload.yaml cost -p gcp
 
 # DigitalOcean
-orchestr8 -s workload.yaml cost -p digitalocean
+aether -s workload.yaml cost -p digitalocean
 
 # Linode
-orchestr8 -s workload.yaml cost -p linode
+aether -s workload.yaml cost -p linode
 ```
 
 ## Pricing Models
@@ -139,7 +139,7 @@ Same formats as memory (uses same parsing logic).
 Compare providers to find the cheapest option:
 
 ```bash
-orchestr8 -s production-workload.yaml cost | grep "✅"
+aether -s production-workload.yaml cost | grep "✅"
 ```
 
 ### Budget Planning
@@ -154,7 +154,7 @@ total=0
 
 for workload in workloads/*.yaml; do
   echo "Processing $workload..."
-  cost=$(orchestr8 -s "$workload" cost -p aws | grep "total_monthly" | awk '{print $2}')
+  cost=$(aether -s "$workload" cost -p aws | grep "total_monthly" | awk '{print $2}')
   total=$(echo "$total + $cost" | bc)
 done
 
@@ -169,7 +169,7 @@ Make data-driven provider decisions:
 # Estimate costs for all workloads across all providers
 for workload in *.yaml; do
   echo "=== $workload ==="
-  orchestr8 -s "$workload" cost | grep "Savings"
+  aether -s "$workload" cost | grep "Savings"
 done
 ```
 
@@ -178,7 +178,7 @@ done
 Generate cost comparison reports:
 
 ```bash
-orchestr8 -s workload.yaml cost > cost-report.txt
+aether -s workload.yaml cost > cost-report.txt
 cat cost-report.txt
 ```
 
@@ -189,8 +189,8 @@ cat cost-report.txt
 Use the Rust API for custom cost analysis:
 
 ```rust
-use orchestr8::cost::{estimate_all_providers, CloudProvider, CostComparison};
-use orchestr8::spec::Workload;
+use aether::cost::{estimate_all_providers, CloudProvider, CostComparison};
+use aether::spec::Workload;
 
 async fn analyze_costs(workload: &Workload) -> anyhow::Result<()> {
     // Get estimates for all providers
@@ -218,7 +218,7 @@ async fn analyze_costs(workload: &Workload) -> anyhow::Result<()> {
 For integration with other tools, parse the output as JSON:
 
 ```bash
-orchestr8 -s workload.yaml cost --format json > cost.json
+aether -s workload.yaml cost --format json > cost.json
 ```
 
 Note: JSON output format is not yet implemented. Use text parsing for now.
@@ -235,7 +235,7 @@ DATE=$(date +%Y-%m-%d)
 WORKLOAD="production-app.yaml"
 
 # Estimate current cost
-orchestr8 -s "$WORKLOAD" cost -p aws | grep "total_monthly" \
+aether -s "$WORKLOAD" cost -p aws | grep "total_monthly" \
   >> "cost-history-${DATE}.log"
 
 # Analyze trends
@@ -355,7 +355,7 @@ Compare estimates with actual bills:
 
 ```bash
 # Estimate
-orchestr8 -s workload.yaml cost -p aws
+aether -s workload.yaml cost -p aws
 # Estimated: $48/mo
 
 # Actual (from AWS bill)
@@ -394,7 +394,7 @@ PROVIDER="aws"
 THRESHOLD=100  # $100/mo
 
 # Get estimate
-ESTIMATED=$(orchestr8 -s "$WORKLOAD" cost -p "$PROVIDER" | \
+ESTIMATED=$(aether -s "$WORKLOAD" cost -p "$PROVIDER" | \
   grep "total_monthly" | awk '{print $2}' | tr -d '$')
 
 if (( $(echo "$ESTIMATED > $THRESHOLD" | bc -l) )); then
@@ -424,7 +424,7 @@ for provider in aws azure gcp digitalocean linode; do
   total=0
 
   for workload in workloads/*.yaml; do
-    cost=$(orchestr8 -s "$workload" cost -p "$provider" 2>/dev/null | \
+    cost=$(aether -s "$workload" cost -p "$provider" 2>/dev/null | \
       grep "total_monthly" | awk '{print $2}' | tr -d '$' || echo "0")
 
     total=$(echo "$total + $cost" | bc)
@@ -443,7 +443,7 @@ Calculate return on investment for migrations:
 CURRENT_COST=5000  # $5000/mo
 
 # Estimated cloud costs
-CLOUD_COST=$(orchestr8 -s workload.yaml cost -p aws | \
+CLOUD_COST=$(aether -s workload.yaml cost -p aws | \
   grep "total_monthly" | awk '{print $2}' | tr -d '$')
 
 # Migration cost
@@ -488,7 +488,7 @@ Future enhancements planned:
 ## Support
 
 For cost estimation issues:
-- GitHub Issues: https://github.com/ssahani/orchestr8/issues
+- GitHub Issues: https://github.com/ssahani/aether/issues
 - Tag: `cost-estimation`
 
 ## Additional Resources
