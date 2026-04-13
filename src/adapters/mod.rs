@@ -1,11 +1,13 @@
 //! Runtime adapters module
 
 pub mod common;
+pub mod docker;
 pub mod podman;
 pub mod kube;
 pub mod kubevirt;
 pub mod metal;
 
+pub use docker::DockerRuntime;
 pub use podman::PodmanRuntime;
 pub use kube::KubernetesRuntime;
 pub use kubevirt::KubeVirtRuntime;

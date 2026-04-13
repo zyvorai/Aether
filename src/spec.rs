@@ -99,6 +99,25 @@ pub struct NetworkSpec {
     pub service_type: ServiceType,
     #[serde(default)]
     pub ports: Vec<PortMapping>,
+    #[serde(default)]
+    pub network_policy: Option<NetworkPolicyConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkPolicyConfig {
+    /// Allow ingress from specific labels
+    #[serde(default)]
+    pub allow_from: Vec<String>,
+    /// Allow egress to specific labels
+    #[serde(default)]
+    pub allow_to: Vec<String>,
+    /// Deny all ingress by default
+    #[serde(default)]
+    pub deny_all_ingress: bool,
+    /// Deny all egress by default
+    #[serde(default)]
+    pub deny_all_egress: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]

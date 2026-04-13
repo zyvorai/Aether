@@ -3121,14 +3121,15 @@ pub(crate) async fn exec_command(name: &str, command: &str, interactive: bool, t
     output::header("🐚", &format!("Exec into {}", name));
 
     match ws.runtime {
-        RuntimeKind::Podman => {
-            let mut cmd = std::process::Command::new("podman");
+        RuntimeKind::Podman | RuntimeKind::Docker => {
+            let bin = if ws.runtime == RuntimeKind::Docker { "docker" } else { "podman" };
+            let mut cmd = std::process::Command::new(bin);
             cmd.args(["exec"]);
             if interactive {
                 cmd.args(["-it"]);
             }
             cmd.arg(&ws.instance.id).arg(command);
-            run_with_timeout(cmd, "podman exec", timeout).await?;
+            run_with_timeout(cmd, &format!("{} exec", bin), timeout).await?;
         }
         RuntimeKind::Kubernetes => {
             let mut cmd = std::process::Command::new("kubectl");
@@ -3184,10 +3185,11 @@ pub(crate) async fn port_forward_command(name: &str, ports: &str, timeout: u64) 
     }
 
     match ws.runtime {
-        RuntimeKind::Podman => {
+        RuntimeKind::Podman | RuntimeKind::Docker => {
+            let rt_name = if ws.runtime == RuntimeKind::Docker { "Docker" } else { "Podman" };
             output::info(&format!(
-                "Podman containers use direct port mapping. Port {}:{} was configured at deploy time.",
-                local_port, remote_port
+                "{} containers use direct port mapping. Port {}:{} was configured at deploy time.",
+                rt_name, local_port, remote_port
             ));
             output::muted(&format!(
                 "Access your workload at http://localhost:{}",
@@ -3322,7 +3324,7 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
         let is_recommended = recommended.as_ref().map(|r| *r == runtime).unwrap_or(false);
 
         let suitability = match runtime {
-            RuntimeKind::Podman => {
+            RuntimeKind::Podman | RuntimeKind::Docker => {
                 if workload.requirements.gpu.is_some() { "Limited (no GPU)" }
                 else if cpu > 8.0 { "Adequate" }
                 else { "Excellent" }
@@ -3344,6 +3346,7 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
 
         let limitations = match runtime {
             RuntimeKind::Podman => "Single host, no HA, no service mesh",
+            RuntimeKind::Docker => "Single host, no HA, no service mesh",
             RuntimeKind::Kubernetes => "Requires cluster, higher complexity",
             RuntimeKind::KubeVirt => "Requires KubeVirt operator, VM overhead",
             RuntimeKind::Metal3 => "Requires BMC, slow provisioning, no autoscale",
@@ -3728,6 +3731,50 @@ pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) 
         summary.uptime_percent, summary.ready_checks, summary.total_checks, summary.last_restart_count
     ));
 
+    Ok(())
+}
+
+pub(crate) async fn health_collect_command() -> Result<()> {
+    output::section_with_icon("\u{1F493}", "Collecting Health Data");
+
+    let state = StateStore::load(&StateStore::default_path())?;
+    let workloads = state.list();
+
+    if workloads.is_empty() {
+        output::info("No workloads to check");
+        return Ok(());
+    }
+
+    let health_path = aether::health::HealthHistory::default_path();
+    let mut history = aether::health::HealthHistory::load(&health_path).unwrap_or_default();
+    let mut collected = 0u32;
+
+    for ws in &workloads {
+        match aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await {
+            Ok(rt) => {
+                match rt.status(&ws.instance).await {
+                    Ok(status) => {
+                        let record = aether::health::record_from_status(
+                            &ws.name,
+                            ws.runtime,
+                            &status,
+                        );
+                        history.record(record);
+                        collected += 1;
+                    }
+                    Err(e) => {
+                        tracing::debug!("Failed to get status for '{}': {}", ws.name, e);
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::debug!("Failed to create runtime for '{}': {}", ws.name, e);
+            }
+        }
+    }
+
+    history.save(&health_path)?;
+    output::success(&format!("Collected health data for {} workloads", collected));
     Ok(())
 }
 

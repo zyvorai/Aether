@@ -90,6 +90,7 @@ pub const COLOR_MUTED: (u8, u8, u8) = (107, 114, 128);
 pub fn runtime_meta(runtime: &crate::runtime::RuntimeKind) -> (&'static str, &'static str, (u8, u8, u8)) {
     match runtime {
         crate::runtime::RuntimeKind::Podman => ("🐳", "Podman", (52, 152, 219)),
+        crate::runtime::RuntimeKind::Docker => ("🐋", "Docker", (36, 130, 206)),
         crate::runtime::RuntimeKind::Kubernetes => ("☸️", "Kubernetes", (93, 173, 226)),
         crate::runtime::RuntimeKind::KubeVirt => ("🖥️", "KubeVirt", (155, 89, 182)),
         crate::runtime::RuntimeKind::Metal3 => ("🖧", "Metal3", (231, 76, 60)),
