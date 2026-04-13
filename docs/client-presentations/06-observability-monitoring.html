@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether — Observability &amp; Monitoring</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- Page 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> — Observability &amp; Monitoring</h1>
+    <h2>Built-in Metrics, Events, and Health Tracking</h2>
+    <p class="tagline">Prometheus-native metrics, real-time health monitoring, audit trails with integrity hashes, and multi-cloud cost estimation — all without external dependencies.</p>
+    <div class="badge">Zero-Config Observability</div>
+</div>
+
+<!-- Page 2: Metrics -->
+<div class="page page-dark">
+    <h2 class="st">Prometheus <span>Metrics</span></h2>
+    <p class="sub">Aether exposes a /metrics endpoint in Prometheus format. Scrape it directly or use the built-in dashboard.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4CA;</div>
+            <h4>Export Metrics</h4>
+            <p>Start the metrics server on the default port and point Prometheus at it.</p>
+<pre>$ aether metrics --port 9090
+
+Metrics server listening on :9090
+  Endpoint: /metrics
+  Format:   Prometheus text/plain
+
+# Scrape config (prometheus.yml)
+scrape_configs:
+  - job_name: 'aether'
+    static_configs:
+      - targets: ['localhost:9090']</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F4C8;</div>
+            <h4>Key Metric Families</h4>
+            <p>Core metrics exposed by every Aether instance.</p>
+<pre># Workload metrics
+aether_workloads_total{runtime="podman"} 5
+aether_workloads_running{runtime="k8s"} 3
+aether_workloads_failed 0
+
+# Command duration (histogram)
+aether_command_duration_seconds_bucket{
+  cmd="run", le="1.0"} 42
+aether_command_duration_seconds_sum{
+  cmd="run"} 38.7
+
+# Migration metrics
+aether_migrations_total{strategy="blue-green"} 7
+aether_migration_duration_seconds 34.2</pre>
+        </div>
+    </div>
+
+    <h3>Pre-built Grafana Dashboard (14 Panels)</h3>
+    <div class="card-grid card-grid-3" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="card">
+            <h4>Workload Overview</h4>
+            <ul>
+                <li>Total workloads by runtime</li>
+                <li>Running vs failed ratio</li>
+                <li>Replica health status</li>
+                <li>Deployment frequency</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h4>Performance</h4>
+            <ul>
+                <li>Command duration (p50/p95/p99)</li>
+                <li>Build time trends</li>
+                <li>Migration latency</li>
+                <li>API response times</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h4>Resources &amp; Costs</h4>
+            <ul>
+                <li>CPU/memory utilization</li>
+                <li>Network I/O per workload</li>
+                <li>Disk usage trends</li>
+                <li>Estimated cost by provider</li>
+            </ul>
+        </div>
+    </div>
+
+<pre>$ aether metrics dashboard --export grafana > aether-dashboard.json
+# Import aether-dashboard.json into Grafana
+# Dashboard ID: aether-overview | 14 panels | auto-refresh: 15s</pre>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">14</div>
+            <div class="label">Grafana Panels</div>
+        </div>
+        <div class="stat">
+            <div class="number">50+</div>
+            <div class="label">Metric Series</div>
+        </div>
+        <div class="stat">
+            <div class="number">15s</div>
+            <div class="label">Scrape Interval</div>
+        </div>
+        <div class="stat">
+            <div class="number">0</div>
+            <div class="label">External Deps</div>
+        </div>
+    </div>
+</div>
+
+<!-- Page 3: Health Monitoring -->
+<div class="page page-light">
+    <h2 class="st">Health <span>Monitoring</span></h2>
+    <p class="sub">Continuous health tracking with history, circuit breaker protection, and automated recovery.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F49A;</div>
+            <h4>Health Status</h4>
+<pre>$ aether health
+WORKLOAD      STATUS    UPTIME     CHECKS   LAST
+my-web-app    Healthy   99.97%     1,482    2s ago
+api-service   Healthy   99.91%     1,201    5s ago
+cache-redis   Healthy   100.0%     1,482    1s ago
+worker-queue  Warning   98.12%       890    3s ago
+
+Overall: 3 healthy, 1 warning, 0 critical</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F4C5;</div>
+            <h4>Health History Timeline</h4>
+<pre>$ aether health my-web-app --history 24h
+
+Timeline (last 24h):
+  00:00-06:00  &#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;  Healthy
+  06:00-06:05  &#x2588;&#x2588;            Warning (high latency)
+  06:05-12:00  &#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;  Healthy
+  12:00-18:00  &#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;  Healthy
+  18:00-00:00  &#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;  Healthy
+
+Uptime: 99.97% | Incidents: 1 | MTTR: 5m</pre>
+        </div>
+    </div>
+
+    <h3>Active Health Checks</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>Custom Health Check</h4>
+<pre>$ aether health-check my-web-app \
+    --type http \
+    --path /healthz \
+    --interval 10s \
+    --timeout 3s \
+    --threshold 3
+
+Health check configured:
+  Type:        HTTP GET
+  Endpoint:    http://my-web-app:80/healthz
+  Interval:    every 10s
+  Timeout:     3s
+  Fail threshold: 3 consecutive</pre>
+        </div>
+
+        <div class="card">
+            <h4>Circuit Breaker Protection</h4>
+            <p>Aether automatically applies circuit breaker logic to prevent cascading failures.</p>
+            <div class="arch-box">
+                <h4>Circuit Breaker States</h4>
+                <ul>
+                    <li><strong>Closed</strong> — Normal operation, requests pass through</li>
+                    <li><strong>Open</strong> — Failures exceeded threshold, requests blocked for cooldown</li>
+                    <li><strong>Half-Open</strong> — Probe requests sent to test recovery</li>
+                </ul>
+            </div>
+<pre>$ aether health my-web-app --circuit-breaker
+State: CLOSED
+  Failures: 0/3 threshold
+  Success rate: 100% (last 100 checks)
+  Last trip: 6d ago (auto-recovered)</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Page 4: Events & Audit -->
+<div class="page page-accent">
+    <h2 class="st">Events &amp; <span>Audit</span> Trail</h2>
+    <p class="sub">Every action is recorded. Every event is verifiable. Every notification is delivered.</p>
+
+    <h3>Event System with Severity Levels</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>Event Stream</h4>
+<pre>$ aether events --follow
+
+TIMESTAMP            SEVERITY  SOURCE       MESSAGE
+2026-04-12T10:00:01  INFO      scheduler    Workload my-web-app scaled to 3
+2026-04-12T10:00:05  INFO      health       Health check passed (12ms)
+2026-04-12T10:01:12  WARNING   resources    CPU usage at 85% threshold
+2026-04-12T10:02:30  INFO      migration    Migration plan created
+2026-04-12T10:02:45  INFO      migration    Blue-green switch complete
+2026-04-12T10:05:00  CRITICAL  health       Endpoint /api unresponsive</pre>
+        </div>
+
+        <div class="card">
+            <h4>Severity Levels</h4>
+            <table>
+                <tr><th>Level</th><th>Description</th><th>Action</th></tr>
+                <tr><td><span class="check">INFO</span></td><td>Normal operations</td><td>Log only</td></tr>
+                <tr><td style="color: #eab308; font-weight: 700;">WARNING</td><td>Threshold approaching</td><td>Log + alert</td></tr>
+                <tr><td><span class="cross">CRITICAL</span></td><td>Service degraded</td><td>Log + alert + auto-heal</td></tr>
+                <tr><td style="color: #dc2626; font-weight: 700;">FATAL</td><td>Complete failure</td><td>Log + alert + page</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <h3>Audit Trail with Integrity Hashes</h3>
+<pre>$ aether audit --last 10
+
+ID       TIMESTAMP             USER     ACTION          TARGET        HASH (SHA-256)
+a8f301   2026-04-12T10:00:01   admin    deploy          my-web-app    e3b0c44298fc1c14...
+a8f302   2026-04-12T10:02:30   admin    migrate.plan    my-web-app    9f86d081884c7d65...
+a8f303   2026-04-12T10:02:45   system   migrate.exec    my-web-app    a665a459204f70b8...
+a8f304   2026-04-12T10:05:12   admin    scale           api-service   2cf24dba5fb0a30e...
+
+# Verify audit chain integrity
+$ aether audit --verify
+Chain integrity: VALID (304 entries, 0 tampered)</pre>
+
+    <h3>Webhook Notifications</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>Configure Webhooks</h4>
+<pre>$ aether notify add \
+    --name ops-slack \
+    --type webhook \
+    --url https://hooks.slack.com/T0/B0/xxx \
+    --events "critical,fatal" \
+    --retry-count 3 \
+    --retry-delay 10s
+
+Webhook registered:
+  Name:    ops-slack
+  Events:  critical, fatal
+  Retries: 3 (10s delay)
+  Queue:   persistent (survives restart)</pre>
+        </div>
+
+        <div class="card">
+            <h4>Retry Queue</h4>
+            <p>Failed webhook deliveries are queued and retried with exponential backoff.</p>
+<pre>$ aether notify status
+NAME        TYPE      DELIVERED  PENDING  FAILED
+ops-slack   webhook   142        0        0
+pager-duty  webhook   38         1        0
+email-ops   email     89         0        2
+
+Retry queue: 1 pending (next: 8s)
+Dead letter: 2 (manual review)</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Page 5: Cost Estimation -->
+<div class="page page-dark">
+    <h2 class="st">Multi-Cloud <span>Cost</span> Estimation</h2>
+    <p class="sub">Compare your workload costs across providers before you deploy. No surprises on the invoice.</p>
+
+<pre>$ aether cost my-web-app --provider all
+
+Cost Estimation for: my-web-app
+  Spec: 2 replicas, 500m CPU, 256Mi RAM, 10Gi storage
+
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; Provider       Instance        Monthly    Yearly      &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502; AWS            t3.micro        $18.40     $220.80     &#x2502;
+&#x2502; Azure          B1s             $16.80     $201.60     &#x2502;
+&#x2502; GCP            e2-micro        $15.20     $182.40     &#x2502;
+&#x2502; DigitalOcean   s-1vcpu-512mb   $8.00      $96.00      &#x2502;
+&#x2502; Linode         Nanode 1GB      $10.00     $120.00     &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+
+Cheapest: GCP e2-micro ($15.20/mo)
+Current:  Podman (local) — $0.00/mo</pre>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4B0;</div>
+            <h4>Cost Breakdown</h4>
+<pre>$ aether cost my-web-app --provider aws --detail
+
+AWS Cost Breakdown (t3.micro x2):
+  Compute:   $14.40/mo  (78%)
+  Storage:   $2.00/mo   (11%)
+  Network:   $1.50/mo   (8%)
+  Other:     $0.50/mo   (3%)
+  &#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;
+  Total:     $18.40/mo</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F4C9;</div>
+            <h4>Cost Optimization Tips</h4>
+<pre>$ aether cost my-web-app --optimize
+
+Optimization Suggestions:
+  1. Use spot/preemptible instances
+     Savings: ~60% ($7.36/mo on AWS)
+
+  2. Right-size resources
+     CPU 500m &#x2192; 250m (avg usage: 18%)
+     Savings: ~20% ($3.68/mo)
+
+  3. Reserved pricing (1yr)
+     Savings: ~30% ($5.52/mo)
+
+Potential savings: up to $16.56/mo</pre>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">5</div>
+            <div class="label">Cloud Providers</div>
+        </div>
+        <div class="stat">
+            <div class="number">Real-time</div>
+            <div class="label">Price Updates</div>
+        </div>
+        <div class="stat">
+            <div class="number">60%</div>
+            <div class="label">Max Spot Savings</div>
+        </div>
+        <div class="stat">
+            <div class="number">JSON</div>
+            <div class="label">Export Format</div>
+        </div>
+    </div>
+</div>
+
+<!-- Page 6: CTA — Set Up Monitoring -->
+<div class="page page-accent">
+    <h2 class="st">Set Up <span>Monitoring</span> Now</h2>
+    <p class="sub">From zero to full observability in three commands.</p>
+
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-dot">1</div>
+            <div class="timeline-content">
+                <h4>Start the metrics server</h4>
+                <p>Expose Prometheus metrics on port 9090 and configure your scrape target.</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot">2</div>
+            <div class="timeline-content">
+                <h4>Import the Grafana dashboard</h4>
+                <p>Export the pre-built 14-panel dashboard and import it into your Grafana instance.</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot">3</div>
+            <div class="timeline-content">
+                <h4>Configure webhook alerts</h4>
+                <p>Add Slack, PagerDuty, or email endpoints for critical and fatal events.</p>
+            </div>
+        </div>
+    </div>
+
+<pre># Complete setup in 3 commands
+$ aether metrics --port 9090 --daemon
+$ aether metrics dashboard --export grafana > dashboard.json
+$ aether notify add --name ops-slack --type webhook \
+    --url https://hooks.slack.com/T0/B0/xxx \
+    --events "warning,critical,fatal"</pre>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4D6;</div>
+            <h4>Further Reading</h4>
+            <ul>
+                <li>Metrics reference: all 50+ exposed metrics</li>
+                <li>Custom alerting rules with aether alert</li>
+                <li>Long-term metric storage with remote write</li>
+                <li>Multi-cluster federation setup</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F517;</div>
+            <h4>Integrations</h4>
+            <ul>
+                <li>Prometheus + Grafana (native)</li>
+                <li>Datadog (via StatsD bridge)</li>
+                <li>OpenTelemetry (OTLP export)</li>
+                <li>Slack, PagerDuty, Opsgenie webhooks</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h3>Observability Should Be Built In, Not Bolted On</h3>
+        <p>Aether ships with everything you need — no sidecars, no agents, no external dependencies. Just start the metrics server and you are live.</p>
+    </div>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane &mdash; aether.dev</div>
+</div>
+
+</body>
+</html>

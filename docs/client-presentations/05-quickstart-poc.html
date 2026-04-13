@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether — Quick Start PoC</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- Page 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> — Quick Start PoC</h1>
+    <h2>From Zero to Deployed in 5 Minutes</h2>
+    <p class="tagline">Install, deploy, migrate, and monitor — a complete proof of concept in minutes.</p>
+    <div class="badge">Universal Runtime Control Plane</div>
+</div>
+
+<!-- Page 2: Installation -->
+<div class="page page-dark">
+    <h2 class="st">Three Ways to <span>Install</span></h2>
+    <p class="sub">Choose the method that fits your environment. All options give you the full Aether CLI.</p>
+
+    <div class="card-grid" style="grid-template-columns: 1fr;">
+        <div class="card">
+            <div class="icon">&#x1F4E6;</div>
+            <h4>Option A: Container Image</h4>
+            <p>Pull the official image and alias the CLI — no local dependencies required.</p>
+<pre>docker pull ghcr.io/aether/aether:latest
+
+# Create a convenient alias
+alias aether='docker run --rm -v $(pwd):/work \
+  -v /var/run/podman/podman.sock:/var/run/podman/podman.sock \
+  ghcr.io/aether/aether:latest'
+
+aether --version
+# aether 0.9.0 (runtime: container)</pre>
+        </div>
+    </div>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4E5;</div>
+            <h4>Option B: Pre-built Binary</h4>
+            <p>Download a statically-linked binary for Linux x86_64 or aarch64.</p>
+<pre># Download latest release
+curl -fsSL https://get.aether.dev | sh
+
+# Or fetch a specific version
+curl -LO https://github.com/aether/aether/\
+releases/download/v0.9.0/aether-linux-amd64
+
+chmod +x aether-linux-amd64
+sudo mv aether-linux-amd64 /usr/local/bin/aether
+
+aether --version
+# aether 0.9.0 (runtime: binary)</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F527;</div>
+            <h4>Option C: Build from Source</h4>
+            <p>Clone the repo and compile with Cargo. Requires Rust 1.75+.</p>
+<pre># Clone the repository
+git clone https://github.com/aether/aether.git
+cd aether
+
+# Build in release mode
+cargo build --release
+
+# Install to PATH
+sudo cp target/release/aether /usr/local/bin/
+
+aether --version
+# aether 0.9.0 (runtime: source)</pre>
+        </div>
+    </div>
+
+    <div class="quote">
+        All three methods produce the same CLI binary with identical capabilities. Choose container for isolation, binary for speed, or source for customization.
+    </div>
+</div>
+
+<!-- Page 3: First Deployment -->
+<div class="page page-light">
+    <h2 class="st">Your First <span>Deployment</span></h2>
+    <p class="sub">Define a workload in YAML, validate, build, run, and inspect — all from one tool.</p>
+
+    <h3>1. Create workload.yaml</h3>
+<pre>apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: my-web-app
+  labels:
+    team: platform
+    env: staging
+spec:
+  runtime: podman
+  image: docker.io/library/nginx:alpine
+  replicas: 2
+  ports:
+    - containerPort: 80
+      hostPort: 8080
+  resources:
+    cpu: "500m"
+    memory: "256Mi"
+  healthCheck:
+    httpGet:
+      path: /
+      port: 80
+    intervalSeconds: 10
+    timeoutSeconds: 3
+  env:
+    - name: APP_ENV
+      value: staging</pre>
+
+    <h3>2. Validate, Build, Run, Inspect</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>Validate the spec</h4>
+<pre>$ aether validate workload.yaml
+&#x2713; Schema valid
+&#x2713; Image reference valid
+&#x2713; Port range OK
+&#x2713; Resource limits OK
+Result: PASS (4/4 checks)</pre>
+        </div>
+        <div class="card">
+            <h4>Build and Run</h4>
+<pre>$ aether build workload.yaml
+Building my-web-app... done (1.2s)
+
+$ aether run workload.yaml
+Deploying my-web-app to podman...
+  &#x2713; Container created (replica 1/2)
+  &#x2713; Container created (replica 2/2)
+  &#x2713; Health check passing
+Status: RUNNING</pre>
+        </div>
+    </div>
+
+    <div class="card-grid">
+        <div class="card">
+            <h4>Check status</h4>
+<pre>$ aether status my-web-app
+NAME         RUNTIME  REPLICAS  STATUS   AGE
+my-web-app   podman   2/2       Running  45s
+
+Endpoints:
+  http://localhost:8080 &#x2192; :80</pre>
+        </div>
+        <div class="card">
+            <h4>Stream logs</h4>
+<pre>$ aether logs my-web-app --follow
+[replica-1] 172.17.0.1 - GET / 200 0.002s
+[replica-2] 172.17.0.1 - GET / 200 0.001s
+[replica-1] health-check OK (12ms)
+[replica-2] health-check OK (9ms)</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Page 4: Migration Demo -->
+<div class="page page-accent">
+    <h2 class="st">Live <span>Migration</span> Demo</h2>
+    <p class="sub">Move workloads between runtimes with a single command. Zero downtime, full state preservation.</p>
+
+    <h3>Migrate from Podman to Kubernetes</h3>
+<pre>$ aether migrate my-web-app kubernetes --strategy blue-green
+
+Migration Plan:
+  Source:      podman (local)
+  Target:      kubernetes (cluster: staging-east)
+  Strategy:    blue-green
+  Rollback:    automatic (on failure)
+
+Phase 1/4: Preparing target environment...
+  &#x2713; Namespace created: aether-my-web-app
+  &#x2713; Deployment manifest generated
+  &#x2713; Service + Ingress configured
+
+Phase 2/4: Deploying green environment...
+  &#x2713; Pod my-web-app-green-7f8d9 running (1/2)
+  &#x2713; Pod my-web-app-green-a3b12 running (2/2)
+  &#x2713; Health checks passing
+
+Phase 3/4: Switching traffic...
+  &#x2713; Traffic routed to green (100%)
+  &#x2713; Blue environment draining
+
+Phase 4/4: Cleanup...
+  &#x2713; Podman containers stopped
+  &#x2713; Migration state recorded
+
+Result: SUCCESS (total: 38s)</pre>
+
+    <h3>Verify Migration</h3>
+<pre>$ aether status my-web-app
+NAME         RUNTIME      REPLICAS  STATUS   AGE    MIGRATED-FROM
+my-web-app   kubernetes   2/2       Running  12s    podman (38s ago)</pre>
+
+    <div class="flow">
+        <div class="flow-step">Podman</div>
+        <div class="flow-arrow">&#x27A1;</div>
+        <div class="flow-step">Kubernetes</div>
+        <div class="flow-arrow">&#x27A1;</div>
+        <div class="flow-step">KubeVirt</div>
+        <div class="flow-arrow">&#x27A1;</div>
+        <div class="flow-step">Metal3</div>
+    </div>
+
+    <div class="quote">
+        Aether supports migrations between any pair of runtimes. Strategies include rolling, blue-green, canary, and immediate. Automatic rollback protects against failures.
+    </div>
+</div>
+
+<!-- Page 5: Dashboard & API -->
+<div class="page page-dark">
+    <h2 class="st">Dashboard & <span>API</span></h2>
+    <p class="sub">Monitor workloads with the built-in TUI or integrate via the REST API.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F5A5;</div>
+            <h4>Terminal UI (TUI)</h4>
+            <p>Full-featured dashboard in your terminal. Real-time metrics, logs, and management.</p>
+<pre>$ aether tui
+
+&#x250C;&#x2500; Workloads &#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; my-web-app  k8s   2/2  Running &#x2502;
+&#x2502; api-svc     podman 1/1  Running &#x2502;
+&#x2502; cache       podman 3/3  Running &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+  [Tab] Switch  [Enter] Detail
+  [l] Logs  [r] Restart  [q] Quit</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F310;</div>
+            <h4>Web Dashboard</h4>
+            <p>Launch the web UI on port 5090 for browser-based monitoring.</p>
+<pre>$ aether serve --port 5090
+
+Aether Web Dashboard
+  URL:  http://localhost:5090
+  API:  http://localhost:5090/api/v1
+  Auth: Bearer token (see below)
+
+Generating API token...
+  Token: aether_tk_a8f3...b92e
+  Save this token — it will not be
+  shown again.</pre>
+        </div>
+    </div>
+
+    <h3>REST API Examples</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>List all workloads</h4>
+<pre>$ curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:5090/api/v1/workloads | jq
+
+{
+  "workloads": [
+    {
+      "name": "my-web-app",
+      "runtime": "kubernetes",
+      "replicas": { "ready": 2, "desired": 2 },
+      "status": "Running",
+      "age": "5m12s"
+    }
+  ],
+  "total": 1
+}</pre>
+        </div>
+
+        <div class="card">
+            <h4>Deploy via API</h4>
+<pre>$ curl -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/yaml" \
+  --data-binary @workload.yaml \
+  http://localhost:5090/api/v1/workloads
+
+{
+  "status": "created",
+  "name": "my-web-app",
+  "runtime": "podman",
+  "message": "Deployment initiated"
+}</pre>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">5090</div>
+            <div class="label">Default Port</div>
+        </div>
+        <div class="stat">
+            <div class="number">REST</div>
+            <div class="label">API Protocol</div>
+        </div>
+        <div class="stat">
+            <div class="number">JWT</div>
+            <div class="label">Auth Method</div>
+        </div>
+        <div class="stat">
+            <div class="number">OpenAPI</div>
+            <div class="label">Schema Available</div>
+        </div>
+    </div>
+</div>
+
+<!-- Page 6: CTA — Next Steps -->
+<div class="page page-accent">
+    <h2 class="st">What's <span>Next</span>?</h2>
+    <p class="sub">You have a running workload. Now unlock the full power of Aether.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4CB;</div>
+            <h4>Explore Templates</h4>
+            <p>8 built-in templates for common workload patterns: web apps, APIs, databases, workers, cron jobs, and more.</p>
+<pre>$ aether template list
+$ aether template web-app --name my-svc</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F4E6;</div>
+            <h4>Multi-Workload Compose</h4>
+            <p>Define entire stacks in aether-compose.yaml with dependency ordering and shared networking.</p>
+<pre>$ aether compose up
+$ aether compose status</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F510;</div>
+            <h4>Secrets Management</h4>
+            <p>Encrypt and inject secrets at deploy time. Supports file-based, environment, and vault-backed secrets.</p>
+<pre>$ aether secret set DB_PASS --value s3cret
+$ aether secret list</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F504;</div>
+            <h4>CI/CD Integration</h4>
+            <p>Use --yes for non-interactive mode. Dry-run support for pipeline validation before deploy.</p>
+<pre>$ aether run workload.yaml --yes --dry-run
+$ aether run workload.yaml --yes</pre>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h3>Ready to Go Further?</h3>
+        <p>Check out the Observability guide for metrics, the Developer Experience guide for 40+ commands, or dive into the full documentation at docs.aether.dev.</p>
+    </div>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane &mdash; aether.dev</div>
+</div>
+
+</body>
+</html>
