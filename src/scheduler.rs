@@ -99,10 +99,22 @@ pub struct RuntimeCapacity {
 }
 
 impl RuntimeCapacity {
+    /// Create capacity from a probed Capacity value
+    pub fn from_probed(cap: &crate::runtime::Capacity, runtime: RuntimeKind) -> Self {
+        Self {
+            total_cpu: cap.total_cpu,
+            available_cpu: cap.available_cpu,
+            total_memory_mb: cap.total_memory_mb,
+            available_memory_mb: cap.available_memory_mb,
+            // Keep defaults for GPU, cost, storage, etc. since we can't probe those
+            ..Self::default_for(runtime)
+        }
+    }
+
     /// Default capacity for a runtime (for simulation/testing)
     pub fn default_for(runtime: RuntimeKind) -> Self {
         match runtime {
-            RuntimeKind::Podman => Self {
+            RuntimeKind::Podman | RuntimeKind::Docker => Self {
                 runtime,
                 total_cpu: 8.0,
                 available_cpu: 6.0,

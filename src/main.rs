@@ -9,7 +9,7 @@ use colored::Colorize;
 use aether::state::StateStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use cli::{Cli, Commands};
+use cli::{Cli, Commands, HealthAction};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -205,8 +205,13 @@ async fn main() -> Result<()> {
         Commands::Plugin { action } => {
             commands::plugin_command(action).await
         }
-        Commands::Health { name, last, summary } => {
-            commands::health_command(&name, last, summary).await
+        Commands::Health { action } => match action {
+            HealthAction::Show { name, last, summary } => {
+                commands::health_command(&name, last, summary).await
+            }
+            HealthAction::Collect => {
+                commands::health_collect_command().await
+            }
         }
     };
 

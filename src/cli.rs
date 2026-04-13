@@ -491,6 +491,15 @@ pub(crate) enum Commands {
 
     /// View workload health history and uptime
     Health {
+        #[command(subcommand)]
+        action: HealthAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum HealthAction {
+    /// Show health history for a workload
+    Show {
         /// Workload name
         name: String,
 
@@ -502,6 +511,8 @@ pub(crate) enum Commands {
         #[arg(long)]
         summary: bool,
     },
+    /// Collect health data for all deployed workloads
+    Collect,
 }
 
 impl Commands {

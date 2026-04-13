@@ -365,7 +365,7 @@ impl AffinityEngine {
 
     fn heuristic_cost(&self, _class: &WorkloadClass, runtime: &RuntimeKind) -> f64 {
         match runtime {
-            RuntimeKind::Podman => 5.0,
+            RuntimeKind::Podman | RuntimeKind::Docker => 5.0,
             RuntimeKind::Kubernetes => 15.0,
             RuntimeKind::KubeVirt => 25.0,
             RuntimeKind::Metal3 => 40.0,

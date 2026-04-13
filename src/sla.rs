@@ -342,6 +342,22 @@ impl SlaEngine {
     }
 }
 
+/// Build an SLA observation from health history data
+pub fn observation_from_health(
+    history: &crate::health::HealthHistory,
+    workload: &str,
+) -> SlaObservation {
+    let uptime = history.uptime_percent(workload);
+    let restarts = history.restart_count(workload);
+    SlaObservation {
+        uptime_pct: uptime,
+        avg_latency_ms: 100.0, // Default when no latency data available
+        error_rate_pct: if uptime > 0.0 { 100.0 - uptime } else { 0.0 },
+        restarts,
+        observation_period: "auto".to_string(),
+    }
+}
+
 /// Format SLA report
 pub fn format_sla_report(report: &SlaReport) -> String {
     let mut output = String::new();

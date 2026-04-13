@@ -238,7 +238,7 @@ impl PolicyEngine {
                 use crate::spec::RuntimeType;
                 if let Ok(kind) = runtime_name.parse::<RuntimeKind>() {
                     let rt = match kind {
-                        RuntimeKind::Podman => RuntimeType::Container,
+                        RuntimeKind::Podman | RuntimeKind::Docker => RuntimeType::Container,
                         RuntimeKind::Kubernetes => RuntimeType::Kube,
                         RuntimeKind::KubeVirt => RuntimeType::Kubevirt,
                         RuntimeKind::Metal3 => RuntimeType::Metal,
