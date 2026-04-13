@@ -19,7 +19,7 @@ The WebUI provides:
 aether serve
 ```
 
-The server starts on `http://127.0.0.1:8080` by default.
+The server starts on `http://127.0.0.1:5090` by default.
 
 ### Custom Host and Port
 
@@ -27,11 +27,27 @@ The server starts on `http://127.0.0.1:8080` by default.
 aether serve --host 0.0.0.0 --port 3000
 ```
 
+### Enable API Authentication
+
+Set the `AETHER_API_KEY` environment variable to require Bearer token authentication on all `/api/*` endpoints:
+
+```bash
+export AETHER_API_KEY="my-secure-api-key"
+aether serve
+```
+
+When enabled, all API requests must include:
+```
+Authorization: Bearer my-secure-api-key
+```
+
+The `/health` endpoint and dashboard (`/`) remain public. See [Security Features](features/security.md#-api-authentication) for details.
+
 ### Access the Dashboard
 
 Open your browser and navigate to:
 ```
-http://localhost:8080
+http://localhost:5090
 ```
 
 ## Dashboard Features
@@ -366,27 +382,27 @@ Response:
 
 #### List all workloads
 ```bash
-curl http://localhost:8080/api/workloads
+curl http://localhost:5090/api/workloads
 ```
 
 #### Get workload logs
 ```bash
-curl http://localhost:8080/api/workloads/my-app/logs
+curl http://localhost:5090/api/workloads/my-app/logs
 ```
 
 #### Stop a workload
 ```bash
-curl -X POST http://localhost:8080/api/workloads/my-app/stop
+curl -X POST http://localhost:5090/api/workloads/my-app/stop
 ```
 
 #### Delete a workload
 ```bash
-curl -X DELETE http://localhost:8080/api/workloads/my-app
+curl -X DELETE http://localhost:5090/api/workloads/my-app
 ```
 
 #### Create a backup
 ```bash
-curl -X POST http://localhost:8080/api/backups \
+curl -X POST http://localhost:5090/api/backups \
   -H "Content-Type: application/json" \
   -d '{"name": "backup-20240206", "description": "Daily backup"}'
 ```
@@ -397,7 +413,7 @@ curl -X POST http://localhost:8080/api/backups \
 import requests
 
 # Base URL
-base_url = "http://localhost:8080/api"
+base_url = "http://localhost:5090/api"
 
 # List workloads
 response = requests.get(f"{base_url}/workloads")
@@ -425,7 +441,7 @@ print(response.json())
 ```javascript
 const axios = require('axios');
 
-const baseURL = 'http://localhost:8080/api';
+const baseURL = 'http://localhost:5090/api';
 
 // List workloads
 async function listWorkloads() {
@@ -473,7 +489,7 @@ import (
     "net/http"
 )
 
-const baseURL = "http://localhost:8080/api"
+const baseURL = "http://localhost:5090/api"
 
 type ApiResponse struct {
     Success bool        `json:"success"`
@@ -540,7 +556,7 @@ server {
     ssl_certificate_key /etc/ssl/private/aether.key;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:5090;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -659,7 +675,7 @@ docker-compose up -d
 The API server exposes metrics that can be scraped by Prometheus:
 
 ```bash
-curl http://localhost:8080/metrics
+curl http://localhost:5090/metrics
 ```
 
 See [METRICS.md](METRICS.md) for full Prometheus integration guide.

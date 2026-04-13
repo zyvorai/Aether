@@ -198,41 +198,41 @@ chrono = "0.4"  # For timestamps
 
 ### List Workloads
 ```bash
-curl http://localhost:8080/api/workloads
+curl http://localhost:5090/api/workloads
 ```
 
 ### Create Workload
 ```bash
-curl -X POST http://localhost:8080/api/workloads \
+curl -X POST http://localhost:5090/api/workloads \
   -H "Content-Type: application/json" \
   -d @workload.json
 ```
 
 ### View Logs
 ```bash
-curl http://localhost:8080/api/workloads/my-app/logs
+curl http://localhost:5090/api/workloads/my-app/logs
 ```
 
 ### Stop Workload
 ```bash
-curl -X POST http://localhost:8080/api/workloads/my-app/stop
+curl -X POST http://localhost:5090/api/workloads/my-app/stop
 ```
 
 ### Delete Workload
 ```bash
-curl -X DELETE http://localhost:8080/api/workloads/my-app
+curl -X DELETE http://localhost:5090/api/workloads/my-app
 ```
 
 ### Estimate Costs
 ```bash
-curl -X POST http://localhost:8080/api/cost \
+curl -X POST http://localhost:5090/api/cost \
   -H "Content-Type: application/json" \
   -d @workload-spec.json
 ```
 
 ### Create Backup
 ```bash
-curl -X POST http://localhost:8080/api/backups \
+curl -X POST http://localhost:5090/api/backups \
   -H "Content-Type: application/json" \
   -d '{"name": "backup-20240206", "description": "Daily backup"}'
 ```
@@ -282,7 +282,7 @@ spec:
 
 **Manual Testing:**
 1. Start server: `aether serve`
-2. Access dashboard: http://localhost:8080
+2. Access dashboard: http://localhost:5090
 3. Test all API endpoints
 4. Verify workload operations
 5. Check log viewer functionality
@@ -414,7 +414,7 @@ cargo test
 
 # Server starts
 aether serve
-# Output: 🌐 Starting API server on http://127.0.0.1:8080
+# Output: 🌐 Starting API server on http://127.0.0.1:5090
 ```
 
 ## Conclusion

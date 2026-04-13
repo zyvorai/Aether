@@ -427,7 +427,7 @@ aether build
 aether run --runtime podman
 
 # Test
-curl http://localhost:8080
+curl http://localhost:5090
 
 # Check logs
 aether logs my-app

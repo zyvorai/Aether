@@ -53,11 +53,18 @@
 | Topic | Document | What You Learn | Time |
 |-------|----------|----------------|------|
 | Advanced Features | [Advanced Tutorial](tutorials/03-advanced-features.md) | Policies, AES-256 secrets, drift reconciliation, plugins | 60 min |
+| How It Works | [Deep Dive Tutorial](tutorials/04-how-it-works.md) | Internal architecture, decision engine, runtime adapters, state management, security model | 90 min |
 | CI/CD Integration | [CI/CD Guide](CICD.md) | GitHub Actions, GitLab CI, Jenkins pipelines | 30 min |
 
 ---
 
 ## 📗 Guides
+
+### Architecture
+
+| Guide | Description |
+|-------|-------------|
+| [Architecture Overview](architecture/ARCHITECTURE.md) | System design, component architecture, data flow, security model, key design decisions |
 
 ### CLI Guide
 

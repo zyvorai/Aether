@@ -379,7 +379,7 @@ Validate a compose spec via the REST API.
 **Request:** Raw YAML body (Content-Type: `text/plain` or `application/x-yaml`)
 
 ```bash
-curl -X POST http://localhost:8080/api/compose/validate \
+curl -X POST http://localhost:5090/api/compose/validate \
   -H "Content-Type: text/plain" \
   -d @aether-compose.yaml
 ```
