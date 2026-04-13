@@ -209,6 +209,14 @@ pub(crate) enum Commands {
         /// Server port
         #[arg(short, long, default_value = "5090")]
         port: u16,
+
+        /// TLS certificate file path (enables HTTPS)
+        #[arg(long)]
+        tls_cert: Option<std::path::PathBuf>,
+
+        /// TLS private key file path (required with --tls-cert)
+        #[arg(long)]
+        tls_key: Option<std::path::PathBuf>,
     },
 
     /// AI-powered runtime recommendation with scoring

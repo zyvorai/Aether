@@ -13,6 +13,10 @@ pub struct ApiConfig {
     pub host: String,
     pub port: u16,
     pub state_path: PathBuf,
+    /// TLS certificate file path (enables HTTPS when set with tls_key)
+    pub tls_cert: Option<PathBuf>,
+    /// TLS private key file path
+    pub tls_key: Option<PathBuf>,
 }
 
 impl Default for ApiConfig {
@@ -21,6 +25,8 @@ impl Default for ApiConfig {
             host: "127.0.0.1".to_string(),
             port: 5090,
             state_path: StateStore::default_path(),
+            tls_cert: None,
+            tls_key: None,
         }
     }
 }
@@ -265,6 +271,8 @@ mod tests {
             host: "0.0.0.0".to_string(),
             port: 3000,
             state_path: PathBuf::from("/tmp/test-state.json"),
+            tls_cert: None,
+            tls_key: None,
         };
         assert_eq!(config.host, "0.0.0.0");
         assert_eq!(config.port, 3000);

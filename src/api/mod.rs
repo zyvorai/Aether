@@ -2,6 +2,7 @@
 //!
 //! Provides HTTP endpoints for workload management.
 //! Supports optional API key authentication via AETHER_API_KEY environment variable.
+//! Supports optional HTTPS via --tls-cert and --tls-key flags.
 
 mod types;
 mod handlers;
@@ -61,6 +62,33 @@ async fn auth_middleware(req: Request<axum::body::Body>, next: Next) -> Result<R
     Err(StatusCode::UNAUTHORIZED)
 }
 
+/// Create a shutdown signal that listens for Ctrl+C and SIGTERM.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    println!("\n🛑 Received shutdown signal, draining connections...");
+}
+
 /// Start the API server
 pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     // Load state
@@ -69,12 +97,15 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         state: Arc::new(RwLock::new(state_store)),
     };
 
+    let tls_enabled = config.tls_cert.is_some() && config.tls_key.is_some();
+    let scheme = if tls_enabled { "https" } else { "http" };
+
     // CORS configuration: restrict to same-origin by default
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::DELETE])
         .allow_headers(Any)
         .allow_origin({
-            let origin_str = format!("http://{}:{}", config.host, config.port);
+            let origin_str = format!("{}://{}:{}", scheme, config.host, config.port);
             origin_str.parse::<HeaderValue>().unwrap_or_else(|e| {
                 tracing::warn!("Failed to parse CORS origin '{}': {}, using default", origin_str, e);
                 HeaderValue::from_static("http://127.0.0.1:5090")
@@ -143,17 +174,47 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .map(|k| !k.is_empty())
         .unwrap_or(false);
 
-    println!("🌐 Starting API server on http://{}", addr);
-    println!("📊 Dashboard: http://{}", addr);
-    println!("📋 API Health: http://{}/health", addr);
+    println!("🌐 Starting API server on {}://{}", scheme, addr);
+    println!("📊 Dashboard: {}://{}", scheme, addr);
+    println!("📋 API Health: {}://{}/health", scheme, addr);
+    if tls_enabled {
+        println!("🔒 TLS enabled");
+    }
     if has_api_key {
         println!("🔐 API authentication enabled (AETHER_API_KEY)");
     } else {
         println!("⚠️  No AETHER_API_KEY set — API is unauthenticated. Set AETHER_API_KEY for production use.");
     }
 
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    axum::serve(listener, app).await?;
+    if tls_enabled {
+        // HTTPS with TLS
+        let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file(
+            config.tls_cert.as_ref().unwrap(),
+            config.tls_key.as_ref().unwrap(),
+        )
+        .await?;
 
+        let handle = axum_server::Handle::new();
+        let shutdown_handle = handle.clone();
+
+        // Spawn shutdown signal handler
+        tokio::spawn(async move {
+            shutdown_signal().await;
+            shutdown_handle.graceful_shutdown(Some(std::time::Duration::from_secs(30)));
+        });
+
+        axum_server::bind_rustls(addr, tls_config)
+            .handle(handle)
+            .serve(app.into_make_service())
+            .await?;
+    } else {
+        // Plain HTTP
+        let listener = tokio::net::TcpListener::bind(&addr).await?;
+        axum::serve(listener, app)
+            .with_graceful_shutdown(shutdown_signal())
+            .await?;
+    }
+
+    println!("🛑 Server stopped");
     Ok(())
 }
