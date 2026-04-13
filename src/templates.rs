@@ -209,6 +209,7 @@ fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<Ru
         config: None,
         ingress: None,
         scaling: None,
+        mesh: None,
     }
 }
 

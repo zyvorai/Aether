@@ -27,6 +27,10 @@ pub struct Config {
     pub policy: PolicyConfig,
     #[serde(default)]
     pub reconciliation: ReconciliationConfig,
+    #[serde(default)]
+    pub logging: LoggingConfig,
+    #[serde(default)]
+    pub notifications: NotificationsConfig,
 }
 
 impl Config {
@@ -386,6 +390,73 @@ impl Default for ReconciliationConfig {
     }
 }
 
+/// Logging configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoggingConfig {
+    /// Output format: "text" (default) or "json" (structured)
+    #[serde(default = "default_log_format")]
+    pub format: String,
+    /// Log level: "error", "warn", "info", "debug", "trace"
+    #[serde(default = "default_log_level")]
+    pub level: String,
+    /// Log forwarding endpoint (Loki, Elasticsearch, etc.)
+    /// When set, logs from `aether logs` are also forwarded here.
+    #[serde(default)]
+    pub forward_url: Option<String>,
+    /// Labels to attach to forwarded log entries
+    #[serde(default)]
+    pub labels: std::collections::HashMap<String, String>,
+}
+
+fn default_log_format() -> String {
+    "text".to_string()
+}
+
+fn default_log_level() -> String {
+    "warn".to_string()
+}
+
+impl Default for LoggingConfig {
+    fn default() -> Self {
+        Self {
+            format: default_log_format(),
+            level: default_log_level(),
+            forward_url: None,
+            labels: std::collections::HashMap::new(),
+        }
+    }
+}
+
+/// Notification channel configuration (Slack, email, etc.)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationsConfig {
+    /// Slack webhook URL (optional)
+    #[serde(default)]
+    pub slack_webhook_url: Option<String>,
+    /// Slack channel name for display purposes
+    #[serde(default)]
+    pub slack_channel: Option<String>,
+    /// Minimum severity for Slack notifications (info, warning, error, critical)
+    #[serde(default = "default_notification_severity")]
+    pub min_severity: String,
+}
+
+fn default_notification_severity() -> String {
+    "warning".to_string()
+}
+
+impl Default for NotificationsConfig {
+    fn default() -> Self {
+        Self {
+            slack_webhook_url: None,
+            slack_channel: None,
+            min_severity: default_notification_severity(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -435,5 +506,36 @@ mod tests {
         assert_eq!(config.timeout_secs, 10);
         assert_eq!(config.max_retries, 3);
         assert!(config.user_agent.starts_with("aether/"));
+    }
+
+    #[test]
+    fn test_notifications_config_defaults() {
+        let config = NotificationsConfig::default();
+        assert!(config.slack_webhook_url.is_none());
+        assert!(config.slack_channel.is_none());
+        assert_eq!(config.min_severity, "warning");
+    }
+
+    #[test]
+    fn test_notifications_config_roundtrip() {
+        let config = NotificationsConfig {
+            slack_webhook_url: Some("https://hooks.slack.com/services/T00/B00/xxx".to_string()),
+            slack_channel: Some("ops-alerts".to_string()),
+            min_severity: "error".to_string(),
+        };
+        let yaml = serde_yaml::to_string(&config).unwrap();
+        let parsed: NotificationsConfig = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(parsed.slack_webhook_url.as_deref(), Some("https://hooks.slack.com/services/T00/B00/xxx"));
+        assert_eq!(parsed.slack_channel.as_deref(), Some("ops-alerts"));
+        assert_eq!(parsed.min_severity, "error");
+    }
+
+    #[test]
+    fn test_config_with_notifications_roundtrip() {
+        let config = Config::default();
+        let yaml = serde_yaml::to_string(&config).unwrap();
+        let parsed: Config = serde_yaml::from_str(&yaml).unwrap();
+        assert!(parsed.notifications.slack_webhook_url.is_none());
+        assert_eq!(parsed.notifications.min_severity, "warning");
     }
 }

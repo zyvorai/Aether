@@ -29,6 +29,8 @@ pub struct Workload {
     pub ingress: Option<IngressSpec>,
     #[serde(default)]
     pub scaling: Option<ScalingSpec>,
+    #[serde(default)]
+    pub mesh: Option<MeshConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -502,6 +504,22 @@ pub enum MetricType {
     Custom,
 }
 
+/// Service mesh sidecar injection configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MeshConfig {
+    /// Service mesh provider: istio, linkerd, consul
+    pub provider: String,
+    /// Enable sidecar injection
+    #[serde(default = "default_true")]
+    pub inject: bool,
+    /// Additional mesh-specific annotations
+    #[serde(default)]
+    pub annotations: std::collections::HashMap<String, String>,
+}
+
+fn default_true() -> bool { true }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -540,6 +558,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         };
 
         assert!(workload.validate().is_ok());
@@ -579,6 +598,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         };
 
         assert_eq!(workload.image_name(), "ghcr.io/yourorg/my-app:latest");
@@ -618,6 +638,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         };
 
         let result = workload.validate();
@@ -659,6 +680,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         };
 
         let result = workload.validate();
@@ -700,6 +722,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         };
 
         let result = workload.validate();
@@ -741,6 +764,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         };
 
         let result = workload.validate();
@@ -785,6 +809,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         }
     }
 
