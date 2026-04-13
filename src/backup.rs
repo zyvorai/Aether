@@ -49,13 +49,21 @@ impl Backup {
         }
     }
 
-    /// Save backup to file
+    /// Save backup to file with restricted permissions (0o600)
     pub fn save(&self, path: &Path) -> Result<()> {
         let json = serde_json::to_string_pretty(self)
             .context("Failed to serialize backup")?;
 
-        fs::write(path, json)
+        fs::write(path, &json)
             .context(format!("Failed to write backup to {}", path.display()))?;
+
+        // Set restrictive permissions (owner read/write only)
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+                .context("Failed to set backup file permissions")?;
+        }
 
         tracing::info!("Backup saved to {}", path.display());
         Ok(())
@@ -156,7 +164,11 @@ impl BackupManager {
 
         let backup = Backup::from_state(state, description);
 
-        let filename = if let Some(n) = name {
+        let filename = if let Some(ref n) = name {
+            // Validate backup name to prevent path traversal
+            if n.contains('/') || n.contains('\\') || n.contains("..") || n.contains('\0') {
+                anyhow::bail!("Invalid backup name '{}': must not contain path separators or traversal sequences", n);
+            }
             format!("{}.json", n)
         } else {
             let timestamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
@@ -312,8 +324,16 @@ impl SnapshotManager {
 
         let json = serde_json::to_string_pretty(&backup)
             .context("Failed to serialize snapshot")?;
-        fs::write(&path, json)
+        fs::write(&path, &json)
             .context(format!("Failed to write snapshot to {}", path.display()))?;
+
+        // Set restrictive permissions (owner read/write only)
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
+                .context("Failed to set snapshot file permissions")?;
+        }
 
         tracing::info!("Snapshot saved: {}", path.display());
         Ok(path)

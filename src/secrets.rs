@@ -171,7 +171,12 @@ impl SecretStore {
 
     /// Set a key-value pair in a secret
     pub fn set(&mut self, secret_name: &str, key: &str, value: &str) -> anyhow::Result<()> {
-        let (encrypted, method) = self.encrypt(value);
+        self.set_with_actor(secret_name, key, value, "cli")
+    }
+
+    /// Set a key-value pair in a secret with a specific actor for audit logging
+    pub fn set_with_actor(&mut self, secret_name: &str, key: &str, value: &str, actor: &str) -> anyhow::Result<()> {
+        let (encrypted, method) = self.encrypt(value)?;
         let now = crate::resources::now_rfc3339();
 
         let secret = self
@@ -199,7 +204,7 @@ impl SecretStore {
             timestamp: now,
             action: SecretAction::Write,
             key: key.to_string(),
-            actor: "cli".to_string(),
+            actor: actor.to_string(),
         });
 
         Ok(())
@@ -222,6 +227,11 @@ impl SecretStore {
 
     /// Get a decrypted value and log the access
     pub fn get_and_log(&mut self, secret_name: &str, key: &str) -> anyhow::Result<String> {
+        self.get_and_log_with_actor(secret_name, key, "cli")
+    }
+
+    /// Get a decrypted value and log the access with a specific actor
+    pub fn get_and_log_with_actor(&mut self, secret_name: &str, key: &str, actor: &str) -> anyhow::Result<String> {
         let now = crate::resources::now_rfc3339();
         let secret = self
             .secrets
@@ -239,7 +249,7 @@ impl SecretStore {
             timestamp: now,
             action: SecretAction::Read,
             key: key.to_string(),
-            actor: "cli".to_string(),
+            actor: actor.to_string(),
         });
 
         self.decrypt(&encrypted, &method)
@@ -247,6 +257,11 @@ impl SecretStore {
 
     /// Delete a key from a secret
     pub fn delete_key(&mut self, secret_name: &str, key: &str) -> anyhow::Result<()> {
+        self.delete_key_with_actor(secret_name, key, "cli")
+    }
+
+    /// Delete a key from a secret with a specific actor for audit logging
+    pub fn delete_key_with_actor(&mut self, secret_name: &str, key: &str, actor: &str) -> anyhow::Result<()> {
         let now = crate::resources::now_rfc3339();
         let secret = self
             .secrets
@@ -259,7 +274,7 @@ impl SecretStore {
             timestamp: now,
             action: SecretAction::Delete,
             key: key.to_string(),
-            actor: "cli".to_string(),
+            actor: actor.to_string(),
         });
 
         Ok(())
@@ -292,7 +307,12 @@ impl SecretStore {
 
     /// Rotate a specific key in a secret
     pub fn rotate(&mut self, secret_name: &str, key: &str, new_value: &str) -> anyhow::Result<()> {
-        let (encrypted, method) = self.encrypt(new_value);
+        self.rotate_with_actor(secret_name, key, new_value, "cli")
+    }
+
+    /// Rotate a specific key in a secret with a specific actor for audit logging
+    pub fn rotate_with_actor(&mut self, secret_name: &str, key: &str, new_value: &str, actor: &str) -> anyhow::Result<()> {
+        let (encrypted, method) = self.encrypt(new_value)?;
         let now = crate::resources::now_rfc3339();
 
         let secret = self
@@ -320,7 +340,7 @@ impl SecretStore {
             timestamp: now,
             action: SecretAction::Rotate,
             key: key.to_string(),
-            actor: "cli".to_string(),
+            actor: actor.to_string(),
         });
 
         Ok(())
@@ -389,27 +409,37 @@ impl SecretStore {
 
     fn default_key() -> Vec<u8> {
         match std::env::var("AETHER_SECRET_KEY") {
-            Ok(key) if !key.is_empty() => key.into_bytes(),
+            Ok(key) if key.len() >= 16 => key.into_bytes(),
+            Ok(key) if !key.is_empty() => {
+                tracing::warn!(
+                    "AETHER_SECRET_KEY is too short ({} bytes, minimum 16). \
+                     Using it anyway, but consider a longer key for production.",
+                    key.len()
+                );
+                key.into_bytes()
+            }
             _ => {
                 tracing::warn!(
-                    "AETHER_SECRET_KEY not set — generating ephemeral key from machine identity. \
+                    "AETHER_SECRET_KEY not set — generating deterministic key from machine identity. \
                      Set AETHER_SECRET_KEY for stable production encryption."
                 );
-                // Derive a machine-specific key from hostname + uid rather than
+                // Derive a machine-specific key from hostname + user rather than
                 // using a hardcoded constant that any source reader can extract.
+                // NOTE: process::id() is intentionally excluded — it changes on
+                // every restart, which would make secrets unrecoverable.
                 use sha2::{Digest, Sha256};
                 let hostname = std::env::var("HOSTNAME")
                     .or_else(|_| std::env::var("USER"))
                     .unwrap_or_else(|_| "aether-local".to_string());
-                let seed = format!("aether-ephemeral-{}-{}", hostname, std::process::id());
+                let seed = format!("aether-machine-key-{}", hostname);
                 Sha256::digest(seed.as_bytes()).to_vec()
             }
         }
     }
 
     /// Encrypt a plaintext value. Always uses AES-256-GCM regardless of key source.
-    fn encrypt(&self, plaintext: &str) -> (String, EncryptionMethod) {
-        (self.aes_encrypt(plaintext), EncryptionMethod::Aes256)
+    fn encrypt(&self, plaintext: &str) -> anyhow::Result<(String, EncryptionMethod)> {
+        Ok((self.aes_encrypt(plaintext)?, EncryptionMethod::Aes256))
     }
 
     /// Decrypt a ciphertext value, dispatching by encryption method.
@@ -428,7 +458,7 @@ impl SecretStore {
         }
     }
 
-    fn aes_encrypt(&self, plaintext: &str) -> String {
+    fn aes_encrypt(&self, plaintext: &str) -> anyhow::Result<String> {
         use aes_gcm::aead::rand_core::RngCore;
         use aes_gcm::aead::{Aead, KeyInit, OsRng};
         use aes_gcm::{Aes256Gcm, Nonce};
@@ -436,7 +466,8 @@ impl SecretStore {
 
         // Derive 32-byte key from user key via SHA-256
         let key_bytes: [u8; 32] = Sha256::digest(&self.encryption_key).into();
-        let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("32-byte key");
+        let cipher = Aes256Gcm::new_from_slice(&key_bytes)
+            .map_err(|e| anyhow::anyhow!("Failed to initialize AES-256-GCM cipher: {}", e))?;
 
         // Generate random 12-byte nonce
         let mut nonce_bytes = [0u8; 12];
@@ -445,12 +476,12 @@ impl SecretStore {
 
         let ciphertext = cipher
             .encrypt(nonce, plaintext.as_bytes())
-            .expect("AES-256-GCM encryption failed");
+            .map_err(|e| anyhow::anyhow!("AES-256-GCM encryption failed: {}", e))?;
 
         // Prepend nonce to ciphertext, then base64 encode
         let mut combined = nonce_bytes.to_vec();
         combined.extend_from_slice(&ciphertext);
-        base64_encode(&combined)
+        Ok(base64_encode(&combined))
     }
 
     fn aes_decrypt(&self, ciphertext: &str) -> anyhow::Result<String> {
@@ -643,7 +674,7 @@ mod tests {
     fn test_encrypt_decrypt_roundtrip_default_key() {
         let store = SecretStore::new();
         let plaintext = "hello-world-secret-value";
-        let (encrypted, method) = store.encrypt(plaintext);
+        let (encrypted, method) = store.encrypt(plaintext).unwrap();
         assert_eq!(method, EncryptionMethod::Aes256);
         let decrypted = store.decrypt(&encrypted, &method).unwrap();
         assert_eq!(decrypted, plaintext);
@@ -678,7 +709,7 @@ mod tests {
     fn test_encrypt_decrypt_roundtrip_aes() {
         let store = SecretStore::with_key(b"my-production-secret-key-32chars!".to_vec());
         let plaintext = "super-secret-database-password";
-        let (encrypted, method) = store.encrypt(plaintext);
+        let (encrypted, method) = store.encrypt(plaintext).unwrap();
         assert_eq!(method, EncryptionMethod::Aes256);
         let decrypted = store.decrypt(&encrypted, &method).unwrap();
         assert_eq!(decrypted, plaintext);
@@ -688,8 +719,8 @@ mod tests {
     fn test_aes_different_nonces() {
         let store = SecretStore::with_key(b"test-key-for-nonce-check".to_vec());
         let plaintext = "same-value";
-        let (enc1, _) = store.encrypt(plaintext);
-        let (enc2, _) = store.encrypt(plaintext);
+        let (enc1, _) = store.encrypt(plaintext).unwrap();
+        let (enc2, _) = store.encrypt(plaintext).unwrap();
         // Different nonces should produce different ciphertexts
         assert_ne!(enc1, enc2);
     }
@@ -698,7 +729,7 @@ mod tests {
     fn test_aes_wrong_key_fails() {
         let store1 = SecretStore::with_key(b"key-one-for-encryption".to_vec());
         let store2 = SecretStore::with_key(b"key-two-different-key".to_vec());
-        let (encrypted, _) = store1.encrypt("secret-data");
+        let (encrypted, _) = store1.encrypt("secret-data").unwrap();
         let result = store2.aes_decrypt(&encrypted);
         assert!(result.is_err());
     }

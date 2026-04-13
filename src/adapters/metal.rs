@@ -78,35 +78,20 @@ fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Val
             "bootMACAddress": spec.metadata.annotations
                 .get("aether.io/boot-mac-address")
                 .cloned()
-                .unwrap_or_else(|| {
-                    tracing::error!(
-                        "REQUIRED: 'aether.io/boot-mac-address' annotation not set for '{}'. \
-                         Metal3 provisioning WILL FAIL without a valid MAC address. \
-                         Set the annotation in metadata.annotations to match real hardware.",
-                        spec.metadata.name
-                    );
-                    "00:00:00:00:00:00".to_string()
-                }),
-            "bootMode": "UEFI",
+                .unwrap_or_default(),
+            "bootMode": spec.metadata.annotations
+                .get("aether.io/boot-mode")
+                .cloned()
+                .unwrap_or_else(|| "UEFI".to_string()),
             "image": {
                 "url": spec.metadata.annotations
                     .get("aether.io/image-url")
                     .cloned()
-                    .unwrap_or_else(|| {
-                        let fallback = format!("http://image-server/{}.img", spec.image_name());
-                        tracing::warn!(
-                            "No 'aether.io/image-url' annotation set for '{}'; \
-                             using fallback URL '{}'. Set the annotation for production use.",
-                            spec.metadata.name, fallback
-                        );
-                        fallback
-                    }),
+                    .unwrap_or_default(),
                 "checksum": spec.metadata.annotations
                     .get("aether.io/image-checksum-url")
                     .cloned()
-                    .unwrap_or_else(|| {
-                        format!("http://image-server/{}.img.sha256sum", spec.image_name())
-                    }),
+                    .unwrap_or_default(),
             },
             "userData": {
                 "name": format!("{}-userdata", spec.metadata.name),
@@ -240,6 +225,24 @@ impl Runtime for Metal3Runtime {
 
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
         common::validate_kube_name(&spec.metadata.name)?;
+
+        // Validate required Metal3 annotations before proceeding
+        if !spec.metadata.annotations.contains_key("aether.io/boot-mac-address") {
+            anyhow::bail!(
+                "Required annotation 'aether.io/boot-mac-address' not set for '{}'. \
+                 Metal3 provisioning requires a valid MAC address matching real hardware. \
+                 Set it in metadata.annotations.",
+                spec.metadata.name
+            );
+        }
+        if !spec.metadata.annotations.contains_key("aether.io/image-url") {
+            anyhow::bail!(
+                "Required annotation 'aether.io/image-url' not set for '{}'. \
+                 Metal3 provisioning requires an explicit bootable disk image URL. \
+                 Set it in metadata.annotations.",
+                spec.metadata.name
+            );
+        }
 
         tracing::info!(
             "Provisioning BareMetalHost to namespace '{}': {}",
@@ -672,7 +675,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bmh_json_boot_mode_uefi() {
+    fn test_bmh_json_boot_mode_default_uefi() {
         let spec = make_workload("my-host", "4", "32Gi", "200Gi");
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
@@ -680,25 +683,60 @@ mod tests {
     }
 
     #[test]
-    fn test_bmh_json_placeholder_mac_address() {
+    fn test_bmh_json_boot_mode_from_annotation() {
+        let mut spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        spec.metadata.annotations.insert(
+            "aether.io/boot-mode".to_string(),
+            "BIOS".to_string(),
+        );
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["bootMode"], "BIOS");
+    }
+
+    #[test]
+    fn test_bmh_json_empty_mac_address_without_annotation() {
         let spec = make_workload("my-host", "4", "32Gi", "200Gi");
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
-        assert_eq!(bmh["spec"]["bootMACAddress"], "00:00:00:00:00:00");
+        // Without the annotation, bootMACAddress defaults to empty string
+        assert_eq!(bmh["spec"]["bootMACAddress"], "");
+    }
+
+    #[test]
+    fn test_bmh_json_mac_address_from_annotation() {
+        let mut spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        spec.metadata.annotations.insert(
+            "aether.io/boot-mac-address".to_string(),
+            "AA:BB:CC:DD:EE:FF".to_string(),
+        );
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["bootMACAddress"], "AA:BB:CC:DD:EE:FF");
     }
 
     // ---------------------------------------------------------------
     // BMC configuration in manifest
     // ---------------------------------------------------------------
     #[test]
-    fn test_bmh_json_image_url() {
+    fn test_bmh_json_image_url_empty_without_annotation() {
         let spec = make_workload("my-host", "4", "32Gi", "200Gi");
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
-        let url = bmh["spec"]["image"]["url"].as_str().unwrap();
-        assert!(url.starts_with("http://image-server/"));
-        assert!(url.ends_with(".img"));
-        assert!(url.contains("my-host"));
+        // Without the annotation, image URL defaults to empty string
+        assert_eq!(bmh["spec"]["image"]["url"], "");
+    }
+
+    #[test]
+    fn test_bmh_json_image_url_from_annotation() {
+        let mut spec = make_workload("my-host", "4", "32Gi", "200Gi");
+        spec.metadata.annotations.insert(
+            "aether.io/image-url".to_string(),
+            "https://images.example.com/coreos.img".to_string(),
+        );
+        let bmh = build_baremetalhost_json("metal3-system", &spec);
+
+        assert_eq!(bmh["spec"]["image"]["url"], "https://images.example.com/coreos.img");
     }
 
     #[test]
