@@ -99,7 +99,7 @@ Deploy once. Run anywhere. Migrate seamlessly.
 
 **Production Ready**
 - 37,000+ lines of Rust code
-- 916 tests passing (unit + integration)
+- 928 tests passing (unit + integration)
 - Zero compiler warnings, zero Clippy lints
 - Atomic state persistence with advisory file locking (crash-safe)
 - Symlink-safe backup operations
