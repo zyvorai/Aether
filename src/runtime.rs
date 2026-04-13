@@ -181,26 +181,34 @@ pub async fn create_runtime(kind: &RuntimeKind) -> crate::Result<Box<dyn Runtime
 /// Create a runtime instance with an explicit namespace override.
 /// When `namespace` is `Some`, kube-based runtimes use it instead of the
 /// `AETHER_NAMESPACE` env var or the default `"default"`.
+/// When `AETHER_CONTEXT` env var is set, kube-based runtimes use that
+/// kubeconfig context for multi-cluster support.
 pub async fn create_runtime_ns(
     kind: &RuntimeKind,
     namespace: Option<&str>,
 ) -> crate::Result<Box<dyn Runtime>> {
     use crate::adapters::{DockerRuntime, KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
 
+    // Check for multi-cluster context override
+    let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+
     match kind {
         RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
         RuntimeKind::Docker => Ok(Box::new(DockerRuntime::new()?)),
-        RuntimeKind::Kubernetes => match namespace {
-            Some(ns) => Ok(Box::new(KubernetesRuntime::with_namespace(ns.to_string()).await?)),
-            None => Ok(Box::new(KubernetesRuntime::new().await?)),
+        RuntimeKind::Kubernetes => match (&context, namespace) {
+            (Some(ctx), ns) => Ok(Box::new(KubernetesRuntime::with_context(ctx, ns.map(String::from)).await?)),
+            (None, Some(ns)) => Ok(Box::new(KubernetesRuntime::with_namespace(ns.to_string()).await?)),
+            (None, None) => Ok(Box::new(KubernetesRuntime::new().await?)),
         },
-        RuntimeKind::KubeVirt => match namespace {
-            Some(ns) => Ok(Box::new(KubeVirtRuntime::with_namespace(ns.to_string()).await?)),
-            None => Ok(Box::new(KubeVirtRuntime::new().await?)),
+        RuntimeKind::KubeVirt => match (&context, namespace) {
+            (Some(ctx), ns) => Ok(Box::new(KubeVirtRuntime::with_context(ctx, ns.map(String::from)).await?)),
+            (None, Some(ns)) => Ok(Box::new(KubeVirtRuntime::with_namespace(ns.to_string()).await?)),
+            (None, None) => Ok(Box::new(KubeVirtRuntime::new().await?)),
         },
-        RuntimeKind::Metal3 => match namespace {
-            Some(ns) => Ok(Box::new(Metal3Runtime::with_namespace(ns.to_string()).await?)),
-            None => Ok(Box::new(Metal3Runtime::new().await?)),
+        RuntimeKind::Metal3 => match (&context, namespace) {
+            (Some(ctx), ns) => Ok(Box::new(Metal3Runtime::with_context(ctx, ns.map(String::from)).await?)),
+            (None, Some(ns)) => Ok(Box::new(Metal3Runtime::with_namespace(ns.to_string()).await?)),
+            (None, None) => Ok(Box::new(Metal3Runtime::new().await?)),
         },
     }
 }
