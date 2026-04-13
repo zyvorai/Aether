@@ -1185,6 +1185,7 @@ mod tests {
                     service_port: 8080,
                     protocol: "TCP".to_string(),
                 }],
+                network_policy: None,
             },
             persistence: PersistenceSpec {
                 enabled: false,
