@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether &mdash; Intelligent Workload Scheduling</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> &mdash; Intelligent Workload Scheduling</h1>
+    <h2>Right Workload, Right Runtime, Right Time</h2>
+    <p class="tagline">Four scheduling strategies, resource-aware placement, constraint-based filtering, and optimization suggestions &mdash; across Podman, Kubernetes, KubeVirt, and Metal3.</p>
+    <div class="badge">Balanced &bull; Cost &bull; Performance &bull; Bin-Packing</div>
+</div>
+
+<!-- PAGE 2: Scheduling Strategies -->
+<div class="page page-dark">
+    <h2 class="st">Scheduling <span>Strategies</span></h2>
+    <p class="sub">Aether's scheduler evaluates every runtime against your workload requirements and selects the optimal placement based on the active strategy.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#9878;</div>
+            <h4>Balanced (Default)</h4>
+            <p>Weighs both cost and performance equally. Allocates 30% scoring weight to cost efficiency and 30% to resource headroom, producing well-rounded placements that avoid extremes.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128176;</div>
+            <h4>Cost Optimized</h4>
+            <p>Minimizes estimated daily cost by favoring runtimes with the lowest cost-per-CPU and cost-per-GB rates. Podman typically wins for small workloads at $0.50/CPU/day vs Metal3 at $3.00/CPU/day.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#9889;</div>
+            <h4>Performance Optimized</h4>
+            <p>Maximizes resource headroom by favoring runtimes with the lowest utilization after placement. Spreads workloads across runtimes to prevent contention and noisy-neighbor effects.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128230;</div>
+            <h4>Bin Packing</h4>
+            <p>Packs workloads tightly onto the fewest runtimes possible. Maximizes utilization on active runtimes, allowing unused runtimes to be powered down for infrastructure savings.</p>
+        </div>
+    </div>
+
+    <pre><span style="color:#d35400;">#</span> Schedule with a specific strategy
+<span style="color:#d35400;">$</span> aether schedule my-app --strategy cost
+<span style="color:#d35400;">$</span> aether schedule my-app --strategy performance
+<span style="color:#d35400;">$</span> aether schedule my-app --strategy bin-packing
+<span style="color:#d35400;">$</span> aether schedule my-app --strategy balanced</pre>
+
+    <div class="quote">
+        The scheduler scores each candidate runtime from 0.0 to 1.0, combining strategy weight (60%), preferred runtime bonus (20%), affinity score (15%), and capacity headroom (10%).
+    </div>
+</div>
+
+<!-- PAGE 3: Resource-Aware Placement -->
+<div class="page page-light">
+    <h2 class="st">Resource-Aware <span>Placement</span></h2>
+    <p class="sub">Every scheduling decision considers CPU, memory, storage, GPU requirements, and runtime-specific constraints before selecting a target.</p>
+
+    <h3>Runtime Capacity Model</h3>
+    <table>
+        <tr>
+            <th>Runtime</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>GPU</th>
+            <th>Cost/CPU/Day</th>
+            <th>Max Workloads</th>
+        </tr>
+        <tr>
+            <td><strong>Podman</strong></td>
+            <td>8 cores</td>
+            <td>16 GB</td>
+            <td>0</td>
+            <td>$0.50</td>
+            <td>20</td>
+        </tr>
+        <tr>
+            <td><strong>Kubernetes</strong></td>
+            <td>64 cores</td>
+            <td>128 GB</td>
+            <td>2</td>
+            <td>$1.00</td>
+            <td>200</td>
+        </tr>
+        <tr>
+            <td><strong>KubeVirt</strong></td>
+            <td>32 cores</td>
+            <td>64 GB</td>
+            <td>4</td>
+            <td>$2.00</td>
+            <td>50</td>
+        </tr>
+        <tr>
+            <td><strong>Metal3</strong></td>
+            <td>128 cores</td>
+            <td>512 GB</td>
+            <td>8</td>
+            <td>$3.00</td>
+            <td>20</td>
+        </tr>
+    </table>
+
+    <h3>Constraint-Based Filtering</h3>
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#127919;</div>
+            <h4>Runtime Constraints</h4>
+            <p><code>RequireRuntime</code> and <code>ExcludeRuntime</code> constraints hard-filter the candidate list before scoring begins. Co-locate and anti-affinity constraints link placements between workloads.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128187;</div>
+            <h4>Hardware Constraints</h4>
+            <p><code>RequireGpu</code> filters to runtimes with available GPUs. <code>RequireBareMetal</code> restricts to Metal3 only. <code>MaxCostPerDay</code> caps the estimated daily cost per placement.</p>
+        </div>
+    </div>
+
+    <pre><span style="color:#d35400;">#</span> Schedule with constraints
+<span style="color:#d35400;">$</span> aether schedule gpu-trainer \
+    --cpu 8 --memory 32768 --gpu 2 \
+    --constraint require:gpu \
+    --constraint zone:us-east-1a \
+    --preferred-runtime kubevirt</pre>
+</div>
+
+<!-- PAGE 4: Utilization Monitoring -->
+<div class="page page-accent">
+    <h2 class="st">Utilization <span>Monitoring</span></h2>
+    <p class="sub">Real-time visibility into resource utilization across all four runtimes. Identify overloaded runtimes, underused capacity, and cost-saving opportunities.</p>
+
+    <pre><span style="color:#d35400;">$</span> aether schedule utilization
+
+<span style="color:#888;">Runtime Utilization:
+
+  Runtime          CPU   Memory    Workloads  Cost/Day
+  --------------------------------------------------------
+  Podman           25%      25%      2/20      $  1.20
+  Kubernetes       25%      25%     10/200     $ 12.80
+  KubeVirt         25%      25%      3/50      $  6.40
+  Metal3           25%      25%      1/20      $  9.60</span></pre>
+
+    <h3>Utilization Metrics</h3>
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#128200;</div>
+            <h4>CPU Utilization</h4>
+            <p>Calculated as <code>(total_cpu - available_cpu) / total_cpu</code>. Tracked per-runtime and used by the Performance strategy to spread workloads and by the Bin Packing strategy to consolidate them.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128202;</div>
+            <h4>Memory Utilization</h4>
+            <p>Calculated as <code>(total_memory - available_memory) / total_memory</code>. Combined with CPU utilization to produce a composite utilization score that drives placement decisions.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128176;</div>
+            <h4>Cost Tracking</h4>
+            <p>Each runtime tracks cost-per-CPU-day and cost-per-GB-day rates. The scheduler estimates daily cost for each placement candidate and surfaces total runtime cost in the utilization summary.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#9888;</div>
+            <h4>Capacity Warnings</h4>
+            <p>When a placement pushes utilization above 85%, the scheduler emits a warning. Approaching the max workload limit also triggers a warning to prevent capacity exhaustion.</p>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 5: Optimization & Placement History -->
+<div class="page page-dark">
+    <h2 class="st">Optimization <span>Suggestions</span></h2>
+    <p class="sub">The scheduler continuously analyzes placement patterns and generates actionable recommendations to reduce cost, improve balance, and prevent capacity issues.</p>
+
+    <pre><span style="color:#d35400;">$</span> aether schedule optimize
+
+<span style="color:#888;">[CAPACITY] Kubernetes CPU utilization at 92% - consider scaling up
+           or migrating workloads
+
+[COST]     Metal3 is underutilized (5% CPU) with 1 workload -
+           consider consolidation
+           Potential saving: $4.80/day
+
+[COST]     'data-loader' uses only 2 CPUs on Metal3 - consider
+           moving to Kubernetes or Podman
+           Potential saving: $4.00/day
+
+[BALANCE]  KubeVirt utilization (75%) deviates significantly from
+           average (40%)</span></pre>
+
+    <h3>Optimization Categories</h3>
+    <table>
+        <tr>
+            <th>Category</th>
+            <th>Trigger</th>
+            <th>Action</th>
+        </tr>
+        <tr>
+            <td><strong>CAPACITY</strong></td>
+            <td>CPU utilization &gt; 90%</td>
+            <td>Scale up runtime or migrate workloads out</td>
+        </tr>
+        <tr>
+            <td><strong>COST</strong></td>
+            <td>CPU utilization &lt; 10% with active workloads</td>
+            <td>Consolidate to cheaper runtime</td>
+        </tr>
+        <tr>
+            <td><strong>COST</strong></td>
+            <td>Small workload on expensive runtime</td>
+            <td>Move workloads using &lt;4 CPUs off Metal3</td>
+        </tr>
+        <tr>
+            <td><strong>BALANCE</strong></td>
+            <td>Utilization deviates &gt;30% from average</td>
+            <td>Redistribute workloads across runtimes</td>
+        </tr>
+    </table>
+
+    <h3>Placement History</h3>
+    <div class="arch-box">
+        <p>Every scheduling decision is recorded as a <strong>Placement</strong> record with workload name, selected runtime, reserved CPU, reserved memory, and RFC 3339 timestamp. When a workload is deleted, <code>release()</code> frees the reserved capacity back to the runtime. This history enables capacity planning, chargeback reporting, and audit trail compliance.</p>
+    </div>
+
+    <pre><span style="color:#d35400;">$</span> aether schedule history
+
+<span style="color:#888;">  Workload         Runtime       CPU   Memory   Placed At
+  ----------------------------------------------------------------
+  web-frontend     Podman        2.0   2048 MB  2026-04-10T08:00:00Z
+  api-service      Kubernetes    4.0   8192 MB  2026-04-10T09:15:00Z
+  gpu-trainer      KubeVirt      8.0   32 GB    2026-04-11T14:30:00Z
+  data-pipeline    Metal3       16.0   64 GB    2026-04-12T06:00:00Z</span></pre>
+</div>
+
+<!-- PAGE 6: CTA -->
+<div class="page page-accent" style="display: flex; flex-direction: column; justify-content: center;">
+    <h2 class="st">Schedule <span>Smarter</span></h2>
+    <p class="sub">Let Aether's scheduler place workloads where they belong &mdash; automatically, efficiently, and with full transparency.</p>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">4</div>
+            <div class="label">Scheduling Strategies</div>
+        </div>
+        <div class="stat">
+            <div class="number">8</div>
+            <div class="label">Constraint Types</div>
+        </div>
+        <div class="stat">
+            <div class="number">4</div>
+            <div class="label">Optimization Categories</div>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h3>Intelligent Placement for Every Workload</h3>
+        <p>From cost-optimized dev workloads to performance-critical production services, Aether schedules across Podman, Kubernetes, KubeVirt, and Metal3 with a single command.</p>
+    </div>
+
+    <pre><span style="color:#d35400;">#</span> End-to-end scheduling workflow
+<span style="color:#d35400;">$</span> aether schedule my-app --cpu 4 --memory 8192 --strategy balanced
+<span style="color:#d35400;">$</span> aether schedule utilization
+<span style="color:#d35400;">$</span> aether schedule optimize
+<span style="color:#d35400;">$</span> aether schedule history</pre>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane</div>
+</div>
+
+</body>
+</html>
