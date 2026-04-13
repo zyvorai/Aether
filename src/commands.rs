@@ -9,29 +9,49 @@ use aether::{
     state::StateStore,
 };
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
 
 use crate::cli::*;
 
-/// Global flag to skip policy checks (set via --skip-policy)
-static SKIP_POLICY: AtomicBool = AtomicBool::new(false);
+/// CLI command context — holds session-scoped settings that were previously
+/// global statics.  Initialized once per CLI invocation in `main()` via
+/// `set_skip_policy()` / `set_namespace()`.  These are deliberately NOT
+/// passed through every function signature because the CLI is single-threaded
+/// (one command per process), and threading a context through 50+ handlers
+/// adds complexity without benefit.  The API server has its own request-scoped
+/// state in `AppState`.
+mod ctx {
+    use std::sync::atomic::{AtomicBool, Ordering};
 
-/// Enable skip-policy mode
+    static SKIP_POLICY: AtomicBool = AtomicBool::new(false);
+    static NAMESPACE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+
+    pub(crate) fn set_skip_policy(enabled: bool) {
+        SKIP_POLICY.store(enabled, Ordering::Relaxed);
+    }
+
+    pub(crate) fn skip_policy() -> bool {
+        SKIP_POLICY.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn set_namespace(ns: Option<String>) {
+        let _ = NAMESPACE.set(ns);
+    }
+
+    pub(crate) fn namespace() -> Option<&'static str> {
+        NAMESPACE.get().and_then(|n| n.as_deref())
+    }
+}
+
 pub(crate) fn set_skip_policy(enabled: bool) {
-    SKIP_POLICY.store(enabled, std::sync::atomic::Ordering::Relaxed);
+    ctx::set_skip_policy(enabled);
 }
 
-/// Global namespace override (set via --namespace)
-static NAMESPACE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
-
-/// Set the global namespace override
 pub(crate) fn set_namespace(ns: Option<String>) {
-    let _ = NAMESPACE.set(ns);
+    ctx::set_namespace(ns);
 }
 
-/// Get the current namespace override
 fn get_namespace() -> Option<&'static str> {
-    NAMESPACE.get().and_then(|n| n.as_deref())
+    ctx::namespace()
 }
 
 /// Load the state store and look up a workload by name, returning a borrowed
@@ -190,7 +210,7 @@ async fn deploy_workload_inner(
 ) -> Result<()> {
     // Policy gate: evaluate workload against configured policies
     let config = aether::config::Config::load();
-    if config.policy.enforce_on_deploy && !SKIP_POLICY.load(std::sync::atomic::Ordering::Relaxed) {
+    if config.policy.enforce_on_deploy && !ctx::skip_policy() {
         aether::policy::gate_deploy(workload, &config.policy)?;
     }
 
@@ -1541,10 +1561,20 @@ pub(crate) async fn template_command(
     let yaml = serde_yaml::to_string(&spec)?;
 
     if let Some(path) = output_path {
-        // Validate output path is not outside the current directory tree
-        let canonical = path.canonicalize().unwrap_or_else(|_| path.clone());
-        if canonical.starts_with("/etc") || canonical.starts_with("/proc") || canonical.starts_with("/sys") {
-            anyhow::bail!("Refusing to write to system path: {}", canonical.display());
+        // Validate output path is safe to write to
+        let check_path = path.canonicalize().unwrap_or_else(|_| path.clone());
+        let path_str = check_path.to_string_lossy();
+        if path_str.contains("..") {
+            anyhow::bail!(
+                "Refusing to write to path with traversal: {}",
+                path.display()
+            );
+        }
+        // Reject known system directories
+        for prefix in &["/etc", "/proc", "/sys", "/dev", "/boot", "/sbin", "/usr/sbin"] {
+            if check_path.starts_with(prefix) {
+                anyhow::bail!("Refusing to write to system path: {}", check_path.display());
+            }
         }
         std::fs::write(&path, &yaml)?;
         output::success(&format!("Generated {} template: {}", name, path.display()));
@@ -2827,7 +2857,7 @@ pub(crate) async fn deploy_command(
                     ));
                     return Err(anyhow::anyhow!(
                         "Deploy aborted: '{}' failed",
-                        failed.last().unwrap().0
+                        failed.last().map(|f| f.0.as_str()).unwrap_or("unknown")
                     ));
                 }
             }
@@ -3146,8 +3176,17 @@ pub(crate) async fn watch_command(spec_path: &PathBuf, runtime: Option<String>) 
                     &format!("Change detected — redeploying (#{})...", deploy_count),
                 );
 
-                // Use non-interactive deploy (auto-select runtime)
-                let workload = match Workload::from_file(spec_path) {
+                // Read the file content atomically, then parse — minimizes
+                // the TOCTOU window between stat() and read().
+                let content = match std::fs::read_to_string(spec_path) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        output::error(&format!("Failed to read spec: {}", e));
+                        output::muted("Watching for more changes...");
+                        continue;
+                    }
+                };
+                let workload: Workload = match serde_yaml::from_str(&content) {
                     Ok(w) => w,
                     Err(e) => {
                         output::error(&format!("Failed to parse spec: {}", e));
@@ -3155,6 +3194,11 @@ pub(crate) async fn watch_command(spec_path: &PathBuf, runtime: Option<String>) 
                         continue;
                     }
                 };
+                if let Err(e) = workload.validate() {
+                    output::error(&format!("Invalid spec: {}", e));
+                    output::muted("Watching for more changes...");
+                    continue;
+                }
                 match deploy_single_workload(&workload, spec_path, runtime.as_deref(), None).await {
                     Ok(()) => output::success("Redeployment complete"),
                     Err(e) => output::error(&format!("Redeployment failed: {}", e)),

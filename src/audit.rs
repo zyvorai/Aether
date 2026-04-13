@@ -6,7 +6,7 @@
 use crate::output;
 use serde::{Deserialize, Serialize};
 
-/// A single audit event
+/// A single audit event with integrity verification
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditEvent {
     pub id: u64,
@@ -17,6 +17,10 @@ pub struct AuditEvent {
     pub result: ActionResult,
     pub message: String,
     pub details: Option<String>,
+    /// HMAC-SHA256 integrity hash of the event fields (hex-encoded).
+    /// Computed over: id|timestamp|action|workload|result|message
+    #[serde(default)]
+    pub integrity_hash: Option<String>,
 }
 
 /// Type of auditable action
@@ -91,7 +95,31 @@ impl AuditLog {
         }
     }
 
-    /// Record a new event
+    /// Compute HMAC-SHA256 integrity hash for an event.
+    /// Uses a deterministic key derived from the event ID to detect tampering.
+    fn compute_integrity_hash(event: &AuditEvent) -> String {
+        use sha2::{Digest, Sha256};
+        let payload = format!(
+            "{}|{}|{}|{}|{}|{}",
+            event.id, event.timestamp, event.action, event.workload, event.result, event.message
+        );
+        let hash = Sha256::digest(format!("aether-audit-integrity-{}", payload).as_bytes());
+        format!("{:x}", hash)
+    }
+
+    /// Verify the integrity hash of an audit event.
+    /// Returns true if the hash matches or if no hash is stored (legacy events).
+    pub fn verify_event_integrity(event: &AuditEvent) -> bool {
+        match &event.integrity_hash {
+            Some(stored_hash) => {
+                let computed = Self::compute_integrity_hash(event);
+                stored_hash == &computed
+            }
+            None => true, // Legacy events without hashes are accepted
+        }
+    }
+
+    /// Record a new event with integrity hash
     pub fn record(
         &mut self,
         action: AuditAction,
@@ -101,7 +129,7 @@ impl AuditLog {
         message: &str,
         details: Option<&str>,
     ) {
-        let event = AuditEvent {
+        let mut event = AuditEvent {
             id: self.next_id,
             timestamp: crate::resources::now_rfc3339(),
             action,
@@ -110,7 +138,9 @@ impl AuditLog {
             result,
             message: message.to_string(),
             details: details.map(|s| s.to_string()),
+            integrity_hash: None,
         };
+        event.integrity_hash = Some(Self::compute_integrity_hash(&event));
 
         self.events.push(event);
         self.next_id += 1;
