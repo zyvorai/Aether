@@ -105,6 +105,13 @@ pub enum ChannelType {
     File { path: String },
     /// HTTP webhook (Slack, Discord, PagerDuty, etc.)
     Webhook { url: String, method: String },
+    /// Slack webhook (posts Block Kit formatted messages)
+    Slack {
+        /// Slack webhook URL (from Slack app config)
+        webhook_url: String,
+        /// Channel name for display purposes
+        channel: String,
+    },
     /// Write to stdout
     Console,
 }
@@ -114,6 +121,7 @@ impl std::fmt::Display for ChannelType {
         match self {
             ChannelType::File { path } => write!(f, "file:{}", path),
             ChannelType::Webhook { url, .. } => write!(f, "webhook:{}", url),
+            ChannelType::Slack { channel, .. } => write!(f, "slack:#{}", channel),
             ChannelType::Console => write!(f, "console"),
         }
     }
@@ -430,6 +438,9 @@ impl EventBus {
                     "[{}] [{}] {} - {}",
                     event.severity, event.category, event.title, event.message
                 ),
+                severity: event.severity.clone(),
+                category: event.category.clone(),
+                workload: event.workload.clone(),
             });
         }
 
@@ -486,8 +497,64 @@ impl EventBus {
                 // Queue with immediate delivery attempt + persistent retry on failure
                 WebhookQueue::enqueue(&payload, url, method);
             }
+            ChannelType::Slack { webhook_url, .. } => {
+                let payload_json = format_slack_payload(notification);
+                // Slack webhooks are always POST
+                WebhookQueue::enqueue_raw(&payload_json, webhook_url, "POST");
+            }
         }
     }
+}
+
+/// Format a notification as a Slack Block Kit message with color-coded attachments.
+fn format_slack_payload(notification: &NotificationPayload) -> String {
+    let color = match notification.severity {
+        EventSeverity::Critical => "#dc3545",
+        EventSeverity::Error => "#fd7e14",
+        EventSeverity::Warning => "#ffc107",
+        EventSeverity::Info => "#28a745",
+    };
+
+    let workload_display = notification
+        .workload
+        .as_deref()
+        .unwrap_or("(none)");
+
+    serde_json::json!({
+        "attachments": [{
+            "color": color,
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": format!("Aether: {}", notification.category)
+                    }
+                },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": format!("*Severity:* {}", notification.severity)
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": format!("*Workload:* {}", workload_display)
+                        }
+                    ]
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": notification.message.clone()
+                    }
+                }
+            ]
+        }]
+    })
+    .to_string()
 }
 
 /// Notification payload
@@ -499,6 +566,12 @@ pub struct NotificationPayload {
     pub event_id: u64,
     pub title: String,
     pub message: String,
+    /// Event severity (used by Slack formatter)
+    pub severity: EventSeverity,
+    /// Event category (used by Slack formatter)
+    pub category: EventCategory,
+    /// Workload name if applicable (used by Slack formatter)
+    pub workload: Option<String>,
 }
 
 /// Webhook-specific JSON payload sent to HTTP endpoints
@@ -695,6 +768,33 @@ pub struct WebhookQueue {
 crate::impl_json_store!(WebhookQueue, "webhook_queue.json");
 
 impl WebhookQueue {
+    /// Queue a pre-formatted JSON payload for delivery. Attempts immediate
+    /// delivery first; on failure, the payload is persisted for later retry.
+    /// This is used by Slack and other channels that build their own JSON.
+    pub fn enqueue_raw(payload_json: &str, url: &str, method: &str) {
+        let now = crate::resources::now_rfc3339();
+
+        // Try immediate delivery
+        if Self::try_deliver(payload_json, url, method) {
+            return;
+        }
+
+        // Failed — queue for retry
+        let path = Self::default_path();
+        let mut queue = Self::load(&path).unwrap_or_default();
+        queue.pending.push(PendingWebhook {
+            payload_json: payload_json.to_string(),
+            url: url.to_string(),
+            method: method.to_string(),
+            attempts: 1,
+            max_attempts: 5,
+            next_attempt_at: Self::backoff_time(&now, 1),
+            created_at: now,
+        });
+        let _ = queue.save(&path);
+        tracing::info!("Webhook queued for retry ({} pending)", queue.pending.len());
+    }
+
     /// Queue a webhook for delivery. Attempts immediate delivery first;
     /// on failure, the webhook is persisted for later retry.
     pub fn enqueue(payload: &WebhookPayload, url: &str, method: &str) {
@@ -1163,5 +1263,149 @@ mod tests {
         assert_eq!("critical".parse::<EventSeverity>().unwrap(), EventSeverity::Critical);
         assert_eq!("CRITICAL".parse::<EventSeverity>().unwrap(), EventSeverity::Critical);
         assert!("debug".parse::<EventSeverity>().is_err());
+    }
+
+    // ── Slack notification tests ────────────────────────────────────────
+
+    #[test]
+    fn test_slack_channel_type_display() {
+        let ct = ChannelType::Slack {
+            webhook_url: "https://hooks.slack.com/services/T00/B00/xxx".to_string(),
+            channel: "ops-alerts".to_string(),
+        };
+        assert_eq!(format!("{}", ct), "slack:#ops-alerts");
+    }
+
+    #[test]
+    fn test_slack_channel_serialization_roundtrip() {
+        let channel = NotificationChannel {
+            name: "slack-ops".to_string(),
+            channel_type: ChannelType::Slack {
+                webhook_url: "https://hooks.slack.com/services/T00/B00/xxx".to_string(),
+                channel: "ops-alerts".to_string(),
+            },
+            enabled: true,
+            min_severity: EventSeverity::Warning,
+            categories: vec![],
+        };
+        let json = serde_json::to_string(&channel).unwrap();
+        let parsed: NotificationChannel = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.name, "slack-ops");
+        assert!(matches!(parsed.channel_type, ChannelType::Slack { .. }));
+        if let ChannelType::Slack { webhook_url, channel } = &parsed.channel_type {
+            assert_eq!(webhook_url, "https://hooks.slack.com/services/T00/B00/xxx");
+            assert_eq!(channel, "ops-alerts");
+        }
+    }
+
+    #[test]
+    fn test_format_slack_payload_structure() {
+        let notification = NotificationPayload {
+            channel_name: "slack-ops".to_string(),
+            channel_type: ChannelType::Slack {
+                webhook_url: "https://hooks.slack.com/test".to_string(),
+                channel: "ops".to_string(),
+            },
+            event_id: 1,
+            title: "SLA Violated".to_string(),
+            message: "Uptime dropped below 99.9%".to_string(),
+            severity: EventSeverity::Critical,
+            category: EventCategory::SlaViolation,
+            workload: Some("web-app".to_string()),
+        };
+
+        let payload_str = format_slack_payload(&notification);
+        let payload: serde_json::Value = serde_json::from_str(&payload_str).unwrap();
+
+        // Verify top-level structure
+        assert!(payload["attachments"].is_array());
+        let attachment = &payload["attachments"][0];
+        assert_eq!(attachment["color"], "#dc3545"); // Critical = red
+
+        // Verify blocks
+        let blocks = &attachment["blocks"];
+        assert!(blocks.is_array());
+        assert_eq!(blocks.as_array().unwrap().len(), 3);
+
+        // Header block
+        assert_eq!(blocks[0]["type"], "header");
+        let header_text = blocks[0]["text"]["text"].as_str().unwrap();
+        assert!(header_text.contains("Aether"));
+
+        // Section with fields
+        assert_eq!(blocks[1]["type"], "section");
+        let fields = blocks[1]["fields"].as_array().unwrap();
+        assert_eq!(fields.len(), 2);
+        assert!(fields[0]["text"].as_str().unwrap().contains("CRITICAL"));
+        assert!(fields[1]["text"].as_str().unwrap().contains("web-app"));
+
+        // Message section
+        assert_eq!(blocks[2]["type"], "section");
+        assert!(blocks[2]["text"]["text"].as_str().unwrap().contains("Uptime dropped"));
+    }
+
+    #[test]
+    fn test_format_slack_payload_severity_colors() {
+        let make_payload = |severity: EventSeverity| {
+            let notification = NotificationPayload {
+                channel_name: "test".to_string(),
+                channel_type: ChannelType::Console,
+                event_id: 1,
+                title: "Test".to_string(),
+                message: "msg".to_string(),
+                severity,
+                category: EventCategory::SystemAlert,
+                workload: None,
+            };
+            let json_str = format_slack_payload(&notification);
+            let v: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+            v["attachments"][0]["color"].as_str().unwrap().to_string()
+        };
+
+        assert_eq!(make_payload(EventSeverity::Critical), "#dc3545");
+        assert_eq!(make_payload(EventSeverity::Error), "#fd7e14");
+        assert_eq!(make_payload(EventSeverity::Warning), "#ffc107");
+        assert_eq!(make_payload(EventSeverity::Info), "#28a745");
+    }
+
+    #[test]
+    fn test_format_slack_payload_no_workload() {
+        let notification = NotificationPayload {
+            channel_name: "test".to_string(),
+            channel_type: ChannelType::Console,
+            event_id: 1,
+            title: "Test".to_string(),
+            message: "msg".to_string(),
+            severity: EventSeverity::Info,
+            category: EventCategory::Deployment,
+            workload: None,
+        };
+        let payload_str = format_slack_payload(&notification);
+        let payload: serde_json::Value = serde_json::from_str(&payload_str).unwrap();
+        let workload_field = payload["attachments"][0]["blocks"][1]["fields"][1]["text"]
+            .as_str()
+            .unwrap();
+        assert!(workload_field.contains("(none)"));
+    }
+
+    #[test]
+    fn test_slack_channel_add_remove() {
+        let mut bus = EventBus::new();
+        let initial = bus.channels().len();
+
+        bus.add_channel(NotificationChannel {
+            name: "slack-ops".to_string(),
+            channel_type: ChannelType::Slack {
+                webhook_url: "https://hooks.slack.com/services/T00/B00/xxx".to_string(),
+                channel: "ops-alerts".to_string(),
+            },
+            enabled: true,
+            min_severity: EventSeverity::Warning,
+            categories: vec![],
+        });
+        assert_eq!(bus.channels().len(), initial + 1);
+
+        assert!(bus.remove_channel("slack-ops"));
+        assert_eq!(bus.channels().len(), initial);
     }
 }

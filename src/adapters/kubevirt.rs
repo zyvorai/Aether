@@ -483,6 +483,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         }
     }
 

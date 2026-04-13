@@ -97,6 +97,78 @@ pub enum RuleCheck {
     MaxGpu(u32),
 }
 
+/// Per-project resource quota tracking
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceQuota {
+    pub project: String,
+    pub max_cpu: f64,
+    pub max_memory_gi: f64,
+    pub max_storage_gi: f64,
+    pub used_cpu: f64,
+    pub used_memory_gi: f64,
+    pub used_storage_gi: f64,
+}
+
+impl ResourceQuota {
+    pub fn remaining_cpu(&self) -> f64 { self.max_cpu - self.used_cpu }
+    pub fn remaining_memory_gi(&self) -> f64 { self.max_memory_gi - self.used_memory_gi }
+    pub fn remaining_storage_gi(&self) -> f64 { self.max_storage_gi - self.used_storage_gi }
+
+    pub fn would_exceed(&self, cpu: f64, memory_gi: f64, storage_gi: f64) -> Vec<String> {
+        let mut violations = Vec::new();
+        if self.used_cpu + cpu > self.max_cpu {
+            violations.push(format!("CPU quota exceeded: {:.1}/{:.1} cores used, requesting {:.1}", self.used_cpu, self.max_cpu, cpu));
+        }
+        if self.used_memory_gi + memory_gi > self.max_memory_gi {
+            violations.push(format!("Memory quota exceeded: {:.1}/{:.1} Gi used, requesting {:.1}", self.used_memory_gi, self.max_memory_gi, memory_gi));
+        }
+        if self.used_storage_gi + storage_gi > self.max_storage_gi {
+            violations.push(format!("Storage quota exceeded: {:.1}/{:.1} Gi used, requesting {:.1}", self.used_storage_gi, self.max_storage_gi, storage_gi));
+        }
+        violations
+    }
+}
+
+/// Persistent store for per-project resource quotas
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct QuotaStore {
+    pub quotas: std::collections::HashMap<String, ResourceQuota>,
+}
+
+impl QuotaStore {
+    pub fn new() -> Self { Self { quotas: std::collections::HashMap::new() } }
+
+    pub fn set_quota(&mut self, project: &str, max_cpu: f64, max_memory_gi: f64, max_storage_gi: f64) {
+        let quota = self.quotas.entry(project.to_string()).or_insert_with(|| ResourceQuota {
+            project: project.to_string(),
+            max_cpu, max_memory_gi, max_storage_gi,
+            used_cpu: 0.0, used_memory_gi: 0.0, used_storage_gi: 0.0,
+        });
+        quota.max_cpu = max_cpu;
+        quota.max_memory_gi = max_memory_gi;
+        quota.max_storage_gi = max_storage_gi;
+    }
+
+    pub fn check_quota(&self, project: &str, cpu: f64, memory_gi: f64, storage_gi: f64) -> Vec<String> {
+        match self.quotas.get(project) {
+            Some(quota) => quota.would_exceed(cpu, memory_gi, storage_gi),
+            None => vec![], // No quota set = no limit
+        }
+    }
+
+    pub fn default_path() -> std::path::PathBuf {
+        crate::resources::aether_path("quotas.json")
+    }
+
+    pub fn load(path: &std::path::Path) -> anyhow::Result<Self> {
+        crate::resources::json_load(path)
+    }
+
+    pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
+        crate::resources::json_save(self, path)
+    }
+}
+
 /// Policy engine that evaluates workloads against policies
 pub struct PolicyEngine {
     policies: Vec<Policy>,
@@ -489,6 +561,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         }
     }
 
