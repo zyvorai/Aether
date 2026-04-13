@@ -1020,19 +1020,32 @@ pub(crate) async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<
     Ok(())
 }
 
-pub(crate) async fn serve_command(host: String, port: u16) -> Result<()> {
+pub(crate) async fn serve_command(
+    host: String,
+    port: u16,
+    tls_cert: Option<PathBuf>,
+    tls_key: Option<PathBuf>,
+) -> Result<()> {
     use aether::api::{start_server, ApiConfig};
 
     output::logo();
     output::banner("AETHER API SERVER", "Universal Runtime Control Plane");
 
+    let tls_enabled = tls_cert.is_some() && tls_key.is_some();
+    if tls_cert.is_some() != tls_key.is_some() {
+        anyhow::bail!("Both --tls-cert and --tls-key must be provided together");
+    }
+
     let config = ApiConfig {
         host,
         port,
         state_path: StateStore::default_path(),
+        tls_cert,
+        tls_key,
     };
 
-    output::kv("Dashboard URL", &format!("http://{}:{}", config.host, config.port));
+    let scheme = if tls_enabled { "https" } else { "http" };
+    output::kv("Dashboard URL", &format!("{}://{}:{}", scheme, config.host, config.port));
 
     output::endpoint_category("Workloads");
     output::endpoint("GET", "/health");

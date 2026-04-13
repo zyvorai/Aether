@@ -81,6 +81,10 @@ impl Runtime for PodmanRuntime {
         let mut cmd = Command::new("podman");
         cmd.args(["run", "-d", "--name", &spec.metadata.name]);
 
+        // Label containers for aether management (used by list filtering)
+        cmd.arg("--label").arg("aether-managed=true");
+        cmd.arg("--label").arg(format!("app={}", spec.metadata.name));
+
         for port in &spec.network.ports {
             cmd.arg("-p").arg(format!(
                 "{}:{}",
@@ -228,7 +232,7 @@ impl Runtime for PodmanRuntime {
 
     async fn list(&self) -> crate::Result<Vec<Instance>> {
         let mut cmd = Command::new("podman");
-        cmd.args(["ps", "-a", "--format", "json"]);
+        cmd.args(["ps", "-a", "--filter", "label=aether-managed=true", "--format", "json"]);
         let output = exec_podman(cmd, "ps").await?;
 
         let json_str = String::from_utf8_lossy(&output.stdout);
