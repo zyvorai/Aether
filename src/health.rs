@@ -25,6 +25,23 @@ pub struct HealthRecord {
     pub latency_ms: Option<f64>,
 }
 
+/// Create a HealthRecord from a runtime status query result
+pub fn record_from_status(
+    workload: &str,
+    runtime: RuntimeKind,
+    status: &crate::runtime::Status,
+) -> HealthRecord {
+    HealthRecord {
+        timestamp: crate::resources::now_rfc3339(),
+        workload: workload.to_string(),
+        runtime,
+        state: status.state.clone(),
+        ready: status.ready,
+        restart_count: status.restart_count,
+        latency_ms: None,
+    }
+}
+
 /// Accumulated health history for all workloads.
 ///
 /// Stores a bounded ring of [`HealthRecord`]s, pruning the oldest entries

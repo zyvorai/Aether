@@ -218,7 +218,7 @@ impl ScoringEngine {
         let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
 
         match runtime {
-            RuntimeKind::Podman => {
+            RuntimeKind::Podman | RuntimeKind::Docker => {
                 reasons.push("Local container: no cloud cost".to_string());
                 if cpu <= 4.0 && memory_gi <= 8.0 {
                     0.95 // Very cheap for small workloads
@@ -275,7 +275,7 @@ impl ScoringEngine {
                 reasons.push("Direct GPU access on bare metal".to_string());
                 0.95
             }
-            (RuntimeKind::Podman, WorkloadClass::GpuCompute) => {
+            (RuntimeKind::Podman | RuntimeKind::Docker, WorkloadClass::GpuCompute) => {
                 warnings.push("Container GPU support varies by host".to_string());
                 0.50
             }
@@ -303,7 +303,7 @@ impl ScoringEngine {
                 reasons.push("K8s provides persistent volumes and stateful primitives".to_string());
                 0.90
             }
-            (RuntimeKind::Podman, WorkloadClass::Stateful) => {
+            (RuntimeKind::Podman | RuntimeKind::Docker, WorkloadClass::Stateful) => {
                 reasons.push("Local volumes work but lack redundancy".to_string());
                 0.55
             }
@@ -318,13 +318,13 @@ impl ScoringEngine {
                     0.80
                 }
             }
-            (RuntimeKind::Podman, WorkloadClass::Stateless) => {
+            (RuntimeKind::Podman | RuntimeKind::Docker, WorkloadClass::Stateless) => {
                 reasons.push("Fast local iteration for development".to_string());
                 0.75
             }
 
             // General defaults
-            (RuntimeKind::Podman, _) => {
+            (RuntimeKind::Podman | RuntimeKind::Docker, _) => {
                 reasons.push("Simple container execution".to_string());
                 0.65
             }
@@ -365,7 +365,7 @@ impl ScoringEngine {
                 reasons.push("Production-grade orchestrator with self-healing".to_string());
                 0.90
             }
-            RuntimeKind::Podman => {
+            RuntimeKind::Podman | RuntimeKind::Docker => {
                 reasons.push("Stable container runtime, local execution".to_string());
                 0.85
             }
@@ -398,7 +398,7 @@ impl ScoringEngine {
                 }
                 score.min(1.0)
             }
-            RuntimeKind::Podman => {
+            RuntimeKind::Podman | RuntimeKind::Docker => {
                 reasons.push("Single-node: no automatic failover".to_string());
                 0.50
             }

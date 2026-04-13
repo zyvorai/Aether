@@ -1,12 +1,21 @@
 //! Runtime trait and common types
 //!
-//! All runtime adapters (Podman, Kubernetes, KubeVirt, Metal3)
+//! All runtime adapters (Podman, Docker, Kubernetes, KubeVirt, Metal3)
 //! must implement this trait.
 
 use crate::spec::Workload;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+
+/// Runtime resource capacity
+#[derive(Debug, Clone)]
+pub struct Capacity {
+    pub total_cpu: f64,
+    pub available_cpu: f64,
+    pub total_memory_mb: u64,
+    pub available_memory_mb: u64,
+}
 
 /// Universal runtime trait
 #[async_trait]
@@ -39,6 +48,11 @@ pub trait Runtime: Send + Sync {
         self.delete(instance).await?;
         let new_image = self.build(spec).await?;
         self.run(&new_image, spec).await
+    }
+
+    /// Query the runtime's available capacity. Returns None if probing is not supported.
+    async fn capacity(&self) -> crate::Result<Option<Capacity>> {
+        Ok(None) // Default: no probing support
     }
 }
 
@@ -115,6 +129,7 @@ impl fmt::Display for InstanceState {
 #[serde(rename_all = "lowercase")]
 pub enum RuntimeKind {
     Podman,
+    Docker,
     Kubernetes,
     KubeVirt,
     Metal3,
@@ -122,8 +137,9 @@ pub enum RuntimeKind {
 
 impl RuntimeKind {
     /// All supported runtime variants.
-    pub const ALL: [RuntimeKind; 4] = [
+    pub const ALL: [RuntimeKind; 5] = [
         RuntimeKind::Podman,
+        RuntimeKind::Docker,
         RuntimeKind::Kubernetes,
         RuntimeKind::KubeVirt,
         RuntimeKind::Metal3,
@@ -134,6 +150,7 @@ impl fmt::Display for RuntimeKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             RuntimeKind::Podman => write!(f, "podman"),
+            RuntimeKind::Docker => write!(f, "docker"),
             RuntimeKind::Kubernetes => write!(f, "kubernetes"),
             RuntimeKind::KubeVirt => write!(f, "kubevirt"),
             RuntimeKind::Metal3 => write!(f, "metal3"),
@@ -147,10 +164,11 @@ impl std::str::FromStr for RuntimeKind {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "podman" | "container" => Ok(RuntimeKind::Podman),
+            "docker" => Ok(RuntimeKind::Docker),
             "kubernetes" | "kube" | "k8s" => Ok(RuntimeKind::Kubernetes),
             "kubevirt" | "vm" => Ok(RuntimeKind::KubeVirt),
             "metal3" | "metal" | "bare-metal" => Ok(RuntimeKind::Metal3),
-            _ => Err(anyhow::anyhow!("Unknown runtime: '{}'. Valid: podman, kubernetes, kubevirt, metal3", s)),
+            _ => Err(anyhow::anyhow!("Unknown runtime: '{}'. Valid: podman, docker, kubernetes, kubevirt, metal3", s)),
         }
     }
 }
@@ -167,10 +185,11 @@ pub async fn create_runtime_ns(
     kind: &RuntimeKind,
     namespace: Option<&str>,
 ) -> crate::Result<Box<dyn Runtime>> {
-    use crate::adapters::{KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
+    use crate::adapters::{DockerRuntime, KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
 
     match kind {
         RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
+        RuntimeKind::Docker => Ok(Box::new(DockerRuntime::new()?)),
         RuntimeKind::Kubernetes => match namespace {
             Some(ns) => Ok(Box::new(KubernetesRuntime::with_namespace(ns.to_string()).await?)),
             None => Ok(Box::new(KubernetesRuntime::new().await?)),
@@ -194,6 +213,7 @@ mod tests {
     fn test_runtime_kind_from_str_valid() {
         assert_eq!("podman".parse::<RuntimeKind>().unwrap(), RuntimeKind::Podman);
         assert_eq!("container".parse::<RuntimeKind>().unwrap(), RuntimeKind::Podman);
+        assert_eq!("docker".parse::<RuntimeKind>().unwrap(), RuntimeKind::Docker);
         assert_eq!("kubernetes".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
         assert_eq!("kube".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
         assert_eq!("k8s".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
@@ -207,13 +227,14 @@ mod tests {
     #[test]
     fn test_runtime_kind_from_str_case_insensitive() {
         assert_eq!("PODMAN".parse::<RuntimeKind>().unwrap(), RuntimeKind::Podman);
+        assert_eq!("DOCKER".parse::<RuntimeKind>().unwrap(), RuntimeKind::Docker);
         assert_eq!("Kubernetes".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
     }
 
     #[test]
     fn test_runtime_kind_from_str_invalid() {
         assert!("unknown".parse::<RuntimeKind>().is_err());
-        assert!("docker".parse::<RuntimeKind>().is_err());
+        assert!("moby".parse::<RuntimeKind>().is_err());
     }
 
     #[test]
