@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether — Multi-Cloud Cost Analysis</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> &mdash; Cost Analysis</h1>
+    <h2>Multi-Cloud Cost Estimation &amp; Comparison</h2>
+    <p class="tagline">Estimate infrastructure costs across five cloud providers before deploying. Compare runtimes side by side and make cost-aware scheduling decisions from the CLI.</p>
+    <div class="badge">AWS &bull; Azure &bull; GCP &bull; DigitalOcean &bull; Linode</div>
+</div>
+
+<!-- PAGE 2: Supported Providers -->
+<div class="page page-dark">
+    <h2 class="st">Supported <span>Providers</span></h2>
+    <p class="sub">Aether includes built-in pricing models for five major cloud providers, with per-resource cost breakdowns.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x2601;</div>
+            <h4>AWS</h4>
+            <p>EC2 instance pricing based on vCPU and memory. Includes EBS storage, network egress, and ALB load balancer costs. Based on us-east-1 on-demand rates.</p>
+            <ul>
+                <li>CPU: $15.00/core/month</li>
+                <li>Memory: $4.00/GB/month</li>
+                <li>Storage: $0.10/GB/month</li>
+                <li>GPU: $350.00/unit/month</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="icon">&#x2601;</div>
+            <h4>Azure</h4>
+            <p>Virtual Machine pricing with Azure Disk Storage and bandwidth. Based on East US standard tier pricing.</p>
+            <ul>
+                <li>CPU: $14.00/core/month</li>
+                <li>Memory: $3.50/GB/month</li>
+                <li>Storage: $0.12/GB/month</li>
+                <li>GPU: $320.00/unit/month</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="icon">&#x2601;</div>
+            <h4>GCP</h4>
+            <p>Compute Engine pricing with Persistent Disk and network costs. Based on us-central1 on-demand rates.</p>
+            <ul>
+                <li>CPU: $13.50/core/month</li>
+                <li>Memory: $3.75/GB/month</li>
+                <li>Storage: $0.08/GB/month</li>
+                <li>GPU: $300.00/unit/month</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="icon">&#x2601;</div>
+            <h4>DigitalOcean &amp; Linode</h4>
+            <p>Droplet and Linode pricing with block storage. Simpler pricing models with flat per-resource rates.</p>
+            <ul>
+                <li>DO CPU: $12.00/core/month</li>
+                <li>DO Memory: $3.00/GB/month</li>
+                <li>Linode CPU: $11.00/core/month</li>
+                <li>Linode Memory: $2.50/GB/month</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 3: Cost Estimation Methodology -->
+<div class="page page-light">
+    <h2 class="st">Cost <span>Methodology</span></h2>
+    <p class="sub">Aether reads resource requirements from your workload spec and applies provider-specific rates to calculate monthly and hourly cost estimates.</p>
+
+    <div class="flow">
+        <div class="flow-step">Parse CPU/Memory/Storage</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Apply Provider Rates</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Add GPU/LB/Egress</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Monthly + Hourly Total</div>
+    </div>
+
+    <h3>Cost Breakdown Structure</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>CostEstimate Fields</h4>
+            <table>
+                <tr><th>Field</th><th>Description</th></tr>
+                <tr><td><strong>provider</strong></td><td>Cloud provider name</td></tr>
+                <tr><td><strong>cpu_cost_monthly</strong></td><td>Monthly cost for CPU cores</td></tr>
+                <tr><td><strong>memory_cost_monthly</strong></td><td>Monthly cost for RAM</td></tr>
+                <tr><td><strong>storage_cost_monthly</strong></td><td>Monthly cost for disk storage</td></tr>
+                <tr><td><strong>total_monthly</strong></td><td>Sum of all monthly costs</td></tr>
+                <tr><td><strong>total_hourly</strong></td><td>total_monthly / 730 hours</td></tr>
+                <tr><td><strong>currency</strong></td><td>Always USD</td></tr>
+            </table>
+        </div>
+        <div class="card">
+            <h4>Resource Parsing</h4>
+<pre>
+# Your workload spec
+requirements:
+  cpu: "4"          # 4 cores
+  memory: 16Gi      # 16 GB RAM
+  storage: 100Gi    # 100 GB disk
+  gpu:
+    count: 1
+    vendor: nvidia
+
+# Aether calculates:
+#   CPU:     4 cores x $15.00  = $60.00/mo
+#   Memory:  16 GB   x $4.00   = $64.00/mo
+#   Storage: 100 GB  x $0.10   = $10.00/mo
+#   GPU:     1 unit  x $350.00 = $350.00/mo
+#   ---
+#   Total: $484.00/mo ($0.6630/hr)
+</pre>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 4: CLI Usage -->
+<div class="page page-accent">
+    <h2 class="st">CLI <span>Usage</span></h2>
+    <p class="sub">Estimate costs for a single provider, compare all providers, or compare across runtimes.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <h4>Single Provider</h4>
+<pre>
+$ aether cost workload.yaml --provider aws
+
+AWS Cost Estimate for my-app:
+  CPU:     $60.00/mo (4 cores)
+  Memory:  $64.00/mo (16 GB)
+  Storage: $10.00/mo (100 GB)
+  GPU:     $350.00/mo (1x NVIDIA)
+  ─────────────────────────
+  Total:   $484.00/mo ($0.6630/hr)
+</pre>
+        </div>
+        <div class="card">
+            <h4>All Providers</h4>
+<pre>
+$ aether cost workload.yaml --provider all
+
+Provider       Monthly    Hourly    Cheapest
+───────────────────────────────────────────
+Linode         $394.50    $0.5404
+DigitalOcean   $408.00    $0.5589
+GCP            $442.80    $0.6066
+Azure          $467.20    $0.6400
+AWS            $484.00    $0.6630
+
+Cheapest: Linode ($394.50/mo)
+Savings vs most expensive: $89.50/mo (18.5%)
+</pre>
+        </div>
+    </div>
+
+    <h3>Cross-Runtime Comparison</h3>
+    <div class="card-grid">
+        <div class="card" style="grid-column: 1 / -1;">
+<pre>
+$ aether compare workload.yaml
+
+Runtime Comparison for my-app (4 CPU, 16Gi RAM, 100Gi storage):
+
+Runtime      Best Provider   Monthly    Startup    Isolation     Migration
+──────────────────────────────────────────────────────────────────────────
+Podman       Local           $0.00      Seconds    Container     Immediate
+Kubernetes   Linode          $394.50    Seconds    Container+NP  Blue-green
+KubeVirt     GCP             $442.80    Minutes    Full VM       Blue-green
+Metal3       On-prem         Custom     Minutes    Physical      Rolling
+
+Recommendation: Start with Podman for dev, deploy to Kubernetes on Linode for production.
+</pre>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 5: Cost-Aware Scheduling -->
+<div class="page page-dark">
+    <h2 class="st">Cost-Aware <span>Scheduling</span></h2>
+    <p class="sub">Aether's Decision Engine can factor cost into runtime selection, choosing the most economical target that meets your workload requirements.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4B0;</div>
+            <h4>Automatic Cost Optimization</h4>
+            <p>When the runtime preference is set to <code>auto</code>, the Decision Engine evaluates cost alongside isolation requirements, scaling needs, and hardware constraints to select the optimal runtime.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F4CA;</div>
+            <h4>Budget Constraints</h4>
+            <p>Set maximum monthly budgets per workload. Aether will warn when a deployment would exceed the budget and suggest cheaper alternatives.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F4C8;</div>
+            <h4>Scaling Cost Projection</h4>
+            <p>When using HPA, Aether projects costs at minimum, target, and maximum replica counts so you can understand the cost envelope before deploying.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F50D;</div>
+            <h4>JSON Output for Analysis</h4>
+            <p>Export cost estimates as JSON for integration with financial dashboards, FinOps tools, and custom reporting pipelines.</p>
+        </div>
+    </div>
+
+    <h3>Cost Projection with Scaling</h3>
+<pre>
+$ aether cost workload.yaml --provider aws --with-scaling
+
+AWS Cost Estimate for my-app (HPA: 2-10 replicas):
+
+  Replica Count  Monthly      Hourly
+  ─────────────────────────────────
+  2 (min)        $268.00      $0.3671
+  5 (target)     $670.00      $0.9178
+  10 (max)       $1,340.00    $1.8356
+
+  Per-replica:   $134.00/mo
+
+  Tip: At 70% CPU utilization target, expect 3-5 replicas
+       under typical load ($402-$670/mo).
+</pre>
+
+    <div class="quote">
+        Cost estimation is not a deployment blocker &mdash; it is a decision-support tool. Aether provides the data; your team makes the call.
+    </div>
+</div>
+
+<!-- PAGE 6: CTA -->
+<div class="page page-accent">
+    <h2 class="st">Know Your Costs <span>Before Deploy</span></h2>
+    <p class="sub">Estimate, compare, and optimize infrastructure costs across five cloud providers and four runtimes.</p>
+
+    <h3>Quick Cost Check</h3>
+<pre>
+# Estimate cost for your workload
+$ aether cost workload.yaml --provider all --output json
+
+# Compare runtimes side by side
+$ aether compare workload.yaml
+
+# Project scaling costs
+$ aether cost workload.yaml --provider aws --with-scaling
+</pre>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">5</div>
+            <div class="label">Cloud Providers</div>
+        </div>
+        <div class="stat">
+            <div class="number">6</div>
+            <div class="label">Cost Dimensions</div>
+        </div>
+        <div class="stat">
+            <div class="number">4</div>
+            <div class="label">Runtimes Compared</div>
+        </div>
+        <div class="stat">
+            <div class="number">USD</div>
+            <div class="label">Currency</div>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h3>FinOps Built Into Your Deployment Tool</h3>
+        <p>Aether puts cost visibility directly in the developer workflow. No separate FinOps tool, no manual spreadsheets &mdash; just run <code>aether cost</code> and see exactly what your workload will cost across every provider.</p>
+    </div>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane &bull; Built with Rust</div>
+</div>
+
+</body>
+</html>
