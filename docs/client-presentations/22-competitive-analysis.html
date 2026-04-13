@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether &mdash; Aether vs Alternatives</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+.page-light tr:nth-child(even) td { background: #f9fafb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> vs Alternatives</h1>
+    <h2>Why a Universal Runtime Control Plane?</h2>
+    <p class="tagline">Compare Aether to kubectl/Helm, HashiCorp Nomad, Docker Compose, and custom scripts. One spec, four runtimes, zero lock-in.</p>
+    <div class="badge">Podman &bull; Kubernetes &bull; KubeVirt &bull; Metal3</div>
+</div>
+
+<!-- PAGE 2: Comparison Table -->
+<div class="page page-light">
+    <h2 class="st">Head-to-Head <span>Comparison</span></h2>
+    <p class="sub">How Aether stacks up against the most common deployment tools across key dimensions.</p>
+
+    <table>
+        <tr>
+            <th>Dimension</th>
+            <th>Aether</th>
+            <th>kubectl / Helm</th>
+            <th>Nomad</th>
+            <th>Docker Compose</th>
+            <th>Custom Scripts</th>
+        </tr>
+        <tr>
+            <td><strong>Runtimes</strong></td>
+            <td class="check">4 (Podman, K8s, KubeVirt, Metal3)</td>
+            <td>1 (K8s only)</td>
+            <td>3 (Docker, exec, QEMU)</td>
+            <td>1 (Docker only)</td>
+            <td>Varies</td>
+        </tr>
+        <tr>
+            <td><strong>Spec Format</strong></td>
+            <td class="check">One unified YAML</td>
+            <td>K8s manifests + Helm charts</td>
+            <td>HCL job files</td>
+            <td>docker-compose.yml</td>
+            <td>Shell/Python/ad-hoc</td>
+        </tr>
+        <tr>
+            <td><strong>Migration Engine</strong></td>
+            <td class="check">16 paths, 3 strategies</td>
+            <td class="cross">None</td>
+            <td class="cross">None</td>
+            <td class="cross">None</td>
+            <td class="cross">Manual</td>
+        </tr>
+        <tr>
+            <td><strong>Decision Engine</strong></td>
+            <td class="check">Auto-selects runtime</td>
+            <td class="cross">User picks K8s</td>
+            <td>Manual scheduler hints</td>
+            <td class="cross">Always Docker</td>
+            <td class="cross">Hardcoded</td>
+        </tr>
+        <tr>
+            <td><strong>Drift Detection</strong></td>
+            <td class="check">Built-in + auto-reconcile</td>
+            <td>Partial (flux/argo)</td>
+            <td>Partial (plan diff)</td>
+            <td class="cross">None</td>
+            <td class="cross">None</td>
+        </tr>
+        <tr>
+            <td><strong>Secrets Management</strong></td>
+            <td class="check">AES-256-GCM built-in</td>
+            <td>External (Vault/SOPS)</td>
+            <td>Built-in Vault integration</td>
+            <td class="cross">env files</td>
+            <td class="cross">env files</td>
+        </tr>
+        <tr>
+            <td><strong>SLA Monitoring</strong></td>
+            <td class="check">Built-in with error budgets</td>
+            <td class="cross">External tools</td>
+            <td class="cross">External tools</td>
+            <td class="cross">None</td>
+            <td class="cross">None</td>
+        </tr>
+        <tr>
+            <td><strong>Language</strong></td>
+            <td class="check">Rust (single binary)</td>
+            <td>Go</td>
+            <td>Go</td>
+            <td>Go</td>
+            <td>Varies</td>
+        </tr>
+    </table>
+</div>
+
+<!-- PAGE 3: Unique Advantages -->
+<div class="page page-accent">
+    <h2 class="st">Unique <span>Advantages</span></h2>
+    <p class="sub">Aether is not just another deployment tool &mdash; it is the only control plane that unifies four runtimes behind a single declarative spec.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#128196;</div>
+            <h4>One Spec, Four Runtimes</h4>
+            <p>Write your workload YAML once. Aether deploys it to Podman for dev, Kubernetes for staging, KubeVirt for legacy apps, and Metal3 for GPU workloads &mdash; without rewriting a single line.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128260;</div>
+            <h4>Migration Engine</h4>
+            <p>16 distinct runtime-to-runtime migration paths with blue-green, rolling, and immediate strategies. Move workloads between any two runtimes with zero downtime and automatic rollback.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#9889;</div>
+            <h4>Decision Engine</h4>
+            <p>The built-in scheduler evaluates CPU, memory, GPU, cost, and affinity to automatically select the optimal runtime. Override when you need to, trust it when you do not.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128202;</div>
+            <h4>Full Observability Stack</h4>
+            <p>Drift detection, SLA compliance, metrics, health monitoring, and audit trails &mdash; all built into the control plane. No external Prometheus, Grafana, or Vault required to get started.</p>
+        </div>
+    </div>
+
+    <div class="quote">
+        Other tools manage one runtime well. Aether manages the choice between runtimes &mdash; and makes that choice reversible at any time.
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">1</div>
+            <div class="label">Spec for All Runtimes</div>
+        </div>
+        <div class="stat">
+            <div class="number">16</div>
+            <div class="label">Migration Paths</div>
+        </div>
+        <div class="stat">
+            <div class="number">0</div>
+            <div class="label">External Dependencies</div>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 4: Feature Matrix -->
+<div class="page page-dark">
+    <h2 class="st">Feature <span>Matrix</span></h2>
+    <p class="sub">A comprehensive comparison of capabilities across Aether and competing tools.</p>
+
+    <table>
+        <tr>
+            <th>Feature</th>
+            <th>Aether</th>
+            <th>kubectl/Helm</th>
+            <th>Nomad</th>
+            <th>Compose</th>
+            <th>Scripts</th>
+        </tr>
+        <tr>
+            <td>Container deployment</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+        </tr>
+        <tr>
+            <td>VM deployment (KubeVirt)</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Bare-metal provisioning</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Cross-runtime migration</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Auto runtime selection</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Built-in secrets (AES-256)</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Drift detection</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>SLA error budgets</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Environment promotion</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Policy engine</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Tamper-evident audit trail</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+        </tr>
+        <tr>
+            <td>Single binary, no daemon</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+            <td class="cross">&#10007;</td>
+            <td class="cross">&#10007;</td>
+            <td class="check">&#10003;</td>
+        </tr>
+    </table>
+</div>
+
+<!-- PAGE 5: Migration from Existing Tools & When to Use -->
+<div class="page page-light">
+    <h2 class="st">Migration from <span>Existing Tools</span></h2>
+    <p class="sub">Aether is designed to complement, not replace. Adopt incrementally alongside your existing tooling.</p>
+
+    <h3>Migration Paths</h3>
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-dot">1</div>
+            <div class="timeline-content">
+                <h4>From Docker Compose</h4>
+                <p>Import your <code>docker-compose.yml</code> using <code>aether compose import</code>. Aether converts services to workload specs, preserving port mappings, environment variables, and volume mounts. Run on Podman first, then migrate to Kubernetes when ready.</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot">2</div>
+            <div class="timeline-content">
+                <h4>From kubectl / Helm</h4>
+                <p>Start by managing new workloads with Aether specs while keeping existing Helm releases. Gradually migrate services by creating Aether specs and using the migration engine to move from Kubernetes to any other runtime (or keep on Kubernetes with unified management).</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot">3</div>
+            <div class="timeline-content">
+                <h4>From Nomad</h4>
+                <p>Translate HCL job files to Aether YAML specs. Aether's scheduler provides similar constraint-based placement but adds cross-runtime migration and built-in drift detection that Nomad lacks.</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot">4</div>
+            <div class="timeline-content">
+                <h4>From Custom Scripts</h4>
+                <p>Replace shell scripts with declarative YAML specs. Gain idempotent deploys, automatic rollback, state tracking, and audit trails. The initial conversion is the last time you write deployment logic.</p>
+            </div>
+        </div>
+    </div>
+
+    <h3>When to Use Aether</h3>
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#9989;</div>
+            <h4>Ideal For</h4>
+            <ul>
+                <li>Teams using multiple runtimes (containers + VMs + bare-metal)</li>
+                <li>Organizations needing cross-runtime migration</li>
+                <li>Teams wanting a single unified control plane</li>
+                <li>Environments requiring built-in secrets and SLA monitoring</li>
+                <li>Edge deployments needing lightweight, single-binary tooling</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="icon">&#128161;</div>
+            <h4>Consider Alternatives When</h4>
+            <ul>
+                <li>You only use Kubernetes and always will</li>
+                <li>You need a service mesh (Istio/Linkerd)</li>
+                <li>You require a full-featured secrets vault with HSM</li>
+                <li>Your team has deep Helm/Nomad expertise and no multi-runtime needs</li>
+                <li>You need cloud provider managed services (ECS, Cloud Run)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 6: CTA -->
+<div class="page page-accent" style="display: flex; flex-direction: column; justify-content: center;">
+    <h2 class="st">Choose <span>Aether</span></h2>
+    <p class="sub">The only control plane that treats containers, VMs, and bare-metal as first-class citizens.</p>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">4</div>
+            <div class="label">Runtimes Unified</div>
+        </div>
+        <div class="stat">
+            <div class="number">40+</div>
+            <div class="label">CLI Commands</div>
+        </div>
+        <div class="stat">
+            <div class="number">1</div>
+            <div class="label">Single Binary</div>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h3>Start Deploying Across Every Runtime Today</h3>
+        <p>Aether is open source, written in Rust, and designed for production. One spec, four runtimes, zero lock-in. Install in seconds, deploy in minutes.</p>
+    </div>
+
+    <pre><span style="color:#d35400;">#</span> Get started in 3 commands
+<span style="color:#d35400;">$</span> cargo install aether
+<span style="color:#d35400;">$</span> aether init my-project
+<span style="color:#d35400;">$</span> aether run --spec workload.yaml
+
+<span style="color:#d35400;">#</span> Migrate from Docker Compose
+<span style="color:#d35400;">$</span> aether compose import docker-compose.yml
+<span style="color:#d35400;">$</span> aether run --spec imported-workload.yaml
+
+<span style="color:#d35400;">#</span> Move to Kubernetes when ready
+<span style="color:#d35400;">$</span> aether migrate my-app --from podman --to kubernetes \
+    --strategy blue-green</pre>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane &bull; Built with Rust</div>
+</div>
+
+</body>
+</html>

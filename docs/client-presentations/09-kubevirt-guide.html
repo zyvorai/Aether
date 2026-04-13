@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether — KubeVirt Virtual Machine Deployment</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> &mdash; KubeVirt VMs</h1>
+    <h2>Virtual Machine Deployment on Kubernetes</h2>
+    <p class="tagline">Run full virtual machines alongside containers on your Kubernetes cluster. Aether generates VirtualMachine CRDs and DataVolumes from the same workload spec used for containers.</p>
+    <div class="badge">VirtualMachine CRD &bull; DataVolume &bull; GPU Passthrough &bull; Live Migration</div>
+</div>
+
+<!-- PAGE 2: What is KubeVirt -->
+<div class="page page-dark">
+    <h2 class="st">What is <span>KubeVirt</span>?</h2>
+    <p class="sub">KubeVirt extends Kubernetes with virtualization capabilities, allowing VMs and containers to coexist in the same cluster under the same management plane.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F5A5;</div>
+            <h4>VMs on Kubernetes</h4>
+            <p>KubeVirt adds a VirtualMachine CRD to Kubernetes, letting you define, schedule, and manage VMs just like pods. The kubelet handles VM lifecycle through the virt-handler DaemonSet.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F504;</div>
+            <h4>Unified Scheduling</h4>
+            <p>VMs are scheduled by the Kubernetes scheduler alongside containers. Resource requests, node affinity, taints, and tolerations all work the same way for both workload types.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F512;</div>
+            <h4>Full VM Isolation</h4>
+            <p>Unlike containers, KubeVirt VMs provide full hardware-level isolation via KVM. Ideal for legacy applications, compliance-sensitive workloads, and multi-tenant environments.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F310;</div>
+            <h4>Kubernetes Networking</h4>
+            <p>VMs connect to the same CNI network as pods. Services, Ingress, and NetworkPolicies work transparently, enabling VMs and containers to communicate natively.</p>
+        </div>
+    </div>
+
+    <div class="quote">
+        KubeVirt is the bridge between legacy VM workloads and modern Kubernetes infrastructure &mdash; and Aether makes deploying to it as simple as deploying a container.
+    </div>
+</div>
+
+<!-- PAGE 3: How Aether Deploys VMs -->
+<div class="page page-light">
+    <h2 class="st">How Aether <span>Deploys VMs</span></h2>
+    <p class="sub">Aether's KubeVirt adapter generates two CRDs from your workload spec: a DataVolume for the disk image and a VirtualMachine for the VM definition.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <h4>DataVolume (Disk Image)</h4>
+<pre>
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: my-vm-disk
+  namespace: default
+  labels:
+    app: my-vm
+    managed-by: aether
+spec:
+  source:
+    registry:
+      url: "docker://quay.io/containerdisks/fedora:40"
+  pvc:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 20Gi
+</pre>
+        </div>
+        <div class="card">
+            <h4>VirtualMachine CRD</h4>
+<pre>
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: my-vm
+  namespace: default
+  labels:
+    app: my-vm
+    managed-by: aether
+spec:
+  running: true
+  template:
+    spec:
+      domain:
+        cpu:
+          cores: 4
+        resources:
+          requests:
+            memory: 8Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: my-vm-disk
+</pre>
+        </div>
+    </div>
+
+    <div class="flow">
+        <div class="flow-step">Workload YAML</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">KubeVirt Adapter</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">DataVolume + VirtualMachine</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Running VM</div>
+    </div>
+</div>
+
+<!-- PAGE 4: GPU Passthrough -->
+<div class="page page-accent">
+    <h2 class="st">GPU <span>Passthrough</span></h2>
+    <p class="sub">Aether maps GPU requirements from your workload spec directly to KubeVirt GPU device passthrough, enabling ML training and inference workloads inside VMs.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <h4>Workload Spec with GPU</h4>
+<pre>
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: ml-training-vm
+spec:
+  requirements:
+    cpu: "8"
+    memory: 32Gi
+    storage: 100Gi
+    gpu:
+      count: 2
+      vendor: nvidia
+  runtime:
+    preferred: kubevirt
+    allow: [kubevirt]
+  build:
+    context: .
+    dockerfile: Dockerfile
+    registry: registry.example.com
+</pre>
+        </div>
+        <div class="card">
+            <h4>Generated VM with GPU</h4>
+<pre>
+spec:
+  template:
+    spec:
+      domain:
+        cpu:
+          cores: 8
+        resources:
+          requests:
+            memory: 32Gi
+        devices:
+          gpus:
+            - name: gpu-0
+              deviceName: nvidia.com/GP100GL
+            - name: gpu-1
+              deviceName: nvidia.com/GP100GL
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ml-training-vm-disk
+</pre>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">NVIDIA</div>
+            <div class="label">GPU Vendor Support</div>
+        </div>
+        <div class="stat">
+            <div class="number">AMD</div>
+            <div class="label">GPU Vendor Support</div>
+        </div>
+        <div class="stat">
+            <div class="number">Intel</div>
+            <div class="label">GPU Vendor Support</div>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 5: Migration & Monitoring -->
+<div class="page page-dark">
+    <h2 class="st">Migration &amp; <span>Monitoring</span></h2>
+    <p class="sub">Migrate workloads from containers to VMs with a single command and monitor VMs using the same Aether interface.</p>
+
+    <h3>Container to VM Migration</h3>
+    <div class="card-grid">
+        <div class="card" style="grid-column: 1 / -1;">
+<pre>
+# Migrate a running container workload to a KubeVirt VM
+$ aether migrate my-app kubevirt --strategy blue-green
+
+Migration: my-app [podman -> kubevirt]
+Strategy:  blue-green
+
+Step 1/4: Generating DataVolume from container image...
+  DataVolume my-app-disk created (20Gi, ReadWriteOnce)
+
+Step 2/4: Creating VirtualMachine CRD...
+  VirtualMachine my-app created (4 CPU, 8Gi RAM)
+
+Step 3/4: Waiting for VM to boot and pass health checks...
+  VM booted in 45s | Health check: HTTP GET / -> 200 OK
+
+Step 4/4: Switching traffic and cleaning up source...
+  Source container stopped
+  Migration complete
+
+Status: my-app running on kubevirt (blue-green, 0 downtime)
+</pre>
+        </div>
+    </div>
+
+    <h3>VM Monitoring</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>Status &amp; Health</h4>
+<pre>
+$ aether status my-vm
+NAME     RUNTIME    STATE     READY
+my-vm    kubevirt   Running   true
+
+$ aether health my-vm
+Uptime: 99.99% (1440 checks)
+Last state: Running
+Restarts: 0
+Latency: 12ms avg
+</pre>
+        </div>
+        <div class="card">
+            <h4>Logs via Serial Console</h4>
+<pre>
+# Stream VM serial console output
+$ aether logs my-vm --follow
+[    0.000000] Linux version 6.8.0
+[    1.234567] systemd[1]: Started
+[    2.345678] sshd[456]: Server listening
+[    3.456789] my-app[789]: Ready on :8080
+
+# Access VM via BMC/serial for debugging
+$ aether exec my-vm -- virsh console my-vm
+</pre>
+        </div>
+    </div>
+
+    <div class="quote">
+        Aether treats VMs as first-class workloads. The same status, logs, health, and migrate commands work identically whether the target is a container or a virtual machine.
+    </div>
+</div>
+
+<!-- PAGE 6: CTA -->
+<div class="page page-accent">
+    <h2 class="st">VMs Meet <span>Kubernetes</span></h2>
+    <p class="sub">Deploy virtual machines with the same simplicity as containers. One spec, one command, full VM isolation.</p>
+
+    <h3>Deploy Your First VM</h3>
+<pre>
+# 1. Create a VM workload spec
+$ cat workload.yaml
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: legacy-app
+spec:
+  requirements:
+    cpu: "4"
+    memory: 8Gi
+    storage: 50Gi
+  runtime:
+    preferred: kubevirt
+    allow: [kubevirt]
+  build:
+    context: .
+    dockerfile: Dockerfile
+    registry: registry.example.com
+
+# 2. Deploy the VM
+$ aether run workload.yaml
+  Creating DataVolume: legacy-app-disk (50Gi) ... done
+  Creating VirtualMachine: legacy-app ... done
+  Waiting for VM boot ... ready (38s)
+
+  Workload legacy-app deployed to kubevirt
+</pre>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">2</div>
+            <div class="label">CRDs Generated</div>
+        </div>
+        <div class="stat">
+            <div class="number">KVM</div>
+            <div class="label">Isolation Level</div>
+        </div>
+        <div class="stat">
+            <div class="number">3</div>
+            <div class="label">GPU Vendors</div>
+        </div>
+        <div class="stat">
+            <div class="number">Zero</div>
+            <div class="label">Downtime Migration</div>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h3>From Containers to VMs &mdash; Seamlessly</h3>
+        <p>Aether's KubeVirt adapter brings full VM isolation to your Kubernetes cluster without changing your workflow. Same spec format, same CLI, same observability &mdash; just stronger isolation.</p>
+    </div>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane &bull; Built with Rust</div>
+</div>
+
+</body>
+</html>
