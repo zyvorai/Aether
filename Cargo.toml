@@ -33,6 +33,7 @@ reqwest = { version = "0.12", features = ["json", "blocking"] }
 
 # API Server
 axum = "0.7"
+axum-server = { version = "0.7", features = ["tls-rustls"] }
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["fs", "cors"] }
 

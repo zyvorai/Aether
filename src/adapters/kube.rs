@@ -7,6 +7,7 @@ use k8s_openapi::api::autoscaling::v2::{
     HorizontalPodAutoscaler, HorizontalPodAutoscalerSpec, MetricSpec, MetricTarget,
     ResourceMetricSource,
 };
+use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, ContainerPort, EnvFromSource as K8sEnvFromSource, HTTPGetAction,
     PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, PodSpec, Probe,
@@ -18,7 +19,7 @@ use k8s_openapi::api::networking::v1::{
     IngressServiceBackend, IngressSpec, IngressTLS, ServiceBackendPort,
 };
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use kube::{
     api::{Api, DeleteParams, ListParams, LogParams, PostParams},
@@ -60,6 +61,10 @@ impl KubernetesRuntime {
                     let api: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
+                "deployment" => {
+                    let api: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
                 _ => Ok(()),
             };
             match result {
@@ -69,50 +74,61 @@ impl KubernetesRuntime {
         }
     }
 
-    /// Get pod status
+    /// Get pod status by looking up pods via label selectors.
+    /// Works with Deployments where pod names include generated hashes.
     async fn get_pod_status(&self, name: &str) -> anyhow::Result<Status> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
+        let lp = ListParams::default().labels(&format!("app={},managed-by=aether", name));
 
-        match pods.get(name).await {
-            Ok(pod) => {
-                let pod_status = pod.status.as_ref();
-                let phase = pod_status
-                    .and_then(|s| s.phase.as_ref())
-                    .map(|p| p.as_str())
-                    .unwrap_or("Unknown");
+        match pods.list(&lp).await {
+            Ok(pod_list) => {
+                if let Some(pod) = pod_list.items.first() {
+                    let pod_status = pod.status.as_ref();
+                    let phase = pod_status
+                        .and_then(|s| s.phase.as_ref())
+                        .map(|p| p.as_str())
+                        .unwrap_or("Unknown");
 
-                let state = match phase {
-                    "Pending" => InstanceState::Pending,
-                    "Running" => InstanceState::Running,
-                    "Succeeded" => InstanceState::Stopped,
-                    "Failed" => InstanceState::Failed,
-                    _ => InstanceState::Unknown,
-                };
+                    let state = match phase {
+                        "Pending" => InstanceState::Pending,
+                        "Running" => InstanceState::Running,
+                        "Succeeded" => InstanceState::Stopped,
+                        "Failed" => InstanceState::Failed,
+                        _ => InstanceState::Unknown,
+                    };
 
-                let ready = pod_status
-                    .and_then(|s| s.conditions.as_ref())
-                    .and_then(|conditions| {
-                        conditions.iter().find(|c| c.type_ == "Ready")
+                    let ready = pod_status
+                        .and_then(|s| s.conditions.as_ref())
+                        .and_then(|conditions| {
+                            conditions.iter().find(|c| c.type_ == "Ready")
+                        })
+                        .map(|c| c.status == "True")
+                        .unwrap_or(false);
+
+                    let message = pod_status
+                        .and_then(|s| s.message.clone())
+                        .or_else(|| pod_status.and_then(|s| s.reason.clone()));
+
+                    let restart_count = pod_status
+                        .and_then(|s| s.container_statuses.as_ref())
+                        .and_then(|statuses| statuses.first())
+                        .map(|s| s.restart_count as u32)
+                        .unwrap_or(0);
+
+                    Ok(Status {
+                        state,
+                        ready,
+                        message,
+                        restart_count,
                     })
-                    .map(|c| c.status == "True")
-                    .unwrap_or(false);
-
-                let message = pod_status
-                    .and_then(|s| s.message.clone())
-                    .or_else(|| pod_status.and_then(|s| s.reason.clone()));
-
-                let restart_count = pod_status
-                    .and_then(|s| s.container_statuses.as_ref())
-                    .and_then(|statuses| statuses.first())
-                    .map(|s| s.restart_count as u32)
-                    .unwrap_or(0);
-
-                Ok(Status {
-                    state,
-                    ready,
-                    message,
-                    restart_count,
-                })
+                } else {
+                    Ok(Status {
+                        state: InstanceState::Unknown,
+                        ready: false,
+                        message: Some("No pods found for workload".to_string()),
+                        restart_count: 0,
+                    })
+                }
             }
             Err(_) => Ok(Status {
                 state: InstanceState::Unknown,
@@ -128,6 +144,17 @@ use super::common::validate_kube_name;
 
 /// Default timeout for Kubernetes API calls (5 minutes).
 const KUBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
+
+/// Default graceful termination period for workloads (30 seconds).
+const KUBE_GRACE_PERIOD: u32 = 30;
+
+/// Create DeleteParams with graceful termination period.
+fn graceful_delete_params() -> DeleteParams {
+    DeleteParams {
+        grace_period_seconds: Some(KUBE_GRACE_PERIOD),
+        ..Default::default()
+    }
+}
 
 /// Execute a Kubernetes API future with a timeout.
 async fn kube_with_timeout<F, T>(op: &str, fut: F) -> crate::Result<T>
@@ -166,8 +193,8 @@ fn sanitize_volume_name(name: &str) -> String {
     }
 }
 
-/// Build a Pod manifest from workload spec.
-fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
+/// Build a Deployment manifest from workload spec.
+fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) -> Deployment {
     let mut labels = BTreeMap::new();
     labels.insert("app".to_string(), spec.metadata.name.clone());
     labels.insert("managed-by".to_string(), "aether".to_string());
@@ -374,7 +401,19 @@ fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
         ..Default::default()
     };
 
-    Pod {
+    // Determine replica count: use scaling min_replicas if configured, otherwise 1
+    let replicas = spec
+        .scaling
+        .as_ref()
+        .filter(|s| s.enabled)
+        .map(|s| s.min_replicas as i32)
+        .unwrap_or(1);
+
+    let mut match_labels = BTreeMap::new();
+    match_labels.insert("app".to_string(), spec.metadata.name.clone());
+    match_labels.insert("managed-by".to_string(), "aether".to_string());
+
+    Deployment {
         metadata: ObjectMeta {
             name: Some(spec.metadata.name.clone()),
             namespace: Some(namespace.to_string()),
@@ -382,9 +421,24 @@ fn build_pod_manifest(namespace: &str, image: &Image, spec: &Workload) -> Pod {
             annotations: Some(spec.metadata.annotations.clone().into_iter().collect()),
             ..Default::default()
         },
-        spec: Some(PodSpec {
-            containers: vec![container],
-            volumes: if volumes.is_empty() { None } else { Some(volumes) },
+        spec: Some(DeploymentSpec {
+            replicas: Some(replicas),
+            selector: LabelSelector {
+                match_labels: Some(match_labels),
+                ..Default::default()
+            },
+            template: k8s_openapi::api::core::v1::PodTemplateSpec {
+                metadata: Some(ObjectMeta {
+                    labels: Some(labels),
+                    annotations: Some(spec.metadata.annotations.clone().into_iter().collect()),
+                    ..Default::default()
+                }),
+                spec: Some(PodSpec {
+                    containers: vec![container],
+                    volumes: if volumes.is_empty() { None } else { Some(volumes) },
+                    ..Default::default()
+                }),
+            },
             ..Default::default()
         }),
         ..Default::default()
@@ -833,30 +887,31 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
-        // Create Pod
-        let pod = build_pod_manifest(&self.namespace, image, spec);
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
+        // Create Deployment
+        let deployment = build_deployment_manifest(&self.namespace, image, spec);
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
 
-        let created_pod = match kube_with_timeout("Pod create", pods.create(&PostParams::default(), &pod)).await {
-            Ok(p) => p,
+        let created_deployment = match kube_with_timeout("Deployment create", deployments.create(&PostParams::default(), &deployment)).await {
+            Ok(d) => d,
             Err(e) => {
-                tracing::error!("Pod creation failed, cleaning up {} resources", new_resources.len());
+                tracing::error!("Deployment creation failed, cleaning up {} resources", new_resources.len());
                 self.cleanup_resources(&new_resources).await;
                 return Err(e);
             }
         };
 
-        let pod_name = created_pod
+        let deploy_name = created_deployment
             .metadata
             .name
             .unwrap_or_else(|| spec.metadata.name.clone());
 
-        let uid = created_pod
+        let uid = created_deployment
             .metadata
             .uid
             .unwrap_or_else(|| "unknown".to_string());
 
-        tracing::info!("Created Pod: {}", pod_name);
+        new_resources.push(("deployment", deploy_name.clone()));
+        tracing::info!("Created Deployment: {}", deploy_name);
 
         // Create HPA if needed (non-critical, don't clean up on failure)
         if let Some(hpa) = build_hpa_manifest(&self.namespace, spec) {
@@ -870,15 +925,19 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
-        Ok(Instance::new(uid, pod_name, RuntimeKind::Kubernetes, image.full_name()))
+        Ok(Instance::new(uid, deploy_name, RuntimeKind::Kubernetes, image.full_name()))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
         validate_kube_name(&instance.name)?;
-        tracing::info!("Stopping (deleting) Pod: {}", instance.name);
+        tracing::info!("Stopping (deleting) Deployment: {}", instance.name);
 
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
-        kube_with_timeout("Pod delete", pods.delete(&instance.name, &DeleteParams::default())).await?;
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+        let dp = DeleteParams {
+            grace_period_seconds: Some(30),
+            ..Default::default()
+        };
+        kube_with_timeout("Deployment delete", deployments.delete(&instance.name, &dp)).await?;
 
         Ok(())
     }
@@ -895,7 +954,14 @@ impl Runtime for KubernetesRuntime {
             ..Default::default()
         };
 
-        let logs = kube_with_timeout("Pod logs", pods.logs(&instance.name, &log_params)).await?;
+        // Look up pods by label since Deployment pods have generated names
+        let lp = ListParams::default().labels(&format!("app={},managed-by=aether", instance.name));
+        let pod_list = pods.list(&lp).await?;
+        let pod_name = pod_list.items.first()
+            .and_then(|p| p.metadata.name.clone())
+            .ok_or_else(|| anyhow::anyhow!("No pods found for workload '{}'", instance.name))?;
+
+        let logs = kube_with_timeout("Pod logs", pods.logs(&pod_name, &log_params)).await?;
         Ok(logs)
     }
 
@@ -911,11 +977,11 @@ impl Runtime for KubernetesRuntime {
             Err(e) => tracing::debug!("HPA deletion failed (may not exist): {}", e),
         }
 
-        // Delete Pod
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
-        match pods.delete(&instance.name, &DeleteParams::default()).await {
-            Ok(_) => tracing::info!("Deleted Pod: {}", instance.name),
-            Err(e) => tracing::warn!("Pod deletion failed: {}", e),
+        // Delete Deployment (cascades to ReplicaSet and Pods)
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+        match deployments.delete(&instance.name, &graceful_delete_params()).await {
+            Ok(_) => tracing::info!("Deleted Deployment: {}", instance.name),
+            Err(e) => tracing::warn!("Deployment deletion failed: {}", e),
         }
 
         // Delete Ingress
@@ -988,36 +1054,37 @@ impl Runtime for KubernetesRuntime {
     }
 
     async fn list(&self) -> crate::Result<Vec<Instance>> {
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
 
-        // List only pods managed by aether
+        // List only deployments managed by aether
         let lp = ListParams::default().labels("managed-by=aether");
-        let pod_list = pods.list(&lp).await?;
+        let deploy_list = deployments.list(&lp).await?;
 
-        let instances: Vec<Instance> = pod_list
+        let instances: Vec<Instance> = deploy_list
             .items
             .iter()
-            .map(|pod| {
-                let name = pod
+            .map(|deploy| {
+                let name = deploy
                     .metadata
                     .name
                     .clone()
                     .unwrap_or_else(|| "unknown".to_string());
 
-                let uid = pod
+                let uid = deploy
                     .metadata
                     .uid
                     .clone()
                     .unwrap_or_else(|| "unknown".to_string());
 
-                let image = pod
+                let image = deploy
                     .spec
                     .as_ref()
-                    .and_then(|s| s.containers.first())
+                    .and_then(|s| s.template.spec.as_ref())
+                    .and_then(|ps| ps.containers.first())
                     .and_then(|c| c.image.clone())
                     .unwrap_or_else(|| "unknown".to_string());
 
-                let created_at = pod
+                let created_at = deploy
                     .metadata
                     .creation_timestamp
                     .as_ref()
@@ -1115,58 +1182,66 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------
-    // Pod generation tests
+    // Deployment generation tests
     // -----------------------------------------------------------------------
 
     #[test]
-    fn test_generate_pod_basic() {
+    fn test_generate_deployment_basic() {
         let spec = create_test_workload();
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
+        let deploy = build_deployment_manifest("default", &image, &spec);
 
-        assert_eq!(pod.metadata.name, Some("test-app".to_string()));
-        assert_eq!(pod.metadata.namespace, Some("default".to_string()));
+        assert_eq!(deploy.metadata.name, Some("test-app".to_string()));
+        assert_eq!(deploy.metadata.namespace, Some("default".to_string()));
 
-        let pod_spec = pod.spec.as_ref().unwrap();
+        let deploy_spec = deploy.spec.as_ref().unwrap();
+        assert_eq!(deploy_spec.replicas, Some(1));
+
+        let pod_spec = deploy_spec.template.spec.as_ref().unwrap();
         assert_eq!(pod_spec.containers.len(), 1);
 
         let container = &pod_spec.containers[0];
         assert_eq!(container.name, "test-app");
         assert_eq!(container.image, Some("test-app:latest".to_string()));
+
+        // Verify selector
+        let match_labels = deploy_spec.selector.match_labels.as_ref().unwrap();
+        assert_eq!(match_labels.get("app"), Some(&"test-app".to_string()));
+        assert_eq!(match_labels.get("managed-by"), Some(&"aether".to_string()));
     }
 
     #[test]
-    fn test_generate_pod_namespace() {
+    fn test_generate_deployment_namespace() {
         let spec = create_test_workload();
         let image = create_test_image();
 
-        let pod = build_pod_manifest("production", &image, &spec);
-        assert_eq!(pod.metadata.namespace, Some("production".to_string()));
+        let deploy = build_deployment_manifest("production", &image, &spec);
+        assert_eq!(deploy.metadata.namespace, Some("production".to_string()));
     }
 
     #[test]
-    fn test_generate_pod_default_labels() {
+    fn test_generate_deployment_default_labels() {
         let spec = create_test_workload();
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let labels = pod.metadata.labels.as_ref().unwrap();
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let labels = deploy.metadata.labels.as_ref().unwrap();
 
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
         assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
     }
 
     #[test]
-    fn test_generate_pod_user_labels_merged() {
+    fn test_generate_deployment_user_labels_merged() {
 
         let mut spec = create_test_workload();
         spec.metadata.labels.insert("env".to_string(), "staging".to_string());
         spec.metadata.labels.insert("team".to_string(), "backend".to_string());
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let labels = pod.metadata.labels.as_ref().unwrap();
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let labels = deploy.metadata.labels.as_ref().unwrap();
 
         // Default labels still present
         assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
@@ -1177,7 +1252,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_annotations() {
+    fn test_generate_deployment_annotations() {
 
         let mut spec = create_test_workload();
         spec.metadata.annotations.insert(
@@ -1190,15 +1265,15 @@ mod tests {
         );
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let annotations = pod.metadata.annotations.as_ref().unwrap();
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let annotations = deploy.metadata.annotations.as_ref().unwrap();
 
         assert_eq!(annotations.get("prometheus.io/scrape"), Some(&"true".to_string()));
         assert_eq!(annotations.get("prometheus.io/port"), Some(&"9090".to_string()));
     }
 
     #[test]
-    fn test_generate_pod_container_ports() {
+    fn test_generate_deployment_container_ports() {
 
         let mut spec = create_test_workload();
         spec.network.ports = vec![
@@ -1220,8 +1295,8 @@ mod tests {
         ];
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         let ports = container.ports.as_ref().unwrap();
 
         assert_eq!(ports.len(), 3);
@@ -1233,29 +1308,29 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_no_ports() {
+    fn test_generate_deployment_no_ports() {
 
         let mut spec = create_test_workload();
         spec.network.ports = vec![];
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         let ports = container.ports.as_ref().unwrap();
 
         assert!(ports.is_empty());
     }
 
     #[test]
-    fn test_generate_pod_resource_limits() {
+    fn test_generate_deployment_resource_limits() {
 
         let mut spec = create_test_workload();
         spec.requirements.cpu = "500m".to_string();
         spec.requirements.memory = "256Mi".to_string();
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         let resources = container.resources.as_ref().unwrap();
 
         let limits = resources.limits.as_ref().unwrap();
@@ -1268,15 +1343,15 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_resource_limits_whole_cpu() {
+    fn test_generate_deployment_resource_limits_whole_cpu() {
 
         let mut spec = create_test_workload();
         spec.requirements.cpu = "4".to_string();
         spec.requirements.memory = "8Gi".to_string();
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         let resources = container.resources.as_ref().unwrap();
 
         let limits = resources.limits.as_ref().unwrap();
@@ -1285,7 +1360,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_image_with_digest() {
+    fn test_generate_deployment_image_with_digest() {
 
         let spec = create_test_workload();
         let image = Image {
@@ -1295,31 +1370,31 @@ mod tests {
             runtime: RuntimeKind::Kubernetes,
         };
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         // full_name() returns "name:tag"
         assert_eq!(container.image, Some("myregistry.io/myapp:v1.2.3".to_string()));
     }
 
     #[test]
-    fn test_generate_pod_no_health_probes() {
+    fn test_generate_deployment_no_health_probes() {
         let spec = create_test_workload();
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.liveness_probe.is_none());
         assert!(container.readiness_probe.is_none());
     }
 
     #[test]
-    fn test_generate_pod_no_env_from() {
+    fn test_generate_deployment_no_env_from() {
         let spec = create_test_workload();
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.env_from.is_none());
     }
@@ -1329,7 +1404,7 @@ mod tests {
     // -----------------------------------------------------------------------
 
     #[test]
-    fn test_generate_pod_liveness_http_probe() {
+    fn test_generate_deployment_liveness_http_probe() {
 
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
@@ -1345,8 +1420,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert_eq!(probe.initial_delay_seconds, Some(15));
@@ -1358,7 +1433,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_readiness_http_probe() {
+    fn test_generate_deployment_readiness_http_probe() {
 
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
@@ -1374,8 +1449,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.liveness_probe.is_none());
 
@@ -1389,7 +1464,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_both_probes() {
+    fn test_generate_deployment_both_probes() {
 
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
@@ -1412,8 +1487,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.liveness_probe.is_some());
         assert!(container.readiness_probe.is_some());
@@ -1434,7 +1509,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_tcp_probe_produces_no_http_get() {
+    fn test_generate_deployment_tcp_probe_produces_no_http_get() {
 
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
@@ -1447,8 +1522,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         // TcpSocket probe type falls into the _ => None arm for http_get
@@ -1458,7 +1533,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_exec_probe_produces_no_http_get() {
+    fn test_generate_deployment_exec_probe_produces_no_http_get() {
 
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
@@ -1473,8 +1548,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.http_get.is_none());
@@ -1486,7 +1561,7 @@ mod tests {
     // -----------------------------------------------------------------------
 
     #[test]
-    fn test_generate_pod_env_from_configmap() {
+    fn test_generate_deployment_env_from_configmap() {
 
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
@@ -1499,8 +1574,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 1);
@@ -1513,7 +1588,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_env_from_secret() {
+    fn test_generate_deployment_env_from_secret() {
 
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
@@ -1526,8 +1601,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 1);
@@ -1540,7 +1615,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_env_from_multiple_sources() {
+    fn test_generate_deployment_env_from_multiple_sources() {
 
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
@@ -1563,8 +1638,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 3);
@@ -1574,7 +1649,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pod_env_from_empty_list() {
+    fn test_generate_deployment_env_from_empty_list() {
 
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
@@ -1584,8 +1659,8 @@ mod tests {
         });
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
         // Empty env_from vec results in None
         assert!(container.env_from.is_none());
     }
@@ -2392,7 +2467,7 @@ mod tests {
     // -----------------------------------------------------------------------
 
     #[test]
-    fn test_full_workload_pod_with_all_features() {
+    fn test_full_workload_deployment_with_all_features() {
 
         let mut spec = create_test_workload();
 
@@ -2480,15 +2555,19 @@ mod tests {
             runtime: RuntimeKind::Kubernetes,
         };
 
-        let pod = build_pod_manifest("production", &image, &spec);
+        let deploy = build_deployment_manifest("production", &image, &spec);
 
         // Verify metadata
-        assert_eq!(pod.metadata.namespace, Some("production".to_string()));
-        let labels = pod.metadata.labels.as_ref().unwrap();
+        assert_eq!(deploy.metadata.namespace, Some("production".to_string()));
+        let labels = deploy.metadata.labels.as_ref().unwrap();
         assert_eq!(labels.get("version"), Some(&"v2".to_string()));
 
+        // Verify deployment spec
+        let deploy_spec = deploy.spec.as_ref().unwrap();
+        assert_eq!(deploy_spec.replicas, Some(1));
+
         // Verify container
-        let container = &pod.spec.as_ref().unwrap().containers[0];
+        let container = &deploy_spec.template.spec.as_ref().unwrap().containers[0];
         assert_eq!(
             container.image,
             Some("registry.example.com/myapp:v2.0.0".to_string())
@@ -2575,8 +2654,9 @@ mod tests {
         let image = create_test_image();
 
         // All generation methods should succeed
-        let pod = build_pod_manifest("default", &image, &spec);
-        assert!(pod.metadata.name.is_some());
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        assert!(deploy.metadata.name.is_some());
+        assert_eq!(deploy.spec.as_ref().unwrap().replicas, Some(2));
 
         let service = build_service_manifest("default", &spec);
         assert!(service.is_some());
@@ -2615,8 +2695,9 @@ mod tests {
 
         let image = create_test_image();
 
-        let pod = build_pod_manifest("default", &image, &spec);
-        assert!(pod.metadata.name.is_some());
+        let deploy = build_deployment_manifest("default", &image, &spec);
+        assert!(deploy.metadata.name.is_some());
+        assert_eq!(deploy.spec.as_ref().unwrap().replicas, Some(1));
 
         assert!(build_service_manifest("default", &spec).is_none());
         assert!(build_pvc_manifest("default", &spec).is_none());
@@ -2673,7 +2754,7 @@ mod tests {
     // ── volume mount generation ──────────────────────────────────────
 
     #[test]
-    fn test_pod_manifest_with_configmap_volume_mount() {
+    fn test_deployment_manifest_with_configmap_volume_mount() {
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
             config_maps: vec![ConfigMapSpec {
@@ -2686,9 +2767,9 @@ mod tests {
         });
 
         let image = create_test_image();
-        let pod = build_pod_manifest("default", &image, &spec);
+        let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = pod.spec.as_ref().unwrap();
+        let pod_spec = deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert_eq!(volumes[0].name, "cm-app-config");
@@ -2703,7 +2784,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pod_manifest_with_pvc_volume_mount() {
+    fn test_deployment_manifest_with_pvc_volume_mount() {
         let mut spec = create_test_workload();
         spec.persistence = PersistenceSpec {
             enabled: true,
@@ -2713,9 +2794,9 @@ mod tests {
         };
 
         let image = create_test_image();
-        let pod = build_pod_manifest("default", &image, &spec);
+        let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = pod.spec.as_ref().unwrap();
+        let pod_spec = deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert!(volumes[0].persistent_volume_claim.is_some());
@@ -2727,7 +2808,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pod_manifest_no_volumes_when_no_mount_path() {
+    fn test_deployment_manifest_no_volumes_when_no_mount_path() {
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
             config_maps: vec![ConfigMapSpec {
@@ -2740,9 +2821,9 @@ mod tests {
         });
 
         let image = create_test_image();
-        let pod = build_pod_manifest("default", &image, &spec);
+        let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = pod.spec.as_ref().unwrap();
+        let pod_spec = deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap();
         assert!(pod_spec.volumes.is_none());
     }
 }

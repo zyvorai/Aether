@@ -110,8 +110,8 @@ async fn main() -> Result<()> {
         Commands::Cost { provider } => {
             commands::cost_command(&cli.spec, &provider).await
         }
-        Commands::Serve { host, port } => {
-            commands::serve_command(host, port).await
+        Commands::Serve { host, port, tls_cert, tls_key } => {
+            commands::serve_command(host, port, tls_cert, tls_key).await
         }
         Commands::Recommend { .. } => {
             commands::recommend_command(&cli.spec).await
