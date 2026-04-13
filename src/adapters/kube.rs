@@ -413,6 +413,30 @@ fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) ->
     match_labels.insert("app".to_string(), spec.metadata.name.clone());
     match_labels.insert("managed-by".to_string(), "aether".to_string());
 
+    // Build pod template annotations from workload metadata + mesh config
+    let mut pod_annotations: BTreeMap<String, String> = spec.metadata.annotations.clone().into_iter().collect();
+
+    if let Some(mesh) = &spec.mesh {
+        match mesh.provider.as_str() {
+            "istio" => {
+                pod_annotations.insert("sidecar.istio.io/inject".to_string(), mesh.inject.to_string());
+            }
+            "linkerd" => {
+                pod_annotations.insert("linkerd.io/inject".to_string(), if mesh.inject { "enabled" } else { "disabled" }.to_string());
+            }
+            "consul" => {
+                pod_annotations.insert("consul.hashicorp.com/connect-inject".to_string(), mesh.inject.to_string());
+            }
+            _ => {
+                tracing::warn!("Unknown mesh provider '{}', adding custom annotations only", mesh.provider);
+            }
+        }
+        // Add any custom mesh annotations
+        for (k, v) in &mesh.annotations {
+            pod_annotations.insert(k.clone(), v.clone());
+        }
+    }
+
     Deployment {
         metadata: ObjectMeta {
             name: Some(spec.metadata.name.clone()),
@@ -430,7 +454,7 @@ fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) ->
             template: k8s_openapi::api::core::v1::PodTemplateSpec {
                 metadata: Some(ObjectMeta {
                     labels: Some(labels),
-                    annotations: Some(spec.metadata.annotations.clone().into_iter().collect()),
+                    annotations: Some(pod_annotations),
                     ..Default::default()
                 }),
                 spec: Some(PodSpec {
@@ -1197,6 +1221,7 @@ mod tests {
             config: None,
             ingress: None,
             scaling: None,
+            mesh: None,
         }
     }
 
