@@ -4,12 +4,14 @@ use super::common;
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::Workload;
 use async_trait::async_trait;
+use k8s_openapi::api::core::v1::Secret;
 use kube::{
     api::{Api, DeleteParams, Patch, PatchParams, PostParams},
     core::DynamicObject,
     Client, ResourceExt,
 };
 use serde_json::json;
+use std::collections::BTreeMap;
 
 /// Metal3 runtime implementation
 pub struct Metal3Runtime {
@@ -111,6 +113,15 @@ fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Val
             "hardwareProfile": "unknown",
         }
     });
+
+    // Add BMC configuration if annotations are present
+    let bmc_address = spec.metadata.annotations.get("aether.io/bmc-address");
+    if let Some(address) = bmc_address {
+        bmh["spec"]["bmc"] = json!({
+            "address": address,
+            "credentialsName": format!("{}-bmc-creds", spec.metadata.name)
+        });
+    }
 
     // Add hardware requirements as annotations for matching
     if let Some(annotations) = bmh["metadata"]["annotations"].as_object_mut() {
@@ -249,6 +260,39 @@ impl Runtime for Metal3Runtime {
             self.namespace,
             spec.metadata.name
         );
+
+        // Create BMC credentials Secret if all three BMC annotations are present
+        let bmc_address = spec.metadata.annotations.get("aether.io/bmc-address");
+        let bmc_username = spec.metadata.annotations.get("aether.io/bmc-username");
+        let bmc_password = spec.metadata.annotations.get("aether.io/bmc-password");
+
+        if let (Some(_), Some(username), Some(password)) = (bmc_address, bmc_username, bmc_password)
+        {
+            let secret_name = format!("{}-bmc-creds", spec.metadata.name);
+            let mut string_data = BTreeMap::new();
+            string_data.insert("username".to_string(), username.clone());
+            string_data.insert("password".to_string(), password.clone());
+
+            let secret = Secret {
+                metadata: k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta {
+                    name: Some(secret_name.clone()),
+                    namespace: Some(self.namespace.clone()),
+                    ..Default::default()
+                },
+                string_data: Some(string_data),
+                type_: Some("Opaque".to_string()),
+                ..Default::default()
+            };
+
+            let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
+            match secrets.create(&PostParams::default(), &secret).await {
+                Ok(_) => tracing::info!("Created BMC credentials Secret: {}", secret_name),
+                Err(e) => tracing::warn!(
+                    "BMC Secret creation failed (may already exist): {}",
+                    e
+                ),
+            }
+        }
 
         // Generate BareMetalHost manifest
         let bmh_json = self.generate_baremetalhost_json(spec);

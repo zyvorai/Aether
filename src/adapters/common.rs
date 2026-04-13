@@ -101,6 +101,39 @@ pub async fn discover_crd_api(
     Ok(Api::namespaced_with(client, namespace, &ar))
 }
 
+/// Retry an async operation with exponential backoff.
+/// Retries on transient errors, fails immediately on permanent errors.
+pub async fn retry_with_backoff<F, Fut, T>(
+    op_name: &str,
+    max_retries: u32,
+    initial_backoff_ms: u64,
+    mut op: F,
+) -> crate::Result<T>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = crate::Result<T>>,
+{
+    let mut attempt = 0;
+    loop {
+        match op().await {
+            Ok(result) => return Ok(result),
+            Err(e) => {
+                attempt += 1;
+                if attempt > max_retries {
+                    tracing::error!("{} failed after {} attempts: {}", op_name, attempt, e);
+                    return Err(e);
+                }
+                let backoff = initial_backoff_ms * 2u64.pow(attempt - 1);
+                tracing::warn!(
+                    "{} failed (attempt {}/{}), retrying in {}ms: {}",
+                    op_name, attempt, max_retries, backoff, e
+                );
+                tokio::time::sleep(std::time::Duration::from_millis(backoff)).await;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
