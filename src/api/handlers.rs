@@ -17,24 +17,34 @@ use axum::http::header;
 use std::path::PathBuf;
 
 /// Validate a workload name from API input.
-/// Rejects empty names and names containing path traversal characters.
+/// Accepts only DNS-1123 compatible names: lowercase alphanumeric, hyphens, dots,
+/// up to 253 characters. Rejects empty names, path traversal, and special characters.
 fn validate_api_name<T: serde::Serialize>(name: &str) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
-    if name.is_empty()
-        || name.contains('/')
-        || name.contains('\\')
-        || name.contains("..")
-        || name.contains('\0')
-    {
-        return Err(err_bad_request(format!("Invalid workload name: '{}'", name)));
+    if name.is_empty() || name.len() > 253 {
+        return Err(err_bad_request(format!("Invalid workload name: '{}' (must be 1-253 characters)", name)));
+    }
+    // Only allow lowercase alphanumeric, hyphens, and dots (DNS-1123 compatible)
+    let valid = name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '.');
+    if !valid || name.starts_with('-') || name.starts_with('.') || name.ends_with('-') || name.ends_with('.') {
+        return Err(err_bad_request(format!(
+            "Invalid workload name: '{}'. Must match [a-z0-9][a-z0-9.-]*[a-z0-9]", name
+        )));
     }
     Ok(())
 }
 
-/// Validate that a spec_path does not contain path traversal sequences.
+/// Validate that a spec_path does not contain path traversal sequences or absolute paths.
 fn validate_spec_path<T: serde::Serialize>(path: &std::path::Path) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
     let path_str = path.to_string_lossy();
     if path_str.contains("..") {
         return Err(err_bad_request("spec_path contains path traversal sequence"));
+    }
+    if path.is_absolute() {
+        return Err(err_bad_request("spec_path must be a relative path"));
+    }
+    // Reject paths starting with system directories even when relative
+    if path_str.starts_with("/etc") || path_str.starts_with("/proc") || path_str.starts_with("/sys") {
+        return Err(err_bad_request("spec_path points to a system directory"));
     }
     Ok(())
 }

@@ -108,15 +108,12 @@ impl Runtime for PodmanRuntime {
                         format!("bash -c '</dev/tcp/localhost/{}' || exit 1", port)
                     }
                     crate::spec::ProbeType::Exec { command } => {
-                        // Shell-escape each argument to prevent command injection
+                        // Use single-quote wrapping for ALL arguments unconditionally
+                        // to prevent any shell interpretation. Single quotes in POSIX sh
+                        // prevent all expansion; embedded single quotes are handled by
+                        // ending the quote, adding an escaped quote, and reopening.
                         command.iter()
-                            .map(|arg| {
-                                if arg.contains(|c: char| c.is_whitespace() || c == '\'' || c == '"' || c == '\\' || c == '$' || c == '`' || c == '!' || c == ';' || c == '&' || c == '|') {
-                                    format!("'{}'", arg.replace('\'', "'\\''"))
-                                } else {
-                                    arg.clone()
-                                }
-                            })
+                            .map(|arg| format!("'{}'", arg.replace('\'', "'\\''")))
                             .collect::<Vec<_>>()
                             .join(" ")
                     }

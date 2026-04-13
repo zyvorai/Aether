@@ -12,6 +12,7 @@ use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
+use serde_json;
 
 // ─── Output Mode Control ─────────────────────────────────────────────
 
@@ -236,8 +237,8 @@ pub fn spinner_fail(pb: &ProgressBar, message: &str) {
 
 /// Emit a JSON status line with properly escaped message
 fn json_status(status: &str, message: &str) {
-    let escaped = message.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n");
-    println!(r#"{{"status":"{}","message":"{}"}}"#, status, escaped);
+    let json = serde_json::json!({ "status": status, "message": message });
+    println!("{}", json);
 }
 
 /// Print a success message with green checkmark
@@ -259,8 +260,8 @@ pub fn success(message: &str) {
 /// Print an error message with red cross (always shown, even in quiet mode)
 pub fn error(message: &str) {
     if is_json() {
-        let escaped = message.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n");
-        eprintln!(r#"{{"status":"error","message":"{}"}}"#, escaped);
+        let json = serde_json::json!({ "status": "error", "message": message });
+        eprintln!("{}", json);
         return;
     }
     eprintln!(
@@ -693,10 +694,14 @@ pub fn colorize_log_line(line: &str) -> String {
 // ─── Confirmation Prompt ──────────────────────────────────────────────
 
 /// Display a styled confirmation prompt and return true if confirmed.
-/// Auto-confirms (returns true) with `--yes`, `--quiet`, or `--json`.
+/// Auto-confirms (returns true) only with `--yes`.
+/// In quiet/json mode, defaults to rejecting (safe by default) unless `--yes` is also set.
 pub fn confirm(message: &str) -> bool {
-    if YES_MODE.load(Ordering::Relaxed) || is_quiet() || is_json() {
-        return true; // non-interactive: auto-confirm
+    if YES_MODE.load(Ordering::Relaxed) {
+        return true; // explicit --yes: auto-confirm
+    }
+    if is_quiet() || is_json() {
+        return false; // non-interactive without --yes: safe default is to reject
     }
     eprint!(
         "\n{} {} {} ",

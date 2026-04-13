@@ -35,6 +35,40 @@ pub struct KubernetesRuntime {
 super::impl_kube_adapter_new!(KubernetesRuntime, "default");
 
 impl KubernetesRuntime {
+    /// Clean up resources created during a failed deployment.
+    /// Best-effort: logs errors but doesn't propagate them.
+    async fn cleanup_resources(&self, resources: &[(&str, String)]) {
+        for (kind, name) in resources {
+            let result = match *kind {
+                "configmap" => {
+                    let api: Api<ConfigMap> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "secret" => {
+                    let api: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "pvc" => {
+                    let api: Api<PersistentVolumeClaim> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "service" => {
+                    let api: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "ingress" => {
+                    let api: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                _ => Ok(()),
+            };
+            match result {
+                Ok(()) => tracing::info!("Cleaned up {} '{}'", kind, name),
+                Err(e) => tracing::warn!("Failed to clean up {} '{}': {}", kind, name, e),
+            }
+        }
+    }
+
     /// Get pod status
     async fn get_pod_status(&self, name: &str) -> anyhow::Result<Status> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -91,6 +125,25 @@ impl KubernetesRuntime {
 }
 
 use super::common::validate_kube_name;
+
+/// Default timeout for Kubernetes API calls (5 minutes).
+const KUBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
+
+/// Execute a Kubernetes API future with a timeout.
+async fn kube_with_timeout<F, T>(op: &str, fut: F) -> crate::Result<T>
+where
+    F: std::future::Future<Output = Result<T, kube::Error>>,
+{
+    tokio::time::timeout(KUBE_TIMEOUT, fut)
+        .await
+        .map_err(|_| anyhow::anyhow!("Kubernetes {} timed out after {:?}", op, KUBE_TIMEOUT))?
+        .map_err(Into::into)
+}
+
+/// Check if a kube error is a 409 Conflict (resource already exists)
+fn is_already_exists(err: &kube::Error) -> bool {
+    matches!(err, kube::Error::Api(resp) if resp.code == 409)
+}
 
 // ---------------------------------------------------------------------------
 // Standalone manifest-generation functions (testable without a kube::Client)
@@ -686,8 +739,9 @@ impl Runtime for KubernetesRuntime {
     }
 
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
-        // Validate workload name is a valid Kubernetes DNS label before creating any resources
+        // Validate workload name and namespace are valid Kubernetes DNS labels
         validate_kube_name(&spec.metadata.name)?;
+        validate_kube_name(&self.namespace)?;
 
         tracing::info!(
             "Deploying to Kubernetes namespace '{}': {}",
@@ -695,34 +749,53 @@ impl Runtime for KubernetesRuntime {
             spec.metadata.name
         );
 
+        // Track created resources for logging
+        let mut _created_configmaps: Vec<String> = Vec::new();
+        let mut _created_secrets: Vec<String> = Vec::new();
+
+        // Track resources created in this deployment for cleanup on failure
+        let mut new_resources: Vec<(&str, String)> = Vec::new();
+
         // Create ConfigMaps
         for configmap in build_configmap_manifests(&self.namespace, spec) {
             let configmaps: Api<ConfigMap> =
                 Api::namespaced(self.client.clone(), &self.namespace);
+            let cm_name = configmap.metadata.name.clone().unwrap_or_default();
 
-            match configmaps.create(&PostParams::default(), &configmap).await {
+            match kube_with_timeout("ConfigMap create", configmaps.create(&PostParams::default(), &configmap)).await {
                 Ok(_) => {
-                    tracing::info!(
-                        "Created ConfigMap: {}",
-                        configmap.metadata.name.unwrap_or_default()
-                    )
+                    tracing::info!("Created ConfigMap: {}", cm_name);
+                    new_resources.push(("configmap", cm_name));
                 }
-                Err(e) => tracing::warn!("ConfigMap creation failed (may already exist): {}", e),
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    tracing::info!("ConfigMap already exists: {}", cm_name);
+                }
+                Err(e) => {
+                    tracing::error!("ConfigMap creation failed: {}", e);
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
             }
         }
 
         // Create Secrets
         for secret in build_secret_manifests(&self.namespace, spec) {
             let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
+            let secret_name = secret.metadata.name.clone().unwrap_or_default();
 
-            match secrets.create(&PostParams::default(), &secret).await {
+            match kube_with_timeout("Secret create", secrets.create(&PostParams::default(), &secret)).await {
                 Ok(_) => {
-                    tracing::info!(
-                        "Created Secret: {}",
-                        secret.metadata.name.unwrap_or_default()
-                    )
+                    tracing::info!("Created Secret: {}", secret_name);
+                    new_resources.push(("secret", secret_name));
                 }
-                Err(e) => tracing::warn!("Secret creation failed (may already exist): {}", e),
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    tracing::info!("Secret already exists: {}", secret_name);
+                }
+                Err(e) => {
+                    tracing::error!("Secret creation failed: {}", e);
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
             }
         }
 
@@ -731,9 +804,10 @@ impl Runtime for KubernetesRuntime {
             let pvcs: Api<PersistentVolumeClaim> =
                 Api::namespaced(self.client.clone(), &self.namespace);
 
-            match pvcs.create(&PostParams::default(), &pvc).await {
-                Ok(_) => tracing::info!("Created PVC: {}-pvc", spec.metadata.name),
-                Err(e) => tracing::warn!("PVC creation failed (may already exist): {}", e),
+            match kube_with_timeout("PVC create", pvcs.create(&PostParams::default(), &pvc)).await {
+                Ok(_) => { tracing::info!("Created PVC: {}-pvc", spec.metadata.name); new_resources.push(("pvc", format!("{}-pvc", spec.metadata.name))); }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("PVC already exists: {}-pvc", spec.metadata.name),
+                Err(e) => { tracing::error!("PVC creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
             }
         }
 
@@ -741,9 +815,10 @@ impl Runtime for KubernetesRuntime {
         if let Some(service) = build_service_manifest(&self.namespace, spec) {
             let services: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
 
-            match services.create(&PostParams::default(), &service).await {
-                Ok(_) => tracing::info!("Created Service: {}-service", spec.metadata.name),
-                Err(e) => tracing::warn!("Service creation failed (may already exist): {}", e),
+            match kube_with_timeout("Service create", services.create(&PostParams::default(), &service)).await {
+                Ok(_) => { tracing::info!("Created Service: {}-service", spec.metadata.name); new_resources.push(("service", format!("{}-service", spec.metadata.name))); }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("Service already exists: {}-service", spec.metadata.name),
+                Err(e) => { tracing::error!("Service creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
             }
         }
 
@@ -751,9 +826,10 @@ impl Runtime for KubernetesRuntime {
         if let Some(ingress) = build_ingress_manifest(&self.namespace, spec) {
             let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
 
-            match ingresses.create(&PostParams::default(), &ingress).await {
-                Ok(_) => tracing::info!("Created Ingress: {}-ingress", spec.metadata.name),
-                Err(e) => tracing::warn!("Ingress creation failed (may already exist): {}", e),
+            match kube_with_timeout("Ingress create", ingresses.create(&PostParams::default(), &ingress)).await {
+                Ok(_) => { tracing::info!("Created Ingress: {}-ingress", spec.metadata.name); new_resources.push(("ingress", format!("{}-ingress", spec.metadata.name))); }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("Ingress already exists: {}-ingress", spec.metadata.name),
+                Err(e) => { tracing::error!("Ingress creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
             }
         }
 
@@ -761,7 +837,14 @@ impl Runtime for KubernetesRuntime {
         let pod = build_pod_manifest(&self.namespace, image, spec);
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
 
-        let created_pod = pods.create(&PostParams::default(), &pod).await?;
+        let created_pod = match kube_with_timeout("Pod create", pods.create(&PostParams::default(), &pod)).await {
+            Ok(p) => p,
+            Err(e) => {
+                tracing::error!("Pod creation failed, cleaning up {} resources", new_resources.len());
+                self.cleanup_resources(&new_resources).await;
+                return Err(e);
+            }
+        };
 
         let pod_name = created_pod
             .metadata
@@ -775,14 +858,15 @@ impl Runtime for KubernetesRuntime {
 
         tracing::info!("Created Pod: {}", pod_name);
 
-        // Create HPA if needed
+        // Create HPA if needed (non-critical, don't clean up on failure)
         if let Some(hpa) = build_hpa_manifest(&self.namespace, spec) {
             let hpas: Api<HorizontalPodAutoscaler> =
                 Api::namespaced(self.client.clone(), &self.namespace);
 
-            match hpas.create(&PostParams::default(), &hpa).await {
+            match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa)).await {
                 Ok(_) => tracing::info!("Created HPA: {}-hpa", spec.metadata.name),
-                Err(e) => tracing::warn!("HPA creation failed (may already exist): {}", e),
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("HPA already exists: {}-hpa", spec.metadata.name),
+                Err(e) => tracing::warn!("HPA creation failed: {}", e),
             }
         }
 
@@ -794,7 +878,7 @@ impl Runtime for KubernetesRuntime {
         tracing::info!("Stopping (deleting) Pod: {}", instance.name);
 
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
-        pods.delete(&instance.name, &DeleteParams::default()).await?;
+        kube_with_timeout("Pod delete", pods.delete(&instance.name, &DeleteParams::default())).await?;
 
         Ok(())
     }
@@ -811,7 +895,7 @@ impl Runtime for KubernetesRuntime {
             ..Default::default()
         };
 
-        let logs = pods.logs(&instance.name, &log_params).await?;
+        let logs = kube_with_timeout("Pod logs", pods.logs(&instance.name, &log_params)).await?;
         Ok(logs)
     }
 
