@@ -500,6 +500,32 @@ fn cascade_delete(name: &str) {
     }
 }
 
+pub(crate) async fn update_command(name: &str, spec_path: &PathBuf) -> Result<()> {
+    let (mut state, ws, rt) = load_state_and_runtime(name).await?;
+    let workload = Workload::from_file(spec_path)?;
+
+    output::section_with_icon("🔄", "Updating Workload");
+    let sp = output::spinner("Updating workload...");
+
+    let image = aether::runtime::Image {
+        name: workload.metadata.name.clone(),
+        tag: "latest".to_string(),
+        digest: None,
+        runtime: ws.runtime,
+    };
+
+    let new_instance = rt.update(&ws.instance, &image, &workload).await?;
+    output::spinner_success(&sp, "Workload updated");
+
+    state.upsert(name.to_string(), aether::state::WorkloadState::new(
+        name.to_string(), ws.runtime, new_instance, spec_path.clone(),
+    ));
+    state.save(&StateStore::default_path())?;
+
+    output::success(&format!("Workload '{}' updated successfully", name));
+    Ok(())
+}
+
 pub(crate) async fn list_command() -> Result<()> {
     let state = StateStore::load(&StateStore::default_path())?;
     let workloads = state.list();
@@ -2352,16 +2378,46 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn rollback_command(name: &str) -> Result<()> {
+pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: bool) -> Result<()> {
     use aether::backup::{Backup, SnapshotManager};
+
+    let snap_mgr = SnapshotManager::new();
+
+    // List mode: show available snapshots and return
+    if list {
+        output::section_with_icon("📋", &format!("Snapshots for workload '{}'", name));
+        let snapshots = snap_mgr.list_snapshots(name)?;
+        if snapshots.is_empty() {
+            output::warning(&format!("No snapshots found for workload '{}'", name));
+            return Ok(());
+        }
+        for (i, snap) in snapshots.iter().enumerate() {
+            output::kv_tree(
+                &format!("#{}", i),
+                &snap.display().to_string(),
+                i == snapshots.len() - 1,
+            );
+        }
+        return Ok(());
+    }
 
     output::section_with_icon("⏪", &format!("Rolling back workload '{}'", name));
 
-    // Find latest snapshot
-    let snap_mgr = SnapshotManager::new();
-    let snapshot_path = snap_mgr
-        .latest_snapshot(name)?
-        .ok_or_else(|| anyhow::anyhow!("No snapshot found for workload '{}'", name))?;
+    // Find snapshot based on version or latest
+    let snapshot_path = if let Some(v) = version {
+        let snapshots = snap_mgr.list_snapshots(name)?;
+        snapshots.into_iter().nth(v).ok_or_else(|| {
+            anyhow::anyhow!(
+                "Snapshot version {} not found for workload '{}'. Use --list to see available versions.",
+                v,
+                name
+            )
+        })?
+    } else {
+        snap_mgr
+            .latest_snapshot(name)?
+            .ok_or_else(|| anyhow::anyhow!("No snapshot found for workload '{}'", name))?
+    };
 
     output::kv_tree("Found snapshot", &snapshot_path.display().to_string(), true);
 
@@ -2854,6 +2910,32 @@ pub(crate) async fn deploy_command(
             Ok(()) => {
                 output::spinner_success(&sp, &format!("Deployed '{}'", workload.metadata.name));
                 succeeded += 1;
+
+                // If this workload has dependents, wait for it to become ready
+                // before deploying the next workload in the dependency chain.
+                if !graph.dependents_of(&workload.metadata.name).is_empty() {
+                    let state = StateStore::load(&StateStore::default_path())?;
+                    if let Some(ws) = state.get(&workload.metadata.name) {
+                        if let Ok(rt) = aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await {
+                            let mut ready = false;
+                            for _ in 0..12 { // 12 * 5s = 60s max wait
+                                if let Ok(status) = rt.status(&ws.instance).await {
+                                    if status.ready {
+                                        ready = true;
+                                        break;
+                                    }
+                                }
+                                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                            }
+                            if !ready {
+                                output::warning(&format!(
+                                    "Workload '{}' not ready after 60s — dependents may fail",
+                                    workload.metadata.name
+                                ));
+                            }
+                        }
+                    }
+                }
             }
             Err(e) => {
                 let msg = format!("{}", e);

@@ -133,6 +133,12 @@ pub(crate) enum Commands {
         name: String,
     },
 
+    /// Update a running workload with the current spec
+    Update {
+        /// Workload name
+        name: String,
+    },
+
     /// List all instances
     List,
 
@@ -401,6 +407,12 @@ pub(crate) enum Commands {
     Rollback {
         /// Workload name
         name: String,
+        /// Snapshot version to rollback to (default: latest). Use --list to see available versions.
+        #[arg(long)]
+        version: Option<usize>,
+        /// List available snapshots instead of rolling back
+        #[arg(long)]
+        list: bool,
     },
 
     /// Deploy all workloads from a directory
@@ -503,6 +515,7 @@ impl Commands {
             Self::Status { .. } => "status",
             Self::Logs { .. } => "logs",
             Self::Delete { .. } => "delete",
+            Self::Update { .. } => "update",
             Self::List => "list",
             Self::Migrate { .. } => "migrate",
             Self::Tui => "tui",

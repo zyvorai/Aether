@@ -73,6 +73,7 @@ async fn main() -> Result<()> {
             }
             commands::delete_command(&name).await
         }
+        Commands::Update { name } => commands::update_command(&name, &cli.spec).await,
         Commands::List => commands::list_command().await,
         Commands::Migrate {
             name,
@@ -177,8 +178,8 @@ async fn main() -> Result<()> {
         Commands::Diff { name } => {
             commands::diff_command(&name).await
         }
-        Commands::Rollback { name } => {
-            commands::rollback_command(&name).await
+        Commands::Rollback { name, version, list } => {
+            commands::rollback_command(&name, version, list).await
         }
         Commands::Deploy { dir, runtime, fail_fast, dry_run } => {
             commands::deploy_command(&dir, runtime, fail_fast, dry_run).await

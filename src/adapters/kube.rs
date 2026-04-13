@@ -1103,6 +1103,24 @@ impl Runtime for KubernetesRuntime {
 
         Ok(instances)
     }
+
+    async fn update(&self, instance: &Instance, image: &Image, spec: &Workload) -> crate::Result<Instance> {
+        validate_kube_name(&spec.metadata.name)?;
+        tracing::info!("Updating Deployment: {}", instance.name);
+
+        let deployment = build_deployment_manifest(&self.namespace, image, spec);
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+
+        let patch = kube::api::Patch::Apply(deployment);
+        let pp = kube::api::PatchParams::apply("aether").force();
+        let patched = kube_with_timeout("Deployment patch", deployments.patch(&instance.name, &pp, &patch)).await?;
+
+        let uid = patched.metadata.uid.unwrap_or_else(|| "unknown".to_string());
+        let name = patched.metadata.name.unwrap_or_else(|| instance.name.clone());
+
+        tracing::info!("Updated Deployment: {} (rolling update triggered)", name);
+        Ok(Instance::new(uid, name, RuntimeKind::Kubernetes, image.full_name()))
+    }
 }
 
 #[cfg(test)]

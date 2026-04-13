@@ -31,6 +31,15 @@ pub trait Runtime: Send + Sync {
 
     /// List all instances managed by this runtime
     async fn list(&self) -> crate::Result<Vec<Instance>>;
+
+    /// Update a running workload with a new spec. Default implementation
+    /// stops and re-deploys. Kubernetes overrides with Deployment patch.
+    async fn update(&self, instance: &Instance, _image: &Image, spec: &Workload) -> crate::Result<Instance> {
+        self.stop(instance).await?;
+        self.delete(instance).await?;
+        let new_image = self.build(spec).await?;
+        self.run(&new_image, spec).await
+    }
 }
 
 /// Built image reference
