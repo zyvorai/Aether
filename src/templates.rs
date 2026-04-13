@@ -227,6 +227,7 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
             service_port: port,
             protocol: "TCP".to_string(),
         }],
+        network_policy: None,
     };
 
     w.health = Some(HealthSpec {
@@ -298,6 +299,7 @@ fn generate_rest_api(params: &TemplateParams) -> Workload {
             service_port: port,
             protocol: "TCP".to_string(),
         }],
+        network_policy: None,
     };
 
     w.health = Some(HealthSpec {
@@ -349,6 +351,7 @@ fn generate_database(params: &TemplateParams) -> Workload {
             service_port: port,
             protocol: "TCP".to_string(),
         }],
+        network_policy: None,
     };
 
     w.persistence = PersistenceSpec {
@@ -390,6 +393,7 @@ fn generate_cache(params: &TemplateParams) -> Workload {
             service_port: port,
             protocol: "TCP".to_string(),
         }],
+        network_policy: None,
     };
 
     w.health = Some(HealthSpec {
@@ -482,6 +486,7 @@ fn generate_microservice(params: &TemplateParams) -> Workload {
             service_port: port,
             protocol: "TCP".to_string(),
         }],
+        network_policy: None,
     };
 
     w.health = Some(HealthSpec {
