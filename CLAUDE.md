@@ -9,7 +9,7 @@ Aether is a Universal Runtime Control Plane written in Rust. It deploys workload
 ```bash
 cargo build          # Debug build
 cargo build --release  # Release build
-cargo test           # Run all 916 tests
+cargo test           # Run all 928 tests
 cargo clippy         # Lint (must pass with zero warnings)
 cargo check          # Fast type-check
 make ci              # Full CI pipeline
@@ -22,7 +22,7 @@ make ci              # Full CI pipeline
 - `src/commands.rs` — All command handler implementations (~4500 lines)
 - `src/spec.rs` — Workload YAML schema (Workload struct, validation)
 - `src/engine.rs` — Runtime decision engine (GPU→KubeVirt, high resources→Metal3, etc.)
-- `src/adapters/` — Runtime implementations (podman.rs, kube.rs, kubevirt.rs, metal.rs)
+- `src/adapters/` — Runtime implementations (podman.rs, docker.rs, kube.rs, kubevirt.rs, metal.rs)
 - `src/migration.rs` — Migration engine (Immediate, Blue-Green, Rolling)
 - `src/api/` — Axum REST API server (mod.rs, handlers.rs, types.rs)
 - `src/state.rs` — Local state store (atomic writes, file locking)
@@ -33,7 +33,7 @@ make ci              # Full CI pipeline
 
 ## Key Patterns
 
-- **Runtime trait** — `src/runtime.rs` defines `build/run/stop/status/logs/delete/list`
+- **Runtime trait** — `src/runtime.rs` defines `build/run/stop/status/logs/delete/list/update/capacity`
 - **Atomic state** — Write to `.tmp`, rename (crash-safe), with `flock` advisory locking
 - **Error handling** — `anyhow::Result` everywhere, context with `.context()/.bail!()`
 - **Async** — Tokio runtime, `async_trait` for runtime adapters
@@ -49,7 +49,7 @@ make ci              # Full CI pipeline
 
 ## Testing
 
-- 916 tests (826 lib + 46 bin + 44 integration)
+- 928 tests (838 lib + 46 bin + 44 integration)
 - Tests use `tempfile::tempdir()` for isolated filesystem state
 - No external services needed (K8s/Podman tests are unit tests against manifest generation)
 - `#[tokio::test]` for async command tests
