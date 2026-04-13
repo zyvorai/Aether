@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether — Developer Experience</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- Page 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> — Developer Experience</h1>
+    <h2>40+ Commands, Templates, Compose, and More</h2>
+    <p class="tagline">A CLI built for developers who want power without complexity. Every command is consistent, every output is scriptable, and every workflow is composable.</p>
+    <div class="badge">Built for Developers, by Developers</div>
+</div>
+
+<!-- Page 2: CLI Overview -->
+<div class="page page-dark">
+    <h2 class="st">CLI <span>Overview</span></h2>
+    <p class="sub">Consistent verbs, predictable flags, and multiple output formats for every command.</p>
+
+    <h3>Core Lifecycle Commands</h3>
+    <table>
+        <tr><th>Command</th><th>Description</th><th>Example</th></tr>
+        <tr><td><strong>validate</strong></td><td>Check spec against schema</td><td>aether validate workload.yaml</td></tr>
+        <tr><td><strong>build</strong></td><td>Build container image</td><td>aether build workload.yaml</td></tr>
+        <tr><td><strong>run</strong></td><td>Deploy workload to runtime</td><td>aether run workload.yaml</td></tr>
+        <tr><td><strong>status</strong></td><td>Show workload state</td><td>aether status my-app</td></tr>
+        <tr><td><strong>logs</strong></td><td>Stream workload logs</td><td>aether logs my-app --follow</td></tr>
+        <tr><td><strong>stop</strong></td><td>Stop a running workload</td><td>aether stop my-app</td></tr>
+        <tr><td><strong>destroy</strong></td><td>Remove workload and resources</td><td>aether destroy my-app</td></tr>
+        <tr><td><strong>migrate</strong></td><td>Move between runtimes</td><td>aether migrate my-app kubernetes</td></tr>
+        <tr><td><strong>scale</strong></td><td>Adjust replica count</td><td>aether scale my-app --replicas 5</td></tr>
+        <tr><td><strong>rollback</strong></td><td>Revert to previous version</td><td>aether rollback my-app</td></tr>
+    </table>
+
+    <h3>Output Formats &amp; CI-Friendly Flags</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>Four Output Formats</h4>
+<pre># Default table output
+$ aether status
+
+# JSON for scripting
+$ aether status -o json | jq '.status'
+
+# YAML for config pipelines
+$ aether status -o yaml
+
+# Wide table with extra columns
+$ aether status -o wide</pre>
+        </div>
+
+        <div class="card">
+            <h4>CI/CD Flags</h4>
+<pre># Dry-run: preview without executing
+$ aether run workload.yaml --dry-run
+Would deploy my-web-app to podman
+  2 replicas, ports: 8080:80
+  No changes applied.
+
+# Non-interactive: skip all prompts
+$ aether destroy my-app --yes
+Destroying my-app... done.
+
+# Combine for pipeline validation
+$ aether run workload.yaml --dry-run --yes \
+    -o json</pre>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">40+</div>
+            <div class="label">CLI Commands</div>
+        </div>
+        <div class="stat">
+            <div class="number">4</div>
+            <div class="label">Output Formats</div>
+        </div>
+        <div class="stat">
+            <div class="number">--dry-run</div>
+            <div class="label">Safe Preview</div>
+        </div>
+        <div class="stat">
+            <div class="number">--yes</div>
+            <div class="label">CI Mode</div>
+        </div>
+    </div>
+</div>
+
+<!-- Page 3: Templates & Init -->
+<div class="page page-light">
+    <h2 class="st">Templates &amp; <span>Init</span></h2>
+    <p class="sub">Start new projects instantly with 8 built-in templates or use the interactive wizard.</p>
+
+    <h3>8 Built-in Templates</h3>
+    <div class="card-grid card-grid-3" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="card">
+            <div class="icon">&#x1F310;</div>
+            <h4>web-app</h4>
+            <p>Nginx/Apache with static files, health checks, and TLS.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F4E1;</div>
+            <h4>rest-api</h4>
+            <p>HTTP API server with env config, readiness probes.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F4BE;</div>
+            <h4>database</h4>
+            <p>Postgres/MySQL with persistent volumes and backups.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x26A1;</div>
+            <h4>cache</h4>
+            <p>Redis/Memcached with memory limits and eviction.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x2699;&#xFE0F;</div>
+            <h4>worker</h4>
+            <p>Background job processor with queue connection.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x23F0;</div>
+            <h4>cron-job</h4>
+            <p>Scheduled tasks with cron expressions.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F9E0;</div>
+            <h4>ml-training</h4>
+            <p>GPU-enabled training with volume mounts and checkpoints.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#x1F3D7;&#xFE0F;</div>
+            <h4>microservice</h4>
+            <p>Minimal service with service mesh readiness.</p>
+        </div>
+    </div>
+
+    <h3>Generate from Template</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>Quick Scaffold</h4>
+<pre>$ aether template web-app --name my-site
+
+Generated: my-site/workload.yaml
+  Runtime:     podman
+  Image:       nginx:alpine
+  Ports:       8080:80
+  Health:      HTTP GET /
+  Resources:   250m CPU, 128Mi RAM
+
+Edit the spec, then deploy:
+  $ aether run my-site/workload.yaml</pre>
+        </div>
+
+        <div class="card">
+            <h4>Interactive Wizard</h4>
+<pre>$ aether init
+
+Welcome to Aether!
+
+? Workload name: my-api
+? Template: rest-api
+? Runtime: kubernetes
+? Image: node:20-alpine
+? Port: 3000
+? CPU limit: 500m
+? Memory limit: 256Mi
+? Replicas: 3
+? Enable health check? Yes
+
+Created: my-api/workload.yaml
+Ready to deploy with: aether run</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Page 4: Compose & Watch -->
+<div class="page page-accent">
+    <h2 class="st">Compose &amp; <span>Watch</span></h2>
+    <p class="sub">Deploy entire stacks with dependency ordering, then auto-redeploy on file changes.</p>
+
+    <h3>Multi-Workload Compose</h3>
+    <div class="card-grid">
+        <div class="card" style="grid-column: 1 / -1;">
+            <h4>aether-compose.yaml</h4>
+<pre>apiVersion: aether/v1
+kind: Compose
+metadata:
+  name: my-stack
+spec:
+  workloads:
+    database:
+      template: database
+      image: postgres:16-alpine
+      env:
+        - name: POSTGRES_DB
+          value: appdb
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+
+    cache:
+      template: cache
+      image: redis:7-alpine
+      depends_on: []
+
+    api:
+      template: rest-api
+      image: my-registry/api:latest
+      ports:
+        - containerPort: 3000
+          hostPort: 3000
+      depends_on:
+        - database
+        - cache
+      env:
+        - name: DATABASE_URL
+          value: postgres://database:5432/appdb
+        - name: REDIS_URL
+          value: redis://cache:6379
+
+    frontend:
+      template: web-app
+      image: my-registry/frontend:latest
+      ports:
+        - containerPort: 80
+          hostPort: 8080
+      depends_on:
+        - api</pre>
+        </div>
+    </div>
+
+    <div class="card-grid">
+        <div class="card">
+            <h4>Deploy the Stack</h4>
+<pre>$ aether compose up
+
+Resolving dependency order...
+  1. database   (no dependencies)
+  2. cache      (no dependencies)
+  3. api        (depends: database, cache)
+  4. frontend   (depends: api)
+
+Deploying in order:
+  &#x2713; database   Running (1.8s)
+  &#x2713; cache      Running (0.9s)
+  &#x2713; api        Running (2.1s)
+  &#x2713; frontend   Running (1.2s)
+
+Stack my-stack: 4/4 workloads running</pre>
+        </div>
+
+        <div class="card">
+            <h4>Watch for Auto-Redeploy</h4>
+<pre>$ aether watch --compose aether-compose.yaml
+
+Watching for changes...
+  Patterns: **/*.yaml, **/Dockerfile
+  Debounce: 2s
+
+[10:05:12] Changed: api/Dockerfile
+  Rebuilding api...
+  &#x2713; Image built (3.4s)
+  &#x2713; Rolling restart (2.1s)
+  api: Running (v2)
+
+[10:07:45] Changed: workload.yaml
+  Revalidating spec...
+  &#x2713; Spec valid, applying changes
+  &#x2713; frontend: redeployed (1.1s)</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Page 5: Exec, Port-Forward, Diff, Rollback -->
+<div class="page page-dark">
+    <h2 class="st">Exec, Port-Forward, <span>Diff</span> &amp; Rollback</h2>
+    <p class="sub">Debug, inspect, compare, and revert — all from the same CLI.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4BB;</div>
+            <h4>aether exec</h4>
+            <p>Execute commands inside a running workload container.</p>
+<pre>$ aether exec my-web-app -- sh
+
+# Now inside the container
+/ $ ls /usr/share/nginx/html/
+index.html  50x.html  assets/
+
+/ $ cat /etc/os-release
+NAME="Alpine Linux"
+VERSION_ID=3.19.1
+
+/ $ exit
+
+# One-shot command
+$ aether exec my-web-app -- cat /etc/hostname
+my-web-app-replica-1</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F50C;</div>
+            <h4>aether port-forward</h4>
+            <p>Forward local ports to workload ports for debugging.</p>
+<pre>$ aether port-forward my-web-app 8080:80
+
+Forwarding localhost:8080 &#x2192; my-web-app:80
+  Press Ctrl+C to stop
+
+# In another terminal:
+$ curl http://localhost:8080
+&lt;html&gt;Welcome to nginx!&lt;/html&gt;
+
+# Forward multiple ports
+$ aether port-forward my-api \
+    3000:3000 \
+    9229:9229   # Node.js debugger</pre>
+        </div>
+    </div>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F50D;</div>
+            <h4>aether diff</h4>
+            <p>Compare the declared spec against the live state. Catch drift before it becomes a problem.</p>
+<pre>$ aether diff my-web-app
+
+Comparing: workload.yaml vs live state
+
+  spec.replicas:
+    - declared: 2
+    + live:     3 (manually scaled)
+
+  spec.resources.memory:
+    - declared: 256Mi
+    + live:     256Mi (match)
+
+  spec.image:
+    - declared: nginx:alpine
+    + live:     nginx:alpine (match)
+
+Drift detected: 1 field(s) differ
+  Run: aether apply workload.yaml to reconcile</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x23EA;</div>
+            <h4>aether rollback</h4>
+            <p>Revert to any previous deployment revision instantly.</p>
+<pre>$ aether rollback my-web-app
+
+Available revisions:
+  #3  current   2026-04-12 10:05  nginx:alpine (3 replicas)
+  #2            2026-04-12 09:30  nginx:alpine (2 replicas)
+  #1            2026-04-11 16:00  nginx:1.24
+
+? Rollback to revision: #2
+
+Rolling back my-web-app to revision #2...
+  &#x2713; Spec restored (2 replicas)
+  &#x2713; Containers reconciled
+  &#x2713; Health check passing
+
+Status: Running (revision #2 restored)</pre>
+        </div>
+    </div>
+
+    <div class="flow">
+        <div class="flow-step">exec</div>
+        <div class="flow-arrow">&#x27A1;</div>
+        <div class="flow-step">diagnose</div>
+        <div class="flow-arrow">&#x27A1;</div>
+        <div class="flow-step">diff</div>
+        <div class="flow-arrow">&#x27A1;</div>
+        <div class="flow-step">fix</div>
+        <div class="flow-arrow">&#x27A1;</div>
+        <div class="flow-step">rollback</div>
+    </div>
+
+    <div class="quote">
+        Every deployment creates a revision snapshot. Rollback restores the full spec, image reference, environment variables, and resource limits — not just the container image.
+    </div>
+</div>
+
+<!-- Page 6: CTA — Shell Completions & IDE -->
+<div class="page page-accent">
+    <h2 class="st">Supercharge Your <span>Workflow</span></h2>
+    <p class="sub">Shell completions, JSON schema for IDE validation, and a single binary — no runtime dependencies.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F41A;</div>
+            <h4>Shell Completions</h4>
+            <p>Tab-complete every command, flag, and workload name in your favorite shell.</p>
+<pre># Bash
+$ aether completion bash > \
+    /etc/bash_completion.d/aether
+
+# Zsh
+$ aether completion zsh > \
+    ~/.zfunc/_aether
+
+# Fish
+$ aether completion fish > \
+    ~/.config/fish/completions/aether.fish
+
+# PowerShell
+$ aether completion powershell > \
+    $PROFILE.d/aether.ps1
+
+# Reload your shell and enjoy:
+$ aether st&lt;TAB&gt;
+  status  stop  scale  serve  secret</pre>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F4DD;</div>
+            <h4>JSON Schema for IDE Validation</h4>
+            <p>Get real-time validation and autocomplete in VS Code, IntelliJ, and Neovim.</p>
+<pre># Export the workload schema
+$ aether schema workload > \
+    aether-workload-schema.json
+
+# VS Code settings.json
+{
+  "yaml.schemas": {
+    "./aether-workload-schema.json": [
+      "workload.yaml",
+      "aether-compose.yaml"
+    ]
+  }
+}
+
+# Now your editor validates:
+#  &#x2713; Required fields
+#  &#x2713; Value types and ranges
+#  &#x2713; Enum values (runtime, strategy)
+#  &#x2713; Autocomplete on properties</pre>
+        </div>
+    </div>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#x1F4E6;</div>
+            <h4>Single Binary, Zero Dependencies</h4>
+            <p>Aether is a statically-linked Rust binary. No Python, no Node.js, no JVM. Copy it to any Linux machine and it works.</p>
+            <div class="stat-row">
+                <div class="stat">
+                    <div class="number">~12MB</div>
+                    <div class="label">Binary Size</div>
+                </div>
+                <div class="stat">
+                    <div class="number">~5ms</div>
+                    <div class="label">Startup Time</div>
+                </div>
+                <div class="stat">
+                    <div class="number">~8MB</div>
+                    <div class="label">Idle Memory</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="icon">&#x1F4DA;</div>
+            <h4>Full Documentation</h4>
+            <ul>
+                <li><strong>Getting Started</strong> — install and first deploy</li>
+                <li><strong>CLI Reference</strong> — all 40+ commands detailed</li>
+                <li><strong>YAML Schema</strong> — every field documented</li>
+                <li><strong>Tutorials</strong> — multi-runtime, migration, compose</li>
+                <li><strong>Architecture</strong> — internals and plugin system</li>
+                <li><strong>API Reference</strong> — REST API with OpenAPI spec</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h3>One Tool. Every Runtime. Every Workflow.</h3>
+        <p>Aether unifies Podman, Kubernetes, KubeVirt, and Metal3 behind a single CLI with 40+ commands, composable templates, and built-in observability. Install it in seconds and never context-switch between tools again.</p>
+    </div>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane &mdash; aether.dev</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether — Technical Architecture Deep Dive</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; }
+.cover { height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(211,84,0,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(99,102,241,0.1) 0%, transparent 50%); }
+.cover h1 { font-size: 3.5em; font-weight: 800; letter-spacing: -2px; margin-bottom: 0.2em; position: relative; }
+.cover h1 span { color: #d35400; }
+.cover h2 { font-size: 1.4em; font-weight: 300; opacity: 0.9; margin-bottom: 2em; position: relative; }
+.cover .tagline { font-size: 1.1em; opacity: 0.7; max-width: 600px; position: relative; }
+.cover .badge { display: inline-block; background: rgba(211,84,0,0.2); border: 1px solid rgba(211,84,0,0.4); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 2em; position: relative; }
+.page { min-height: 100vh; padding: 60px 80px; page-break-after: always; }
+.page-dark { background: #0f111a; color: #e8e6df; }
+.page-light { background: #fafbfc; }
+.page-accent { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e8e6df; }
+h2.st { font-size: 2.2em; font-weight: 700; margin-bottom: 0.8em; letter-spacing: -1px; }
+h2.st span { color: #d35400; }
+h3 { font-size: 1.3em; font-weight: 600; margin: 1.2em 0 0.5em; }
+p { margin-bottom: 1em; font-size: 1.05em; }
+.sub { font-size: 1.1em; opacity: 0.7; margin-bottom: 2em; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 1.5em 0; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+.page-light .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card .icon { font-size: 2em; margin-bottom: 12px; }
+.card h4 { font-size: 1.15em; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.95em; opacity: 0.85; margin-bottom: 0; }
+.stat-row { display: flex; gap: 40px; margin: 2em 0; }
+.stat { text-align: center; flex: 1; }
+.stat .number { font-size: 3em; font-weight: 800; color: #d35400; line-height: 1; }
+.stat .label { font-size: 0.95em; opacity: 0.7; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th { background: #d35400; color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.page-light td { border-bottom: 1px solid #e5e7eb; }
+tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+.page-light tr:nth-child(even) td { background: #f9fafb; }
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+.timeline { margin: 2em 0; }
+.timeline-item { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+.timeline-dot { width: 40px; height: 40px; background: #d35400; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.timeline-content h4 { margin-bottom: 4px; }
+.timeline-content p { font-size: 0.95em; opacity: 0.8; margin-bottom: 0; }
+pre { background: #1a1a2e; color: #e8e6df; padding: 20px; border-radius: 8px; font-size: 0.85em; line-height: 1.7; overflow-x: auto; margin: 1em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.page-dark pre { background: rgba(255,255,255,0.05); }
+.quote { border-left: 4px solid #d35400; padding: 20px 30px; margin: 2em 0; font-size: 1.1em; font-style: italic; opacity: 0.9; }
+.cta-box { background: linear-gradient(135deg, #d35400, #c0392b); color: #fff; padding: 40px; border-radius: 16px; text-align: center; margin: 2em 0; }
+.cta-box h3 { font-size: 1.5em; margin-bottom: 0.5em; }
+.cta-box p { opacity: 0.9; }
+.flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2em 0; flex-wrap: wrap; }
+.flow-step { background: rgba(211,84,0,0.15); border: 1px solid rgba(211,84,0,0.3); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95em; }
+.flow-arrow { font-size: 1.5em; color: #d35400; }
+ul { margin: 0.5em 0 1em 1.5em; }
+li { margin-bottom: 0.4em; font-size: 1em; }
+.arch-box { background: rgba(255,255,255,0.03); border: 2px solid rgba(211,84,0,0.3); border-radius: 12px; padding: 24px; margin: 1.2em 0; }
+.footer { text-align: center; padding: 20px; font-size: 0.85em; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: Cover -->
+<div class="cover">
+    <h1><span>Aether</span> — Technical Architecture</h1>
+    <h2>Deep Dive</h2>
+    <p class="tagline">Inside the Universal Runtime Control Plane: how Aether orchestrates Podman, Kubernetes, KubeVirt, and Metal3 through a single, extensible architecture.</p>
+    <div class="badge">37K Lines of Rust &bull; 916 Tests &bull; 40+ Endpoints</div>
+</div>
+
+<!-- PAGE 2: Architecture Overview -->
+<div class="page page-dark">
+    <h2 class="st">Architecture <span>Overview</span></h2>
+    <p class="sub">Aether follows a layered adapter architecture. Every user action flows through the same pipeline: CLI or API, engine, adapter, runtime.</p>
+
+    <div class="arch-box">
+<pre style="margin:0; background:transparent; padding:0;">
+                         +-----------------------+
+                         |     CLI / TUI / API   |
+                         |   (clap + axum + ratatui)   |
+                         +-----------+-----------+
+                                     |
+                                     v
+                    +----------------+----------------+
+                    |         Aether Engine           |
+                    |  +----------+  +-------------+  |
+                    |  | Decision |  |  Migration   |  |
+                    |  | Engine   |  |  Engine      |  |
+                    |  +----------+  +-------------+  |
+                    |  +----------+  +-------------+  |
+                    |  | State    |  |  Secret      |  |
+                    |  | Manager  |  |  Manager     |  |
+                    |  +----------+  +-------------+  |
+                    +--+-----+-----+-----+--------+--+
+                       |     |     |     |
+              +--------+  +--+--+  +--+--+  +-----+
+              v           v        v        v
+         +--------+ +--------+ +--------+ +--------+
+         | Podman | |  K8s   | |KubeVirt| | Metal3 |
+         |Adapter | |Adapter | |Adapter | |Adapter |
+         +---+----+ +---+----+ +---+----+ +---+----+
+             |           |         |           |
+             v           v         v           v
+         +--------+ +--------+ +--------+ +--------+
+         |Podman  | |  K8s   | |KubeVirt| | Metal3 |
+         |Runtime | | Cluster| |  VMs   | |  BMS   |
+         +--------+ +--------+ +--------+ +--------+
+</pre>
+    </div>
+
+    <p>Each layer is independently testable. The adapter trait ensures new runtimes can be added without modifying the engine. The Decision Engine and Migration Engine operate on abstract workload models, making them runtime-agnostic by design.</p>
+</div>
+
+<!-- PAGE 3: Core Components -->
+<div class="page page-accent">
+    <h2 class="st">Core <span>Components</span></h2>
+    <p class="sub">Four pillars form the foundation of the Aether engine, each responsible for a distinct concern.</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="icon">&#9881;</div>
+            <h4>Decision Engine</h4>
+            <p>Evaluates workload specifications against runtime capabilities using a weighted scoring model. Considers resource limits, isolation requirements, scaling needs, and hardware affinity to select the optimal runtime. Supports manual overrides and constraint annotations.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128268;</div>
+            <h4>Runtime Adapters</h4>
+            <p>Each adapter implements a common trait with deploy, stop, status, logs, and migrate operations. Adapters translate Aether's abstract workload model into runtime-specific API calls. New runtimes are added by implementing the trait -- zero changes to the engine.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128451;</div>
+            <h4>State Management</h4>
+            <p>Workload state is persisted to a local JSON store with file-level locking for concurrency safety. State tracks deployment metadata, runtime binding, health status, and migration history. Designed for single-node reliability with optional remote sync.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128640;</div>
+            <h4>Migration Engine</h4>
+            <p>Orchestrates cross-runtime migrations with three strategies: immediate, blue-green, and rolling. Handles state transfer, health validation, traffic switching, and automatic rollback. Every migration is logged with full audit trail for compliance.</p>
+        </div>
+    </div>
+
+    <div class="quote">
+        The adapter pattern is the key architectural decision. It makes Aether infinitely extensible without ever touching the core engine.
+    </div>
+</div>
+
+<!-- PAGE 4: Runtime Adapters -->
+<div class="page page-light">
+    <h2 class="st">Runtime <span>Adapters</span></h2>
+    <p class="sub">Each adapter encapsulates the full lifecycle of a runtime, from deployment to teardown, behind a unified interface.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Adapter</th>
+                <th>Implementation</th>
+                <th>Timeout</th>
+                <th>Key Features</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Podman</strong></td>
+                <td>CLI subprocess via <code>tokio::process</code></td>
+                <td>30s default</td>
+                <td>Pod creation, container lifecycle, health checks, volume mounts, network management, image pulls</td>
+            </tr>
+            <tr>
+                <td><strong>Kubernetes</strong></td>
+                <td><code>kube-rs</code> client with kubeconfig discovery</td>
+                <td>60s default</td>
+                <td>Deployment/Service/ConfigMap CRUD, namespace isolation, resource limits, rollout status, log streaming</td>
+            </tr>
+            <tr>
+                <td><strong>KubeVirt</strong></td>
+                <td><code>kube-rs</code> with CRD definitions</td>
+                <td>120s default</td>
+                <td>VirtualMachine lifecycle, cloud-init injection, disk management, live migration, console access</td>
+            </tr>
+            <tr>
+                <td><strong>Metal3</strong></td>
+                <td><code>kube-rs</code> with BareMetalHost CRDs</td>
+                <td>300s default</td>
+                <td>Host provisioning, firmware config, RAID setup, network boot, hardware inventory, power management</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Adapter Trait Interface</h3>
+<pre>
+#[async_trait]
+pub trait RuntimeAdapter: Send + Sync {
+    async fn deploy(&self, spec: &WorkloadSpec) -> Result&lt;DeployResult&gt;;
+    async fn stop(&self, name: &str) -> Result&lt;()&gt;;
+    async fn status(&self, name: &str) -> Result&lt;WorkloadStatus&gt;;
+    async fn logs(&self, name: &str, opts: &LogOptions) -> Result&lt;String&gt;;
+    async fn migrate(&self, name: &str, target: RuntimeType) -> Result&lt;MigrateResult&gt;;
+    fn runtime_type(&self) -> RuntimeType;
+}
+</pre>
+</div>
+
+<!-- PAGE 5: Security Architecture -->
+<div class="page page-dark">
+    <h2 class="st">Security <span>Architecture</span></h2>
+    <p class="sub">Aether implements defense in depth with encryption, authentication, audit logging, and input validation at every layer.</p>
+
+    <div class="card-grid card-grid-3">
+        <div class="card">
+            <div class="icon">&#128272;</div>
+            <h4>AES-256-GCM Encryption</h4>
+            <p>All secrets are encrypted at rest using AES-256-GCM with unique nonces. Key derivation uses Argon2id with configurable memory and iteration parameters.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128273;</div>
+            <h4>API Authentication</h4>
+            <p>The API server uses token-based authentication with configurable expiry. Tokens are validated on every request via middleware before reaching any handler.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128220;</div>
+            <h4>Audit Integrity</h4>
+            <p>Every operation is logged to an append-only audit trail with HMAC-SHA256 chain integrity. Tampering with any entry invalidates the entire chain.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128193;</div>
+            <h4>File Permissions</h4>
+            <p>State files, secret stores, and configuration are created with restrictive permissions (0600). Directory permissions are set to 0700 to prevent unauthorized access.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#128737;</div>
+            <h4>Input Validation</h4>
+            <p>All user input is validated and sanitized before processing. Workload names, image references, and resource limits are checked against strict allowlists and bounds.</p>
+        </div>
+        <div class="card">
+            <div class="icon">&#9878;</div>
+            <h4>K8s Resource Safety</h4>
+            <p>Kubernetes deployments enforce resource limits, security contexts, and network policies by default. Privileged containers are blocked unless explicitly allowed.</p>
+        </div>
+    </div>
+
+    <div class="quote">
+        Security is not a feature -- it is a property of the architecture. Every layer assumes the layer above it may be compromised.
+    </div>
+</div>
+
+<!-- PAGE 6: Data Flow -->
+<div class="page page-accent">
+    <h2 class="st">Data <span>Flow</span></h2>
+    <p class="sub">Understanding how requests move through Aether, from user intent to running workload and back.</p>
+
+    <h3>Deployment Flow</h3>
+    <div class="flow">
+        <div class="flow-step">User (CLI/API)</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Parse YAML Spec</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Validate Schema</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Decision Engine</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Runtime Adapter</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Deploy</div>
+    </div>
+
+    <h3>Migration Flow</h3>
+    <div class="flow">
+        <div class="flow-step">Migrate Command</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Resolve Source</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Select Strategy</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Deploy Target</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Health Check</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Switch Traffic</div>
+    </div>
+
+    <h3>Observation Flow</h3>
+    <div class="flow">
+        <div class="flow-step">TUI / API Client</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Status Query</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Adapter Poll</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Aggregate State</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Render Dashboard</div>
+    </div>
+
+    <h3>Secret Injection Flow</h3>
+    <div class="flow">
+        <div class="flow-step">Secret Reference</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Decrypt (AES-256)</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Inject at Deploy</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Env / Volume Mount</div>
+    </div>
+
+    <p>Every flow is fully async, powered by Tokio. Timeouts, retries, and circuit breakers protect against runtime failures at each stage.</p>
+</div>
+
+<!-- PAGE 7: API Server -->
+<div class="page page-light">
+    <h2 class="st">API <span>Server</span></h2>
+    <p class="sub">Aether exposes a full-featured REST API built on Axum, providing programmatic access to every capability available through the CLI.</p>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number" style="color:#d35400;">40+</div>
+            <div class="label">REST Endpoints</div>
+        </div>
+        <div class="stat">
+            <div class="number" style="color:#d35400;">Axum</div>
+            <div class="label">Web Framework</div>
+        </div>
+        <div class="stat">
+            <div class="number" style="color:#d35400;">5090</div>
+            <div class="label">Default Port</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint Group</th>
+                <th>Methods</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>/api/workloads</strong></td>
+                <td>GET, POST, DELETE</td>
+                <td>List, deploy, and remove workloads across all runtimes</td>
+            </tr>
+            <tr>
+                <td><strong>/api/workloads/:name/status</strong></td>
+                <td>GET</td>
+                <td>Real-time workload status with health check results</td>
+            </tr>
+            <tr>
+                <td><strong>/api/workloads/:name/logs</strong></td>
+                <td>GET</td>
+                <td>Stream logs from any runtime with tail and follow options</td>
+            </tr>
+            <tr>
+                <td><strong>/api/migrate</strong></td>
+                <td>POST</td>
+                <td>Trigger cross-runtime migration with strategy selection</td>
+            </tr>
+            <tr>
+                <td><strong>/api/secrets</strong></td>
+                <td>GET, POST, DELETE</td>
+                <td>Manage encrypted secrets in the built-in secret store</td>
+            </tr>
+            <tr>
+                <td><strong>/api/audit</strong></td>
+                <td>GET</td>
+                <td>Query the tamper-evident audit log with filtering</td>
+            </tr>
+            <tr>
+                <td><strong>/api/health</strong></td>
+                <td>GET</td>
+                <td>Server health check for load balancer integration</td>
+            </tr>
+            <tr>
+                <td><strong>/api/auth/login</strong></td>
+                <td>POST</td>
+                <td>Authenticate and receive a session token</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Middleware Stack</h3>
+    <div class="flow">
+        <div class="flow-step">Request</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">CORS</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Auth Middleware</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Rate Limiter</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Handler</div>
+        <div class="flow-arrow">&#10132;</div>
+        <div class="flow-step">Response</div>
+    </div>
+
+    <p>The API server shares the same engine as the CLI, ensuring feature parity. Every operation available through <code>aether</code> commands is also available via the REST API, enabling integration with CI/CD pipelines, custom dashboards, and third-party tooling.</p>
+</div>
+
+<!-- PAGE 8: Start Building -->
+<div class="page page-dark">
+    <h2 class="st">Start <span>Building</span></h2>
+    <p class="sub">Extend Aether with custom adapters, integrate via the REST API, or deploy with the built-in toolchain.</p>
+
+    <h3>Add a Custom Runtime Adapter</h3>
+<pre>
+use aether::adapter::RuntimeAdapter;
+
+pub struct MyCloudAdapter { /* ... */ }
+
+#[async_trait]
+impl RuntimeAdapter for MyCloudAdapter {
+    async fn deploy(&self, spec: &WorkloadSpec) -> Result&lt;DeployResult&gt; {
+        // Translate spec to your cloud's API
+        // Deploy and return result
+    }
+
+    async fn status(&self, name: &str) -> Result&lt;WorkloadStatus&gt; {
+        // Query your cloud for workload status
+    }
+
+    fn runtime_type(&self) -> RuntimeType {
+        RuntimeType::Custom("my-cloud".into())
+    }
+    // ... implement remaining trait methods
+}
+</pre>
+
+    <h3>Integrate via the REST API</h3>
+<pre>
+# Deploy a workload via the API
+curl -X POST http://localhost:5090/api/workloads \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "web-app", "image": "nginx:latest", "runtime": "auto"}'
+
+# Check migration status
+curl http://localhost:5090/api/workloads/web-app/status \
+  -H "Authorization: Bearer $TOKEN"
+</pre>
+
+    <h3>Project Structure</h3>
+<pre>
+aether/
+  src/
+    main.rs           # CLI entry point (clap)
+    engine.rs         # Core orchestration engine
+    decision.rs       # Runtime selection logic
+    migration.rs      # Cross-runtime migration
+    adapters/
+      podman.rs       # Podman adapter
+      kubernetes.rs   # Kubernetes adapter
+      kubevirt.rs     # KubeVirt adapter
+      metal3.rs       # Metal3 adapter
+    api/
+      server.rs       # Axum API server
+      routes.rs       # Endpoint definitions
+      middleware.rs   # Auth + rate limiting
+    security/
+      secrets.rs      # AES-256-GCM secret store
+      audit.rs        # HMAC-SHA256 audit chain
+</pre>
+
+    <div class="cta-box">
+        <h3>Build the Future of Infrastructure</h3>
+        <p>Aether is open source, modular, and designed for extensibility. Whether you are deploying containers, VMs, or bare-metal servers, the architecture scales with your ambition.</p>
+    </div>
+
+    <div class="footer">Aether &mdash; Universal Runtime Control Plane &bull; Technical Architecture Deep Dive</div>
+</div>
+
+</body>
+</html>
