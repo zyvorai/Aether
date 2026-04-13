@@ -4,8 +4,9 @@ use super::common;
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::{AccessMode, Workload};
 use async_trait::async_trait;
+use k8s_openapi::api::core::v1::Pod;
 use kube::{
-    api::{Api, DeleteParams, PostParams},
+    api::{Api, DeleteParams, ListParams, LogParams, PostParams},
     core::DynamicObject,
     Client, ResourceExt,
 };
@@ -160,6 +161,9 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
                         },
                         "resources": {
                             "requests": {
+                                "memory": spec.requirements.memory
+                            },
+                            "limits": {
                                 "memory": spec.requirements.memory
                             }
                         },
@@ -322,9 +326,30 @@ impl Runtime for KubeVirtRuntime {
         self.get_vm_status(&instance.name).await
     }
 
-    async fn logs(&self, instance: &Instance, _follow: bool) -> crate::Result<String> {
-        // KubeVirt VMs don't have logs in the traditional sense
-        // You would typically access the serial console
+    async fn logs(&self, instance: &Instance, follow: bool) -> crate::Result<String> {
+        // Attempt to get real logs from the VM's launcher pod
+        let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
+        let lp = ListParams::default()
+            .labels(&format!("vm.kubevirt.io/name={}", instance.name));
+
+        if let Ok(pod_list) = pods.list(&lp).await {
+            if let Some(pod) = pod_list.items.first() {
+                if let Some(pod_name) = pod.metadata.name.as_deref() {
+                    let log_params = LogParams {
+                        follow,
+                        ..Default::default()
+                    };
+                    match pods.logs(pod_name, &log_params).await {
+                        Ok(logs) => return Ok(logs),
+                        Err(e) => {
+                            tracing::warn!("Failed to get launcher pod logs: {}", e);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fall back to instructional text if no launcher pod found
         tracing::info!(
             "VM console access available via: virtctl console {}",
             instance.name
@@ -332,11 +357,12 @@ impl Runtime for KubeVirtRuntime {
 
         Ok(format!(
             "VirtualMachine Console Access:\n\n\
+            No launcher pod found for VM '{}'. Use virtctl for console access:\n\n\
             Serial Console:\n  virtctl console {}\n\n\
             VNC Access:\n  virtctl vnc {}\n\n\
             Note: Install virtctl CLI tool from:\n  \
             https://kubevirt.io/user-guide/operations/virtctl_client_tool/",
-            instance.name, instance.name
+            instance.name, instance.name, instance.name
         ))
     }
 
