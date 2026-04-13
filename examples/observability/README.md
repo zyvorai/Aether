@@ -1009,7 +1009,7 @@ kubectl port-forward -n observability svc/prometheus 9090:9090
 kubectl get pod <pod-name> -o yaml | grep -A 5 annotations
 
 # Verify metrics endpoint
-kubectl exec -n <namespace> <pod-name> -- curl localhost:8080/metrics
+kubectl exec -n <namespace> <pod-name> -- curl localhost:5090/metrics
 ```
 
 ### Grafana Data Source Issues

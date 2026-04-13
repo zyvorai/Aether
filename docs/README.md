@@ -58,14 +58,20 @@ aether policy-check --policy production
 aether run --skip-policy          # bypass (CI only)
 ```
 
-### 🔐 AES-256 Secrets
+### 🔐 AES-256 Secrets & API Security
 Encrypted secrets management with rotation policies, access auditing, and namespace isolation.
-Values are encrypted at rest using AES-256-GCM.
+Values are encrypted at rest using AES-256-GCM. API server supports Bearer token authentication
+and CORS protection.
 
 ```bash
+# Secrets management
 aether secrets create my-secret
 aether secrets set my-secret DB_PASSWORD hunter2
 aether secrets audit
+
+# Secure API server
+export AETHER_API_KEY="my-production-key"
+aether serve
 ```
 
 ### 🔄 Drift Detection & Reconciliation
@@ -154,6 +160,26 @@ docs/
 ├── getting-started/
 │   ├── 01-Installation.md             # Prerequisites, build, packages, verify
 │   └── 02-Quick-Start.md              # 5-minute quick start guide
+├── tutorials/
+│   ├── 01-beginner-deployment.md      # First deployment (30 min)
+│   ├── 02-intermediate-workflows.md   # Compose, migrations, output formats (45 min)
+│   ├── 03-advanced-features.md        # Policies, secrets, plugins (60 min)
+│   └── 04-how-it-works.md             # Internal architecture deep dive (90 min)
+├── architecture/
+│   └── ARCHITECTURE.md                # System design, data flow, security model
+├── features/
+│   ├── security.md                    # Encryption, API auth, audit integrity, policies
+│   ├── compose.md                     # Multi-workload deployment
+│   ├── health-monitoring.md           # Health tracking and uptime
+│   └── plugins.md                     # Plugin system and JSON-RPC protocol
+├── guides/
+│   └── cli/
+│       └── CLI-Reference.md           # All 40+ commands with examples
+├── reference/
+│   └── api/
+│       └── API-Reference.md           # 40+ REST API endpoints
+├── quick-reference/
+│   └── QUICK_REFERENCE.md             # One-page command cheat sheet
 ├── SCHEMA.md                          # Workload YAML specification reference
 ├── TEMPLATES.md                       # Built-in workload templates
 ├── COST.md                            # Multi-cloud cost estimation
@@ -190,8 +216,8 @@ docs/
 
 ## 📄 License
 
-Proprietary -- HyperSDK. See [LICENSE](../LICENSE) for details.
+Proprietary. See [LICENSE](../LICENSE) for details.
 
 ---
 
-*Generated for aether v0.3.0. See the [Complete Index](index.md) for all documentation.*
+*Aether v0.3.0. See the [Complete Index](index.md) for all documentation.*

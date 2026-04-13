@@ -325,7 +325,7 @@ EOF
 aether run
 
 # Test
-curl http://localhost:8080
+curl http://localhost:5090
 
 # Check logs
 aether logs dev-app

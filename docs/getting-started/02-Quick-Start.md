@@ -348,7 +348,7 @@ aether tui
 >
 > ```bash
 > aether serve --port 8080
-> # Open http://localhost:8080 in your browser
+> # Open http://localhost:5090 in your browser
 > ```
 
 ---

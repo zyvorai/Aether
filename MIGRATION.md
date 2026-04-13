@@ -715,7 +715,7 @@ kubectl run -it --rm debug --image=busybox --restart=Never -- wget -O- my-app:80
 aether run --spec app.yaml --runtime podman
 
 # Test locally
-curl http://localhost:8080
+curl http://localhost:5090
 
 # Migrate to Kubernetes (production)
 aether migrate my-app kubernetes --strategy blue-green

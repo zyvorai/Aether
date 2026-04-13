@@ -496,7 +496,7 @@ aether plugin register ~/.aether/plugins/my-custom-runtime.json
 ### GET `/api/plugins` -- List Registered Plugins
 
 ```bash
-curl http://localhost:8080/api/plugins
+curl http://localhost:5090/api/plugins
 ```
 
 **Response:**
@@ -522,7 +522,7 @@ curl http://localhost:8080/api/plugins
 ### POST `/api/plugins/discover` -- Trigger Plugin Discovery
 
 ```bash
-curl -X POST http://localhost:8080/api/plugins/discover
+curl -X POST http://localhost:5090/api/plugins/discover
 ```
 
 **Response:**

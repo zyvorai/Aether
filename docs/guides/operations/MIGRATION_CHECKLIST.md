@@ -335,7 +335,7 @@ aether drift <WORKLOAD>
 ```bash
 # Port forward and verify
 aether port-forward <WORKLOAD> 8080:80
-# Then curl http://localhost:8080 in another terminal
+# Then curl http://localhost:5090 in another terminal
 ```
 
 - [ ] Application responds correctly
