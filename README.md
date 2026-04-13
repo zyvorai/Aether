@@ -87,9 +87,19 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - Multi-platform container images (amd64, arm64)
 - Prometheus ServiceMonitor support
 
+**Security**
+- AES-256-GCM encryption at rest with SHA-256 key derivation
+- API key authentication (`AETHER_API_KEY` Bearer token)
+- CORS origin restriction on REST API
+- SHA-256 audit trail integrity hashes (tamper detection)
+- Restrictive file permissions (0o600) on backups and snapshots
+- DNS-1123 input validation, path traversal prevention
+- Kubernetes resource cleanup on deployment failure
+- 5-minute timeouts on all Kubernetes API calls
+
 **Production Ready**
-- 8,000+ lines of Rust code
-- 884 tests passing (unit + integration)
+- 37,000+ lines of Rust code
+- 916 tests passing (unit + integration)
 - Zero compiler warnings, zero Clippy lints
 - Atomic state persistence with advisory file locking (crash-safe)
 - Symlink-safe backup operations
@@ -271,7 +281,7 @@ aether list
 ```bash
 # Develop locally with Podman
 aether run --spec app.yaml --runtime podman
-curl http://localhost:8080
+curl http://localhost:5090
 
 # Migrate to Kubernetes for staging
 aether migrate my-app kubernetes --strategy blue-green
@@ -927,12 +937,12 @@ Each direction independently supported with all three strategies.
 ```bash
 # 1. Develop locally
 aether run --spec app.yaml --runtime podman
-curl http://localhost:8080
+curl http://localhost:5090
 
 # 2. Test in Kubernetes
 aether migrate my-app kubernetes --strategy blue-green
 kubectl port-forward pod/my-app 8080:8080
-curl http://localhost:8080
+curl http://localhost:5090
 
 # 3. Production: Need VM isolation
 aether migrate my-app kubevirt --strategy rolling

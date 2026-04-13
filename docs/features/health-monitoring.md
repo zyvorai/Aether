@@ -232,7 +232,7 @@ This translates to:
 
 ```bash
 podman run \
-  --health-cmd "curl -sf http://localhost:8080/health || exit 1" \
+  --health-cmd "curl -sf http://localhost:5090/health || exit 1" \
   --health-interval 5s \
   --health-start-period 10s \
   --restart on-failure:3 \
@@ -365,7 +365,7 @@ The TUI periodically refreshes workload statuses. Each refresh reuses runtime cl
 Retrieve the health summary for a specific workload.
 
 ```bash
-curl http://localhost:8080/api/health/api-service
+curl http://localhost:5090/api/health/api-service
 ```
 
 **Response (workload with history):**

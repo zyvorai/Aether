@@ -41,7 +41,7 @@
 Start the API server and embedded web dashboard:
 
 ```bash
-# Default: localhost:8080
+# Default: localhost:5090
 aether serve
 
 # Custom host and port
@@ -51,33 +51,61 @@ aether serve --host 0.0.0.0 --port 3000
 | Flag | Default | Description |
 |---|---|---|
 | `--host` | `127.0.0.1` | Server bind address |
-| `--port` / `-p` | `8080` | Server port |
+| `--port` / `-p` | `5090` | Server port |
 
 On startup, the server prints:
 
 ```
-🌐 Starting API server on http://127.0.0.1:8080
-📊 Dashboard: http://127.0.0.1:8080
-📋 API Health: http://127.0.0.1:8080/health
+🌐 Starting API server on http://127.0.0.1:5090
+📊 Dashboard: http://127.0.0.1:5090
+📋 API Health: http://127.0.0.1:5090/health
+🔐 API authentication enabled (AETHER_API_KEY)
 ```
 
-The server uses Axum with Tokio for async request handling and loads workload state from `~/.aether/state.json` into a shared `Arc<RwLock<StateStore>>`.
+The server uses Axum with Tokio for async request handling, tower middleware for authentication and CORS, and loads workload state from `~/.aether/state.json` into a shared `Arc<RwLock<StateStore>>`.
 
 ---
 
 ## 🔑 Authentication
 
-The API server currently has **no built-in authentication**. It binds to `127.0.0.1` by default (localhost only).
+The API server supports **Bearer token authentication** via the `AETHER_API_KEY` environment variable.
 
-### Production Recommendations
+### Setup
+
+```bash
+# Enable authentication
+export AETHER_API_KEY="my-secure-api-key-at-least-32-chars"
+aether serve
+```
+
+### How It Works
+
+| Scenario | Behavior |
+|---|---|
+| `AETHER_API_KEY` is set | All `/api/*` endpoints require `Authorization: Bearer <key>` header |
+| `AETHER_API_KEY` is not set | All endpoints are public (localhost development mode) |
+| `/health` and `/` | Always public (no auth required) |
+| Invalid/missing token | `401 Unauthorized` |
+
+### Example Authenticated Request
+
+```bash
+curl -H "Authorization: Bearer my-secure-api-key" \
+     http://localhost:5090/api/workloads
+```
+
+### CORS
+
+Cross-Origin Resource Sharing is restricted to the server's own origin (`http://{host}:{port}`). Only `GET`, `POST`, and `DELETE` methods are allowed.
+
+### Additional Production Recommendations
 
 | Recommendation | Implementation |
 |---|---|
-| Reverse proxy with auth | Nginx, Caddy, or Traefik with OAuth2, mTLS, or API keys |
-| Bind to localhost only | Use the default `--host 127.0.0.1` |
+| TLS termination | Use a reverse proxy (Nginx, Caddy) for HTTPS |
 | Network isolation | Firewall rules, VPN, or service mesh |
-| API gateway | Kong, Ambassador, or cloud-native gateway |
-| TLS termination | Let the reverse proxy handle HTTPS |
+| Strong API key | Use a cryptographically random key of 32+ characters |
+| Key rotation | Restart the server with a new `AETHER_API_KEY` value |
 
 ---
 
@@ -124,7 +152,7 @@ All API responses use the `ApiResponse<T>` wrapper:
 Serves the embedded HTML web dashboard with real-time workload management UI.
 
 ```bash
-curl http://localhost:8080/
+curl http://localhost:5090/
 # Returns: HTML document
 ```
 
@@ -135,7 +163,7 @@ curl http://localhost:8080/
 Lightweight health check endpoint for load balancers and monitoring.
 
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:5090/health
 ```
 
 **Response:**
@@ -158,7 +186,7 @@ curl http://localhost:8080/health
 ### GET `/api/workloads` -- List All Workloads
 
 ```bash
-curl http://localhost:8080/api/workloads
+curl http://localhost:5090/api/workloads
 ```
 
 **Response:**
@@ -184,7 +212,7 @@ curl http://localhost:8080/api/workloads
 ### POST `/api/workloads` -- Create and Deploy Workload
 
 ```bash
-curl -X POST http://localhost:8080/api/workloads \
+curl -X POST http://localhost:5090/api/workloads \
   -H "Content-Type: application/json" \
   -d '{
     "spec": {
@@ -215,7 +243,7 @@ curl -X POST http://localhost:8080/api/workloads \
 ### GET `/api/workloads/:name` -- Get Workload Details
 
 ```bash
-curl http://localhost:8080/api/workloads/my-app
+curl http://localhost:5090/api/workloads/my-app
 ```
 
 **Response:**
@@ -239,7 +267,7 @@ curl http://localhost:8080/api/workloads/my-app
 ### GET `/api/workloads/:name/logs` -- Get Workload Logs
 
 ```bash
-curl http://localhost:8080/api/workloads/my-app/logs
+curl http://localhost:5090/api/workloads/my-app/logs
 ```
 
 **Response:** `"data"` contains the log output as a string.
@@ -251,7 +279,7 @@ curl http://localhost:8080/api/workloads/my-app/logs
 Rebuilds and runs a workload from its stored spec. Guards against concurrent deletion.
 
 ```bash
-curl -X POST http://localhost:8080/api/workloads/my-app/start
+curl -X POST http://localhost:5090/api/workloads/my-app/start
 ```
 
 **Response:**
@@ -265,7 +293,7 @@ curl -X POST http://localhost:8080/api/workloads/my-app/start
 ### POST `/api/workloads/:name/stop` -- Stop a Workload
 
 ```bash
-curl -X POST http://localhost:8080/api/workloads/my-app/stop
+curl -X POST http://localhost:5090/api/workloads/my-app/stop
 ```
 
 **Response:**
@@ -279,7 +307,7 @@ curl -X POST http://localhost:8080/api/workloads/my-app/stop
 ### DELETE `/api/workloads/:name` -- Delete a Workload
 
 ```bash
-curl -X DELETE http://localhost:8080/api/workloads/my-app
+curl -X DELETE http://localhost:5090/api/workloads/my-app
 ```
 
 **Response:**
@@ -297,7 +325,7 @@ curl -X DELETE http://localhost:8080/api/workloads/my-app
 Builds an image for an existing workload using its stored spec and runtime.
 
 ```bash
-curl -X POST http://localhost:8080/api/workloads/my-app/build
+curl -X POST http://localhost:5090/api/workloads/my-app/build
 ```
 
 **Response:**
@@ -322,7 +350,7 @@ curl -X POST http://localhost:8080/api/workloads/my-app/build
 Validates YAML without deploying.
 
 ```bash
-curl -X POST http://localhost:8080/api/validate \
+curl -X POST http://localhost:5090/api/validate \
   -H "Content-Type: application/json" \
   -d '{"yaml": "apiVersion: aether/v1\nkind: Workload\n..."}'
 ```
@@ -356,7 +384,7 @@ curl -X POST http://localhost:8080/api/validate \
 Migrate a deployed workload to a different runtime with zero-downtime strategies.
 
 ```bash
-curl -X POST http://localhost:8080/api/workloads/my-app/migrate \
+curl -X POST http://localhost:5090/api/workloads/my-app/migrate \
   -H "Content-Type: application/json" \
   -d '{"target_runtime": "kubernetes", "strategy": "blue-green"}'
 ```
@@ -393,7 +421,7 @@ curl -X POST http://localhost:8080/api/workloads/my-app/migrate \
 ### POST `/api/cost` -- Estimate Workload Costs
 
 ```bash
-curl -X POST http://localhost:8080/api/cost \
+curl -X POST http://localhost:5090/api/cost \
   -H "Content-Type: application/json" \
   -d @workload.json
 ```
@@ -409,7 +437,7 @@ curl -X POST http://localhost:8080/api/cost \
 ### GET `/api/backups` -- List Backups
 
 ```bash
-curl http://localhost:8080/api/backups
+curl http://localhost:5090/api/backups
 ```
 
 **Response:** Array of backup file paths.
@@ -419,7 +447,7 @@ curl http://localhost:8080/api/backups
 ### POST `/api/backups` -- Create a Backup
 
 ```bash
-curl -X POST http://localhost:8080/api/backups \
+curl -X POST http://localhost:5090/api/backups \
   -H "Content-Type: application/json" \
   -d '{"name": "pre-migration", "description": "Before K8s migration"}'
 ```
@@ -438,7 +466,7 @@ curl -X POST http://localhost:8080/api/backups \
 ### GET `/api/plugins` -- List Registered Plugins
 
 ```bash
-curl http://localhost:8080/api/plugins
+curl http://localhost:5090/api/plugins
 ```
 
 **Response:** Array of `PluginManifest` objects with `name`, `version`, `runtime_kind`, `command`, `capabilities`.
@@ -450,7 +478,7 @@ curl http://localhost:8080/api/plugins
 Scans `~/.aether/plugins/` for manifest files and updates the registry.
 
 ```bash
-curl -X POST http://localhost:8080/api/plugins/discover
+curl -X POST http://localhost:5090/api/plugins/discover
 ```
 
 **Response:**
@@ -470,7 +498,7 @@ curl -X POST http://localhost:8080/api/plugins/discover
 ### GET `/api/health/:workload` -- Health Summary
 
 ```bash
-curl http://localhost:8080/api/health/my-app
+curl http://localhost:5090/api/health/my-app
 ```
 
 **Response:**
@@ -499,7 +527,7 @@ curl http://localhost:8080/api/health/my-app
 Validates a compose YAML for structural correctness, dependency cycles, and missing references.
 
 ```bash
-curl -X POST http://localhost:8080/api/compose/validate \
+curl -X POST http://localhost:5090/api/compose/validate \
   -H "Content-Type: text/plain" \
   -d @aether-compose.yaml
 ```
@@ -527,7 +555,7 @@ curl -X POST http://localhost:8080/api/compose/validate \
 ### GET `/api/secrets` -- List Secrets
 
 ```bash
-curl http://localhost:8080/api/secrets
+curl http://localhost:5090/api/secrets
 ```
 
 **Response:** Array of `SecretSummary` objects (name, namespace, key count, timestamps, rotation status). **Values are never exposed.**
@@ -537,7 +565,7 @@ curl http://localhost:8080/api/secrets
 ### GET `/api/secrets/:name` -- Get Secret Metadata
 
 ```bash
-curl http://localhost:8080/api/secrets/db-creds
+curl http://localhost:5090/api/secrets/db-creds
 ```
 
 **Response:**
@@ -568,7 +596,7 @@ curl http://localhost:8080/api/secrets/db-creds
 ### DELETE `/api/secrets/:name` -- Delete a Secret
 
 ```bash
-curl -X DELETE http://localhost:8080/api/secrets/old-creds
+curl -X DELETE http://localhost:5090/api/secrets/old-creds
 ```
 
 **Response:**
@@ -586,7 +614,7 @@ curl -X DELETE http://localhost:8080/api/secrets/old-creds
 Scores the workload spec against all runtimes using the AI scoring engine.
 
 ```bash
-curl -X POST http://localhost:8080/api/ai/recommend \
+curl -X POST http://localhost:5090/api/ai/recommend \
   -H "Content-Type: application/json" \
   -d @workload.json
 ```
@@ -598,7 +626,7 @@ curl -X POST http://localhost:8080/api/ai/recommend \
 Profiles a deployed workload for resource waste and optimization opportunities.
 
 ```bash
-curl http://localhost:8080/api/ai/profile/my-app
+curl http://localhost:5090/api/ai/profile/my-app
 ```
 
 ---
@@ -608,7 +636,7 @@ curl http://localhost:8080/api/ai/profile/my-app
 Analyzes workload logs for anomalies, error patterns, and trends.
 
 ```bash
-curl http://localhost:8080/api/ai/analyze/my-app
+curl http://localhost:5090/api/ai/analyze/my-app
 ```
 
 ---
@@ -618,7 +646,7 @@ curl http://localhost:8080/api/ai/analyze/my-app
 Provides risk assessment, strategy recommendation, timing advice, and canary configuration for a migration path.
 
 ```bash
-curl http://localhost:8080/api/ai/migration-advice/my-app/kubernetes
+curl http://localhost:5090/api/ai/migration-advice/my-app/kubernetes
 ```
 
 **Response:**
@@ -659,7 +687,7 @@ curl http://localhost:8080/api/ai/migration-advice/my-app/kubernetes
 Predictive scaling advice with forecast trend, cost impact, and confidence score.
 
 ```bash
-curl http://localhost:8080/api/ai/scaling-advice
+curl http://localhost:5090/api/ai/scaling-advice
 ```
 
 **Response includes:** action, current/recommended replicas, reason, confidence, forecast (trend, predicted value, bounds, horizon), and cost impact (current/projected hourly, delta hourly/monthly).
@@ -673,7 +701,7 @@ curl http://localhost:8080/api/ai/scaling-advice
 Compares a workload's spec against its live state to detect drift.
 
 ```bash
-curl http://localhost:8080/api/drift/my-app
+curl http://localhost:5090/api/drift/my-app
 ```
 
 ---
@@ -685,7 +713,7 @@ curl http://localhost:8080/api/drift/my-app
 Evaluate a workload spec against a policy set.
 
 ```bash
-curl -X POST http://localhost:8080/api/policy/check \
+curl -X POST http://localhost:5090/api/policy/check \
   -H "Content-Type: application/json" \
   -d '{"spec": { ... }, "policy_set": "production"}'
 ```
@@ -702,7 +730,7 @@ curl -X POST http://localhost:8080/api/policy/check \
 ### GET `/api/dependencies` -- Show Dependency Graph
 
 ```bash
-curl http://localhost:8080/api/dependencies
+curl http://localhost:5090/api/dependencies
 ```
 
 **Response:** Graph stats, startup order, and validation issues.
@@ -712,7 +740,7 @@ curl http://localhost:8080/api/dependencies
 ### POST `/api/dependencies` -- Add a Dependency
 
 ```bash
-curl -X POST http://localhost:8080/api/dependencies \
+curl -X POST http://localhost:5090/api/dependencies \
   -H "Content-Type: application/json" \
   -d '{"workload": "frontend", "dependency": "backend"}'
 ```
@@ -726,7 +754,7 @@ curl -X POST http://localhost:8080/api/dependencies \
 ### GET `/api/audit` -- List Audit Events
 
 ```bash
-curl http://localhost:8080/api/audit
+curl http://localhost:5090/api/audit
 ```
 
 **Response:** Summary statistics and the 20 most recent audit events.
@@ -738,7 +766,7 @@ curl http://localhost:8080/api/audit
 ### GET `/api/templates` -- List Available Templates
 
 ```bash
-curl http://localhost:8080/api/templates
+curl http://localhost:5090/api/templates
 ```
 
 Available templates: `web-app`, `rest-api`, `database`, `cache`, `worker`, `cron-job`, `ml-training`, `microservice`.
@@ -748,7 +776,7 @@ Available templates: `web-app`, `rest-api`, `database`, `cache`, `worker`, `cron
 ### POST `/api/templates/:name` -- Generate from Template
 
 ```bash
-curl -X POST http://localhost:8080/api/templates/web-app \
+curl -X POST http://localhost:5090/api/templates/web-app \
   -H "Content-Type: application/json" \
   -d '{"workload_name": "my-site", "port": 8080, "replicas": 3}'
 ```
@@ -771,7 +799,7 @@ curl -X POST http://localhost:8080/api/templates/web-app \
 ### GET `/api/sla/:workload` -- Check SLA
 
 ```bash
-curl http://localhost:8080/api/sla/my-app
+curl http://localhost:5090/api/sla/my-app
 ```
 
 Returns the SLA target for the specified workload, or 404 if not configured.
@@ -783,7 +811,7 @@ Returns the SLA target for the specified workload, or 404 if not configured.
 ### GET `/api/events` -- List Recent Events
 
 ```bash
-curl http://localhost:8080/api/events
+curl http://localhost:5090/api/events
 ```
 
 **Response:** Last 50 events with timestamps, severity, and details.
@@ -793,7 +821,7 @@ curl http://localhost:8080/api/events
 ### GET `/api/events/summary` -- Event Summary
 
 ```bash
-curl http://localhost:8080/api/events/summary
+curl http://localhost:5090/api/events/summary
 ```
 
 **Response:** Aggregated event counts by type and severity.
@@ -805,7 +833,7 @@ curl http://localhost:8080/api/events/summary
 ### GET `/api/environments` -- List Environments
 
 ```bash
-curl http://localhost:8080/api/environments
+curl http://localhost:5090/api/environments
 ```
 
 **Response:** All configured environments (development, staging, production).
@@ -817,7 +845,7 @@ curl http://localhost:8080/api/environments
 ### GET `/api/scheduler/utilization` -- Runtime Utilization
 
 ```bash
-curl http://localhost:8080/api/scheduler/utilization
+curl http://localhost:5090/api/scheduler/utilization
 ```
 
 **Response:** CPU and memory utilization per runtime.
@@ -827,7 +855,7 @@ curl http://localhost:8080/api/scheduler/utilization
 ### GET `/api/scheduler/optimize` -- Optimization Suggestions
 
 ```bash
-curl http://localhost:8080/api/scheduler/optimize
+curl http://localhost:5090/api/scheduler/optimize
 ```
 
 **Response:** Suggestions for workload placement improvements.
@@ -839,7 +867,7 @@ curl http://localhost:8080/api/scheduler/optimize
 ### GET `/api/orchestrator/status` -- Managed Workload Statuses
 
 ```bash
-curl http://localhost:8080/api/orchestrator/status
+curl http://localhost:5090/api/orchestrator/status
 ```
 
 **Response:** Health status of all orchestrator-managed workloads.
@@ -849,7 +877,7 @@ curl http://localhost:8080/api/orchestrator/status
 ### GET `/api/orchestrator/summary` -- Health Summary
 
 ```bash
-curl http://localhost:8080/api/orchestrator/summary
+curl http://localhost:5090/api/orchestrator/summary
 ```
 
 **Response:** Aggregated health metrics across all managed workloads.
@@ -861,7 +889,7 @@ curl http://localhost:8080/api/orchestrator/summary
 ### GET `/api/affinity/:class` -- Runtime Affinity Recommendation
 
 ```bash
-curl http://localhost:8080/api/affinity/web-service
+curl http://localhost:5090/api/affinity/web-service
 ```
 
 **Valid classes:** `web-service`, `api-backend`, `database`, `cache`, `batch-job`, `ml-training`, `worker`, `microservice`.
@@ -875,7 +903,7 @@ curl http://localhost:8080/api/affinity/web-service
 ### GET `/api/metrics` -- Prometheus Metrics
 
 ```bash
-curl http://localhost:8080/api/metrics
+curl http://localhost:5090/api/metrics
 ```
 
 **Content-Type:** `text/plain; charset=utf-8`

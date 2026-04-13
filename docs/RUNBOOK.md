@@ -354,7 +354,7 @@ kubectl rollout restart deployment/$SERVICE_NAME
 **Diagnosis:**
 ```bash
 # Check service latency
-kubectl exec -it $POD_NAME -- curl http://localhost:8080/metrics | grep latency
+kubectl exec -it $POD_NAME -- curl http://localhost:5090/metrics | grep latency
 
 # Check database performance
 kubectl exec -it postgres-0 -- psql -U postgres -c "

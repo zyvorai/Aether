@@ -250,7 +250,7 @@ helm install aether aether/aether -f values.yaml
 ```bash
 kubectl get pods -l app=aether
 kubectl port-forward svc/aether 8080:8080
-curl http://localhost:8080/health
+curl http://localhost:5090/health
 ```
 
 ---

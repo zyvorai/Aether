@@ -61,7 +61,7 @@ aether -s ./my-app.yaml run --runtime podman   # Deploy custom spec
 
 ```bash
 aether tui                           # Launch interactive TUI dashboard
-aether serve                         # Start REST API server (localhost:8080)
+aether serve                         # Start REST API server (localhost:5090)
 aether serve --host 0.0.0.0 -p 3000 # Bind to all interfaces, custom port
 ```
 

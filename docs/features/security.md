@@ -1,6 +1,6 @@
 # 🔐 Security Features
 
-> Encryption, secrets management, policy enforcement, and safe state persistence.
+> Encryption, secrets management, API authentication, policy enforcement, audit integrity, and safe state persistence.
 
 ---
 
@@ -8,11 +8,18 @@
 
 - [AES-256-GCM Encryption](#-aes-256-gcm-encryption)
 - [Setting the Encryption Key](#-setting-the-encryption-key)
+- [API Authentication](#-api-authentication)
+- [CORS Protection](#-cors-protection)
+- [Input Validation](#-input-validation)
 - [Secret Lifecycle](#-secret-lifecycle)
+- [Audit Trail Integrity](#-audit-trail-integrity)
+- [File Permission Hardening](#-file-permission-hardening)
 - [Policy Engine](#-policy-engine)
 - [Policy Gate on Deploy](#-policy-gate-on-deploy)
+- [Confirmation Safety](#-confirmation-safety)
 - [State File Locking](#-state-file-locking)
 - [Atomic State Persistence](#-atomic-state-persistence)
+- [Kubernetes Resource Safety](#-kubernetes-resource-safety)
 - [Webhook Delivery Security](#-webhook-delivery-security)
 - [Cross-References](#-cross-references)
 
@@ -66,19 +73,21 @@ User Key (any length)
 
 ### Development Fallback
 
-When `AETHER_SECRET_KEY` is **not set**, aether falls back to **XOR obfuscation** with a built-in dev key. This is **NOT secure** and is designed only for local development convenience.
+When `AETHER_SECRET_KEY` is **not set**, aether derives a **deterministic key from machine identity** (hostname/username) and logs a warning. This key is stable across restarts but is discoverable by other users on the same machine.
 
 ```
-⚠️  Secret stored with XOR obfuscation (dev-only).
-    Set AETHER_SECRET_KEY for AES-256 encryption.
+⚠️  AETHER_SECRET_KEY not set — generating deterministic key from machine identity.
+    Set AETHER_SECRET_KEY for stable production encryption.
 ```
+
+All encryption uses **AES-256-GCM** regardless of key source. The legacy `Obfuscate` (XOR) method is no longer supported — attempting to decrypt XOR-encrypted values produces a clear upgrade message.
 
 ### Encryption Methods
 
 | Method | When Used | Security Level | Icon |
 |---|---|---|---|
-| `Aes256` | Production key set via `AETHER_SECRET_KEY` | 🟢 Production-grade | 🔒 |
-| `Obfuscate` | No key set (built-in dev key) | 🔴 Dev-only, NOT secure | ⚠️ |
+| `Aes256` | Always (both explicit key and machine-derived key) | 🟢 Production-grade | 🔒 |
+| `Obfuscate` | Legacy (rejected on decrypt with upgrade instructions) | 🔴 Deprecated | ⚠️ |
 | `VaultRef` | External vault reference (not stored locally) | 🟢 Delegated to vault | 🏛️ |
 
 The `SecretValue.method` field tracks which encryption was used per key, allowing mixed-method storage within a single secret.
@@ -104,11 +113,12 @@ AETHER_SECRET_KEY="key" aether secrets set db-creds password "s3cret"
 
 | Requirement | Detail |
 |---|---|
-| **Length** | Any length works (hashed via SHA-256 to 32 bytes). At least 16 characters recommended. |
+| **Minimum length** | 16 bytes minimum enforced. Keys shorter than 16 bytes produce a warning. |
+| **Recommended length** | 32+ characters for maximum entropy |
 | **Consistency** | Same key must be used for both encryption and decryption |
 | **Rotation** | Changing the key invalidates all previously encrypted values |
-| **Empty string** | Falls back to the built-in dev key |
-| **Character set** | Any UTF-8 bytes are accepted |
+| **Empty string** | Falls back to machine-derived key (logged warning) |
+| **Character set** | Any UTF-8 bytes are accepted (hashed via SHA-256 to 32 bytes) |
 
 ### Production Recommendations
 
@@ -247,7 +257,155 @@ Every secret operation is logged in the secret's `access_log`:
 | `timestamp` | string (RFC 3339) | When the access occurred |
 | `action` | SecretAction | `READ`, `WRITE`, `DELETE`, or `ROTATE` |
 | `key` | string | Which key was accessed |
-| `actor` | string | Who performed the action (currently `"cli"`) |
+| `actor` | string | Who performed the action (`"cli"` for CLI, custom for API via `*_with_actor()` methods) |
+
+The `*_with_actor()` variants (`set_with_actor`, `get_and_log_with_actor`, `delete_key_with_actor`, `rotate_with_actor`) allow the API server and other callers to pass the real actor identity for proper audit attribution.
+
+---
+
+## 🔑 API Authentication
+
+The REST API server supports **Bearer token authentication** via the `AETHER_API_KEY` environment variable.
+
+### Setup
+
+```bash
+# Set an API key to enable authentication
+export AETHER_API_KEY="my-secret-api-key-at-least-32-chars"
+
+# Start the server
+aether serve
+```
+
+### How It Works
+
+| Scenario | Behavior |
+|---|---|
+| `AETHER_API_KEY` is set and non-empty | All `/api/*` endpoints require `Authorization: Bearer <key>` header |
+| `AETHER_API_KEY` is not set or empty | All endpoints are public (local development mode) |
+| `/health` and `/` (dashboard) | Always public, no authentication required |
+| Invalid or missing token | `401 Unauthorized` response |
+
+### Example API Call
+
+```bash
+# With authentication
+curl -H "Authorization: Bearer my-secret-api-key" \
+     http://localhost:5090/api/workloads
+
+# Health check (always public)
+curl http://localhost:5090/health
+```
+
+### Startup Messages
+
+```
+🌐 Starting API server on http://127.0.0.1:5090
+📊 Dashboard: http://127.0.0.1:5090
+📋 API Health: http://127.0.0.1:5090/health
+🔐 API authentication enabled (AETHER_API_KEY)
+```
+
+Without authentication:
+
+```
+⚠️  No AETHER_API_KEY set — API is unauthenticated. Set AETHER_API_KEY for production use.
+```
+
+---
+
+## 🌐 CORS Protection
+
+The API server restricts Cross-Origin Resource Sharing (CORS) to the server's own origin.
+
+| Setting | Value |
+|---|---|
+| **Allowed origin** | `http://{host}:{port}` (e.g., `http://127.0.0.1:5090`) |
+| **Allowed methods** | `GET`, `POST`, `DELETE` |
+| **Allowed headers** | Any |
+
+This prevents cross-origin attacks from untrusted browser contexts while allowing the built-in dashboard to function.
+
+---
+
+## 🛡️ Input Validation
+
+### Workload Names (API)
+
+API endpoints validate workload names against **DNS-1123** format:
+
+| Rule | Detail |
+|---|---|
+| **Characters** | Lowercase alphanumeric (`a-z`, `0-9`), hyphens (`-`), dots (`.`) |
+| **Length** | 1–253 characters |
+| **Start/end** | Must start and end with alphanumeric |
+| **Rejected** | Uppercase, spaces, `/`, `\`, `..`, `\0`, special characters |
+
+### Path Validation
+
+| Context | Rules |
+|---|---|
+| **API spec paths** | Must be relative, no `..` traversal, no absolute paths |
+| **CLI template output** | Blocks system directories (`/etc`, `/proc`, `/sys`, `/dev`, `/boot`, `/sbin`) |
+| **Backup names** | No `/`, `\`, `..`, or null bytes |
+
+### Metal3 Annotations
+
+Metal3 deployments **fail fast** if required annotations are missing:
+
+| Annotation | Required | Purpose |
+|---|---|---|
+| `aether.io/boot-mac-address` | Yes | Hardware MAC address for provisioning |
+| `aether.io/image-url` | Yes | Bootable disk image URL |
+| `aether.io/boot-mode` | No (default: `UEFI`) | Boot mode (`UEFI` or `BIOS`) |
+| `aether.io/image-checksum-url` | No | Image integrity verification URL |
+
+---
+
+## 📋 Audit Trail Integrity
+
+Every audit event includes a **SHA-256 integrity hash** computed over its fields:
+
+```
+hash = SHA-256("aether-audit-integrity-{id}|{timestamp}|{action}|{workload}|{result}|{message}")
+```
+
+| Property | Detail |
+|---|---|
+| **Hash algorithm** | SHA-256 (hex-encoded) |
+| **Fields covered** | id, timestamp, action, workload, result, message |
+| **Verification** | `AuditLog::verify_event_integrity(event)` returns `true` if hash matches |
+| **Legacy events** | Events without hashes are accepted (backward compatible) |
+| **Tamper detection** | Modified events produce a hash mismatch |
+
+---
+
+## 📁 File Permission Hardening
+
+Sensitive files are created with **restrictive permissions** on Unix systems:
+
+| File Type | Permission | Octal | Description |
+|---|---|---|---|
+| **Backup files** | Owner read/write only | `0o600` | State backups may contain workload config |
+| **Snapshot files** | Owner read/write only | `0o600` | Pre-deploy snapshots contain full workload state |
+| **Secrets store** | Default (from state atomic write) | — | Protected by advisory file locking |
+
+On non-Unix platforms (Windows), default filesystem permissions apply.
+
+---
+
+## ✅ Confirmation Safety
+
+Destructive operations (delete, rollback, etc.) require explicit confirmation:
+
+| Mode | Behavior |
+|---|---|
+| **Interactive** | Prompts `[y/N]` — defaults to **No** |
+| **`--yes` flag** | Auto-confirms all prompts |
+| **`--quiet` mode** | Defaults to **No** (safe) — requires `--yes` to auto-confirm |
+| **`--json` mode** | Defaults to **No** (safe) — requires `--yes` to auto-confirm |
+
+This prevents accidental destructive operations in non-interactive contexts (scripts, CI pipelines) unless explicitly opted in with `--yes`.
 
 ---
 
@@ -324,7 +482,7 @@ aether --skip-policy deploy ./specs/
 ### REST API Policy Check
 
 ```bash
-curl -X POST http://localhost:8080/api/policy/check \
+curl -X POST http://localhost:5090/api/policy/check \
   -H "Content-Type: application/json" \
   -d '{
     "spec": { ... },
@@ -410,6 +568,51 @@ State writes use an **atomic write pattern** (write-to-temp + rename) to prevent
 | `~/.aether/state.json` | Current workload state (the source of truth) |
 | `~/.aether/state.json.tmp` | Temporary write target (renamed on success) |
 | `~/.aether/state.json.lock` | Advisory lock file (prevents concurrent writes) |
+
+---
+
+## ☸️ Kubernetes Resource Safety
+
+### Timeouts
+
+All Kubernetes API calls are wrapped with a **5-minute timeout** to prevent indefinite hangs when the API server is unresponsive:
+
+| Operation | Timeout | Behavior on Timeout |
+|---|---|---|
+| Pod create/delete | 5 min | Error with descriptive message |
+| Service/Ingress/PVC create | 5 min | Error + cleanup of created resources |
+| ConfigMap/Secret create | 5 min | Error + cleanup |
+| Pod logs | 5 min | Error returned to caller |
+
+This matches the Podman adapter's 10-minute timeout for container commands.
+
+### Resource Cleanup on Failure
+
+When pod creation fails after supporting resources (ConfigMap, Secret, PVC, Service, Ingress) have already been created, aether **automatically cleans up orphaned resources**:
+
+```
+1. Create ConfigMap  ✓ (tracked)
+2. Create Secret     ✓ (tracked)
+3. Create PVC        ✓ (tracked)
+4. Create Service    ✓ (tracked)
+5. Create Pod        ✗ FAILED
+   → Clean up: Service, PVC, Secret, ConfigMap (best-effort)
+```
+
+### Conflict Handling
+
+Resource creation distinguishes **409 Conflict** (resource already exists) from other errors:
+
+| HTTP Status | Behavior |
+|---|---|
+| `409 Conflict` | Logged as info, deployment continues |
+| `403 Forbidden` | Error returned, deployment aborted |
+| `500 Server Error` | Error returned, cleanup triggered |
+| Network timeout | Error returned, cleanup triggered |
+
+### Namespace Validation
+
+Both workload name and namespace are validated as DNS-1123 labels before any Kubernetes API calls.
 
 ---
 

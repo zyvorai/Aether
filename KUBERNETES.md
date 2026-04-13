@@ -576,7 +576,7 @@ kubectl create secret docker-registry regcred \
 # Forward local port to pod
 kubectl port-forward web-app 8080:80
 
-# Access at http://localhost:8080
+# Access at http://localhost:5090
 ```
 
 ### Execute Commands
