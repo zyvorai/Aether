@@ -62,15 +62,39 @@ pub fn parse_memory_gi(memory: &str) -> f64 {
     }
 }
 
-/// Return the aether home directory (`~/.aether`).
+/// Return the aether home directory (`~/.aether`) for persistent data
+/// (config, secrets, audit logs, backups).
 pub fn aether_dir() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
     PathBuf::from(home).join(".aether")
 }
 
-/// Return a path inside the aether home directory.
+/// Return a path inside the aether home directory (persistent data).
 pub fn aether_path(filename: &str) -> PathBuf {
     aether_dir().join(filename)
+}
+
+/// Return the runtime lock directory for ephemeral lock files.
+///
+/// Uses `/run/aether` when running as root,
+/// or `$XDG_RUNTIME_DIR/aether` for user sessions.
+/// Falls back to `/tmp/aether-<uid>`.
+///
+/// Lock files belong on tmpfs and should not persist across reboots.
+pub fn lock_dir() -> PathBuf {
+    let uid = unsafe { libc::getuid() };
+    if uid == 0 {
+        PathBuf::from("/run/aether")
+    } else if let Ok(xdg) = std::env::var("XDG_RUNTIME_DIR") {
+        PathBuf::from(xdg).join("aether")
+    } else {
+        PathBuf::from(format!("/tmp/aether-{}", uid))
+    }
+}
+
+/// Return a path inside the lock directory.
+pub fn lock_path(filename: &str) -> PathBuf {
+    lock_dir().join(filename)
 }
 
 /// Load a JSON-serialisable value from a file.

@@ -31,10 +31,34 @@ impl Default for ApiConfig {
     }
 }
 
+/// Server-sent event for real-time updates
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+#[allow(dead_code)]
+pub enum ServerEvent {
+    /// Workload state changed
+    WorkloadChanged {
+        name: String,
+        action: String,
+    },
+    /// New event emitted
+    EventEmitted {
+        message: String,
+        severity: String,
+    },
+    /// Health status update
+    HealthUpdate {
+        workload: String,
+        status: String,
+    },
+}
+
 /// Shared application state
 #[derive(Clone)]
 pub(crate) struct AppState {
     pub(crate) state: Arc<RwLock<StateStore>>,
+    pub(crate) event_tx: tokio::sync::broadcast::Sender<String>,
+    pub(crate) rbac: Arc<RwLock<crate::rbac::RbacStore>>,
 }
 
 /// API Response wrapper
@@ -241,6 +265,39 @@ pub(crate) struct TemplateRequest {
     pub(crate) memory: Option<String>,
     pub(crate) port: Option<u16>,
     pub(crate) replicas: Option<u32>,
+}
+
+/// Request to create a new RBAC API key
+#[derive(Debug, Deserialize)]
+pub(crate) struct CreateApiKeyRequest {
+    /// Human-readable name for the key
+    pub(crate) name: String,
+    /// Role: "admin", "operator", or "viewer"
+    pub(crate) role: String,
+}
+
+/// Response after creating a new RBAC API key
+#[derive(Debug, Serialize)]
+pub(crate) struct CreateApiKeyResponse {
+    pub(crate) name: String,
+    pub(crate) role: String,
+    /// Plaintext API key (shown only once)
+    pub(crate) key: String,
+}
+
+/// Request to revoke an RBAC API key
+#[derive(Debug, Deserialize)]
+pub(crate) struct RevokeApiKeyRequest {
+    /// Name of the key to revoke
+    pub(crate) name: String,
+}
+
+/// Summary of an API key (without the plaintext key)
+#[derive(Debug, Serialize)]
+pub(crate) struct ApiKeySummary {
+    pub(crate) name: String,
+    pub(crate) role: String,
+    pub(crate) created_at: String,
 }
 
 #[cfg(test)]

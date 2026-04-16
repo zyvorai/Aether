@@ -8,6 +8,11 @@ use tokio::process::Command;
 /// Default timeout for docker commands (10 minutes).
 const DOCKER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
 
+/// Check if we are running as root (UID 0).
+fn nix_is_root() -> bool {
+    unsafe { libc::geteuid() == 0 }
+}
+
 /// Execute a pre-built docker [`Command`], returning its output on success.
 /// On failure, bails with a message that includes the sub-command name and stderr.
 /// Commands are subject to a 10-minute timeout to prevent indefinite hangs.
@@ -129,8 +134,21 @@ impl Runtime for DockerRuntime {
         // Restart policy for resilience
         cmd.arg("--restart").arg("on-failure:3");
 
-        cmd.arg("--cpus").arg(&spec.requirements.cpu);
-        cmd.arg("--memory").arg(&spec.requirements.memory);
+        // Resource limits: skip for rootless mode where cgroup controllers
+        // may not be available.
+        let is_rootless = !nix_is_root();
+        if !is_rootless {
+            cmd.arg("--cpus").arg(&spec.requirements.cpu);
+            // Convert K8s memory format (e.g. "256Mi", "4Gi") to Docker format ("256m", "4g")
+            let docker_memory = spec.requirements.memory
+                .replace("Gi", "g").replace("Mi", "m")
+                .replace("Ki", "k").replace("Ti", "t");
+            cmd.arg("--memory").arg(&docker_memory);
+        } else {
+            tracing::info!(
+                "Rootless Docker: skipping --cpus/--memory (cgroup controllers may not be delegated)"
+            );
+        }
         cmd.arg(image.full_name());
 
         let output = exec_docker(cmd, "run").await?;

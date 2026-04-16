@@ -216,9 +216,20 @@ async fn deploy_workload_inner(
 
     let engine = Engine::new();
 
-    // Determine runtime
+    // Determine runtime — use ScoringEngine when intent is present
     let runtime_kind = if let Some(override_str) = runtime_override {
         override_str.parse::<RuntimeKind>()?
+    } else if workload.intent.is_some() {
+        // Intent-driven: use scoring engine for intent-aware selection
+        let scoring = aether::ai::scoring::ScoringEngine::new(config.engine.clone());
+        let result = scoring.score(workload);
+        output::info(&format!(
+            "Intent goal: {:?} — recommended: {} (confidence: {:.0}%)",
+            workload.intent.as_ref().unwrap().goal,
+            result.recommended,
+            result.confidence * 100.0
+        ));
+        result.recommended
     } else if interactive {
         // Interactive selection: show menu
         let ai_recommended = engine.decide(workload)?;
@@ -1950,6 +1961,9 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
     let path = Scheduler::default_path();
     let mut scheduler = Scheduler::load(&path)?;
 
+    // Probe live capacity from all available runtimes before scheduling
+    scheduler.probe_capacities().await;
+
     match action {
         ScheduleAction::Place {
             name,
@@ -2243,6 +2257,40 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     }
                 }
 
+                // Intent constraint checks — flag workloads whose intent
+                // SLA or budget conditions are violated by current state
+                {
+                    let health_path = aether::health::HealthHistory::default_path();
+                    let history = aether::health::HealthHistory::load(&health_path)
+                        .unwrap_or_default();
+                    for ws in state_store.list() {
+                        if let Ok(spec) = Workload::from_file(&ws.spec_path) {
+                            if let Some(ref intent) = spec.intent {
+                                // Check SLA availability constraint
+                                if let Some(ref sla) = intent.sla {
+                                    if let Some(min_avail) = sla.min_availability_pct {
+                                        let uptime = history.uptime_percent(&ws.name);
+                                        if uptime > 0.0 && uptime < min_avail {
+                                            output::warning(&format!(
+                                                "[{}] Intent violation for '{}': uptime {:.1}% < intent min {:.1}%",
+                                                now_str, ws.name, uptime, min_avail
+                                            ));
+                                            emit_event(
+                                                aether::events::EventSeverity::Warning,
+                                                aether::events::EventCategory::IntentViolation,
+                                                "reconciliation-loop",
+                                                Some(&ws.name),
+                                                "Intent SLA violation",
+                                                &format!("Uptime {:.1}% below intent min {:.1}%", uptime, min_avail),
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Evaluate alert rules against current metrics
                 {
                     let events_path = aether::events::EventBus::default_path();
@@ -2465,6 +2513,8 @@ pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: b
             spec_path: snapshot_ws.spec_path.clone(),
             created_at: snapshot_ws.created_at.clone(),
             updated_at: aether::resources::now_rfc3339(),
+            os_version: snapshot_ws.os_version.clone(),
+            node_labels: snapshot_ws.node_labels.clone(),
         },
     );
     state.save(&StateStore::default_path())?;
@@ -2485,7 +2535,7 @@ pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: b
 
 /// Collect live HealthStatus for all managed workloads, grouping by runtime
 /// to avoid creating duplicate runtime clients (N+1).
-async fn collect_health_statuses(
+pub(crate) async fn collect_health_statuses(
     orch: &aether::orchestrator::Orchestrator,
     state: &StateStore,
 ) -> std::collections::HashMap<String, aether::orchestrator::HealthStatus> {
@@ -3392,6 +3442,96 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
+// ─── intent: evaluate intent-based runtime recommendation ────────────
+pub(crate) async fn intent_command(spec_path: &PathBuf) -> Result<()> {
+    use aether::ai::scoring::{format_scoring_report, ScoringEngine};
+    use aether::config::Config;
+
+    let workload = Workload::from_file(spec_path)?;
+
+    let intent = match &workload.intent {
+        Some(i) => i,
+        None => {
+            output::warning("No intent section found in workload spec.");
+            output::info("Add an intent block to enable intent-based decisions:");
+            output::muted(
+                "  intent:\n    goal: low-latency\n    sla:\n      maxLatencyMs: 50\n    budget:\n      maxMonthlyUsd: 500",
+            );
+            output::muted("\nFalling back to standard recommendation.");
+            let config = Config::load();
+            let engine = ScoringEngine::new(config.engine);
+            let result = engine.score(&workload);
+            print!("{}", format_scoring_report(&result));
+            return Ok(());
+        }
+    };
+
+    output::header("🧠", "Intent-Based Runtime Decision");
+
+    // Show intent summary
+    let goal_str = format!("{:?}", intent.goal);
+    let mut intent_pairs: Vec<(&str, String)> = vec![
+        ("Goal", goal_str),
+    ];
+    if let Some(ref sla) = intent.sla {
+        if let Some(latency) = sla.max_latency_ms {
+            intent_pairs.push(("Max Latency", format!("{}ms", latency)));
+        }
+        if let Some(avail) = sla.min_availability_pct {
+            intent_pairs.push(("Min Availability", format!("{:.2}%", avail)));
+        }
+    }
+    if let Some(ref budget) = intent.budget {
+        intent_pairs.push(("Budget Cap", format!("${:.0}/mo", budget.max_monthly_usd)));
+    }
+    if let Some(ref resilience) = intent.resilience {
+        intent_pairs.push(("Resilience", format!("{:?}", resilience)));
+    }
+    if let Some(ref compliance) = intent.compliance {
+        let mut flags = Vec::new();
+        if compliance.isolation_required {
+            flags.push("isolation");
+        }
+        if compliance.encryption_required {
+            flags.push("encryption");
+        }
+        if !flags.is_empty() {
+            intent_pairs.push(("Compliance", flags.join(", ")));
+        }
+    }
+    println!("{}", output::property_table(&intent_pairs));
+
+    // Run intent-aware scoring
+    let config = Config::load();
+    let engine = ScoringEngine::new(config.engine);
+    let result = engine.score(&workload);
+
+    output::section_with_icon("📊", "Intent-Aware Scoring Results");
+    print!("{}", format_scoring_report(&result));
+
+    // Show what intent changed
+    output::section("Intent Influence");
+    let base_engine = ScoringEngine::new(Config::load().engine);
+    let mut base_workload = workload.clone();
+    base_workload.intent = None;
+    let base_result = base_engine.score(&base_workload);
+
+    if result.recommended != base_result.recommended {
+        output::change(
+            "Recommended runtime",
+            &format!("{}", base_result.recommended),
+            &format!("{}", result.recommended),
+        );
+    } else {
+        output::success(&format!(
+            "Intent confirms base recommendation: {}",
+            result.recommended
+        ));
+    }
+
+    Ok(())
+}
+
 // ─── init: first-run onboarding wizard ───────────────────────────────
 pub(crate) async fn init_command() -> Result<()> {
     output::banner("AETHER", "First-Time Setup Wizard");
@@ -3778,6 +3918,95 @@ pub(crate) async fn health_collect_command() -> Result<()> {
     Ok(())
 }
 
+pub(crate) async fn gitops_command(action: GitOpsAction) -> Result<()> {
+    use aether::gitops::{format_status, GitOpsConfig, GitOpsController};
+
+    match action {
+        GitOpsAction::Init { repo, branch } => {
+            let sp = output::spinner("Initializing GitOps repository...");
+
+            let config = GitOpsConfig {
+                repo_url: repo.clone(),
+                branch: branch.clone(),
+                ..Default::default()
+            };
+
+            let mut ctrl = GitOpsController::new(config);
+            ctrl.init_repo()?;
+
+            output::spinner_success(&sp, "GitOps repository initialized");
+            output::success(&format!("Repository: {}", repo));
+            output::success(&format!("Branch: {}", branch));
+            output::success(&format!("Local path: {}", ctrl.repo_dir.display()));
+
+            emit_event(
+                aether::events::EventSeverity::Info,
+                aether::events::EventCategory::Deployment,
+                "cli",
+                None,
+                "GitOps initialized",
+                &format!("Repository {} (branch {}) initialized", repo, branch),
+            );
+
+            Ok(())
+        }
+        GitOpsAction::Status => {
+            // Load saved config from state dir, or show unconfigured status
+            let state_path = aether::resources::aether_path("gitops.json");
+            if state_path.exists() {
+                let data = std::fs::read_to_string(&state_path)?;
+                let status: aether::gitops::GitOpsStatus = serde_json::from_str(&data)?;
+                print!("{}", format_status(&status));
+            } else {
+                output::info("GitOps is not configured. Run `aether git-ops init --repo <URL>` to get started.");
+            }
+            Ok(())
+        }
+        GitOpsAction::Sync => {
+            let state_path = aether::resources::aether_path("gitops.json");
+            if !state_path.exists() {
+                anyhow::bail!(
+                    "GitOps is not configured. Run `aether git-ops init --repo <URL>` first."
+                );
+            }
+
+            let data = std::fs::read_to_string(&state_path)?;
+            let config: GitOpsConfig = serde_json::from_str(&data)?;
+
+            let sp = output::spinner("Syncing from Git repository...");
+            let mut ctrl = GitOpsController::new(config);
+            let changes = ctrl.sync()?;
+            output::spinner_success(&sp, "Sync complete");
+
+            if changes.is_empty() {
+                output::info("No workload changes detected.");
+            } else {
+                output::success(&format!("{} change(s) detected:", changes.len()));
+                for change in &changes {
+                    output::info(&format!("  [{}] {}", change.change_type, change.file_path));
+                }
+            }
+
+            // Persist updated status
+            let status_json = serde_json::to_string_pretty(ctrl.status())?;
+            std::fs::write(&state_path, status_json)?;
+
+            Ok(())
+        }
+    }
+}
+
+pub(crate) async fn helm_export_command(
+    spec_path: &PathBuf,
+    output_dir: &Path,
+    chart_version: Option<&str>,
+) -> Result<()> {
+    let workload = Workload::from_file(spec_path)?;
+    aether::helm::export_helm_chart(&workload, output_dir, chart_version)?;
+    output::success(&format!("Helm chart exported to {}", output_dir.display()));
+    Ok(())
+}
+
 /// Wrap an error with a contextual suggestion for the user.
 pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
     let msg = err.to_string();
@@ -3842,6 +4071,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -3854,6 +4085,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 
@@ -4247,6 +4480,8 @@ mod tests {
             spec_path: PathBuf::from("workload.yaml"),
             created_at: "2025-01-01T00:00:00Z".to_string(),
             updated_at: "2025-01-01T00:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
         };
 
         store.upsert("web".to_string(), ws);
@@ -4281,6 +4516,8 @@ mod tests {
                 spec_path: PathBuf::from("svc.yaml"),
                 created_at: "2025-01-01T00:00:00Z".to_string(),
                 updated_at: "2025-01-01T00:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
             },
         );
         store.save(&path).unwrap();

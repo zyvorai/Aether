@@ -4,10 +4,13 @@ use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Statu
 use crate::spec::{AccessMode, Workload};
 use async_trait::async_trait;
 use k8s_openapi::api::autoscaling::v2::{
-    HorizontalPodAutoscaler, HorizontalPodAutoscalerSpec, MetricSpec, MetricTarget,
-    ResourceMetricSource,
+    HorizontalPodAutoscaler, HorizontalPodAutoscalerSpec, MetricIdentifier, MetricSpec,
+    MetricTarget, PodsMetricSource, ResourceMetricSource,
 };
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
+use k8s_openapi::api::batch::v1::{
+    CronJob, CronJobSpec, JobSpec, JobTemplateSpec,
+};
 use k8s_openapi::api::core::v1::{
     ConfigMap, Container, ContainerPort, EnvFromSource as K8sEnvFromSource, HTTPGetAction,
     PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, PodSpec, Probe,
@@ -17,6 +20,8 @@ use k8s_openapi::api::core::v1::{
 use k8s_openapi::api::networking::v1::{
     HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
     IngressServiceBackend, IngressSpec, IngressTLS, ServiceBackendPort,
+    NetworkPolicy, NetworkPolicyEgressRule, NetworkPolicyIngressRule, NetworkPolicyPeer,
+    NetworkPolicySpec,
 };
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
@@ -63,6 +68,14 @@ impl KubernetesRuntime {
                 }
                 "deployment" => {
                     let api: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "cronjob" => {
+                    let api: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "networkpolicy" => {
+                    let api: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 _ => Ok(()),
@@ -193,6 +206,38 @@ fn sanitize_volume_name(name: &str) -> String {
     }
 }
 
+/// Build Kubernetes resource requirements from workload spec.
+///
+/// Supports burstable QoS: when `cpu_request`/`memory_request` are set and
+/// differ from the limits, Kubernetes assigns the Burstable QoS class.
+fn build_resource_requirements(spec: &Workload) -> K8sResourceRequirements {
+    let mut limits = BTreeMap::new();
+    let mut requests = BTreeMap::new();
+
+    limits.insert("cpu".to_string(), Quantity(spec.requirements.cpu.clone()));
+    limits.insert("memory".to_string(), Quantity(spec.requirements.memory.clone()));
+
+    let cpu_req = spec.requirements.cpu_request.as_deref()
+        .unwrap_or(&spec.requirements.cpu);
+    let mem_req = spec.requirements.memory_request.as_deref()
+        .unwrap_or(&spec.requirements.memory);
+    requests.insert("cpu".to_string(), Quantity(cpu_req.to_string()));
+    requests.insert("memory".to_string(), Quantity(mem_req.to_string()));
+
+    // GPU resources
+    if let Some(ref gpu) = spec.requirements.gpu {
+        let gpu_key = format!("{}.com/gpu", gpu.vendor);
+        limits.insert(gpu_key.clone(), Quantity(gpu.count.to_string()));
+        requests.insert(gpu_key, Quantity(gpu.count.to_string()));
+    }
+
+    K8sResourceRequirements {
+        limits: Some(limits),
+        requests: Some(requests),
+        ..Default::default()
+    }
+}
+
 /// Build a Deployment manifest from workload spec.
 fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) -> Deployment {
     let mut labels = BTreeMap::new();
@@ -216,21 +261,7 @@ fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) ->
         })
         .collect();
 
-    // Resource requirements
-    let mut limits = BTreeMap::new();
-    let mut requests = BTreeMap::new();
-
-    limits.insert("cpu".to_string(), Quantity(spec.requirements.cpu.clone()));
-    limits.insert("memory".to_string(), Quantity(spec.requirements.memory.clone()));
-
-    requests.insert("cpu".to_string(), Quantity(spec.requirements.cpu.clone()));
-    requests.insert("memory".to_string(), Quantity(spec.requirements.memory.clone()));
-
-    let resources = K8sResourceRequirements {
-        limits: Some(limits),
-        requests: Some(requests),
-        ..Default::default()
-    };
+    let resources = build_resource_requirements(spec);
 
     // Health probes
     let liveness_probe = spec.health.as_ref().and_then(|h| {
@@ -517,6 +548,99 @@ fn build_service_manifest(namespace: &str, spec: &Workload) -> Option<Service> {
     })
 }
 
+/// Parse "key=value" label strings into NetworkPolicyPeer selectors.
+fn parse_label_peers(labels: &[String], direction: &str) -> Vec<NetworkPolicyPeer> {
+    labels
+        .iter()
+        .filter_map(|label| {
+            let parts: Vec<&str> = label.splitn(2, '=').collect();
+            if parts.len() == 2 {
+                let mut match_labels = BTreeMap::new();
+                match_labels.insert(parts[0].to_string(), parts[1].to_string());
+                Some(NetworkPolicyPeer {
+                    pod_selector: Some(LabelSelector {
+                        match_labels: Some(match_labels),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                })
+            } else {
+                tracing::warn!("Invalid {} label '{}', expected key=value", direction, label);
+                None
+            }
+        })
+        .collect()
+}
+
+/// Build a NetworkPolicy manifest from workload spec.
+fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> Option<NetworkPolicy> {
+    let np_config = spec.network.network_policy.as_ref()?;
+
+    let mut labels = BTreeMap::new();
+    labels.insert("app".to_string(), spec.metadata.name.clone());
+    labels.insert("managed-by".to_string(), "aether".to_string());
+
+    let pod_selector = LabelSelector {
+        match_labels: Some(labels.clone()),
+        ..Default::default()
+    };
+
+    // Build ingress rules from allow_from labels
+    let ingress = if np_config.deny_all_ingress || !np_config.allow_from.is_empty() {
+        let peers = parse_label_peers(&np_config.allow_from, "allow_from");
+        if peers.is_empty() {
+            // deny_all with no allow_from → empty rules = deny all
+            Some(vec![])
+        } else {
+            Some(vec![NetworkPolicyIngressRule {
+                from: Some(peers),
+                ..Default::default()
+            }])
+        }
+    } else {
+        None
+    };
+
+    // Build egress rules from allow_to labels
+    let egress = if np_config.deny_all_egress || !np_config.allow_to.is_empty() {
+        let peers = parse_label_peers(&np_config.allow_to, "allow_to");
+        if peers.is_empty() {
+            Some(vec![])
+        } else {
+            Some(vec![NetworkPolicyEgressRule {
+                to: Some(peers),
+                ..Default::default()
+            }])
+        }
+    } else {
+        None
+    };
+
+    // Determine policy types
+    let mut policy_types = Vec::new();
+    if ingress.is_some() {
+        policy_types.push("Ingress".to_string());
+    }
+    if egress.is_some() {
+        policy_types.push("Egress".to_string());
+    }
+
+    Some(NetworkPolicy {
+        metadata: ObjectMeta {
+            name: Some(format!("{}-netpol", spec.metadata.name)),
+            namespace: Some(namespace.to_string()),
+            labels: Some(labels),
+            ..Default::default()
+        },
+        spec: Some(NetworkPolicySpec {
+            pod_selector,
+            ingress,
+            egress,
+            policy_types: Some(policy_types),
+        }),
+    })
+}
+
 /// Build a PersistentVolumeClaim manifest from workload spec.
 fn build_pvc_manifest(namespace: &str, spec: &Workload) -> Option<PersistentVolumeClaim> {
     if !spec.persistence.enabled {
@@ -750,7 +874,45 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
                     ..Default::default()
                 })
             }
-            crate::spec::MetricType::Custom => None, // Custom metrics not implemented yet
+            crate::spec::MetricType::Custom => {
+                let metric_name = match &m.metric_name {
+                    Some(name) if !name.is_empty() => name.clone(),
+                    _ => {
+                        tracing::warn!(
+                            "Custom metric missing metric_name for '{}', skipping",
+                            spec.metadata.name
+                        );
+                        return None;
+                    }
+                };
+
+                let target_value: i32 = match m.target_value.trim_end_matches('%').parse() {
+                    Ok(v) => v,
+                    Err(_) => {
+                        tracing::warn!(
+                            value = %m.target_value,
+                            "invalid custom metric HPA target value, skipping"
+                        );
+                        return None;
+                    }
+                };
+
+                Some(MetricSpec {
+                    type_: "Pods".to_string(),
+                    pods: Some(PodsMetricSource {
+                        metric: MetricIdentifier {
+                            name: metric_name,
+                            selector: None,
+                        },
+                        target: MetricTarget {
+                            type_: "AverageValue".to_string(),
+                            average_value: Some(Quantity(target_value.to_string())),
+                            ..Default::default()
+                        },
+                    }),
+                    ..Default::default()
+                })
+            }
         })
         .collect();
 
@@ -793,6 +955,110 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
         }),
         ..Default::default()
     })
+}
+
+/// Build a CronJob manifest from workload spec.
+/// Used when `spec.schedule` is set, creating a Kubernetes CronJob instead of a Deployment.
+fn build_cronjob_manifest(namespace: &str, image: &Image, spec: &Workload) -> CronJob {
+    let schedule_spec = spec.schedule.as_ref().expect("schedule must be set for CronJob");
+
+    let mut labels = BTreeMap::new();
+    labels.insert("app".to_string(), spec.metadata.name.clone());
+    labels.insert("managed-by".to_string(), "aether".to_string());
+
+    for (k, v) in &spec.metadata.labels {
+        labels.insert(k.clone(), v.clone());
+    }
+
+    // Container ports
+    let ports: Vec<ContainerPort> = spec
+        .network
+        .ports
+        .iter()
+        .map(|p| ContainerPort {
+            container_port: p.container_port as i32,
+            protocol: Some(p.protocol.clone()),
+            ..Default::default()
+        })
+        .collect();
+
+    let resources = build_resource_requirements(spec);
+
+    // Environment variables from ConfigMaps
+    let inline_env: Vec<k8s_openapi::api::core::v1::EnvVar> = spec
+        .config
+        .as_ref()
+        .map(|c| {
+            c.config_maps
+                .iter()
+                .flat_map(|cm| {
+                    cm.data.iter().map(|(k, v)| k8s_openapi::api::core::v1::EnvVar {
+                        name: k.clone(),
+                        value: Some(v.clone()),
+                        ..Default::default()
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let restart_policy = match schedule_spec.restart_policy {
+        crate::spec::JobRestartPolicy::Never => "Never",
+        crate::spec::JobRestartPolicy::OnFailure => "OnFailure",
+    };
+
+    let container = Container {
+        name: spec.metadata.name.clone(),
+        image: Some(image.full_name()),
+        ports: if ports.is_empty() { None } else { Some(ports) },
+        resources: Some(resources),
+        env: if inline_env.is_empty() { None } else { Some(inline_env) },
+        ..Default::default()
+    };
+
+    let concurrency_policy = match schedule_spec.concurrency_policy {
+        crate::spec::ConcurrencyPolicy::Allow => "Allow",
+        crate::spec::ConcurrencyPolicy::Forbid => "Forbid",
+        crate::spec::ConcurrencyPolicy::Replace => "Replace",
+    };
+
+    CronJob {
+        metadata: ObjectMeta {
+            name: Some(spec.metadata.name.clone()),
+            namespace: Some(namespace.to_string()),
+            labels: Some(labels.clone()),
+            annotations: Some(spec.metadata.annotations.clone().into_iter().collect()),
+            ..Default::default()
+        },
+        spec: Some(CronJobSpec {
+            schedule: schedule_spec.cron.clone(),
+            concurrency_policy: Some(concurrency_policy.to_string()),
+            job_template: JobTemplateSpec {
+                metadata: Some(ObjectMeta {
+                    labels: Some(labels.clone()),
+                    ..Default::default()
+                }),
+                spec: Some(JobSpec {
+                    backoff_limit: Some(schedule_spec.backoff_limit as i32),
+                    active_deadline_seconds: schedule_spec.active_deadline_seconds,
+                    template: k8s_openapi::api::core::v1::PodTemplateSpec {
+                        metadata: Some(ObjectMeta {
+                            labels: Some(labels),
+                            ..Default::default()
+                        }),
+                        spec: Some(PodSpec {
+                            containers: vec![container],
+                            restart_policy: Some(restart_policy.to_string()),
+                            ..Default::default()
+                        }),
+                    },
+                    ..Default::default()
+                }),
+            },
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
 }
 
 #[async_trait]
@@ -911,45 +1177,74 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
-        // Create Deployment
-        let deployment = build_deployment_manifest(&self.namespace, image, spec);
-        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+        // Create NetworkPolicy if needed
+        if let Some(netpol) = build_networkpolicy_manifest(&self.namespace, spec) {
+            let netpols: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
+            let netpol_name = format!("{}-netpol", spec.metadata.name);
 
-        let created_deployment = match kube_with_timeout("Deployment create", deployments.create(&PostParams::default(), &deployment)).await {
-            Ok(d) => d,
-            Err(e) => {
-                tracing::error!("Deployment creation failed, cleaning up {} resources", new_resources.len());
-                self.cleanup_resources(&new_resources).await;
-                return Err(e);
-            }
-        };
-
-        let deploy_name = created_deployment
-            .metadata
-            .name
-            .unwrap_or_else(|| spec.metadata.name.clone());
-
-        let uid = created_deployment
-            .metadata
-            .uid
-            .unwrap_or_else(|| "unknown".to_string());
-
-        new_resources.push(("deployment", deploy_name.clone()));
-        tracing::info!("Created Deployment: {}", deploy_name);
-
-        // Create HPA if needed (non-critical, don't clean up on failure)
-        if let Some(hpa) = build_hpa_manifest(&self.namespace, spec) {
-            let hpas: Api<HorizontalPodAutoscaler> =
-                Api::namespaced(self.client.clone(), &self.namespace);
-
-            match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa)).await {
-                Ok(_) => tracing::info!("Created HPA: {}-hpa", spec.metadata.name),
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("HPA already exists: {}-hpa", spec.metadata.name),
-                Err(e) => tracing::warn!("HPA creation failed: {}", e),
+            match kube_with_timeout("NetworkPolicy create", netpols.create(&PostParams::default(), &netpol)).await {
+                Ok(_) => { tracing::info!("Created NetworkPolicy: {}", netpol_name); new_resources.push(("networkpolicy", netpol_name)); }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("NetworkPolicy already exists: {}", netpol_name),
+                Err(e) => { tracing::error!("NetworkPolicy creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
             }
         }
 
-        Ok(Instance::new(uid, deploy_name, RuntimeKind::Kubernetes, image.full_name()))
+        // Create CronJob or Deployment depending on schedule
+        let (resource_name, resource_uid) = if spec.schedule.is_some() {
+            // Scheduled workload → CronJob
+            let cronjob = build_cronjob_manifest(&self.namespace, image, spec);
+            let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
+
+            let created = match kube_with_timeout("CronJob create", cronjobs.create(&PostParams::default(), &cronjob)).await {
+                Ok(c) => c,
+                Err(e) => {
+                    tracing::error!("CronJob creation failed, cleaning up {} resources", new_resources.len());
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
+            };
+
+            let name = created.metadata.name.unwrap_or_else(|| spec.metadata.name.clone());
+            let uid = created.metadata.uid.unwrap_or_else(|| "unknown".to_string());
+            new_resources.push(("cronjob", name.clone()));
+            tracing::info!("Created CronJob: {}", name);
+            (name, uid)
+        } else {
+            // Long-running workload → Deployment
+            let deployment = build_deployment_manifest(&self.namespace, image, spec);
+            let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+
+            let created = match kube_with_timeout("Deployment create", deployments.create(&PostParams::default(), &deployment)).await {
+                Ok(d) => d,
+                Err(e) => {
+                    tracing::error!("Deployment creation failed, cleaning up {} resources", new_resources.len());
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
+            };
+
+            let name = created.metadata.name.unwrap_or_else(|| spec.metadata.name.clone());
+            let uid = created.metadata.uid.unwrap_or_else(|| "unknown".to_string());
+            new_resources.push(("deployment", name.clone()));
+            tracing::info!("Created Deployment: {}", name);
+
+            // Create HPA if needed (non-critical, don't clean up on failure)
+            // HPA does not apply to CronJobs, so only create for Deployments
+            if let Some(hpa) = build_hpa_manifest(&self.namespace, spec) {
+                let hpas: Api<HorizontalPodAutoscaler> =
+                    Api::namespaced(self.client.clone(), &self.namespace);
+
+                match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa)).await {
+                    Ok(_) => tracing::info!("Created HPA: {}-hpa", spec.metadata.name),
+                    Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("HPA already exists: {}-hpa", spec.metadata.name),
+                    Err(e) => tracing::warn!("HPA creation failed: {}", e),
+                }
+            }
+
+            (name, uid)
+        };
+
+        Ok(Instance::new(resource_uid, resource_name, RuntimeKind::Kubernetes, image.full_name()))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
@@ -1005,7 +1300,14 @@ impl Runtime for KubernetesRuntime {
         let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
         match deployments.delete(&instance.name, &graceful_delete_params()).await {
             Ok(_) => tracing::info!("Deleted Deployment: {}", instance.name),
-            Err(e) => tracing::warn!("Deployment deletion failed: {}", e),
+            Err(e) => tracing::debug!("Deployment deletion failed (may not exist): {}", e),
+        }
+
+        // Delete CronJob (may exist if workload was scheduled)
+        let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
+        match cronjobs.delete(&instance.name, &DeleteParams::default()).await {
+            Ok(_) => tracing::info!("Deleted CronJob: {}", instance.name),
+            Err(e) => tracing::debug!("CronJob deletion failed (may not exist): {}", e),
         }
 
         // Delete Ingress
@@ -1017,6 +1319,14 @@ impl Runtime for KubernetesRuntime {
         {
             Ok(_) => tracing::info!("Deleted Ingress: {}", ingress_name),
             Err(e) => tracing::debug!("Ingress deletion failed (may not exist): {}", e),
+        }
+
+        // Delete NetworkPolicy
+        let netpols: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
+        let netpol_name = format!("{}-netpol", instance.name);
+        match netpols.delete(&netpol_name, &DeleteParams::default()).await {
+            Ok(_) => tracing::info!("Deleted NetworkPolicy: {}", netpol_name),
+            Err(e) => tracing::debug!("NetworkPolicy deletion failed (may not exist): {}", e),
         }
 
         // Delete Service
@@ -1145,6 +1455,54 @@ impl Runtime for KubernetesRuntime {
         tracing::info!("Updated Deployment: {} (rolling update triggered)", name);
         Ok(Instance::new(uid, name, RuntimeKind::Kubernetes, image.full_name()))
     }
+
+    async fn capacity(&self) -> crate::Result<Option<crate::runtime::Capacity>> {
+        use k8s_openapi::api::core::v1::Node;
+
+        let nodes: Api<Node> = Api::all(self.client.clone());
+        match nodes.list(&ListParams::default()).await {
+            Ok(node_list) => {
+                let mut total_cpu = 0.0_f64;
+                let mut total_memory_mb = 0_u64;
+                let mut allocatable_cpu = 0.0_f64;
+                let mut allocatable_memory_mb = 0_u64;
+
+                for node in &node_list.items {
+                    if let Some(status) = &node.status {
+                        if let Some(allocatable) = &status.allocatable {
+                            if let Some(cpu) = allocatable.get("cpu") {
+                                allocatable_cpu += crate::resources::parse_cpu(&cpu.0);
+                            }
+                            if let Some(mem) = allocatable.get("memory") {
+                                let gi = crate::resources::parse_memory_gi(&mem.0);
+                                allocatable_memory_mb += (gi * 1024.0) as u64;
+                            }
+                        }
+                        if let Some(cap) = &status.capacity {
+                            if let Some(cpu) = cap.get("cpu") {
+                                total_cpu += crate::resources::parse_cpu(&cpu.0);
+                            }
+                            if let Some(mem) = cap.get("memory") {
+                                let gi = crate::resources::parse_memory_gi(&mem.0);
+                                total_memory_mb += (gi * 1024.0) as u64;
+                            }
+                        }
+                    }
+                }
+
+                Ok(Some(crate::runtime::Capacity {
+                    total_cpu,
+                    available_cpu: allocatable_cpu,
+                    total_memory_mb,
+                    available_memory_mb: allocatable_memory_mb,
+                }))
+            }
+            Err(e) => {
+                tracing::warn!("Failed to probe Kubernetes node capacity: {}", e);
+                Ok(None)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -1196,6 +1554,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Kube,
@@ -1222,6 +1582,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 
@@ -2348,6 +2710,7 @@ mod tests {
             metrics: vec![ScalingMetric {
                 metric_type: MetricType::CPU,
                 target_value: "80%".to_string(),
+                metric_name: None,
             }],
         });
 
@@ -2385,6 +2748,7 @@ mod tests {
             metrics: vec![ScalingMetric {
                 metric_type: MetricType::Memory,
                 target_value: "70%".to_string(),
+                metric_name: None,
             }],
         });
 
@@ -2410,10 +2774,12 @@ mod tests {
                 ScalingMetric {
                     metric_type: MetricType::CPU,
                     target_value: "75".to_string(),
+                    metric_name: None,
                 },
                 ScalingMetric {
                     metric_type: MetricType::Memory,
                     target_value: "85".to_string(),
+                    metric_name: None,
                 },
             ],
         });
@@ -2448,17 +2814,19 @@ mod tests {
                 ScalingMetric {
                     metric_type: MetricType::CPU,
                     target_value: "80".to_string(),
+                    metric_name: None,
                 },
                 ScalingMetric {
                     metric_type: MetricType::Custom,
                     target_value: "100".to_string(),
+                    metric_name: None,
                 },
             ],
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
         let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
-        // Custom metrics are filtered out (not yet implemented)
+        // Custom metrics without metric_name are filtered out
         assert_eq!(metrics.len(), 1);
         assert_eq!(metrics[0].resource.as_ref().unwrap().name, "cpu");
     }
@@ -2474,6 +2842,7 @@ mod tests {
             metrics: vec![ScalingMetric {
                 metric_type: MetricType::CPU,
                 target_value: "50".to_string(),
+                metric_name: None,
             }],
         });
 
@@ -2495,6 +2864,7 @@ mod tests {
             metrics: vec![ScalingMetric {
                 metric_type: MetricType::CPU,
                 target_value: "90".to_string(),
+                metric_name: None,
             }],
         });
 
@@ -2669,6 +3039,7 @@ mod tests {
             metrics: vec![ScalingMetric {
                 metric_type: MetricType::CPU,
                 target_value: "70%".to_string(),
+                metric_name: None,
             }],
         });
 
@@ -2869,5 +3240,289 @@ mod tests {
 
         let pod_spec = deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap();
         assert!(pod_spec.volumes.is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // Custom HPA metric tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_generate_hpa_custom_metric_with_name() {
+        let mut spec = create_test_workload();
+        spec.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 1,
+            max_replicas: 10,
+            metrics: vec![ScalingMetric {
+                metric_type: MetricType::Custom,
+                target_value: "30".to_string(),
+                metric_name: Some("http_requests_per_second".to_string()),
+            }],
+        });
+
+        let hpa = build_hpa_manifest("default", &spec).unwrap();
+        let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
+        assert_eq!(metrics.len(), 1);
+        assert_eq!(metrics[0].type_, "Pods");
+
+        let pods = metrics[0].pods.as_ref().unwrap();
+        assert_eq!(pods.metric.name, "http_requests_per_second");
+        assert_eq!(pods.target.type_, "AverageValue");
+        assert_eq!(pods.target.average_value.as_ref().unwrap().0, "30");
+    }
+
+    #[test]
+    fn test_generate_hpa_custom_metric_missing_name_skipped() {
+        let mut spec = create_test_workload();
+        spec.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 1,
+            max_replicas: 10,
+            metrics: vec![ScalingMetric {
+                metric_type: MetricType::Custom,
+                target_value: "50".to_string(),
+                metric_name: None,
+            }],
+        });
+
+        // No valid metrics → no HPA generated
+        let hpa = build_hpa_manifest("default", &spec);
+        assert!(hpa.is_none());
+    }
+
+    #[test]
+    fn test_generate_hpa_custom_metric_empty_name_skipped() {
+        let mut spec = create_test_workload();
+        spec.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 1,
+            max_replicas: 10,
+            metrics: vec![ScalingMetric {
+                metric_type: MetricType::Custom,
+                target_value: "50".to_string(),
+                metric_name: Some(String::new()),
+            }],
+        });
+
+        let hpa = build_hpa_manifest("default", &spec);
+        assert!(hpa.is_none());
+    }
+
+    #[test]
+    fn test_generate_hpa_mixed_cpu_and_custom() {
+        let mut spec = create_test_workload();
+        spec.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 2,
+            max_replicas: 20,
+            metrics: vec![
+                ScalingMetric {
+                    metric_type: MetricType::CPU,
+                    target_value: "70".to_string(),
+                    metric_name: None,
+                },
+                ScalingMetric {
+                    metric_type: MetricType::Custom,
+                    target_value: "100".to_string(),
+                    metric_name: Some("queue_depth".to_string()),
+                },
+            ],
+        });
+
+        let hpa = build_hpa_manifest("default", &spec).unwrap();
+        let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
+        assert_eq!(metrics.len(), 2);
+
+        // First is CPU Resource metric
+        assert_eq!(metrics[0].type_, "Resource");
+        assert_eq!(metrics[0].resource.as_ref().unwrap().name, "cpu");
+
+        // Second is Custom Pods metric
+        assert_eq!(metrics[1].type_, "Pods");
+        assert_eq!(metrics[1].pods.as_ref().unwrap().metric.name, "queue_depth");
+    }
+
+    #[test]
+    fn test_generate_hpa_custom_metric_invalid_value() {
+        let mut spec = create_test_workload();
+        spec.scaling = Some(ScalingSpec {
+            enabled: true,
+            min_replicas: 1,
+            max_replicas: 10,
+            metrics: vec![ScalingMetric {
+                metric_type: MetricType::Custom,
+                target_value: "abc".to_string(),
+                metric_name: Some("requests".to_string()),
+            }],
+        });
+
+        // Invalid target value → metric skipped → no valid metrics → no HPA
+        let hpa = build_hpa_manifest("default", &spec);
+        assert!(hpa.is_none());
+    }
+
+    #[test]
+    fn test_scaling_metric_with_name_serde_roundtrip() {
+        let metric = ScalingMetric {
+            metric_type: MetricType::Custom,
+            target_value: "42".to_string(),
+            metric_name: Some("rps".to_string()),
+        };
+        let yaml = serde_yaml::to_string(&metric).unwrap();
+        let parsed: ScalingMetric = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(parsed.metric_name, Some("rps".to_string()));
+        assert_eq!(parsed.metric_type, MetricType::Custom);
+    }
+
+    // -----------------------------------------------------------------------
+    // NetworkPolicy generation tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_generate_networkpolicy_none_when_absent() {
+        let spec = create_test_workload();
+        assert!(spec.network.network_policy.is_none());
+        let result = build_networkpolicy_manifest("default", &spec);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_deny_all_ingress() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec![],
+            allow_to: vec![],
+            deny_all_ingress: true,
+            deny_all_egress: false,
+        });
+
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        assert_eq!(netpol.metadata.name, Some("test-app-netpol".to_string()));
+        assert_eq!(netpol.metadata.namespace, Some("default".to_string()));
+
+        let np_spec = netpol.spec.as_ref().unwrap();
+        // Empty ingress vec = deny all ingress
+        assert!(np_spec.ingress.as_ref().unwrap().is_empty());
+        assert!(np_spec.egress.is_none());
+        assert!(np_spec.policy_types.as_ref().unwrap().contains(&"Ingress".to_string()));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_allow_from_labels() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec!["app=frontend".to_string(), "role=api".to_string()],
+            allow_to: vec![],
+            deny_all_ingress: false,
+            deny_all_egress: false,
+        });
+
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let np_spec = netpol.spec.as_ref().unwrap();
+
+        let ingress_rules = np_spec.ingress.as_ref().unwrap();
+        assert_eq!(ingress_rules.len(), 1);
+        let peers = ingress_rules[0].from.as_ref().unwrap();
+        assert_eq!(peers.len(), 2);
+
+        let first_labels = peers[0].pod_selector.as_ref().unwrap().match_labels.as_ref().unwrap();
+        assert_eq!(first_labels.get("app"), Some(&"frontend".to_string()));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_deny_all_egress() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec![],
+            allow_to: vec![],
+            deny_all_ingress: false,
+            deny_all_egress: true,
+        });
+
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let np_spec = netpol.spec.as_ref().unwrap();
+
+        assert!(np_spec.ingress.is_none());
+        assert!(np_spec.egress.as_ref().unwrap().is_empty());
+        assert!(np_spec.policy_types.as_ref().unwrap().contains(&"Egress".to_string()));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_allow_to_labels() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec![],
+            allow_to: vec!["app=database".to_string()],
+            deny_all_ingress: false,
+            deny_all_egress: false,
+        });
+
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let np_spec = netpol.spec.as_ref().unwrap();
+
+        let egress_rules = np_spec.egress.as_ref().unwrap();
+        assert_eq!(egress_rules.len(), 1);
+        let peers = egress_rules[0].to.as_ref().unwrap();
+        assert_eq!(peers.len(), 1);
+
+        let labels = peers[0].pod_selector.as_ref().unwrap().match_labels.as_ref().unwrap();
+        assert_eq!(labels.get("app"), Some(&"database".to_string()));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_labels_and_namespace() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec![],
+            allow_to: vec![],
+            deny_all_ingress: true,
+            deny_all_egress: false,
+        });
+
+        let netpol = build_networkpolicy_manifest("production", &spec).unwrap();
+        assert_eq!(netpol.metadata.namespace, Some("production".to_string()));
+
+        let labels = netpol.metadata.labels.as_ref().unwrap();
+        assert_eq!(labels.get("app"), Some(&"test-app".to_string()));
+        assert_eq!(labels.get("managed-by"), Some(&"aether".to_string()));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_combined_ingress_egress() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec!["app=frontend".to_string()],
+            allow_to: vec!["app=database".to_string()],
+            deny_all_ingress: false,
+            deny_all_egress: false,
+        });
+
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let np_spec = netpol.spec.as_ref().unwrap();
+
+        assert!(np_spec.ingress.is_some());
+        assert!(np_spec.egress.is_some());
+
+        let policy_types = np_spec.policy_types.as_ref().unwrap();
+        assert!(policy_types.contains(&"Ingress".to_string()));
+        assert!(policy_types.contains(&"Egress".to_string()));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_pod_selector() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec![],
+            allow_to: vec![],
+            deny_all_ingress: true,
+            deny_all_egress: true,
+        });
+
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let np_spec = netpol.spec.as_ref().unwrap();
+
+        let selector_labels = np_spec.pod_selector.match_labels.as_ref().unwrap();
+        assert_eq!(selector_labels.get("app"), Some(&"test-app".to_string()));
+        assert_eq!(selector_labels.get("managed-by"), Some(&"aether".to_string()));
     }
 }

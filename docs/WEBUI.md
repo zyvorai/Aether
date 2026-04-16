@@ -1,31 +1,61 @@
 # WebUI and REST API Guide
 
-Aether provides a modern web dashboard and REST API for managing workloads through your browser.
+Aether provides a full-featured React web dashboard and REST API for managing workloads through your browser.
 
 ## Overview
 
-The WebUI provides:
-- **Real-time Dashboard**: Monitor all workloads across runtimes
-- **REST API**: Programmatic access to all operations
-- **Live Statistics**: Track workload counts, runtimes, and backups
-- **Log Viewing**: Browse container logs in your browser
-- **Workload Management**: Stop and delete workloads with one click
+The WebUI is a **React 18 single-page application** built with TypeScript, Tailwind CSS, and Vite. It provides:
+- **19 feature pages**: Full coverage of workloads, AI, security, operations, and observability
+- **REST API**: Programmatic access to all operations (43 endpoints)
+- **Dark metallic zinc theme**: Consistent dark UI with orange accents
+- **Responsive design**: Desktop and mobile support with collapsible menu
+- **Real-time updates**: Auto-refresh on key pages
+
+### Tech Stack
+
+| Component | Technology |
+|---|---|
+| **Framework** | React 18 |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS |
+| **Build tool** | Vite |
+| **Location** | `web/dashboard/` |
 
 ## Quick Start
 
-### Start the Server
+### Start the API Server
 
 ```bash
 aether serve
 ```
 
-The server starts on `http://127.0.0.1:5090` by default.
+The server starts on `http://127.0.0.1:5090` by default and serves the built dashboard assets.
 
 ### Custom Host and Port
 
 ```bash
 aether serve --host 0.0.0.0 --port 3000
 ```
+
+### Development Mode
+
+For frontend development with hot-reload:
+
+```bash
+cd web/dashboard
+npm install
+npm run dev
+```
+
+The Vite dev server starts with a proxy to `http://localhost:5090` for API requests.
+
+### Production Build
+
+```bash
+cd web/dashboard && npm run build
+```
+
+The build output is served by the Aether API server at `/`.
 
 ### Enable API Authentication
 
@@ -50,36 +80,112 @@ Open your browser and navigate to:
 http://localhost:5090
 ```
 
+**Default login credentials:** `admin` / `aether`
+
+## Dashboard Pages
+
+The dashboard provides 19 pages organized under a top navigation bar with dropdown groups:
+
+| Page | Description |
+|---|---|
+| **Dashboard** | Overview with workload stats, runtime distribution, and recent events |
+| **Workloads** | List, create, start, stop, delete, and view logs for workloads |
+| **AI Engine** | Runtime recommendations, profiling, log analysis, and scaling advice |
+| **Cost** | Cost estimation across cloud providers |
+| **Affinity** | Runtime affinity scores by workload class |
+| **Drift** | Configuration drift detection and reconciliation |
+| **Policy** | Policy enforcement checks against production/development rule sets |
+| **Scheduler** | Runtime utilization and optimization suggestions |
+| **Health** | Health monitoring timeline and uptime summaries |
+| **Events** | Event stream with severity filtering and summary |
+| **SLA** | SLA compliance targets and status |
+| **Dependencies** | Dependency graph visualization and startup ordering |
+| **Environments** | Environment configuration management |
+| **Secrets** | Secret metadata and rotation status (values never exposed) |
+| **Backups** | Backup creation and listing |
+| **Templates** | Generate workloads from built-in templates |
+| **Plugins** | Plugin registry and discovery |
+| **Audit** | Audit trail with integrity verification |
+| **Metrics** | Prometheus metrics display |
+
 ## Dashboard Features
 
-### Statistics Overview
+### Navigation
 
-The dashboard displays four key metrics:
-- **Total Workloads**: Number of deployed workloads
-- **Running**: Count of running instances
-- **Runtimes**: Number of unique runtimes in use
-- **Backups**: Available backup snapshots
+The top navbar organizes pages into dropdown groups for quick access. On mobile devices, a hamburger menu provides access to all pages.
 
-### Workload Table
+### SSE Real-Time Updates
 
-View all workloads with:
-- **Name**: Workload identifier
-- **Runtime**: Deployment target (Podman, Kubernetes, KubeVirt, Metal3)
-- **Image**: Container or VM image
-- **Status**: Current state (running, stopped)
-- **Created**: Deployment timestamp
-- **Actions**: Quick access buttons
+The dashboard receives real-time updates from the API server via Server-Sent Events (SSE). When a mutation occurs (create, delete, start, stop, migrate), the API handler emits a `ServerEvent` that the dashboard's `useEventStream` hook receives instantly -- no polling required.
 
-### Actions
+A **connection indicator** (green/red dot) in the navbar shows the live SSE connection status. Green means the SSE stream is connected and receiving events; red means the connection is lost.
 
-For each workload:
-- **📋 Logs**: View recent logs in a modal dialog
-- **⏸️ Stop**: Stop the running workload
-- **🗑️ Delete**: Remove the workload completely
+### WorkloadDetail Panel
+
+Click any workload name to open a tabbed detail view with four tabs:
+
+| Tab | Content |
+|---|---|
+| **Overview** | Workload metadata, runtime, status, resource requirements, created/updated timestamps |
+| **Logs** | Integrated LogViewer component (see below) |
+| **Drift** | Configuration drift detection results for this workload |
+| **Scoring** | AI scoring breakdown and Intent Debugger visualization |
+
+The panel includes action buttons: **Start**, **Stop**, **Restart**, and **Delete** -- each with confirmation dialogs.
+
+### LogViewer
+
+A full-featured log viewer component with:
+
+- **Auto-polling**: Fetches new log lines on a configurable interval
+- **Follow mode**: Auto-scrolls to the bottom as new lines arrive (toggle on/off)
+- **Filter input**: Search/filter log lines by text
+- **Line numbers**: Optional line number display
+- **Color-coded levels**: Log levels (INFO, WARN, ERROR, DEBUG) are color-coded for quick scanning
+- **Copy-to-clipboard**: Copy the full log output or selected lines
+
+### Command Palette
+
+Press **Cmd+K** (macOS) or **Ctrl+K** (Linux/Windows) to open the Command Palette overlay. You can also press **?** to open it.
+
+The palette provides fuzzy search across:
+- **Pages**: Navigate directly to any dashboard page
+- **Workloads**: Jump to a specific workload's detail view
+- **Actions**: Execute common actions (refresh, deploy, migrate)
+
+### Intent Debugger
+
+The Intent Debugger visualizes AI scoring for a workload using a **pure SVG radar chart** with four axes:
+- **Cost** -- how cost-effective the runtime is for this workload
+- **Performance** -- latency and throughput scoring
+- **Reliability** -- failure rate and restart history
+- **Availability** -- uptime and SLA compliance
+
+Each runtime's scores are overlaid on the chart for visual comparison.
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `r` | Refresh current page data |
+| `?` | Open Command Palette |
+| `Cmd+K` / `Ctrl+K` | Open Command Palette |
+
+### Confirmation Dialogs
+
+Destructive actions (delete, stop) display a confirmation dialog before executing. This prevents accidental data loss.
+
+### Toast Notifications
+
+Success and error feedback is shown via toast notifications that auto-dismiss after a few seconds.
+
+### Error Boundary
+
+React error boundaries catch rendering errors and display a fallback UI instead of a blank page.
 
 ### Auto-Refresh
 
-The dashboard automatically refreshes every 5 seconds to show the latest state.
+Key pages (Dashboard, Workloads, Health, Events) automatically refresh data at regular intervals to show the latest state. SSE events trigger immediate updates for mutation-related pages.
 
 ## REST API
 
@@ -755,17 +861,10 @@ aether serve
 ## Limitations
 
 Current limitations:
-- No authentication/authorization built-in
 - No HTTPS support (use reverse proxy)
-- No WebSocket support for real-time updates
-- Create workload requires full spec (no form builder yet)
 
 Future enhancements planned:
-- Built-in authentication (API keys, OAuth)
-- WebSocket for live updates
-- Form-based workload creation
-- Metrics dashboard integration
-- Multi-user support with RBAC
+- OAuth / SSO integration
 
 ## Support
 

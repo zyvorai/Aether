@@ -392,6 +392,8 @@ mod tests {
             spec_path: PathBuf::from("/tmp/workload.yaml"),
             created_at: crate::resources::now_rfc3339(),
             updated_at: crate::resources::now_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
         }
     }
 

@@ -13,6 +13,9 @@ use cli::{Cli, Commands, HealthAction};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Install rustls crypto provider before any TLS operations
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     let cli = Cli::parse();
 
     // Initialize tracing (suppress default fmt for non-verbose to keep output clean)
@@ -22,10 +25,19 @@ async fn main() -> Result<()> {
         tracing_subscriber::EnvFilter::new("warn")
     };
 
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    // Support structured JSON logs via AETHER_LOG_FORMAT=json or config
+    let log_format = std::env::var("AETHER_LOG_FORMAT").unwrap_or_default();
+    if log_format == "json" {
+        tracing_subscriber::registry()
+            .with(filter)
+            .with(tracing_subscriber::fmt::layer().json())
+            .init();
+    } else {
+        tracing_subscriber::registry()
+            .with(filter)
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+    }
 
     // Set output modes
     aether::output::set_quiet(cli.quiet);
@@ -159,6 +171,9 @@ async fn main() -> Result<()> {
         Commands::Env { action } => {
             commands::env_command(action).await
         }
+        Commands::GitOps { action } => {
+            commands::gitops_command(action).await
+        }
         Commands::Schedule { action } => {
             commands::schedule_command(action).await
         }
@@ -196,6 +211,9 @@ async fn main() -> Result<()> {
         Commands::Compare => {
             commands::compare_command(&cli.spec).await
         }
+        Commands::Intent => {
+            commands::intent_command(&cli.spec).await
+        }
         Commands::Init => {
             commands::init_command().await
         }
@@ -212,6 +230,9 @@ async fn main() -> Result<()> {
             HealthAction::Collect => {
                 commands::health_collect_command().await
             }
+        }
+        Commands::HelmExport { output_dir, chart_version } => {
+            commands::helm_export_command(&cli.spec, &output_dir, chart_version.as_deref()).await
         }
     };
 

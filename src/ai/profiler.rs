@@ -573,6 +573,8 @@ mod tests {
                 memory: "8Gi".to_string(),
                 storage: "50Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -594,6 +596,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 

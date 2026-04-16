@@ -247,6 +247,7 @@ impl MigrationAdvisor {
             MigrationStrategy::Immediate => self.config.graceful_shutdown_secs + 30,
             MigrationStrategy::BlueGreen => 0, // Zero downtime in theory
             MigrationStrategy::Rolling => 0,   // Zero downtime in theory
+            MigrationStrategy::Canary => 0,    // Zero downtime (canary runs alongside stable)
         };
 
         if is_stateful {
@@ -459,6 +460,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -471,6 +474,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 

@@ -166,6 +166,16 @@ pub enum PluginProtocol {
     ListResponse {
         instances_json: String,
     },
+
+    /// Ask the plugin to stream logs for an instance.
+    LogsRequest {
+        instance_json: String,
+        follow: bool,
+    },
+    /// Response to a `LogsRequest`.
+    LogsResponse {
+        logs: String,
+    },
 }
 
 // ─── Plugin Runtime (IPC-based Runtime trait implementation) ──────────
@@ -339,8 +349,21 @@ impl crate::Runtime for PluginRuntime {
         }
     }
 
-    async fn logs(&self, _instance: &crate::runtime::Instance, _follow: bool) -> crate::Result<String> {
-        Ok("Plugin log streaming not yet supported".to_string())
+    async fn logs(&self, instance: &crate::runtime::Instance, follow: bool) -> crate::Result<String> {
+        if !self.manifest.capabilities.iter().any(|c| c == "logs") {
+            return Ok("Plugin does not support log streaming".to_string());
+        }
+
+        let instance_json = serde_json::to_string(instance)?;
+        let response = self.ipc_call(PluginProtocol::LogsRequest {
+            instance_json,
+            follow,
+        }).await?;
+
+        match response {
+            PluginProtocol::LogsResponse { logs } => Ok(logs),
+            other => anyhow::bail!("Unexpected response from plugin logs: {:?}", other),
+        }
     }
 
     async fn list(&self) -> crate::Result<Vec<crate::runtime::Instance>> {
@@ -681,6 +704,69 @@ mod tests {
         };
         let json = serde_json::to_string(&msg).unwrap();
         assert!(json.contains(r#""type":"DeleteRequest""#));
+    }
+
+    // ── LogsRequest / LogsResponse tests ─────────────────────────────
+
+    #[test]
+    fn test_logs_request_serialization() {
+        let msg = PluginProtocol::LogsRequest {
+            instance_json: r#"{"id":"inst-1"}"#.to_string(),
+            follow: true,
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        assert!(json.contains(r#""type":"LogsRequest""#));
+        assert!(json.contains(r#""follow":true"#));
+        assert!(json.contains(r#""instance_json""#));
+    }
+
+    #[test]
+    fn test_logs_response_serialization() {
+        let msg = PluginProtocol::LogsResponse {
+            logs: "line1\nline2\n".to_string(),
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        assert!(json.contains(r#""type":"LogsResponse""#));
+        assert!(json.contains("line1"));
+    }
+
+    #[test]
+    fn test_logs_protocol_roundtrip() {
+        let req = PluginProtocol::LogsRequest {
+            instance_json: r#"{"id":"abc"}"#.to_string(),
+            follow: false,
+        };
+        let json_req = serde_json::to_string(&req).unwrap();
+        let parsed_req: PluginProtocol = serde_json::from_str(&json_req).unwrap();
+        assert_eq!(req, parsed_req);
+
+        let resp = PluginProtocol::LogsResponse {
+            logs: "output".to_string(),
+        };
+        let json_resp = serde_json::to_string(&resp).unwrap();
+        let parsed_resp: PluginProtocol = serde_json::from_str(&json_resp).unwrap();
+        assert_eq!(resp, parsed_resp);
+    }
+
+    #[test]
+    fn test_plugin_protocol_has_logs_variants() {
+        let _req = PluginProtocol::LogsRequest {
+            instance_json: "{}".to_string(),
+            follow: true,
+        };
+        let _resp = PluginProtocol::LogsResponse {
+            logs: String::new(),
+        };
+    }
+
+    #[test]
+    fn test_logs_capability_string() {
+        let cap = "logs".to_string();
+        let capabilities = vec!["build".to_string(), "run".to_string(), "logs".to_string()];
+        assert!(capabilities.iter().any(|c| c == &cap));
+
+        let no_logs = vec!["build".to_string(), "run".to_string()];
+        assert!(!no_logs.iter().any(|c| c == &cap));
     }
 
 }
