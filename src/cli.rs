@@ -369,6 +369,12 @@ pub(crate) enum Commands {
         action: EnvAction,
     },
 
+    /// GitOps reconciliation
+    GitOps {
+        #[command(subcommand)]
+        action: GitOpsAction,
+    },
+
     /// Workload scheduling and optimization
     Schedule {
         #[command(subcommand)]
@@ -474,6 +480,9 @@ pub(crate) enum Commands {
     /// Compare workload across runtimes (cost, capabilities, limitations)
     Compare,
 
+    /// Evaluate intent-based runtime recommendation
+    Intent,
+
     /// First-time setup wizard
     Init,
 
@@ -493,6 +502,16 @@ pub(crate) enum Commands {
     Health {
         #[command(subcommand)]
         action: HealthAction,
+    },
+
+    /// Export workload as a Helm chart
+    HelmExport {
+        /// Output directory for the Helm chart
+        #[arg(short, long, default_value = "helm-output")]
+        output_dir: PathBuf,
+        /// Chart version
+        #[arg(long)]
+        chart_version: Option<String>,
     },
 }
 
@@ -552,6 +571,7 @@ impl Commands {
             Self::Secrets { .. } => "secrets",
             Self::Events { .. } => "events",
             Self::Env { .. } => "env",
+            Self::GitOps { .. } => "gitops",
             Self::Schedule { .. } => "schedule",
             Self::Orchestrate { .. } => "orchestrate",
             Self::Affinity { .. } => "affinity",
@@ -564,10 +584,12 @@ impl Commands {
             Self::PortForward { .. } => "port-forward",
             Self::Watch { .. } => "watch",
             Self::Compare => "compare",
+            Self::Intent => "intent",
             Self::Init => "init",
             Self::Compose { .. } => "compose",
             Self::Plugin { .. } => "plugin",
             Self::Health { .. } => "health",
+            Self::HelmExport { .. } => "helm-export",
         }
     }
 }
@@ -690,6 +712,23 @@ pub(crate) enum EnvAction {
         /// Second environment
         env2: String,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum GitOpsAction {
+    /// Initialize GitOps with a repository
+    Init {
+        /// Git repository URL
+        #[arg(long)]
+        repo: String,
+        /// Branch to watch
+        #[arg(long, default_value = "main")]
+        branch: String,
+    },
+    /// Show GitOps sync status
+    Status,
+    /// Trigger a manual sync
+    Sync,
 }
 
 #[derive(Subcommand)]

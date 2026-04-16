@@ -14,6 +14,7 @@ use axum::{
     response::{Html, IntoResponse, Json},
 };
 use axum::http::header;
+use futures::stream::StreamExt;
 use std::path::PathBuf;
 
 /// Validate a workload name from API input.
@@ -41,10 +42,6 @@ fn validate_spec_path<T: serde::Serialize>(path: &std::path::Path) -> Result<(),
     }
     if path.is_absolute() {
         return Err(err_bad_request("spec_path must be a relative path"));
-    }
-    // Reject paths starting with system directories even when relative
-    if path_str.starts_with("/etc") || path_str.starts_with("/proc") || path_str.starts_with("/sys") {
-        return Err(err_bad_request("spec_path points to a system directory"));
     }
     Ok(())
 }
@@ -74,6 +71,13 @@ async fn make_runtime<T: serde::Serialize>(
     kind: &RuntimeKind,
 ) -> Result<Box<dyn Runtime>, (StatusCode, Json<ApiResponse<T>>)> {
     runtime::create_runtime(kind).await.map_err(|e| err_internal(e))
+}
+
+/// Emit a server-sent event for real-time dashboard updates.
+fn emit_sse(app_state: &AppState, event: &ServerEvent) {
+    if let Ok(json) = serde_json::to_string(event) {
+        let _ = app_state.event_tx.send(json);
+    }
 }
 
 /// Shorthand for a successful JSON response.
@@ -110,12 +114,24 @@ fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Js
     )
 }
 
-/// Embedded dashboard HTML
-pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/index.html");
+/// Embedded dashboard HTML (built from web/dashboard/ React app)
+pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/dashboard/dist/index.html");
+const DASHBOARD_CSS: &str = include_str!("../../web/dashboard/dist/assets/index-DiVd-Lmd.css");
+const DASHBOARD_JS: &str = include_str!("../../web/dashboard/dist/assets/index-qv9Tu_QH.js");
 
 /// GET / - Serve the web dashboard
 pub(crate) async fn serve_dashboard() -> impl IntoResponse {
     Html(DASHBOARD_HTML)
+}
+
+/// GET /assets/*.css - Serve embedded dashboard CSS
+pub(crate) async fn serve_dashboard_css() -> impl IntoResponse {
+    ([(header::CONTENT_TYPE, "text/css")], DASHBOARD_CSS)
+}
+
+/// GET /assets/*.js - Serve embedded dashboard JS
+pub(crate) async fn serve_dashboard_js() -> impl IntoResponse {
+    ([(header::CONTENT_TYPE, "application/javascript")], DASHBOARD_JS)
 }
 
 /// GET /health - Health check endpoint
@@ -127,22 +143,142 @@ pub(crate) async fn health_check() -> impl IntoResponse {
     Json(ApiResponse::success(response))
 }
 
-/// GET /api/workloads - List all workloads
+/// Discover workloads live from Kubernetes Deployments and KubeVirt VMs
+/// across all namespaces. Returns instances regardless of managed-by labels.
+async fn discover_live_workloads() -> Vec<WorkloadResponse> {
+    let mut results = Vec::new();
+
+    // Discover K8s Deployments across all namespaces
+    if let Ok(client) = kube::Client::try_default().await {
+        let deployments: kube::Api<k8s_openapi::api::apps::v1::Deployment> = kube::Api::all(client.clone());
+        if let Ok(deploy_list) = deployments.list(&kube::api::ListParams::default()).await {
+            for deploy in &deploy_list.items {
+                let name = deploy.metadata.name.clone().unwrap_or_default();
+                let ns = deploy.metadata.namespace.clone().unwrap_or_else(|| "default".to_string());
+                let labels = deploy.metadata.labels.as_ref();
+                let managed = labels.map_or(false, |l| l.get("managed-by").map_or(false, |v| v == "aether"));
+
+                let image = deploy.spec.as_ref()
+                    .and_then(|s| s.template.spec.as_ref())
+                    .and_then(|ps| ps.containers.first())
+                    .and_then(|c| c.image.clone())
+                    .unwrap_or_else(|| "unknown".to_string());
+
+                let ready_replicas = deploy.status.as_ref()
+                    .and_then(|s| s.ready_replicas)
+                    .unwrap_or(0);
+                let replicas = deploy.spec.as_ref()
+                    .and_then(|s| s.replicas)
+                    .unwrap_or(1);
+
+                let status = if ready_replicas >= replicas {
+                    "running".to_string()
+                } else if ready_replicas > 0 {
+                    "degraded".to_string()
+                } else {
+                    "pending".to_string()
+                };
+
+                let created_at = deploy.metadata.creation_timestamp.as_ref()
+                    .map(|t| t.0.to_rfc3339())
+                    .unwrap_or_default();
+
+                let runtime_label = if managed { "Kubernetes (aether)" } else { "Kubernetes" };
+
+                results.push(WorkloadResponse {
+                    name: format!("{}/{}", ns, name),
+                    runtime: runtime_label.to_string(),
+                    image,
+                    status,
+                    created_at,
+                });
+            }
+        }
+
+        // Discover KubeVirt VMs across all namespaces
+        let vms: kube::Api<kube::core::DynamicObject> = kube::Api::all_with(
+            client.clone(),
+            &kube::discovery::ApiResource {
+                group: "kubevirt.io".to_string(),
+                version: "v1".to_string(),
+                api_version: "kubevirt.io/v1".to_string(),
+                kind: "VirtualMachineInstance".to_string(),
+                plural: "virtualmachineinstances".to_string(),
+            },
+        );
+        if let Ok(vm_list) = vms.list(&kube::api::ListParams::default()).await {
+            for vm in &vm_list.items {
+                let name = vm.metadata.name.clone().unwrap_or_default();
+                let ns = vm.metadata.namespace.clone().unwrap_or_else(|| "default".to_string());
+                let labels = vm.metadata.labels.as_ref();
+                let managed = labels.map_or(false, |l| l.get("managed-by").map_or(false, |v| v == "aether"));
+
+                let phase = vm.data.get("status")
+                    .and_then(|s| s.get("phase"))
+                    .and_then(|p| p.as_str())
+                    .unwrap_or("Unknown");
+
+                let status = match phase {
+                    "Running" => "running",
+                    "Succeeded" => "stopped",
+                    "Failed" => "failed",
+                    "Scheduling" | "Scheduled" | "Pending" => "pending",
+                    _ => "unknown",
+                };
+
+                let created_at = vm.metadata.creation_timestamp.as_ref()
+                    .map(|t| t.0.to_rfc3339())
+                    .unwrap_or_default();
+
+                let runtime_label = if managed { "KubeVirt (aether)" } else { "KubeVirt" };
+
+                results.push(WorkloadResponse {
+                    name: format!("{}/{}", ns, name),
+                    runtime: runtime_label.to_string(),
+                    image: format!("vm:{}", name),
+                    status: status.to_string(),
+                    created_at,
+                });
+            }
+        }
+    }
+
+    results
+}
+
+/// GET /api/workloads - List all workloads (state store + live discovery)
 pub(crate) async fn list_workloads(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl IntoResponse {
+    // Start with state store entries
+    let mut seen = std::collections::HashSet::new();
     let state = app_state.state.read().await;
-    let workloads: Vec<WorkloadResponse> = state
+    let mut workloads: Vec<WorkloadResponse> = state
         .list()
         .iter()
-        .map(|w| WorkloadResponse {
-            name: w.name.clone(),
-            runtime: format!("{:?}", w.runtime),
-            image: w.instance.image.clone(),
-            status: format!("deployed ({})", w.runtime),
-            created_at: w.created_at.clone(),
+        .map(|w| {
+            seen.insert(w.name.clone());
+            WorkloadResponse {
+                name: w.name.clone(),
+                runtime: format!("{:?}", w.runtime),
+                image: w.instance.image.clone(),
+                status: format!("deployed ({})", w.runtime),
+                created_at: w.created_at.clone(),
+            }
         })
         .collect();
+    drop(state);
+
+    // Merge live-discovered workloads (skip duplicates already in state store)
+    let live = discover_live_workloads().await;
+    for w in live {
+        // Match by bare name (state store uses bare name, discovery uses ns/name)
+        let bare_name = w.name.rsplit('/').next().unwrap_or(&w.name);
+        if !seen.contains(bare_name) && !seen.contains(&w.name) {
+            seen.insert(w.name.clone());
+            workloads.push(w);
+        }
+    }
 
     Json(ApiResponse::success(workloads))
 }
@@ -206,6 +342,11 @@ pub(crate) async fn create_workload(
         return err_internal::<String>(e);
     }
 
+    emit_sse(&app_state, &ServerEvent::WorkloadChanged {
+        name: request.spec.metadata.name.clone(),
+        action: "created".to_string(),
+    });
+
     created_json(format!("Workload {} created", request.spec.metadata.name))
 }
 
@@ -242,6 +383,11 @@ pub(crate) async fn delete_workload(
             if let Err(e) = state.save(&StateStore::default_path()) {
                 return err_internal::<String>(e);
             }
+
+            emit_sse(&app_state, &ServerEvent::WorkloadChanged {
+                name: name.clone(),
+                action: "deleted".to_string(),
+            });
 
             (
                 StatusCode::OK,
@@ -332,12 +478,19 @@ pub(crate) async fn start_workload(
             spec_path: workload_state.spec_path,
             created_at: workload_state.created_at,
             updated_at: crate::resources::now_rfc3339(),
+            os_version: workload_state.os_version,
+            node_labels: workload_state.node_labels,
         },
     );
 
     if let Err(e) = state.save(&StateStore::default_path()) {
         return err_internal::<String>(e);
     }
+
+    emit_sse(&app_state, &ServerEvent::WorkloadChanged {
+        name: name.clone(),
+        action: "started".to_string(),
+    });
 
     (
         StatusCode::OK,
@@ -361,10 +514,17 @@ pub(crate) async fn stop_workload(
     };
 
     match rt.stop(&workload.instance).await {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(format!("Workload {} stopped", name))),
-        ),
+        Ok(_) => {
+            emit_sse(&app_state, &ServerEvent::WorkloadChanged {
+                name: name.clone(),
+                action: "stopped".to_string(),
+            });
+
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(format!("Workload {} stopped", name))),
+            )
+        }
         Err(e) => err_internal::<String>(e),
     }
 }
@@ -1183,6 +1343,11 @@ pub(crate) async fn migrate_workload(
             state.upsert(name.clone(), updated.clone());
         }
 
+        emit_sse(&app_state, &ServerEvent::WorkloadChanged {
+            name: name.clone(),
+            action: "migrated".to_string(),
+        });
+
         (
             StatusCode::OK,
             Json(ApiResponse::success(format!(
@@ -1234,6 +1399,11 @@ pub(crate) async fn build_workload(
 
     match image {
         Ok(img) => {
+            emit_sse(&app_state, &ServerEvent::WorkloadChanged {
+                name: name.clone(),
+                action: "built".to_string(),
+            });
+
             let response = BuildResponse {
                 image_name: img.name.clone(),
                 image_tag: img.tag.clone(),
@@ -1376,6 +1546,144 @@ pub(crate) async fn get_metrics() -> impl IntoResponse {
     )
 }
 
+/// GET /api/events/stream - Server-Sent Events for real-time dashboard updates
+pub(crate) async fn sse_events(
+    AxumState(state): AxumState<AppState>,
+) -> axum::response::Sse<impl futures::stream::Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>>> {
+    let rx = state.event_tx.subscribe();
+    let stream = tokio_stream::wrappers::BroadcastStream::new(rx)
+        .filter_map(|msg| async move {
+            match msg {
+                Ok(data) => Some(Ok(axum::response::sse::Event::default().data(data))),
+                Err(_) => None,
+            }
+        });
+    axum::response::Sse::new(stream)
+        .keep_alive(axum::response::sse::KeepAlive::default())
+}
+
+/// GET /api/audit/verify — Verify integrity of all audit events
+pub(crate) async fn api_audit_verify() -> impl IntoResponse {
+    use crate::audit::AuditLog;
+
+    let path = AuditLog::default_path();
+    match AuditLog::load(&path) {
+        Ok(log) => {
+            let events = log.events();
+            let total = events.len();
+            let mut verified = 0usize;
+            let mut tampered = Vec::new();
+
+            for event in events {
+                if AuditLog::verify_event_integrity(event) {
+                    verified += 1;
+                } else {
+                    tampered.push(serde_json::json!({
+                        "id": event.id,
+                        "timestamp": event.timestamp,
+                        "action": format!("{}", event.action),
+                        "workload": event.workload,
+                    }));
+                }
+            }
+
+            let result = serde_json::json!({
+                "total": total,
+                "verified": verified,
+                "tampered": tampered.len(),
+                "integrity": if tampered.is_empty() { "VERIFIED" } else { "TAMPERED" },
+                "tampered_events": tampered,
+            });
+
+            Json(ApiResponse::success(result))
+        }
+        Err(e) => {
+            Json(ApiResponse::error(format!("Failed to load audit log: {}", e)))
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
+// RBAC management handlers
+// -----------------------------------------------------------------------
+
+/// List all registered API keys (without exposing raw keys)
+pub(crate) async fn rbac_list_keys(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let store = app_state.rbac.read().await;
+    let keys: Vec<ApiKeySummary> = store
+        .list_keys()
+        .iter()
+        .map(|entry| ApiKeySummary {
+            name: entry.name.clone(),
+            role: entry.role.to_string(),
+            created_at: entry.created_at.clone(),
+        })
+        .collect();
+    Json(ApiResponse::success(keys))
+}
+
+/// Create a new RBAC API key
+pub(crate) async fn rbac_create_key(
+    AxumState(app_state): AxumState<AppState>,
+    Json(request): Json<CreateApiKeyRequest>,
+) -> impl IntoResponse {
+    let role = match request.role.to_lowercase().as_str() {
+        "admin" => crate::rbac::Role::Admin,
+        "operator" => crate::rbac::Role::Operator,
+        "viewer" => crate::rbac::Role::Viewer,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<CreateApiKeyResponse>::error(
+                    "Invalid role. Must be 'admin', 'operator', or 'viewer'".to_string(),
+                )),
+            );
+        }
+    };
+
+    let mut store = app_state.rbac.write().await;
+    let plaintext_key = store.create_key(&request.name, role.clone());
+
+    // Save to disk
+    if let Err(e) = store.save(&crate::rbac::RbacStore::default_path()) {
+        tracing::error!("Failed to save RBAC store: {}", e);
+    }
+
+    (
+        StatusCode::CREATED,
+        Json(ApiResponse::success(CreateApiKeyResponse {
+            name: request.name,
+            role: role.to_string(),
+            key: plaintext_key,
+        })),
+    )
+}
+
+/// Revoke an RBAC API key by name
+pub(crate) async fn rbac_revoke_key(
+    AxumState(app_state): AxumState<AppState>,
+    Json(request): Json<RevokeApiKeyRequest>,
+) -> impl IntoResponse {
+    let mut store = app_state.rbac.write().await;
+    let removed = store.revoke_key(&request.name);
+
+    if removed {
+        if let Err(e) = store.save(&crate::rbac::RbacStore::default_path()) {
+            tracing::error!("Failed to save RBAC store: {}", e);
+        }
+        Json(ApiResponse::success(serde_json::json!({
+            "message": format!("API key '{}' revoked", request.name),
+        })))
+    } else {
+        Json(ApiResponse::error(format!(
+            "API key '{}' not found",
+            request.name
+        )))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1417,5 +1725,48 @@ mod tests {
     #[test]
     fn test_dashboard_html_has_viewport_meta() {
         assert!(DASHBOARD_HTML.contains("viewport"));
+    }
+
+    // ---------------------------------------------------------------
+    // RBAC API types tests
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_create_api_key_request_deserialization() {
+        let json = r#"{"name": "my-key", "role": "operator"}"#;
+        let req: CreateApiKeyRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(req.name, "my-key");
+        assert_eq!(req.role, "operator");
+    }
+
+    #[test]
+    fn test_create_api_key_response_serialization() {
+        let resp = CreateApiKeyResponse {
+            name: "test-key".to_string(),
+            role: "admin".to_string(),
+            key: "aether_abc123".to_string(),
+        };
+        let json = serde_json::to_string(&resp).unwrap();
+        assert!(json.contains("test-key"));
+        assert!(json.contains("aether_abc123"));
+    }
+
+    #[test]
+    fn test_revoke_api_key_request_deserialization() {
+        let json = r#"{"name": "old-key"}"#;
+        let req: RevokeApiKeyRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(req.name, "old-key");
+    }
+
+    #[test]
+    fn test_api_key_summary_serialization() {
+        let summary = ApiKeySummary {
+            name: "ops-key".to_string(),
+            role: "operator".to_string(),
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+        };
+        let json = serde_json::to_string(&summary).unwrap();
+        assert!(json.contains("ops-key"));
+        assert!(json.contains("operator"));
     }
 }

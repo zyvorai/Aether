@@ -20,6 +20,12 @@ pub struct WorkloadState {
     pub spec_path: PathBuf,
     pub created_at: String,
     pub updated_at: String,
+    /// OS/image version running on the node (Metal3/KubeVirt)
+    #[serde(default)]
+    pub os_version: Option<String>,
+    /// Hardware labels discovered from the node (GPU, NVMe, etc.)
+    #[serde(default)]
+    pub node_labels: Vec<String>,
 }
 
 impl WorkloadState {
@@ -33,6 +39,8 @@ impl WorkloadState {
             spec_path,
             created_at: now.clone(),
             updated_at: now,
+            os_version: None,
+            node_labels: Vec::new(),
         }
     }
 
@@ -45,6 +53,8 @@ impl WorkloadState {
             spec_path: self.spec_path.clone(),
             created_at: self.created_at.clone(),
             updated_at: crate::resources::now_rfc3339(),
+            os_version: self.os_version.clone(),
+            node_labels: self.node_labels.clone(),
         }
     }
 }
@@ -75,8 +85,12 @@ impl StateStore {
         std::fs::create_dir_all(dir)
             .with_context(|| format!("failed to create state directory: {}", dir.display()))?;
 
-        // Acquire advisory lock on a .lock file
-        let lock_path = path.with_extension("json.lock");
+        // Lock file on tmpfs (/run/aether/ or $XDG_RUNTIME_DIR/aether/).
+        // Separate from state file which lives in ~/.aether/.
+        let lock_dir = crate::resources::lock_dir();
+        std::fs::create_dir_all(&lock_dir)
+            .with_context(|| format!("failed to create lock directory: {}", lock_dir.display()))?;
+        let lock_path = crate::resources::lock_path("state.lock");
         let lock_file = OpenOptions::new()
             .create(true)
             .write(true)
@@ -138,7 +152,10 @@ impl StateStore {
         self.workloads.values().collect()
     }
 
-    /// Get default state file path
+    /// Get default state file path (`~/.aether/state.json`).
+    ///
+    /// State lives in the persistent aether directory so it survives reboots
+    /// and is consistent between CLI and systemd service.
     pub fn default_path() -> PathBuf {
         crate::resources::aether_path("state.json")
     }
@@ -169,6 +186,8 @@ mod tests {
             spec_path: PathBuf::from("workload.yaml"),
             created_at: "2024-01-01T00:00:00Z".to_string(),
             updated_at: "2024-01-01T00:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
         }
     }
 
@@ -186,6 +205,8 @@ mod tests {
             spec_path: PathBuf::from(format!("{}.yaml", name)),
             created_at: "2024-06-15T12:00:00Z".to_string(),
             updated_at: "2024-06-15T12:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
         }
     }
 
@@ -207,16 +228,18 @@ mod tests {
     #[test]
     fn test_default_path_ends_with_state_json() {
         let path = StateStore::default_path();
-        assert!(path.ends_with(".aether/state.json"));
+        let path_str = path.to_string_lossy();
+        assert!(
+            path_str.ends_with(".aether/state.json"),
+            "expected path to end with .aether/state.json, got: {}",
+            path_str
+        );
     }
 
     #[test]
-    fn test_default_path_is_absolute_when_home_set() {
-        // The default_path uses $HOME; if HOME is set it should be absolute
-        if std::env::var("HOME").is_ok() {
-            let path = StateStore::default_path();
-            assert!(path.is_absolute());
-        }
+    fn test_default_path_is_absolute() {
+        let path = StateStore::default_path();
+        assert!(path.is_absolute(), "state path should be absolute: {}", path.display());
     }
 
     // ── WorkloadState construction ─────────────────────────────────────
@@ -236,6 +259,8 @@ mod tests {
             spec_path: PathBuf::from("/etc/aether/my-service.yaml"),
             created_at: "2025-03-01T08:30:00Z".to_string(),
             updated_at: "2025-03-02T10:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
         };
         assert_eq!(state.name, "my-service");
         assert_eq!(state.runtime, RuntimeKind::Kubernetes);
@@ -496,6 +521,8 @@ mod tests {
             spec_path: PathBuf::from("/specs/full-check.yaml"),
             created_at: "2025-07-04T00:00:00Z".to_string(),
             updated_at: "2025-07-05T12:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
         };
 
         let mut store = StateStore::new();

@@ -10,6 +10,7 @@ license = "Proprietary"
 # Core async runtime
 tokio = { version = "1.42", features = ["full"] }
 futures = "0.3"
+tokio-stream = { version = "0.1", features = ["sync"] }
 
 # CLI framework
 clap = { version = "4.5", features = ["derive", "cargo", "env"] }
@@ -34,7 +35,8 @@ reqwest = { version = "0.12", features = ["json", "blocking"] }
 # API Server
 axum = "0.7"
 axum-server = { version = "0.7", features = ["tls-rustls"] }
-tower = { version = "0.4", features = ["util"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
+tower = { version = "0.4", features = ["util", "limit"] }
 tower-http = { version = "0.5", features = ["fs", "cors"] }
 
 # Error handling
@@ -43,7 +45,7 @@ thiserror = "2.0"
 
 # Logging
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 # Process execution (for Podman)
 which = "7.0"
@@ -56,6 +58,9 @@ chrono = "0.4"
 
 # Metrics
 prometheus = "0.13"
+
+# Email (SMTP)
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "builder", "hostname"] }
 
 # Utilities
 dirs = "5.0"

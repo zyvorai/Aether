@@ -467,6 +467,44 @@ impl Runtime for Metal3Runtime {
 
         Ok(instances)
     }
+
+    async fn capacity(&self) -> crate::Result<Option<crate::runtime::Capacity>> {
+        use k8s_openapi::api::core::v1::Node;
+        use kube::api::{Api, ListParams};
+
+        let nodes: Api<Node> = Api::all(self.client.clone());
+        match nodes.list(&ListParams::default()).await {
+            Ok(node_list) => {
+                let mut total_cpu = 0.0_f64;
+                let mut total_memory_mb = 0_u64;
+
+                for node in &node_list.items {
+                    if let Some(status) = &node.status {
+                        if let Some(alloc) = &status.allocatable {
+                            if let Some(cpu) = alloc.get("cpu") {
+                                total_cpu += crate::resources::parse_cpu(&cpu.0);
+                            }
+                            if let Some(mem) = alloc.get("memory") {
+                                let gi = crate::resources::parse_memory_gi(&mem.0);
+                                total_memory_mb += (gi * 1024.0) as u64;
+                            }
+                        }
+                    }
+                }
+
+                Ok(Some(crate::runtime::Capacity {
+                    total_cpu,
+                    available_cpu: total_cpu,
+                    total_memory_mb,
+                    available_memory_mb: total_memory_mb,
+                }))
+            }
+            Err(e) => {
+                tracing::warn!("Failed to probe Metal3 node capacity: {}", e);
+                Ok(None)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -501,6 +539,8 @@ mod tests {
                 memory: memory.to_string(),
                 storage: storage.to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Metal,
@@ -513,6 +553,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 

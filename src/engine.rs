@@ -26,6 +26,25 @@ impl Engine {
 
     /// Automatic runtime selection based on requirements
     fn auto_decide(&self, spec: &Workload) -> anyhow::Result<RuntimeKind> {
+        // Rule 0: Intent compliance — isolation requirement overrides all other rules
+        if let Some(ref intent) = spec.intent {
+            if let Some(ref compliance) = intent.compliance {
+                if compliance.isolation_required {
+                    if self.is_allowed(spec, RuntimeType::Kubevirt) {
+                        return Ok(RuntimeKind::KubeVirt);
+                    }
+                    if self.is_allowed(spec, RuntimeType::Metal) {
+                        return Ok(RuntimeKind::Metal3);
+                    }
+                    // Isolation requested but neither VM nor bare-metal allowed —
+                    // fall through to normal rules with a warning
+                    tracing::warn!(
+                        "Intent requires isolation but KubeVirt/Metal3 not in allowed list"
+                    );
+                }
+            }
+        }
+
         // Rule 1: GPU required -> KubeVirt
         if spec.requirements.gpu.is_some() && self.is_allowed(spec, RuntimeType::Kubevirt) {
             return Ok(RuntimeKind::KubeVirt);
@@ -194,6 +213,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec { preferred, allow },
             network: NetworkSpec::default(),
@@ -203,6 +224,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 
@@ -1267,5 +1290,133 @@ mod tests {
             storage_class: None,
         };
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Kubernetes);
+    }
+
+    // ---------------------------------------------------------------
+    // Intent compliance gate tests
+    // ---------------------------------------------------------------
+
+    use crate::spec::{IntentSpec, IntentGoal, ComplianceSpec};
+
+    #[test]
+    fn test_isolation_required_selects_kubevirt() {
+        let engine = Engine::new();
+        let mut spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container, RuntimeType::Kube, RuntimeType::Kubevirt],
+        );
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
+    }
+
+    #[test]
+    fn test_isolation_required_falls_back_to_metal3() {
+        let engine = Engine::new();
+        let mut spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container, RuntimeType::Metal],
+        );
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        // KubeVirt not allowed, should fall back to Metal3
+        assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Metal3);
+    }
+
+    #[test]
+    fn test_isolation_falls_through_when_neither_allowed() {
+        let engine = Engine::new();
+        let mut spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container],
+        );
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        // Neither KubeVirt nor Metal3 allowed — falls through to Podman
+        assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
+    }
+
+    #[test]
+    fn test_no_intent_unchanged_behavior() {
+        let engine = Engine::new();
+        let spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container, RuntimeType::Kube],
+        );
+        // No intent — should behave exactly as before (Podman for simple workload)
+        assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
+    }
+
+    #[test]
+    fn test_intent_without_compliance_unchanged() {
+        let engine = Engine::new();
+        let mut spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container, RuntimeType::Kube],
+        );
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::CostOptimized,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: None,
+            trust: None,
+        });
+        // Intent without compliance doesn't affect rule-based engine
+        assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
+    }
+
+    #[test]
+    fn test_isolation_takes_priority_over_gpu() {
+        let engine = Engine::new();
+        let mut spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Kubevirt, RuntimeType::Metal],
+        );
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+        });
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        // Rule 0 (intent isolation) fires before Rule 1 (GPU)
+        // Both would select KubeVirt, so the result is the same
+        assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
     }
 }

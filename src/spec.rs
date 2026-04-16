@@ -31,6 +31,10 @@ pub struct Workload {
     pub scaling: Option<ScalingSpec>,
     #[serde(default)]
     pub mesh: Option<MeshConfig>,
+    #[serde(default)]
+    pub intent: Option<IntentSpec>,
+    #[serde(default)]
+    pub schedule: Option<ScheduleSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -54,12 +58,19 @@ pub struct BuildSpec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ResourceRequirements {
-    pub cpu: String,       // e.g., "2" or "2000m"
-    pub memory: String,    // e.g., "4Gi"
+    pub cpu: String,       // e.g., "2" or "2000m" (used as limit)
+    pub memory: String,    // e.g., "4Gi" (used as limit)
     pub storage: String,   // e.g., "20Gi"
     #[serde(default)]
     pub gpu: Option<GpuRequirements>,
+    /// CPU request (defaults to cpu limit if absent, enabling burstable QoS)
+    #[serde(default)]
+    pub cpu_request: Option<String>,
+    /// Memory request (defaults to memory limit if absent, enabling burstable QoS)
+    #[serde(default)]
+    pub memory_request: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -228,6 +239,18 @@ impl Workload {
         Self::validate_memory(&self.requirements.memory)?;
         Self::validate_storage(&self.requirements.storage)?;
 
+        // Validate optional resource requests
+        if let Some(ref cpu_req) = self.requirements.cpu_request {
+            Self::validate_cpu(cpu_req).map_err(|e| {
+                anyhow::anyhow!("requirements.cpuRequest: {}", e)
+            })?;
+        }
+        if let Some(ref mem_req) = self.requirements.memory_request {
+            Self::validate_memory(mem_req).map_err(|e| {
+                anyhow::anyhow!("requirements.memoryRequest: {}", e)
+            })?;
+        }
+
         // Validate GPU if present
         if let Some(ref gpu) = self.requirements.gpu {
             if gpu.count == 0 {
@@ -269,6 +292,21 @@ impl Workload {
         if let Some(ref ingress) = self.ingress {
             if ingress.enabled && ingress.host.is_empty() {
                 anyhow::bail!("ingress.host cannot be empty when ingress is enabled");
+            }
+        }
+
+        // Validate intent spec
+        if let Some(ref intent) = self.intent {
+            intent.validate()?;
+        }
+
+        // Validate schedule spec
+        if let Some(ref schedule) = self.schedule {
+            Self::validate_cron(&schedule.cron)?;
+            if let Some(deadline) = schedule.active_deadline_seconds {
+                if deadline <= 0 {
+                    anyhow::bail!("schedule.activeDeadlineSeconds must be > 0");
+                }
             }
         }
 
@@ -383,6 +421,44 @@ impl Workload {
         );
     }
 
+    /// Validate a cron expression (5 fields: minute hour day-of-month month day-of-week).
+    ///
+    /// Checks structure (5 fields) and basic range limits for numeric values.
+    fn validate_cron(expr: &str) -> anyhow::Result<()> {
+        if expr.is_empty() {
+            anyhow::bail!("schedule.cron cannot be empty");
+        }
+        let fields: Vec<&str> = expr.split_whitespace().collect();
+        if fields.len() != 5 {
+            anyhow::bail!(
+                "schedule.cron must have exactly 5 fields (minute hour dom month dow), got {}",
+                fields.len()
+            );
+        }
+
+        // Validate ranges: minute(0-59), hour(0-23), dom(1-31), month(1-12), dow(0-7)
+        let ranges: [(u32, u32); 5] = [(0, 59), (0, 23), (1, 31), (1, 12), (0, 7)];
+        let names = ["minute", "hour", "day-of-month", "month", "day-of-week"];
+
+        for (i, (field, (min, max))) in fields.iter().zip(ranges.iter()).enumerate() {
+            // Skip wildcards and complex expressions (*/N, ranges, lists)
+            if field.contains('*') || field.contains('/') || field.contains(',') || field.contains('-') {
+                continue;
+            }
+            // Validate plain numeric values
+            if let Ok(val) = field.parse::<u32>() {
+                if val < *min || val > *max {
+                    anyhow::bail!(
+                        "schedule.cron {} field value {} is out of range ({}-{})",
+                        names[i], val, min, max
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// Get full image name with registry
     pub fn image_name(&self) -> String {
         format!("{}/{}:latest", self.build.registry, self.metadata.name)
@@ -412,6 +488,52 @@ impl Workload {
         }
         self
     }
+}
+
+/// Schedule specification for CronJob/Job workloads
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScheduleSpec {
+    /// Cron expression (e.g., "*/5 * * * *")
+    pub cron: String,
+    /// How to treat concurrent executions
+    #[serde(default)]
+    pub concurrency_policy: ConcurrencyPolicy,
+    /// Number of retries before marking as failed
+    #[serde(default = "default_backoff_limit")]
+    pub backoff_limit: u32,
+    /// Maximum time in seconds for the job to run
+    #[serde(default)]
+    pub active_deadline_seconds: Option<i64>,
+    /// Pod restart policy for job containers
+    #[serde(default)]
+    pub restart_policy: JobRestartPolicy,
+}
+
+fn default_backoff_limit() -> u32 {
+    3
+}
+
+/// Concurrency policy for CronJob
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub enum ConcurrencyPolicy {
+    /// Allow concurrent runs (default)
+    #[default]
+    Allow,
+    /// Skip new run if previous is still active
+    Forbid,
+    /// Replace currently running job with new one
+    Replace,
+}
+
+/// Restart policy for Job containers
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub enum JobRestartPolicy {
+    /// Never restart (default for jobs)
+    #[default]
+    Never,
+    /// Restart on failure
+    OnFailure,
 }
 
 /// Configuration specification (ConfigMaps and Secrets)
@@ -495,6 +617,9 @@ pub struct ScalingSpec {
 pub struct ScalingMetric {
     pub metric_type: MetricType,
     pub target_value: String,
+    /// Custom metric name (required when metric_type is Custom)
+    #[serde(default)]
+    pub metric_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -519,6 +644,130 @@ pub struct MeshConfig {
 }
 
 fn default_true() -> bool { true }
+
+/// Intent-based deployment specification
+///
+/// Declares high-level goals (latency, budget, resilience, compliance) that
+/// drive runtime selection via the scoring engine instead of explicit runtime choice.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentSpec {
+    /// Primary optimization goal
+    pub goal: IntentGoal,
+    /// Service-level targets (latency, availability)
+    #[serde(default)]
+    pub sla: Option<IntentSla>,
+    /// Monthly cost ceiling
+    #[serde(default)]
+    pub budget: Option<IntentBudget>,
+    /// Resilience / high-availability tier
+    #[serde(default)]
+    pub resilience: Option<ResilienceLevel>,
+    /// Compliance and isolation requirements
+    #[serde(default)]
+    pub compliance: Option<ComplianceSpec>,
+    /// Trust level — controls node attestation and security requirements
+    #[serde(default)]
+    pub trust: Option<TrustLevel>,
+}
+
+impl IntentSpec {
+    /// Validate intent constraints are internally consistent.
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if let Some(ref sla) = self.sla {
+            if let Some(latency) = sla.max_latency_ms {
+                if latency == 0 {
+                    anyhow::bail!("intent.sla.maxLatencyMs must be > 0");
+                }
+            }
+            if let Some(avail) = sla.min_availability_pct {
+                if avail <= 0.0 || avail > 100.0 {
+                    anyhow::bail!(
+                        "intent.sla.minAvailabilityPct must be in (0, 100], got {}",
+                        avail
+                    );
+                }
+            }
+        }
+        if let Some(ref budget) = self.budget {
+            if budget.max_monthly_usd <= 0.0 {
+                anyhow::bail!("intent.budget.maxMonthlyUsd must be > 0");
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Primary optimization goal for intent-based deployment
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum IntentGoal {
+    /// Minimize response latency — favors performance weight
+    LowLatency,
+    /// Maximize throughput — favors performance + availability
+    HighThroughput,
+    /// Minimize cloud spend — favors cost weight
+    CostOptimized,
+    /// Equal weight across all dimensions
+    Balanced,
+}
+
+/// Service-level agreement targets
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentSla {
+    /// Maximum acceptable p99 latency in milliseconds
+    #[serde(default)]
+    pub max_latency_ms: Option<u32>,
+    /// Minimum acceptable uptime percentage (e.g. 99.9)
+    #[serde(default)]
+    pub min_availability_pct: Option<f64>,
+}
+
+/// Monthly cost ceiling
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentBudget {
+    /// Maximum monthly cost in USD
+    pub max_monthly_usd: f64,
+}
+
+/// Resilience / high-availability tier
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum ResilienceLevel {
+    /// No HA guarantees — acceptable for dev/test
+    BestEffort,
+    /// Standard redundancy (default for production)
+    Standard,
+    /// Full HA — multi-replica, auto-scaling required
+    High,
+}
+
+/// Compliance and isolation requirements
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ComplianceSpec {
+    /// Workload must run in an isolated environment (VM or bare metal)
+    #[serde(default)]
+    pub isolation_required: bool,
+    /// Workload data must be encrypted at rest
+    #[serde(default)]
+    pub encryption_required: bool,
+}
+
+/// Trust level — determines node attestation and security requirements
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum TrustLevel {
+    /// No trust requirements — any node is acceptable
+    None,
+    /// Standard trust — basic security (default)
+    Standard,
+    /// Strict trust — requires TPM, secure boot, attested nodes only.
+    /// Filters to KubeVirt (VM isolation) or Metal3 (dedicated hardware).
+    Strict,
+}
 
 #[cfg(test)]
 mod tests {
@@ -547,6 +796,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -559,6 +810,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         };
 
         assert!(workload.validate().is_ok());
@@ -587,6 +840,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -599,6 +854,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         };
 
         assert_eq!(workload.image_name(), "ghcr.io/yourorg/my-app:latest");
@@ -627,6 +884,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -639,6 +898,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         };
 
         let result = workload.validate();
@@ -669,6 +930,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -681,6 +944,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         };
 
         let result = workload.validate();
@@ -711,6 +976,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -723,6 +990,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         };
 
         let result = workload.validate();
@@ -753,6 +1022,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Kube,
@@ -765,6 +1036,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         };
 
         let result = workload.validate();
@@ -798,6 +1071,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -810,6 +1085,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 
@@ -1261,5 +1538,300 @@ mod tests {
     #[test]
     fn test_validate_byte_quantity_t_suffix() {
         assert!(Workload::validate_byte_quantity("2T", "test").is_ok());
+    }
+
+    // ---------------------------------------------------------------
+    // Intent spec validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_intent_spec_validation_valid() {
+        let mut w = make_valid_workload();
+        w.intent = Some(IntentSpec {
+            goal: IntentGoal::LowLatency,
+            sla: Some(IntentSla {
+                max_latency_ms: Some(50),
+                min_availability_pct: Some(99.9),
+            }),
+            budget: Some(IntentBudget {
+                max_monthly_usd: 500.0,
+            }),
+            resilience: Some(ResilienceLevel::High),
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_intent_budget_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.intent = Some(IntentSpec {
+            goal: IntentGoal::CostOptimized,
+            sla: None,
+            budget: Some(IntentBudget {
+                max_monthly_usd: 0.0,
+            }),
+            resilience: None,
+            compliance: None,
+            trust: None,
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("maxMonthlyUsd"), "{}", err);
+    }
+
+    #[test]
+    fn test_intent_budget_negative_rejected() {
+        let mut w = make_valid_workload();
+        w.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: Some(IntentBudget {
+                max_monthly_usd: -100.0,
+            }),
+            resilience: None,
+            compliance: None,
+            trust: None,
+        });
+        assert!(w.validate().is_err());
+    }
+
+    #[test]
+    fn test_intent_availability_over_100_rejected() {
+        let mut w = make_valid_workload();
+        w.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: Some(IntentSla {
+                max_latency_ms: None,
+                min_availability_pct: Some(101.0),
+            }),
+            budget: None,
+            resilience: None,
+            compliance: None,
+            trust: None,
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("minAvailabilityPct"), "{}", err);
+    }
+
+    #[test]
+    fn test_intent_availability_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: Some(IntentSla {
+                max_latency_ms: None,
+                min_availability_pct: Some(0.0),
+            }),
+            budget: None,
+            resilience: None,
+            compliance: None,
+            trust: None,
+        });
+        assert!(w.validate().is_err());
+    }
+
+    #[test]
+    fn test_intent_latency_zero_rejected() {
+        let mut w = make_valid_workload();
+        w.intent = Some(IntentSpec {
+            goal: IntentGoal::LowLatency,
+            sla: Some(IntentSla {
+                max_latency_ms: Some(0),
+                min_availability_pct: None,
+            }),
+            budget: None,
+            resilience: None,
+            compliance: None,
+            trust: None,
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("maxLatencyMs"), "{}", err);
+    }
+
+    #[test]
+    fn test_intent_none_backward_compat() {
+        let w = make_valid_workload();
+        assert!(w.intent.is_none());
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_intent_serde_roundtrip() {
+        let mut w = make_valid_workload();
+        w.intent = Some(IntentSpec {
+            goal: IntentGoal::HighThroughput,
+            sla: Some(IntentSla {
+                max_latency_ms: Some(100),
+                min_availability_pct: Some(99.5),
+            }),
+            budget: Some(IntentBudget {
+                max_monthly_usd: 1000.0,
+            }),
+            resilience: Some(ResilienceLevel::Standard),
+            compliance: None,
+            trust: None,
+        });
+        let yaml = serde_yaml::to_string(&w).unwrap();
+        let parsed: Workload = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(w.intent, parsed.intent);
+    }
+
+    #[test]
+    fn test_intent_goal_all_variants_serialize() {
+        for goal in [
+            IntentGoal::LowLatency,
+            IntentGoal::HighThroughput,
+            IntentGoal::CostOptimized,
+            IntentGoal::Balanced,
+        ] {
+            let yaml = serde_yaml::to_string(&goal).unwrap();
+            let parsed: IntentGoal = serde_yaml::from_str(&yaml).unwrap();
+            assert_eq!(goal, parsed);
+        }
+    }
+
+    #[test]
+    fn test_intent_resilience_all_variants_serialize() {
+        for level in [
+            ResilienceLevel::BestEffort,
+            ResilienceLevel::Standard,
+            ResilienceLevel::High,
+        ] {
+            let yaml = serde_yaml::to_string(&level).unwrap();
+            let parsed: ResilienceLevel = serde_yaml::from_str(&yaml).unwrap();
+            assert_eq!(level, parsed);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Schedule / CronJob validation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_schedule_valid_cron() {
+        let mut w = make_valid_workload();
+        w.schedule = Some(ScheduleSpec {
+            cron: "*/5 * * * *".to_string(),
+            concurrency_policy: ConcurrencyPolicy::Allow,
+            backoff_limit: 3,
+            active_deadline_seconds: None,
+            restart_policy: JobRestartPolicy::Never,
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_schedule_empty_cron_rejected() {
+        let mut w = make_valid_workload();
+        w.schedule = Some(ScheduleSpec {
+            cron: "".to_string(),
+            concurrency_policy: ConcurrencyPolicy::Allow,
+            backoff_limit: 3,
+            active_deadline_seconds: None,
+            restart_policy: JobRestartPolicy::Never,
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("cron"), "{}", err);
+    }
+
+    #[test]
+    fn test_schedule_wrong_field_count_rejected() {
+        let mut w = make_valid_workload();
+        w.schedule = Some(ScheduleSpec {
+            cron: "* * *".to_string(),
+            concurrency_policy: ConcurrencyPolicy::Allow,
+            backoff_limit: 3,
+            active_deadline_seconds: None,
+            restart_policy: JobRestartPolicy::Never,
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("5 fields"), "{}", err);
+    }
+
+    #[test]
+    fn test_schedule_negative_deadline_rejected() {
+        let mut w = make_valid_workload();
+        w.schedule = Some(ScheduleSpec {
+            cron: "0 * * * *".to_string(),
+            concurrency_policy: ConcurrencyPolicy::Forbid,
+            backoff_limit: 3,
+            active_deadline_seconds: Some(-1),
+            restart_policy: JobRestartPolicy::OnFailure,
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("activeDeadlineSeconds"), "{}", err);
+    }
+
+    #[test]
+    fn test_schedule_none_backward_compat() {
+        let w = make_valid_workload();
+        assert!(w.schedule.is_none());
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_schedule_serde_roundtrip() {
+        let mut w = make_valid_workload();
+        w.schedule = Some(ScheduleSpec {
+            cron: "0 2 * * *".to_string(),
+            concurrency_policy: ConcurrencyPolicy::Replace,
+            backoff_limit: 5,
+            active_deadline_seconds: Some(3600),
+            restart_policy: JobRestartPolicy::OnFailure,
+        });
+        let yaml = serde_yaml::to_string(&w).unwrap();
+        let parsed: Workload = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(w.schedule, parsed.schedule);
+    }
+
+    #[test]
+    fn test_concurrency_policy_all_variants_serialize() {
+        for policy in [
+            ConcurrencyPolicy::Allow,
+            ConcurrencyPolicy::Forbid,
+            ConcurrencyPolicy::Replace,
+        ] {
+            let yaml = serde_yaml::to_string(&policy).unwrap();
+            let parsed: ConcurrencyPolicy = serde_yaml::from_str(&yaml).unwrap();
+            assert_eq!(policy, parsed);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Burstable QoS (cpu_request / memory_request)
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_resource_requests_valid() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu_request = Some("500m".to_string());
+        w.requirements.memory_request = Some("1Gi".to_string());
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_resource_requests_none_backward_compat() {
+        let w = make_valid_workload();
+        assert!(w.requirements.cpu_request.is_none());
+        assert!(w.requirements.memory_request.is_none());
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_cpu_request_invalid_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.cpu_request = Some("abc".to_string());
+        assert!(w.validate().is_err());
+    }
+
+    #[test]
+    fn test_memory_request_invalid_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.memory_request = Some("not-memory".to_string());
+        assert!(w.validate().is_err());
     }
 }

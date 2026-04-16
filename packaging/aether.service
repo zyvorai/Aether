@@ -1,0 +1,23 @@
+[Unit]
+Description=Aether Universal Runtime Control Plane
+Documentation=https://github.com/ssahani/aether
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aether serve --host 0.0.0.0 --port 5090
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/var/lib/aether
+Environment=AETHER_LOG_FORMAT=json
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/aether /root/.aether /home
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

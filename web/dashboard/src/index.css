@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-100 antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-zinc-700 rounded; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-zinc-600; }
+}
+
+@layer components {
+  /* Stat card gradients — subtle zinc base with colored tint */
+  .stat-card-orange { background: linear-gradient(135deg, #2a1a08 0%, #1c1c1f 100%); }
+  .stat-card-green { background: linear-gradient(135deg, #0a1f10 0%, #1c1c1f 100%); }
+  .stat-card-red { background: linear-gradient(135deg, #1f0a0a 0%, #1c1c1f 100%); }
+  .stat-card-blue { background: linear-gradient(135deg, #0a1225 0%, #1c1c1f 100%); }
+  .stat-card-purple { background: linear-gradient(135deg, #160a2e 0%, #1c1c1f 100%); }
+  .stat-card-yellow { background: linear-gradient(135deg, #1f1506 0%, #1c1c1f 100%); }
+
+  /* Brushed metal card feel */
+  .card-metal {
+    background: linear-gradient(180deg, #27272a 0%, #232326 100%);
+  }
+
+  /* Card hover glow */
+  .card-glow:hover {
+    box-shadow: 0 0 20px rgba(211, 84, 0, 0.05), 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Navbar blur — near-black with slight zinc tint */
+  .navbar-blur {
+    background: rgba(9, 9, 11, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Toast animations */
+  @keyframes toast-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes toast-slide-out {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+  .toast-enter { animation: toast-slide-in 0.3s ease-out forwards; }
+  .toast-exit { animation: toast-slide-out 0.3s ease-in forwards; }
+}

@@ -41,6 +41,12 @@ pub enum ScheduleConstraint {
     RequireBareMetal,
     /// Region/zone constraint
     Zone(String),
+    /// Require NVMe storage
+    RequireNvme,
+    /// Require trusted (TPM/attested) node
+    RequireTrusted,
+    /// Require minimum network bandwidth
+    RequireNetworkBandwidth(String),
 }
 
 impl std::fmt::Display for ScheduleConstraint {
@@ -54,6 +60,9 @@ impl std::fmt::Display for ScheduleConstraint {
             ScheduleConstraint::RequireGpu => write!(f, "require:gpu"),
             ScheduleConstraint::RequireBareMetal => write!(f, "require:bare-metal"),
             ScheduleConstraint::Zone(zone) => write!(f, "zone:{}", zone),
+            ScheduleConstraint::RequireNvme => write!(f, "require:nvme"),
+            ScheduleConstraint::RequireTrusted => write!(f, "require:trusted"),
+            ScheduleConstraint::RequireNetworkBandwidth(bw) => write!(f, "require:bandwidth:{}", bw),
         }
     }
 }
@@ -96,6 +105,12 @@ pub struct RuntimeCapacity {
     pub max_workloads: usize,
     pub healthy: bool,
     pub zones: Vec<String>,
+    /// Hardware capability labels (e.g., "nvme", "gpu:nvidia-a100", "10gbe")
+    #[serde(default)]
+    pub hardware_labels: Vec<String>,
+    /// Whether this runtime supports trusted/attested execution (TPM, secure boot)
+    #[serde(default)]
+    pub trusted: bool,
 }
 
 impl RuntimeCapacity {
@@ -129,6 +144,8 @@ impl RuntimeCapacity {
                 max_workloads: 20,
                 healthy: true,
                 zones: vec!["local".to_string()],
+                hardware_labels: vec![],
+                trusted: false,
             },
             RuntimeKind::Kubernetes => Self {
                 runtime,
@@ -145,6 +162,8 @@ impl RuntimeCapacity {
                 max_workloads: 200,
                 healthy: true,
                 zones: vec!["us-east-1a".to_string(), "us-east-1b".to_string()],
+                hardware_labels: vec!["ssd".to_string()],
+                trusted: false,
             },
             RuntimeKind::KubeVirt => Self {
                 runtime,
@@ -161,6 +180,8 @@ impl RuntimeCapacity {
                 max_workloads: 50,
                 healthy: true,
                 zones: vec!["us-east-1a".to_string()],
+                hardware_labels: vec!["gpu:passthrough".to_string(), "ssd".to_string()],
+                trusted: true,
             },
             RuntimeKind::Metal3 => Self {
                 runtime,
@@ -177,6 +198,8 @@ impl RuntimeCapacity {
                 max_workloads: 20,
                 healthy: true,
                 zones: vec!["dc-1".to_string()],
+                hardware_labels: vec!["nvme".to_string(), "gpu:nvidia-a100".to_string(), "10gbe".to_string()],
+                trusted: true,
             },
         }
     }
@@ -343,6 +366,34 @@ impl Scheduler {
     /// Update runtime capacity information
     pub fn update_capacity(&mut self, capacity: RuntimeCapacity) {
         self.capacities.insert(capacity.runtime, capacity);
+    }
+
+    /// Probe live capacity from all available runtimes.
+    /// Falls back to defaults for runtimes that are unavailable or don't support probing.
+    pub async fn probe_capacities(&mut self) {
+        for runtime_kind in RuntimeKind::ALL {
+            match crate::runtime::create_runtime(&runtime_kind).await {
+                Ok(rt) => match rt.capacity().await {
+                    Ok(Some(cap)) => {
+                        let updated = RuntimeCapacity::from_probed(&cap, runtime_kind);
+                        self.update_capacity(updated);
+                        tracing::info!(
+                            "Probed live capacity for {}: {:.1} CPU, {} MB memory",
+                            runtime_kind, cap.available_cpu, cap.available_memory_mb
+                        );
+                    }
+                    Ok(None) => {
+                        tracing::debug!("{} does not support capacity probing", runtime_kind);
+                    }
+                    Err(e) => {
+                        tracing::debug!("Failed to probe capacity for {}: {}", runtime_kind, e);
+                    }
+                },
+                Err(_) => {
+                    tracing::info!("{} runtime not available, using default capacity", runtime_kind);
+                }
+            }
+        }
     }
 
     /// Schedule a workload
@@ -625,6 +676,25 @@ impl Scheduler {
                         candidates.retain(|c| *c != placement.runtime);
                     }
                 }
+                ScheduleConstraint::RequireNvme => {
+                    candidates.retain(|c| {
+                        self.capacities
+                            .get(c)
+                            .is_some_and(|cap| cap.hardware_labels.iter().any(|l| l.contains("nvme")))
+                    });
+                }
+                ScheduleConstraint::RequireTrusted => {
+                    candidates.retain(|c| {
+                        self.capacities.get(c).is_some_and(|cap| cap.trusted)
+                    });
+                }
+                ScheduleConstraint::RequireNetworkBandwidth(bw) => {
+                    candidates.retain(|c| {
+                        self.capacities
+                            .get(c)
+                            .is_some_and(|cap| cap.hardware_labels.iter().any(|l| l.contains(bw.as_str())))
+                    });
+                }
             }
         }
 
@@ -688,6 +758,27 @@ impl Scheduler {
         // Health bonus
         if cap.healthy {
             score += 0.1;
+        }
+
+        // GPU match bonus — if workload needs GPU and runtime has it
+        if request.gpu_required > 0 && cap.gpu_available >= request.gpu_required {
+            score += 0.15;
+            reasons.push(format!("GPU: {} available (need {})", cap.gpu_available, request.gpu_required));
+        }
+
+        // Trust bonus — only applies when workload explicitly requires trust
+        if cap.trusted && request.constraints.iter().any(|c| matches!(c, ScheduleConstraint::RequireTrusted)) {
+            score += 0.15;
+            reasons.push("Trusted runtime (TPM/attested) — matches requirement".to_string());
+        }
+
+        // Hardware label match bonus — NVMe, high-bandwidth NIC, etc.
+        let hw_match_count = request.constraints.iter().filter(|c| {
+            matches!(c, ScheduleConstraint::RequireNvme | ScheduleConstraint::RequireNetworkBandwidth(_))
+        }).count();
+        if hw_match_count > 0 {
+            score += 0.05 * hw_match_count as f64;
+            reasons.push(format!("Hardware match: {} constraint(s)", hw_match_count));
         }
 
         (score, reasons)

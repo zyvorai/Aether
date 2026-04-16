@@ -8,6 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **RBAC API Integration:** API middleware now enforces Admin/Operator/Viewer roles via `RbacStore`. New endpoints: `GET /api/rbac/keys`, `POST /api/rbac/keys`, `POST /api/rbac/keys/revoke`. Falls back to `AETHER_API_KEY` for backward compatibility.
+- **NetworkPolicy Manifest Generation:** `kube.rs` now generates Kubernetes NetworkPolicy resources from `spec.network.network_policy` config, supporting `deny_all_ingress`, `deny_all_egress`, `allow_from`, and `allow_to` label selectors.
+- **Custom HPA Metrics:** `ScalingMetric` now has an optional `metric_name` field. `MetricType::Custom` generates a `PodsMetricSource` in the HPA manifest, enabling scaling on application-specific metrics.
+- **Live Drift Detection:** `DriftDetector::check_live_drift()` queries runtime status for failed state, not-ready conditions, and restart count anomalies.
+- **Plugin Log Streaming:** `PluginProtocol` now supports `LogsRequest`/`LogsResponse` messages. Plugins with the `"logs"` capability can stream logs back to the CLI and dashboard.
+- **Blue-Green Connection Draining:** `migrate_blue_green()` now implements connection draining capped at 30 seconds and documents K8s Service selector behavior during traffic switching.
+- **Scheduler Live Capacity Probing:** `probe_capacities()` queries `runtime.capacity()` for K8s/KubeVirt/Metal3 nodes and falls back to defaults when live data is unavailable.
+- **Health Check Loop in API Server:** Background tokio task runs health checks every 30 seconds when `aether serve` is running, keeping health state up to date without manual polling.
+- **Email SMTP Notifications:** Real SMTP delivery via the `lettre` crate for `ChannelType::Email` notification channels.
+- **Multi-Cluster Tests:** 6 unit tests for namespace/context resolution logic in multi-cluster configurations.
+- **Web Dashboard Upgrade (k9s-level):**
+  - SSE real-time updates: handlers emit `ServerEvent` after mutations; dashboard updates instantly via `useEventStream` hook
+  - WorkloadDetail panel: click workload name for tabbed detail view (Overview/Logs/Drift/Scoring) with Start/Stop/Restart/Delete action buttons
+  - LogViewer: auto-polling log viewer with follow mode, filter input, line numbers, color-coded log levels, and copy-to-clipboard
+  - Command Palette: Cmd+K / Ctrl+K overlay with fuzzy search across pages, workloads, and actions
+  - Intent Debugger: AI scoring visualization with pure SVG radar chart (cost/performance/reliability/availability axes)
+  - SSE connection indicator: green/red dot in navbar showing live connection status
+  - Keyboard shortcuts: `r` (refresh), `?` (command palette), `Cmd+K` (command palette)
+- **New Modules:** `src/rbac.rs` (RBAC key store), `src/gitops.rs` (GitOps reconciliation), `src/helm.rs` (Helm chart management)
+
+### Fixed
+- **Container Memory Format:** Podman/Docker adapters now convert K8s memory format (e.g., `256Mi`) to container-native format (e.g., `256m`).
+- **Rootless Cgroup Handling:** Podman/Docker adapters skip `--cpus`/`--memory` flags when running as rootless (euid != 0) to avoid cgroup permission errors.
+- **State File Path:** `state.json` now lives in `~/.aether/` (persistent, shared between CLI and systemd service).
+- **Lock File Path:** Lock files use `/run/aether/` (root), `$XDG_RUNTIME_DIR/aether/` (user), or `/tmp/aether-<uid>` (fallback) instead of colocating with the state file.
+
+### Changed
+- Test suite expanded from 958 to 1,064 tests (970 lib + 46 bin + 48 integration)
+
+### Added
+- **Intent Engine:** Declarative intent-based deployment via `intent:` YAML spec field. Supports goals (low-latency, high-throughput, cost-optimized, balanced), SLA targets (latency, availability), budget caps, resilience levels (best-effort, standard, high), and compliance options (isolation, encryption). Intent drives scoring engine weight adjustments, runtime filtering, and score multipliers. Intent violations tracked in reconciliation loop. New `aether intent` CLI command. 30 new tests added.
+- **React Web Dashboard:** Complete rewrite from single embedded HTML to React 18 + TypeScript + Tailwind CSS + Vite application. 19 pages, 12 shared components, top navbar with dropdown groups, metallic zinc-grey dark theme. 40+ API endpoints wired with confirmation dialogs, toast notifications, error boundary, mobile hamburger menu, deploy new workload button, and auto-refresh indicator.
+- **Audit Integrity API:** New `GET /api/audit/verify` endpoint that verifies HMAC-SHA256 hashes on all audit events and returns verified/tampered status per event.
+- **Structured JSON Logging:** `AETHER_LOG_FORMAT=json` environment variable enables JSON-formatted tracing output for machine-parseable log ingestion.
+- **API Rate Limiting:** Concurrency limiting (200 concurrent requests) on the API server via tower middleware to prevent overload.
+- **Systemd Unit File:** `packaging/aether.service` with security hardening (NoNewPrivileges, ProtectSystem, ProtectHome, PrivateTmp).
+- **Dashboard Features:** Confirmation dialogs for destructive actions, toast notifications for operation feedback, error boundary for graceful failure handling, mobile hamburger menu for responsive layout, deploy new workload button, auto-refresh indicator.
 - **Namespace Override:** New `-n` / `--namespace` CLI flag and `AETHER_NAMESPACE` environment variable to override the Kubernetes namespace for all kube-based runtimes (Kubernetes, KubeVirt, Metal3). The flag takes precedence over the env var.
 - **Kubernetes Volume Mounts:** ConfigMaps, Secrets, and PVCs are now auto-mounted as volumes in pod manifests:
   - ConfigMaps with `mount_path` are mounted as read-only volumes

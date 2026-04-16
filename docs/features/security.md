@@ -1,6 +1,6 @@
 # 🔐 Security Features
 
-> Encryption, secrets management, API authentication, policy enforcement, audit integrity, and safe state persistence.
+> Encryption, secrets management, RBAC, API authentication, policy enforcement, audit integrity, email notifications, and safe state persistence.
 
 ---
 
@@ -8,6 +8,7 @@
 
 - [AES-256-GCM Encryption](#-aes-256-gcm-encryption)
 - [Setting the Encryption Key](#-setting-the-encryption-key)
+- [RBAC API Integration](#-rbac-api-integration)
 - [API Authentication](#-api-authentication)
 - [CORS Protection](#-cors-protection)
 - [Input Validation](#-input-validation)
@@ -20,7 +21,10 @@
 - [State File Locking](#-state-file-locking)
 - [Atomic State Persistence](#-atomic-state-persistence)
 - [Kubernetes Resource Safety](#-kubernetes-resource-safety)
+- [Rate Limiting](#-rate-limiting)
+- [Structured JSON Logging](#-structured-json-logging)
 - [Webhook Delivery Security](#-webhook-delivery-security)
+- [Email SMTP Notifications](#-email-smtp-notifications)
 - [Cross-References](#-cross-references)
 
 ---
@@ -263,6 +267,66 @@ The `*_with_actor()` variants (`set_with_actor`, `get_and_log_with_actor`, `dele
 
 ---
 
+## 🛂 RBAC API Integration
+
+Aether supports **role-based access control (RBAC)** for API keys via the `RbacStore`. Each API key is assigned one of three roles that determine which operations are permitted.
+
+### Roles
+
+| Role | Permissions | Description |
+|---|---|---|
+| **Admin** | Full access | Create/revoke keys, mutate workloads, read all data |
+| **Operator** | Read + mutate workloads | Start, stop, delete, migrate workloads; cannot manage RBAC keys |
+| **Viewer** | Read-only | List workloads, view logs, check health; no mutations |
+
+### API Endpoints
+
+| Method | Path | Description | Required Role |
+|---|---|---|---|
+| `GET` | `/api/rbac/keys` | List all RBAC keys (names and roles, no raw keys) | Admin |
+| `POST` | `/api/rbac/keys` | Create a new RBAC key with a specified role | Admin |
+| `POST` | `/api/rbac/keys/revoke` | Revoke an existing RBAC key | Admin |
+
+### How It Works
+
+The API middleware checks incoming requests in this order:
+
+1. **RBAC key check** -- If the `Authorization: Bearer <key>` header matches a key in the `RbacStore`, the request is authorized with the corresponding role.
+2. **Fallback to `AETHER_API_KEY`** -- If no RBAC key matches but `AETHER_API_KEY` is set and the Bearer token matches, the request is authorized with Admin-equivalent access. This preserves backward compatibility.
+3. **No auth configured** -- If neither RBAC keys nor `AETHER_API_KEY` are configured, all endpoints are public (local development mode).
+
+### Creating RBAC Keys
+
+```bash
+# Create an admin key
+curl -X POST http://localhost:5090/api/rbac/keys \
+  -H "Authorization: Bearer <admin-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ci-pipeline", "role": "operator"}'
+
+# List all keys
+curl http://localhost:5090/api/rbac/keys \
+  -H "Authorization: Bearer <admin-key>"
+
+# Revoke a key
+curl -X POST http://localhost:5090/api/rbac/keys/revoke \
+  -H "Authorization: Bearer <admin-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ci-pipeline"}'
+```
+
+### Endpoint Authorization Matrix
+
+| Endpoint Category | Admin | Operator | Viewer |
+|---|---|---|---|
+| List/get workloads, logs, health | Yes | Yes | Yes |
+| Start/stop/delete/migrate workloads | Yes | Yes | No |
+| RBAC key management | Yes | No | No |
+| Secrets management | Yes | Yes | No |
+| Backup/restore | Yes | Yes | No |
+
+---
+
 ## 🔑 API Authentication
 
 The REST API server supports **Bearer token authentication** via the `AETHER_API_KEY` environment variable.
@@ -377,6 +441,26 @@ hash = SHA-256("aether-audit-integrity-{id}|{timestamp}|{action}|{workload}|{res
 | **Verification** | `AuditLog::verify_event_integrity(event)` returns `true` if hash matches |
 | **Legacy events** | Events without hashes are accepted (backward compatible) |
 | **Tamper detection** | Modified events produce a hash mismatch |
+
+### Audit Integrity Verification API
+
+The REST API exposes a `GET /api/audit/verify` endpoint that checks every audit event against its stored SHA-256 hash and returns an integrity report:
+
+```bash
+curl http://localhost:5090/api/audit/verify
+```
+
+```json
+{
+  "total": 142,
+  "verified": 142,
+  "tampered": 0,
+  "integrity": "ok",
+  "tampered_events": []
+}
+```
+
+If any event has been modified, `integrity` returns `"compromised"` and `tampered_events` lists the affected event IDs.
 
 ---
 
@@ -616,6 +700,36 @@ Both workload name and namespace are validated as DNS-1123 labels before any Kub
 
 ---
 
+## 🚦 Rate Limiting
+
+The API server enforces a **200 concurrent request limit** using tower middleware. When the limit is exceeded, additional requests receive a `503 Service Unavailable` response until in-flight requests complete. This protects the server from resource exhaustion during traffic spikes or misbehaving clients.
+
+| Property | Detail |
+|---|---|
+| **Limit** | 200 concurrent requests |
+| **Scope** | All routes (API and dashboard) |
+| **Exceeded behavior** | `503 Service Unavailable` |
+| **Implementation** | tower concurrency limit middleware |
+
+---
+
+## 📝 Structured JSON Logging
+
+Set the `AETHER_LOG_FORMAT` environment variable to `json` to switch from human-readable log output to structured JSON lines:
+
+```bash
+AETHER_LOG_FORMAT=json aether serve
+```
+
+Each log entry is a single JSON object with `timestamp`, `level`, `message`, and `target` fields, making it suitable for ingestion by log aggregation systems such as Elasticsearch, Grafana Loki, or Datadog.
+
+| Variable | Value | Effect |
+|---|---|---|
+| `AETHER_LOG_FORMAT` | `json` | Structured JSON log output |
+| `AETHER_LOG_FORMAT` | unset or any other value | Default human-readable output |
+
+---
+
 ## 📡 Webhook Delivery Security
 
 aether supports webhook notifications for events. Channels are managed with `aether webhook` commands.
@@ -664,6 +778,35 @@ aether webhook remove alerts
 | `critical` | Highest | Circuit breaker tripped, data corruption |
 
 A webhook configured with `--severity warning` will receive `warning`, `error`, and `critical` events, but not `info` events.
+
+---
+
+## 📧 Email SMTP Notifications
+
+Aether supports real SMTP email delivery for event notifications via the `lettre` crate. Configure an email notification channel using `ChannelType::Email`.
+
+### Configuration
+
+Email channels are configured alongside other notification channels (Console, File, Webhook):
+
+| Field | Required | Description |
+|---|---|---|
+| `smtp_host` | Yes | SMTP server hostname (e.g., `smtp.gmail.com`) |
+| `smtp_port` | No | SMTP port (default: 587 for STARTTLS) |
+| `smtp_username` | Yes | SMTP authentication username |
+| `smtp_password` | Yes | SMTP authentication password |
+| `from_address` | Yes | Sender email address |
+| `to_addresses` | Yes | Array of recipient email addresses |
+| `severity` | No | Minimum severity to trigger email (`info`, `warning`, `error`, `critical`) |
+
+### Security Considerations
+
+| Aspect | Detail |
+|---|---|
+| **Transport** | Use TLS/STARTTLS for encrypted SMTP connections |
+| **Credentials** | Store SMTP credentials in environment variables or secrets, not in config files |
+| **Rate limiting** | Email channels respect the per-channel cooldown period to avoid inbox flooding |
+| **Severity filter** | Only events at or above the configured severity trigger email delivery |
 
 ---
 

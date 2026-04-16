@@ -99,6 +99,133 @@ PVCs are auto-mounted at `/data` when `persistence.enabled: true`.
 
 ---
 
+## NetworkPolicyConfig
+
+The `network.network_policy` field allows you to declare Kubernetes NetworkPolicy rules directly in the workload spec. When deploying to Kubernetes, Aether generates a `NetworkPolicy` resource alongside the workload.
+
+```yaml
+network:
+  service: true
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+  network_policy:
+    deny_all_ingress: true
+    deny_all_egress: false
+    allow_from:
+      - app: frontend
+      - role: monitoring
+    allow_to:
+      - app: database
+```
+
+### NetworkPolicyConfig Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `deny_all_ingress` | boolean | No | When `true`, deny all inbound traffic by default |
+| `deny_all_egress` | boolean | No | When `true`, deny all outbound traffic by default |
+| `allow_from` | array of label maps | No | Pod label selectors allowed to send traffic to this workload |
+| `allow_to` | array of label maps | No | Pod label selectors this workload is allowed to send traffic to |
+
+When `deny_all_ingress` is `true` and `allow_from` entries are provided, the generated NetworkPolicy creates ingress rules that permit traffic only from pods matching the specified labels. The same logic applies to `deny_all_egress` and `allow_to`.
+
+---
+
+## ScalingMetric — Custom Metrics
+
+The `scaling.metrics` array supports a `Custom` metric type for HPA scaling on application-specific signals. When `metricType` is `Custom`, the optional `metric_name` field specifies the Pods metric name used in the HPA `PodsMetricSource`.
+
+```yaml
+scaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - metricType: CPU
+      targetValue: "80%"
+    - metricType: Custom
+      metric_name: "requests_per_second"
+      targetValue: "1000"
+    - metricType: Custom
+      metric_name: "queue_depth"
+      targetValue: "50"
+```
+
+### ScalingMetric Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `metricType` | string (enum) | Yes | `CPU`, `Memory`, or `Custom` |
+| `targetValue` | string | Yes | Target value (percentage for CPU/Memory, absolute for Custom) |
+| `metric_name` | string | No | Metric name for `Custom` type (used as `PodsMetricSource.metric.name` in HPA) |
+
+---
+
+## IntentSpec
+
+The `intent` field allows you to declare high-level operational goals for a workload. The intent engine uses these goals to influence runtime selection scoring, placement decisions, and policy evaluation.
+
+```yaml
+intent:
+  goal: low-latency | high-throughput | cost-optimized | balanced
+  sla:
+    maxLatencyMs: 50
+    minAvailabilityPct: 99.9
+  budget:
+    maxMonthlyUsd: 500
+  resilience: best-effort | standard | high
+  compliance:
+    isolationRequired: true
+    encryptionRequired: false
+```
+
+### IntentSpec Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `goal` | string (enum) | Yes | Optimization goal: `low-latency`, `high-throughput`, `cost-optimized`, or `balanced` |
+| `sla.maxLatencyMs` | integer | No | Maximum acceptable latency in milliseconds |
+| `sla.minAvailabilityPct` | float | No | Minimum availability percentage (e.g., `99.9`) |
+| `budget.maxMonthlyUsd` | integer | No | Maximum monthly cost in USD |
+| `resilience` | string (enum) | No | Resilience level: `best-effort`, `standard`, or `high` |
+| `compliance.isolationRequired` | boolean | No | Whether workload isolation is required |
+| `compliance.encryptionRequired` | boolean | No | Whether encryption at rest is required |
+
+### Example: Low-Latency Intent
+
+```yaml
+apiVersion: aether/v1
+kind: Workload
+
+metadata:
+  name: trading-api
+  owner: platform
+  project: fintech
+
+intent:
+  goal: low-latency
+  sla:
+    maxLatencyMs: 10
+    minAvailabilityPct: 99.99
+  budget:
+    maxMonthlyUsd: 2000
+  resilience: high
+  compliance:
+    isolationRequired: true
+    encryptionRequired: true
+
+requirements:
+  cpu: "4"
+  memory: 8Gi
+  storage: 50Gi
+```
+
+Use `aether intent` to evaluate and display the intent scoring for a workload spec.
+
+---
+
 ## Schema Features
 
 ### Field Validation

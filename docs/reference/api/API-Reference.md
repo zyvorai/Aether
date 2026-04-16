@@ -1,6 +1,6 @@
 # 🌐 REST API Reference
 
-> Complete reference for the aether REST API -- 43 endpoints across workloads, AI, security, and operations.
+> Complete reference for the aether REST API -- 46+ endpoints across workloads, AI, security, RBAC, and operations.
 
 ---
 
@@ -31,6 +31,8 @@
 - [Scheduler](#-scheduler)
 - [Orchestrator](#-orchestrator)
 - [Affinity](#-affinity)
+- [RBAC](#-rbac)
+- [SSE Events](#-sse-events)
 - [Metrics](#-metrics)
 - [Endpoint Summary Table](#-endpoint-summary-table)
 
@@ -64,6 +66,20 @@ On startup, the server prints:
 
 The server uses Axum with Tokio for async request handling, tower middleware for authentication and CORS, and loads workload state from `~/.aether/state.json` into a shared `Arc<RwLock<StateStore>>`.
 
+### Rate Limiting
+
+The API server enforces a **200 concurrent request limit** via tower middleware. Requests exceeding this limit receive a `503 Service Unavailable` response. This protects the server from overload during traffic spikes.
+
+### Structured JSON Logging
+
+Set the `AETHER_LOG_FORMAT` environment variable to `json` to enable structured JSON log output, suitable for log aggregation systems (e.g., Elasticsearch, Loki, Datadog):
+
+```bash
+AETHER_LOG_FORMAT=json aether serve
+```
+
+When set, each log line is emitted as a JSON object with `timestamp`, `level`, `message`, and `target` fields.
+
 ---
 
 ## 🔑 Authentication
@@ -82,8 +98,9 @@ aether serve
 
 | Scenario | Behavior |
 |---|---|
-| `AETHER_API_KEY` is set | All `/api/*` endpoints require `Authorization: Bearer <key>` header |
-| `AETHER_API_KEY` is not set | All endpoints are public (localhost development mode) |
+| RBAC keys exist in `RbacStore` | Bearer token is matched against RBAC keys; role determines access |
+| No RBAC match, `AETHER_API_KEY` is set | Falls back to `AETHER_API_KEY` Bearer token (Admin-equivalent) |
+| Neither RBAC nor `AETHER_API_KEY` set | All endpoints are public (localhost development mode) |
 | `/health` and `/` | Always public (no auth required) |
 | Invalid/missing token | `401 Unauthorized` |
 
@@ -761,6 +778,40 @@ curl http://localhost:5090/api/audit
 
 ---
 
+### GET `/api/audit/verify` -- Verify Audit Trail Integrity
+
+Verifies the SHA-256 integrity hashes of all audit events and returns a summary report.
+
+```bash
+curl http://localhost:5090/api/audit/verify
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "total": 142,
+    "verified": 142,
+    "tampered": 0,
+    "integrity": "ok",
+    "tampered_events": []
+  },
+  "error": null
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `total` | integer | Total number of audit events checked |
+| `verified` | integer | Number of events with valid integrity hashes |
+| `tampered` | integer | Number of events with hash mismatches |
+| `integrity` | string | `"ok"` if no tampering detected, `"compromised"` otherwise |
+| `tampered_events` | array | List of event IDs with integrity failures |
+
+---
+
 ## 📝 Templates
 
 ### GET `/api/templates` -- List Available Templates
@@ -898,6 +949,125 @@ curl http://localhost:5090/api/affinity/web-service
 
 ---
 
+## 🛂 RBAC
+
+### GET `/api/rbac/keys` -- List RBAC Keys
+
+Lists all RBAC API keys (names and roles). Raw key values are never exposed.
+
+```bash
+curl http://localhost:5090/api/rbac/keys \
+  -H "Authorization: Bearer <admin-key>"
+```
+
+**Required Role:** Admin
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    { "name": "ci-pipeline", "role": "operator" },
+    { "name": "monitoring", "role": "viewer" }
+  ],
+  "error": null
+}
+```
+
+---
+
+### POST `/api/rbac/keys` -- Create RBAC Key
+
+Creates a new RBAC API key with the specified role. Returns the generated key (shown only once).
+
+```bash
+curl -X POST http://localhost:5090/api/rbac/keys \
+  -H "Authorization: Bearer <admin-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ci-pipeline", "role": "operator"}'
+```
+
+**Required Role:** Admin
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | Yes | Unique name for the key |
+| `role` | Yes | `admin`, `operator`, or `viewer` |
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "name": "ci-pipeline",
+    "role": "operator",
+    "key": "aether_rbac_..."
+  },
+  "error": null
+}
+```
+
+---
+
+### POST `/api/rbac/keys/revoke` -- Revoke RBAC Key
+
+Revokes an existing RBAC API key by name.
+
+```bash
+curl -X POST http://localhost:5090/api/rbac/keys/revoke \
+  -H "Authorization: Bearer <admin-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ci-pipeline"}'
+```
+
+**Required Role:** Admin
+
+**Response:**
+
+```json
+{ "success": true, "data": "Key 'ci-pipeline' revoked", "error": null }
+```
+
+---
+
+## 📡 SSE Events
+
+### GET `/api/events/stream` -- Server-Sent Events Stream
+
+Opens a persistent SSE connection that receives real-time `ServerEvent` messages whenever a mutation occurs (workload created, started, stopped, deleted, migrated).
+
+```bash
+curl -N http://localhost:5090/api/events/stream \
+  -H "Authorization: Bearer <key>"
+```
+
+**Content-Type:** `text/event-stream`
+
+Each event is a JSON object:
+
+```
+data: {"type": "workload_created", "workload": "my-app", "runtime": "kubernetes", "timestamp": "2026-04-15T10:00:00Z"}
+
+data: {"type": "workload_stopped", "workload": "my-app", "timestamp": "2026-04-15T10:05:00Z"}
+```
+
+### Event Types
+
+| Type | Trigger |
+|---|---|
+| `workload_created` | POST `/api/workloads` succeeded |
+| `workload_started` | POST `/api/workloads/:name/start` succeeded |
+| `workload_stopped` | POST `/api/workloads/:name/stop` succeeded |
+| `workload_deleted` | DELETE `/api/workloads/:name` succeeded |
+| `workload_migrated` | POST `/api/workloads/:name/migrate` succeeded |
+| `health_check` | Background health check loop completed a cycle |
+
+The web dashboard uses this stream via the `useEventStream` React hook to update the UI instantly without polling.
+
+---
+
 ## 📈 Metrics
 
 ### GET `/api/metrics` -- Prometheus Metrics
@@ -958,6 +1128,7 @@ Returns Prometheus-format metrics text for scraping by Prometheus, Grafana Agent
 | GET | `/api/dependencies` | Show dependencies |
 | POST | `/api/dependencies` | Add dependency |
 | GET | `/api/audit` | Audit events |
+| GET | `/api/audit/verify` | Verify audit trail integrity |
 | GET | `/api/templates` | List templates |
 | POST | `/api/templates/:name` | Generate from template |
 | GET | `/api/sla/:workload` | SLA check |
@@ -969,4 +1140,11 @@ Returns Prometheus-format metrics text for scraping by Prometheus, Grafana Agent
 | GET | `/api/orchestrator/status` | Orchestrator status |
 | GET | `/api/orchestrator/summary` | Orchestrator summary |
 | GET | `/api/affinity/:class` | Affinity recommendation |
+| **RBAC** | | |
+| GET | `/api/rbac/keys` | List RBAC keys (Admin only) |
+| POST | `/api/rbac/keys` | Create RBAC key (Admin only) |
+| POST | `/api/rbac/keys/revoke` | Revoke RBAC key (Admin only) |
+| **SSE** | | |
+| GET | `/api/events/stream` | Server-Sent Events stream |
+| **Metrics** | | |
 | GET | `/api/metrics` | Prometheus metrics (text/plain) |

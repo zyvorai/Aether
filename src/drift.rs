@@ -264,6 +264,33 @@ impl DriftDetector {
                 category: DriftCategory::Resources,
             });
         }
+
+        // Detect resource request > limit (misconfiguration)
+        if let Some(ref cpu_req) = spec.requirements.cpu_request {
+            let req_val = crate::resources::parse_cpu(cpu_req);
+            if req_val > cpu_val {
+                drifts.push(DriftItem {
+                    field: "requirements.cpuRequest".to_string(),
+                    expected: format!("<= {} (cpu limit)", cpu),
+                    actual: format!("{} (request exceeds limit)", cpu_req),
+                    severity: DriftSeverity::Critical,
+                    category: DriftCategory::Resources,
+                });
+            }
+        }
+
+        if let Some(ref mem_req) = spec.requirements.memory_request {
+            let req_val = crate::resources::parse_memory_gi(mem_req);
+            if req_val > mem_val {
+                drifts.push(DriftItem {
+                    field: "requirements.memoryRequest".to_string(),
+                    expected: format!("<= {} (memory limit)", memory),
+                    actual: format!("{} (request exceeds limit)", mem_req),
+                    severity: DriftSeverity::Critical,
+                    category: DriftCategory::Resources,
+                });
+            }
+        }
     }
 
     fn check_network_drift(
@@ -331,6 +358,89 @@ impl DriftDetector {
                 });
             }
         }
+    }
+
+    /// Detect drift including live runtime state checks.
+    ///
+    /// Extends `detect()` with actual runtime status queries to compare
+    /// expected vs actual workload state.
+    pub async fn check_live_drift(
+        &self,
+        spec: &crate::spec::Workload,
+        state: &crate::state::WorkloadState,
+        runtime: &dyn crate::Runtime,
+    ) -> DriftReport {
+        let mut report = self.detect(spec, state);
+
+        match runtime.status(&state.instance).await {
+            Ok(status) => {
+                use crate::runtime::InstanceState;
+
+                if status.state == InstanceState::Failed {
+                    report.drifts.push(DriftItem {
+                        field: "live.state".to_string(),
+                        expected: "running".to_string(),
+                        actual: "failed".to_string(),
+                        severity: DriftSeverity::Critical,
+                        category: DriftCategory::Runtime,
+                    });
+                    report.has_drift = true;
+                }
+
+                if !status.ready && status.state == InstanceState::Running {
+                    report.drifts.push(DriftItem {
+                        field: "live.ready".to_string(),
+                        expected: "true".to_string(),
+                        actual: "false".to_string(),
+                        severity: DriftSeverity::Warning,
+                        category: DriftCategory::Health,
+                    });
+                    report.has_drift = true;
+                }
+
+                if status.restart_count > 0 {
+                    report.drifts.push(DriftItem {
+                        field: "live.restart_count".to_string(),
+                        expected: "0".to_string(),
+                        actual: status.restart_count.to_string(),
+                        severity: if status.restart_count > 3 {
+                            DriftSeverity::Critical
+                        } else {
+                            DriftSeverity::Warning
+                        },
+                        category: DriftCategory::Health,
+                    });
+                    report.has_drift = true;
+                }
+            }
+            Err(e) => {
+                report.drifts.push(DriftItem {
+                    field: "live.status".to_string(),
+                    expected: "reachable".to_string(),
+                    actual: format!("unreachable: {}", e),
+                    severity: DriftSeverity::Critical,
+                    category: DriftCategory::Runtime,
+                });
+                report.has_drift = true;
+            }
+        }
+
+        // Recalculate overall severity
+        report.severity = report.drifts.iter()
+            .map(|d| match d.severity {
+                DriftSeverity::Critical => 2,
+                DriftSeverity::Warning => 1,
+                DriftSeverity::Info => 0,
+            })
+            .max()
+            .map(|v| match v {
+                2 => DriftSeverity::Critical,
+                1 => DriftSeverity::Warning,
+                _ => DriftSeverity::Info,
+            })
+            .unwrap_or(DriftSeverity::Info);
+
+        report
     }
 
     fn build_reconciliation_plan(&self, drifts: &[DriftItem]) -> Vec<ReconcileAction> {
@@ -586,6 +696,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -607,6 +719,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 
@@ -624,6 +738,8 @@ mod tests {
             spec_path: PathBuf::from("workload.yaml"),
             created_at: "2026-01-01T00:00:00Z".to_string(),
             updated_at: "2026-01-01T00:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
         }
     }
 
@@ -712,6 +828,116 @@ mod tests {
         let output = format_live_diff(&report);
         assert!(output.contains("my-app"));
         assert!(output.contains("No differences found"));
+    }
+
+    // ── MockRuntime and live drift tests ────────────────────────────
+
+    use async_trait::async_trait;
+
+    struct MockRuntime {
+        status_result: Result<crate::runtime::Status, String>,
+    }
+
+    #[async_trait]
+    impl crate::Runtime for MockRuntime {
+        async fn build(&self, _: &crate::spec::Workload) -> crate::Result<crate::runtime::Image> { unimplemented!() }
+        async fn run(&self, _: &crate::runtime::Image, _: &crate::spec::Workload) -> crate::Result<crate::runtime::Instance> { unimplemented!() }
+        async fn stop(&self, _: &crate::runtime::Instance) -> crate::Result<()> { unimplemented!() }
+        async fn status(&self, _: &crate::runtime::Instance) -> crate::Result<crate::runtime::Status> {
+            match &self.status_result {
+                Ok(s) => Ok(s.clone()),
+                Err(e) => Err(anyhow::anyhow!("{}", e)),
+            }
+        }
+        async fn logs(&self, _: &crate::runtime::Instance, _: bool) -> crate::Result<String> { unimplemented!() }
+        async fn delete(&self, _: &crate::runtime::Instance) -> crate::Result<()> { unimplemented!() }
+        async fn list(&self) -> crate::Result<Vec<crate::runtime::Instance>> { unimplemented!() }
+    }
+
+    #[tokio::test]
+    async fn test_live_drift_failed_state() {
+        let detector = DriftDetector::new();
+        let spec = test_spec();
+        let state = test_state();
+        let mock = MockRuntime {
+            status_result: Ok(crate::runtime::Status {
+                state: crate::runtime::InstanceState::Failed,
+                ready: false,
+                message: Some("CrashLoopBackOff".to_string()),
+                restart_count: 0,
+            }),
+        };
+        let report = detector.check_live_drift(&spec, &state, &mock).await;
+        assert!(report.has_drift);
+        assert!(report.drifts.iter().any(|d| d.field == "live.state" && d.severity == DriftSeverity::Critical));
+    }
+
+    #[tokio::test]
+    async fn test_live_drift_not_ready() {
+        let detector = DriftDetector::new();
+        let spec = test_spec();
+        let state = test_state();
+        let mock = MockRuntime {
+            status_result: Ok(crate::runtime::Status {
+                state: crate::runtime::InstanceState::Running,
+                ready: false,
+                message: None,
+                restart_count: 0,
+            }),
+        };
+        let report = detector.check_live_drift(&spec, &state, &mock).await;
+        assert!(report.has_drift);
+        assert!(report.drifts.iter().any(|d| d.field == "live.ready" && d.severity == DriftSeverity::Warning));
+    }
+
+    #[tokio::test]
+    async fn test_live_drift_restart_count_high() {
+        let detector = DriftDetector::new();
+        let spec = test_spec();
+        let state = test_state();
+        let mock = MockRuntime {
+            status_result: Ok(crate::runtime::Status {
+                state: crate::runtime::InstanceState::Running,
+                ready: true,
+                message: None,
+                restart_count: 5,
+            }),
+        };
+        let report = detector.check_live_drift(&spec, &state, &mock).await;
+        assert!(report.has_drift);
+        assert!(report.drifts.iter().any(|d| d.field == "live.restart_count" && d.severity == DriftSeverity::Critical));
+    }
+
+    #[tokio::test]
+    async fn test_live_drift_healthy() {
+        let detector = DriftDetector::new();
+        let spec = test_spec();
+        let state = test_state();
+        let mock = MockRuntime {
+            status_result: Ok(crate::runtime::Status {
+                state: crate::runtime::InstanceState::Running,
+                ready: true,
+                message: None,
+                restart_count: 0,
+            }),
+        };
+        let report = detector.check_live_drift(&spec, &state, &mock).await;
+        // No live.* drift items should be present
+        assert!(!report.drifts.iter().any(|d| d.field.starts_with("live.")));
+    }
+
+    #[tokio::test]
+    async fn test_live_drift_unreachable() {
+        let detector = DriftDetector::new();
+        let spec = test_spec();
+        let state = test_state();
+        let mock = MockRuntime {
+            status_result: Err("connection refused".to_string()),
+        };
+        let report = detector.check_live_drift(&spec, &state, &mock).await;
+        assert!(report.has_drift);
+        assert!(report.drifts.iter().any(|d| d.field == "live.status" && d.severity == DriftSeverity::Critical));
+        assert!(report.drifts.iter().any(|d| d.actual.contains("unreachable")));
     }
 
     #[test]

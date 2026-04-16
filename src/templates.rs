@@ -141,9 +141,9 @@ pub fn list_templates() -> Vec<TemplateInfo> {
         TemplateInfo {
             kind: TemplateKind::CronJob,
             name: "cron-job".to_string(),
-            description: "Scheduled job with configurable timing and retry".to_string(),
+            description: "Scheduled CronJob with configurable cron timing and retry policy".to_string(),
             tags: vec!["cron".to_string(), "batch".to_string(), "scheduled".to_string()],
-            default_runtime: RuntimePreference::Container,
+            default_runtime: RuntimePreference::Kube,
         },
         TemplateInfo {
             kind: TemplateKind::MlTraining,
@@ -198,6 +198,8 @@ fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<Ru
             memory: params.memory.clone().unwrap_or_else(|| "1Gi".to_string()),
             storage: params.storage.clone().unwrap_or_else(|| "10Gi".to_string()),
             gpu: None,
+            cpu_request: None,
+            memory_request: None,
         },
         runtime: RuntimeSpec {
             preferred: pref,
@@ -210,6 +212,8 @@ fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<Ru
         ingress: None,
         scaling: None,
         mesh: None,
+        intent: None,
+        schedule: None,
     }
 }
 
@@ -279,6 +283,7 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
         metrics: vec![ScalingMetric {
             metric_type: MetricType::CPU,
             target_value: "70".to_string(),
+            metric_name: None,
         }],
     });
 
@@ -330,6 +335,7 @@ fn generate_rest_api(params: &TemplateParams) -> Workload {
         metrics: vec![ScalingMetric {
             metric_type: MetricType::CPU,
             target_value: "75".to_string(),
+            metric_name: None,
         }],
     });
 
@@ -430,6 +436,7 @@ fn generate_worker(params: &TemplateParams) -> Workload {
         metrics: vec![ScalingMetric {
             metric_type: MetricType::Memory,
             target_value: "80".to_string(),
+            metric_name: None,
         }],
     });
 
@@ -439,14 +446,23 @@ fn generate_worker(params: &TemplateParams) -> Workload {
 fn generate_cron_job(params: &TemplateParams) -> Workload {
     let mut w = base_workload(
         params,
-        RuntimePreference::Container,
-        vec![RuntimeType::Container, RuntimeType::Kube],
+        RuntimePreference::Kube,
+        vec![RuntimeType::Kube, RuntimeType::Container],
     );
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "500m".to_string());
     w.requirements.memory = params.memory.clone().unwrap_or_else(|| "512Mi".to_string());
     w.requirements.storage = params.storage.clone().unwrap_or_else(|| "1Gi".to_string());
     w.network = NetworkSpec::default();
+
+    // Set schedule to create a Kubernetes CronJob instead of a Deployment
+    w.schedule = Some(ScheduleSpec {
+        cron: "0 * * * *".to_string(),
+        concurrency_policy: ConcurrencyPolicy::Forbid,
+        backoff_limit: 3,
+        active_deadline_seconds: None,
+        restart_policy: JobRestartPolicy::Never,
+    });
 
     w
 }

@@ -1,0 +1,47 @@
+import { useState } from 'react';
+import { Send, Loader2 } from 'lucide-react';
+
+interface YamlInputProps {
+  placeholder?: string;
+  buttonText: string;
+  onSubmit: (yaml: string) => void;
+  loading?: boolean;
+}
+
+export default function YamlInput({ placeholder, buttonText, onSubmit, loading }: YamlInputProps) {
+  const [value, setValue] = useState('');
+
+  function handleSubmit() {
+    const trimmed = value.trim();
+    if (trimmed && !loading) {
+      onSubmit(trimmed);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder ?? 'Paste YAML here...'}
+        rows={10}
+        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-4 text-sm text-zinc-300 font-mono placeholder-zinc-600 resize-y focus:outline-none focus:border-aether focus:ring-1 focus:ring-aether/30 transition-colors leading-relaxed"
+        spellCheck={false}
+      />
+      <div className="flex justify-end">
+        <button
+          onClick={handleSubmit}
+          disabled={!value.trim() || loading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether-light disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-aether/50"
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
+          {buttonText}
+        </button>
+      </div>
+    </div>
+  );
+}
