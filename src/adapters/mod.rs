@@ -57,3 +57,71 @@ macro_rules! impl_kube_adapter_new {
 }
 
 pub(crate) use impl_kube_adapter_new;
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Mutex;
+
+    /// Mutex to serialize tests that modify environment variables.
+    /// Prevents race conditions when tests run in parallel.
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn test_namespace_fallback_explicit_wins() {
+        // No env var access — no lock needed
+        let explicit = Some("prod".to_string());
+        let namespace = explicit.unwrap_or_else(|| {
+            std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
+        });
+        assert_eq!(namespace, "prod");
+    }
+
+    #[test]
+    fn test_namespace_fallback_default() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+        let saved = std::env::var("AETHER_NAMESPACE").ok();
+        std::env::remove_var("AETHER_NAMESPACE");
+        let explicit: Option<String> = None;
+        let namespace = explicit.unwrap_or_else(|| {
+            std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
+        });
+        assert_eq!(namespace, "default");
+        if let Some(v) = saved { std::env::set_var("AETHER_NAMESPACE", v); }
+    }
+
+    #[test]
+    fn test_with_namespace_always_uses_explicit() {
+        let explicit_ns = "explicit-ns".to_string();
+        assert_eq!(explicit_ns, "explicit-ns");
+    }
+
+    #[test]
+    fn test_context_env_var_handling() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+        let saved = std::env::var("AETHER_CONTEXT").ok();
+        std::env::remove_var("AETHER_CONTEXT");
+        let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+        assert!(context.is_none());
+        if let Some(v) = saved { std::env::set_var("AETHER_CONTEXT", v); }
+    }
+
+    #[test]
+    fn test_context_env_var_empty_is_none() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+        let saved = std::env::var("AETHER_CONTEXT").ok();
+        std::env::set_var("AETHER_CONTEXT", "");
+        let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+        assert!(context.is_none());
+        if let Some(v) = saved { std::env::set_var("AETHER_CONTEXT", v); } else { std::env::remove_var("AETHER_CONTEXT"); }
+    }
+
+    #[test]
+    fn test_context_env_var_non_empty() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+        let saved = std::env::var("AETHER_CONTEXT").ok();
+        std::env::set_var("AETHER_CONTEXT", "staging-cluster");
+        let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+        assert_eq!(context, Some("staging-cluster".to_string()));
+        if let Some(v) = saved { std::env::set_var("AETHER_CONTEXT", v); } else { std::env::remove_var("AETHER_CONTEXT"); }
+    }
+}

@@ -102,8 +102,10 @@ impl ScoringEngine {
     /// Score all allowed runtimes and return ranked results
     pub fn score(&self, spec: &Workload) -> ScoringResult {
         let workload_class = self.classify_workload(spec);
-        let weights = self.config.scoring_weights.normalized();
+        let base_weights = self.config.scoring_weights.normalized();
+        let weights = self.adjust_weights_for_intent(spec, base_weights);
         let allowed_runtimes = self.get_allowed_runtimes(spec);
+        let allowed_runtimes = self.filter_by_intent(spec, allowed_runtimes);
 
         let mut scores: Vec<RuntimeScore> = allowed_runtimes
             .iter()
@@ -195,10 +197,14 @@ impl ScoringEngine {
         // Availability score (0.0 - 1.0, higher = more available)
         let availability_score = self.score_availability(runtime, spec, &mut reasons);
 
-        let total_score = weights.cost * cost_score
+        let mut total_score = weights.cost * cost_score
             + weights.performance * performance_score
             + weights.reliability * reliability_score
             + weights.availability * availability_score;
+
+        // Apply intent-specific score adjustments
+        let intent_multiplier = self.intent_score_adjustment(runtime, spec, &mut reasons);
+        total_score *= intent_multiplier;
 
         RuntimeScore {
             runtime,
@@ -429,6 +435,194 @@ impl ScoringEngine {
             .collect()
     }
 
+    // ─── Intent-aware scoring ────────────────────────────────────────────
+
+    /// Adjust scoring weights based on the workload's intent goal.
+    /// When no intent is set, returns the base weights unchanged.
+    fn adjust_weights_for_intent(&self, spec: &Workload, base: ScoringWeights) -> ScoringWeights {
+        use crate::spec::IntentGoal;
+
+        let intent = match &spec.intent {
+            Some(i) => i,
+            None => return base,
+        };
+
+        let adjusted = match intent.goal {
+            IntentGoal::LowLatency => ScoringWeights {
+                cost: 0.15,
+                performance: 0.45,
+                reliability: 0.25,
+                availability: 0.15,
+            },
+            IntentGoal::HighThroughput => ScoringWeights {
+                cost: 0.20,
+                performance: 0.40,
+                reliability: 0.15,
+                availability: 0.25,
+            },
+            IntentGoal::CostOptimized => ScoringWeights {
+                cost: 0.50,
+                performance: 0.20,
+                reliability: 0.15,
+                availability: 0.15,
+            },
+            IntentGoal::Balanced => return base,
+        };
+
+        adjusted.normalized()
+    }
+
+    /// Filter runtimes that violate hard intent constraints.
+    /// Budget, compliance isolation, resilience HA, and extreme latency
+    /// requirements can eliminate candidates before scoring.
+    fn filter_by_intent(&self, spec: &Workload, runtimes: Vec<RuntimeKind>) -> Vec<RuntimeKind> {
+        let intent = match &spec.intent {
+            Some(i) => i,
+            None => return runtimes,
+        };
+
+        let mut filtered = runtimes;
+
+        // Compliance: isolation required → remove container runtimes
+        if let Some(ref compliance) = intent.compliance {
+            if compliance.isolation_required {
+                filtered.retain(|rt| !matches!(rt, RuntimeKind::Podman | RuntimeKind::Docker));
+            }
+        }
+
+        // Trust: Strict → only VM/bare-metal runtimes (attested, isolated)
+        if let Some(crate::spec::TrustLevel::Strict) = intent.trust {
+            filtered.retain(|rt| matches!(rt, RuntimeKind::KubeVirt | RuntimeKind::Metal3));
+        }
+
+        // Resilience: High → remove single-host runtimes (no HA)
+        if let Some(crate::spec::ResilienceLevel::High) = intent.resilience {
+            filtered.retain(|rt| !matches!(rt, RuntimeKind::Podman | RuntimeKind::Docker));
+        }
+
+        // SLA: very low latency → remove Metal3 (slow provisioning overhead)
+        if let Some(ref sla) = intent.sla {
+            if let Some(max_ms) = sla.max_latency_ms {
+                if max_ms < 10 {
+                    filtered.retain(|rt| !matches!(rt, RuntimeKind::Metal3));
+                }
+            }
+        }
+
+        // Budget: estimate cheapest provider cost per runtime, remove those exceeding cap
+        if let Some(ref budget) = intent.budget {
+            filtered.retain(|rt| {
+                let estimated = self.estimate_runtime_monthly_cost(*rt, spec);
+                if estimated > budget.max_monthly_usd {
+                    tracing::info!(
+                        "Intent filter: {} excluded (est ${:.0}/mo > budget ${:.0})",
+                        rt, estimated, budget.max_monthly_usd
+                    );
+                    false
+                } else {
+                    true
+                }
+            });
+        }
+
+        // Never return empty — fall back to full list if all filtered
+        if filtered.is_empty() {
+            tracing::warn!(
+                "Intent constraints filtered all runtimes for '{}'; ignoring filters",
+                spec.metadata.name
+            );
+            return self.get_allowed_runtimes(spec);
+        }
+
+        filtered
+    }
+
+    /// Estimate the cheapest monthly cost for a workload on a given runtime.
+    /// Uses the minimum across all cloud providers as a proxy.
+    /// Local runtimes (Podman/Docker) are treated as zero cost.
+    fn estimate_runtime_monthly_cost(&self, runtime: RuntimeKind, spec: &Workload) -> f64 {
+        match runtime {
+            RuntimeKind::Podman | RuntimeKind::Docker => 0.0,
+            _ => {
+                // Use cheapest provider estimate as a lower bound
+                crate::cost::estimate_all_providers(spec)
+                    .ok()
+                    .and_then(|estimates| estimates.first().map(|e| e.total_monthly))
+                    .unwrap_or(0.0)
+            }
+        }
+    }
+
+    /// Return a score multiplier (0.5–1.5) based on how well a runtime
+    /// matches the intent's soft preferences.
+    fn intent_score_adjustment(
+        &self,
+        runtime: RuntimeKind,
+        spec: &Workload,
+        reasons: &mut Vec<String>,
+    ) -> f64 {
+        let intent = match &spec.intent {
+            Some(i) => i,
+            None => return 1.0,
+        };
+
+        let mut multiplier = 1.0;
+
+        // Compliance isolation bonus for VM/bare-metal runtimes
+        if let Some(ref compliance) = intent.compliance {
+            if compliance.isolation_required {
+                match runtime {
+                    RuntimeKind::KubeVirt | RuntimeKind::Metal3 => {
+                        multiplier *= 1.3;
+                        reasons.push("Intent: isolation bonus (VM/bare-metal)".to_string());
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Trust: strict → bonus for isolated runtimes (VM/bare-metal)
+        if let Some(crate::spec::TrustLevel::Strict) = intent.trust {
+            match runtime {
+                RuntimeKind::Metal3 => {
+                    multiplier *= 1.4;
+                    reasons.push("Intent: strict trust bonus (dedicated hardware, TPM)".to_string());
+                }
+                RuntimeKind::KubeVirt => {
+                    multiplier *= 1.3;
+                    reasons.push("Intent: strict trust bonus (VM isolation)".to_string());
+                }
+                _ => {}
+            }
+        }
+
+        // High resilience bonus for Kubernetes (native HA)
+        if let Some(crate::spec::ResilienceLevel::High) = intent.resilience {
+            if runtime == RuntimeKind::Kubernetes {
+                multiplier *= 1.2;
+                reasons.push("Intent: HA bonus (Kubernetes native)".to_string());
+            }
+        }
+
+        // Low latency bonus for local containers on small workloads
+        if intent.goal == crate::spec::IntentGoal::LowLatency {
+            let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
+            if matches!(runtime, RuntimeKind::Podman | RuntimeKind::Docker) && cpu <= 4.0 {
+                multiplier *= 1.1;
+                reasons.push("Intent: low-latency bonus (local container, small workload)".to_string());
+            }
+        }
+
+        // Cost-optimized bonus for local containers (zero cloud cost)
+        if intent.goal == crate::spec::IntentGoal::CostOptimized
+            && matches!(runtime, RuntimeKind::Podman | RuntimeKind::Docker)
+        {
+            multiplier *= 1.2;
+            reasons.push("Intent: cost bonus (no cloud spend)".to_string());
+        }
+
+        multiplier
+    }
 }
 
 /// Display a scoring result as a formatted report
@@ -511,6 +705,8 @@ mod tests {
                 memory: "4Gi".to_string(),
                 storage: "20Gi".to_string(),
                 gpu: None,
+                cpu_request: None,
+                memory_request: None,
             },
             runtime: RuntimeSpec {
                 preferred: RuntimePreference::Auto,
@@ -523,6 +719,8 @@ mod tests {
             ingress: None,
             scaling: None,
             mesh: None,
+            intent: None,
+            schedule: None,
         }
     }
 
@@ -610,5 +808,201 @@ mod tests {
         let report = format_scoring_report(&result);
         assert!(report.contains("Recommended Runtime"));
         assert!(report.contains("Decision Factors"));
+    }
+
+    // ---------------------------------------------------------------
+    // Intent-aware scoring tests
+    // ---------------------------------------------------------------
+
+    use crate::spec::{IntentSpec, IntentGoal, ResilienceLevel, ComplianceSpec};
+
+    fn make_intent(goal: IntentGoal) -> IntentSpec {
+        IntentSpec {
+            goal,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: None,
+            trust: None,
+        }
+    }
+
+    #[test]
+    fn test_weights_adjusted_for_low_latency() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![RuntimeType::Container, RuntimeType::Kube]);
+        spec.intent = Some(make_intent(IntentGoal::LowLatency));
+        let base_weights = engine.config.scoring_weights.normalized();
+        let adjusted = engine.adjust_weights_for_intent(&spec, base_weights);
+        assert!(adjusted.performance > 0.40, "performance weight should be high for low-latency");
+        assert!(adjusted.cost < 0.20, "cost weight should be low for low-latency");
+    }
+
+    #[test]
+    fn test_weights_adjusted_for_cost_optimized() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![RuntimeType::Container, RuntimeType::Kube]);
+        spec.intent = Some(make_intent(IntentGoal::CostOptimized));
+        let base_weights = engine.config.scoring_weights.normalized();
+        let adjusted = engine.adjust_weights_for_intent(&spec, base_weights);
+        assert!(adjusted.cost > 0.45, "cost weight should be high for cost-optimized");
+    }
+
+    #[test]
+    fn test_weights_unchanged_for_balanced() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![RuntimeType::Container, RuntimeType::Kube]);
+        spec.intent = Some(make_intent(IntentGoal::Balanced));
+        let base_weights = engine.config.scoring_weights.normalized();
+        let adjusted = engine.adjust_weights_for_intent(&spec, base_weights.clone());
+        assert!((adjusted.cost - base_weights.cost).abs() < 0.001);
+        assert!((adjusted.performance - base_weights.performance).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_weights_unchanged_when_no_intent() {
+        let engine = ScoringEngine::with_defaults();
+        let spec = create_test_workload(vec![RuntimeType::Container, RuntimeType::Kube]);
+        let base_weights = engine.config.scoring_weights.normalized();
+        let adjusted = engine.adjust_weights_for_intent(&spec, base_weights.clone());
+        assert!((adjusted.cost - base_weights.cost).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_filter_removes_podman_when_isolation_required() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![
+            RuntimeType::Container,
+            RuntimeType::Kube,
+            RuntimeType::Kubevirt,
+        ]);
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        let runtimes = engine.get_allowed_runtimes(&spec);
+        let filtered = engine.filter_by_intent(&spec, runtimes);
+        assert!(!filtered.contains(&RuntimeKind::Podman));
+        assert!(filtered.contains(&RuntimeKind::KubeVirt));
+    }
+
+    #[test]
+    fn test_filter_removes_podman_when_high_resilience() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![
+            RuntimeType::Container,
+            RuntimeType::Kube,
+        ]);
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: Some(ResilienceLevel::High),
+            compliance: None,
+            trust: None,
+        });
+        let runtimes = engine.get_allowed_runtimes(&spec);
+        let filtered = engine.filter_by_intent(&spec, runtimes);
+        assert!(!filtered.contains(&RuntimeKind::Podman));
+        assert!(filtered.contains(&RuntimeKind::Kubernetes));
+    }
+
+    #[test]
+    fn test_filter_no_change_when_no_intent() {
+        let engine = ScoringEngine::with_defaults();
+        let spec = create_test_workload(vec![RuntimeType::Container, RuntimeType::Kube]);
+        let runtimes = engine.get_allowed_runtimes(&spec);
+        let filtered = engine.filter_by_intent(&spec, runtimes.clone());
+        assert_eq!(filtered.len(), runtimes.len());
+    }
+
+    #[test]
+    fn test_filter_fallback_when_all_filtered() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![RuntimeType::Container]);
+        // Only Podman allowed, but isolation required — would filter everything
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        let runtimes = engine.get_allowed_runtimes(&spec);
+        let filtered = engine.filter_by_intent(&spec, runtimes);
+        // Should fall back to original list instead of empty
+        assert!(!filtered.is_empty());
+    }
+
+    #[test]
+    fn test_scoring_with_intent_vs_without() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![
+            RuntimeType::Container,
+            RuntimeType::Kube,
+            RuntimeType::Kubevirt,
+        ]);
+
+        // Score without intent
+        let result_no_intent = engine.score(&spec);
+
+        // Score with cost-optimized intent
+        spec.intent = Some(make_intent(IntentGoal::CostOptimized));
+        let result_with_intent = engine.score(&spec);
+
+        // Cost-optimized should favor cheaper runtimes
+        let no_intent_cost = result_no_intent.scores.iter()
+            .find(|s| s.runtime == RuntimeKind::Podman)
+            .map(|s| s.total_score)
+            .unwrap_or(0.0);
+        let intent_cost = result_with_intent.scores.iter()
+            .find(|s| s.runtime == RuntimeKind::Podman)
+            .map(|s| s.total_score)
+            .unwrap_or(0.0);
+        // With cost-optimized intent, Podman's score should be higher or equal
+        assert!(
+            intent_cost >= no_intent_cost - 0.01,
+            "Cost-optimized intent should not decrease Podman's score"
+        );
+    }
+
+    #[test]
+    fn test_intent_isolation_bonus_applied() {
+        let engine = ScoringEngine::with_defaults();
+        let mut spec = create_test_workload(vec![
+            RuntimeType::Kube,
+            RuntimeType::Kubevirt,
+        ]);
+        spec.intent = Some(IntentSpec {
+            goal: IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: Some(ComplianceSpec {
+                isolation_required: true,
+                encryption_required: false,
+            }),
+            trust: None,
+        });
+        let result = engine.score(&spec);
+        // KubeVirt should get isolation bonus
+        let kv_score = result.scores.iter()
+            .find(|s| s.runtime == RuntimeKind::KubeVirt);
+        assert!(kv_score.is_some());
+        assert!(
+            kv_score.unwrap().reasons.iter().any(|r| r.contains("isolation bonus")),
+            "KubeVirt should have isolation bonus reason"
+        );
     }
 }

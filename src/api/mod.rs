@@ -14,7 +14,7 @@ use handlers::*;
 use crate::state::StateStore;
 use axum::{
     extract::DefaultBodyLimit,
-    http::{Request, StatusCode, HeaderValue, Method},
+    http::{Request, StatusCode, Method},
     middleware::{self, Next},
     response::Response,
     routing::{delete, get, post},
@@ -22,40 +22,80 @@ use axum::{
 };
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{broadcast, RwLock};
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Any};
 
-/// API key authentication middleware.
-/// If AETHER_API_KEY is set, all /api/* requests must include a matching
-/// `Authorization: Bearer <key>` header. The /health endpoint and dashboard
-/// (/) are always public.
-async fn auth_middleware(req: Request<axum::body::Body>, next: Next) -> Result<Response, StatusCode> {
-    let api_key = std::env::var("AETHER_API_KEY").ok();
-
-    // If no API key is configured, allow all requests (local development)
-    let Some(expected_key) = api_key else {
+/// API key authentication middleware with RBAC support.
+///
+/// Authentication is checked in this order:
+/// 1. Public endpoints (/health, /, /api/events/stream, /assets/*) bypass auth entirely.
+/// 2. If no AETHER_API_KEY is set AND the RBAC store is empty, allow all requests (local dev).
+/// 3. Extract Bearer token from Authorization header.
+/// 4. Try RBAC store first — if token matches a registered key, enforce role-based permissions.
+/// 5. Fall back to AETHER_API_KEY env var for backward compatibility (grants Admin role).
+async fn auth_middleware(
+    axum::extract::State(app_state): axum::extract::State<AppState>,
+    req: Request<axum::body::Body>,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    // Public endpoints: health check, dashboard, SSE, and static assets
+    let path = req.uri().path();
+    if path == "/health" || path == "/" || path == "/api/events/stream" || path.starts_with("/assets") {
         return Ok(next.run(req).await);
+    }
+
+    let legacy_key = std::env::var("AETHER_API_KEY").ok().filter(|k| !k.is_empty());
+
+    // Extract Bearer token before acquiring lock
+    let token = req
+        .headers()
+        .get("authorization")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(|s| s.to_string());
+
+    let method = req.method().to_string();
+
+    // Acquire RBAC lock briefly — do all lookups, then drop immediately.
+    // verify_key() performs SHA-256 hashing, so minimize lock hold time.
+    let rbac_result = {
+        let rbac_store = app_state.rbac.read().await;
+        let has_rbac_keys = !rbac_store.list_keys().is_empty();
+        let verified = token.as_deref()
+            .and_then(|t| rbac_store.verify_key(t))
+            .map(|entry| (entry.role.clone(), crate::rbac::check_permission(&entry.role, &method, path)));
+        (has_rbac_keys, verified)
+    };
+    // Lock dropped here
+
+    let (has_rbac_keys, verified) = rbac_result;
+
+    // If no auth configured at all, allow everything (local development)
+    if legacy_key.is_none() && !has_rbac_keys {
+        return Ok(next.run(req).await);
+    }
+
+    let Some(ref token) = token else {
+        return Err(StatusCode::UNAUTHORIZED);
     };
 
-    if expected_key.is_empty() {
+    // Try RBAC result first
+    if let Some((_role, permitted)) = verified {
+        if !permitted {
+            return Err(StatusCode::FORBIDDEN);
+        }
         return Ok(next.run(req).await);
     }
 
-    // Public endpoints: health check and dashboard
-    let path = req.uri().path();
-    if path == "/health" || path == "/" {
-        return Ok(next.run(req).await);
-    }
-
-    // Check Authorization header
-    if let Some(auth_header) = req.headers().get("authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                if token == expected_key {
-                    return Ok(next.run(req).await);
-                }
-            }
+    // Fall back to legacy AETHER_API_KEY (grants Admin-equivalent access).
+    // Use constant-time comparison via SHA-256 to prevent timing attacks.
+    if let Some(ref expected) = legacy_key {
+        use sha2::{Digest, Sha256};
+        let token_hash = Sha256::digest(token.as_bytes());
+        let expected_hash = Sha256::digest(expected.as_bytes());
+        if token_hash == expected_hash {
+            return Ok(next.run(req).await);
         }
     }
 
@@ -89,33 +129,110 @@ async fn shutdown_signal() {
     println!("\n🛑 Received shutdown signal, draining connections...");
 }
 
+/// Run a single background health check cycle.
+async fn run_background_health_check(state: &Arc<RwLock<StateStore>>) -> anyhow::Result<()> {
+    let orch_path = crate::orchestrator::Orchestrator::default_path();
+    let mut orch = crate::orchestrator::Orchestrator::load(&orch_path)?;
+
+    if orch.list_workloads().is_empty() {
+        return Ok(());
+    }
+
+    let state_store = state.read().await;
+
+    // Build health statuses by querying runtimes
+    let mut statuses = std::collections::HashMap::new();
+    for mw in orch.list_workloads() {
+        if let Some(ws) = state_store.get(&mw.name) {
+            match crate::runtime::create_runtime(&ws.runtime).await {
+                Ok(rt) => {
+                    match rt.status(&ws.instance).await {
+                        Ok(status) => {
+                            let hs = match status.state {
+                                crate::runtime::InstanceState::Running if status.ready => {
+                                    crate::orchestrator::HealthStatus::Healthy
+                                }
+                                crate::runtime::InstanceState::Running => {
+                                    crate::orchestrator::HealthStatus::Degraded
+                                }
+                                crate::runtime::InstanceState::Failed => {
+                                    crate::orchestrator::HealthStatus::Unhealthy
+                                }
+                                _ => crate::orchestrator::HealthStatus::Unknown,
+                            };
+                            statuses.insert(mw.name.clone(), hs);
+                        }
+                        Err(_) => {
+                            statuses.insert(mw.name.clone(), crate::orchestrator::HealthStatus::Unknown);
+                        }
+                    }
+                }
+                Err(_) => {
+                    statuses.insert(mw.name.clone(), crate::orchestrator::HealthStatus::Unknown);
+                }
+            }
+        }
+    }
+    drop(state_store);
+
+    let actions = orch.run_health_checks_from_statuses(&statuses);
+    orch.save(&orch_path)?;
+
+    if !actions.is_empty() {
+        tracing::info!("Background health check: {} action(s)", actions.len());
+    }
+
+    Ok(())
+}
+
 /// Start the API server
 pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     // Load state
     let state_store = StateStore::load(&config.state_path)?;
+    let (event_tx, _) = broadcast::channel::<String>(256);
+
+    // Load RBAC store (create empty if not found)
+    let rbac_store = crate::rbac::RbacStore::load(&crate::rbac::RbacStore::default_path())
+        .unwrap_or_default();
+
     let app_state = AppState {
         state: Arc::new(RwLock::new(state_store)),
+        event_tx,
+        rbac: Arc::new(RwLock::new(rbac_store)),
     };
+
+    // Spawn background health check loop
+    {
+        let health_state = app_state.state.clone();
+        tokio::spawn(async move {
+            let interval = std::time::Duration::from_secs(30);
+            loop {
+                tokio::time::sleep(interval).await;
+                if let Err(e) = run_background_health_check(&health_state).await {
+                    tracing::debug!("Background health check cycle: {}", e);
+                }
+            }
+        });
+    }
 
     let tls_enabled = config.tls_cert.is_some() && config.tls_key.is_some();
     let scheme = if tls_enabled { "https" } else { "http" };
 
-    // CORS configuration: restrict to same-origin by default
+    // CORS: allow any origin since the dashboard is served from this same server.
+    // When accessed via NodePort or load balancer, the external origin differs
+    // from the bind address, so restricting to self would block the dashboard.
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::DELETE])
         .allow_headers(Any)
-        .allow_origin({
-            let origin_str = format!("{}://{}:{}", scheme, config.host, config.port);
-            origin_str.parse::<HeaderValue>().unwrap_or_else(|e| {
-                tracing::warn!("Failed to parse CORS origin '{}': {}, using default", origin_str, e);
-                HeaderValue::from_static("http://127.0.0.1:5090")
-            })
-        });
+        .allow_origin(Any);
 
-    // Build router
+    // Build router — dashboard assets are embedded in the binary via include_str!
     let app = Router::new()
         .route("/", get(serve_dashboard))
+        .route("/assets/index-DiVd-Lmd.css", get(serve_dashboard_css))
+        .route("/assets/index-qv9Tu_QH.js", get(serve_dashboard_js))
         .route("/health", get(health_check))
+        .route("/api/events/stream", get(sse_events))
         .route("/api/workloads", get(list_workloads))
         .route("/api/workloads", post(create_workload))
         .route("/api/workloads/:name", get(get_workload))
@@ -158,11 +275,16 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/plugins/discover", post(api_plugins_discover))
         .route("/api/health/:workload", get(api_health_summary))
         .route("/api/compose/validate", post(api_compose_validate))
+        .route("/api/audit/verify", get(api_audit_verify))
+        .route("/api/rbac/keys", get(rbac_list_keys))
+        .route("/api/rbac/keys", post(rbac_create_key))
+        .route("/api/rbac/keys/revoke", post(rbac_revoke_key))
         .layer(
             ServiceBuilder::new()
                 .layer(DefaultBodyLimit::max(2 * 1024 * 1024)) // 2 MB max request body
+                .layer(tower::limit::ConcurrencyLimitLayer::new(200))
                 .layer(cors)
-                .layer(middleware::from_fn(auth_middleware))
+                .layer(middleware::from_fn_with_state(app_state.clone(), auth_middleware))
         )
         .with_state(app_state);
 
@@ -187,12 +309,22 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     }
 
     if tls_enabled {
-        // HTTPS with TLS
+        // HTTPS with TLS — validate files exist before attempting to load
+        let cert_path = config.tls_cert.as_ref().unwrap();
+        let key_path = config.tls_key.as_ref().unwrap();
+        if !cert_path.exists() {
+            anyhow::bail!("TLS certificate file not found: {}", cert_path.display());
+        }
+        if !key_path.exists() {
+            anyhow::bail!("TLS key file not found: {}", key_path.display());
+        }
+
         let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file(
-            config.tls_cert.as_ref().unwrap(),
-            config.tls_key.as_ref().unwrap(),
+            cert_path,
+            key_path,
         )
-        .await?;
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to load TLS certificate/key: {e}"))?;
 
         let handle = axum_server::Handle::new();
         let shutdown_handle = handle.clone();

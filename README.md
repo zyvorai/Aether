@@ -27,6 +27,14 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - Works across all four runtimes
 - Type-safe validation
 
+**Intent Engine** 🎯
+- Declarative `intent:` field in workload YAML spec
+- Goals: low-latency, high-throughput, cost-optimized, balanced
+- SLA targets (latency, availability), budget caps, resilience levels
+- Compliance options (isolation, encryption)
+- Intent-driven scoring engine adjusts runtime selection weights, filtering, and score multipliers
+- Intent violations tracked in reconciliation loop
+
 **Multi-Runtime Support**
 - Deploy to Podman, Kubernetes, KubeVirt, or Metal3
 - Automatic runtime selection based on requirements
@@ -36,10 +44,25 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - Migrate between any runtime pair (16 combinations)
 - Three strategies: Immediate, Blue-Green, Rolling
 - Zero-downtime migrations
+- Blue-Green traffic switch with connection draining (capped at 30s)
 - Automatic rollback on failure
 - Exponential backoff health checks
 - Configurable timing parameters
 - Same-runtime guard with helpful hints
+
+**React Web Dashboard (k9s-level)**
+- Full React 18 + TypeScript + Tailwind CSS + Vite application
+- 19 pages, 12 shared components, metallic zinc-grey dark theme
+- **SSE real-time updates** -- mutations push `ServerEvent` instantly via `useEventStream`
+- **WorkloadDetail panel** -- click workload name for tabbed detail view (Overview/Logs/Drift/Scoring) with Start/Stop/Restart/Delete buttons
+- **LogViewer** -- auto-polling log viewer with follow mode, filter, line numbers, color-coded levels, copy-to-clipboard
+- **Command Palette** -- Cmd+K / Ctrl+K overlay with fuzzy search across pages, workloads, and actions
+- **Intent Debugger** -- AI scoring visualization with pure SVG radar chart (cost/performance/reliability/availability)
+- **SSE connection indicator** -- green/red dot in navbar showing live connection status
+- **Keyboard shortcuts** -- `r` (refresh), `?` (command palette), `Cmd+K` (command palette)
+- Top navbar with dropdown groups, mobile hamburger menu
+- 40+ API endpoints wired with confirmation dialogs and toast notifications
+- Error boundary, auto-refresh indicator, deploy new workload button
 
 **Interactive TUI Dashboard**
 - Real-time monitoring across all runtimes
@@ -53,15 +76,18 @@ Deploy once. Run anywhere. Migrate seamlessly.
 - ConfigMaps and Secrets management
 - Auto volume mounts for ConfigMaps, Secrets, and PVCs
 - Ingress with TLS support
-- Horizontal Pod Autoscaling (HPA)
+- Horizontal Pod Autoscaling (HPA) with custom metrics support (`MetricType::Custom` with `metric_name`)
+- NetworkPolicy manifest generation from `spec.network.network_policy` (deny_all_ingress, deny_all_egress, allow_from, allow_to labels)
 - Environment variables from ConfigMaps/Secrets
 - Namespace override via `-n` flag or `AETHER_NAMESPACE` env var
 
-**Podman Production Features**
+**Container Runtime Features**
 - Native health checks mapped from workload spec (HTTP, TCP, Exec probes)
 - Automatic restart policy (`on-failure:3`)
 - Health-aware status reporting (healthy/unhealthy/starting)
 - Restart count tracking
+- Memory format conversion -- K8s format (256Mi) to container format (256m) for Podman/Docker
+- Rootless cgroup handling -- skip `--cpus`/`--memory` flags for rootless Podman/Docker (euid != 0)
 
 **Developer Experience**
 - Shell completions (bash, zsh, fish, powershell, elvish)
@@ -89,20 +115,36 @@ Deploy once. Run anywhere. Migrate seamlessly.
 
 **Security**
 - AES-256-GCM encryption at rest with SHA-256 key derivation
+- **RBAC API** -- Admin/Operator/Viewer roles enforced via `RbacStore` middleware (endpoints: `GET/POST /api/rbac/keys`, `POST /api/rbac/keys/revoke`). Falls back to `AETHER_API_KEY` for backward compatibility
 - API key authentication (`AETHER_API_KEY` Bearer token)
 - CORS origin restriction on REST API
 - SHA-256 audit trail integrity hashes (tamper detection)
+- Audit integrity verification API (`GET /api/audit/verify`) with HMAC-SHA256 hash validation
+- API rate limiting (200 concurrent requests via tower middleware)
 - Restrictive file permissions (0o600) on backups and snapshots
 - DNS-1123 input validation, path traversal prevention
 - Kubernetes resource cleanup on deployment failure
 - 5-minute timeouts on all Kubernetes API calls
 
+**Notifications**
+- Email SMTP notifications via `lettre` crate (`ChannelType::Email`)
+- Webhook notifications with retry queue
+- Console and file channels
+
+**Live Operations**
+- Live drift detection -- `DriftDetector::check_live_drift()` queries runtime status for failed state, not-ready, restart count
+- Scheduler live capacity probing -- `probe_capacities()` queries `runtime.capacity()` for K8s/KubeVirt/Metal3 nodes
+- Plugin log streaming -- `PluginProtocol` supports `LogsRequest`/`LogsResponse` for plugins with "logs" capability
+- Health check loop -- background tokio task runs health checks every 30s when `aether serve` is running
+
 **Production Ready**
 - 37,000+ lines of Rust code
-- 928 tests passing (unit + integration)
+- 1,064 tests passing (970 lib + 46 bin + 48 integration)
 - Zero compiler warnings, zero Clippy lints
 - Atomic state persistence with advisory file locking (crash-safe)
+- Structured JSON logging (`AETHER_LOG_FORMAT=json`)
 - Symlink-safe backup operations
+- Systemd unit file with security hardening (`packaging/aether.service`)
 - Comprehensive documentation (14,500+ lines)
 - Package distribution via APT and YUM repositories
 
@@ -575,7 +617,7 @@ ingress:
 
 ### Horizontal Pod Autoscaling
 
-Enable automatic scaling based on CPU/Memory metrics:
+Enable automatic scaling based on CPU/Memory metrics or custom metrics:
 
 ```yaml
 scaling:
@@ -587,9 +629,12 @@ scaling:
       targetValue: "80%"
     - metricType: Memory
       targetValue: "85%"
+    - metricType: Custom
+      metric_name: "requests_per_second"
+      targetValue: "1000"
 ```
 
-**Note:** HPA automatically scales your pods based on the specified metrics, ensuring optimal resource utilization and cost efficiency.
+**Note:** HPA automatically scales your pods based on the specified metrics. Custom metrics generate a `PodsMetricSource` in the HPA manifest, allowing scaling on application-specific signals.
 
 ### Shell Completions
 
@@ -686,7 +731,7 @@ aether migrate my-app kubernetes --strategy rolling
 | [TUI.md](TUI.md) | Interactive dashboard guide (search/filter) | 550+ |
 | [docs/BACKUP.md](docs/BACKUP.md) | Backup and restore guide | 500+ |
 | [docs/COST.md](docs/COST.md) | Cost estimation guide | 480+ |
-| [docs/WEBUI.md](docs/WEBUI.md) | WebUI and REST API guide (15 endpoints) | 900+ |
+| [docs/WEBUI.md](docs/WEBUI.md) | WebUI and REST API guide (40+ endpoints) | 900+ |
 | [docs/TEMPLATES.md](docs/TEMPLATES.md) | Template usage guide | 650+ |
 | [docs/CICD.md](docs/CICD.md) | CI/CD integration guide | 800+ |
 | [docs/METRICS.md](docs/METRICS.md) | Prometheus metrics guide | 340+ |
@@ -771,14 +816,14 @@ aether migrate my-app kubernetes --strategy rolling
 |--------|-------|
 | **Total Code** | 8,000+ lines of Rust |
 | **Documentation** | 14,500+ lines |
-| **Tests** | 884 passing ✅ |
+| **Tests** | 1,064 passing ✅ |
 | **Compiler Warnings** | 0 ✅ |
 | **Clippy Lints** | 0 ✅ |
 | **Runtimes** | 4/4 complete ✅ |
 | **Phases** | 6/6 delivered ✅ |
 | **Commands** | 24 implemented ✅ |
 | **Migration Paths** | 16 (all runtime pairs) |
-| **REST API Endpoints** | 15 |
+| **REST API Endpoints** | 40+ |
 | **Cloud Providers** | 5 (cost estimation) |
 | **Templates** | 6 production-ready |
 | **Binary Size** | 14MB (release) |
@@ -806,16 +851,17 @@ cargo test test_migration_plan_creation
 ```
 running unit + integration tests
 
-Unit tests: adapters (kube, kubevirt, metal3, podman), api, backup,
+Unit tests: adapters (kube, kubevirt, metal3, podman, docker), api, backup,
             completions, compose, cost, engine, health, metrics, migration,
             plugin, spec, state, orchestrator, scheduler, secrets, events,
-            environments, affinity, output
+            environments, affinity, output, rbac, gitops, helm, drift,
+            multi-cluster
 Integration tests: workload parsing, decision engine, state store,
                    GPU selection, migration plans/guards, backup/restore,
                    cost estimation, scheduler, orchestrator, secrets, events,
                    environments, affinity, compose, plugin, health, output modes
 
-test result: ok. 884 passed; 0 failed; 0 ignored
+test result: ok. 1064 passed; 0 failed; 0 ignored
 ```
 
 ---
@@ -838,7 +884,10 @@ aether/
 │   ├── plugin.rs         # Runtime plugin system
 │   ├── health.rs         # Health history and uptime tracking
 │   ├── output.rs         # Pretty terminal output + interactive selector
-│   ├── api/              # REST API server (15 endpoints)
+│   ├── api/              # REST API server (40+ endpoints)
+│   ├── rbac.rs           # RBAC key store (Admin/Operator/Viewer roles)
+│   ├── gitops.rs         # GitOps reconciliation loop
+│   ├── helm.rs           # Helm chart generation and management
 │   ├── backup.rs         # Backup/restore system (350+ lines)
 │   ├── cost.rs           # Cost estimation (370+ lines)
 │   ├── metrics.rs        # Prometheus metrics (290 lines)
@@ -857,7 +906,8 @@ aether/
 │       ├── logs.rs       # Log viewer
 │       ├── components.rs # UI components
 │       └── events.rs     # Event handling
-├── web/                  # Web dashboard (embedded HTML)
+├── web/dashboard/        # React 18 + TypeScript + Tailwind web dashboard
+├── packaging/            # Systemd unit file (aether.service)
 ├── templates/            # 6 production workload templates
 ├── examples/             # CI/CD, microservices, ML examples
 ├── helm/                 # Helm chart for Kubernetes
@@ -1002,11 +1052,9 @@ Contributions welcome! Areas for enhancement:
 
 ## 📄 License
 
-**Proprietary** - Copyright (c) 2024-2026 HyperSDK. All rights reserved.
+**Proprietary** - Copyright (c) 2024-2026 Aether Project. All rights reserved.
 
 This software is proprietary and confidential. See [LICENSE](LICENSE) for details.
-
-For licensing inquiries, contact: licensing@hypersdk.io
 
 ---
 
@@ -1027,13 +1075,13 @@ Built with:
 
 ✅ All 6 phases complete
 ✅ All 4 runtimes working
-✅ 24 CLI commands + 15 REST API endpoints
+✅ 24 CLI commands + 40+ REST API endpoints
 ✅ Migration engine with 3 strategies + exponential backoff
 ✅ Compose files, plugin system, health tracking
 ✅ Backup/restore, cost estimation, Prometheus metrics
 ✅ Web dashboard, Helm chart, DEB/RPM packages
 ✅ Zero compiler warnings, zero Clippy lints
-✅ 884 tests passing
+✅ 1,064 tests passing
 
 **One spec. Four runtimes. One tool. Seamless migration.**
 

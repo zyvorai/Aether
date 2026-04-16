@@ -222,7 +222,9 @@ aether config --init                 # Create default config file
 | Variable | Description | Default |
 |---|---|---|
 | `AETHER_NAMESPACE` | Kubernetes namespace for kube-based runtimes. Overridden by `-n` flag. | `default` |
-| `AETHER_SECRET_KEY` | Encryption key for secrets. Enables AES-256-GCM when set. | Built-in dev key (XOR obfuscation, NOT secure) |
+| `AETHER_SECRET_KEY` | Encryption key for secrets. Enables AES-256-GCM when set. | Machine-derived key (logged warning) |
+| `AETHER_API_KEY` | Bearer token for API authentication (backward-compat fallback when RBAC keys exist). | Unset (API is public) |
+| `AETHER_LOG_FORMAT` | Set to `json` for structured JSON log output. | Unset (human-readable) |
 
 ### Setting the Secret Key
 
@@ -326,6 +328,19 @@ aether secrets audit                             # Check rotation status
 
 ---
 
+## 🛂 RBAC Commands
+
+```bash
+# Managed via REST API (requires Admin role)
+curl http://localhost:5090/api/rbac/keys                          # List RBAC keys
+curl -X POST http://localhost:5090/api/rbac/keys \
+  -d '{"name":"ci","role":"operator"}'                            # Create key
+curl -X POST http://localhost:5090/api/rbac/keys/revoke \
+  -d '{"name":"ci"}'                                              # Revoke key
+```
+
+---
+
 ## 🧠 AI and Intelligence
 
 ```bash
@@ -334,11 +349,31 @@ aether profile                                   # Resource profiling and waste 
 aether analyze-logs my-app                       # Log anomaly detection
 aether migration-advice my-app kube              # Migration risk assessment
 aether scaling-advice                            # Predictive scaling recommendation
+aether intent                                    # Evaluate intent goals and scoring
 aether drift my-app                              # Configuration drift detection
 aether drift my-app --reconcile                  # Auto-reconcile detected drift
 aether policy-check                              # Check spec against policies
 aether policy-check --policy development         # Use development policy set
 ```
+
+---
+
+## 🌐 Web Dashboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `r` | Refresh current page |
+| `?` | Open Command Palette |
+| `Cmd+K` / `Ctrl+K` | Open Command Palette |
+
+### Dashboard Features
+
+- **SSE real-time updates** -- mutations push events instantly (no polling)
+- **WorkloadDetail** -- click workload name for tabbed detail panel (Overview/Logs/Drift/Scoring)
+- **LogViewer** -- auto-poll, follow mode, filter, line numbers, color-coded levels, copy-to-clipboard
+- **Command Palette** -- fuzzy search across pages, workloads, and actions
+- **Intent Debugger** -- SVG radar chart for AI scoring visualization
+- **Connection indicator** -- green/red dot showing SSE connection status
 
 ---
 

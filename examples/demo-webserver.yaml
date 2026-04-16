@@ -1,0 +1,25 @@
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: demo-webserver
+  owner: sus
+  project: aether-demo
+build:
+  context: "."
+  dockerfile: Dockerfile
+  registry: localhost
+requirements:
+  cpu: "500m"
+  memory: 256Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+network:
+  service: true
+  serviceType: NodePort
+  ports:
+    - containerPort: 2222
+      servicePort: 2222
+      protocol: TCP

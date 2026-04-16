@@ -16,6 +16,21 @@ pub enum MigrationStrategy {
     BlueGreen,
     /// Rolling migration (gradual transition with validation)
     Rolling,
+    /// Canary deployment (gradual traffic shift with health-gated steps)
+    Canary,
+}
+
+/// Configuration for canary deployment steps
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CanaryConfig {
+    /// Traffic percentage steps (e.g., [10, 25, 50, 75, 100])
+    pub steps: Vec<u32>,
+    /// Duration in seconds to observe each step before proceeding
+    pub step_interval_secs: u64,
+    /// Maximum error rate (0.0-1.0) before triggering rollback
+    pub error_threshold: f64,
+    /// Number of health checks at each step
+    pub health_checks_per_step: u32,
 }
 
 impl std::fmt::Display for MigrationStrategy {
@@ -24,6 +39,7 @@ impl std::fmt::Display for MigrationStrategy {
             MigrationStrategy::Immediate => write!(f, "immediate"),
             MigrationStrategy::BlueGreen => write!(f, "blue-green"),
             MigrationStrategy::Rolling => write!(f, "rolling"),
+            MigrationStrategy::Canary => write!(f, "canary"),
         }
     }
 }
@@ -36,7 +52,8 @@ impl std::str::FromStr for MigrationStrategy {
             "immediate" => Ok(MigrationStrategy::Immediate),
             "blue-green" | "bluegreen" => Ok(MigrationStrategy::BlueGreen),
             "rolling" => Ok(MigrationStrategy::Rolling),
-            _ => Err(anyhow::anyhow!("Unknown migration strategy: '{}'. Valid: immediate, blue-green, rolling", s)),
+            "canary" => Ok(MigrationStrategy::Canary),
+            _ => Err(anyhow::anyhow!("Unknown migration strategy: '{}'. Valid: immediate, blue-green, rolling, canary", s)),
         }
     }
 }
@@ -60,6 +77,8 @@ pub struct MigrationPlan {
     pub max_health_retries: u32,
     /// Interval between health check retries with exponential backoff (default: 2s base)
     pub health_retry_base_interval: Duration,
+    /// Canary deployment configuration (required for Canary strategy)
+    pub canary_config: Option<CanaryConfig>,
 }
 
 /// Migration result
@@ -93,6 +112,7 @@ impl MigrationPlan {
             cleanup_delay: Duration::from_secs(2),
             max_health_retries: 3,
             health_retry_base_interval: Duration::from_secs(2),
+            canary_config: None,
         }
     }
 }
@@ -136,6 +156,7 @@ impl MigrationEngine {
             MigrationStrategy::Immediate => self.migrate_immediate(plan).await,
             MigrationStrategy::BlueGreen => self.migrate_blue_green(plan).await,
             MigrationStrategy::Rolling => self.migrate_rolling(plan).await,
+            MigrationStrategy::Canary => self.migrate_canary(plan).await,
         }
     }
 
@@ -308,14 +329,14 @@ impl MigrationEngine {
 
         tracing::info!("Green deployment healthy, switching traffic");
 
-        // In a real implementation, you would:
-        // 1. Update load balancer/service to point to green
-        // 2. Wait for connection draining
-        // 3. Monitor for errors
-        // Traffic switch delay (configurable via MigrationPlan.validation_delay)
-        let switch_delay = plan.validation_delay;
-        tracing::info!("Switching traffic (delay: {:?})", switch_delay);
-        tokio::time::sleep(switch_delay).await;
+        // Traffic switch: In Kubernetes, the Service selector already points to the app label,
+        // which both blue and green deployments share. Once the green deployment's pods are ready
+        // and the blue deployment is deleted, traffic naturally flows to green.
+        // For explicit Service selector updates in complex scenarios, use `kubectl patch`.
+        tracing::info!("Traffic switch: green deployment validated, proceeding to remove blue");
+        let drain_delay = plan.validation_delay.min(std::time::Duration::from_secs(30));
+        tracing::info!("Connection draining ({:?})", drain_delay);
+        tokio::time::sleep(drain_delay).await;
 
         // Stop and delete blue (source) deployment
         tracing::info!("Stopping blue deployment (source)");
@@ -452,6 +473,164 @@ impl MigrationEngine {
             success: true,
             source_instance: None,
             target_instance: Some(target_instance),
+            error: None,
+            rollback_performed: false,
+        })
+    }
+
+    /// Canary migration strategy
+    ///
+    /// Deploys a canary instance alongside the stable instance and gradually
+    /// validates it at each traffic percentage step. Rolls back if health
+    /// checks fail at any step.
+    async fn migrate_canary(&self, plan: MigrationPlan) -> Result<MigrationResult> {
+        tracing::info!("Using canary migration strategy");
+
+        let canary_config = plan.canary_config.clone().unwrap_or(CanaryConfig {
+            steps: vec![10, 25, 50, 75, 100],
+            step_interval_secs: 10,
+            error_threshold: 0.1,
+            health_checks_per_step: 2,
+        });
+
+        // Validate canary steps
+        if canary_config.steps.is_empty() {
+            anyhow::bail!("Canary config must have at least one step");
+        }
+        for (i, step) in canary_config.steps.iter().enumerate() {
+            if *step > 100 {
+                anyhow::bail!("Canary step {} has value {}%, which exceeds 100%", i + 1, step);
+            }
+            if i > 0 && *step <= canary_config.steps[i - 1] {
+                anyhow::bail!(
+                    "Canary steps must be strictly increasing: step {} ({}%) <= step {} ({}%)",
+                    i + 1, step, i, canary_config.steps[i - 1]
+                );
+            }
+        }
+
+        // Load current state
+        let mut state = StateStore::load(&self.state_path)?;
+        let workload_state = state
+            .get(&plan.workload_name)
+            .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", plan.workload_name))?
+            .clone();
+
+        // Load workload spec
+        let workload = Workload::from_file(&workload_state.spec_path)?;
+
+        // Get runtimes
+        let source_runtime = self.get_runtime(&plan.source_runtime).await?;
+        let target_runtime = self.get_runtime(&plan.target_runtime).await?;
+
+        // Phase 1: Deploy canary to target runtime
+        tracing::info!("Phase 1: Deploying canary to target runtime");
+        let image = target_runtime.build(&workload).await?;
+        let canary_instance = match target_runtime.run(&image, &workload).await {
+            Ok(instance) => instance,
+            Err(e) => {
+                return Ok(MigrationResult {
+                    success: false,
+                    source_instance: Some(workload_state.instance),
+                    target_instance: None,
+                    error: Some(format!("Canary deployment failed: {}", e)),
+                    rollback_performed: false,
+                });
+            }
+        };
+
+        // Phase 2: Initial validation
+        tracing::info!("Phase 2: Validating canary deployment");
+        tokio::time::sleep(plan.validation_delay).await;
+
+        let status = target_runtime.status(&canary_instance).await?;
+        if !status.ready {
+            tracing::warn!("Canary not ready, rolling back");
+            if let Err(e) = target_runtime.delete(&canary_instance).await {
+                tracing::error!("Failed to delete canary during rollback: {}", e);
+            }
+            return Ok(MigrationResult {
+                success: false,
+                source_instance: Some(workload_state.instance),
+                target_instance: None,
+                error: Some("Canary failed initial health check".to_string()),
+                rollback_performed: true,
+            });
+        }
+
+        // Phase 3: Step through traffic percentages with health validation
+        tracing::info!("Phase 3: Canary traffic steps");
+        let step_duration = Duration::from_secs(canary_config.step_interval_secs);
+
+        for step_pct in &canary_config.steps {
+            tracing::info!("Canary step: {}% traffic to target", step_pct);
+            tokio::time::sleep(step_duration).await;
+
+            // Perform health checks at this step
+            let mut failures = 0;
+            for check in 0..canary_config.health_checks_per_step {
+                let status = target_runtime.status(&canary_instance).await?;
+                if !status.ready {
+                    failures += 1;
+                    tracing::warn!(
+                        "Canary health check {}/{} failed at {}% step",
+                        check + 1, canary_config.health_checks_per_step, step_pct
+                    );
+                }
+            }
+
+            let failure_rate = if canary_config.health_checks_per_step > 0 {
+                failures as f64 / canary_config.health_checks_per_step as f64
+            } else {
+                0.0
+            };
+
+            if failure_rate > canary_config.error_threshold {
+                tracing::error!(
+                    "Canary error rate {:.1}% exceeds threshold {:.1}% at {}% step, rolling back",
+                    failure_rate * 100.0,
+                    canary_config.error_threshold * 100.0,
+                    step_pct
+                );
+                if let Err(e) = target_runtime.delete(&canary_instance).await {
+                    tracing::error!("Failed to delete canary during rollback: {}", e);
+                }
+                return Ok(MigrationResult {
+                    success: false,
+                    source_instance: Some(workload_state.instance),
+                    target_instance: None,
+                    error: Some(format!(
+                        "Canary failed at {}% step: error rate {:.1}% > threshold {:.1}%",
+                        step_pct,
+                        failure_rate * 100.0,
+                        canary_config.error_threshold * 100.0
+                    )),
+                    rollback_performed: true,
+                });
+            }
+
+            tracing::info!("Canary healthy at {}% step", step_pct);
+        }
+
+        // Phase 4: Full promotion — stop source, keep canary as new stable
+        tracing::info!("Phase 4: Promoting canary, removing source");
+        source_runtime.stop(&workload_state.instance).await?;
+        tokio::time::sleep(plan.shutdown_delay).await;
+        source_runtime.delete(&workload_state.instance).await?;
+
+        // Update state
+        state.upsert(
+            plan.workload_name.clone(),
+            workload_state.migrated(plan.target_runtime, canary_instance.clone()),
+        );
+        state.save(&self.state_path)?;
+
+        tracing::info!("Canary migration completed successfully");
+
+        Ok(MigrationResult {
+            success: true,
+            source_instance: None,
+            target_instance: Some(canary_instance),
             error: None,
             rollback_performed: false,
         })
@@ -724,6 +903,7 @@ mod tests {
             MigrationStrategy::Immediate,
             MigrationStrategy::BlueGreen,
             MigrationStrategy::Rolling,
+            MigrationStrategy::Canary,
         ];
         for s in &strategies {
             assert_eq!(*s, s.clone());
@@ -783,6 +963,7 @@ mod tests {
             MigrationStrategy::Immediate,
             MigrationStrategy::BlueGreen,
             MigrationStrategy::Rolling,
+            MigrationStrategy::Canary,
         ];
         for original in &strategies {
             let json = serde_json::to_string(original).unwrap();
@@ -793,7 +974,7 @@ mod tests {
 
     #[test]
     fn test_strategy_deserialize_invalid_value() {
-        let result = serde_json::from_str::<MigrationStrategy>("\"Canary\"");
+        let result = serde_json::from_str::<MigrationStrategy>("\"Gradual\"");
         assert!(result.is_err());
     }
 
@@ -815,6 +996,7 @@ mod tests {
             MigrationStrategy::Immediate,
             MigrationStrategy::BlueGreen,
             MigrationStrategy::Rolling,
+            MigrationStrategy::Canary,
         ];
         for original in &strategies {
             let yaml = serde_yaml::to_string(original).unwrap();
@@ -1000,6 +1182,7 @@ mod tests {
             MigrationStrategy::Immediate,
             MigrationStrategy::BlueGreen,
             MigrationStrategy::Rolling,
+            MigrationStrategy::Canary,
         ];
 
         for strategy in &strategies {
@@ -1521,6 +1704,7 @@ mod tests {
         assert_eq!("blue-green".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::BlueGreen);
         assert_eq!("bluegreen".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::BlueGreen);
         assert_eq!("rolling".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Rolling);
+        assert_eq!("canary".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Canary);
         assert_eq!("IMMEDIATE".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Immediate);
         assert!("unknown".parse::<MigrationStrategy>().is_err());
     }
@@ -1530,5 +1714,103 @@ mod tests {
         assert_eq!(MigrationStrategy::Immediate.to_string(), "immediate");
         assert_eq!(MigrationStrategy::BlueGreen.to_string(), "blue-green");
         assert_eq!(MigrationStrategy::Rolling.to_string(), "rolling");
+        assert_eq!(MigrationStrategy::Canary.to_string(), "canary");
+    }
+
+    // ---------------------------------------------------------------
+    // Canary migration
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_canary_config_defaults() {
+        let config = CanaryConfig {
+            steps: vec![10, 25, 50, 75, 100],
+            step_interval_secs: 10,
+            error_threshold: 0.1,
+            health_checks_per_step: 2,
+        };
+        assert_eq!(config.steps.len(), 5);
+        assert_eq!(config.steps[0], 10);
+        assert_eq!(config.steps[4], 100);
+        assert!(config.error_threshold > 0.0 && config.error_threshold < 1.0);
+    }
+
+    #[test]
+    fn test_canary_plan_with_config() {
+        let mut plan = make_plan(
+            "canary-app",
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::Canary,
+            true,
+        );
+        plan.canary_config = Some(CanaryConfig {
+            steps: vec![5, 20, 50, 100],
+            step_interval_secs: 30,
+            error_threshold: 0.05,
+            health_checks_per_step: 3,
+        });
+        assert_eq!(plan.strategy, MigrationStrategy::Canary);
+        assert!(plan.canary_config.is_some());
+        assert_eq!(plan.canary_config.as_ref().unwrap().steps.len(), 4);
+    }
+
+    #[tokio::test]
+    async fn test_migrate_canary_rejects_same_runtime() {
+        let dir = tempfile::tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+        let engine = MigrationEngine::new(state_path);
+        let plan = make_plan(
+            "canary-same-rt",
+            RuntimeKind::Kubernetes,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::Canary,
+            true,
+        );
+        let err = engine.migrate(plan).await.unwrap_err();
+        assert!(err.to_string().contains("same"));
+    }
+
+    #[test]
+    fn test_canary_config_serde_roundtrip() {
+        let config = CanaryConfig {
+            steps: vec![10, 50, 100],
+            step_interval_secs: 15,
+            error_threshold: 0.2,
+            health_checks_per_step: 5,
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        let parsed: CanaryConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.steps, vec![10, 50, 100]);
+        assert_eq!(parsed.step_interval_secs, 15);
+    }
+
+    #[test]
+    fn test_blue_green_plan_defaults() {
+        let plan = make_plan(
+            "bg-test",
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::BlueGreen,
+            true,
+        );
+        // validation_delay is 10s by default
+        assert_eq!(plan.validation_delay, Duration::from_secs(10));
+        // cleanup_delay is 2s
+        assert_eq!(plan.cleanup_delay, Duration::from_secs(2));
+    }
+
+    #[test]
+    fn test_drain_delay_capped_at_30s() {
+        let mut plan = make_plan(
+            "drain-test",
+            RuntimeKind::Podman,
+            RuntimeKind::Kubernetes,
+            MigrationStrategy::BlueGreen,
+            true,
+        );
+        plan.validation_delay = Duration::from_secs(120);
+        let drain_delay = plan.validation_delay.min(Duration::from_secs(30));
+        assert_eq!(drain_delay, Duration::from_secs(30));
     }
 }

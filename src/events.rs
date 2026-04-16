@@ -53,6 +53,7 @@ pub enum EventCategory {
     HealthCheck,
     SecretRotation,
     CostAnomaly,
+    IntentViolation,
     SystemAlert,
 }
 
@@ -68,6 +69,7 @@ impl std::fmt::Display for EventCategory {
             EventCategory::HealthCheck => write!(f, "HEALTH"),
             EventCategory::SecretRotation => write!(f, "SECRET"),
             EventCategory::CostAnomaly => write!(f, "COST"),
+            EventCategory::IntentViolation => write!(f, "INTENT"),
             EventCategory::SystemAlert => write!(f, "SYSTEM"),
         }
     }
@@ -114,6 +116,27 @@ pub enum ChannelType {
     },
     /// Write to stdout
     Console,
+    /// PagerDuty Events API v2
+    PagerDuty {
+        /// PagerDuty integration/routing key
+        routing_key: String,
+    },
+    /// Email via SMTP
+    Email {
+        /// SMTP server hostname
+        smtp_host: String,
+        /// SMTP server port (default: 587)
+        smtp_port: u16,
+        /// Sender email address
+        from: String,
+        /// Recipient email addresses
+        to: Vec<String>,
+    },
+    /// Microsoft Teams webhook
+    Teams {
+        /// Teams incoming webhook URL
+        webhook_url: String,
+    },
 }
 
 impl std::fmt::Display for ChannelType {
@@ -123,6 +146,9 @@ impl std::fmt::Display for ChannelType {
             ChannelType::Webhook { url, .. } => write!(f, "webhook:{}", url),
             ChannelType::Slack { channel, .. } => write!(f, "slack:#{}", channel),
             ChannelType::Console => write!(f, "console"),
+            ChannelType::PagerDuty { .. } => write!(f, "pagerduty"),
+            ChannelType::Email { from, .. } => write!(f, "email:{}", from),
+            ChannelType::Teams { .. } => write!(f, "teams"),
         }
     }
 }
@@ -502,6 +528,74 @@ impl EventBus {
                 // Slack webhooks are always POST
                 WebhookQueue::enqueue_raw(&payload_json, webhook_url, "POST");
             }
+            ChannelType::PagerDuty { routing_key } => {
+                let payload_json = format_pagerduty_payload(notification, routing_key);
+                WebhookQueue::enqueue_raw(
+                    &payload_json,
+                    "https://events.pagerduty.com/v2/enqueue",
+                    "POST",
+                );
+            }
+            ChannelType::Email { smtp_host, smtp_port, from, to } => {
+                use lettre::{Message, SmtpTransport, Transport};
+                use lettre::message::header::ContentType;
+
+                let subject = format!("[Aether] [{}] {}", notification.severity, notification.title);
+                let body = format!(
+                    "Aether Notification\n\
+                     ====================\n\n\
+                     Severity: {}\n\
+                     Category: {}\n\
+                     Workload: {}\n\n\
+                     {}\n\n\
+                     --\nAether Runtime Control Plane",
+                    notification.severity,
+                    notification.category,
+                    notification.workload.as_deref().unwrap_or("N/A"),
+                    notification.message,
+                );
+
+                for recipient in to {
+                    let email = match Message::builder()
+                        .from(from.parse().unwrap_or_else(|_| {
+                            tracing::warn!("Invalid email from address: {}", from);
+                            "aether@localhost".parse().unwrap()
+                        }))
+                        .to(match recipient.parse() {
+                            Ok(addr) => addr,
+                            Err(e) => {
+                                tracing::warn!("Invalid email recipient '{}': {}", recipient, e);
+                                continue;
+                            }
+                        })
+                        .subject(&subject)
+                        .header(ContentType::TEXT_PLAIN)
+                        .body(body.clone())
+                    {
+                        Ok(msg) => msg,
+                        Err(e) => {
+                            tracing::warn!("Failed to build email message: {}", e);
+                            continue;
+                        }
+                    };
+
+                    // NOTE: builder_dangerous disables TLS certificate verification.
+                    // Suitable for local/dev SMTP relays. For production with TLS,
+                    // switch to SmtpTransport::relay() which enforces TLS.
+                    match SmtpTransport::builder_dangerous(smtp_host)
+                        .port(*smtp_port)
+                        .build()
+                        .send(&email)
+                    {
+                        Ok(_) => tracing::info!("Email notification sent to {}", recipient),
+                        Err(e) => tracing::warn!("Failed to send email to {}: {}", recipient, e),
+                    }
+                }
+            }
+            ChannelType::Teams { webhook_url } => {
+                let payload_json = format_teams_payload(notification);
+                WebhookQueue::enqueue_raw(&payload_json, webhook_url, "POST");
+            }
         }
     }
 }
@@ -552,6 +646,79 @@ fn format_slack_payload(notification: &NotificationPayload) -> String {
                     }
                 }
             ]
+        }]
+    })
+    .to_string()
+}
+
+/// Format a notification as a PagerDuty Events API v2 payload.
+fn format_pagerduty_payload(notification: &NotificationPayload, routing_key: &str) -> String {
+    let severity = match notification.severity {
+        EventSeverity::Critical => "critical",
+        EventSeverity::Error => "error",
+        EventSeverity::Warning => "warning",
+        EventSeverity::Info => "info",
+    };
+
+    serde_json::json!({
+        "routing_key": routing_key,
+        "event_action": "trigger",
+        "payload": {
+            "summary": format!("[Aether] {}", notification.title),
+            "source": "aether",
+            "severity": severity,
+            "component": notification.workload.as_deref().unwrap_or("unknown"),
+            "group": format!("{}", notification.category),
+            "custom_details": {
+                "message": notification.message,
+                "event_id": notification.event_id,
+                "category": format!("{}", notification.category),
+            }
+        }
+    })
+    .to_string()
+}
+
+/// Format a notification as a Microsoft Teams Adaptive Card payload.
+fn format_teams_payload(notification: &NotificationPayload) -> String {
+    let color = match notification.severity {
+        EventSeverity::Critical => "attention",
+        EventSeverity::Error => "warning",
+        EventSeverity::Warning => "accent",
+        EventSeverity::Info => "good",
+    };
+
+    serde_json::json!({
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.4",
+                "body": [
+                    {
+                        "type": "TextBlock",
+                        "size": "Medium",
+                        "weight": "Bolder",
+                        "text": format!("Aether: {}", notification.title),
+                        "color": color
+                    },
+                    {
+                        "type": "FactSet",
+                        "facts": [
+                            { "title": "Severity", "value": format!("{}", notification.severity) },
+                            { "title": "Category", "value": format!("{}", notification.category) },
+                            { "title": "Workload", "value": notification.workload.as_deref().unwrap_or("N/A") }
+                        ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": notification.message,
+                        "wrap": true
+                    }
+                ]
+            }
         }]
     })
     .to_string()
@@ -1406,6 +1573,129 @@ mod tests {
         assert_eq!(bus.channels().len(), initial + 1);
 
         assert!(bus.remove_channel("slack-ops"));
+        assert_eq!(bus.channels().len(), initial);
+    }
+
+    // ---------------------------------------------------------------
+    // PagerDuty, Email, Teams channel tests
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn test_pagerduty_channel_type_display() {
+        let ct = ChannelType::PagerDuty {
+            routing_key: "R0123456789".to_string(),
+        };
+        assert_eq!(ct.to_string(), "pagerduty");
+    }
+
+    #[test]
+    fn test_email_channel_type_display() {
+        let ct = ChannelType::Email {
+            smtp_host: "smtp.example.com".to_string(),
+            smtp_port: 587,
+            from: "aether@example.com".to_string(),
+            to: vec!["ops@example.com".to_string()],
+        };
+        assert_eq!(ct.to_string(), "email:aether@example.com");
+    }
+
+    #[test]
+    fn test_teams_channel_type_display() {
+        let ct = ChannelType::Teams {
+            webhook_url: "https://outlook.office.com/webhook/xxx".to_string(),
+        };
+        assert_eq!(ct.to_string(), "teams");
+    }
+
+    #[test]
+    fn test_pagerduty_channel_serialization_roundtrip() {
+        let ct = ChannelType::PagerDuty {
+            routing_key: "R0123456789".to_string(),
+        };
+        let json = serde_json::to_string(&ct).unwrap();
+        let parsed: ChannelType = serde_json::from_str(&json).unwrap();
+        assert_eq!(ct, parsed);
+    }
+
+    #[test]
+    fn test_email_channel_serialization_roundtrip() {
+        let ct = ChannelType::Email {
+            smtp_host: "smtp.example.com".to_string(),
+            smtp_port: 587,
+            from: "aether@example.com".to_string(),
+            to: vec!["ops@example.com".to_string(), "dev@example.com".to_string()],
+        };
+        let json = serde_json::to_string(&ct).unwrap();
+        let parsed: ChannelType = serde_json::from_str(&json).unwrap();
+        assert_eq!(ct, parsed);
+    }
+
+    #[test]
+    fn test_teams_channel_serialization_roundtrip() {
+        let ct = ChannelType::Teams {
+            webhook_url: "https://outlook.office.com/webhook/xxx".to_string(),
+        };
+        let json = serde_json::to_string(&ct).unwrap();
+        let parsed: ChannelType = serde_json::from_str(&json).unwrap();
+        assert_eq!(ct, parsed);
+    }
+
+    #[test]
+    fn test_format_pagerduty_payload_structure() {
+        let notification = NotificationPayload {
+            channel_name: "pd".to_string(),
+            channel_type: ChannelType::Console,
+            event_id: 42,
+            title: "High CPU".to_string(),
+            message: "CPU at 95%".to_string(),
+            severity: EventSeverity::Critical,
+            category: EventCategory::HealthCheck,
+            workload: Some("web-app".to_string()),
+        };
+        let payload = format_pagerduty_payload(&notification, "R_KEY");
+        let parsed: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(parsed["routing_key"], "R_KEY");
+        assert_eq!(parsed["event_action"], "trigger");
+        assert_eq!(parsed["payload"]["severity"], "critical");
+        assert!(parsed["payload"]["summary"].as_str().unwrap().contains("High CPU"));
+    }
+
+    #[test]
+    fn test_format_teams_payload_structure() {
+        let notification = NotificationPayload {
+            channel_name: "teams".to_string(),
+            channel_type: ChannelType::Console,
+            event_id: 7,
+            title: "Drift Detected".to_string(),
+            message: "Config drift on db-primary".to_string(),
+            severity: EventSeverity::Warning,
+            category: EventCategory::DriftDetected,
+            workload: Some("db-primary".to_string()),
+        };
+        let payload = format_teams_payload(&notification);
+        let parsed: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(parsed["type"], "message");
+        assert!(parsed["attachments"][0]["content"]["body"][0]["text"]
+            .as_str().unwrap().contains("Drift Detected"));
+    }
+
+    #[test]
+    fn test_pagerduty_channel_add_remove() {
+        let mut bus = EventBus::new();
+        let initial = bus.channels().len();
+
+        bus.add_channel(NotificationChannel {
+            name: "pd-ops".to_string(),
+            channel_type: ChannelType::PagerDuty {
+                routing_key: "R_KEY_123".to_string(),
+            },
+            enabled: true,
+            min_severity: EventSeverity::Error,
+            categories: vec![],
+        });
+        assert_eq!(bus.channels().len(), initial + 1);
+
+        assert!(bus.remove_channel("pd-ops"));
         assert_eq!(bus.channels().len(), initial);
     }
 }

@@ -118,6 +118,8 @@ fn test_state_store_operations() {
         spec_path: PathBuf::from("/tmp/test.yaml"),
         created_at: chrono::Utc::now().to_rfc3339(),
         updated_at: chrono::Utc::now().to_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
     };
 
     state.upsert("test-app".to_string(), workload_state);
@@ -244,6 +246,8 @@ fn test_multiple_workloads_in_state() {
             spec_path: PathBuf::from(format!("/tmp/app-{}.yaml", i)),
             created_at: chrono::Utc::now().to_rfc3339(),
             updated_at: chrono::Utc::now().to_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
         };
 
         state.upsert(format!("app-{}", i), workload_state);
@@ -332,6 +336,8 @@ fn test_backup_create_list_restore() {
             spec_path: PathBuf::from("/tmp/test.yaml"),
             created_at: chrono::Utc::now().to_rfc3339(),
             updated_at: chrono::Utc::now().to_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
         },
     );
     state.save(&state_path).unwrap();
@@ -420,6 +426,8 @@ fn test_backup_merge() {
             spec_path: PathBuf::from("/tmp/existing.yaml"),
             created_at: chrono::Utc::now().to_rfc3339(),
             updated_at: chrono::Utc::now().to_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
         },
     );
     state.save(&state_path).unwrap();
@@ -441,6 +449,8 @@ fn test_backup_merge() {
             spec_path: PathBuf::from("/tmp/backup.yaml"),
             created_at: chrono::Utc::now().to_rfc3339(),
             updated_at: chrono::Utc::now().to_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
         },
     );
 
@@ -1098,6 +1108,8 @@ fn test_drift_detection_full_cycle() {
         spec_path: PathBuf::from("test.yaml"),
         created_at: chrono::Utc::now().to_rfc3339(),
         updated_at: chrono::Utc::now().to_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
     };
 
     let detector = DriftDetector::new();
@@ -1281,6 +1293,8 @@ fn test_resources_json_load_save_roundtrip() {
             spec_path: PathBuf::from("test.yaml"),
             created_at: chrono::Utc::now().to_rfc3339(),
             updated_at: chrono::Utc::now().to_rfc3339(),
+            os_version: None,
+            node_labels: vec![],
         },
     );
 
@@ -1621,4 +1635,171 @@ fn test_plugin_protocol_serialization() {
     let json = serde_json::to_string(&msg).unwrap();
     let parsed: PluginProtocol = serde_json::from_str(&json).unwrap();
     assert_eq!(msg, parsed);
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Intent spec integration tests
+// ───────────────────────────────────────────────────────────────────────
+
+#[test]
+fn test_intent_yaml_parsing() {
+    let temp_dir = TempDir::new().unwrap();
+    let spec_content = r#"
+apiVersion: aether/v1
+kind: Workload
+
+metadata:
+  name: intent-app
+  owner: test-user
+  project: test-project
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: ghcr.io/test
+
+requirements:
+  cpu: "4"
+  memory: "8Gi"
+  storage: "20Gi"
+
+runtime:
+  preferred: auto
+  allow:
+    - container
+    - kube
+    - kubevirt
+
+intent:
+  goal: low-latency
+  sla:
+    maxLatencyMs: 50
+    minAvailabilityPct: 99.9
+  budget:
+    maxMonthlyUsd: 500
+  resilience: high
+  compliance:
+    isolationRequired: true
+    encryptionRequired: false
+"#;
+
+    let spec_path = temp_dir.path().join("intent.yaml");
+    fs::write(&spec_path, spec_content).unwrap();
+
+    let workload = Workload::from_file(&spec_path).unwrap();
+    assert_eq!(workload.metadata.name, "intent-app");
+
+    let intent = workload.intent.as_ref().unwrap();
+    assert_eq!(intent.goal, aether::spec::IntentGoal::LowLatency);
+    assert_eq!(intent.sla.as_ref().unwrap().max_latency_ms, Some(50));
+    assert_eq!(intent.sla.as_ref().unwrap().min_availability_pct, Some(99.9));
+    assert_eq!(intent.budget.as_ref().unwrap().max_monthly_usd, 500.0);
+    assert_eq!(intent.resilience, Some(aether::spec::ResilienceLevel::High));
+    assert!(intent.compliance.as_ref().unwrap().isolation_required);
+    assert!(!intent.compliance.as_ref().unwrap().encryption_required);
+}
+
+#[test]
+fn test_intent_yaml_without_intent_still_works() {
+    let temp_dir = TempDir::new().unwrap();
+    let (workload, _) = create_test_workload("no-intent-app", &temp_dir);
+
+    // Existing workloads without intent should parse and validate fine
+    assert!(workload.intent.is_none());
+    assert_eq!(workload.metadata.name, "no-intent-app");
+}
+
+#[test]
+fn test_intent_scoring_integration() {
+    use aether::ai::scoring::ScoringEngine;
+
+    let temp_dir = TempDir::new().unwrap();
+    let spec_content = r#"
+apiVersion: aether/v1
+kind: Workload
+
+metadata:
+  name: scored-app
+  owner: test-user
+  project: test-project
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: ghcr.io/test
+
+requirements:
+  cpu: "2"
+  memory: "4Gi"
+  storage: "10Gi"
+
+runtime:
+  preferred: auto
+  allow:
+    - container
+    - kube
+    - kubevirt
+
+intent:
+  goal: cost-optimized
+  budget:
+    maxMonthlyUsd: 100
+"#;
+
+    let spec_path = temp_dir.path().join("scored.yaml");
+    fs::write(&spec_path, spec_content).unwrap();
+
+    let workload = Workload::from_file(&spec_path).unwrap();
+    let engine = ScoringEngine::with_defaults();
+    let result = engine.score(&workload);
+
+    // With cost-optimized intent, Podman (free) should rank highly
+    assert!(!result.scores.is_empty());
+    assert!(result.confidence > 0.0);
+}
+
+#[test]
+fn test_intent_engine_isolation_decision() {
+    let temp_dir = TempDir::new().unwrap();
+    let spec_content = r#"
+apiVersion: aether/v1
+kind: Workload
+
+metadata:
+  name: isolated-app
+  owner: test-user
+  project: test-project
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: ghcr.io/test
+
+requirements:
+  cpu: "2"
+  memory: "4Gi"
+  storage: "10Gi"
+
+runtime:
+  preferred: auto
+  allow:
+    - container
+    - kube
+    - kubevirt
+
+intent:
+  goal: balanced
+  compliance:
+    isolationRequired: true
+"#;
+
+    let spec_path = temp_dir.path().join("isolated.yaml");
+    fs::write(&spec_path, spec_content).unwrap();
+
+    let workload = Workload::from_file(&spec_path).unwrap();
+    let engine = Engine::new();
+    let runtime = engine.decide(&workload).unwrap();
+
+    // Isolation required → KubeVirt (it's in the allow list)
+    assert_eq!(runtime, RuntimeKind::KubeVirt);
 }
