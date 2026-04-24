@@ -1,6 +1,7 @@
 //! API handler functions
 
 use super::types::*;
+use anyhow::Context;
 use crate::config::Config;
 use crate::engine::Engine;
 use crate::kubecluster::ClusterLogsRequest;
@@ -10,13 +11,25 @@ use crate::state::{StateStore, WorkloadState};
 use crate::{backup, cost, Runtime};
 
 use axum::{
-    extract::{Path, Query, State as AxumState},
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        Path, Query, State as AxumState,
+    },
+    http::HeaderMap,
     http::StatusCode,
     response::{Html, IntoResponse, Json},
 };
 use axum::http::header;
-use futures::stream::StreamExt;
+use futures::{SinkExt, stream::StreamExt};
+use serde_json::json;
 use std::path::PathBuf;
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    net::TcpListener,
+    process::Command,
+    sync::mpsc,
+    time::{sleep, Duration},
+};
 
 /// Validate a workload name from API input.
 /// Accepts only DNS-1123 compatible names: lowercase alphanumeric, hyphens, dots,
@@ -115,6 +128,108 @@ fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Js
     )
 }
 
+fn record_audit_event(
+    action: crate::audit::AuditAction,
+    workload: &str,
+    runtime: Option<&str>,
+    result: crate::audit::ActionResult,
+    message: &str,
+    details: Option<&str>,
+) {
+    let path = crate::audit::AuditLog::default_path();
+    let mut log = crate::audit::AuditLog::load(&path).unwrap_or_default();
+    log.record(action, workload, runtime, result, message, details);
+    let _ = log.save(&path);
+}
+
+fn extract_bearer_token(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get("authorization")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(|s| s.to_string())
+}
+
+fn kubectl_resource_name(kind: &str) -> Option<&'static str> {
+    match kind {
+        "Namespace" => Some("namespaces"),
+        "Pod" => Some("pods"),
+        "ServiceAccount" => Some("serviceaccounts"),
+        "Secret" => Some("secrets"),
+        "PersistentVolumeClaim" => Some("persistentvolumeclaims"),
+        "Deployment" => Some("deployments.apps"),
+        "StatefulSet" => Some("statefulsets.apps"),
+        "DaemonSet" => Some("daemonsets.apps"),
+        "Job" => Some("jobs.batch"),
+        "CronJob" => Some("cronjobs.batch"),
+        "HorizontalPodAutoscaler" => Some("horizontalpodautoscalers.autoscaling"),
+        "Service" => Some("services"),
+        "Ingress" => Some("ingresses.networking.k8s.io"),
+        "NetworkPolicy" => Some("networkpolicies.networking.k8s.io"),
+        "ConfigMap" => Some("configmaps"),
+        "Event" => Some("events"),
+        "DataVolume" => Some("datavolumes.cdi.kubevirt.io"),
+        "VirtualMachine" => Some("virtualmachines.kubevirt.io"),
+        "VirtualMachineInstance" => Some("virtualmachineinstances.kubevirt.io"),
+        _ => None,
+    }
+}
+
+fn build_kubectl_command(context: &str) -> Command {
+    let mut command = Command::new("kubectl");
+    command.arg("--context").arg(context);
+    command
+}
+
+async fn read_child_stream_to_channel<T>(
+    stream: T,
+    tx: mpsc::UnboundedSender<String>,
+) where
+    T: tokio::io::AsyncRead + Unpin + Send + 'static,
+{
+    let mut reader = BufReader::new(stream);
+    let mut buffer = vec![0_u8; 4096];
+
+    loop {
+        match tokio::io::AsyncReadExt::read(&mut reader, &mut buffer).await {
+            Ok(0) => break,
+            Ok(bytes) => {
+                let chunk = String::from_utf8_lossy(&buffer[..bytes]).to_string();
+                if tx.send(chunk).is_err() {
+                    break;
+                }
+            }
+            Err(error) => {
+                let _ = tx.send(format!("\n[aether] stream error: {error}\n"));
+                break;
+            }
+        }
+    }
+}
+
+async fn allocate_local_port(requested: Option<u16>) -> anyhow::Result<u16> {
+    let bind_addr = format!("127.0.0.1:{}", requested.unwrap_or(0));
+    let listener = TcpListener::bind(&bind_addr).await?;
+    Ok(listener.local_addr()?.port())
+}
+
+async fn run_kubectl(args: Vec<String>) -> anyhow::Result<String> {
+    let output = Command::new("kubectl").args(args).output().await?;
+    if !output.status.success() {
+        anyhow::bail!(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+fn rollout_resource(kind: &str) -> Option<&'static str> {
+    match kind {
+        "Deployment" => Some("deployment"),
+        "StatefulSet" => Some("statefulset"),
+        "DaemonSet" => Some("daemonset"),
+        _ => None,
+    }
+}
+
 /// Embedded dashboard HTML (built from web/dashboard/ React app)
 pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/dashboard/dist/index.html");
 const DASHBOARD_CSS: &str = include_str!("../../web/dashboard/dist/assets/index-DiVd-Lmd.css");
@@ -142,6 +257,54 @@ pub(crate) async fn health_check() -> impl IntoResponse {
         version: env!("CARGO_PKG_VERSION").to_string(),
     };
     Json(ApiResponse::success(response))
+}
+
+/// GET /api/auth/me - Return the effective authenticated role for the current request.
+pub(crate) async fn api_auth_me(
+    AxumState(app_state): AxumState<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let token = extract_bearer_token(&headers);
+    let legacy_key = std::env::var("AETHER_API_KEY").ok().filter(|value| !value.is_empty());
+
+    {
+        let rbac_store = app_state.rbac.read().await;
+        if let Some(token) = token.as_deref() {
+            if let Some(entry) = rbac_store.verify_key(token) {
+                return ok_json(AuthStatusResponse {
+                    authenticated: true,
+                    username: entry.name.clone(),
+                    role: entry.role.to_string(),
+                });
+            }
+        }
+
+        if legacy_key.is_none() && rbac_store.list_keys().is_empty() {
+            return ok_json(AuthStatusResponse {
+                authenticated: true,
+                username: "local-dev".to_string(),
+                role: "admin".to_string(),
+            });
+        }
+    }
+
+    if let (Some(expected), Some(token)) = (legacy_key, token) {
+        use sha2::{Digest, Sha256};
+        let token_hash = Sha256::digest(token.as_bytes());
+        let expected_hash = Sha256::digest(expected.as_bytes());
+        if token_hash == expected_hash {
+            return ok_json(AuthStatusResponse {
+                authenticated: true,
+                username: "api-key".to_string(),
+                role: "admin".to_string(),
+            });
+        }
+    }
+
+    (
+        StatusCode::UNAUTHORIZED,
+        Json(ApiResponse::error("not authenticated".to_string())),
+    )
 }
 
 /// Discover workloads live from Kubernetes Deployments and KubeVirt VMs
@@ -1094,6 +1257,9 @@ pub(crate) async fn api_cluster_logs(
         namespace: query.namespace,
         kind: query.kind,
         name: query.name,
+        api_version: None,
+        plural: None,
+        namespaced: None,
     })
     .await
     {
@@ -1111,6 +1277,9 @@ pub(crate) async fn api_cluster_resource(
         namespace: query.namespace,
         kind: query.kind,
         name: query.name,
+        api_version: query.api_version,
+        plural: query.plural,
+        namespaced: query.namespaced,
     };
 
     match crate::kubecluster::workload_detail(&request).await {
@@ -1119,10 +1288,53 @@ pub(crate) async fn api_cluster_resource(
     }
 }
 
+/// GET /api/cluster/health - App-style health summary for a resource.
+pub(crate) async fn api_cluster_health(
+    Query(query): Query<ClusterHealthQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::health_summary(&ClusterLogsRequest {
+        cluster: query.cluster,
+        namespace: query.namespace,
+        kind: query.kind,
+        name: query.name,
+        api_version: query.api_version,
+        plural: query.plural,
+        namespaced: query.namespaced,
+    }).await {
+        Ok(summary) => ok_json(summary),
+        Err(error) => err_internal::<crate::kubecluster::ClusterHealthSummary>(error),
+    }
+}
+
+/// GET /api/cluster/events - List cluster events related to a specific resource.
+pub(crate) async fn api_cluster_events(
+    Query(query): Query<ClusterEventsQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::related_events(
+        &query.cluster,
+        &query.namespace,
+        &query.kind,
+        &query.name,
+    )
+    .await
+    {
+        Ok(events) => ok_json(events),
+        Err(error) => err_internal::<Vec<crate::kubecluster::ClusterRelatedEvent>>(error),
+    }
+}
+
 /// POST /api/cluster/action - Execute a native Kubernetes workload action.
 pub(crate) async fn api_cluster_action(
     Json(request): Json<ClusterActionRequestBody>,
 ) -> impl IntoResponse {
+    let workload_ref = format!("{}:{}/{}:{}", request.cluster, request.namespace, request.kind, request.name);
+    let audit_action = match request.action.as_str() {
+        "start" | "resume" | "uncordon" => crate::audit::AuditAction::Start,
+        "stop" | "suspend" | "cordon" | "drain" => crate::audit::AuditAction::Stop,
+        "delete" => crate::audit::AuditAction::Delete,
+        "scale" => crate::audit::AuditAction::Scale,
+        _ => crate::audit::AuditAction::ConfigChange,
+    };
     match crate::kubecluster::workload_action(&crate::kubecluster::ClusterActionRequest {
         cluster: request.cluster,
         namespace: request.namespace,
@@ -1130,9 +1342,19 @@ pub(crate) async fn api_cluster_action(
         name: request.name,
         action: request.action,
         replicas: request.replicas,
+        api_version: request.api_version,
+        plural: request.plural,
+        namespaced: request.namespaced,
     }).await {
-        Ok(message) => ok_json(message),
-        Err(error) => err_internal::<String>(error),
+        Ok(message) => {
+            record_audit_event(audit_action, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Success, &message, None);
+            ok_json(message)
+        }
+        Err(error) => {
+            let error_message = error.to_string();
+            record_audit_event(audit_action, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Failure, &error_message, None);
+            err_internal::<String>(error_message)
+        }
     }
 }
 
@@ -1154,6 +1376,9 @@ pub(crate) async fn api_cluster_browse(
         cluster: query.cluster,
         namespace: query.namespace,
         kind: query.kind,
+        api_version: query.api_version,
+        plural: query.plural,
+        namespaced: query.namespaced,
     }).await {
         Ok(resources) => ok_json(resources),
         Err(error) => err_internal::<Vec<crate::kubecluster::ClusterResourceSummary>>(error),
@@ -1164,16 +1389,538 @@ pub(crate) async fn api_cluster_browse(
 pub(crate) async fn api_cluster_apply(
     Json(request): Json<ClusterApplyRequestBody>,
 ) -> impl IntoResponse {
+    let workload_ref = format!("{}:{}/{}:{}", request.cluster, request.namespace, request.kind, request.manifest.get("metadata").and_then(|m| m.get("name")).and_then(|n| n.as_str()).unwrap_or("unknown"));
     match crate::kubecluster::apply_manifest(
         &request.cluster,
         &request.namespace,
         &request.kind,
         request.manifest,
+        request.api_version.as_deref(),
+        request.plural.as_deref(),
+        request.namespaced,
     )
     .await
     {
-        Ok(message) => ok_json(message),
-        Err(error) => err_internal::<String>(error),
+        Ok(message) => {
+            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Success, &message, None);
+            ok_json(message)
+        }
+        Err(error) => {
+            let error_message = error.to_string();
+            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Failure, &error_message, None);
+            err_internal::<String>(error_message)
+        }
+    }
+}
+
+/// GET /api/cluster/ws/exec - Interactive exec stream into a selected pod.
+pub(crate) async fn api_cluster_exec_ws(
+    ws: WebSocketUpgrade,
+    Query(query): Query<ClusterExecQuery>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| async move {
+        if let Err(error) = handle_cluster_exec_socket(socket, query).await {
+            tracing::warn!("cluster exec websocket ended: {}", error);
+        }
+    })
+}
+
+async fn handle_cluster_exec_socket(
+    socket: WebSocket,
+    query: ClusterExecQuery,
+) -> anyhow::Result<()> {
+    let mut command = build_kubectl_command(&query.cluster);
+    command
+        .arg("-n")
+        .arg(&query.namespace)
+        .arg("exec")
+        .arg("-i")
+        .arg(&query.pod);
+
+    if let Some(container) = query.container.as_deref().filter(|value| !value.is_empty()) {
+        command.arg("-c").arg(container);
+    }
+
+    command.arg("--");
+    if let Some(shell) = query.command.as_deref().filter(|value| !value.is_empty()) {
+        command.arg(shell);
+    } else {
+        command.arg("/bin/sh");
+    }
+
+    command
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .kill_on_drop(true);
+
+    let mut child = command.spawn()?;
+    let mut stdin = child.stdin.take().context("exec session missing stdin")?;
+    let stdout = child.stdout.take().context("exec session missing stdout")?;
+    let stderr = child.stderr.take().context("exec session missing stderr")?;
+
+    let (mut ws_sender, mut ws_receiver) = socket.split();
+    let (output_tx, mut output_rx) = mpsc::unbounded_channel::<String>();
+
+    tokio::spawn(read_child_stream_to_channel(stdout, output_tx.clone()));
+    tokio::spawn(read_child_stream_to_channel(stderr, output_tx.clone()));
+
+    let writer = tokio::spawn(async move {
+        while let Some(chunk) = output_rx.recv().await {
+            if ws_sender.send(Message::Text(chunk.into())).await.is_err() {
+                break;
+            }
+        }
+    });
+
+    while let Some(message) = ws_receiver.next().await {
+        match message {
+            Ok(Message::Text(input)) => {
+                stdin.write_all(input.as_bytes()).await?;
+                stdin.flush().await?;
+            }
+            Ok(Message::Binary(input)) => {
+                stdin.write_all(&input).await?;
+                stdin.flush().await?;
+            }
+            Ok(Message::Close(_)) => break,
+            Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+
+    let _ = child.kill().await;
+    let _ = writer.await;
+    Ok(())
+}
+
+/// GET /api/cluster/ws/watch - Stream resource-list updates over WebSocket.
+pub(crate) async fn api_cluster_watch_ws(
+    ws: WebSocketUpgrade,
+    Query(query): Query<ClusterWatchQuery>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| async move {
+        if let Err(error) = handle_cluster_watch_socket(socket, query).await {
+            tracing::warn!("cluster watch websocket ended: {}", error);
+        }
+    })
+}
+
+async fn handle_cluster_watch_socket(
+    mut socket: WebSocket,
+    query: ClusterWatchQuery,
+) -> anyhow::Result<()> {
+    let request = crate::kubecluster::ClusterBrowseRequest {
+        cluster: query.cluster.clone(),
+        namespace: query.namespace.clone(),
+        kind: query.kind.clone(),
+        api_version: query.api_version.clone(),
+        plural: query.plural.clone(),
+        namespaced: query.namespaced,
+    };
+
+    let initial = crate::kubecluster::browse_resources(&request).await?;
+    socket
+        .send(Message::Text(serde_json::to_string(&initial)?.into()))
+        .await?;
+
+    let resource_name = if query.kind == "CustomResource" {
+        match query.plural.as_deref() {
+            Some(plural) if !plural.is_empty() => plural.to_string(),
+            _ => {
+                socket
+                    .send(Message::Text(
+                        json!({ "type": "error", "message": "watch is not supported without plural for CustomResource" })
+                            .to_string()
+                            .into(),
+                    ))
+                    .await?;
+                return Ok(());
+            }
+        }
+    } else if let Some(resource_name) = kubectl_resource_name(&query.kind) {
+        resource_name.to_string()
+    } else {
+        socket
+            .send(Message::Text(
+                json!({ "type": "error", "message": format!("watch is not supported for {}", query.kind) })
+                    .to_string()
+                    .into(),
+            ))
+            .await?;
+        return Ok(());
+    };
+
+    let mut command = build_kubectl_command(&query.cluster);
+    command.arg("get").arg(&resource_name);
+    if query.kind == "Namespace" || (query.kind == "CustomResource" && !query.namespaced.unwrap_or(true)) {
+        command.arg("--watch-only").arg("-o").arg("name");
+    } else if let Some(namespace) = query.namespace.as_deref().filter(|value| *value != "all") {
+        command
+            .arg("-n")
+            .arg(namespace)
+            .arg("--watch-only")
+            .arg("-o")
+            .arg("name");
+    } else {
+        command
+            .arg("-A")
+            .arg("--watch-only")
+            .arg("-o")
+            .arg("name");
+    }
+
+    command
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true);
+
+    let mut child = command.spawn()?;
+    let stdout = child.stdout.take().context("watch session missing stdout")?;
+    let mut lines = BufReader::new(stdout).lines();
+
+    while let Some(_line) = lines.next_line().await? {
+        let resources = crate::kubecluster::browse_resources(&request).await?;
+        if socket
+            .send(Message::Text(serde_json::to_string(&resources)?.into()))
+            .await
+            .is_err()
+        {
+            break;
+        }
+    }
+
+    let _ = child.kill().await;
+    Ok(())
+}
+
+/// POST /api/cluster/port-forward - Start a pod port-forward session.
+pub(crate) async fn api_cluster_port_forward_start(
+    AxumState(app_state): AxumState<AppState>,
+    Json(request): Json<ClusterPortForwardRequestBody>,
+) -> impl IntoResponse {
+    let target_kind = request
+        .target_kind
+        .clone()
+        .or_else(|| request.pod.as_ref().map(|_| "Pod".to_string()))
+        .unwrap_or_else(|| "Pod".to_string());
+    let target_name = request
+        .target_name
+        .clone()
+        .or_else(|| request.pod.clone());
+    let Some(target_name) = target_name else {
+        return err_bad_request::<ClusterPortForwardResponse>("target_name or pod is required");
+    };
+    let local_port = match allocate_local_port(request.local_port).await {
+        Ok(port) => port,
+        Err(error) => return err_internal::<ClusterPortForwardResponse>(error),
+    };
+
+    let mut command = build_kubectl_command(&request.cluster);
+    command
+        .arg("-n")
+        .arg(&request.namespace)
+        .arg("port-forward")
+        .arg(format!("{}/{}", target_kind.to_lowercase(), target_name))
+        .arg(format!("{}:{}", local_port, request.remote_port))
+        .arg("--address")
+        .arg("127.0.0.1")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true);
+
+    let mut child = match command.spawn() {
+        Ok(child) => child,
+        Err(error) => return err_internal::<ClusterPortForwardResponse>(error),
+    };
+
+    sleep(Duration::from_millis(700)).await;
+    match child.try_wait() {
+        Ok(Some(_)) => {
+            return err_internal::<ClusterPortForwardResponse>("port-forward process exited immediately");
+        }
+        Ok(None) => {}
+        Err(error) => return err_internal::<ClusterPortForwardResponse>(error),
+    }
+
+    let session_id = format!(
+        "pf-{}-{}",
+        chrono::Utc::now().timestamp_millis(),
+        local_port
+    );
+    let response = ClusterPortForwardResponse {
+        session_id: session_id.clone(),
+        cluster: request.cluster.clone(),
+        namespace: request.namespace.clone(),
+        target_kind: target_kind.clone(),
+        target_name: target_name.clone(),
+        local_port,
+        remote_port: request.remote_port,
+        local_url: format!("http://127.0.0.1:{}", local_port),
+    };
+
+    app_state.port_forwards.lock().await.insert(
+        session_id.clone(),
+        PortForwardSession {
+            id: session_id,
+            cluster: request.cluster,
+            namespace: request.namespace,
+            pod: target_name,
+            local_port,
+            remote_port: request.remote_port,
+            child,
+        },
+    );
+
+    created_json(response)
+}
+
+/// POST /api/cluster/port-forward/stop - Stop an active port-forward session.
+pub(crate) async fn api_cluster_port_forward_stop(
+    AxumState(app_state): AxumState<AppState>,
+    Json(request): Json<ClusterPortForwardStopRequestBody>,
+) -> impl IntoResponse {
+    let mut session = match app_state.port_forwards.lock().await.remove(&request.session_id) {
+        Some(session) => session,
+        None => return err_not_found::<String>(format!("port-forward session {} not found", request.session_id)),
+    };
+
+    let summary = format!(
+        "stopped port-forward {} {} {}/{}:{} -> 127.0.0.1:{}",
+        session.id,
+        session.cluster,
+        session.namespace,
+        session.pod,
+        session.remote_port,
+        session.local_port
+    );
+    let _ = session.child.kill().await;
+    ok_json(summary)
+}
+
+/// GET /api/cluster/top - Pod/container metrics via kubectl top.
+pub(crate) async fn api_cluster_top(
+    Query(query): Query<ClusterTopQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::top_metrics(&ClusterLogsRequest {
+        cluster: query.cluster,
+        namespace: query.namespace,
+        kind: query.kind,
+        name: query.name,
+        api_version: None,
+        plural: None,
+        namespaced: None,
+    }).await {
+        Ok(metrics) => ok_json(metrics),
+        Err(error) => err_internal::<Vec<crate::kubecluster::ClusterTopMetric>>(error),
+    }
+}
+
+/// GET /api/cluster/metrics/summary - Aggregate pod metrics for a cluster or namespace.
+pub(crate) async fn api_cluster_metrics_summary(
+    Query(query): Query<ClusterMetricsSummaryQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::metrics_summary(&query.cluster, query.namespace.as_deref()).await {
+        Ok(summary) => ok_json(ClusterMetricsSummaryResponse {
+            scope: summary.scope,
+            pod_count: summary.pod_count,
+            total_cpu_millicores: summary.total_cpu_millicores,
+            total_memory_mib: summary.total_memory_mib,
+            pods: summary.pods,
+        }),
+        Err(error) => err_internal::<ClusterMetricsSummaryResponse>(error),
+    }
+}
+
+/// POST /api/cluster/diff - Server-side diff preview for an edited manifest.
+pub(crate) async fn api_cluster_diff(
+    Json(request): Json<ClusterDiffRequestBody>,
+) -> impl IntoResponse {
+    match crate::kubecluster::manifest_diff(
+        &request.cluster,
+        &request.namespace,
+        &request.kind,
+        &request.name,
+        request.draft_manifest,
+        request.api_version.as_deref(),
+        request.plural.as_deref(),
+        request.namespaced,
+    )
+    .await
+    {
+        Ok(lines) => ok_json(
+            lines
+                .into_iter()
+                .map(|(kind, text)| ClusterDiffLine { kind, text })
+                .collect::<Vec<_>>(),
+        ),
+        Err(error) => err_internal::<Vec<ClusterDiffLine>>(error),
+    }
+}
+
+/// GET /api/cluster/rollout - Get rollout status and revision history.
+pub(crate) async fn api_cluster_rollout(
+    Query(query): Query<ClusterRolloutQuery>,
+) -> impl IntoResponse {
+    let Some(resource) = rollout_resource(&query.kind) else {
+        return err_bad_request::<ClusterRolloutResponse>(format!("rollout is not supported for {}", query.kind));
+    };
+
+    let status = match run_kubectl(vec![
+        "--context".to_string(),
+        query.cluster.clone(),
+        "-n".to_string(),
+        query.namespace.clone(),
+        "rollout".to_string(),
+        "status".to_string(),
+        format!("{}/{}", resource, query.name),
+        "--timeout=5s".to_string(),
+    ])
+    .await
+    {
+        Ok(output) => output.trim().to_string(),
+        Err(error) => error.to_string(),
+    };
+
+    let history_raw = match run_kubectl(vec![
+        "--context".to_string(),
+        query.cluster.clone(),
+        "-n".to_string(),
+        query.namespace.clone(),
+        "rollout".to_string(),
+        "history".to_string(),
+        format!("{}/{}", resource, query.name),
+    ])
+    .await
+    {
+        Ok(output) => output,
+        Err(error) => return err_internal::<ClusterRolloutResponse>(error),
+    };
+
+    let history = history_raw
+        .lines()
+        .skip_while(|line| !line.trim_start().starts_with("REVISION"))
+        .skip(1)
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+            let mut parts = trimmed.split_whitespace();
+            let revision = parts.next()?.to_string();
+            let change_cause = parts.collect::<Vec<_>>().join(" ");
+            Some(ClusterRolloutRevision {
+                revision,
+                change_cause: if change_cause.is_empty() {
+                    "none recorded".to_string()
+                } else {
+                    change_cause
+                },
+            })
+        })
+        .collect::<Vec<_>>();
+
+    ok_json(ClusterRolloutResponse {
+        cluster: query.cluster,
+        namespace: query.namespace,
+        kind: query.kind,
+        name: query.name,
+        status,
+        history,
+    })
+}
+
+/// POST /api/cluster/rollout/action - Execute rollout pause/resume/undo/restart.
+pub(crate) async fn api_cluster_rollout_action(
+    Json(request): Json<ClusterRolloutActionRequestBody>,
+) -> impl IntoResponse {
+    let Some(resource) = rollout_resource(&request.kind) else {
+        return err_bad_request::<String>(format!("rollout is not supported for {}", request.kind));
+    };
+
+    let mut args = vec![
+        "--context".to_string(),
+        request.cluster.clone(),
+        "-n".to_string(),
+        request.namespace.clone(),
+    ];
+
+    match request.action.as_str() {
+        "pause" | "resume" => {
+            args.extend([
+                "rollout".to_string(),
+                request.action.clone(),
+                format!("{}/{}", resource, request.name),
+            ]);
+        }
+        "undo" => {
+            args.extend([
+                "rollout".to_string(),
+                "undo".to_string(),
+                format!("{}/{}", resource, request.name),
+            ]);
+            if let Some(revision) = request.revision.as_deref().filter(|value| !value.is_empty()) {
+                args.push(format!("--to-revision={revision}"));
+            }
+        }
+        "restart" => {
+            args.extend([
+                "rollout".to_string(),
+                "restart".to_string(),
+                format!("{}/{}", resource, request.name),
+            ]);
+        }
+        other => return err_bad_request::<String>(format!("unsupported rollout action {}", other)),
+    }
+
+    let workload_ref = format!("{}:{}/{}:{}", request.cluster, request.namespace, request.kind, request.name);
+    match run_kubectl(args).await {
+        Ok(output) => {
+            let message = output.trim().to_string();
+            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Success, &message, None);
+            ok_json(message)
+        }
+        Err(error) => {
+            let error_message = error.to_string();
+            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Failure, &error_message, None);
+            err_internal::<String>(error_message)
+        }
+    }
+}
+
+/// GET /api/cluster/helm/history - Helm revision history for a release.
+pub(crate) async fn api_cluster_helm_history(
+    Query(query): Query<ClusterHelmHistoryQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::helm_history(&query.cluster, &query.namespace, &query.release).await {
+        Ok(history) => ok_json(history),
+        Err(error) => err_internal::<Vec<crate::kubecluster::HelmRevisionEntry>>(error),
+    }
+}
+
+/// POST /api/cluster/helm/action - Install, upgrade, or rollback a Helm release.
+pub(crate) async fn api_cluster_helm_action(
+    Json(request): Json<ClusterHelmActionRequestBody>,
+) -> impl IntoResponse {
+    let workload_ref = format!("{}:{}/HelmRelease:{}", request.cluster, request.namespace, request.release);
+    match crate::kubecluster::helm_action(
+        &request.cluster,
+        &request.namespace,
+        &request.release,
+        &request.action,
+        request.chart.as_deref(),
+        request.values_yaml.as_deref(),
+        request.revision.as_deref(),
+    ).await {
+        Ok(message) => {
+            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("helm"), crate::audit::ActionResult::Success, &message, None);
+            ok_json(message)
+        }
+        Err(error) => {
+            let error_message = error.to_string();
+            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("helm"), crate::audit::ActionResult::Failure, &error_message, None);
+            err_internal::<String>(error_message)
+        }
     }
 }
 

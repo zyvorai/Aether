@@ -2,16 +2,30 @@ import type { ApiResponse } from '../types/api';
 
 const BASE = '/api';
 
-function authHeaders(extra?: Record<string, string>): Record<string, string> {
-  const headers: Record<string, string> = { ...extra };
+export function getAuthToken(): string | null {
   const stored = sessionStorage.getItem('aether_auth');
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      if (parsed.token) headers['Authorization'] = `Bearer ${parsed.token}`;
+      if (parsed.token) return parsed.token as string;
     } catch { /* ignore */ }
   }
+  return null;
+}
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { ...extra };
+  const token = getAuthToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
+}
+
+export function apiWebSocketUrl(path: string): string {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = new URL(`/api${path}`, `${protocol}//${window.location.host}`);
+  const token = getAuthToken();
+  if (token) url.searchParams.set('token', token);
+  return url.toString();
 }
 
 export async function apiFetch<T>(path: string): Promise<T | null> {

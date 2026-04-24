@@ -3,9 +3,11 @@
 use crate::spec::Workload;
 use crate::state::StateStore;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::process::Child;
+use tokio::sync::{Mutex, RwLock};
 
 /// API Server configuration
 #[derive(Debug, Clone)]
@@ -59,6 +61,17 @@ pub(crate) struct AppState {
     pub(crate) state: Arc<RwLock<StateStore>>,
     pub(crate) event_tx: tokio::sync::broadcast::Sender<String>,
     pub(crate) rbac: Arc<RwLock<crate::rbac::RbacStore>>,
+    pub(crate) port_forwards: Arc<Mutex<HashMap<String, PortForwardSession>>>,
+}
+
+pub(crate) struct PortForwardSession {
+    pub(crate) id: String,
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) pod: String,
+    pub(crate) local_port: u16,
+    pub(crate) remote_port: u16,
+    pub(crate) child: Child,
 }
 
 /// API Response wrapper
@@ -131,6 +144,13 @@ pub(crate) struct BuildResponse {
     pub(crate) runtime: String,
 }
 
+#[derive(Debug, Serialize)]
+pub(crate) struct AuthStatusResponse {
+    pub(crate) authenticated: bool,
+    pub(crate) username: String,
+    pub(crate) role: String,
+}
+
 /// Query parameters for native Kubernetes workload logs.
 #[derive(Debug, Deserialize)]
 pub(crate) struct ClusterLogsQuery {
@@ -147,6 +167,50 @@ pub(crate) struct ClusterResourceQuery {
     pub(crate) namespace: String,
     pub(crate) kind: String,
     pub(crate) name: String,
+    pub(crate) api_version: Option<String>,
+    pub(crate) plural: Option<String>,
+    pub(crate) namespaced: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterHealthQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+    pub(crate) api_version: Option<String>,
+    pub(crate) plural: Option<String>,
+    pub(crate) namespaced: Option<bool>,
+}
+
+/// Query parameters for native Kubernetes resource-related events.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterEventsQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+}
+
+/// Query parameters for native Kubernetes exec sessions over WebSocket.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterExecQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) pod: String,
+    pub(crate) command: Option<String>,
+    pub(crate) container: Option<String>,
+}
+
+/// Query parameters for native Kubernetes watch sessions over WebSocket.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterWatchQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: Option<String>,
+    pub(crate) kind: String,
+    pub(crate) api_version: Option<String>,
+    pub(crate) plural: Option<String>,
+    pub(crate) namespaced: Option<bool>,
 }
 
 /// Request body for native Kubernetes actions.
@@ -158,6 +222,9 @@ pub(crate) struct ClusterActionRequestBody {
     pub(crate) name: String,
     pub(crate) action: String,
     pub(crate) replicas: Option<i32>,
+    pub(crate) api_version: Option<String>,
+    pub(crate) plural: Option<String>,
+    pub(crate) namespaced: Option<bool>,
 }
 
 /// Query parameters for native Kubernetes namespace listing.
@@ -172,6 +239,9 @@ pub(crate) struct ClusterBrowseQuery {
     pub(crate) cluster: String,
     pub(crate) namespace: Option<String>,
     pub(crate) kind: String,
+    pub(crate) api_version: Option<String>,
+    pub(crate) plural: Option<String>,
+    pub(crate) namespaced: Option<bool>,
 }
 
 /// Request body for applying an edited Kubernetes manifest.
@@ -181,6 +251,136 @@ pub(crate) struct ClusterApplyRequestBody {
     pub(crate) namespace: String,
     pub(crate) kind: String,
     pub(crate) manifest: serde_json::Value,
+    pub(crate) api_version: Option<String>,
+    pub(crate) plural: Option<String>,
+    pub(crate) namespaced: Option<bool>,
+}
+
+/// Request body for starting a pod port-forward session.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterPortForwardRequestBody {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) target_kind: Option<String>,
+    pub(crate) target_name: Option<String>,
+    pub(crate) pod: Option<String>,
+    pub(crate) remote_port: u16,
+    pub(crate) local_port: Option<u16>,
+}
+
+/// Request body for stopping a port-forward session.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterPortForwardStopRequestBody {
+    pub(crate) session_id: String,
+}
+
+/// API response for a running port-forward session.
+#[derive(Debug, Serialize)]
+pub(crate) struct ClusterPortForwardResponse {
+    pub(crate) session_id: String,
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) target_kind: String,
+    pub(crate) target_name: String,
+    pub(crate) local_port: u16,
+    pub(crate) remote_port: u16,
+    pub(crate) local_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterTopQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterMetricsSummaryQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterDiffRequestBody {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+    pub(crate) draft_manifest: serde_json::Value,
+    pub(crate) api_version: Option<String>,
+    pub(crate) plural: Option<String>,
+    pub(crate) namespaced: Option<bool>,
+}
+
+/// Query parameters for rollout inspection.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterRolloutQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+}
+
+/// Rollout action request body.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterRolloutActionRequestBody {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+    pub(crate) action: String,
+    pub(crate) revision: Option<String>,
+}
+
+/// Rollout status/history response.
+#[derive(Debug, Serialize)]
+pub(crate) struct ClusterRolloutResponse {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+    pub(crate) status: String,
+    pub(crate) history: Vec<ClusterRolloutRevision>,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct ClusterRolloutRevision {
+    pub(crate) revision: String,
+    pub(crate) change_cause: String,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct ClusterMetricsSummaryResponse {
+    pub(crate) scope: String,
+    pub(crate) pod_count: usize,
+    pub(crate) total_cpu_millicores: i64,
+    pub(crate) total_memory_mib: i64,
+    pub(crate) pods: Vec<crate::kubecluster::ClusterTopMetric>,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct ClusterDiffLine {
+    pub(crate) kind: String,
+    pub(crate) text: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterHelmHistoryQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) release: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterHelmActionRequestBody {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) release: String,
+    pub(crate) action: String,
+    pub(crate) chart: Option<String>,
+    pub(crate) values_yaml: Option<String>,
+    pub(crate) revision: Option<String>,
 }
 
 /// Secret metadata response (no raw values exposed)

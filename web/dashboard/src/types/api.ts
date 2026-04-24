@@ -63,6 +63,74 @@ export interface ClusterResourceDetail {
   manifest: Record<string, unknown>;
 }
 
+export interface ClusterRelatedEvent {
+  type_: string;
+  reason: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface ClusterPortForwardSession {
+  session_id: string;
+  cluster: string;
+  namespace: string;
+  target_kind: string;
+  target_name: string;
+  local_port: number;
+  remote_port: number;
+  local_url: string;
+}
+
+export interface ClusterRolloutRevision {
+  revision: string;
+  change_cause: string;
+}
+
+export interface ClusterRolloutStatus {
+  cluster: string;
+  namespace: string;
+  kind: string;
+  name: string;
+  status: string;
+  history: ClusterRolloutRevision[];
+}
+
+export interface ClusterTopMetric {
+  name: string;
+  cpu: string;
+  memory: string;
+}
+
+export interface ClusterMetricsSummary {
+  scope: string;
+  pod_count: number;
+  total_cpu_millicores: number;
+  total_memory_mib: number;
+  pods: ClusterTopMetric[];
+}
+
+export interface ClusterDiffLine {
+  kind: string;
+  text: string;
+}
+
+export interface ClusterHealthSummary {
+  level: string;
+  summary: string;
+  ready_pods: number;
+  total_pods: number;
+  warning_events: number;
+}
+
+export interface HelmRevisionEntry {
+  revision: string;
+  updated: string;
+  status: string;
+  chart: string;
+  app_version?: string | null;
+  description?: string | null;
+}
+
 export interface ClusterNamespaceSummary {
   name: string;
   status: string;
@@ -77,6 +145,12 @@ export interface ClusterBrowseItem {
   status: string;
   created_at: string;
   detail?: string | null;
+}
+
+export interface AuthStatus {
+  authenticated: boolean;
+  username: string;
+  role: string;
 }
 
 export interface BuildResponse {
