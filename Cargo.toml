@@ -33,7 +33,7 @@ k8s-openapi = { version = "0.23", features = ["latest"] }
 reqwest = { version = "0.12", features = ["json", "blocking"] }
 
 # API Server
-axum = "0.7"
+axum = { version = "0.7", features = ["ws"] }
 axum-server = { version = "0.7", features = ["tls-rustls"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 tower = { version = "0.4", features = ["util", "limit"] }

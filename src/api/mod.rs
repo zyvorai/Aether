@@ -22,7 +22,7 @@ use axum::{
 };
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::{broadcast, RwLock};
+use tokio::sync::{broadcast, Mutex, RwLock};
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Any};
 
@@ -48,12 +48,20 @@ async fn auth_middleware(
     let legacy_key = std::env::var("AETHER_API_KEY").ok().filter(|k| !k.is_empty());
 
     // Extract Bearer token before acquiring lock
-    let token = req
+    let header_token = req
         .headers()
         .get("authorization")
         .and_then(|h| h.to_str().ok())
         .and_then(|s| s.strip_prefix("Bearer "))
         .map(|s| s.to_string());
+    let query_token = req.uri().query().and_then(|query| {
+        query
+            .split('&')
+            .filter_map(|part| part.split_once('='))
+            .find(|(key, _)| *key == "token")
+            .map(|(_, value)| value.replace("%20", " "))
+    });
+    let token = header_token.or(query_token);
 
     let method = req.method().to_string();
 
@@ -199,6 +207,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         state: Arc::new(RwLock::new(state_store)),
         event_tx,
         rbac: Arc::new(RwLock::new(rbac_store)),
+        port_forwards: Arc::new(Mutex::new(std::collections::HashMap::new())),
     };
 
     // Spawn background health check loop
@@ -233,6 +242,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/assets/index-qv9Tu_QH.js", get(serve_dashboard_js))
         .route("/health", get(health_check))
         .route("/api/events/stream", get(sse_events))
+        .route("/api/auth/me", get(api_auth_me))
         .route("/api/workloads", get(list_workloads))
         .route("/api/workloads", post(create_workload))
         .route("/api/workloads/:name", get(get_workload))
@@ -269,9 +279,22 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/cluster/namespaces", get(api_cluster_namespaces))
         .route("/api/cluster/browse", get(api_cluster_browse))
         .route("/api/cluster/apply", post(api_cluster_apply))
+        .route("/api/cluster/events", get(api_cluster_events))
         .route("/api/cluster/logs", get(api_cluster_logs))
         .route("/api/cluster/resource", get(api_cluster_resource))
+        .route("/api/cluster/health", get(api_cluster_health))
         .route("/api/cluster/action", post(api_cluster_action))
+        .route("/api/cluster/ws/exec", get(api_cluster_exec_ws))
+        .route("/api/cluster/ws/watch", get(api_cluster_watch_ws))
+        .route("/api/cluster/port-forward", post(api_cluster_port_forward_start))
+        .route("/api/cluster/port-forward/stop", post(api_cluster_port_forward_stop))
+        .route("/api/cluster/top", get(api_cluster_top))
+        .route("/api/cluster/metrics/summary", get(api_cluster_metrics_summary))
+        .route("/api/cluster/diff", post(api_cluster_diff))
+        .route("/api/cluster/rollout", get(api_cluster_rollout))
+        .route("/api/cluster/rollout/action", post(api_cluster_rollout_action))
+        .route("/api/cluster/helm/history", get(api_cluster_helm_history))
+        .route("/api/cluster/helm/action", post(api_cluster_helm_action))
         .route("/api/environments", get(api_env_list))
         .route("/api/scheduler/utilization", get(api_scheduler_utilization))
         .route("/api/scheduler/optimize", get(api_scheduler_optimize))
