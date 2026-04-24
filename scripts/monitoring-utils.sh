@@ -1,343 +1,230 @@
-#!/bin/bash
-# Monitoring Utilities for Aether
-# Common operations for observability stack management
+#!/usr/bin/env bash
+# ============================================================================
+# monitoring-utils.sh — Utility commands for the observability stack
+# ============================================================================
 
-set -e
+set -euo pipefail
 
-NAMESPACE=${NAMESPACE:-observability}
+NAMESPACE="${NAMESPACE:-observability}"
+KUBECTL="${KUBECTL:-kubectl}"
 
-# Colors
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+info() { echo "  [✓] $*"; }
+warn() { echo "  [!] $*"; }
+error() { echo "  [✗] $*" >&2; exit 1; }
+section() { echo ""; echo "== $*"; }
 
-print_status() {
-    local color=$1
-    local message=$2
-    echo -e "${color}${message}${NC}"
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || error "Missing required command: $1"
 }
 
-print_header() {
-    echo ""
-    echo "========================================="
-    echo "$1"
-    echo "========================================="
+require_stack() {
+  ${KUBECTL} get namespace "${NAMESPACE}" >/dev/null 2>&1 || error "Namespace not found: ${NAMESPACE}"
 }
 
-# Function to check component health
+with_port_forward() {
+  local service="$1"
+  local local_port="$2"
+  local remote_port="$3"
+  local callback="$4"
+  ${KUBECTL} port-forward -n "${NAMESPACE}" "svc/${service}" "${local_port}:${remote_port}" >/dev/null 2>&1 &
+  local pf_pid=$!
+  trap 'kill "${pf_pid}" >/dev/null 2>&1 || true' RETURN
+  sleep 2
+  "${callback}"
+}
+
+component_pod() {
+  local selector="$1"
+  ${KUBECTL} get pods -n "${NAMESPACE}" -l "${selector}" -o jsonpath='{.items[0].metadata.name}'
+}
+
 check_health() {
-    print_header "Observability Stack Health"
-
-    components=("prometheus" "grafana" "alertmanager" "loki")
-
-    for component in "${components[@]}"; do
-        if kubectl get deployment ${component} -n ${NAMESPACE} &>/dev/null; then
-            status=$(kubectl get deployment ${component} -n ${NAMESPACE} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')
-            if [ "$status" == "True" ]; then
-                print_status "${GREEN}" "✅ ${component}: Ready"
-            else
-                print_status "${RED}" "❌ ${component}: Not Ready"
-            fi
-        else
-            print_status "${YELLOW}" "⚠️  ${component}: Not Deployed"
-        fi
-    done
-
-    # Check Promtail DaemonSet
-    if kubectl get daemonset promtail -n ${NAMESPACE} &>/dev/null; then
-        desired=$(kubectl get daemonset promtail -n ${NAMESPACE} -o jsonpath='{.status.desiredNumberScheduled}')
-        ready=$(kubectl get daemonset promtail -n ${NAMESPACE} -o jsonpath='{.status.numberReady}')
-        if [ "$desired" == "$ready" ]; then
-            print_status "${GREEN}" "✅ promtail: ${ready}/${desired} pods ready"
-        else
-            print_status "${YELLOW}" "⚠️  promtail: ${ready}/${desired} pods ready"
-        fi
-    fi
-}
-
-# Function to check Prometheus targets
-check_targets() {
-    print_header "Prometheus Targets Status"
-
-    # Port forward Prometheus
-    kubectl port-forward -n ${NAMESPACE} svc/prometheus 9090:9090 &>/dev/null &
-    PF_PID=$!
-    sleep 3
-
-    # Query targets API
-    curl -s http://localhost:9090/api/v1/targets | jq -r '
-        .data.activeTargets[] |
-        "\(.labels.job)\t\(.health)\t\(.labels.instance // .labels.pod)"
-    ' | column -t -s $'\t' || print_status "${RED}" "Failed to get targets"
-
-    # Cleanup
-    kill $PF_PID 2>/dev/null
-}
-
-# Function to check alert status
-check_alerts() {
-    print_header "Active Alerts"
-
-    # Port forward Prometheus
-    kubectl port-forward -n ${NAMESPACE} svc/prometheus 9090:9090 &>/dev/null &
-    PF_PID=$!
-    sleep 3
-
-    # Query alerts API
-    alerts=$(curl -s http://localhost:9090/api/v1/alerts | jq -r '
-        .data.alerts[] |
-        select(.state == "firing") |
-        "\(.labels.alertname)\t\(.labels.severity)\t\(.annotations.summary)"
-    ')
-
-    if [ -z "$alerts" ]; then
-        print_status "${GREEN}" "✅ No active alerts"
+  section "Observability Stack Health"
+  local components=("prometheus" "grafana" "alertmanager" "loki")
+  local component
+  for component in "${components[@]}"; do
+    if ${KUBECTL} get deployment "${component}" -n "${NAMESPACE}" >/dev/null 2>&1; then
+      local ready desired
+      ready="$(${KUBECTL} get deployment "${component}" -n "${NAMESPACE}" -o jsonpath='{.status.readyReplicas}')"
+      desired="$(${KUBECTL} get deployment "${component}" -n "${NAMESPACE}" -o jsonpath='{.status.replicas}')"
+      ready="${ready:-0}"
+      desired="${desired:-0}"
+      if [ "${ready}" -ge 1 ]; then
+        info "${component}: ${ready}/${desired} ready"
+      else
+        warn "${component}: ${ready}/${desired} ready"
+      fi
     else
-        echo "$alerts" | column -t -s $'\t'
+      warn "${component}: not deployed"
     fi
+  done
 
-    # Cleanup
-    kill $PF_PID 2>/dev/null
+  if ${KUBECTL} get daemonset promtail -n "${NAMESPACE}" >/dev/null 2>&1; then
+    local desired ready
+    desired="$(${KUBECTL} get daemonset promtail -n "${NAMESPACE}" -o jsonpath='{.status.desiredNumberScheduled}')"
+    ready="$(${KUBECTL} get daemonset promtail -n "${NAMESPACE}" -o jsonpath='{.status.numberReady}')"
+    info "promtail: ${ready:-0}/${desired:-0} ready"
+  fi
 }
 
-# Function to view logs
+show_targets() {
+  require_cmd curl
+  require_cmd jq
+  with_port_forward prometheus 9090 9090 _show_targets
+}
+
+_show_targets() {
+  section "Prometheus Targets"
+  curl -s http://127.0.0.1:9090/api/v1/targets | jq -r '
+    .data.activeTargets[] |
+    "\(.labels.job)\t\(.health)\t\(.labels.instance // .labels.pod // "n/a")"
+  '
+}
+
+show_alerts() {
+  require_cmd curl
+  require_cmd jq
+  with_port_forward prometheus 9090 9090 _show_alerts
+}
+
+_show_alerts() {
+  section "Active Alerts"
+  local alerts
+  alerts="$(curl -s http://127.0.0.1:9090/api/v1/alerts | jq -r '
+    .data.alerts[]? |
+    select(.state == "firing") |
+    "\(.labels.alertname)\t\(.labels.severity // "n/a")\t\(.annotations.summary // "")"
+  ')"
+  if [ -z "${alerts}" ]; then
+    info "No active alerts"
+  else
+    echo "${alerts}"
+  fi
+}
+
 view_logs() {
-    local component=$1
-
-    if [ -z "$component" ]; then
-        print_status "${RED}" "Usage: $0 logs <component>"
-        print_status "${YELLOW}" "Components: prometheus, grafana, alertmanager, loki, promtail"
-        return 1
-    fi
-
-    print_header "Logs: ${component}"
-
-    if [ "$component" == "promtail" ]; then
-        # DaemonSet - show logs from first pod
-        pod=$(kubectl get pods -n ${NAMESPACE} -l app=promtail -o jsonpath='{.items[0].metadata.name}')
-    else
-        pod=$(kubectl get pods -n ${NAMESPACE} -l app=${component} -o jsonpath='{.items[0].metadata.name}')
-    fi
-
-    if [ -z "$pod" ]; then
-        print_status "${RED}" "No pod found for ${component}"
-        return 1
-    fi
-
-    kubectl logs -n ${NAMESPACE} ${pod} --tail=100 -f
+  local component="${1:-}"
+  [ -n "${component}" ] || error "Usage: $0 logs <component>"
+  local selector="app=${component}"
+  [ "${component}" = "promtail" ] && selector="app=promtail"
+  local pod
+  pod="$(component_pod "${selector}")"
+  [ -n "${pod}" ] || error "No pod found for ${component}"
+  ${KUBECTL} logs -n "${NAMESPACE}" "${pod}" --tail=100 -f
 }
 
-# Function to restart component
 restart_component() {
-    local component=$1
-
-    if [ -z "$component" ]; then
-        print_status "${RED}" "Usage: $0 restart <component>"
-        return 1
-    fi
-
-    print_status "${YELLOW}" "Restarting ${component}..."
-
-    if [ "$component" == "promtail" ]; then
-        kubectl rollout restart daemonset/${component} -n ${NAMESPACE}
-    else
-        kubectl rollout restart deployment/${component} -n ${NAMESPACE}
-    fi
-
-    print_status "${GREEN}" "✅ ${component} restart initiated"
+  local component="${1:-}"
+  [ -n "${component}" ] || error "Usage: $0 restart <component>"
+  if [ "${component}" = "promtail" ]; then
+    ${KUBECTL} rollout restart daemonset/promtail -n "${NAMESPACE}"
+  else
+    ${KUBECTL} rollout restart deployment/"${component}" -n "${NAMESPACE}"
+  fi
+  info "Restart initiated for ${component}"
 }
 
-# Function to check storage usage
-check_storage() {
-    print_header "Storage Usage"
-
-    pvcs=$(kubectl get pvc -n ${NAMESPACE} -o json)
-
-    echo "$pvcs" | jq -r '.items[] |
-        "\(.metadata.name)\t\(.spec.resources.requests.storage)\t\(.status.capacity.storage // "N/A")"
-    ' | column -t -s $'\t' | while read line; do
-        echo "  $line"
-    done
+show_storage() {
+  section "PVC Usage"
+  ${KUBECTL} get pvc -n "${NAMESPACE}" || true
 }
 
-# Function to backup Prometheus data
 backup_prometheus() {
-    local backup_dir=${1:-/tmp/prometheus-backup-$(date +%Y%m%d-%H%M%S)}
-
-    print_header "Backing up Prometheus Data"
-
-    # Create snapshot
-    pod=$(kubectl get pods -n ${NAMESPACE} -l app=prometheus -o jsonpath='{.items[0].metadata.name}')
-
-    print_status "${YELLOW}" "Creating snapshot..."
-    kubectl exec -n ${NAMESPACE} ${pod} -- \
-        curl -XPOST http://localhost:9090/api/v1/admin/tsdb/snapshot
-
-    snapshot=$(kubectl exec -n ${NAMESPACE} ${pod} -- \
-        ls -t /prometheus/snapshots | head -1)
-
-    print_status "${YELLOW}" "Copying snapshot ${snapshot}..."
-    kubectl cp -n ${NAMESPACE} ${pod}:/prometheus/snapshots/${snapshot} ${backup_dir}
-
-    print_status "${GREEN}" "✅ Backup completed: ${backup_dir}"
+  local backup_dir="${1:-/tmp/prometheus-backup-$(date +%Y%m%d-%H%M%S)}"
+  local pod
+  pod="$(component_pod 'app=prometheus')"
+  [ -n "${pod}" ] || error "No Prometheus pod found"
+  section "Prometheus Backup"
+  ${KUBECTL} exec -n "${NAMESPACE}" "${pod}" -- curl -fsS -XPOST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot >/dev/null
+  local snapshot
+  snapshot="$(${KUBECTL} exec -n "${NAMESPACE}" "${pod}" -- sh -lc 'ls -t /prometheus/snapshots | head -1')"
+  [ -n "${snapshot}" ] || error "No snapshot created"
+  ${KUBECTL} cp -n "${NAMESPACE}" "${pod}:/prometheus/snapshots/${snapshot}" "${backup_dir}"
+  info "Backup copied to ${backup_dir}"
 }
 
-# Function to query metrics
 query_metrics() {
-    local query=$1
-
-    if [ -z "$query" ]; then
-        print_status "${RED}" "Usage: $0 query '<promql>'"
-        return 1
-    fi
-
-    # Port forward Prometheus
-    kubectl port-forward -n ${NAMESPACE} svc/prometheus 9090:9090 &>/dev/null &
-    PF_PID=$!
-    sleep 3
-
-    result=$(curl -s -G --data-urlencode "query=${query}" http://localhost:9090/api/v1/query)
-
-    echo "$result" | jq -r '.data.result[] |
-        "\(.metric | to_entries | map("\(.key)=\(.value)") | join(","))\t\(.value[1])"
-    ' | column -t -s $'\t'
-
-    # Cleanup
-    kill $PF_PID 2>/dev/null
+  local query="${1:-}"
+  [ -n "${query}" ] || error "Usage: $0 query '<promql>'"
+  require_cmd curl
+  require_cmd jq
+  with_port_forward prometheus 9090 9090 _query_metrics
 }
 
-# Function to test alertmanager config
+_query_metrics() {
+  local query="${1:-${PROMQL_QUERY:-}}"
+  curl -s -G --data-urlencode "query=${query}" http://127.0.0.1:9090/api/v1/query | jq -r '
+    .data.result[]? |
+    "\(.metric | to_entries | map("\(.key)=\(.value)") | join(","))\t\(.value[1])"
+  '
+}
+
 test_alertmanager_config() {
-    print_header "Testing AlertManager Configuration"
-
-    # Get config
-    config=$(kubectl get configmap alertmanager-config -n ${NAMESPACE} -o jsonpath='{.data.alertmanager\.yml}')
-
-    # Test with amtool
-    pod=$(kubectl get pods -n ${NAMESPACE} -l app=alertmanager -o jsonpath='{.items[0].metadata.name}')
-
-    print_status "${YELLOW}" "Checking configuration..."
-    kubectl exec -n ${NAMESPACE} ${pod} -- amtool check-config /etc/alertmanager/alertmanager.yml
-
-    if [ $? -eq 0 ]; then
-        print_status "${GREEN}" "✅ AlertManager configuration is valid"
-    else
-        print_status "${RED}" "❌ AlertManager configuration has errors"
-        return 1
-    fi
+  local pod
+  pod="$(component_pod 'app=alertmanager')"
+  [ -n "${pod}" ] || error "No AlertManager pod found"
+  ${KUBECTL} exec -n "${NAMESPACE}" "${pod}" -- amtool check-config /etc/alertmanager/alertmanager.yml
 }
 
-# Function to send test alert
 send_test_alert() {
-    print_header "Sending Test Alert"
-
-    # Port forward Prometheus
-    kubectl port-forward -n ${NAMESPACE} svc/prometheus 9090:9090 &>/dev/null &
-    PF_PID=$!
-    sleep 3
-
-    # Send test alert
-    curl -XPOST http://localhost:9090/api/v1/alerts -d '[{
-        "labels": {
-            "alertname": "TestAlert",
-            "severity": "warning",
-            "component": "aether"
-        },
-        "annotations": {
-            "summary": "This is a test alert",
-            "description": "Testing alert routing and notifications"
-        }
-    }]'
-
-    print_status "${GREEN}" "✅ Test alert sent"
-    print_status "${YELLOW}" "Check AlertManager UI at http://localhost:9093"
-
-    # Cleanup
-    kill $PF_PID 2>/dev/null
+  require_cmd curl
+  with_port_forward alertmanager 9093 9093 _send_test_alert
 }
 
-# Function to show dashboard URLs
+_send_test_alert() {
+  curl -fsS -XPOST http://127.0.0.1:9093/api/v2/alerts \
+    -H 'Content-Type: application/json' \
+    -d '[{"labels":{"alertname":"AetherTestAlert","severity":"warning","component":"aether"},"annotations":{"summary":"Aether test alert","description":"Monitoring connectivity test"}}]'
+  info "Test alert submitted"
+}
+
 show_urls() {
-    print_header "Service URLs"
-
-    echo ""
-    echo "Port-forward commands:"
-    echo ""
-    echo "  Grafana:"
-    echo "    kubectl port-forward -n ${NAMESPACE} svc/grafana 3000:3000"
-    echo "    http://localhost:3000"
-    echo ""
-    echo "  Prometheus:"
-    echo "    kubectl port-forward -n ${NAMESPACE} svc/prometheus 9090:9090"
-    echo "    http://localhost:9090"
-    echo ""
-    echo "  AlertManager:"
-    echo "    kubectl port-forward -n ${NAMESPACE} svc/alertmanager 9093:9093"
-    echo "    http://localhost:9093"
-    echo ""
+  echo "Grafana:      kubectl port-forward -n ${NAMESPACE} svc/grafana 3000:3000"
+  echo "Prometheus:   kubectl port-forward -n ${NAMESPACE} svc/prometheus 9090:9090"
+  echo "AlertManager: kubectl port-forward -n ${NAMESPACE} svc/alertmanager 9093:9093"
 }
 
-# Main command handler
-case ${1} in
-    health|status)
-        check_health
-        ;;
-    targets)
-        check_targets
-        ;;
-    alerts)
-        check_alerts
-        ;;
-    logs)
-        view_logs "$2"
-        ;;
-    restart)
-        restart_component "$2"
-        ;;
-    storage)
-        check_storage
-        ;;
-    backup)
-        backup_prometheus "$2"
-        ;;
-    query)
-        query_metrics "$2"
-        ;;
-    test-config)
-        test_alertmanager_config
-        ;;
-    test-alert)
-        send_test_alert
-        ;;
-    urls)
-        show_urls
-        ;;
-    *)
-        echo "Aether Monitoring Utilities"
-        echo ""
-        echo "Usage: $0 <command> [options]"
-        echo ""
-        echo "Commands:"
-        echo "  health              - Check observability stack health"
-        echo "  targets             - Show Prometheus scrape targets"
-        echo "  alerts              - Show active alerts"
-        echo "  logs <component>    - View component logs"
-        echo "  restart <component> - Restart a component"
-        echo "  storage             - Show storage usage"
-        echo "  backup [dir]        - Backup Prometheus data"
-        echo "  query '<promql>'    - Run PromQL query"
-        echo "  test-config         - Test AlertManager configuration"
-        echo "  test-alert          - Send test alert"
-        echo "  urls                - Show service URLs"
-        echo ""
-        echo "Components: prometheus, grafana, alertmanager, loki, promtail"
-        echo ""
-        echo "Examples:"
-        echo "  $0 health"
-        echo "  $0 logs prometheus"
-        echo "  $0 query 'up'"
-        echo "  $0 backup /backups/prometheus"
-        ;;
+usage() {
+  cat <<EOF
+Usage: $0 <command> [options]
+
+Commands:
+  health
+  targets
+  alerts
+  logs <component>
+  restart <component>
+  storage
+  backup [dir]
+  query '<promql>'
+  test-config
+  test-alert
+  urls
+EOF
+}
+
+require_cmd "${KUBECTL}"
+require_stack
+
+case "${1:-}" in
+  health|status) check_health ;;
+  targets) show_targets ;;
+  alerts) show_alerts ;;
+  logs) view_logs "${2:-}" ;;
+  restart) restart_component "${2:-}" ;;
+  storage) show_storage ;;
+  backup) backup_prometheus "${2:-}" ;;
+  query)
+    export PROMQL_QUERY="${2:-}"
+    query_metrics "${2:-}"
+    ;;
+  test-config) test_alertmanager_config ;;
+  test-alert) send_test_alert ;;
+  urls) show_urls ;;
+  ""|--help|-h)
+    usage
+    ;;
+  *)
+    error "Unknown command: ${1}"
+    ;;
 esac
