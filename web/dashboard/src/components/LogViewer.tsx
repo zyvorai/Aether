@@ -3,9 +3,10 @@ import { apiFetch } from '../utils/api';
 
 interface LogViewerProps {
   workloadName: string;
+  logsPath?: string;
 }
 
-export default function LogViewer({ workloadName }: LogViewerProps) {
+export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [following, setFollowing] = useState(true);
   const [filter, setFilter] = useState('');
@@ -13,14 +14,14 @@ export default function LogViewer({ workloadName }: LogViewerProps) {
 
   const fetchLogs = useCallback(async () => {
     try {
-      const resp = await apiFetch<string>(`/workloads/${workloadName}/logs`);
+      const resp = await apiFetch<string>(logsPath ?? `/workloads/${workloadName}/logs`);
       if (resp && typeof resp === 'string') {
         setLogs(resp.split('\n'));
       } else if (resp) {
         setLogs([String(resp)]);
       }
     } catch { /* ignore */ }
-  }, [workloadName]);
+  }, [logsPath, workloadName]);
 
   // Initial fetch + polling every 3s
   useEffect(() => {
