@@ -14,6 +14,7 @@ import CommandPalette from './components/CommandPalette';
 // Page components — each is written by the pages agent
 import OverviewPage from './components/pages/OverviewPage';
 import WorkloadsPage from './components/pages/WorkloadsPage';
+import ClustersPage from './components/pages/ClustersPage';
 import AIPage from './components/pages/AIPage';
 import CostPage from './components/pages/CostPage';
 import AffinityPage from './components/pages/AffinityPage';
@@ -35,6 +36,7 @@ import MetricsPage from './components/pages/MetricsPage';
 const heroConfig: Record<AppView, { title: string; subtitle: string }> = {
   overview: { title: 'Dashboard', subtitle: 'Real-time overview of your universal runtime control plane' },
   workloads: { title: 'Workloads', subtitle: 'Manage and monitor deployed workloads across all runtimes' },
+  clusters: { title: 'Cluster Browser', subtitle: 'Browse namespaces and Kubernetes resources directly from Aether' },
   ai: { title: 'AI Engine', subtitle: 'Intelligent runtime scoring, scaling advice, and migration planning' },
   cost: { title: 'Cost Estimation', subtitle: 'Analyze and forecast infrastructure costs across providers' },
   affinity: { title: 'Runtime Affinity', subtitle: 'Historical performance scores and deployment success rates' },
@@ -150,6 +152,8 @@ export default function App() {
         return <OverviewPage key={refreshKey} onNavigate={handleNavigate} />;
       case 'workloads':
         return <WorkloadsPage key={refreshKey} />;
+      case 'clusters':
+        return <ClustersPage key={refreshKey} />;
       case 'ai':
         return <AIPage key={refreshKey} />;
       case 'cost':
