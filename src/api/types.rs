@@ -131,6 +131,58 @@ pub(crate) struct BuildResponse {
     pub(crate) runtime: String,
 }
 
+/// Query parameters for native Kubernetes workload logs.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterLogsQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+}
+
+/// Query parameters for native Kubernetes workload detail inspection.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterResourceQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+}
+
+/// Request body for native Kubernetes actions.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterActionRequestBody {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+    pub(crate) action: String,
+    pub(crate) replicas: Option<i32>,
+}
+
+/// Query parameters for native Kubernetes namespace listing.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterNamespacesQuery {
+    pub(crate) cluster: String,
+}
+
+/// Query parameters for native Kubernetes resource browsing.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterBrowseQuery {
+    pub(crate) cluster: String,
+    pub(crate) namespace: Option<String>,
+    pub(crate) kind: String,
+}
+
+/// Request body for applying an edited Kubernetes manifest.
+#[derive(Debug, Deserialize)]
+pub(crate) struct ClusterApplyRequestBody {
+    pub(crate) cluster: String,
+    pub(crate) namespace: String,
+    pub(crate) kind: String,
+    pub(crate) manifest: serde_json::Value,
+}
+
 /// Secret metadata response (no raw values exposed)
 #[derive(Debug, Serialize)]
 pub(crate) struct SecretMetadataResponse {
@@ -160,6 +212,14 @@ pub(crate) struct WorkloadResponse {
     pub(crate) image: String,
     pub(crate) status: String,
     pub(crate) created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) cluster: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) namespace: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) kind: Option<String>,
 }
 
 /// Health check response
@@ -482,6 +542,10 @@ mod tests {
             image: "my-app:latest".to_string(),
             status: "running".to_string(),
             created_at: "2026-01-01T00:00:00Z".to_string(),
+            source: None,
+            cluster: None,
+            namespace: None,
+            kind: None,
         };
         let json = serde_json::to_string(&response).unwrap();
         assert!(json.contains("my-app"));
@@ -496,6 +560,10 @@ mod tests {
             image: "registry.io/web:v2".to_string(),
             status: "deployed (kubernetes)".to_string(),
             created_at: "2026-06-15T12:30:00Z".to_string(),
+            source: None,
+            cluster: None,
+            namespace: None,
+            kind: None,
         };
         let value = serde_json::to_value(&response).unwrap();
         let obj = value.as_object().unwrap();
@@ -516,6 +584,10 @@ mod tests {
             image: "img:latest".to_string(),
             status: "deployed".to_string(),
             created_at: "2026-01-01T00:00:00Z".to_string(),
+            source: None,
+            cluster: None,
+            namespace: None,
+            kind: None,
         };
         let json_str = serde_json::to_string(&response).unwrap();
         let reparsed: serde_json::Value = serde_json::from_str(&json_str).unwrap();
@@ -1057,6 +1129,10 @@ mod tests {
             image: "registry.io/api-svc:v1".to_string(),
             status: "deployed (kubevirt)".to_string(),
             created_at: "2026-03-10T08:00:00Z".to_string(),
+            source: None,
+            cluster: None,
+            namespace: None,
+            kind: None,
         };
         let api_resp = ApiResponse::success(workload);
         let json = serde_json::to_value(&api_resp).unwrap();
@@ -1082,6 +1158,10 @@ mod tests {
                 image: "app-a:latest".to_string(),
                 status: "running".to_string(),
                 created_at: "2026-01-01T00:00:00Z".to_string(),
+                source: None,
+                cluster: None,
+                namespace: None,
+                kind: None,
             },
             WorkloadResponse {
                 name: "app-b".to_string(),
@@ -1089,6 +1169,10 @@ mod tests {
                 image: "app-b:v2".to_string(),
                 status: "deployed".to_string(),
                 created_at: "2026-02-01T00:00:00Z".to_string(),
+                source: None,
+                cluster: None,
+                namespace: None,
+                kind: None,
             },
         ];
         let api_resp = ApiResponse::success(workloads);

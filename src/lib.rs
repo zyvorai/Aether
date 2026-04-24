@@ -19,6 +19,7 @@ pub mod events;
 pub mod gitops;
 pub mod health;
 pub mod helm;
+pub mod kubecluster;
 pub mod metrics;
 pub mod migration;
 pub mod orchestrator;

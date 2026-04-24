@@ -3,13 +3,14 @@
 use super::types::*;
 use crate::config::Config;
 use crate::engine::Engine;
+use crate::kubecluster::ClusterLogsRequest;
 use crate::runtime::{self, RuntimeKind};
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use crate::{backup, cost, Runtime};
 
 use axum::{
-    extract::{Path, State as AxumState},
+    extract::{Path, Query, State as AxumState},
     http::StatusCode,
     response::{Html, IntoResponse, Json},
 };
@@ -191,6 +192,10 @@ async fn discover_live_workloads() -> Vec<WorkloadResponse> {
                     image,
                     status,
                     created_at,
+                    source: Some("cluster".to_string()),
+                    cluster: None,
+                    namespace: Some(ns),
+                    kind: Some("Deployment".to_string()),
                 });
             }
         }
@@ -238,6 +243,10 @@ async fn discover_live_workloads() -> Vec<WorkloadResponse> {
                     image: format!("vm:{}", name),
                     status: status.to_string(),
                     created_at,
+                    source: Some("cluster".to_string()),
+                    cluster: None,
+                    namespace: Some(ns),
+                    kind: Some("VirtualMachineInstance".to_string()),
                 });
             }
         }
@@ -264,6 +273,10 @@ pub(crate) async fn list_workloads(
                 image: w.instance.image.clone(),
                 status: format!("deployed ({})", w.runtime),
                 created_at: w.created_at.clone(),
+                source: Some("aether".to_string()),
+                cluster: None,
+                namespace: None,
+                kind: None,
             }
         })
         .collect();
@@ -277,6 +290,25 @@ pub(crate) async fn list_workloads(
         if !seen.contains(bare_name) && !seen.contains(&w.name) {
             seen.insert(w.name.clone());
             workloads.push(w);
+        }
+    }
+
+    if let Ok(cluster_workloads) = crate::kubecluster::list_workloads().await {
+        for workload in cluster_workloads {
+            let full_name = format!("{}/{}/{}", workload.cluster, workload.namespace, workload.name);
+            if seen.insert(full_name.clone()) {
+                workloads.push(WorkloadResponse {
+                    name: full_name,
+                    runtime: "Kubernetes".to_string(),
+                    image: workload.image,
+                    status: workload.status,
+                    created_at: workload.created_at,
+                    source: Some("cluster".to_string()),
+                    cluster: Some(workload.cluster),
+                    namespace: Some(workload.namespace),
+                    kind: Some(workload.kind),
+                });
+            }
         }
     }
 
@@ -366,6 +398,10 @@ pub(crate) async fn get_workload(
         image: workload.instance.image.clone(),
         status: format!("deployed ({})", workload.runtime),
         created_at: workload.created_at.clone(),
+        source: Some("aether".to_string()),
+        cluster: None,
+        namespace: None,
+        kind: None,
     };
     ok_json(response)
 }
@@ -1041,6 +1077,103 @@ pub(crate) async fn api_events_summary() -> impl IntoResponse {
             )
         }
         Err(e) => err_internal::<serde_json::Value>(e),
+    }
+}
+
+/// GET /api/cluster/summary - Native kubeconfig-backed cluster summary
+pub(crate) async fn api_cluster_summary() -> impl IntoResponse {
+    ok_json(crate::kubecluster::cluster_summary().await)
+}
+
+/// GET /api/cluster/logs - Get logs for a kubeconfig-backed Kubernetes workload
+pub(crate) async fn api_cluster_logs(
+    Query(query): Query<ClusterLogsQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::workload_logs(&ClusterLogsRequest {
+        cluster: query.cluster,
+        namespace: query.namespace,
+        kind: query.kind,
+        name: query.name,
+    })
+    .await
+    {
+        Ok(logs) => ok_json(logs),
+        Err(error) => err_internal::<String>(error),
+    }
+}
+
+/// GET /api/cluster/resource - Inspect a native Kubernetes workload manifest and pods.
+pub(crate) async fn api_cluster_resource(
+    Query(query): Query<ClusterResourceQuery>,
+) -> impl IntoResponse {
+    let request = ClusterLogsRequest {
+        cluster: query.cluster,
+        namespace: query.namespace,
+        kind: query.kind,
+        name: query.name,
+    };
+
+    match crate::kubecluster::workload_detail(&request).await {
+        Ok(detail) => ok_json(detail),
+        Err(error) => err_internal::<crate::kubecluster::ClusterResourceDetail>(error),
+    }
+}
+
+/// POST /api/cluster/action - Execute a native Kubernetes workload action.
+pub(crate) async fn api_cluster_action(
+    Json(request): Json<ClusterActionRequestBody>,
+) -> impl IntoResponse {
+    match crate::kubecluster::workload_action(&crate::kubecluster::ClusterActionRequest {
+        cluster: request.cluster,
+        namespace: request.namespace,
+        kind: request.kind,
+        name: request.name,
+        action: request.action,
+        replicas: request.replicas,
+    }).await {
+        Ok(message) => ok_json(message),
+        Err(error) => err_internal::<String>(error),
+    }
+}
+
+/// GET /api/cluster/namespaces - List namespaces for a kubeconfig-backed cluster.
+pub(crate) async fn api_cluster_namespaces(
+    Query(query): Query<ClusterNamespacesQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::list_namespaces(&query.cluster).await {
+        Ok(namespaces) => ok_json(namespaces),
+        Err(error) => err_internal::<Vec<crate::kubecluster::ClusterNamespaceSummary>>(error),
+    }
+}
+
+/// GET /api/cluster/browse - Browse native Kubernetes resources by cluster, namespace, and kind.
+pub(crate) async fn api_cluster_browse(
+    Query(query): Query<ClusterBrowseQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::browse_resources(&crate::kubecluster::ClusterBrowseRequest {
+        cluster: query.cluster,
+        namespace: query.namespace,
+        kind: query.kind,
+    }).await {
+        Ok(resources) => ok_json(resources),
+        Err(error) => err_internal::<Vec<crate::kubecluster::ClusterResourceSummary>>(error),
+    }
+}
+
+/// POST /api/cluster/apply - Apply an edited Kubernetes manifest back to the cluster.
+pub(crate) async fn api_cluster_apply(
+    Json(request): Json<ClusterApplyRequestBody>,
+) -> impl IntoResponse {
+    match crate::kubecluster::apply_manifest(
+        &request.cluster,
+        &request.namespace,
+        &request.kind,
+        request.manifest,
+    )
+    .await
+    {
+        Ok(message) => ok_json(message),
+        Err(error) => err_internal::<String>(error),
     }
 }
 

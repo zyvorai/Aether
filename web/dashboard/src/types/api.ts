@@ -12,6 +12,71 @@ export interface WorkloadResponse {
   image: string;
   status: string;
   created_at: string;
+  source?: string | null;
+  cluster?: string | null;
+  namespace?: string | null;
+  kind?: string | null;
+}
+
+export interface ClusterInfo {
+  name: string;
+  server: string | null;
+  version: string | null;
+  reachable: boolean;
+}
+
+export interface ClusterSummary {
+  enabled: boolean;
+  connected: boolean;
+  backend: string;
+  cluster_count: number;
+  healthy_clusters: number;
+  workload_count: number;
+  clusters: ClusterInfo[];
+  error: string | null;
+}
+
+export interface ClusterPodSummary {
+  name: string;
+  phase: string;
+  ready: number;
+  total_containers: number;
+  restarts: number;
+  node: string | null;
+}
+
+export interface ClusterConditionSummary {
+  type_: string;
+  status: string;
+  reason?: string | null;
+  message?: string | null;
+}
+
+export interface ClusterResourceDetail {
+  cluster: string;
+  namespace: string;
+  kind: string;
+  name: string;
+  api_version: string | null;
+  pods: ClusterPodSummary[];
+  conditions: ClusterConditionSummary[];
+  manifest: Record<string, unknown>;
+}
+
+export interface ClusterNamespaceSummary {
+  name: string;
+  status: string;
+  created_at: string;
+}
+
+export interface ClusterBrowseItem {
+  cluster: string;
+  namespace: string;
+  kind: string;
+  name: string;
+  status: string;
+  created_at: string;
+  detail?: string | null;
 }
 
 export interface BuildResponse {
@@ -337,6 +402,7 @@ export interface HealthResponse {
 export type AppView =
   | 'overview'
   | 'workloads'
+  | 'clusters'
   | 'ai'
   | 'cost'
   | 'affinity'

@@ -23,9 +23,18 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
+function isAetherManaged(workload: WorkloadResponse): boolean {
+  return (workload.source ?? 'aether') === 'aether';
+}
+
 export default function WorkloadsPage() {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'aether' | 'cluster'>('all');
+  const [kindFilter, setKindFilter] = useState('all');
+  const [clusterFilter, setClusterFilter] = useState('all');
+  const [namespaceFilter, setNamespaceFilter] = useState('all');
   const [logsModal, setLogsModal] = useState<{ name: string; content: string } | null>(null);
   const [migrateModal, setMigrateModal] = useState<string | null>(null);
   const [validateModal, setValidateModal] = useState(false);
@@ -146,6 +155,27 @@ export default function WorkloadsPage() {
     );
   }
 
+  const kinds = ['all', ...Array.from(new Set(workloads.map((w) => w.kind).filter((kind): kind is string => Boolean(kind)))).sort()];
+  const clusters = ['all', ...Array.from(new Set(workloads.map((w) => w.cluster).filter((cluster): cluster is string => Boolean(cluster)))).sort()];
+  const namespaces = ['all', ...Array.from(new Set(workloads.map((w) => w.namespace).filter((namespace): namespace is string => Boolean(namespace)))).sort()];
+
+  const filteredWorkloads = workloads.filter((workload) => {
+    const matchesSearch = !search || [
+      workload.name,
+      workload.image,
+      workload.runtime,
+      workload.cluster ?? '',
+      workload.namespace ?? '',
+      workload.kind ?? '',
+    ].some((value) => value.toLowerCase().includes(search.toLowerCase()));
+    const source = workload.source ?? 'aether';
+    const matchesSource = sourceFilter === 'all' || source === sourceFilter;
+    const matchesKind = kindFilter === 'all' || workload.kind === kindFilter;
+    const matchesCluster = clusterFilter === 'all' || workload.cluster === clusterFilter;
+    const matchesNamespace = namespaceFilter === 'all' || workload.namespace === namespaceFilter;
+    return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace;
+  });
+
   return (
     <div>
       <div className="flex items-center justify-end mb-6">
@@ -175,20 +205,44 @@ export default function WorkloadsPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <StatCard title="Total" value={workloads.length} color="orange" />
+        <StatCard title="Total" value={filteredWorkloads.length} color="orange" />
         <StatCard
           title="Running"
-          value={workloads.filter((w) => w.status.toLowerCase() === 'running').length}
+          value={filteredWorkloads.filter((w) => w.status.toLowerCase() === 'running').length}
           color="green"
         />
         <StatCard
           title="Stopped"
-          value={workloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length}
+          value={filteredWorkloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length}
           color="red"
         />
       </div>
 
-      {workloads.length === 0 ? (
+      <div className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-5">
+        <input
+          type="text"
+          placeholder="Search name, image, cluster, namespace..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+        />
+        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as 'all' | 'aether' | 'cluster')} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+          <option value="all">All sources</option>
+          <option value="aether">Aether managed</option>
+          <option value="cluster">Kubernetes discovered</option>
+        </select>
+        <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+          {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
+        </select>
+        <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+          {clusters.map((cluster) => <option key={cluster} value={cluster}>{cluster === 'all' ? 'All clusters' : cluster}</option>)}
+        </select>
+        <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+          {namespaces.map((namespace) => <option key={namespace} value={namespace}>{namespace === 'all' ? 'All namespaces' : namespace}</option>)}
+        </select>
+      </div>
+
+      {filteredWorkloads.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to see it here" />
       ) : (
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
@@ -205,7 +259,7 @@ export default function WorkloadsPage() {
                 </tr>
               </thead>
               <tbody>
-                {workloads.map((w) => (
+                {filteredWorkloads.map((w) => (
                   <tr key={w.name} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
                     <td className="py-3 px-4 font-medium text-zinc-200">
                       <button
@@ -217,7 +271,14 @@ export default function WorkloadsPage() {
                     </td>
                     <td className="py-3 px-4"><RuntimeBadge runtime={w.runtime} /></td>
                     <td className="py-3 px-4">
-                      <code className="text-xs bg-zinc-950 px-2 py-1 rounded text-zinc-300">{w.image}</code>
+                      <div className="space-y-1">
+                        <code className="text-xs bg-zinc-950 px-2 py-1 rounded text-zinc-300 inline-block">{w.image}</code>
+                        {(w.cluster || w.namespace || w.kind) && (
+                          <div className="text-[11px] text-zinc-500">
+                            {[w.kind, w.cluster, w.namespace].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <Badge text={w.status} variant={getStatusVariant(w.status)} />
@@ -225,15 +286,23 @@ export default function WorkloadsPage() {
                     <td className="py-3 px-4 text-sm text-zinc-400">{formatTimestamp(w.created_at)}</td>
                     <td className="py-3 px-4">
                       <div className="flex flex-wrap gap-1">
-                        <button onClick={() => handleLogs(w.name)} className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
-                        <button onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
-                        <button onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
-                        <button onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
-                        <button onClick={() => setMigrateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
-                        <button onClick={() => handleProfile(w.name)} className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
-                        <button onClick={() => handleAnalyze(w.name)} className="p-1.5 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
-                        <button onClick={() => handleDrift(w.name)} className="p-1.5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
-                        <button onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
+                        {isAetherManaged(w) ? (
+                          <>
+                            <button onClick={() => handleLogs(w.name)} className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
+                            <button onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
+                            <button onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
+                            <button onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
+                            <button onClick={() => setMigrateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
+                            <button onClick={() => handleProfile(w.name)} className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
+                            <button onClick={() => handleAnalyze(w.name)} className="p-1.5 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
+                            <button onClick={() => handleDrift(w.name)} className="p-1.5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
+                            <button onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
+                          </>
+                        ) : (
+                          <span className="text-xs text-zinc-500 px-2 py-1">
+                            K8s discovered
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>

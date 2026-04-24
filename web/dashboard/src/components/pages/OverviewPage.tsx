@@ -6,7 +6,7 @@ import type { AppView } from '../../types/api';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
-import type { WorkloadResponse, EventSummary, HealthSummary, BackupInfo, SecretSummary, Event } from '../../types/api';
+import type { WorkloadResponse, EventSummary, HealthSummary, BackupInfo, SecretSummary, Event, ClusterSummary } from '../../types/api';
 
 interface OverviewPageProps {
   onNavigate: (view: AppView) => void;
@@ -19,17 +19,19 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [clusterSummary, setClusterSummary] = useState<ClusterSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [w, es, hs, b, s, ev] = await Promise.all([
+      const [w, es, hs, b, s, ev, cs] = await Promise.all([
         apiFetch<WorkloadResponse[]>('/workloads'),
         apiFetch<EventSummary>('/events/summary'),
         apiFetch<HealthSummary>('/orchestrator/summary'),
         apiFetch<BackupInfo[]>('/backups'),
         apiFetch<SecretSummary[]>('/secrets'),
         apiFetch<Event[]>('/events'),
+        apiFetch<ClusterSummary>('/cluster/summary'),
       ]);
       setWorkloads(w ?? []);
       setEventSummary(es);
@@ -37,6 +39,7 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
       setBackups(b ?? []);
       setSecrets(s ?? []);
       setEvents(ev ?? []);
+      setClusterSummary(cs);
       setLoading(false);
     }
     load();
@@ -59,6 +62,7 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
         <button onClick={() => onNavigate('workloads')} className="text-left">
           <StatCard title="Workloads" value={workloads.length} color="orange" icon={<LayoutDashboard size={18} />} />
         </button>
+        <StatCard title="Clusters" value={clusterSummary?.cluster_count ?? 0} color="blue" icon={<Activity size={18} />} />
         <button onClick={() => onNavigate('health')} className="text-left">
           <StatCard title="Healthy" value={healthy} color="green" icon={<Activity size={18} />} />
         </button>
@@ -77,6 +81,49 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Kubernetes Clusters</h2>
+          {!clusterSummary || !clusterSummary.enabled ? (
+            <EmptyState
+              icon={<Activity size={48} />}
+              title="No kubeconfig clusters"
+              description="Aether did not find any reachable kubeconfig contexts."
+            />
+          ) : (
+            <div className="space-y-4">
+              <div className={`rounded-lg border px-4 py-3 text-sm ${
+                clusterSummary.connected
+                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                  : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+              }`}>
+                {clusterSummary.connected
+                  ? `${clusterSummary.healthy_clusters}/${clusterSummary.cluster_count} cluster contexts reachable`
+                  : clusterSummary.error ?? 'Kubernetes cluster discovery unavailable'}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <StatCard title="Clusters" value={clusterSummary.cluster_count} color="blue" />
+                <StatCard title="Reachable" value={clusterSummary.healthy_clusters} color="green" />
+                <StatCard title="K8s Workloads" value={clusterSummary.workload_count} color="orange" />
+              </div>
+              {clusterSummary.clusters.length > 0 && (
+                <div className="space-y-2">
+                  {clusterSummary.clusters.slice(0, 6).map(cluster => (
+                    <div key={cluster.name} className="flex items-center justify-between rounded-lg bg-zinc-950/60 px-3 py-2 text-sm">
+                      <div>
+                        <div className="text-zinc-200 font-medium">{cluster.name}</div>
+                        <div className="text-zinc-500 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
+                      </div>
+                      <div className={cluster.reachable ? 'text-emerald-400' : 'text-amber-400'}>
+                        {cluster.reachable ? 'reachable' : 'offline'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Recent Events */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4">Recent Events</h2>

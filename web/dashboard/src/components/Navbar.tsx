@@ -58,6 +58,7 @@ const intelligenceItems: DropdownItem[] = [
 ];
 
 const operationsItems: DropdownItem[] = [
+  { label: 'Cluster Browser', view: 'clusters', icon: <Container className="w-4 h-4" /> },
   { label: 'Scheduler', view: 'scheduler', icon: <Settings className="w-4 h-4" /> },
   { label: 'Health Monitor', view: 'health', icon: <HeartPulse className="w-4 h-4" /> },
   { label: 'Events', view: 'events', icon: <Bell className="w-4 h-4" /> },
