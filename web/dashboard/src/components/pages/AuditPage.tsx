@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Inbox } from 'lucide-react';
+import { Inbox, ShieldCheck } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import StatCard from '../StatCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
-import type { AuditResponse } from '../../types/api';
+import type { AuditResponse, AuditVerifyResponse } from '../../types/api';
 
 export default function AuditPage() {
   const [audit, setAudit] = useState<AuditResponse | null>(null);
+  const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const data = await apiFetch<AuditResponse>('/audit');
+      const [data, verifyData] = await Promise.all([
+        apiFetch<AuditResponse>('/audit'),
+        apiFetch<AuditVerifyResponse>('/audit/verify'),
+      ]);
       setAudit(data);
+      setVerify(verifyData);
       setLoading(false);
     }
     load();
@@ -41,7 +46,35 @@ export default function AuditPage() {
         <StatCard title="Successes" value={audit.summary.successes} color="green" />
         <StatCard title="Failures" value={audit.summary.failures} color="red" />
         <StatCard title="Workloads" value={audit.summary.unique_workloads} color="purple" />
+        {verify && <StatCard title="Verified" value={verify.verified} color="green" icon={<ShieldCheck size={18} />} />}
+        {verify && <StatCard title="Tampered" value={verify.tampered} color={verify.tampered > 0 ? 'red' : 'blue'} />}
       </div>
+
+      {verify && (
+        <div className="mb-6 rounded-2xl surface-panel p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Integrity Verification</div>
+              <div className="mt-2 flex items-center gap-3">
+                <Badge text={verify.integrity} variant={verify.integrity === 'VERIFIED' ? 'green' : 'red'} />
+                <span className="text-sm text-slate-400">
+                  {verify.verified} of {verify.total} events verified successfully
+                </span>
+              </div>
+            </div>
+          </div>
+          {verify.tampered_events.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {verify.tampered_events.map((event) => (
+                <div key={event.id} className="rounded-xl bg-red-500/5 border border-red-500/15 px-4 py-3 text-sm">
+                  <div className="font-medium text-red-300">{event.action} on {event.workload}</div>
+                  <div className="mt-1 text-xs text-slate-500">{formatTimestamp(event.timestamp)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {audit.recent_events.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No recent events" />

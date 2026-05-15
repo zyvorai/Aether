@@ -252,6 +252,19 @@ pub static AFFINITY_RECOMMENDATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(
     .expect("metric can be created")
 });
 
+/// HTTP requests handled by the embedded Axum API (low-cardinality labels).
+pub static API_HTTP_REQUESTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
+    CounterVec::new(
+        Opts::new(
+            "aether_api_http_requests_total",
+            "Total HTTP requests processed through the API middleware stack",
+        )
+        .namespace("aether"),
+        &["method", "status"],
+    )
+    .expect("metric can be created")
+});
+
 /// Initialize metrics registry
 pub fn init() {
     // Register all metrics (ignore errors if already registered)
@@ -275,6 +288,7 @@ pub fn init() {
     let _ = REGISTRY.register(Box::new(EVENTS_EMITTED_TOTAL.clone()));
     let _ = REGISTRY.register(Box::new(ENV_PROMOTIONS_TOTAL.clone()));
     let _ = REGISTRY.register(Box::new(AFFINITY_RECOMMENDATIONS_TOTAL.clone()));
+    let _ = REGISTRY.register(Box::new(API_HTTP_REQUESTS_TOTAL.clone()));
 
     tracing::debug!("Metrics initialized");
 }
@@ -293,6 +307,13 @@ pub fn gather() -> String {
         tracing::error!("Metrics contain invalid UTF-8: {}", e);
         "# Error: metrics contained invalid UTF-8\n".to_string()
     })
+}
+
+/// Count one HTTP request after the response status is known.
+pub fn record_api_http(method: &str, status: &str) {
+    API_HTTP_REQUESTS_TOTAL
+        .with_label_values(&[method, status])
+        .inc();
 }
 
 /// Record a workload build

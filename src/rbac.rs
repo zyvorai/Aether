@@ -179,7 +179,8 @@ fn generate_api_key() -> String {
 ///
 /// Permission matrix:
 /// - **Viewer**: GET requests only
-/// - **Operator**: GET and POST requests, but NOT to `/api/rbac/*` paths
+/// - **Operator**: GET; POST except `/api/rbac/*`; PUT/PATCH on workload updates;
+///   DELETE on workloads, secrets, backups, and dependency edges; no admin-only audit append.
 /// - **Admin**: all methods, all paths
 pub fn check_permission(role: &Role, method: &str, path: &str) -> bool {
     match role {
@@ -190,8 +191,23 @@ pub fn check_permission(role: &Role, method: &str, path: &str) -> bool {
                 return true;
             }
             if method_upper == "POST" {
-                // Operators cannot manage RBAC endpoints
-                return path != "/api/rbac" && !path.starts_with("/api/rbac/");
+                // Operators cannot manage RBAC or append external audit events
+                if path == "/api/rbac" || path.starts_with("/api/rbac/") {
+                    return false;
+                }
+                if path == "/api/audit/events" {
+                    return false;
+                }
+                return true;
+            }
+            if method_upper == "PUT" || method_upper == "PATCH" {
+                return path.starts_with("/api/workloads/");
+            }
+            if method_upper == "DELETE" {
+                return path.starts_with("/api/workloads/")
+                    || path.starts_with("/api/secrets/")
+                    || path.starts_with("/api/backups/")
+                    || path == "/api/dependencies";
             }
             false
         }
@@ -364,9 +380,16 @@ mod tests {
         assert!(!check_permission(&Role::Operator, "POST", "/api/rbac/keys"));
         assert!(!check_permission(&Role::Operator, "POST", "/api/rbac/revoke"));
 
-        // Operators cannot PUT or DELETE
-        assert!(!check_permission(&Role::Operator, "PUT", "/api/workloads/foo"));
-        assert!(!check_permission(&Role::Operator, "DELETE", "/api/workloads/foo"));
+        // Operators can PUT/PATCH workload updates and DELETE workloads / secrets / backups / deps
+        assert!(check_permission(&Role::Operator, "PUT", "/api/workloads/foo"));
+        assert!(check_permission(&Role::Operator, "PATCH", "/api/workloads/foo"));
+        assert!(check_permission(&Role::Operator, "DELETE", "/api/workloads/foo"));
+        assert!(check_permission(&Role::Operator, "DELETE", "/api/secrets/foo"));
+        assert!(check_permission(&Role::Operator, "DELETE", "/api/backups/foo"));
+        assert!(check_permission(&Role::Operator, "DELETE", "/api/dependencies"));
+        assert!(!check_permission(&Role::Operator, "PUT", "/api/other/foo"));
+        assert!(!check_permission(&Role::Operator, "DELETE", "/api/rbac/keys"));
+        assert!(!check_permission(&Role::Operator, "POST", "/api/audit/events"));
     }
 
     #[test]

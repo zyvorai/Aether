@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { apiEventStreamUrl } from '../utils/api';
 
 interface ServerEvent {
   type: 'workloadChanged' | 'eventEmitted' | 'healthUpdate';
@@ -21,8 +22,9 @@ export function useEventStream(
       return;
     }
 
-    const url = `${apiUrl}/api/events/stream`;
-    const es = new EventSource(url);
+    const streamPath = apiEventStreamUrl();
+    const url = apiUrl ? `${apiUrl}${streamPath}` : streamPath;
+    const es = new EventSource(url, { withCredentials: true });
     eventSourceRef.current = es;
 
     es.onopen = () => setConnected(true);

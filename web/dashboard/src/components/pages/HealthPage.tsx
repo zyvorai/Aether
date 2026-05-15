@@ -39,7 +39,7 @@ export default function HealthPage() {
     async function load() {
       const [s, w] = await Promise.all([
         apiFetch<HealthSummary>('/orchestrator/summary'),
-        apiFetch<ManagedWorkload[]>('/orchestrator/workloads'),
+        apiFetch<ManagedWorkload[]>('/orchestrator/status'),
       ]);
       setSummary(s);
       setWorkloads(w ?? []);

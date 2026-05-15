@@ -1,4 +1,5 @@
-# Applied by scripts/deploy-remote.sh when ciliumnetworkpolicies.cilium.io exists.
+# Applied by scripts/deploy-k8s.sh / deploy-remote.sh when ciliumnetworkpolicies.cilium.io exists.
+# For kube-apiserver + DNS only, set AETHER_CILIUM_EGRESS_STRICT=1 and use cilium-aether-egress-strict.yaml.
 # Placeholder __AETHER_NAMESPACE__ is replaced with $AETHER_NAMESPACE (default: aether-system).
 # Pods are labeled app=aether (see Deployment in deploy-remote.sh).
 ---

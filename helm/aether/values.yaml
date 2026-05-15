@@ -29,23 +29,53 @@ rbac:
   # Rules for the ClusterRole
   rules:
     - apiGroups: [""]
-      resources: ["pods", "services", "persistentvolumeclaims", "configmaps", "secrets"]
+      resources:
+        - pods
+        - pods/log
+        - pods/status
+        - services
+        - configmaps
+        - secrets
+        - nodes
+        - namespaces
+        - persistentvolumes
+        - persistentvolumeclaims
+        - resourcequotas
+        - limitranges
+        - serviceaccounts
+        - events
+        - endpoints
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     - apiGroups: ["apps"]
-      resources: ["deployments", "statefulsets", "daemonsets"]
+      resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["batch"]
+      resources: ["jobs", "cronjobs"]
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     - apiGroups: ["networking.k8s.io"]
-      resources: ["ingresses"]
+      resources: ["ingresses", "networkpolicies"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["discovery.k8s.io"]
+      resources: ["endpointslices"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["storage.k8s.io"]
+      resources: ["storageclasses"]
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     - apiGroups: ["autoscaling"]
       resources: ["horizontalpodautoscalers"]
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     - apiGroups: ["kubevirt.io"]
-      resources: ["virtualmachines", "virtualmachineinstances", "datavolumes"]
+      resources: ["virtualmachines", "virtualmachineinstances"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["cdi.kubevirt.io"]
+      resources: ["datavolumes"]
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     - apiGroups: ["metal3.io"]
       resources: ["baremetalhosts"]
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["apiextensions.k8s.io"]
+      resources: ["customresourcedefinitions"]
+      verbs: ["get", "list", "watch"]
 
 podAnnotations: {}
 

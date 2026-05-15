@@ -38,6 +38,8 @@ pub enum AuditAction {
     BackupRestore,
     PolicyCheck,
     DriftDetected,
+    /// Externally submitted audit entry (API; admin only).
+    External,
 }
 
 impl std::fmt::Display for AuditAction {
@@ -55,6 +57,7 @@ impl std::fmt::Display for AuditAction {
             AuditAction::BackupRestore => write!(f, "RESTORE"),
             AuditAction::PolicyCheck => write!(f, "POLICY"),
             AuditAction::DriftDetected => write!(f, "DRIFT"),
+            AuditAction::External => write!(f, "EXTERNAL"),
         }
     }
 }

@@ -43,7 +43,7 @@ export default function SecretsPage() {
   }
 
   async function handleDelete(name: string) {
-    const res = await apiDelete(`/secrets/${name}`);
+    const res = await apiDelete(`/secrets/${name}`, { label: `Delete secret "${name}"` });
     setConfirmDelete(null);
     if (res.success) {
       toast(`Secret "${name}" deleted`, 'success');
