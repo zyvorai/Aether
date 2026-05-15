@@ -5,11 +5,11 @@ export default {
     extend: {
       colors: {
         aether: {
-          DEFAULT: '#d35400',
-          light: '#e67e22',
-          dark: '#b84500',
-          dim: 'rgba(211, 84, 0, 0.12)',
-          glow: 'rgba(211, 84, 0, 0.25)',
+          DEFAULT: '#63a4ff',
+          light: '#8bc2ff',
+          dark: '#2d6fd2',
+          dim: 'rgba(99, 164, 255, 0.14)',
+          glow: 'rgba(99, 164, 255, 0.28)',
         },
       },
       animation: {

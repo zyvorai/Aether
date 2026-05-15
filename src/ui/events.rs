@@ -80,11 +80,9 @@ async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<(
         KeyCode::Up | KeyCode::Char('k') => {
             app.select_previous();
         }
-        KeyCode::Home | KeyCode::Char('g') => {
+        KeyCode::Home | KeyCode::Char('g') if !app.filtered_workloads().is_empty() => {
             // Jump to first workload (in filtered view)
-            if !app.filtered_workloads().is_empty() {
-                app.selected_index = 0;
-            }
+            app.selected_index = 0;
         }
         KeyCode::End | KeyCode::Char('G') => {
             // Jump to last workload (in filtered view)
@@ -105,11 +103,9 @@ async fn handle_dashboard_keys(app: &mut App, key: KeyEvent) -> anyhow::Result<(
             app.toggle_search();
         }
         // Clear search
-        KeyCode::Esc => {
-            if !app.search_filter.is_empty() {
-                app.search_filter.clear();
-                app.selected_index = 0;
-            }
+        KeyCode::Esc if !app.search_filter.is_empty() => {
+            app.search_filter.clear();
+            app.selected_index = 0;
         }
         _ => {}
     }

@@ -13,11 +13,14 @@ use crate::{backup, cost, Runtime};
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        Path, Query, State as AxumState,
+        Path, Query, RawQuery, State as AxumState,
     },
+    body::Body,
     http::HeaderMap,
+    http::HeaderValue,
     http::StatusCode,
-    response::{Html, IntoResponse, Json},
+    http::{Method, Uri},
+    response::{Html, IntoResponse, Json, Response},
 };
 use axum::http::header;
 use futures::{SinkExt, stream::StreamExt};
@@ -30,6 +33,59 @@ use tokio::{
     sync::mpsc,
     time::{sleep, Duration},
 };
+
+fn clamp_page(limit: Option<usize>, offset: Option<usize>, default_limit: usize, max_limit: usize) -> (usize, usize) {
+    let lim = limit.unwrap_or(default_limit).min(max_limit).max(1);
+    let off = offset.unwrap_or(0).min(100_000);
+    (lim, off)
+}
+
+fn workload_spec_file(name: &str) -> PathBuf {
+    crate::resources::aether_path(&format!("specs/{name}.yaml"))
+}
+
+/// Validate backup stem or filename and return path under `backup_dir`.
+fn resolve_backup_path(backup_dir: &std::path::Path, name: &str) -> Result<PathBuf, String> {
+    let stem = name.strip_suffix(".json").unwrap_or(name);
+    if stem.is_empty() || stem.len() > 200 {
+        return Err("invalid backup name".into());
+    }
+    if !stem
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+    {
+        return Err("invalid backup name: use alphanumeric, dot, underscore, hyphen only".into());
+    }
+    Ok(backup_dir.join(format!("{stem}.json")))
+}
+
+fn parse_audit_action_from_str(s: &str) -> crate::audit::AuditAction {
+    match s.to_ascii_lowercase().as_str() {
+        "build" => crate::audit::AuditAction::Build,
+        "deploy" => crate::audit::AuditAction::Deploy,
+        "start" => crate::audit::AuditAction::Start,
+        "stop" => crate::audit::AuditAction::Stop,
+        "delete" => crate::audit::AuditAction::Delete,
+        "migrate" => crate::audit::AuditAction::Migrate,
+        "scale" => crate::audit::AuditAction::Scale,
+        "config" | "configchange" => crate::audit::AuditAction::ConfigChange,
+        "backup" | "backupcreate" => crate::audit::AuditAction::BackupCreate,
+        "restore" | "backuprestore" => crate::audit::AuditAction::BackupRestore,
+        "policy" | "policycheck" => crate::audit::AuditAction::PolicyCheck,
+        "drift" | "driftdetected" => crate::audit::AuditAction::DriftDetected,
+        "external" => crate::audit::AuditAction::External,
+        _ => crate::audit::AuditAction::External,
+    }
+}
+
+fn parse_action_result_from_str(s: &str) -> crate::audit::ActionResult {
+    match s.to_ascii_lowercase().as_str() {
+        "success" | "ok" => crate::audit::ActionResult::Success,
+        "failure" | "fail" | "error" => crate::audit::ActionResult::Failure,
+        "warning" | "warn" => crate::audit::ActionResult::Warning,
+        _ => crate::audit::ActionResult::Success,
+    }
+}
 
 /// Validate a workload name from API input.
 /// Accepts only DNS-1123 compatible names: lowercase alphanumeric, hyphens, dots,
@@ -64,6 +120,53 @@ fn validate_spec_path<T: serde::Serialize>(path: &std::path::Path) -> Result<(),
 fn load_spec_safe<T: serde::Serialize>(path: &PathBuf) -> Result<Workload, (StatusCode, Json<ApiResponse<T>>)> {
     validate_spec_path(path)?;
     Workload::from_file(path).map_err(|e| err_internal(format!("Failed to load workload spec: {}", e)))
+}
+
+fn parse_workload_payload<T: serde::Serialize>(
+    value: serde_json::Value,
+) -> Result<Workload, (StatusCode, Json<ApiResponse<T>>)> {
+    if let Ok(spec) = serde_json::from_value::<Workload>(value.clone()) {
+        return Ok(spec);
+    }
+
+    if let Some(spec_value) = value.get("spec") {
+        if let Ok(spec) = serde_json::from_value::<Workload>(spec_value.clone()) {
+            return Ok(spec);
+        }
+    }
+
+    if let Some(yaml) = value.get("yaml").and_then(|v| v.as_str()) {
+        return serde_yaml::from_str::<Workload>(yaml)
+            .map_err(|e| err_bad_request(format!("Invalid YAML: {}", e)));
+    }
+
+    Err(err_bad_request("Request body must be a workload object, { spec: ... }, or { yaml: ... }"))
+}
+
+fn parse_create_workload_payload<T: serde::Serialize>(
+    value: serde_json::Value,
+) -> Result<CreateWorkloadRequest, (StatusCode, Json<ApiResponse<T>>)> {
+    if let Ok(request) = serde_json::from_value::<CreateWorkloadRequest>(value.clone()) {
+        return Ok(request);
+    }
+
+    if let Some(spec_yaml) = value.get("spec_yaml").and_then(|v| v.as_str()) {
+        let spec = serde_yaml::from_str::<Workload>(spec_yaml)
+            .map_err(|e| err_bad_request(format!("Invalid workload YAML: {}", e)))?;
+        let runtime = value
+            .get("runtime")
+            .and_then(|v| v.as_str())
+            .map(ToOwned::to_owned);
+
+        return Ok(CreateWorkloadRequest { spec, runtime });
+    }
+
+    let runtime = value
+        .get("runtime")
+        .and_then(|v| v.as_str())
+        .map(ToOwned::to_owned);
+    let spec = parse_workload_payload::<T>(value)?;
+    Ok(CreateWorkloadRequest { spec, runtime })
 }
 
 /// Look up a workload by name from state, returning a cloned WorkloadState
@@ -232,8 +335,9 @@ fn rollout_resource(kind: &str) -> Option<&'static str> {
 
 /// Embedded dashboard HTML (built from web/dashboard/ React app)
 pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/dashboard/dist/index.html");
-const DASHBOARD_CSS: &str = include_str!("../../web/dashboard/dist/assets/index-DiVd-Lmd.css");
-const DASHBOARD_JS: &str = include_str!("../../web/dashboard/dist/assets/index-qv9Tu_QH.js");
+// Run `npm run build` in web/dashboard/ after UI changes (stable asset names in vite.config.ts).
+const DASHBOARD_CSS: &str = include_str!("../../web/dashboard/dist/assets/aether-dashboard.css");
+const DASHBOARD_JS: &str = include_str!("../../web/dashboard/dist/assets/aether-dashboard.js");
 
 /// GET / - Serve the web dashboard
 pub(crate) async fn serve_dashboard() -> impl IntoResponse {
@@ -248,6 +352,18 @@ pub(crate) async fn serve_dashboard_css() -> impl IntoResponse {
 /// GET /assets/*.js - Serve embedded dashboard JS
 pub(crate) async fn serve_dashboard_js() -> impl IntoResponse {
     ([(header::CONTENT_TYPE, "application/javascript")], DASHBOARD_JS)
+}
+
+/// SPA fallback: non-API GET requests serve the dashboard (deep links, refresh).
+pub(crate) async fn serve_dashboard_spa_fallback(method: Method, uri: Uri) -> impl IntoResponse {
+    if method != Method::GET {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    let path = uri.path();
+    if path.starts_with("/api") {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    Html(DASHBOARD_HTML).into_response()
 }
 
 /// GET /health - Health check endpoint
@@ -279,11 +395,21 @@ pub(crate) async fn api_auth_me(
             }
         }
 
-        if legacy_key.is_none() && rbac_store.list_keys().is_empty() {
+        if legacy_key.is_none() && rbac_store.list_keys().is_empty() && app_state.oidc.is_none() {
             return ok_json(AuthStatusResponse {
                 authenticated: true,
                 username: "local-dev".to_string(),
                 role: "admin".to_string(),
+            });
+        }
+    }
+
+    if let Some(oidc) = app_state.oidc.as_ref() {
+        if let Some((role, username)) = oidc.verify_session_cookie(&headers) {
+            return ok_json(AuthStatusResponse {
+                authenticated: true,
+                username,
+                role: role.to_string(),
             });
         }
     }
@@ -307,6 +433,73 @@ pub(crate) async fn api_auth_me(
     )
 }
 
+/// GET /api/auth/oidc/login — redirect to the configured IdP (requires OIDC env).
+pub(crate) async fn api_oidc_login(
+    AxumState(app_state): AxumState<AppState>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> impl IntoResponse {
+    let Some(oidc) = app_state.oidc.as_ref() else {
+        return (StatusCode::NOT_FOUND, "OIDC not configured").into_response();
+    };
+    let next = params.get("next").map(|s| s.as_str());
+    match oidc.begin_login(next).await {
+        Ok(r) => r.into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/auth/oidc/callback — OAuth redirect target; sets session cookie and returns to `next`.
+pub(crate) async fn api_oidc_callback(
+    AxumState(app_state): AxumState<AppState>,
+    RawQuery(raw): RawQuery,
+) -> impl IntoResponse {
+    let Some(oidc) = app_state.oidc.as_ref() else {
+        return (StatusCode::NOT_FOUND, "OIDC not configured").into_response();
+    };
+    let q = raw.unwrap_or_default();
+    let pairs: Vec<(String, String)> = url::form_urlencoded::parse(q.as_bytes())
+        .into_owned()
+        .collect();
+    match oidc.finish_login(&pairs, app_state.tls_active).await {
+        Ok(r) => r.into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/auth/oidc/logout — clear OIDC session cookie and redirect to `/`.
+pub(crate) async fn api_oidc_logout(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
+    let mut res = axum::response::Redirect::to("/").into_response();
+    if app_state.oidc.is_some() {
+        res.headers_mut().insert(
+            header::SET_COOKIE,
+            crate::oidc::OidcRuntime::clear_session_cookie(app_state.tls_active),
+        );
+    }
+    res
+}
+
+/// GET /api/system/ready — combined readiness (Redis when used, process up).
+pub(crate) async fn api_system_ready(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
+    let redis_ok = app_state.shared_cache.redis_ping_ok().await;
+    let ha_redis = app_state.shared_cache.uses_redis();
+    if ha_redis && !redis_ok {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({ "ready": false, "redis": false })),
+        )
+            .into_response();
+    }
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "ready": true,
+            "redis": redis_ok,
+            "ha_shared_cache": ha_redis,
+        })),
+    )
+        .into_response()
+}
+
 /// Discover workloads live from Kubernetes Deployments and KubeVirt VMs
 /// across all namespaces. Returns instances regardless of managed-by labels.
 async fn discover_live_workloads() -> Vec<WorkloadResponse> {
@@ -320,7 +513,7 @@ async fn discover_live_workloads() -> Vec<WorkloadResponse> {
                 let name = deploy.metadata.name.clone().unwrap_or_default();
                 let ns = deploy.metadata.namespace.clone().unwrap_or_else(|| "default".to_string());
                 let labels = deploy.metadata.labels.as_ref();
-                let managed = labels.map_or(false, |l| l.get("managed-by").map_or(false, |v| v == "aether"));
+                let managed = labels.is_some_and(|l| l.get("managed-by").is_some_and(|v| v == "aether"));
 
                 let image = deploy.spec.as_ref()
                     .and_then(|s| s.template.spec.as_ref())
@@ -379,7 +572,7 @@ async fn discover_live_workloads() -> Vec<WorkloadResponse> {
                 let name = vm.metadata.name.clone().unwrap_or_default();
                 let ns = vm.metadata.namespace.clone().unwrap_or_else(|| "default".to_string());
                 let labels = vm.metadata.labels.as_ref();
-                let managed = labels.map_or(false, |l| l.get("managed-by").map_or(false, |v| v == "aether"));
+                let managed = labels.is_some_and(|l| l.get("managed-by").is_some_and(|v| v == "aether"));
 
                 let phase = vm.data.get("status")
                     .and_then(|s| s.get("phase"))
@@ -421,6 +614,7 @@ async fn discover_live_workloads() -> Vec<WorkloadResponse> {
 /// GET /api/workloads - List all workloads (state store + live discovery)
 pub(crate) async fn list_workloads(
     AxumState(app_state): AxumState<AppState>,
+    Query(page): Query<PaginationQuery>,
 ) -> impl IntoResponse {
     // Start with state store entries
     let mut seen = std::collections::HashSet::new();
@@ -475,14 +669,51 @@ pub(crate) async fn list_workloads(
         }
     }
 
-    Json(ApiResponse::success(workloads))
+    let total = workloads.len();
+    let use_page = page.limit.is_some() || page.offset.is_some();
+    let workloads = if use_page {
+        let (lim, off) = clamp_page(page.limit, page.offset, 50, 500);
+        workloads.into_iter().skip(off).take(lim).collect()
+    } else {
+        workloads
+    };
+
+    if use_page {
+        let json = match serde_json::to_string(&ApiResponse::success(workloads)) {
+            Ok(s) => s,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiResponse::<Vec<WorkloadResponse>>::error(e.to_string())),
+                )
+                    .into_response();
+            }
+        };
+        let mut res = Response::new(Body::from(json));
+        *res.status_mut() = StatusCode::OK;
+        if let Ok(v) = HeaderValue::from_str(&total.to_string()) {
+            res.headers_mut().insert("x-total-count", v);
+        }
+        res.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+        res.into_response()
+    } else {
+        Json(ApiResponse::success(workloads)).into_response()
+    }
 }
 
 /// POST /api/workloads - Create and deploy a workload
 pub(crate) async fn create_workload(
     AxumState(app_state): AxumState<AppState>,
-    Json(request): Json<CreateWorkloadRequest>,
+    Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
+    let request = match parse_create_workload_payload::<String>(payload) {
+        Ok(request) => request,
+        Err(response) => return response,
+    };
+
     // Select runtime
     let runtime_kind = if let Some(runtime_name) = request.runtime {
         match runtime_name.parse::<RuntimeKind>() {
@@ -728,8 +959,126 @@ pub(crate) async fn stop_workload(
     }
 }
 
+/// PUT/PATCH /api/workloads/:name — replace workload spec on disk and redeploy.
+pub(crate) async fn update_workload(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    if let Err(e) = validate_api_name::<String>(&name) {
+        return e;
+    }
+
+    let spec = match parse_workload_payload::<String>(payload) {
+        Ok(s) => s,
+        Err(err) => return err,
+    };
+    if spec.metadata.name != name {
+        return err_bad_request::<String>(format!(
+            "spec.metadata.name ('{}') must match URL name ('{}')",
+            spec.metadata.name, name
+        ));
+    }
+
+    let workload_state = match lookup_workload::<String>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+
+    let mut spec_path = workload_state.spec_path.clone();
+    if spec_path.as_path() == std::path::Path::new("api_created") || Workload::from_file(&spec_path).is_err() {
+        spec_path = workload_spec_file(&name);
+        if let Some(parent) = spec_path.parent() {
+            if let Err(e) = std::fs::create_dir_all(parent) {
+                return err_internal::<String>(format!("create specs dir: {}", e));
+            }
+        }
+    }
+
+    if let Err(e) = validate_spec_path::<String>(&spec_path) {
+        return e;
+    }
+
+    let yaml = match serde_yaml::to_string(&spec) {
+        Ok(y) => y,
+        Err(e) => return err_internal::<String>(e),
+    };
+    if let Err(e) = std::fs::write(&spec_path, yaml) {
+        return err_internal::<String>(e);
+    }
+
+    let rt = match make_runtime::<String>(&workload_state.runtime).await {
+        Ok(r) => r,
+        Err(e) => return e,
+    };
+    let _ = rt.stop(&workload_state.instance).await;
+
+    let image = match rt.build(&spec).await {
+        Ok(img) => img,
+        Err(e) => return err_internal::<String>(e),
+    };
+    let instance = match rt.run(&image, &spec).await {
+        Ok(inst) => inst,
+        Err(e) => return err_internal::<String>(e),
+    };
+
+    let mut state = app_state.state.write().await;
+    state.upsert(
+        name.clone(),
+        WorkloadState {
+            name: name.clone(),
+            runtime: workload_state.runtime,
+            instance,
+            spec_path,
+            created_at: workload_state.created_at,
+            updated_at: crate::resources::now_rfc3339(),
+            os_version: workload_state.os_version,
+            node_labels: workload_state.node_labels,
+        },
+    );
+    if let Err(e) = state.save(&StateStore::default_path()) {
+        return err_internal::<String>(e);
+    }
+
+    emit_sse(&app_state, &ServerEvent::WorkloadChanged {
+        name: name.clone(),
+        action: "updated".to_string(),
+    });
+
+    record_audit_event(
+        crate::audit::AuditAction::ConfigChange,
+        &name,
+        None,
+        crate::audit::ActionResult::Success,
+        "workload updated via API",
+        None,
+    );
+
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(format!("Workload {} updated", name))),
+    )
+}
+
+/// POST /api/workloads/:name/restart — stop then start.
+pub(crate) async fn restart_workload(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    let stop_resp = stop_workload(AxumState(app_state.clone()), Path(name.clone())).await.into_response();
+    if !stop_resp.status().is_success() {
+        return stop_resp;
+    }
+    start_workload(AxumState(app_state), Path(name)).await.into_response()
+}
+
 /// POST /api/cost - Estimate costs for a workload
-pub(crate) async fn estimate_cost(Json(spec): Json<Workload>) -> impl IntoResponse {
+pub(crate) async fn estimate_cost(Json(payload): Json<serde_json::Value>) -> impl IntoResponse {
+    let spec = match parse_workload_payload::<Vec<cost::CostEstimate>>(payload) {
+        Ok(spec) => spec,
+        Err(error) => return error,
+    };
+
     match cost::estimate_all_providers(&spec) {
         Ok(estimates) => ok_json(estimates),
         Err(e) => err_internal::<Vec<cost::CostEstimate>>(e),
@@ -737,12 +1086,43 @@ pub(crate) async fn estimate_cost(Json(spec): Json<Workload>) -> impl IntoRespon
 }
 
 /// GET /api/backups - List all backups
-pub(crate) async fn list_backups() -> impl IntoResponse {
+pub(crate) async fn list_backups(Query(page): Query<PaginationQuery>) -> impl IntoResponse {
     let manager = backup::BackupManager::new(backup::BackupManager::default_dir());
 
     match manager.list_backups() {
-        Ok(backups) => ok_json(backups),
-        Err(e) => err_internal::<Vec<PathBuf>>(e),
+        Ok(mut backups) => {
+            let total = backups.len();
+            let use_page = page.limit.is_some() || page.offset.is_some();
+            if use_page {
+                let (lim, off) = clamp_page(page.limit, page.offset, 50, 500);
+                backups = backups.into_iter().skip(off).take(lim).collect();
+            }
+            if use_page {
+                let json = match serde_json::to_string(&ApiResponse::success(backups)) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ApiResponse::<Vec<PathBuf>>::error(e.to_string())),
+                        )
+                            .into_response();
+                    }
+                };
+                let mut res = Response::new(Body::from(json));
+                *res.status_mut() = StatusCode::OK;
+                if let Ok(v) = HeaderValue::from_str(&total.to_string()) {
+                    res.headers_mut().insert("x-total-count", v);
+                }
+                res.headers_mut().insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static("application/json"),
+                );
+                res.into_response()
+            } else {
+                Json(ApiResponse::success(backups)).into_response()
+            }
+        }
+        Err(e) => err_internal::<Vec<PathBuf>>(e).into_response(),
     }
 }
 
@@ -764,9 +1144,14 @@ pub(crate) async fn create_backup(
 }
 
 /// POST /api/ai/recommend - AI-powered runtime recommendation
-pub(crate) async fn ai_recommend(Json(spec): Json<Workload>) -> impl IntoResponse {
-    use crate::ai::scoring::ScoringEngine;
+pub(crate) async fn ai_recommend(Json(payload): Json<serde_json::Value>) -> impl IntoResponse {
+    use crate::ai::scoring::{ScoringEngine, ScoringResult};
     use crate::config::Config;
+
+    let spec = match parse_workload_payload::<ScoringResult>(payload) {
+        Ok(spec) => spec,
+        Err(error) => return error,
+    };
 
     let config = Config::load();
     let engine = ScoringEngine::new(config.engine);
@@ -977,15 +1362,24 @@ pub(crate) async fn api_drift_check(
 }
 
 /// POST /api/policy/check - Check workload against policies
-pub(crate) async fn api_policy_check(Json(request): Json<PolicyCheckRequest>) -> impl IntoResponse {
+pub(crate) async fn api_policy_check(Json(payload): Json<serde_json::Value>) -> impl IntoResponse {
     use crate::policy::PolicyEngine;
 
-    let engine = match request.policy_set.as_deref() {
+    let policy_set = payload
+        .get("policy_set")
+        .and_then(|value| value.as_str())
+        .map(|value| value.to_string());
+    let spec = match parse_workload_payload::<serde_json::Value>(payload) {
+        Ok(spec) => spec,
+        Err(error) => return error,
+    };
+
+    let engine = match policy_set.as_deref() {
         Some("development") => PolicyEngine::development(),
         _ => PolicyEngine::production(),
     };
 
-    let result = engine.evaluate(&request.spec);
+    let result = engine.evaluate(&spec);
 
     (
         StatusCode::OK,
@@ -1041,25 +1435,76 @@ pub(crate) async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> i
     }
 }
 
+/// DELETE /api/dependencies — Remove a dependency edge (same JSON body as POST add).
+pub(crate) async fn api_deps_remove(Json(request): Json<AddDependencyRequest>) -> impl IntoResponse {
+    use crate::dependencies::DependencyGraph;
+
+    let graph_path = DependencyGraph::default_path();
+    match DependencyGraph::load(&graph_path) {
+        Ok(mut graph) => {
+            graph.remove_dependency(&request.workload, &request.dependency);
+            if let Err(e) = graph.save(&graph_path) {
+                return err_internal::<String>(e);
+            }
+            (
+                StatusCode::OK,
+                Json(ApiResponse::success(format!(
+                    "Dependency removed: {} -> {}",
+                    request.workload, request.dependency
+                ))),
+            )
+        }
+        Err(e) => err_internal::<String>(e),
+    }
+}
+
 /// GET /api/audit - List audit events
-pub(crate) async fn api_audit_list() -> impl IntoResponse {
+pub(crate) async fn api_audit_list(Query(page): Query<PaginationQuery>) -> impl IntoResponse {
     use crate::audit::AuditLog;
 
     let audit_path = AuditLog::default_path();
     match AuditLog::load(&audit_path) {
         Ok(log) => {
             let summary = log.summary();
-            let recent = log.last_n(20);
+            let all: Vec<_> = log.events().iter().rev().cloned().collect();
+            let total = all.len();
+            let use_page = page.limit.is_some() || page.offset.is_some();
+            let recent: Vec<_> = if use_page {
+                let (lim, off) = clamp_page(page.limit, page.offset, 20, 500);
+                all.into_iter().skip(off).take(lim).collect()
+            } else {
+                log.last_n(20).into_iter().cloned().collect()
+            };
             let response = serde_json::json!({
                 "summary": summary,
                 "recent_events": recent,
             });
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(response)),
-            )
+            if use_page {
+                let json = match serde_json::to_string(&ApiResponse::success(response)) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                        )
+                            .into_response();
+                    }
+                };
+                let mut res = Response::new(Body::from(json));
+                *res.status_mut() = StatusCode::OK;
+                if let Ok(v) = HeaderValue::from_str(&total.to_string()) {
+                    res.headers_mut().insert("x-total-count", v);
+                }
+                res.headers_mut().insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static("application/json"),
+                );
+                res.into_response()
+            } else {
+                (StatusCode::OK, Json(ApiResponse::success(response))).into_response()
+            }
         }
-        Err(e) => err_internal::<serde_json::Value>(e),
+        Err(e) => err_internal::<serde_json::Value>(e).into_response(),
     }
 }
 
@@ -1199,25 +1644,116 @@ pub(crate) async fn api_secrets_list() -> impl IntoResponse {
     }
 }
 
+/// POST /api/secrets — Create a secret and optional key/value pairs.
+pub(crate) async fn create_secret(Json(request): Json<CreateSecretRequest>) -> impl IntoResponse {
+    if let Err(e) = validate_api_name::<String>(&request.name) {
+        return e;
+    }
+    if request.keys.is_empty() {
+        return err_bad_request::<String>("keys map must not be empty".to_string());
+    }
+
+    use crate::secrets::SecretStore;
+
+    let path = SecretStore::default_path();
+    let mut store = match SecretStore::load(&path) {
+        Ok(s) => s,
+        Err(e) => return err_internal::<String>(e),
+    };
+
+    if store.get_secret(&request.name).is_some() {
+        return (
+            StatusCode::CONFLICT,
+            Json(ApiResponse::<String>::error(format!(
+                "Secret '{}' already exists",
+                request.name
+            ))),
+        );
+    }
+
+    let ns = request.namespace.as_deref().unwrap_or("default");
+    store.create_secret(&request.name, ns);
+    for (k, v) in &request.keys {
+        if let Err(e) = store.set_with_actor(&request.name, k, v, "api") {
+            return err_internal::<String>(e);
+        }
+    }
+
+    if let Err(e) = store.save(&path) {
+        return err_internal::<String>(e);
+    }
+
+    created_json(format!("Secret '{}' created", request.name))
+}
+
 /// GET /api/events - List recent events
-pub(crate) async fn api_events_list() -> impl IntoResponse {
+pub(crate) async fn api_events_list(Query(page): Query<PaginationQuery>) -> impl IntoResponse {
     use crate::events::EventBus;
 
     let path = EventBus::default_path();
     match EventBus::load(&path) {
         Ok(bus) => {
-            let events = bus.last_n(50);
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(
+            let all: Vec<_> = bus.events().iter().rev().cloned().collect();
+            let total = all.len();
+            let use_page = page.limit.is_some() || page.offset.is_some();
+            let events: Vec<_> = if use_page {
+                let (lim, off) = clamp_page(page.limit, page.offset, 50, 500);
+                all.into_iter().skip(off).take(lim).collect()
+            } else {
+                bus.last_n(50).into_iter().cloned().collect()
+            };
+            if use_page {
+                let json = match serde_json::to_string(&ApiResponse::success(
                     match serde_json::to_value(events) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-                )),
-            )
+                        Ok(v) => v,
+                        Err(e) => {
+                            return err_internal::<serde_json::Value>(format!(
+                                "Serialization failed: {}",
+                                e
+                            ))
+                            .into_response();
+                        }
+                    },
+                )) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                        )
+                            .into_response();
+                    }
+                };
+                let mut res = Response::new(Body::from(json));
+                *res.status_mut() = StatusCode::OK;
+                if let Ok(v) = HeaderValue::from_str(&total.to_string()) {
+                    res.headers_mut().insert("x-total-count", v);
+                }
+                res.headers_mut().insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static("application/json"),
+                );
+                res.into_response()
+            } else {
+                (
+                    StatusCode::OK,
+                    Json(ApiResponse::success(
+                        match serde_json::to_value(events) {
+                            Ok(v) => v,
+                            Err(e) => {
+                                return err_internal::<serde_json::Value>(format!(
+                                    "Serialization failed: {}",
+                                    e
+                                ))
+                                .into_response();
+                            }
+                        },
+                    )),
+                )
+                    .into_response()
+            }
         }
-        Err(e) => err_internal::<serde_json::Value>(e),
+        Err(e) => err_internal::<serde_json::Value>(e).into_response(),
     }
 }
 
@@ -1467,7 +2003,7 @@ async fn handle_cluster_exec_socket(
 
     let writer = tokio::spawn(async move {
         while let Some(chunk) = output_rx.recv().await {
-            if ws_sender.send(Message::Text(chunk.into())).await.is_err() {
+            if ws_sender.send(Message::Text(chunk)).await.is_err() {
                 break;
             }
         }
@@ -1521,7 +2057,7 @@ async fn handle_cluster_watch_socket(
 
     let initial = crate::kubecluster::browse_resources(&request).await?;
     socket
-        .send(Message::Text(serde_json::to_string(&initial)?.into()))
+        .send(Message::Text(serde_json::to_string(&initial)?))
         .await?;
 
     let resource_name = if query.kind == "CustomResource" {
@@ -1531,8 +2067,7 @@ async fn handle_cluster_watch_socket(
                 socket
                     .send(Message::Text(
                         json!({ "type": "error", "message": "watch is not supported without plural for CustomResource" })
-                            .to_string()
-                            .into(),
+                            .to_string(),
                     ))
                     .await?;
                 return Ok(());
@@ -1544,8 +2079,7 @@ async fn handle_cluster_watch_socket(
         socket
             .send(Message::Text(
                 json!({ "type": "error", "message": format!("watch is not supported for {}", query.kind) })
-                    .to_string()
-                    .into(),
+                    .to_string(),
             ))
             .await?;
         return Ok(());
@@ -1582,7 +2116,7 @@ async fn handle_cluster_watch_socket(
     while let Some(_line) = lines.next_line().await? {
         let resources = crate::kubecluster::browse_resources(&request).await?;
         if socket
-            .send(Message::Text(serde_json::to_string(&resources)?.into()))
+            .send(Message::Text(serde_json::to_string(&resources)?))
             .await
             .is_err()
         {
@@ -2201,6 +2735,17 @@ pub(crate) async fn migrate_workload(
         result.rollback_performed,
     );
 
+    tracing::info!(
+        workload = %name,
+        source = %source_runtime,
+        target = %target_runtime,
+        strategy = %request.strategy,
+        success = result.success,
+        rollback = result.rollback_performed,
+        duration_sec = duration,
+        "migration completed"
+    );
+
     if result.success {
         // Reload state after migration engine updated it
         let new_state = match StateStore::load(&StateStore::default_path()) {
@@ -2562,6 +3107,289 @@ pub(crate) async fn rbac_revoke_key(
             request.name
         )))
     }
+}
+
+fn load_gitops_controller_for_api() -> Result<(crate::gitops::GitOpsController, PathBuf), String> {
+    let state_path = crate::resources::aether_path("gitops.json");
+    if !state_path.exists() {
+        return Err("GitOps not configured: run `aether git-ops init --repo <URL>` first".into());
+    }
+    let data = std::fs::read_to_string(&state_path).map_err(|e| e.to_string())?;
+    if let Ok(config) = serde_json::from_str::<crate::gitops::GitOpsConfig>(&data) {
+        if config.repo_url.is_empty() {
+            return Err("gitops.json has empty repo_url".into());
+        }
+        return Ok((crate::gitops::GitOpsController::new(config), state_path));
+    }
+    if let Ok(status) = serde_json::from_str::<crate::gitops::GitOpsStatus>(&data) {
+        if status.repo_url.is_empty() {
+            return Err("gitops.json status has empty repo_url".into());
+        }
+        let config = crate::gitops::GitOpsConfig {
+            repo_url: status.repo_url.clone(),
+            branch: status.branch.clone(),
+            ..Default::default()
+        };
+        return Ok((crate::gitops::GitOpsController::new(config), state_path));
+    }
+    Err("Could not parse ~/.aether/gitops.json".into())
+}
+
+/// GET /api/gitops/status — Raw `gitops.json` payload (config or last status).
+pub(crate) async fn api_gitops_status() -> impl IntoResponse {
+    let path = crate::resources::aether_path("gitops.json");
+    if !path.exists() {
+        return ok_json(serde_json::json!({
+            "configured": false,
+            "hint": "Run `aether git-ops init --repo <URL>`"
+        }));
+    }
+    match std::fs::read_to_string(&path) {
+        Ok(data) => match serde_json::from_str::<serde_json::Value>(&data) {
+            Ok(v) => ok_json(v),
+            Err(e) => err_internal::<serde_json::Value>(e),
+        },
+        Err(e) => err_internal::<serde_json::Value>(e),
+    }
+}
+
+/// POST /api/gitops/sync — Pull repo and detect YAML changes (same as CLI sync).
+pub(crate) async fn api_gitops_sync() -> impl IntoResponse {
+    match load_gitops_controller_for_api() {
+        Ok((mut ctrl, state_path)) => match ctrl.sync() {
+            Ok(changes) => {
+                let st = ctrl.status().clone();
+                let status_json = match serde_json::to_string_pretty(&st) {
+                    Ok(s) => s,
+                    Err(e) => return err_internal::<serde_json::Value>(e.to_string()),
+                };
+                if let Err(e) = std::fs::write(&state_path, status_json) {
+                    return err_internal::<serde_json::Value>(e.to_string());
+                }
+                ok_json(serde_json::json!({
+                    "changes": changes,
+                    "status": st,
+                }))
+            }
+            Err(e) => err_internal::<serde_json::Value>(e),
+        },
+        Err(msg) => (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::<serde_json::Value>::error(msg)),
+        ),
+    }
+}
+
+/// POST /api/webhooks/test — Queue a test notification for a channel (see `aether webhook test`).
+pub(crate) async fn api_webhook_test(Json(req): Json<WebhookTestRequest>) -> impl IntoResponse {
+    use crate::events::{EventBus, EventCategory, EventSeverity};
+
+    let path = EventBus::default_path();
+    let mut bus = match EventBus::load(&path) {
+        Ok(b) => b,
+        Err(e) => return err_internal::<String>(e),
+    };
+    if !bus.channels().iter().any(|c| c.name == req.channel) {
+        return err_not_found::<String>(format!("Channel '{}' not found", req.channel));
+    }
+    bus.emit_simple(
+        EventSeverity::Info,
+        EventCategory::SystemAlert,
+        "api",
+        None,
+        "Webhook Test",
+        &format!("Test notification for channel '{}'", req.channel),
+    );
+    if let Err(e) = bus.save(&path) {
+        return err_internal::<String>(e);
+    }
+    ok_json(format!("Test event emitted for '{}'", req.channel))
+}
+
+/// GET /api/server — Process capabilities (auth modes, persistence).
+pub(crate) async fn api_server_info() -> impl IntoResponse {
+    let oidc_issuer = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty());
+    let oidc_ready = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty()).is_some()
+        && std::env::var("AETHER_OIDC_CLIENT_ID").ok().filter(|s| !s.is_empty()).is_some()
+        && std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty()).is_some()
+        && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
+    let redis_configured = std::env::var("AETHER_REDIS_URL").ok().filter(|s| !s.is_empty()).is_some();
+    let mutation_confirm = std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
+        .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    ok_json(serde_json::json!({
+        "version": env!("CARGO_PKG_VERSION"),
+        "persistence": "local-json",
+        "ha_mode": if redis_configured { "multi-node-cache" } else { "single" },
+        "ha_shared_cache": redis_configured,
+        "mtls": false,
+        "oidc": {
+            "enabled": oidc_ready,
+            "issuer_configured": oidc_issuer.is_some(),
+            "issuer": oidc_issuer,
+            "login_path": "/api/auth/oidc/login",
+            "callback_path": "/api/auth/oidc/callback",
+            "role_mapping_env": "AETHER_OIDC_ROLE_MAP",
+            "groups_claim_env": "AETHER_OIDC_GROUPS_CLAIM",
+            "role_mapping_configured": std::env::var("AETHER_OIDC_ROLE_MAP").ok().filter(|s| !s.is_empty()).is_some(),
+        },
+        "rate_limit": { "type": "global_concurrency", "max": 200 },
+        "observability": {
+            "prometheus_metrics_path": "/api/metrics",
+            "request_id_header": "x-request-id",
+            "api_http_metrics": "aether_api_http_requests_total",
+        },
+        "safety": {
+            "mutation_confirm_required": mutation_confirm,
+            "mutation_confirm_header": "X-Aether-Confirm",
+            "mutation_confirm_values": ["1", "true", "yes", "delete"],
+        },
+        "durability": {
+            "state_store": "~/.aether/state.json",
+            "backup_api": "/api/backups",
+            "recommended": "Schedule POST /api/backups on a timer; copy ~/.aether off-host for DR.",
+        },
+        "plugins": {
+            "ipc_timeout_env": "AETHER_PLUGIN_IPC_TIMEOUT_SEC",
+            "ipc_max_output_env": "AETHER_PLUGIN_IPC_MAX_OUTPUT_BYTES",
+        },
+    }))
+}
+
+/// GET /api/auth/providers — Advertised authentication mechanisms.
+pub(crate) async fn api_auth_providers() -> impl IntoResponse {
+    let issuer = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty());
+    let oidc_ready = issuer.is_some()
+        && std::env::var("AETHER_OIDC_CLIENT_ID").ok().filter(|s| !s.is_empty()).is_some()
+        && std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty()).is_some()
+        && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
+    let role_map = std::env::var("AETHER_OIDC_ROLE_MAP").ok().filter(|s| !s.is_empty());
+    ok_json(serde_json::json!({
+        "methods": ["bearer", "legacy_env", "oidc_session_cookie"],
+        "oidc": {
+            "enabled": oidc_ready,
+            "issuer": issuer,
+            "authorization_code_pkce": oidc_ready,
+            "login_url": "/api/auth/oidc/login",
+            "logout_url": "/api/auth/oidc/logout",
+            "role_mapping_configured": role_map.is_some(),
+            "groups_claim_env": "AETHER_OIDC_GROUPS_CLAIM",
+            "role_mapping_env": "AETHER_OIDC_ROLE_MAP",
+            "note": "Dashboard: Sign in with OIDC or use bearer token. Map IdP groups via AETHER_OIDC_ROLE_MAP (admin=group1;operator=group2)."
+        },
+    }))
+}
+
+/// GET /api/openapi.json — Minimal OpenAPI 3 document (curated list of notable routes).
+pub(crate) async fn serve_openapi() -> impl IntoResponse {
+    const DOC: &str = include_str!("openapi.json");
+    ([(header::CONTENT_TYPE, "application/json")], DOC)
+}
+
+/// POST /api/audit/events — Append an audit row (admin only; integrity hash applied).
+pub(crate) async fn api_audit_append(Json(req): Json<AuditAppendRequest>) -> impl IntoResponse {
+    use crate::audit::AuditLog;
+
+    let path = AuditLog::default_path();
+    let mut log = AuditLog::load(&path).unwrap_or_default();
+    let action = parse_audit_action_from_str(&req.action);
+    let result = parse_action_result_from_str(&req.result);
+    log.record(
+        action,
+        &req.workload,
+        req.runtime.as_deref(),
+        result,
+        &req.message,
+        req.details.as_deref(),
+    );
+    if let Err(e) = log.save(&path) {
+        return err_internal::<String>(e);
+    }
+    ok_json("audit event recorded".to_string())
+}
+
+/// GET /api/backups/:name — Metadata for a backup file in the default backup directory.
+pub(crate) async fn get_backup(Path(name): Path<String>) -> impl IntoResponse {
+    let manager = backup::BackupManager::new(backup::BackupManager::default_dir());
+    let dir = backup::BackupManager::default_dir();
+    let path = match resolve_backup_path(&dir, &name) {
+        Ok(p) => p,
+        Err(msg) => return err_bad_request::<String>(msg).into_response(),
+    };
+    if !path.exists() {
+        return err_not_found::<String>(format!("Backup not found: {}", name)).into_response();
+    }
+    match manager.get_backup_info(&path) {
+        Ok(meta) => ok_json(meta).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e).into_response(),
+    }
+}
+
+/// DELETE /api/backups/:name — Remove a backup file from disk.
+pub(crate) async fn delete_backup_api(Path(name): Path<String>) -> impl IntoResponse {
+    let manager = backup::BackupManager::new(backup::BackupManager::default_dir());
+    let dir = backup::BackupManager::default_dir();
+    let path = match resolve_backup_path(&dir, &name) {
+        Ok(p) => p,
+        Err(msg) => return err_bad_request::<String>(msg),
+    };
+    match manager.delete_backup(&path) {
+        Ok(()) => (
+            StatusCode::OK,
+            Json(ApiResponse::success(format!("Deleted backup {}", name))),
+        ),
+        Err(e) => err_internal::<String>(e),
+    }
+}
+
+/// POST /api/backups/restore — Restore or merge workload state from a backup.
+pub(crate) async fn restore_backup(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<RestoreBackupRequest>,
+) -> impl IntoResponse {
+    let dir = backup::BackupManager::default_dir();
+    let path = match resolve_backup_path(&dir, &req.name) {
+        Ok(p) => p,
+        Err(msg) => return err_bad_request::<String>(msg),
+    };
+    let backup = match backup::Backup::load(&path) {
+        Ok(b) => b,
+        Err(e) => return err_internal::<String>(e),
+    };
+    let state_path = StateStore::default_path();
+    let res = if req.merge.unwrap_or(false) {
+        backup.merge(&state_path)
+    } else {
+        backup.restore(&state_path)
+    };
+    if let Err(e) = res {
+        return err_internal::<String>(e);
+    }
+    match StateStore::load(&state_path) {
+        Ok(new_state) => {
+            *app_state.state.write().await = new_state;
+        }
+        Err(e) => {
+            return err_internal::<String>(format!("Restored file but failed to reload state: {}", e));
+        }
+    }
+    record_audit_event(
+        crate::audit::AuditAction::BackupRestore,
+        "state",
+        None,
+        crate::audit::ActionResult::Success,
+        "state restored via API",
+        Some(req.name.as_str()),
+    );
+    ok_json(format!(
+        "Backup '{}' {}",
+        req.name,
+        if req.merge.unwrap_or(false) {
+            "merged"
+        } else {
+            "restored"
+        }
+    ))
 }
 
 #[cfg(test)]

@@ -70,9 +70,10 @@ mod tests {
     fn test_namespace_fallback_explicit_wins() {
         // No env var access — no lock needed
         let explicit = Some("prod".to_string());
-        let namespace = explicit.unwrap_or_else(|| {
-            std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
-        });
+        let namespace = match explicit {
+            Some(value) => value,
+            None => std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string()),
+        };
         assert_eq!(namespace, "prod");
     }
 
@@ -82,9 +83,10 @@ mod tests {
         let saved = std::env::var("AETHER_NAMESPACE").ok();
         std::env::remove_var("AETHER_NAMESPACE");
         let explicit: Option<String> = None;
-        let namespace = explicit.unwrap_or_else(|| {
-            std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
-        });
+        let namespace = match explicit {
+            Some(value) => value,
+            None => std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string()),
+        };
         assert_eq!(namespace, "default");
         if let Some(v) = saved { std::env::set_var("AETHER_NAMESPACE", v); }
     }

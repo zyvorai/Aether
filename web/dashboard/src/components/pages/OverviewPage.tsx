@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Activity, AlertTriangle, Calendar, Shield, Lock, Inbox } from 'lucide-react';
+import { LayoutDashboard, Activity, AlertTriangle, Calendar, Shield, Lock, Inbox, Boxes, KeySquare, Workflow } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import type { AppView } from '../../types/api';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
-import type { WorkloadResponse, EventSummary, HealthSummary, BackupInfo, SecretSummary, Event, ClusterSummary } from '../../types/api';
+import type { WorkloadResponse, EventSummary, HealthSummary, BackupInfo, SecretSummary, Event, ClusterSummary, PluginInfo, Environment, ApiKeySummary } from '../../types/api';
 
 interface OverviewPageProps {
   onNavigate: (view: AppView) => void;
@@ -20,11 +20,14 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [clusterSummary, setClusterSummary] = useState<ClusterSummary | null>(null);
+  const [plugins, setPlugins] = useState<PluginInfo[]>([]);
+  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKeySummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [w, es, hs, b, s, ev, cs] = await Promise.all([
+      const [w, es, hs, b, s, ev, cs, p, envs, keys] = await Promise.all([
         apiFetch<WorkloadResponse[]>('/workloads'),
         apiFetch<EventSummary>('/events/summary'),
         apiFetch<HealthSummary>('/orchestrator/summary'),
@@ -32,6 +35,9 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
         apiFetch<SecretSummary[]>('/secrets'),
         apiFetch<Event[]>('/events'),
         apiFetch<ClusterSummary>('/cluster/summary'),
+        apiFetch<PluginInfo[]>('/plugins'),
+        apiFetch<Environment[]>('/environments'),
+        apiFetch<ApiKeySummary[]>('/rbac/keys'),
       ]);
       setWorkloads(w ?? []);
       setEventSummary(es);
@@ -40,6 +46,9 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
       setSecrets(s ?? []);
       setEvents(ev ?? []);
       setClusterSummary(cs);
+      setPlugins(p ?? []);
+      setEnvironments(envs ?? []);
+      setApiKeys(keys ?? []);
       setLoading(false);
     }
     load();
@@ -58,6 +67,11 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
 
   return (
     <div>
+      {clusterSummary?.summary_note ? (
+        <div className="mb-5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95 leading-relaxed">
+          {clusterSummary.summary_note}
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <button onClick={() => onNavigate('workloads')} className="text-left">
           <StatCard title="Workloads" value={workloads.length} color="orange" icon={<LayoutDashboard size={18} />} />
@@ -77,6 +91,15 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
         </button>
         <button onClick={() => onNavigate('secrets')} className="text-left">
           <StatCard title="Secrets" value={secrets.length} color="yellow" icon={<Lock size={18} />} />
+        </button>
+        <button onClick={() => onNavigate('plugins')} className="text-left">
+          <StatCard title="Plugins" value={plugins.length} color="blue" icon={<Boxes size={18} />} />
+        </button>
+        <button onClick={() => onNavigate('envs')} className="text-left">
+          <StatCard title="Environments" value={environments.length} color="green" icon={<Workflow size={18} />} />
+        </button>
+        <button onClick={() => onNavigate('rbac')} className="text-left">
+          <StatCard title="API Keys" value={apiKeys.length} color="purple" icon={<KeySquare size={18} />} />
         </button>
       </div>
 

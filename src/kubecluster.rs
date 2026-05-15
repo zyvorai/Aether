@@ -27,6 +27,10 @@ pub struct ClusterSummaryResponse {
     pub workload_count: usize,
     pub clusters: Vec<ClusterInfo>,
     pub error: Option<String>,
+    /// Present when the summary was derived from the active default client because
+    /// multi-context kubeconfig inventory was unavailable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary_note: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -211,19 +215,89 @@ pub async fn cluster_summary() -> ClusterSummaryResponse {
                 workload_count: workloads.len(),
                 clusters,
                 error: None,
+                summary_note: None,
             }
         }
-        Err(error) => ClusterSummaryResponse {
-            enabled: false,
-            connected: false,
-            backend: "Aether Kubernetes".to_string(),
-            cluster_count: 0,
-            healthy_clusters: 0,
-            workload_count: 0,
-            clusters: Vec::new(),
-            error: Some(error.to_string()),
-        },
+        Err(error) => {
+            if let Some(fallback) = cluster_summary_from_default_client().await {
+                ClusterSummaryResponse {
+                    summary_note: Some(format!(
+                        "Kubeconfig multi-context inventory unavailable ({}). \
+                         Showing the active default Kubernetes client only — same source as live workload discovery.",
+                        error
+                    )),
+                    ..fallback
+                }
+            } else {
+                ClusterSummaryResponse {
+                    enabled: false,
+                    connected: false,
+                    backend: "Aether Kubernetes".to_string(),
+                    cluster_count: 0,
+                    healthy_clusters: 0,
+                    workload_count: 0,
+                    clusters: Vec::new(),
+                    error: Some(error.to_string()),
+                    summary_note: None,
+                }
+            }
+        }
     }
+}
+
+/// When `Kubeconfig::read()` fails (missing file, permissions, etc.) but `Client::try_default()`
+/// succeeds — align cluster summary with `/api/workloads` live discovery.
+async fn cluster_summary_from_default_client() -> Option<ClusterSummaryResponse> {
+    let client = Client::try_default().await.ok()?;
+    let version = client
+        .apiserver_version()
+        .await
+        .ok()
+        .map(|v| v.git_version)?;
+    let cfg = Config::infer().await.ok()?;
+    let context_label = std::env::var("AETHER_CLUSTER_DISPLAY_NAME")
+        .unwrap_or_else(|_| "active-client".to_string());
+    let server = Some(cfg.cluster_url.to_string());
+    let workload_count = count_default_client_workloads(&client).await;
+    Some(ClusterSummaryResponse {
+        enabled: true,
+        connected: true,
+        backend: "Aether Kubernetes (active client)".to_string(),
+        cluster_count: 1,
+        healthy_clusters: 1,
+        workload_count,
+        clusters: vec![ClusterInfo {
+            name: context_label,
+            server,
+            version: Some(version),
+            reachable: true,
+        }],
+        error: None,
+        summary_note: None,
+    })
+}
+
+async fn count_default_client_workloads(client: &Client) -> usize {
+    let mut n = 0usize;
+    if let Ok(list) = Api::<Deployment>::all(client.clone())
+        .list(&kube::api::ListParams::default())
+        .await
+    {
+        n += list.items.len();
+    }
+    if let Ok(list) = Api::<StatefulSet>::all(client.clone())
+        .list(&kube::api::ListParams::default())
+        .await
+    {
+        n += list.items.len();
+    }
+    if let Ok(list) = Api::<DaemonSet>::all(client.clone())
+        .list(&kube::api::ListParams::default())
+        .await
+    {
+        n += list.items.len();
+    }
+    n
 }
 
 pub async fn list_clusters() -> Result<Vec<ClusterInfo>> {
@@ -619,6 +693,7 @@ pub async fn metrics_summary(cluster: &str, namespace: Option<&str>) -> Result<C
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn manifest_diff(
     cluster: &str,
     namespace: &str,

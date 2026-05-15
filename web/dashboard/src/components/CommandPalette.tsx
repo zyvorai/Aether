@@ -22,6 +22,8 @@ interface CommandPaletteProps {
 const NAV_ITEMS: CommandAction[] = [
   { id: 'nav-overview', label: 'Go to Overview', category: 'navigation', icon: 'Dashboard', view: 'overview' },
   { id: 'nav-workloads', label: 'Go to Workloads', category: 'navigation', icon: 'Workloads', view: 'workloads' },
+  { id: 'nav-clusters', label: 'Go to Cluster Browser', category: 'navigation', icon: 'Cluster', view: 'clusters' },
+  { id: 'nav-compose', label: 'Go to Compose Import', category: 'navigation', icon: 'Compose', view: 'compose' },
   { id: 'nav-ai', label: 'Go to AI Engine', category: 'navigation', icon: 'AI', view: 'ai' },
   { id: 'nav-health', label: 'Go to Health', category: 'navigation', icon: 'Health', view: 'health' },
   { id: 'nav-events', label: 'Go to Events', category: 'navigation', icon: 'Events', view: 'events' },
@@ -38,6 +40,7 @@ const NAV_ITEMS: CommandAction[] = [
   { id: 'nav-deps', label: 'Go to Dependencies', category: 'navigation', icon: 'Deps', view: 'deps' },
   { id: 'nav-envs', label: 'Go to Environments', category: 'navigation', icon: 'Envs', view: 'envs' },
   { id: 'nav-plugins', label: 'Go to Plugins', category: 'navigation', icon: 'Plugins', view: 'plugins' },
+  { id: 'nav-rbac', label: 'Go to Access Control', category: 'navigation', icon: 'RBAC', view: 'rbac' },
   { id: 'nav-affinity', label: 'Go to Affinity', category: 'navigation', icon: 'Affinity', view: 'affinity' },
 ];
 
@@ -130,12 +133,12 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={onClose}>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-xl rounded-[24px] surface-panel overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Search Input */}
-        <div className="flex items-center px-4 py-3 border-b border-zinc-700">
-          <span className="text-zinc-500 mr-2 text-sm font-mono">{'>'}</span>
+        <div className="flex items-center px-4 py-4 border-b border-slate-800">
+          <span className="text-slate-500 mr-2 text-sm font-mono">{'>'}</span>
           <input
             ref={inputRef}
             type="text"
@@ -143,16 +146,16 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a command or search..."
-            className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-500"
+            className="flex-1 bg-transparent text-white text-sm outline-none placeholder-slate-500"
             autoComplete="off"
           />
-          <kbd className="text-xs text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">ESC</kbd>
+          <kbd className="text-xs text-slate-500 bg-slate-800/90 px-1.5 py-0.5 rounded border border-slate-700">ESC</kbd>
         </div>
 
         {/* Results */}
         <div ref={listRef} className="max-h-80 overflow-y-auto py-1">
           {filtered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-zinc-500 text-sm">No results found</div>
+            <div className="px-4 py-8 text-center text-slate-500 text-sm">No results found</div>
           ) : (
             filtered.map((cmd, i) => {
               const showCategory = cmd.category !== lastCategory;
@@ -160,7 +163,7 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
               return (
                 <div key={cmd.id}>
                   {showCategory && (
-                    <div className="px-4 pt-2 pb-1 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                    <div className="px-4 pt-2 pb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">
                       {categoryLabels[cmd.category] || cmd.category}
                     </div>
                   )}
@@ -169,12 +172,12 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}
                     className={`w-full px-4 py-2 flex items-center gap-3 text-sm text-left transition-colors ${
-                      i === selectedIndex ? 'bg-aether/20 text-aether' : 'text-zinc-300 hover:bg-zinc-800'
+                      i === selectedIndex ? 'bg-aether/20 text-aether' : 'text-slate-300 hover:bg-slate-800/80'
                     }`}
                   >
-                    <span className="text-zinc-500 text-xs font-mono w-16 shrink-0">{cmd.icon}</span>
+                    <span className="text-slate-500 text-xs font-mono w-16 shrink-0">{cmd.icon}</span>
                     <span className="flex-1">{cmd.label}</span>
-                    {cmd.view && <span className="text-xs text-zinc-600">Navigate</span>}
+                    {cmd.view && <span className="text-xs text-slate-600">Navigate</span>}
                   </button>
                 </div>
               );
@@ -183,7 +186,7 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 border-t border-zinc-700 flex items-center gap-4 text-xs text-zinc-500">
+        <div className="px-4 py-3 border-t border-slate-800 flex items-center gap-4 text-xs text-slate-500">
           <span>Arrow keys navigate</span>
           <span>Enter to select</span>
           <span>Esc to close</span>

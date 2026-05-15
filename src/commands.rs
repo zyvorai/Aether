@@ -219,13 +219,13 @@ async fn deploy_workload_inner(
     // Determine runtime — use ScoringEngine when intent is present
     let runtime_kind = if let Some(override_str) = runtime_override {
         override_str.parse::<RuntimeKind>()?
-    } else if workload.intent.is_some() {
+    } else if let Some(intent) = &workload.intent {
         // Intent-driven: use scoring engine for intent-aware selection
         let scoring = aether::ai::scoring::ScoringEngine::new(config.engine.clone());
         let result = scoring.score(workload);
         output::info(&format!(
             "Intent goal: {:?} — recommended: {} (confidence: {:.0}%)",
-            workload.intent.as_ref().unwrap().goal,
+            intent.goal,
             result.recommended,
             result.confidence * 100.0
         ));

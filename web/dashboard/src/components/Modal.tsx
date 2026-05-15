@@ -39,7 +39,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
       />
 
       {/* Card */}
-      <div className={`relative w-full ${size === 'wide' ? 'max-w-6xl' : 'max-w-2xl'} max-h-[85vh] bg-zinc-800 border border-zinc-700 rounded-2xl shadow-2xl flex flex-col animate-scale-in`}>
+      <div className={`relative w-full ${size === 'wide' ? 'max-w-[min(96rem,calc(100vw-2rem))]' : 'max-w-2xl'} max-h-[85vh] bg-zinc-800 border border-zinc-700 rounded-2xl shadow-2xl flex flex-col animate-scale-in`}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-700 shrink-0">
           <h2 className="text-lg font-semibold text-white">{title}</h2>

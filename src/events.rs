@@ -1319,8 +1319,10 @@ mod tests {
     #[test]
     fn test_evaluate_rules_drift_detected() {
         let mut bus = make_bus_with_rule(AlertCondition::DriftDetected, 0);
-        let mut metrics = SystemMetrics::default();
-        metrics.drift_detected = true;
+        let metrics = SystemMetrics {
+            drift_detected: true,
+            ..Default::default()
+        };
 
         let fired = bus.evaluate_rules(&metrics);
         assert_eq!(fired.len(), 1);
@@ -1329,8 +1331,10 @@ mod tests {
     #[test]
     fn test_evaluate_rules_policy_violation() {
         let mut bus = make_bus_with_rule(AlertCondition::PolicyViolation, 0);
-        let mut metrics = SystemMetrics::default();
-        metrics.policy_violations = true;
+        let metrics = SystemMetrics {
+            policy_violations: true,
+            ..Default::default()
+        };
 
         let fired = bus.evaluate_rules(&metrics);
         assert_eq!(fired.len(), 1);
@@ -1358,8 +1362,10 @@ mod tests {
             cooldown_seconds: 0,
             last_triggered: None,
         }];
-        let mut metrics = SystemMetrics::default();
-        metrics.drift_detected = true;
+        let metrics = SystemMetrics {
+            drift_detected: true,
+            ..Default::default()
+        };
 
         let fired = bus.evaluate_rules(&metrics);
         assert!(fired.is_empty());
@@ -1368,8 +1374,10 @@ mod tests {
     #[test]
     fn test_evaluate_rules_cooldown_prevents_repeated_firing() {
         let mut bus = make_bus_with_rule(AlertCondition::DriftDetected, 3600);
-        let mut metrics = SystemMetrics::default();
-        metrics.drift_detected = true;
+        let metrics = SystemMetrics {
+            drift_detected: true,
+            ..Default::default()
+        };
 
         // First evaluation should fire
         let fired1 = bus.evaluate_rules(&metrics);
@@ -1403,8 +1411,10 @@ mod tests {
                 last_triggered: None,
             },
         ];
-        let mut metrics = SystemMetrics::default();
-        metrics.drift_detected = true;
+        let mut metrics = SystemMetrics {
+            drift_detected: true,
+            ..Default::default()
+        };
         metrics.restart_counts.insert("svc".to_string(), 10);
 
         let fired = bus.evaluate_rules(&metrics);

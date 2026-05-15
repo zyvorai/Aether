@@ -14,7 +14,7 @@ export default function CostPage() {
   async function handleEstimate(yaml: string) {
     setLoading(true);
     setError(null);
-    const res = await apiPost<CostEstimate[]>('/cost/estimate', { yaml });
+    const res = await apiPost<CostEstimate[]>('/cost', { yaml });
     if (res.success && res.data) {
       setEstimates(res.data);
     } else {

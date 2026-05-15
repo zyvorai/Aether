@@ -13,5 +13,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // Stable filenames for embedding in the Rust binary (include_str!).
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: true,
+        entryFileNames: 'assets/aether-dashboard.js',
+        assetFileNames: 'assets/aether-dashboard[extname]',
+      },
+    },
   },
 });

@@ -43,13 +43,16 @@ export default function AIPage() {
     setRecommendLoading(true);
     const res = await apiPost<ScoringResult>('/ai/recommend', { yaml });
     setRecommendation(res.data ?? null);
+    if (!res.success) {
+      toast(res.error ?? 'Failed to generate recommendation', 'error');
+    }
     setRecommendLoading(false);
   }
 
   async function handleScaling() {
     setLoading('scaling');
-    const res = await apiPost<ScalingAdvice>('/ai/scaling');
-    setScalingAdvice(res.data ?? null);
+    const res = await apiFetch<ScalingAdvice>('/ai/scaling-advice');
+    setScalingAdvice(res ?? null);
     setLoading(null);
   }
 

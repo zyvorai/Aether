@@ -4,6 +4,7 @@ import { apiFetch, apiPost } from '../../utils/api';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import CodeBlock from '../CodeBlock';
+import Modal from '../Modal';
 import type { PluginInfo } from '../../types/api';
 
 export default function PluginsPage() {
@@ -11,6 +12,8 @@ export default function PluginsPage() {
   const [loading, setLoading] = useState(true);
   const [discovering, setDiscovering] = useState(false);
   const [discoverResult, setDiscoverResult] = useState<string | null>(null);
+  const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
+  const [runtimeFilter, setRuntimeFilter] = useState('all');
 
   async function load() {
     setLoading(true);
@@ -37,9 +40,28 @@ export default function PluginsPage() {
     );
   }
 
+  const runtimeOptions = ['all', ...Array.from(new Set(plugins.map((plugin) => plugin.runtime_kind)))];
+  const visiblePlugins = runtimeFilter === 'all'
+    ? plugins
+    : plugins.filter((plugin) => plugin.runtime_kind === runtimeFilter);
+
   return (
     <div>
-      <div className="flex items-center justify-end mb-6">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-2">
+          <label className="text-xs uppercase tracking-[0.18em] text-slate-500">Runtime</label>
+          <select
+            value={runtimeFilter}
+            onChange={(e) => setRuntimeFilter(e.target.value)}
+            className="rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-200"
+          >
+            {runtimeOptions.map((option) => (
+              <option key={option} value={option}>
+                {option === 'all' ? 'All runtimes' : option}
+              </option>
+            ))}
+          </select>
+        </div>
         <button
           onClick={handleDiscover}
           disabled={discovering}
@@ -57,7 +79,7 @@ export default function PluginsPage() {
         </div>
       )}
 
-      {plugins.length === 0 ? (
+      {visiblePlugins.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No plugins" description="No plugins are installed. Try discovering plugins." />
       ) : (
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
@@ -69,10 +91,11 @@ export default function PluginsPage() {
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Version</th>
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Runtime</th>
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Capabilities</th>
+                  <th className="text-right text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {plugins.map((p) => (
+                {visiblePlugins.map((p) => (
                   <tr key={p.name} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
                     <td className="py-3 px-4 font-medium text-zinc-200">{p.name}</td>
                     <td className="py-3 px-4 text-sm text-zinc-300">{p.version}</td>
@@ -84,6 +107,14 @@ export default function PluginsPage() {
                         ))}
                       </div>
                     </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => setSelectedPlugin(p)}
+                        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800"
+                      >
+                        Inspect
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -91,6 +122,43 @@ export default function PluginsPage() {
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={selectedPlugin !== null}
+        onClose={() => setSelectedPlugin(null)}
+        title={selectedPlugin ? `Plugin: ${selectedPlugin.name}` : 'Plugin'}
+      >
+        {selectedPlugin && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Runtime</div>
+                <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.runtime_kind}</div>
+              </div>
+              <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Version</div>
+                <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.version}</div>
+              </div>
+              <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Capabilities</div>
+                <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.capabilities.length}</div>
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-slate-200">Command</div>
+              <CodeBlock title="command">{selectedPlugin.command}</CodeBlock>
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-slate-200">Capabilities</div>
+              <div className="flex flex-wrap gap-2">
+                {selectedPlugin.capabilities.map((capability) => (
+                  <Badge key={capability} text={capability} variant="blue" />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
