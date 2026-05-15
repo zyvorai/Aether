@@ -72,6 +72,12 @@ comfy-table = "7.1"
 libc = "0.2.184"
 aes-gcm = "0.10"
 sha2 = "0.10"
+openidconnect = { version = "4", default-features = false, features = ["reqwest"] }
+jsonwebtoken = "9"
+rand = "0.8"
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
+url = "2"
+base64 = "0.22"
 
 [dev-dependencies]
 tempfile = "3.15"

@@ -22,7 +22,10 @@
 #   --uninstall     Remove Aether from the remote cluster
 #
 # Environment:
-#   AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1 — skip deploy/k8s/bootstrap/cilium-aether-egress.yaml
+#   AETHER_SKIP_CILIUM_BOOTSTRAP=1 — skip Cilium bootstrap (same as legacy AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP)
+#   AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1 — legacy alias for the above
+#   AETHER_CILIUM_EGRESS_STRICT=1 — Cilium: kube-apiserver + DNS only (instead of toEntities: all)
+#   AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1 — with strict, also allow toEntities: cluster (in-cluster workloads)
 # ============================================================================
 
 set -euo pipefail
@@ -52,7 +55,7 @@ for arg in "$@"; do
     --local-build) LOCAL_BUILD=1 ;;
     --uninstall) UNINSTALL=1 ;;
     --help|-h)
-      sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,38p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) POSITIONAL+=("$arg") ;;
@@ -88,6 +91,15 @@ ssh_cmd() {
     SSHPASS="${PASS}" sshpass -e ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" "$@"
   else
     ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" "$@"
+  fi
+}
+
+# Run a multi-line bash script on the remote (stdin). Expands locals in the caller's heredoc.
+remote_bash() {
+  if [ -n "${PASS}" ]; then
+    SSHPASS="${PASS}" sshpass -e ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" bash -s
+  else
+    ssh -o StrictHostKeyChecking=no "${USER}@${HOST}" bash -s
   fi
 }
 
@@ -172,12 +184,16 @@ echo ""
 
 if [ "${UNINSTALL}" = "1" ]; then
   step "Removing Aether from remote cluster"
-  ssh_cmd "
-    ${K} delete namespace ${AETHER_NS} --ignore-not-found
-    ${K} delete clusterrole aether-discovery --ignore-not-found
-    ${K} delete clusterrolebinding aether-discovery --ignore-not-found
-    rm -rf ${REMOTE_DIR}
-  " >/dev/null 2>&1 || true
+  remote_bash <<UNINSTALL
+set -euo pipefail
+source "${REMOTE_DIR}/scripts/lib-deploy-pretty.sh"
+source "${REMOTE_DIR}/scripts/lib-deploy-cluster.sh"
+aether_delete_managed_cilium_policies "${AETHER_NS}" "${K}"
+${K} delete namespace ${AETHER_NS} --ignore-not-found
+${K} delete clusterrole aether-discovery --ignore-not-found
+${K} delete clusterrolebinding aether-discovery --ignore-not-found
+rm -rf ${REMOTE_DIR}
+UNINSTALL
   info "Aether removed from ${HOST}"
   aether_finale_uninstall
   exit 0
@@ -266,70 +282,15 @@ EOF
 )
 fi
 
-ssh_cmd "
-  ${K} create namespace ${AETHER_NS} --dry-run=client -o yaml | ${K} apply -f -
-  if [ \"${AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP:-}\" != \"1\" ] && [ \"${AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP:-}\" != \"true\" ] && ${K} get crd ciliumnetworkpolicies.cilium.io &>/dev/null && [ -f \"${REMOTE_DIR}/deploy/k8s/bootstrap/cilium-aether-egress.yaml\" ]; then
-    sed \"s|__AETHER_NAMESPACE__|${AETHER_NS}|g\" \"${REMOTE_DIR}/deploy/k8s/bootstrap/cilium-aether-egress.yaml\" | ${K} apply -f -
-    echo 'Applied CiliumNetworkPolicy allow-aether-egress'
-  else
-    echo 'Skipping Cilium aether egress bootstrap (AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1, no Cilium CRD, or yaml missing)'
-  fi
-  cat <<'EOF' | ${K} apply -f -
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: aether
-  namespace: ${AETHER_NS}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: aether-discovery
-rules:
-- apiGroups: ['apps']
-  resources: ['deployments', 'statefulsets', 'daemonsets']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['batch']
-  resources: ['jobs', 'cronjobs']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['autoscaling']
-  resources: ['horizontalpodautoscalers']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['networking.k8s.io']
-  resources: ['ingresses', 'networkpolicies']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['discovery.k8s.io']
-  resources: ['endpointslices']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['storage.k8s.io']
-  resources: ['storageclasses']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['kubevirt.io']
-  resources: ['virtualmachines', 'virtualmachineinstances']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['cdi.kubevirt.io']
-  resources: ['datavolumes']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['']
-  resources: ['pods', 'pods/log', 'services', 'configmaps', 'secrets', 'nodes', 'namespaces', 'persistentvolumes', 'persistentvolumeclaims', 'resourcequotas', 'limitranges', 'serviceaccounts', 'events', 'endpoints']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['apiextensions.k8s.io']
-  resources: ['customresourcedefinitions']
-  verbs: ['get', 'list', 'watch']
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: aether-discovery
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: aether-discovery
-subjects:
-- kind: ServiceAccount
-  name: aether
-  namespace: ${AETHER_NS}
-${API_KEY_SECRET_BLOCK}
+remote_bash <<REMOTE_APPLY
+set -euo pipefail
+${K} create namespace ${AETHER_NS} --dry-run=client -o yaml | ${K} apply -f -
+source "${REMOTE_DIR}/scripts/lib-deploy-pretty.sh"
+source "${REMOTE_DIR}/scripts/lib-deploy-cluster.sh"
+aether_apply_rbac "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
+aether_apply_cilium_bootstrap "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
+$([ -n "${API_KEY_SECRET_BLOCK}" ] && printf '%s\n' "${API_KEY_SECRET_BLOCK}")
+cat <<YAML | ${K} apply -f -
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -397,10 +358,10 @@ spec:
     port: 5090
     targetPort: 5090
     nodePort: ${NODE_PORT}
-EOF
-  ${K} -n ${AETHER_NS} rollout restart deployment/aether >/dev/null 2>&1 || true
-  ${K} -n ${AETHER_NS} rollout status deployment/aether --timeout=180s
-"
+YAML
+${K} -n ${AETHER_NS} rollout restart deployment/aether >/dev/null 2>&1 || true
+${K} -n ${AETHER_NS} rollout status deployment/aether --timeout=180s
+REMOTE_APPLY
 info "Kubernetes deployment applied"
 
 step "Step 5/${TOTAL_STEPS}: Verifying"

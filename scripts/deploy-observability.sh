@@ -16,6 +16,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=lib-deploy-pretty.sh
+source "${SCRIPT_DIR}/lib-deploy-pretty.sh"
 EXAMPLES_DIR="${REPO_ROOT}/examples/observability"
 
 COMMAND="${1:-deploy}"
@@ -25,10 +27,10 @@ fi
 NAMESPACE="${1:-${OBSERVABILITY_NAMESPACE:-observability}}"
 KUBECTL="${KUBECTL:-kubectl}"
 
-info() { echo "  [✓] $*"; }
-warn() { echo "  [!] $*"; }
-step() { echo ""; echo "  --- $*"; }
-error() { echo "  [✗] $*" >&2; exit 1; }
+info() { aether_ok "$*"; }
+warn() { aether_warn "$*"; }
+step() { aether_step "$*"; }
+error() { aether_die "$*"; }
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || error "Missing required command: $1"
@@ -89,6 +91,10 @@ deploy_stack() {
 
 case "${COMMAND}" in
   deploy)
+    echo ""
+    aether_sparkle_line "Observability"
+    echo -e "${A_CYN}${A_BLD}     📊  Prometheus · Grafana · Loki · Alertmanager${A_RST}"
+    echo ""
     deploy_stack
     ;;
   status)

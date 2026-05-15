@@ -1,0 +1,58 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Aether Control Plane API",
+    "version": "0.3.0",
+    "description": "REST API for the Aether universal runtime control plane. Authenticate with Authorization: Bearer <token>, an RBAC key, or (when configured) an OIDC session cookie (`aether_session`) after visiting `/api/auth/oidc/login`. Open local dev may allow anonymous access when no keys and no OIDC are configured."
+  },
+  "servers": [{ "url": "/", "description": "Same origin as the dashboard or CLI target host" }],
+  "paths": {
+    "/health": { "get": { "summary": "Liveness / version" } },
+    "/api/workloads": {
+      "get": { "summary": "List workloads (optional ?limit=&offset= adds X-Total-Count)" },
+      "post": { "summary": "Create workload" }
+    },
+    "/api/workloads/{name}": {
+      "get": { "summary": "Get workload" },
+      "put": { "summary": "Replace workload spec and redeploy" },
+      "patch": { "summary": "Same as PUT" },
+      "delete": { "summary": "Remove workload from state" }
+    },
+    "/api/workloads/{name}/restart": { "post": { "summary": "Stop then start workload" } },
+    "/api/secrets": {
+      "get": { "summary": "List secrets" },
+      "post": { "summary": "Create secret with keys" }
+    },
+    "/api/backups": {
+      "get": { "summary": "List backup files" },
+      "post": { "summary": "Create backup" }
+    },
+    "/api/backups/restore": { "post": { "summary": "Restore or merge from backup name" } },
+    "/api/backups/{name}": {
+      "get": { "summary": "Backup metadata" },
+      "delete": { "summary": "Delete backup file" }
+    },
+    "/api/dependencies": {
+      "get": { "summary": "Dependency graph" },
+      "post": { "summary": "Add edge" },
+      "delete": { "summary": "Remove edge (JSON body)" }
+    },
+    "/api/gitops/status": { "get": { "summary": "GitOps status from ~/.aether/gitops.json" } },
+    "/api/gitops/sync": { "post": { "summary": "Pull + detect YAML changes" } },
+    "/api/webhooks/test": { "post": { "summary": "Emit test event for a channel" } },
+    "/api/server": { "get": { "summary": "Server capabilities and persistence mode" } },
+    "/api/openapi.json": { "get": { "summary": "This document" } },
+    "/api/auth/providers": { "get": { "summary": "Supported auth mechanisms (bearer, OIDC session cookie, etc.)" } },
+    "/api/auth/oidc/login": { "get": { "summary": "Start OIDC authorization code + PKCE (redirect); query: next=" } },
+    "/api/auth/oidc/callback": { "get": { "summary": "OAuth redirect URI; sets session cookie" } },
+    "/api/auth/oidc/logout": { "get": { "summary": "Clear OIDC session cookie; redirect to /" } },
+    "/api/system/ready": { "get": { "summary": "Readiness (Redis ping when HA shared cache uses Redis)" } },
+    "/api/audit/events": { "post": { "summary": "Append audit event (admin only)" } }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "API key" }
+    }
+  },
+  "security": [{ "bearerAuth": [] }]
+}

@@ -3,10 +3,12 @@ import { useEffect, useCallback } from 'react';
 interface KeyboardConfig {
   onRefresh: () => void;
   onCommandPalette: () => void;
+  /** Shift + / — keyboard shortcuts overlay (Machina-style). */
+  onShortcutsHelp?: () => void;
   enabled: boolean;
 }
 
-export function useKeyboard({ onRefresh, onCommandPalette, enabled }: KeyboardConfig) {
+export function useKeyboard({ onRefresh, onCommandPalette, onShortcutsHelp, enabled }: KeyboardConfig) {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!enabled) return;
 
@@ -23,10 +25,17 @@ export function useKeyboard({ onRefresh, onCommandPalette, enabled }: KeyboardCo
 
     // Single-key shortcuts (only when not in input fields)
     switch (e.key) {
-      case 'r': onRefresh(); break;
-      case '?': onCommandPalette(); break;
+      case 'r':
+        onRefresh();
+        break;
+      case '?':
+        if (onShortcutsHelp) {
+          e.preventDefault();
+          onShortcutsHelp();
+        }
+        break;
     }
-  }, [enabled, onRefresh, onCommandPalette]);
+  }, [enabled, onRefresh, onCommandPalette, onShortcutsHelp]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);

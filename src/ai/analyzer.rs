@@ -208,7 +208,7 @@ impl LogAnalyzer {
             })
             .collect();
 
-        patterns.sort_by(|a, b| b.count.cmp(&a.count));
+        patterns.sort_by_key(|p| std::cmp::Reverse(p.count));
         patterns.truncate(self.config.max_patterns);
 
         // Build timeline windows

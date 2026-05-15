@@ -34,6 +34,7 @@ export interface ClusterSummary {
   workload_count: number;
   clusters: ClusterInfo[];
   error: string | null;
+  summary_note?: string | null;
 }
 
 export interface ClusterPodSummary {
@@ -370,6 +371,19 @@ export interface AuditResponse {
   recent_events: AuditEvent[];
 }
 
+export interface AuditVerifyResponse {
+  total: number;
+  verified: number;
+  tampered: number;
+  integrity: string;
+  tampered_events: Array<{
+    id: number;
+    timestamp: string;
+    action: string;
+    workload: string;
+  }>;
+}
+
 // ─── Templates ───────────────────────────────────────────────────────
 export interface Template {
   name: string;
@@ -418,6 +432,25 @@ export interface SlaTarget {
   max_latency_ms: number | null;
   max_error_rate_pct: number | null;
   max_restarts_per_day: number | null;
+}
+
+// ─── Compose / RBAC ─────────────────────────────────────────────────
+export interface ComposeValidationResult {
+  valid: boolean;
+  workload_count?: number;
+  deploy_order?: string[];
+}
+
+export interface ApiKeySummary {
+  name: string;
+  role: string;
+  created_at: string;
+}
+
+export interface CreateApiKeyResponse {
+  name: string;
+  role: string;
+  key: string;
 }
 
 // ─── Drift ───────────────────────────────────────────────────────────
@@ -477,6 +510,7 @@ export type AppView =
   | 'overview'
   | 'workloads'
   | 'clusters'
+  | 'compose'
   | 'ai'
   | 'cost'
   | 'affinity'
@@ -492,5 +526,6 @@ export type AppView =
   | 'backups'
   | 'templates'
   | 'plugins'
+  | 'rbac'
   | 'audit'
   | 'metrics';

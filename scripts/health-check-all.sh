@@ -8,6 +8,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib-deploy-pretty.sh
+source "${SCRIPT_DIR}/lib-deploy-pretty.sh"
+
 NAMESPACE="${1:-${AETHER_NAMESPACE:-aether-system}}"
 KUBECTL="${KUBECTL:-kubectl}"
 
@@ -16,14 +20,10 @@ PASSED_CHECKS=0
 FAILED_CHECKS=0
 WARNINGS=0
 
-pass() { echo "  [PASS] $*"; }
-warn() { echo "  [WARN] $*"; WARNINGS=$((WARNINGS + 1)); }
-fail() { echo "  [FAIL] $*"; }
-section() { echo ""; echo "== $*"; }
-
-have_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
+pass() { aether_ok "$*"; }
+warn() { aether_warn "$*"; WARNINGS=$((WARNINGS + 1)); }
+fail() { aether_bad "$*"; }
+section() { aether_section "$*"; }
 
 run_check() {
   TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -48,7 +48,13 @@ check_namespace() {
     pass "Namespace exists: ${NAMESPACE}"
     return 0
   fi
-  fail "Namespace not found: ${NAMESPACE}"
+
+  if ${KUBECTL} create namespace "${NAMESPACE}" >/dev/null 2>&1; then
+    warn "Namespace was missing and has been created: ${NAMESPACE}"
+    return 0
+  fi
+
+  fail "Namespace not found and could not be created: ${NAMESPACE}"
   return 1
 }
 
@@ -187,6 +193,39 @@ check_ingress() {
   [ "${failed}" -eq 0 ]
 }
 
+# Informational only (never fails the ritual)
+check_mesh_kubevirt() {
+  if ${KUBECTL} get crd virtualmachines.kubevirt.io &>/dev/null; then
+    pass "KubeVirt API detected (virtualmachines.kubevirt.io)"
+  else
+    warn "KubeVirt CRDs not found (VM workloads need KubeVirt on the cluster)"
+  fi
+  return 0
+}
+
+check_mesh_metal3() {
+  if ${KUBECTL} get crd baremetalhosts.metal3.io &>/dev/null; then
+    pass "Metal3 API detected (baremetalhosts.metal3.io)"
+  else
+    warn "Metal3 CRDs not found (optional unless you provision bare metal)"
+  fi
+  return 0
+}
+
+check_mesh_cilium() {
+  if ${KUBECTL} get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
+    pass "CiliumNetworkPolicy CRD detected (deploy scripts can install aether egress allow)"
+  else
+    warn "Cilium CRDs not found (fine if the cluster uses another CNI)"
+  fi
+  return 0
+}
+
+aether_banner_health
+aether_kv "Namespace" "${NAMESPACE}"
+aether_kv "kubectl" "${KUBECTL}"
+echo ""
+
 section "Cluster"
 run_check check_cluster
 run_check check_namespace
@@ -202,12 +241,22 @@ run_check check_recent_events
 run_check check_metrics_server
 run_check check_ingress
 
+section "Cluster mesh (optional)"
+run_check check_mesh_kubevirt
+run_check check_mesh_metal3
+run_check check_mesh_cilium
+
 echo ""
-echo "Total Checks: ${TOTAL_CHECKS}"
-echo "Passed:       ${PASSED_CHECKS}"
-echo "Failed:       ${FAILED_CHECKS}"
-echo "Warnings:     ${WARNINGS}"
+echo -e "${A_BLD}  ── Ritual tally ──${A_RST}"
+aether_kv "Checks run" "${TOTAL_CHECKS}"
+aether_kv "Blessed ✓" "${PASSED_CHECKS}"
+aether_kv "Cursed ✗" "${FAILED_CHECKS}"
+aether_kv "Omens ⚡" "${WARNINGS}"
 
 if [ "${FAILED_CHECKS}" -gt 0 ]; then
+  aether_finale_health_bad
   exit 1
 fi
+
+aether_finale_health_ok
+exit 0

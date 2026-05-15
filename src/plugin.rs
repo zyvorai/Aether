@@ -203,7 +203,24 @@ impl PluginRuntime {
 
     /// Send a request to the plugin binary via stdin and read the response from stdout.
     async fn ipc_call(&self, request: PluginProtocol) -> anyhow::Result<PluginProtocol> {
+        use std::sync::OnceLock;
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        static LIMITS: OnceLock<(std::time::Duration, usize)> = OnceLock::new();
+        let (timeout, max_stdout) = *LIMITS.get_or_init(|| {
+            let timeout_secs: u64 = std::env::var("AETHER_PLUGIN_IPC_TIMEOUT_SEC")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(60)
+                .clamp(1, 600);
+            let max_out: usize = std::env::var("AETHER_PLUGIN_IPC_MAX_OUTPUT_BYTES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(8 * 1024 * 1024)
+                .clamp(4096, 64 * 1024 * 1024);
+            (std::time::Duration::from_secs(timeout_secs), max_out)
+        });
+        const STDERR_CAP: usize = 512 * 1024;
 
         let request_json = serde_json::to_string(&request)?;
 
@@ -211,61 +228,95 @@ impl PluginRuntime {
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
+            .kill_on_drop(true)
             .spawn()
             .map_err(|e| anyhow::anyhow!("Failed to spawn plugin '{}': {}", self.manifest.name, e))?;
 
-        // Write request to stdin
         if let Some(mut stdin) = child.stdin.take() {
             stdin.write_all(request_json.as_bytes()).await?;
             stdin.write_all(b"\n").await?;
-            // Drop stdin to signal EOF
+            stdin.flush().await?;
         }
 
-        // Read stdout and stderr concurrently to prevent deadlock when
-        // the plugin writes more than the OS pipe buffer to stderr.
-        let mut stdout_handle = child.stdout.take();
-        let mut stderr_handle = child.stderr.take();
+        let work = async {
+            let stdout = child.stdout.take();
+            let stderr = child.stderr.take();
 
-        let output = tokio::time::timeout(
-            std::time::Duration::from_secs(60),
-            async {
-                let stdout_fut = async {
-                    let mut buf = String::new();
-                    if let Some(ref mut stdout) = stdout_handle {
-                        stdout.read_to_string(&mut buf).await?;
+            let stdout_fut = async {
+                let mut buf = Vec::new();
+                if let Some(mut s) = stdout {
+                    let mut chunk = [0u8; 8192];
+                    loop {
+                        let n = s.read(&mut chunk).await?;
+                        if n == 0 {
+                            break;
+                        }
+                        if buf.len() + n > max_stdout {
+                            anyhow::bail!(
+                                "Plugin '{}' stdout exceeded AETHER_PLUGIN_IPC_MAX_OUTPUT_BYTES ({})",
+                                self.manifest.name,
+                                max_stdout
+                            );
+                        }
+                        buf.extend_from_slice(&chunk[..n]);
                     }
-                    Ok::<String, anyhow::Error>(buf)
-                };
-                let stderr_fut = async {
-                    let mut buf = String::new();
-                    if let Some(ref mut stderr) = stderr_handle {
-                        stderr.read_to_string(&mut buf).await?;
-                    }
-                    Ok::<String, anyhow::Error>(buf)
-                };
-
-                let (stdout_result, stderr_result) = tokio::join!(stdout_fut, stderr_fut);
-                let stdout_buf = stdout_result?;
-                let stderr_buf = stderr_result.unwrap_or_default();
-
-                let status = child.wait().await?;
-                if !status.success() {
-                    anyhow::bail!(
-                        "Plugin '{}' exited with {}: {}",
-                        self.manifest.name, status, stderr_buf.trim()
-                    );
                 }
-                Ok::<String, anyhow::Error>(stdout_buf)
-            }
-        )
-        .await
-        .map_err(|_| anyhow::anyhow!("Plugin '{}' timed out after 60s", self.manifest.name))??;
+                Ok::<Vec<u8>, anyhow::Error>(buf)
+            };
+            let stderr_fut = async {
+                let mut buf = Vec::new();
+                if let Some(mut s) = stderr {
+                    let mut chunk = [0u8; 4096];
+                    loop {
+                        let n = s.read(&mut chunk).await?;
+                        if n == 0 {
+                            break;
+                        }
+                        if buf.len() + n > STDERR_CAP {
+                            break;
+                        }
+                        buf.extend_from_slice(&chunk[..n]);
+                    }
+                }
+                Ok::<Vec<u8>, anyhow::Error>(buf)
+            };
 
-        let response: PluginProtocol = serde_json::from_str(output.trim())
-            .map_err(|e| anyhow::anyhow!(
+            let (stdout_result, stderr_result) = tokio::join!(stdout_fut, stderr_fut);
+            let stdout_buf = stdout_result?;
+            let stderr_buf = stderr_result.unwrap_or_default();
+            let status = child.wait().await?;
+            if !status.success() {
+                anyhow::bail!(
+                    "Plugin '{}' exited with {}: {}",
+                    self.manifest.name,
+                    status,
+                    String::from_utf8_lossy(&stderr_buf).trim()
+                );
+            }
+            Ok::<Vec<u8>, anyhow::Error>(stdout_buf)
+        };
+
+        let output = match tokio::time::timeout(timeout, work).await {
+            Ok(res) => res?,
+            Err(_) => {
+                let _ = child.kill().await;
+                anyhow::bail!(
+                    "Plugin '{}' IPC timed out after {:?} (AETHER_PLUGIN_IPC_TIMEOUT_SEC)",
+                    self.manifest.name,
+                    timeout
+                );
+            }
+        };
+
+        let text = String::from_utf8_lossy(&output).trim().to_string();
+        let response: PluginProtocol = serde_json::from_str(&text).map_err(|e| {
+            anyhow::anyhow!(
                 "Plugin '{}' returned invalid JSON: {} (raw: {})",
-                self.manifest.name, e, output.chars().take(200).collect::<String>()
-            ))?;
+                self.manifest.name,
+                e,
+                text.chars().take(200).collect::<String>()
+            )
+        })?;
 
         Ok(response)
     }
@@ -762,10 +813,10 @@ mod tests {
     #[test]
     fn test_logs_capability_string() {
         let cap = "logs".to_string();
-        let capabilities = vec!["build".to_string(), "run".to_string(), "logs".to_string()];
+        let capabilities = ["build".to_string(), "run".to_string(), "logs".to_string()];
         assert!(capabilities.iter().any(|c| c == &cap));
 
-        let no_logs = vec!["build".to_string(), "run".to_string()];
+        let no_logs = ["build".to_string(), "run".to_string()];
         assert!(!no_logs.iter().any(|c| c == &cap));
     }
 

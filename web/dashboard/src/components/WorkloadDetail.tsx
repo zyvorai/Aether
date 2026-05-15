@@ -70,7 +70,7 @@ export default function WorkloadDetail({ workload, onClose, onAction }: Workload
           await apiPost(`/workloads/${workload.name}/stop`);
           await apiPost(`/workloads/${workload.name}/start`);
         } else if (action === 'delete') {
-          await apiDelete(`/workloads/${workload.name}`);
+          await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
           onClose();
         }
       } else if (workload.cluster && workload.namespace && workload.kind) {

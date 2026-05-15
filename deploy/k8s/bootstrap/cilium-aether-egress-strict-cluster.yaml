@@ -1,0 +1,16 @@
+# Optional add-on when AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1: allow all in-cluster pod/Service
+# traffic from aether (union with allow-aether-egress-strict). Use if the control plane
+# must reach workloads or metrics endpoints without going through the Kubernetes API.
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-aether-egress-strict-cluster
+  namespace: __AETHER_NAMESPACE__
+spec:
+  endpointSelector:
+    matchLabels:
+      app: aether
+  egress:
+    - toEntities:
+        - cluster

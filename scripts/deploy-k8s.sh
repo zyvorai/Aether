@@ -13,12 +13,22 @@
 #   status   Show deployment status
 #   logs     Tail deployment logs
 #   delete   Remove Aether from the cluster
+#
+# Environment:
+#   AETHER_SKIP_CILIUM_BOOTSTRAP=1 — skip Cilium bootstrap manifests
+#   AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1 — legacy alias for the above
+#   AETHER_CILIUM_EGRESS_STRICT=1 — Cilium: kube-apiserver + DNS only (see deploy/k8s/bootstrap/)
+#   AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1 — with strict, also allow in-cluster pod/service traffic
 # ============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=lib-deploy-pretty.sh
+source "${SCRIPT_DIR}/lib-deploy-pretty.sh"
+# shellcheck source=lib-deploy-cluster.sh
+source "${SCRIPT_DIR}/lib-deploy-cluster.sh"
 
 REPO="${AETHER_REGISTRY:-localhost/aether}"
 VERSION="${VERSION:-$(grep '^version' "${REPO_ROOT}/Cargo.toml" | head -1 | sed 's/.*"\(.*\)".*/\1/')}"
@@ -92,62 +102,11 @@ EOF
   fi
 
   ${KUBECTL} create namespace "${NAMESPACE}" --dry-run=client -o yaml | ${KUBECTL} apply -f -
-  cat <<EOF | ${KUBECTL} apply -f -
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: aether
-  namespace: ${NAMESPACE}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: aether-discovery
-rules:
-- apiGroups: ['apps']
-  resources: ['deployments', 'statefulsets', 'daemonsets']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['batch']
-  resources: ['jobs', 'cronjobs']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['autoscaling']
-  resources: ['horizontalpodautoscalers']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['networking.k8s.io']
-  resources: ['ingresses', 'networkpolicies']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['discovery.k8s.io']
-  resources: ['endpointslices']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['storage.k8s.io']
-  resources: ['storageclasses']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['kubevirt.io']
-  resources: ['virtualmachines', 'virtualmachineinstances']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['cdi.kubevirt.io']
-  resources: ['datavolumes']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['']
-  resources: ['pods', 'pods/log', 'services', 'configmaps', 'secrets', 'nodes', 'namespaces', 'persistentvolumes', 'persistentvolumeclaims', 'resourcequotas', 'limitranges', 'serviceaccounts', 'events', 'endpoints']
-  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
-- apiGroups: ['apiextensions.k8s.io']
-  resources: ['customresourcedefinitions']
-  verbs: ['get', 'list', 'watch']
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: aether-discovery
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: aether-discovery
-subjects:
-- kind: ServiceAccount
-  name: aether
-  namespace: ${NAMESPACE}
-${api_key_secret}
+  aether_apply_rbac "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
+  aether_apply_cilium_bootstrap "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
+  {
+    [ -n "${api_key_secret}" ] && printf '%s\n' "${api_key_secret}"
+    cat <<EOF
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -210,16 +169,27 @@ spec:
     protocol: TCP
     name: http
 EOF
+  } | ${KUBECTL} apply -f -
 }
 
 cmd_detect() {
   detect_container_runtime
   detect_k8s_distro
-  echo "Container runtime: ${RUNTIME}"
-  echo "Kubectl:           ${KUBECTL}"
-  echo "K8s distro:        ${DISTRO}"
-  echo "Namespace:         ${NAMESPACE}"
-  echo "Image:             ${IMAGE_LATEST}"
+  echo ""
+  aether_sparkle_line "Local cluster"
+  echo -e "${A_CYN}${A_BLD}     🔭  Environment probe${A_RST}"
+  echo ""
+  aether_kv "Container runtime" "${RUNTIME}"
+  aether_kv "Kubectl" "${KUBECTL}"
+  aether_kv "K8s distro" "${DISTRO}"
+  aether_kv "Namespace" "${NAMESPACE}"
+  aether_kv "Image" "${IMAGE_LATEST}"
+  if ${KUBECTL} cluster-info &>/dev/null; then
+    aether_print_cluster_mesh_report "${KUBECTL}"
+  else
+    aether_subtle "     (cluster unreachable — skipping mesh probe)"
+    echo ""
+  fi
 }
 
 cmd_build() {
@@ -283,6 +253,7 @@ cmd_logs() {
 }
 
 cmd_delete() {
+  aether_delete_managed_cilium_policies "${NAMESPACE}" "${KUBECTL}"
   ${KUBECTL} delete namespace "${NAMESPACE}" --ignore-not-found
   ${KUBECTL} delete clusterrole aether-discovery --ignore-not-found
   ${KUBECTL} delete clusterrolebinding aether-discovery --ignore-not-found
@@ -302,9 +273,11 @@ case "${COMMAND}" in
     cmd_load
     cmd_deploy
     cmd_status
+    echo ""
+    aether_ok "🪄  Build → load → deploy chain complete (local cluster)"
+    aether_subtle "     Tip: ./scripts/health-check-all.sh for the full ritual."
     ;;
   *)
-    echo "Unknown command: ${COMMAND}" >&2
-    exit 1
+    aether_die "Unknown command: ${COMMAND}"
     ;;
 esac

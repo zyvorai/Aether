@@ -62,6 +62,10 @@ pub(crate) struct AppState {
     pub(crate) event_tx: tokio::sync::broadcast::Sender<String>,
     pub(crate) rbac: Arc<RwLock<crate::rbac::RbacStore>>,
     pub(crate) port_forwards: Arc<Mutex<HashMap<String, PortForwardSession>>>,
+    pub(crate) shared_cache: crate::ha::SharedCache,
+    pub(crate) oidc: Option<Arc<crate::oidc::OidcRuntime>>,
+    /// True when the API is serving HTTPS (used for Secure session cookies).
+    pub(crate) tls_active: bool,
 }
 
 pub(crate) struct PortForwardSession {
@@ -500,18 +504,64 @@ pub(crate) struct CreateBackupRequest {
     pub(crate) description: Option<String>,
 }
 
-/// Policy check request
+/// Policy check request (used by policy API tests; wire to handler when exposing POST /policy/check).
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct PolicyCheckRequest {
     pub(crate) spec: Workload,
     pub(crate) policy_set: Option<String>,
 }
 
-/// Add dependency request
+/// Add dependency request (also used for DELETE body)
 #[derive(Debug, Deserialize)]
 pub(crate) struct AddDependencyRequest {
     pub(crate) workload: String,
     pub(crate) dependency: String,
+}
+
+/// Create secret via API (metadata + plaintext keys; values encrypted at rest).
+#[derive(Debug, Deserialize)]
+pub(crate) struct CreateSecretRequest {
+    pub(crate) name: String,
+    #[serde(default)]
+    pub(crate) namespace: Option<String>,
+    pub(crate) keys: std::collections::HashMap<String, String>,
+}
+
+/// Restore state from a backup file in the default backup directory.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RestoreBackupRequest {
+    /// Backup file stem (`foo`) or filename (`foo.json`).
+    pub(crate) name: String,
+    /// When true, merge workloads that are not already present (default: false).
+    #[serde(default)]
+    pub(crate) merge: Option<bool>,
+}
+
+/// Append an audit event (admin only).
+#[derive(Debug, Deserialize)]
+pub(crate) struct AuditAppendRequest {
+    pub(crate) action: String,
+    pub(crate) workload: String,
+    pub(crate) message: String,
+    pub(crate) result: String,
+    #[serde(default)]
+    pub(crate) details: Option<String>,
+    #[serde(default)]
+    pub(crate) runtime: Option<String>,
+}
+
+/// Optional pagination for list endpoints (`limit` default varies by handler).
+#[derive(Debug, Default, Deserialize)]
+pub(crate) struct PaginationQuery {
+    pub(crate) limit: Option<usize>,
+    pub(crate) offset: Option<usize>,
+}
+
+/// Trigger a webhook test by channel name (same as CLI `aether webhook test`).
+#[derive(Debug, Deserialize)]
+pub(crate) struct WebhookTestRequest {
+    pub(crate) channel: String,
 }
 
 /// Template generation request

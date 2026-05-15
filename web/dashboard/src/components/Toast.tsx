@@ -17,15 +17,15 @@ const iconMap: Record<ToastType, typeof CheckCircle2> = {
 };
 
 const colorMap: Record<ToastType, string> = {
-  success: 'border-emerald-500/30 bg-zinc-900',
-  error: 'border-red-500/30 bg-zinc-900',
-  info: 'border-blue-500/30 bg-zinc-900',
+  success: 'border-emerald-500/30 bg-slate-900/95',
+  error: 'border-red-500/30 bg-slate-900/95',
+  info: 'border-aether/30 bg-slate-900/95',
 };
 
 const iconColorMap: Record<ToastType, string> = {
   success: 'text-emerald-400',
   error: 'text-red-400',
-  info: 'text-blue-400',
+  info: 'text-aether',
 };
 
 export function useToast() {
@@ -77,15 +77,15 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
 
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-3 min-w-[280px] max-w-sm border rounded-lg px-4 py-3 shadow-lg ${
+      className={`pointer-events-auto flex items-start gap-3 min-w-[280px] max-w-sm border rounded-2xl px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.45)] ${
         colorMap[item.type]
       } ${item.exiting ? 'toast-exit' : 'toast-enter'}`}
     >
       <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${iconColorMap[item.type]}`} />
-      <p className="text-sm text-zinc-100 flex-1">{item.message}</p>
+      <p className="text-sm text-slate-100 flex-1">{item.message}</p>
       <button
         onClick={() => onDismiss(item.id)}
-        className="shrink-0 p-0.5 rounded text-zinc-500 hover:text-zinc-300 transition-colors"
+        className="shrink-0 p-0.5 rounded text-slate-500 hover:text-slate-300 transition-colors"
       >
         <X className="w-4 h-4" />
       </button>

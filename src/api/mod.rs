@@ -13,39 +13,126 @@ use types::AppState;
 use handlers::*;
 use crate::state::StateStore;
 use axum::{
+    body::Body,
     extract::DefaultBodyLimit,
-    http::{Request, StatusCode, Method},
+    http::{header::HeaderName, HeaderMap, HeaderValue, Method, Request, StatusCode},
     middleware::{self, Next},
     response::Response,
     routing::{delete, get, post},
     Router,
 };
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex, RwLock};
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Any};
 
+/// Monotonic id generator for `x-request-id` when the client does not supply one.
+static HTTP_REQUEST_SEQ: AtomicU64 = AtomicU64::new(1);
+
+fn mutation_confirm_env_enabled() -> bool {
+    std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
+        .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
+/// DELETE routes that remove durable user data or workloads.
+fn path_requires_mutation_confirm(method: &Method, path: &str) -> bool {
+    if *method != Method::DELETE {
+        return false;
+    }
+    let segs: Vec<&str> = path.trim_matches('/').split('/').collect();
+    matches!(
+        segs.as_slice(),
+        ["api", "workloads", _] | ["api", "secrets", _] | ["api", "backups", _]
+    )
+}
+
+fn mutation_confirm_header_ok(headers: &HeaderMap) -> bool {
+    headers
+        .get("x-aether-confirm")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| {
+            let t = s.trim();
+            t == "1"
+                || t.eq_ignore_ascii_case("true")
+                || t.eq_ignore_ascii_case("yes")
+                || t.eq_ignore_ascii_case("delete")
+        })
+        .unwrap_or(false)
+}
+
+fn ensure_mutation_confirm(method: &Method, path: &str, headers: &HeaderMap) -> Result<(), StatusCode> {
+    if !mutation_confirm_env_enabled() {
+        return Ok(());
+    }
+    if !path.starts_with("/api/") {
+        return Ok(());
+    }
+    if !path_requires_mutation_confirm(method, path) {
+        return Ok(());
+    }
+    if mutation_confirm_header_ok(headers) {
+        Ok(())
+    } else {
+        Err(StatusCode::PRECONDITION_FAILED)
+    }
+}
+
+async fn observability_middleware(req: Request<Body>, next: Next) -> Response {
+    let hdr = HeaderName::from_static("x-request-id");
+    let rid = req
+        .headers()
+        .get(&hdr)
+        .and_then(|v| v.to_str().ok())
+        .filter(|s| !s.is_empty() && s.len() <= 128)
+        .map(std::string::ToString::to_string)
+        .unwrap_or_else(|| {
+            format!(
+                "aether-{}",
+                HTTP_REQUEST_SEQ.fetch_add(1, Ordering::Relaxed)
+            )
+        });
+
+    let method = req.method().as_str().to_string();
+    let mut res = next.run(req).await;
+    let status = res.status().as_u16().to_string();
+    crate::metrics::record_api_http(&method, &status);
+    if let Ok(val) = HeaderValue::try_from(rid.as_str()) {
+        res.headers_mut().insert(hdr, val);
+    }
+    res
+}
+
 /// API key authentication middleware with RBAC support.
 ///
 /// Authentication is checked in this order:
-/// 1. Public endpoints (/health, /, /api/events/stream, /assets/*) bypass auth entirely.
-/// 2. If no AETHER_API_KEY is set AND the RBAC store is empty, allow all requests (local dev).
-/// 3. Extract Bearer token from Authorization header.
-/// 4. Try RBAC store first — if token matches a registered key, enforce role-based permissions.
-/// 5. Fall back to AETHER_API_KEY env var for backward compatibility (grants Admin role).
+/// 1. Public endpoints (/health, `/`, OIDC bootstrap, `/api/auth/providers`, `/api/system/ready`, /assets/*) bypass auth.
+///    `/api/events/stream` requires the same auth as other API routes (bearer, query token, or OIDC cookie).
+/// 2. If no `AETHER_API_KEY`, no RBAC keys, and OIDC is not configured — allow all requests (local dev).
+/// 3. Bearer token: RBAC store, then legacy `AETHER_API_KEY`.
+/// 4. When OIDC is configured: signed `aether_session` cookie (same permission model as RBAC roles).
 async fn auth_middleware(
     axum::extract::State(app_state): axum::extract::State<AppState>,
-    req: Request<axum::body::Body>,
+    req: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    // Public endpoints: health check, dashboard, SSE, and static assets
+    // Public: static assets, OIDC bootstrap, auth provider advertisement, readiness, dashboard HTML shell.
     let path = req.uri().path();
-    if path == "/health" || path == "/" || path == "/api/events/stream" || path.starts_with("/assets") {
+    let public_unauthenticated = path.starts_with("/assets")
+        || path == "/api/system/ready"
+        || path == "/api/auth/providers"
+        || path == "/api/auth/oidc/login"
+        || path == "/api/auth/oidc/callback"
+        || path == "/api/auth/oidc/logout"
+        || (*req.method() == Method::GET && !path.starts_with("/api"));
+    if public_unauthenticated {
         return Ok(next.run(req).await);
     }
 
     let legacy_key = std::env::var("AETHER_API_KEY").ok().filter(|k| !k.is_empty());
+    let oidc_enabled = app_state.oidc.is_some();
 
     // Extract Bearer token before acquiring lock
     let header_token = req
@@ -63,47 +150,56 @@ async fn auth_middleware(
     });
     let token = header_token.or(query_token);
 
-    let method = req.method().to_string();
+    let http_method = req.method().to_string();
 
     // Acquire RBAC lock briefly — do all lookups, then drop immediately.
-    // verify_key() performs SHA-256 hashing, so minimize lock hold time.
     let rbac_result = {
         let rbac_store = app_state.rbac.read().await;
         let has_rbac_keys = !rbac_store.list_keys().is_empty();
         let verified = token.as_deref()
             .and_then(|t| rbac_store.verify_key(t))
-            .map(|entry| (entry.role.clone(), crate::rbac::check_permission(&entry.role, &method, path)));
+            .map(|entry| (entry.role.clone(), crate::rbac::check_permission(&entry.role, &http_method, path)));
         (has_rbac_keys, verified)
     };
-    // Lock dropped here
 
     let (has_rbac_keys, verified) = rbac_result;
 
     // If no auth configured at all, allow everything (local development)
-    if legacy_key.is_none() && !has_rbac_keys {
+    if legacy_key.is_none() && !has_rbac_keys && !oidc_enabled {
+        ensure_mutation_confirm(req.method(), path, req.headers())?;
         return Ok(next.run(req).await);
     }
 
-    let Some(ref token) = token else {
-        return Err(StatusCode::UNAUTHORIZED);
-    };
-
-    // Try RBAC result first
-    if let Some((_role, permitted)) = verified {
-        if !permitted {
-            return Err(StatusCode::FORBIDDEN);
-        }
-        return Ok(next.run(req).await);
-    }
-
-    // Fall back to legacy AETHER_API_KEY (grants Admin-equivalent access).
-    // Use constant-time comparison via SHA-256 to prevent timing attacks.
-    if let Some(ref expected) = legacy_key {
-        use sha2::{Digest, Sha256};
-        let token_hash = Sha256::digest(token.as_bytes());
-        let expected_hash = Sha256::digest(expected.as_bytes());
-        if token_hash == expected_hash {
+    if let Some(ref token) = token {
+        if let Some((_role, permitted)) = verified {
+            if !permitted {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            ensure_mutation_confirm(req.method(), path, req.headers())?;
             return Ok(next.run(req).await);
+        }
+
+        if let Some(ref expected) = legacy_key {
+            use sha2::{Digest, Sha256};
+            let token_hash = Sha256::digest(token.as_bytes());
+            let expected_hash = Sha256::digest(expected.as_bytes());
+            if token_hash == expected_hash {
+                ensure_mutation_confirm(req.method(), path, req.headers())?;
+                return Ok(next.run(req).await);
+            }
+        }
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    if oidc_enabled {
+        if let Some(oidc) = app_state.oidc.as_ref() {
+            if let Some((role, _username)) = oidc.verify_session_cookie(req.headers()) {
+                if !crate::rbac::check_permission(&role, &http_method, path) {
+                    return Err(StatusCode::FORBIDDEN);
+                }
+                ensure_mutation_confirm(req.method(), path, req.headers())?;
+                return Ok(next.run(req).await);
+            }
         }
     }
 
@@ -203,11 +299,20 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let rbac_store = crate::rbac::RbacStore::load(&crate::rbac::RbacStore::default_path())
         .unwrap_or_default();
 
+    let tls_enabled = config.tls_cert.is_some() && config.tls_key.is_some();
+
+    let redis_url = std::env::var("AETHER_REDIS_URL").ok();
+    let shared_cache = crate::ha::SharedCache::connect(redis_url.as_deref()).await?;
+    let oidc = crate::oidc::OidcRuntime::new(shared_cache.clone())?;
+
     let app_state = AppState {
         state: Arc::new(RwLock::new(state_store)),
         event_tx,
         rbac: Arc::new(RwLock::new(rbac_store)),
         port_forwards: Arc::new(Mutex::new(std::collections::HashMap::new())),
+        shared_cache,
+        oidc,
+        tls_active: tls_enabled,
     };
 
     // Spawn background health check loop
@@ -224,41 +329,63 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         });
     }
 
-    let tls_enabled = config.tls_cert.is_some() && config.tls_key.is_some();
     let scheme = if tls_enabled { "https" } else { "http" };
 
     // CORS: allow any origin since the dashboard is served from this same server.
     // When accessed via NodePort or load balancer, the external origin differs
     // from the bind address, so restricting to self would block the dashboard.
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST, Method::DELETE])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::DELETE,
+            Method::PUT,
+            Method::PATCH,
+        ])
         .allow_headers(Any)
         .allow_origin(Any);
 
     // Build router — dashboard assets are embedded in the binary via include_str!
     let app = Router::new()
         .route("/", get(serve_dashboard))
-        .route("/assets/index-DiVd-Lmd.css", get(serve_dashboard_css))
-        .route("/assets/index-qv9Tu_QH.js", get(serve_dashboard_js))
+        .route("/assets/aether-dashboard.css", get(serve_dashboard_css))
+        .route("/assets/aether-dashboard.js", get(serve_dashboard_js))
         .route("/health", get(health_check))
         .route("/api/events/stream", get(sse_events))
         .route("/api/auth/me", get(api_auth_me))
+        .route("/api/auth/providers", get(api_auth_providers))
+        .route("/api/auth/oidc/login", get(api_oidc_login))
+        .route("/api/auth/oidc/callback", get(api_oidc_callback))
+        .route("/api/auth/oidc/logout", get(api_oidc_logout))
+        .route("/api/system/ready", get(api_system_ready))
         .route("/api/workloads", get(list_workloads))
         .route("/api/workloads", post(create_workload))
-        .route("/api/workloads/:name", get(get_workload))
-        .route("/api/workloads/:name", delete(delete_workload))
+        .route(
+            "/api/workloads/:name",
+            get(get_workload)
+                .put(update_workload)
+                .patch(update_workload)
+                .delete(delete_workload),
+        )
         .route("/api/workloads/:name/logs", get(get_logs))
         .route("/api/workloads/:name/start", post(start_workload))
         .route("/api/workloads/:name/stop", post(stop_workload))
+        .route("/api/workloads/:name/restart", post(restart_workload))
         .route("/api/workloads/:name/migrate", post(migrate_workload))
         .route("/api/workloads/:name/build", post(build_workload))
         .route("/api/validate", post(validate_workload))
+        .route("/api/secrets", get(api_secrets_list).post(create_secret))
         .route("/api/secrets/:name", get(get_secret))
         .route("/api/secrets/:name", delete(delete_secret))
         .route("/api/metrics", get(get_metrics))
         .route("/api/cost", post(estimate_cost))
         .route("/api/backups", get(list_backups))
         .route("/api/backups", post(create_backup))
+        .route("/api/backups/restore", post(restore_backup))
+        .route(
+            "/api/backups/:name",
+            get(get_backup).delete(delete_backup_api),
+        )
         .route("/api/ai/recommend", post(ai_recommend))
         .route("/api/ai/profile/:name", get(ai_profile))
         .route("/api/ai/analyze/:name", get(ai_analyze_logs))
@@ -266,13 +393,15 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/scaling-advice", get(ai_scaling_advice))
         .route("/api/drift/:name", get(api_drift_check))
         .route("/api/policy/check", post(api_policy_check))
-        .route("/api/dependencies", get(api_deps_show))
-        .route("/api/dependencies", post(api_deps_add))
+        .route(
+            "/api/dependencies",
+            get(api_deps_show).post(api_deps_add).delete(api_deps_remove),
+        )
         .route("/api/audit", get(api_audit_list))
+        .route("/api/audit/events", post(api_audit_append))
         .route("/api/templates", get(api_template_list))
         .route("/api/templates/:name", post(api_template_generate))
         .route("/api/sla/:workload", get(api_sla_check))
-        .route("/api/secrets", get(api_secrets_list))
         .route("/api/events", get(api_events_list))
         .route("/api/events/summary", get(api_events_summary))
         .route("/api/cluster/summary", get(api_cluster_summary))
@@ -306,15 +435,22 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/health/:workload", get(api_health_summary))
         .route("/api/compose/validate", post(api_compose_validate))
         .route("/api/audit/verify", get(api_audit_verify))
+        .route("/api/gitops/status", get(api_gitops_status))
+        .route("/api/gitops/sync", post(api_gitops_sync))
+        .route("/api/webhooks/test", post(api_webhook_test))
+        .route("/api/server", get(api_server_info))
+        .route("/api/openapi.json", get(serve_openapi))
         .route("/api/rbac/keys", get(rbac_list_keys))
         .route("/api/rbac/keys", post(rbac_create_key))
         .route("/api/rbac/keys/revoke", post(rbac_revoke_key))
+        .fallback(get(serve_dashboard_spa_fallback))
         .layer(
             ServiceBuilder::new()
                 .layer(DefaultBodyLimit::max(2 * 1024 * 1024)) // 2 MB max request body
                 .layer(tower::limit::ConcurrencyLimitLayer::new(200))
                 .layer(cors)
                 .layer(middleware::from_fn_with_state(app_state.clone(), auth_middleware))
+                .layer(middleware::from_fn(observability_middleware))
         )
         .with_state(app_state);
 
@@ -336,6 +472,12 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         println!("🔐 API authentication enabled (AETHER_API_KEY)");
     } else {
         println!("⚠️  No AETHER_API_KEY set — API is unauthenticated. Set AETHER_API_KEY for production use.");
+    }
+    if std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
+        .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+    {
+        println!("🛡️  AETHER_REQUIRE_MUTATION_CONFIRM enabled — destructive DELETEs need header X-Aether-Confirm: 1");
     }
 
     if tls_enabled {

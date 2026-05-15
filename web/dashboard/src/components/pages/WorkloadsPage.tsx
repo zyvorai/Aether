@@ -70,7 +70,7 @@ export default function WorkloadsPage() {
     } else if (action === 'stop') {
       res = await apiPost(`/workloads/${name}/stop`);
     } else if (action === 'delete') {
-      res = await apiDelete(`/workloads/${name}`);
+      res = await apiDelete(`/workloads/${name}`, { label: `Delete workload "${name}"` });
     }
     setActionLoading(null);
     if (res?.success) {
@@ -94,12 +94,12 @@ export default function WorkloadsPage() {
   }
 
   async function handleProfile(name: string) {
-    const data = await apiFetch<unknown>(`/workloads/${name}/profile`);
+    const data = await apiFetch<unknown>(`/ai/profile/${name}`);
     setLogsModal({ name: `Profile: ${name}`, content: JSON.stringify(data, null, 2) });
   }
 
   async function handleAnalyze(name: string) {
-    const data = await apiFetch<unknown>(`/workloads/${name}/analyze`);
+    const data = await apiFetch<unknown>(`/ai/analyze/${name}`);
     setLogsModal({ name: `Analyze: ${name}`, content: JSON.stringify(data, null, 2) });
   }
 
@@ -246,45 +246,55 @@ export default function WorkloadsPage() {
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to see it here" />
       ) : (
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto min-w-0">
+            <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-zinc-800">
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Runtime</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Image</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Status</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Created</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Actions</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[18%] min-w-0">Name</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[12%] min-w-0">Runtime</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[36%] min-w-0">Image</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Status</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[14%] min-w-0">Created</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredWorkloads.map((w) => (
                   <tr key={w.name} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
-                    <td className="py-3 px-4 font-medium text-zinc-200">
+                    <td className="py-3 px-3 sm:px-4 font-medium text-zinc-200 align-top min-w-0">
                       <button
+                        type="button"
                         onClick={() => setSelectedWorkload(w)}
-                        className="hover:text-aether transition-colors text-left"
+                        className="hover:text-aether transition-colors text-left w-full min-w-0 truncate block"
+                        title={w.name}
                       >
                         {w.name}
                       </button>
                     </td>
-                    <td className="py-3 px-4"><RuntimeBadge runtime={w.runtime} /></td>
-                    <td className="py-3 px-4">
-                      <div className="space-y-1">
-                        <code className="text-xs bg-zinc-950 px-2 py-1 rounded text-zinc-300 inline-block">{w.image}</code>
+                    <td className="py-3 px-3 sm:px-4 align-top min-w-0"><RuntimeBadge runtime={w.runtime} /></td>
+                    <td className="py-3 px-3 sm:px-4 align-top min-w-0">
+                      <div className="space-y-1 min-w-0">
+                        <code
+                          className="text-xs bg-zinc-950 px-2 py-1 rounded text-zinc-300 block w-full min-w-0 truncate"
+                          title={w.image}
+                        >
+                          {w.image}
+                        </code>
                         {(w.cluster || w.namespace || w.kind) && (
-                          <div className="text-[11px] text-zinc-500">
+                          <div
+                            className="text-[11px] text-zinc-500 truncate"
+                            title={[w.kind, w.cluster, w.namespace].filter(Boolean).join(' · ')}
+                          >
                             {[w.kind, w.cluster, w.namespace].filter(Boolean).join(' · ')}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-3 sm:px-4 align-top min-w-0">
                       <Badge text={w.status} variant={getStatusVariant(w.status)} />
                     </td>
-                    <td className="py-3 px-4 text-sm text-zinc-400">{formatTimestamp(w.created_at)}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-3 sm:px-4 text-sm text-zinc-400 align-top min-w-0 whitespace-nowrap">{formatTimestamp(w.created_at)}</td>
+                    <td className="py-3 px-3 sm:px-4 align-top min-w-0">
                       <div className="flex flex-wrap gap-1">
                         {isAetherManaged(w) ? (
                           <>
