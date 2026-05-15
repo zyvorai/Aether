@@ -20,12 +20,17 @@
 #   --quick         Skip sync + cargo + image build/import
 #   --local-build   Build locally and upload only the release binary
 #   --uninstall     Remove Aether from the remote cluster
+#
+# Environment:
+#   AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1 — skip deploy/k8s/bootstrap/cilium-aether-egress.yaml
 # ============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=lib-deploy-pretty.sh
+source "${SCRIPT_DIR}/lib-deploy-pretty.sh"
 
 SKIP_RSYNC="${AETHER_SKIP_RSYNC:-0}"
 SKIP_CARGO="${AETHER_SKIP_CARGO:-0}"
@@ -69,10 +74,10 @@ NODE_PORT="${AETHER_NODE_PORT:-30090}"
 AETHER_API_KEY="${AETHER_API_KEY:-}"
 AETHER_LOG_FORMAT="${AETHER_LOG_FORMAT:-json}"
 
-info()  { echo "  [✓] $*"; }
-warn()  { echo "  [!] $*"; }
-step()  { echo ""; echo "  --- $*"; }
-error() { echo "  [✗] $*"; exit 1; }
+info() { aether_ok "$*"; }
+warn() { aether_warn "$*"; }
+step() { aether_step "$*"; }
+error() { aether_die "$*"; }
 
 if [ -n "${PASS}" ] && ! command -v sshpass >/dev/null 2>&1; then
   error "sshpass is required when DEPLOY_PASS is set"
@@ -153,20 +158,16 @@ detect_remote_env() {
 
 detect_remote_env
 
-echo ""
-echo "  ============================================"
-echo "    Aether Remote Kubernetes Deployment"
-echo "  ============================================"
-echo ""
-echo "  Host:      ${USER}@${HOST}"
-echo "  Cluster:   ${REMOTE_K8S_FLAVOR}"
-echo "  Kubectl:   ${K}"
-echo "  Builder:   ${BUILD_TOOL}"
-echo "  Import:    ${IMPORT_CMD}"
-echo "  Namespace: ${AETHER_NS}"
-echo "  Image:     ${AETHER_IMAGE}"
-echo "  NodePort:  ${NODE_PORT}"
-echo "  Fast path: skip_rsync=${SKIP_RSYNC} skip_cargo=${SKIP_CARGO} skip_image=${SKIP_IMAGE} local_build=${LOCAL_BUILD}"
+aether_banner_orchestrator
+aether_kv "Host" "${USER}@${HOST}"
+aether_kv "Cluster" "${REMOTE_K8S_FLAVOR}"
+aether_kv "Kubectl" "${K}"
+aether_kv "Builder" "${BUILD_TOOL}"
+aether_kv "Import" "${IMPORT_CMD}"
+aether_kv "Namespace" "${AETHER_NS}"
+aether_kv "Image" "${AETHER_IMAGE}"
+aether_kv "NodePort" "${NODE_PORT}"
+aether_kv "Fast path" "rsync=${SKIP_RSYNC} cargo=${SKIP_CARGO} image=${SKIP_IMAGE} local_build=${LOCAL_BUILD}"
 echo ""
 
 if [ "${UNINSTALL}" = "1" ]; then
@@ -178,6 +179,7 @@ if [ "${UNINSTALL}" = "1" ]; then
     rm -rf ${REMOTE_DIR}
   " >/dev/null 2>&1 || true
   info "Aether removed from ${HOST}"
+  aether_finale_uninstall
   exit 0
 fi
 
@@ -266,6 +268,12 @@ fi
 
 ssh_cmd "
   ${K} create namespace ${AETHER_NS} --dry-run=client -o yaml | ${K} apply -f -
+  if [ \"${AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP:-}\" != \"1\" ] && [ \"${AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP:-}\" != \"true\" ] && ${K} get crd ciliumnetworkpolicies.cilium.io &>/dev/null && [ -f \"${REMOTE_DIR}/deploy/k8s/bootstrap/cilium-aether-egress.yaml\" ]; then
+    sed \"s|__AETHER_NAMESPACE__|${AETHER_NS}|g\" \"${REMOTE_DIR}/deploy/k8s/bootstrap/cilium-aether-egress.yaml\" | ${K} apply -f -
+    echo 'Applied CiliumNetworkPolicy allow-aether-egress'
+  else
+    echo 'Skipping Cilium aether egress bootstrap (AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1, no Cilium CRD, or yaml missing)'
+  fi
   cat <<'EOF' | ${K} apply -f -
 apiVersion: v1
 kind: ServiceAccount
@@ -406,3 +414,4 @@ info "Aether is available at http://${HOST}:${NODE_PORT}"
 if [ -n "${AETHER_API_KEY}" ]; then
   info "API authentication is enabled on the remote deployment"
 fi
+aether_subtle "  🚀 Remote path complete. Run ./scripts/health-check-all.sh from the bundle for a full seal."

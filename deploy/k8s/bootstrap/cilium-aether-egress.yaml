@@ -1,0 +1,16 @@
+# Applied by scripts/deploy-remote.sh when ciliumnetworkpolicies.cilium.io exists.
+# Placeholder __AETHER_NAMESPACE__ is replaced with $AETHER_NAMESPACE (default: aether-system).
+# Pods are labeled app=aether (see Deployment in deploy-remote.sh).
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-aether-egress
+  namespace: __AETHER_NAMESPACE__
+spec:
+  endpointSelector:
+    matchLabels:
+      app: aether
+  egress:
+    - toEntities:
+        - all
