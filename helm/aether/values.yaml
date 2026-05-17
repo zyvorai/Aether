@@ -139,6 +139,22 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
+# Voluntary disruption budget — auto-enabled when replicaCount (or HPA minReplicas) >= 2.
+# With a single replica, keep podDisruptionBudget.enabled=false and auto=false (or set maxUnavailable: 1).
+podDisruptionBudget:
+  enabled: false
+  auto: true
+  minAvailable: 1
+  # If set (e.g. "25%" or 1), minAvailable is ignored — use for single-replica clusters that still want a PDB.
+  maxUnavailable: ""
+
+# Spread pods across failure domains (zones) when running multiple replicas.
+topologySpreadConstraints:
+  enabled: false
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
 nodeSelector: {}
 
 tolerations: []

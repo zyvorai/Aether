@@ -505,6 +505,51 @@ export interface HealthResponse {
   version: string;
 }
 
+// ─── Platform / HA ───────────────────────────────────────────────────
+export interface WorkloadStateBackendInfo {
+  backend: 'local-json' | 'postgresql';
+  configured: boolean;
+  pollSecs: number;
+  env: string;
+  pollEnv: string;
+}
+
+export interface PlatformInfo {
+  version: string;
+  persistence: 'local-json' | 'postgresql';
+  haMode: string;
+  haSharedCache: boolean;
+  tls: boolean;
+  workloadState: WorkloadStateBackendInfo;
+  oidc: {
+    enabled: boolean;
+    issuer?: string | null;
+  };
+  safety: {
+    mutation_confirm_required: boolean;
+    mutation_confirm_header: string;
+    mutation_confirm_values?: string[];
+  };
+}
+
+export interface SystemReadyCheck {
+  required: boolean;
+  ok: boolean;
+}
+
+export interface SystemReadyStatus {
+  ready: boolean;
+  redis: boolean;
+  ha_shared_cache?: boolean;
+  postgres?: boolean;
+  workload_state_backend?: string;
+  checks?: {
+    process?: boolean;
+    redis?: SystemReadyCheck;
+    postgres?: SystemReadyCheck;
+  };
+}
+
 // ─── View types ──────────────────────────────────────────────────────
 export type AppView =
   | 'overview'

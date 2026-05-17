@@ -1083,6 +1083,13 @@ pub(crate) async fn serve_command(
 
     let scheme = if tls_enabled { "https" } else { "http" };
     output::kv("Dashboard URL", &format!("{}://{}:{}", scheme, config.host, config.port));
+    if std::env::var("AETHER_STATE_DATABASE_URL")
+        .ok()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false)
+    {
+        output::kv("Workload state", "PostgreSQL (AETHER_STATE_DATABASE_URL)");
+    }
 
     output::endpoint_category("Workloads");
     output::endpoint("GET", "/health");

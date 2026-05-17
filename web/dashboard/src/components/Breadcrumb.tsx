@@ -37,17 +37,19 @@ export default function Breadcrumb({ currentView, onNavigate }: BreadcrumbProps)
   const label = VIEW_LABELS[currentView];
 
   return (
-    <nav className="mb-5 flex items-center gap-1.5 text-sm flex-wrap" aria-label="Breadcrumb">
-      <button
-        type="button"
-        onClick={() => onNavigate('overview')}
-        className="text-slate-400 hover:text-slate-100 transition flex items-center gap-1 rounded-lg px-1 py-0.5 -mx-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/50"
-      >
-        <Home className="w-3.5 h-3.5 shrink-0" aria-hidden />
-        <span className="hidden sm:inline">Dashboard</span>
-      </button>
-      <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" aria-hidden />
-      <span className="text-slate-100 font-medium">{label}</span>
+    <nav className="dash-breadcrumb mb-6" aria-label="Breadcrumb">
+      <div className="flex min-w-0 flex-wrap items-center gap-1 px-1 py-1">
+        <button
+          type="button"
+          onClick={() => onNavigate('overview')}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+        >
+          <Home className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+          <span className="hidden sm:inline">Home</span>
+        </button>
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-600" aria-hidden />
+        <span className="truncate px-1 py-1.5 text-sm font-medium text-slate-100">{label}</span>
+      </div>
     </nav>
   );
 }

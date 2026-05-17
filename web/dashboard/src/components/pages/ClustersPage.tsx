@@ -742,7 +742,7 @@ export default function ClustersPage() {
           description="Try a different cluster, namespace, or resource kind."
         />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="dash-card-flush">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

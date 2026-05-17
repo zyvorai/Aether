@@ -6,13 +6,17 @@ import type { AppView } from '../../types/api';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
+import PlatformStatusPanel from '../PlatformStatusPanel';
+import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import type { WorkloadResponse, EventSummary, HealthSummary, BackupInfo, SecretSummary, Event, ClusterSummary, PluginInfo, Environment, ApiKeySummary } from '../../types/api';
 
 interface OverviewPageProps {
   onNavigate: (view: AppView) => void;
+  sseConnected?: boolean;
 }
 
-export default function OverviewPage({ onNavigate }: OverviewPageProps) {
+export default function OverviewPage({ onNavigate, sseConnected = false }: OverviewPageProps) {
+  const { capabilities, ready, loading: platformLoading } = useServerCapabilities();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [eventSummary, setEventSummary] = useState<EventSummary | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
@@ -56,8 +60,17 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+      <div>
+        <PlatformStatusPanel platform={null} ready={null} sseConnected={sseConnected} loading />
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton h-24 rounded-xl" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="skeleton h-72 rounded-xl" />
+          <div className="skeleton h-72 rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -67,6 +80,12 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
 
   return (
     <div>
+      <PlatformStatusPanel
+        platform={capabilities?.platform ?? null}
+        ready={ready}
+        sseConnected={sseConnected}
+        loading={platformLoading && !capabilities}
+      />
       {clusterSummary?.summary_note ? (
         <div className="mb-5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95 leading-relaxed">
           {clusterSummary.summary_note}
@@ -104,8 +123,8 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Kubernetes Clusters</h2>
+        <div className="dash-card">
+          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Clusters</h2>
           {!clusterSummary || !clusterSummary.enabled ? (
             <EmptyState
               icon={<Activity size={48} />}
@@ -148,8 +167,8 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
         </div>
 
         {/* Recent Events */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Recent Events</h2>
+        <div className="dash-card">
+          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Events</h2>
           {events.length === 0 ? (
             <EmptyState icon={<Inbox size={48} />} title="No events" description="No events have been recorded yet" />
           ) : (
@@ -169,8 +188,8 @@ export default function OverviewPage({ onNavigate }: OverviewPageProps) {
         </div>
 
         {/* Health Summary */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Health Summary</h2>
+        <div className="dash-card">
+          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Health</h2>
           {healthSummary ? (
             <div className="grid grid-cols-2 gap-4">
               <StatCard title="Healthy" value={healthSummary.healthy} color="green" />

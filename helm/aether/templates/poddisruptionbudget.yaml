@@ -1,0 +1,29 @@
+{{- $wantPdb := false }}
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- $wantPdb = true }}
+{{- else if .Values.podDisruptionBudget.auto }}
+{{- if .Values.autoscaling.enabled }}
+{{- if ge (int .Values.autoscaling.minReplicas) 2 }}
+{{- $wantPdb = true }}
+{{- end }}
+{{- else if ge (int .Values.replicaCount) 2 }}
+{{- $wantPdb = true }}
+{{- end }}
+{{- end }}
+{{- if $wantPdb }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "aether.fullname" . }}
+  labels:
+    {{- include "aether.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aether.selectorLabels" . | nindent 6 }}
+{{- end }}

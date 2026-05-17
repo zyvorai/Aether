@@ -56,7 +56,7 @@ export default function DepsPage() {
   return (
     <div>
       {/* Add Dependency Form */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+      <div className="dash-card mb-6">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
           <Plus size={20} className="text-emerald-400" />
           Add Dependency
@@ -112,7 +112,7 @@ export default function DepsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Startup Order */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="dash-card">
               <h2 className="text-lg font-semibold text-zinc-100 mb-4">Startup Order</h2>
               {graph.startup_order.length === 0 ? (
                 <p className="text-sm text-zinc-500">No startup order defined</p>
@@ -131,7 +131,7 @@ export default function DepsPage() {
             </div>
 
             {/* Issues */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="dash-card">
               <h2 className="text-lg font-semibold text-zinc-100 mb-4">Issues</h2>
               {graph.issues.length === 0 ? (
                 <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export default function DepsPage() {
           </div>
 
           {/* Full Graph JSON */}
-          <div className="mt-6 bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="mt-6 dash-card">
             <h2 className="text-lg font-semibold text-zinc-100 mb-4">Full Graph</h2>
             <CodeBlock title="json">{JSON.stringify(graph, null, 2)}</CodeBlock>
           </div>

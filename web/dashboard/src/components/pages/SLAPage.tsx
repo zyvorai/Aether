@@ -46,7 +46,7 @@ export default function SLAPage() {
           {workloads.map((w) => {
             const sla = slaData[w.name];
             return (
-              <div key={w.name} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <div key={w.name} className="dash-card">
                 <h2 className="text-lg font-semibold text-zinc-100 mb-4">{w.name}</h2>
                 {sla ? (
                   <div className="space-y-3">

@@ -44,7 +44,7 @@ export default function DriftPage() {
       {workloads.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to check for drift" />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="dash-card">
           <h2 className="text-lg font-semibold text-zinc-100 mb-2">Select Workload</h2>
           <p className="text-sm text-zinc-400 mb-4">Click a workload to check for configuration drift</p>
           <div className="flex flex-wrap gap-3">

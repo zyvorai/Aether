@@ -42,7 +42,7 @@ export default function SchedulerPage() {
           <EmptyState icon={<Inbox size={48} />} title="No utilization data" description="No runtimes are reporting utilization" />
         ) : (
           utilization.map((rt) => (
-            <div key={rt.runtime} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div key={rt.runtime} className="dash-card">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-zinc-100 capitalize">{rt.runtime}</h2>
                 <div className="flex items-center gap-2">
@@ -68,7 +68,7 @@ export default function SchedulerPage() {
       </div>
 
       {/* Optimization Suggestions */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+      <div className="dash-card">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Optimization Suggestions</h2>
         {suggestions.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No suggestions" description="No optimization suggestions at this time" />

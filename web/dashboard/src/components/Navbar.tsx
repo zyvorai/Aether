@@ -30,6 +30,7 @@ import {
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
+import PlatformHealthChip from './PlatformHealthChip';
 
 function maskBearer(token: string | null): string {
   if (token === null || token.trim() === '') return 'Not set';
@@ -258,7 +259,7 @@ export default function Navbar({ currentView, onNavigate, username, onLogout: _o
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-lg font-semibold text-white tracking-tight">Aether</span>
-                <span className="hidden lg:block text-[11px] uppercase tracking-[0.22em] text-slate-500">Runtime Control Plane</span>
+                <span className="hidden lg:block text-[11px] uppercase tracking-[0.22em] text-slate-500">Universal Runtime Control Plane</span>
               </div>
             </button>
           </div>
@@ -325,8 +326,9 @@ export default function Navbar({ currentView, onNavigate, username, onLogout: _o
                 <option value="light">Light</option>
               </select>
             </label>
+            <PlatformHealthChip sseConnected={sseConnected ?? false} />
             <span
-              className={`hidden sm:inline-block w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`}
+              className={`sm:hidden inline-block w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 platform-pulse' : 'bg-red-400'}`}
               title={sseConnected ? 'SSE Connected' : 'SSE Disconnected'}
             />
             <span className={`hidden sm:inline text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-500'}`}>{relativeTime}</span>

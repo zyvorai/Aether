@@ -29,7 +29,7 @@ export default function MetricsPage() {
         </button>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+      <div className="dash-card">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Prometheus Metrics</h2>
         {loading ? (
           <div className="flex items-center justify-center h-32">

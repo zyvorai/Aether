@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import type { AppView } from './types/api';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Footer from './components/Footer';
+import DashboardShell from './components/DashboardShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import Breadcrumb from './components/Breadcrumb';
 import ShortcutsHelp from './components/ShortcutsHelp';
@@ -43,28 +41,28 @@ import AuditPage from './components/pages/AuditPage';
 import MetricsPage from './components/pages/MetricsPage';
 
 const heroConfig: Record<AppView, { title: string; subtitle: string }> = {
-  overview: { title: 'Dashboard', subtitle: 'Real-time overview of your universal runtime control plane' },
-  workloads: { title: 'Workloads', subtitle: 'Manage and monitor deployed workloads across all runtimes' },
-  clusters: { title: 'Cluster Browser', subtitle: 'Browse namespaces and Kubernetes resources directly from Aether' },
-  compose: { title: 'Compose Import', subtitle: 'Validate multi-workload compose specs and inspect deploy order before rollout' },
-  ai: { title: 'AI Engine', subtitle: 'Intelligent runtime scoring, scaling advice, and migration planning' },
-  cost: { title: 'Cost Estimation', subtitle: 'Analyze and forecast infrastructure costs across providers' },
-  affinity: { title: 'Runtime Affinity', subtitle: 'Historical performance scores and deployment success rates' },
-  drift: { title: 'Drift Detection', subtitle: 'Detect and reconcile configuration drift in live workloads' },
-  policy: { title: 'Policy Check', subtitle: 'Evaluate workloads against security and compliance policies' },
-  scheduler: { title: 'Scheduler', subtitle: 'Runtime utilization, placement decisions, and optimization' },
-  health: { title: 'Health Monitor', subtitle: 'Real-time health checks, circuit breakers, and restart tracking' },
-  events: { title: 'Events', subtitle: 'System events, alerts, and notifications across all runtimes' },
-  sla: { title: 'SLA Compliance', subtitle: 'Track uptime targets, latency budgets, and error rate limits' },
-  deps: { title: 'Dependencies', subtitle: 'Workload dependency graph, startup order, and cycle detection' },
-  envs: { title: 'Environments', subtitle: 'Manage environment tiers, variables, and workload assignments' },
-  secrets: { title: 'Secrets', subtitle: 'Encrypted secrets management with rotation policies' },
-  backups: { title: 'Backups', subtitle: 'State snapshots, restore points, and backup history' },
-  templates: { title: 'Templates', subtitle: 'Reusable workload templates for rapid deployment' },
-  plugins: { title: 'Plugins', subtitle: 'Installed runtime plugins and their capabilities' },
-  rbac: { title: 'Access Control', subtitle: 'Manage RBAC API keys and operator access from the dashboard' },
-  audit: { title: 'Audit Trail', subtitle: 'Immutable log of all actions with integrity verification' },
-  metrics: { title: 'Metrics', subtitle: 'System performance metrics and resource utilization trends' },
+  overview: { title: 'Dashboard', subtitle: '' },
+  workloads: { title: 'Workloads', subtitle: '' },
+  clusters: { title: 'Cluster Browser', subtitle: '' },
+  compose: { title: 'Compose Import', subtitle: '' },
+  ai: { title: 'AI Engine', subtitle: '' },
+  cost: { title: 'Cost Estimation', subtitle: '' },
+  affinity: { title: 'Runtime Affinity', subtitle: '' },
+  drift: { title: 'Drift Detection', subtitle: '' },
+  policy: { title: 'Policy Check', subtitle: '' },
+  scheduler: { title: 'Scheduler', subtitle: '' },
+  health: { title: 'Health Monitor', subtitle: '' },
+  events: { title: 'Events', subtitle: '' },
+  sla: { title: 'SLA Compliance', subtitle: '' },
+  deps: { title: 'Dependencies', subtitle: '' },
+  envs: { title: 'Environments', subtitle: '' },
+  secrets: { title: 'Secrets', subtitle: '' },
+  backups: { title: 'Backups', subtitle: '' },
+  templates: { title: 'Templates', subtitle: '' },
+  plugins: { title: 'Plugins', subtitle: '' },
+  rbac: { title: 'Access Control', subtitle: '' },
+  audit: { title: 'Audit Trail', subtitle: '' },
+  metrics: { title: 'Metrics', subtitle: '' },
 };
 
 function AetherDashboard() {
@@ -240,7 +238,7 @@ function AetherDashboard() {
   function renderPage() {
     switch (currentView) {
       case 'overview':
-        return <OverviewPage key={refreshKey} onNavigate={handleNavigate} />;
+        return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
       case 'workloads':
         return <WorkloadsPage key={refreshKey} />;
       case 'clusters':
@@ -284,43 +282,43 @@ function AetherDashboard() {
       case 'metrics':
         return <MetricsPage key={refreshKey} />;
       default:
-        return <OverviewPage key={refreshKey} onNavigate={handleNavigate} />;
+        return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
     }
   }
 
   return (
     <ServerCapabilitiesProvider>
-    <div className={shellClass}>
-      <Navbar
+      <DashboardShell
+        shellClass={shellClass}
         currentView={currentView}
-        onNavigate={handleNavigate}
+        heroTitle={hero.title}
+        heroSubtitle={hero.subtitle}
         username={username}
-        onLogout={handleLogout}
-        onRefresh={handleRefresh}
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
-      />
-      <Hero title={hero.title} subtitle={hero.subtitle} />
-      <main className="flex-1 dash-content py-8 lg:py-10">
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+        onRefresh={handleRefresh}
+        commandPalette={
+          <CommandPalette
+            open={commandPaletteOpen}
+            onClose={() => setCommandPaletteOpen(false)}
+            onNavigate={handleNavigate}
+            workloads={workloadNames}
+            onRefresh={() => {
+              setRefreshKey((k) => k + 1);
+              setLastRefreshed(new Date());
+            }}
+          />
+        }
+        shortcutsHelp={shortcutsOpen ? <ShortcutsHelp onClose={() => setShortcutsOpen(false)} /> : null}
+        toastContainer={<ToastContainer />}
+      >
         <ErrorBoundary>
           <Breadcrumb currentView={currentView} onNavigate={handleNavigate} />
           <div className="page-frame">{renderPage()}</div>
         </ErrorBoundary>
-      </main>
-      <Footer />
-      <CommandPalette
-        open={commandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-        onNavigate={handleNavigate}
-        workloads={workloadNames}
-        onRefresh={() => {
-          setRefreshKey((k) => k + 1);
-          setLastRefreshed(new Date());
-        }}
-      />
-      {shortcutsOpen ? <ShortcutsHelp onClose={() => setShortcutsOpen(false)} /> : null}
-      <ToastContainer />
-    </div>
+      </DashboardShell>
     </ServerCapabilitiesProvider>
   );
 }

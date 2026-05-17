@@ -46,7 +46,7 @@ export default function EventsPage() {
       {events.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No events" description="No events have been recorded" />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="dash-card">
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {events.map((ev, i) => (
               <div key={i} className="flex items-start gap-3 p-4 bg-zinc-950/50 rounded-lg">
