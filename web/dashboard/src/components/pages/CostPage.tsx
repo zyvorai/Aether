@@ -30,7 +30,7 @@ export default function CostPage() {
 
   return (
     <div>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+      <div className="dash-card mb-6">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Workload YAML</h2>
         <YamlInput
           buttonText="Estimate Costs"
@@ -44,7 +44,7 @@ export default function CostPage() {
       {estimates.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No estimates" description="Submit a workload YAML to see cost estimates" />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="dash-card-flush">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

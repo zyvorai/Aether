@@ -13,6 +13,10 @@
 #   ./scripts/deploy-remote.sh [flags] <host> [user]
 #   ./scripts/deploy-remote.sh 185.165.240.5 sus
 #
+# Only two positional arguments are used: <host> and optional [user]. Do not pass a URL
+# as a third argument (it is ignored); open TCP on AETHER_NODE_PORT (default 30090) in the
+# host firewall and cloud security group if the service is not reachable from the internet.
+#
 # Flags:
 #   --skip-sync     Skip rsync (AETHER_SKIP_RSYNC=1)
 #   --skip-cargo    Skip cargo build (AETHER_SKIP_CARGO=1)
@@ -22,10 +26,16 @@
 #   --uninstall     Remove Aether from the remote cluster
 #
 # Environment:
+#   AETHER_DEPLOY_REPLICAS — API Deployment replicas (default 1). Use 2+ only with shared RWX state or read-only replicas; local JSON state is single-writer.
+#   AETHER_DEPLOY_PDB — when AETHER_DEPLOY_REPLICAS>=2, apply a PodDisruptionBudget (default 1). Set 0 to skip.
 #   AETHER_SKIP_CILIUM_BOOTSTRAP=1 — skip Cilium bootstrap (same as legacy AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP)
 #   AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1 — legacy alias for the above
 #   AETHER_CILIUM_EGRESS_STRICT=1 — Cilium: kube-apiserver + DNS only (instead of toEntities: all)
 #   AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1 — with strict, also allow toEntities: cluster (in-cluster workloads)
+#   AETHER_SKIP_EXTERNAL_HEALTH=1 — skip curl from this machine to http://<host>:<nodePort>/health (useful in CI)
+#
+# Reachability: SSH keys only affect ssh/rsync. If the script finishes but the URL fails in a browser, open TCP
+#   AETHER_NODE_PORT (default 30090) on the host (ufw) and in your cloud firewall / security group (e.g. Hetzner).
 # ============================================================================
 
 set -euo pipefail
@@ -55,7 +65,7 @@ for arg in "$@"; do
     --local-build) LOCAL_BUILD=1 ;;
     --uninstall) UNINSTALL=1 ;;
     --help|-h)
-      sed -n '2,38p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,39p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) POSITIONAL+=("$arg") ;;
@@ -66,6 +76,10 @@ HOST="${POSITIONAL[0]:-${DEPLOY_HOST:-}}"
 USER="${POSITIONAL[1]:-${DEPLOY_USER:-root}}"
 PASS="${DEPLOY_PASS:-}"
 
+if [ "${#POSITIONAL[@]}" -gt 2 ]; then
+  warn "Ignoring extra argument(s) after <host> [user]: only '${HOST}' and '${USER}' are used (${#POSITIONAL[@]} args given)."
+fi
+
 [ -n "${HOST}" ] || {
   echo "Usage: $0 [flags] <host> [user]"
   exit 1
@@ -74,8 +88,31 @@ PASS="${DEPLOY_PASS:-}"
 AETHER_NS="${AETHER_NAMESPACE:-aether-system}"
 AETHER_IMAGE="${AETHER_IMAGE:-localhost/aether:latest}"
 NODE_PORT="${AETHER_NODE_PORT:-30090}"
+DEPLOY_REPLICAS="${AETHER_DEPLOY_REPLICAS:-1}"
+DEPLOY_PDB="${AETHER_DEPLOY_PDB:-1}"
+case "${DEPLOY_REPLICAS}" in
+  '' | *[!0-9]*) DEPLOY_REPLICAS=1 ;;
+esac
+if [ "${DEPLOY_REPLICAS}" -lt 1 ]; then
+  DEPLOY_REPLICAS=1
+fi
+PDB_YAML_APPEND=""
+if [ "${DEPLOY_REPLICAS}" -ge 2 ] && [ "${DEPLOY_PDB}" != "0" ]; then
+  PDB_YAML_APPEND="$(printf '%s\n' "---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: aether
+  namespace: ${AETHER_NS}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: aether")"
+fi
 AETHER_API_KEY="${AETHER_API_KEY:-}"
 AETHER_LOG_FORMAT="${AETHER_LOG_FORMAT:-json}"
+SKIP_EXT_HEALTH="${AETHER_SKIP_EXTERNAL_HEALTH:-0}"
 
 info() { aether_ok "$*"; }
 warn() { aether_warn "$*"; }
@@ -179,8 +216,13 @@ aether_kv "Import" "${IMPORT_CMD}"
 aether_kv "Namespace" "${AETHER_NS}"
 aether_kv "Image" "${AETHER_IMAGE}"
 aether_kv "NodePort" "${NODE_PORT}"
+aether_kv "Replicas" "${DEPLOY_REPLICAS}"
 aether_kv "Fast path" "rsync=${SKIP_RSYNC} cargo=${SKIP_CARGO} image=${SKIP_IMAGE} local_build=${LOCAL_BUILD}"
 echo ""
+
+if [ "${DEPLOY_REPLICAS}" -ge 2 ]; then
+  warn "AETHER_DEPLOY_REPLICAS>=2: remote YAML has no shared state volume — each pod has its own empty store. Use replicas=1 or extend the manifest with RWX persistence before scaling the API."
+fi
 
 if [ "${UNINSTALL}" = "1" ]; then
   step "Removing Aether from remote cluster"
@@ -298,7 +340,7 @@ metadata:
   name: aether
   namespace: ${AETHER_NS}
 spec:
-  replicas: 1
+  replicas: ${DEPLOY_REPLICAS}
   selector:
     matchLabels:
       app: aether
@@ -358,6 +400,7 @@ spec:
     port: 5090
     targetPort: 5090
     nodePort: ${NODE_PORT}
+${PDB_YAML_APPEND}
 YAML
 ${K} -n ${AETHER_NS} rollout restart deployment/aether >/dev/null 2>&1 || true
 ${K} -n ${AETHER_NS} rollout status deployment/aether --timeout=180s
@@ -369,6 +412,31 @@ ssh_cmd "
   ${K} -n ${AETHER_NS} get pods -o wide
   ${K} -n ${AETHER_NS} get svc aether
 " || error "Verification failed"
+
+LOCAL_HP="$(ssh_cmd "command -v curl >/dev/null 2>&1 && { code=\$(curl -sS -m 12 -o /dev/null -w '%{http_code}' http://127.0.0.1:${NODE_PORT}/health 2>/dev/null || true); echo \"\${code:-000}\"; } || echo nocurl" | tr -d '\r' | tail -1)"
+if [ "${LOCAL_HP}" = "200" ]; then
+  info "NodePort responds on the server (curl 127.0.0.1:${NODE_PORT}/health → 200)"
+  if [ "${SKIP_EXT_HEALTH}" != "1" ] && command -v curl >/dev/null 2>&1; then
+    EXT_HP="$(curl -sS -m 12 -o /dev/null -w '%{http_code}' "http://${HOST}:${NODE_PORT}/health" 2>/dev/null || printf '%s' "000")"
+    if [ "${EXT_HP}" = "200" ]; then
+      info "Health check from this machine → http://${HOST}:${NODE_PORT}/health (200)"
+    else
+      warn "Health check from this machine → http://${HOST}:${NODE_PORT}/health returned '${EXT_HP}' (not 200)."
+      warn "SSH and the in-cluster deploy are unrelated to this: open inbound TCP ${NODE_PORT} on the server (sudo ufw allow ${NODE_PORT}/tcp) and in your cloud provider firewall / security group, then retry the URL."
+    fi
+  elif [ "${SKIP_EXT_HEALTH}" != "1" ]; then
+    warn "Install curl on this machine to probe http://${HOST}:${NODE_PORT}/health from here, or test in a browser after opening TCP ${NODE_PORT} in the cloud firewall."
+  fi
+elif [ "${LOCAL_HP}" = "nocurl" ]; then
+  warn "Remote host has no curl — install curl to auto-probe NodePort, or test manually: curl -sS http://127.0.0.1:${NODE_PORT}/health"
+else
+  warn "NodePort health from server loopback returned '${LOCAL_HP}' (expected 200)."
+  warn "Pod diagnostics (describe + logs):"
+  ssh_cmd "${K} -n ${AETHER_NS} get events --sort-by=.lastTimestamp | tail -n 25" || true
+  ssh_cmd "${K} -n ${AETHER_NS} describe pod -l app=aether 2>/dev/null | tail -n 80" || true
+  ssh_cmd "${K} -n ${AETHER_NS} logs deploy/aether --tail=60 2>&1" || true
+  warn "Multi-node cluster? imagePullPolicy:Never requires the image on every node that can run the pod. Re-run image import on each node or use a registry."
+fi
 
 echo ""
 info "Aether is available at http://${HOST}:${NODE_PORT}"

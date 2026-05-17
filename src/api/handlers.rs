@@ -40,6 +40,16 @@ fn clamp_page(limit: Option<usize>, offset: Option<usize>, default_limit: usize,
     (lim, off)
 }
 
+/// Persist workload state to Postgres (if enabled) and the configured JSON file.
+async fn persist_workload_api(app: &AppState, store: &StateStore) -> anyhow::Result<()> {
+    crate::state_postgres::persist_workload_state(
+        app.workload_state_pg.as_ref(),
+        &app.state_path,
+        store,
+    )
+    .await
+}
+
 fn workload_spec_file(name: &str) -> PathBuf {
     crate::resources::aether_path(&format!("specs/{name}.yaml"))
 }
@@ -478,23 +488,40 @@ pub(crate) async fn api_oidc_logout(AxumState(app_state): AxumState<AppState>) -
     res
 }
 
-/// GET /api/system/ready — combined readiness (Redis when used, process up).
+/// GET /api/system/ready — combined readiness (Postgres workload state + Redis OIDC cache when configured).
 pub(crate) async fn api_system_ready(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
-    let redis_ok = app_state.shared_cache.redis_ping_ok().await;
     let ha_redis = app_state.shared_cache.uses_redis();
-    if ha_redis && !redis_ok {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            Json(serde_json::json!({ "ready": false, "redis": false })),
-        )
-            .into_response();
-    }
+    let redis_ok = app_state.shared_cache.redis_ping_ok().await;
+    let postgres_required = app_state.workload_state_pg.is_some();
+    let postgres_ok = if let Some(ref pg) = app_state.workload_state_pg {
+        pg.ping_ok().await
+    } else {
+        true
+    };
+    let workload_backend = if postgres_required {
+        "postgresql"
+    } else {
+        "local-json"
+    };
+    let ready = (!ha_redis || redis_ok) && (!postgres_required || postgres_ok);
+    let status = if ready {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
     (
-        StatusCode::OK,
+        status,
         Json(serde_json::json!({
-            "ready": true,
+            "ready": ready,
             "redis": redis_ok,
             "ha_shared_cache": ha_redis,
+            "postgres": postgres_ok,
+            "workload_state_backend": workload_backend,
+            "checks": {
+                "process": true,
+                "redis": { "required": ha_redis, "ok": redis_ok },
+                "postgres": { "required": postgres_required, "ok": postgres_ok },
+            },
         })),
     )
         .into_response()
@@ -764,14 +791,9 @@ pub(crate) async fn create_workload(
     );
 
     // Persist to disk
-    if let Err(e) = state.save(&StateStore::default_path()) {
+    if let Err(e) = persist_workload_api(&app_state, &state).await {
         return err_internal::<String>(e);
     }
-
-    emit_sse(&app_state, &ServerEvent::WorkloadChanged {
-        name: request.spec.metadata.name.clone(),
-        action: "created".to_string(),
-    });
 
     created_json(format!("Workload {} created", request.spec.metadata.name))
 }
@@ -810,14 +832,9 @@ pub(crate) async fn delete_workload(
     match state.remove(&name) {
         Some(_) => {
             // Persist to disk
-            if let Err(e) = state.save(&StateStore::default_path()) {
+            if let Err(e) = persist_workload_api(&app_state, &state).await {
                 return err_internal::<String>(e);
             }
-
-            emit_sse(&app_state, &ServerEvent::WorkloadChanged {
-                name: name.clone(),
-                action: "deleted".to_string(),
-            });
 
             (
                 StatusCode::OK,
@@ -913,7 +930,7 @@ pub(crate) async fn start_workload(
         },
     );
 
-    if let Err(e) = state.save(&StateStore::default_path()) {
+    if let Err(e) = persist_workload_api(&app_state, &state).await {
         return err_internal::<String>(e);
     }
 
@@ -1036,7 +1053,7 @@ pub(crate) async fn update_workload(
             node_labels: workload_state.node_labels,
         },
     );
-    if let Err(e) = state.save(&StateStore::default_path()) {
+    if let Err(e) = persist_workload_api(&app_state, &state).await {
         return err_internal::<String>(e);
     }
 
@@ -2717,7 +2734,7 @@ pub(crate) async fn migrate_workload(
     );
 
     let migration_start = std::time::Instant::now();
-    let engine = MigrationEngine::new(StateStore::default_path());
+    let engine = MigrationEngine::new(app_state.state_path.clone());
     let result = match engine.migrate(plan).await {
         Ok(r) => r,
         Err(e) => {
@@ -2748,7 +2765,7 @@ pub(crate) async fn migrate_workload(
 
     if result.success {
         // Reload state after migration engine updated it
-        let new_state = match StateStore::load(&StateStore::default_path()) {
+        let new_state = match StateStore::load(&app_state.state_path) {
             Ok(s) => s,
             Err(e) => {
                 tracing::error!(
@@ -2766,6 +2783,12 @@ pub(crate) async fn migrate_workload(
         // Sync our in-memory state with what migration engine wrote
         if let Some(updated) = new_state.get(&name) {
             state.upsert(name.clone(), updated.clone());
+        }
+        if let Err(e) = persist_workload_api(&app_state, &state).await {
+            return err_internal::<String>(format!(
+                "Migration persisted to disk but failed to sync shared state: {}",
+                e
+            ));
         }
 
         emit_sse(&app_state, &ServerEvent::WorkloadChanged {
@@ -3207,21 +3230,49 @@ pub(crate) async fn api_webhook_test(Json(req): Json<WebhookTestRequest>) -> imp
 }
 
 /// GET /api/server — Process capabilities (auth modes, persistence).
-pub(crate) async fn api_server_info() -> impl IntoResponse {
+pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
     let oidc_issuer = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty());
     let oidc_ready = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty()).is_some()
         && std::env::var("AETHER_OIDC_CLIENT_ID").ok().filter(|s| !s.is_empty()).is_some()
         && std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty()).is_some()
         && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
-    let redis_configured = std::env::var("AETHER_REDIS_URL").ok().filter(|s| !s.is_empty()).is_some();
+    let redis_configured = app_state.shared_cache.uses_redis();
+    let postgres_configured = app_state.workload_state_pg.is_some();
+    let state_poll_secs = std::env::var("AETHER_STATE_POLL_SECS")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .filter(|n| *n > 0 && *n <= 3600)
+        .unwrap_or(2);
+    let workload_backend = if postgres_configured {
+        "postgresql"
+    } else {
+        "local-json"
+    };
+    let ha_mode = if postgres_configured && redis_configured {
+        "multi-node-full"
+    } else if postgres_configured {
+        "multi-node-state"
+    } else if redis_configured {
+        "multi-node-cache"
+    } else {
+        "single"
+    };
     let mutation_confirm = std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
         .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
     ok_json(serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
-        "persistence": "local-json",
-        "ha_mode": if redis_configured { "multi-node-cache" } else { "single" },
+        "persistence": workload_backend,
+        "workload_state": {
+            "backend": workload_backend,
+            "configured": postgres_configured,
+            "poll_secs": state_poll_secs,
+            "env": "AETHER_STATE_DATABASE_URL",
+            "poll_env": "AETHER_STATE_POLL_SECS",
+        },
+        "ha_mode": ha_mode,
         "ha_shared_cache": redis_configured,
+        "tls": app_state.tls_active,
         "mtls": false,
         "oidc": {
             "enabled": oidc_ready,
@@ -3356,7 +3407,7 @@ pub(crate) async fn restore_backup(
         Ok(b) => b,
         Err(e) => return err_internal::<String>(e),
     };
-    let state_path = StateStore::default_path();
+    let state_path = app_state.state_path.clone();
     let res = if req.merge.unwrap_or(false) {
         backup.merge(&state_path)
     } else {
@@ -3365,13 +3416,18 @@ pub(crate) async fn restore_backup(
     if let Err(e) = res {
         return err_internal::<String>(e);
     }
-    match StateStore::load(&state_path) {
-        Ok(new_state) => {
-            *app_state.state.write().await = new_state;
-        }
+    let new_state = match StateStore::load(&state_path) {
+        Ok(s) => s,
         Err(e) => {
             return err_internal::<String>(format!("Restored file but failed to reload state: {}", e));
         }
+    };
+    *app_state.state.write().await = new_state.clone();
+    if let Err(e) = persist_workload_api(&app_state, &new_state).await {
+        return err_internal::<String>(format!(
+            "State restored to disk but failed to sync shared store: {}",
+            e
+        ));
     }
     record_audit_event(
         crate::audit::AuditAction::BackupRestore,

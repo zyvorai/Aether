@@ -73,7 +73,7 @@ export default function PluginsPage() {
       </div>
 
       {discoverResult && (
-        <div className="mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="mb-6 dash-card">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4">Discovery Result</h2>
           <CodeBlock title="json">{discoverResult}</CodeBlock>
         </div>
@@ -82,7 +82,7 @@ export default function PluginsPage() {
       {visiblePlugins.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No plugins" description="No plugins are installed. Try discovering plugins." />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="dash-card-flush">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

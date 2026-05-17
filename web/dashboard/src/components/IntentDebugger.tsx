@@ -49,7 +49,7 @@ export default function IntentDebugger() {
 
   if (!result) {
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
+      <div className="dash-card text-center">
         <h3 className="text-lg font-bold text-white mb-2">Intent Debugger</h3>
         <p className="text-zinc-400 text-sm mb-4">
           Understand why the AI engine selected a specific runtime. See scoring across all dimensions.
@@ -85,7 +85,7 @@ export default function IntentDebugger() {
     : [];
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+    <div className="dash-card-flush">
       <div className="px-4 py-3 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between">
         <h3 className="text-lg font-bold text-white">Intent Debugger</h3>
         <button onClick={analyze} className="text-xs text-aether hover:text-aether-light">Re-analyze</button>

@@ -98,7 +98,7 @@ export default function AIPage() {
     <div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* AI Recommendation */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="dash-card">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4">AI Recommendation</h2>
           <YamlInput
             buttonText="Get Recommendation"
@@ -146,7 +146,7 @@ export default function AIPage() {
         </div>
 
         {/* Scaling Advice */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="dash-card">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
             <TrendingUp size={20} className="text-blue-400" />
             Scaling Advice
@@ -194,7 +194,7 @@ export default function AIPage() {
       </div>
 
       {/* Migration Advice */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+      <div className="dash-card mb-6">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
           <ArrowRightLeft size={20} className="text-purple-400" />
           Migration Advice
@@ -278,7 +278,7 @@ export default function AIPage() {
       </Modal>
 
       {/* Profiler */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+      <div className="dash-card">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
           <Cpu size={20} className="text-cyan-400" />
           Workload Profiler

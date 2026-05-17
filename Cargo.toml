@@ -76,6 +76,8 @@ openidconnect = { version = "4", default-features = false, features = ["reqwest"
 jsonwebtoken = "9"
 rand = "0.8"
 redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
+deadpool-postgres = "0.14"
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
 url = "2"
 base64 = "0.22"
 
