@@ -245,7 +245,7 @@ export default function WorkloadsPage() {
       {filteredWorkloads.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to see it here" />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="dash-card-flush">
           <div className="overflow-x-auto min-w-0">
             <table className="w-full table-fixed border-collapse">
               <thead>

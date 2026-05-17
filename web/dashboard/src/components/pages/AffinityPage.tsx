@@ -52,7 +52,7 @@ export default function AffinityPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {classes.map(([cls, scores]) => (
-            <div key={cls} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div key={cls} className="dash-card">
               <h2 className="text-lg font-semibold text-zinc-100 mb-4 capitalize">
                 {cls.replace(/-/g, ' ')}
               </h2>

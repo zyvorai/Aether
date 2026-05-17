@@ -6,6 +6,14 @@
 #   AETHER_CILIUM_EGRESS_STRICT=1 — kube-apiserver + kube-dns/CoreDNS only (not toEntities: all)
 #   AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1 — with strict mode, also allow toEntities: cluster (add-on policies)
 
+# kubectl may be a multi-word command (e.g. sudo /usr/local/bin/k3s kubectl); do not quote as a single path.
+aether__kubectl_exec() {
+  local _kubectl="${1:?kubectl command}"
+  shift
+  # shellcheck disable=SC2086
+  ${_kubectl} "$@"
+}
+
 aether_rbac_manifest() {
   local root="${1:?repo root}"
   echo "${root}/deploy/k8s/rbac/aether-rbac.yaml"
@@ -21,22 +29,22 @@ aether_apply_rbac() {
     echo "Missing RBAC manifest: ${rbac}" >&2
     return 1
   }
-  sed "s/__AETHER_NAMESPACE__/${ns}/g" "${rbac}" | "${kubectl_bin}" apply -f -
+  sed "s/__AETHER_NAMESPACE__/${ns}/g" "${rbac}" | aether__kubectl_exec "${kubectl_bin}" apply -f -
 }
 
 # Remove Cilium policies this repo manages (safe before re-apply / mode switch).
 aether_delete_managed_cilium_policies() {
   local ns="${1:?namespace}"
   local kubectl_bin="${2:-kubectl}"
-  if "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
-    "${kubectl_bin}" delete cnp -n "${ns}" \
+  if aether__kubectl_exec "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
+    aether__kubectl_exec "${kubectl_bin}" delete cnp -n "${ns}" \
       allow-aether-egress \
       allow-aether-egress-strict \
       allow-aether-egress-strict-cluster \
       --ignore-not-found 2>/dev/null || true
   fi
-  if "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
-    "${kubectl_bin}" delete ccnp \
+  if aether__kubectl_exec "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
+    aether__kubectl_exec "${kubectl_bin}" delete ccnp \
       aether-control-plane-egress \
       aether-control-plane-egress-strict \
       aether-control-plane-egress-strict-cluster \
@@ -58,7 +66,7 @@ aether_apply_cilium_bootstrap() {
     return 0
   fi
 
-  if ! "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
+  if ! aether__kubectl_exec "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
     echo "CiliumNetworkPolicy CRD not found — skipping Cilium bootstrap"
     return 0
   fi
@@ -77,26 +85,26 @@ aether_apply_cilium_bootstrap() {
       echo "Missing ${s}" >&2
       return 1
     }
-    sed "s/__AETHER_NAMESPACE__/${ns}/g" "${s}" | "${kubectl_bin}" apply -f -
+    sed "s/__AETHER_NAMESPACE__/${ns}/g" "${s}" | aether__kubectl_exec "${kubectl_bin}" apply -f -
     echo "Applied CiliumNetworkPolicy allow-aether-egress-strict (${ns}) — kube-apiserver + DNS"
 
     if [ "${strict_cluster}" = "1" ] || [ "${strict_cluster}" = "true" ]; then
       local sc="${bootstrap}/cilium-aether-egress-strict-cluster.yaml"
-      [ -f "${sc}" ] && sed "s/__AETHER_NAMESPACE__/${ns}/g" "${sc}" | "${kubectl_bin}" apply -f - && \
+      [ -f "${sc}" ] && sed "s/__AETHER_NAMESPACE__/${ns}/g" "${sc}" | aether__kubectl_exec "${kubectl_bin}" apply -f - && \
         echo "Applied CiliumNetworkPolicy allow-aether-egress-strict-cluster (${ns})"
     fi
 
     if [ -f "${bootstrap}/cilium-aether-clusterwide-egress-strict.yaml" ] && \
-      "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
+      aether__kubectl_exec "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
       sed "s/__AETHER_NAMESPACE__/${ns}/g" "${bootstrap}/cilium-aether-clusterwide-egress-strict.yaml" | \
-        "${kubectl_bin}" apply -f - && echo "Applied CiliumClusterwideNetworkPolicy aether-control-plane-egress-strict" || \
+        aether__kubectl_exec "${kubectl_bin}" apply -f - && echo "Applied CiliumClusterwideNetworkPolicy aether-control-plane-egress-strict" || \
         echo "Optional clusterwide strict Cilium policy not applied"
     fi
 
     if [ "${strict_cluster}" = "1" ] || [ "${strict_cluster}" = "true" ]; then
       local scc="${bootstrap}/cilium-aether-clusterwide-egress-strict-cluster.yaml"
-      if [ -f "${scc}" ] && "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
-        sed "s/__AETHER_NAMESPACE__/${ns}/g" "${scc}" | "${kubectl_bin}" apply -f - && \
+      if [ -f "${scc}" ] && aether__kubectl_exec "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
+        sed "s/__AETHER_NAMESPACE__/${ns}/g" "${scc}" | aether__kubectl_exec "${kubectl_bin}" apply -f - && \
           echo "Applied CiliumClusterwideNetworkPolicy aether-control-plane-egress-strict-cluster" || true
       fi
     fi
@@ -110,12 +118,12 @@ aether_apply_cilium_bootstrap() {
     return 0
   fi
 
-  sed "s/__AETHER_NAMESPACE__/${ns}/g" "${egress}" | "${kubectl_bin}" apply -f -
+  sed "s/__AETHER_NAMESPACE__/${ns}/g" "${egress}" | aether__kubectl_exec "${kubectl_bin}" apply -f -
   echo "Applied CiliumNetworkPolicy allow-aether-egress (${ns}) — toEntities: all"
 
   local ccnp="${bootstrap}/cilium-aether-clusterwide-egress.yaml"
-  if [ -f "${ccnp}" ] && "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
-    sed "s/__AETHER_NAMESPACE__/${ns}/g" "${ccnp}" | "${kubectl_bin}" apply -f - && \
+  if [ -f "${ccnp}" ] && aether__kubectl_exec "${kubectl_bin}" get crd ciliumclusterwidenetworkpolicies.cilium.io &>/dev/null; then
+    sed "s/__AETHER_NAMESPACE__/${ns}/g" "${ccnp}" | aether__kubectl_exec "${kubectl_bin}" apply -f - && \
       echo "Applied CiliumClusterwideNetworkPolicy aether-control-plane-egress" || \
       echo "Optional clusterwide Cilium policy not applied"
   fi
@@ -128,19 +136,19 @@ aether_print_cluster_mesh_report() {
   echo -e "${A_CYN}${A_BLD}     🕸  Runtime stack probe${A_RST}"
   echo ""
 
-  if "${kubectl_bin}" get crd virtualmachines.kubevirt.io &>/dev/null; then
+  if aether__kubectl_exec "${kubectl_bin}" get crd virtualmachines.kubevirt.io &>/dev/null; then
     aether_kv "KubeVirt" "${A_GRN}CRDs present${A_RST}"
   else
     aether_kv "KubeVirt" "${A_DIM}— (install KubeVirt for VM workloads)${A_RST}"
   fi
 
-  if "${kubectl_bin}" get crd baremetalhosts.metal3.io &>/dev/null; then
+  if aether__kubectl_exec "${kubectl_bin}" get crd baremetalhosts.metal3.io &>/dev/null; then
     aether_kv "Metal3" "${A_GRN}BareMetalHost CRD present${A_RST}"
   else
     aether_kv "Metal3" "${A_DIM}— (optional bare metal)${A_RST}"
   fi
 
-  if "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
+  if aether__kubectl_exec "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
     aether_kv "Cilium" "${A_GRN}Network policies available${A_RST}"
     if [ "${AETHER_CILIUM_EGRESS_STRICT:-}" = "1" ] || [ "${AETHER_CILIUM_EGRESS_STRICT:-}" = "true" ]; then
       if [ "${AETHER_CILIUM_STRICT_ALLOW_CLUSTER:-}" = "1" ] || [ "${AETHER_CILIUM_STRICT_ALLOW_CLUSTER:-}" = "true" ]; then
@@ -155,7 +163,7 @@ aether_print_cluster_mesh_report() {
     aether_kv "Cilium" "${A_DIM}— (Cilium bootstrap skipped)${A_RST}"
   fi
 
-  if "${kubectl_bin}" get crd datavolumes.cdi.kubevirt.io &>/dev/null; then
+  if aether__kubectl_exec "${kubectl_bin}" get crd datavolumes.cdi.kubevirt.io &>/dev/null; then
     aether_kv "CDI" "${A_GRN}DataVolume CRD present${A_RST}"
   else
     aether_kv "CDI" "${A_DIM}— (optional with KubeVirt images)${A_RST}"

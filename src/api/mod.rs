@@ -80,6 +80,29 @@ fn ensure_mutation_confirm(method: &Method, path: &str, headers: &HeaderMap) -> 
     }
 }
 
+/// Baseline security headers for dashboard + API responses (TLS termination may add HSTS upstream).
+async fn security_headers_middleware(req: Request<Body>, next: Next) -> Response {
+    let mut res = next.run(req).await;
+    let h = res.headers_mut();
+    let _ = h.insert(
+        HeaderName::from_static("x-content-type-options"),
+        HeaderValue::from_static("nosniff"),
+    );
+    let _ = h.insert(
+        HeaderName::from_static("x-frame-options"),
+        HeaderValue::from_static("SAMEORIGIN"),
+    );
+    let _ = h.insert(
+        HeaderName::from_static("referrer-policy"),
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    let _ = h.insert(
+        HeaderName::from_static("permissions-policy"),
+        HeaderValue::from_static("accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"),
+    );
+    res
+}
+
 async fn observability_middleware(req: Request<Body>, next: Next) -> Response {
     let hdr = HeaderName::from_static("x-request-id");
     let rid = req
@@ -291,8 +314,29 @@ async fn run_background_health_check(state: &Arc<RwLock<StateStore>>) -> anyhow:
 
 /// Start the API server
 pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
-    // Load state
-    let state_store = StateStore::load(&config.state_path)?;
+    let state_path = config.state_path.clone();
+
+    let workload_state_pg: Option<std::sync::Arc<crate::state_postgres::WorkloadStatePool>> =
+        match std::env::var("AETHER_STATE_DATABASE_URL")
+            .ok()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+        {
+            Some(url) => {
+                let pool = crate::state_postgres::WorkloadStatePool::connect(&url).await?;
+                pool.bootstrap_from_file_if_empty(&state_path).await?;
+                tracing::info!("workload state: PostgreSQL backend enabled (AETHER_STATE_DATABASE_URL)");
+                Some(std::sync::Arc::new(pool))
+            }
+            None => None,
+        };
+
+    let state_store = if let Some(ref pg) = workload_state_pg {
+        pg.load().await?
+    } else {
+        StateStore::load(&state_path)?
+    };
+
     let (event_tx, _) = broadcast::channel::<String>(256);
 
     // Load RBAC store (create empty if not found)
@@ -313,7 +357,13 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         shared_cache,
         oidc,
         tls_active: tls_enabled,
+        state_path,
+        workload_state_pg: workload_state_pg.clone(),
     };
+
+    if let Some(pg) = workload_state_pg {
+        crate::state_postgres::spawn_workload_state_poller(pg, app_state.state.clone());
+    }
 
     // Spawn background health check loop
     {
@@ -451,6 +501,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
                 .layer(cors)
                 .layer(middleware::from_fn_with_state(app_state.clone(), auth_middleware))
                 .layer(middleware::from_fn(observability_middleware))
+                .layer(middleware::from_fn(security_headers_middleware))
         )
         .with_state(app_state);
 
@@ -472,6 +523,20 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         println!("🔐 API authentication enabled (AETHER_API_KEY)");
     } else {
         println!("⚠️  No AETHER_API_KEY set — API is unauthenticated. Set AETHER_API_KEY for production use.");
+    }
+    if std::env::var("AETHER_STATE_DATABASE_URL")
+        .ok()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false)
+    {
+        println!("🗄️  Shared workload state: PostgreSQL (multi-replica API ready)");
+    }
+    if std::env::var("AETHER_REDIS_URL")
+        .ok()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false)
+    {
+        println!("🔗 OIDC session cache: Redis (AETHER_REDIS_URL)");
     }
     if std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
         .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))

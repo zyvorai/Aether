@@ -14,6 +14,7 @@ use tokio::sync::{Mutex, RwLock};
 pub struct ApiConfig {
     pub host: String,
     pub port: u16,
+    /// Path to the workload `state.json` file (mirrored when `AETHER_STATE_DATABASE_URL` is set).
     pub state_path: PathBuf,
     /// TLS certificate file path (enables HTTPS when set with tls_key)
     pub tls_cert: Option<PathBuf>,
@@ -66,6 +67,10 @@ pub(crate) struct AppState {
     pub(crate) oidc: Option<Arc<crate::oidc::OidcRuntime>>,
     /// True when the API is serving HTTPS (used for Secure session cookies).
     pub(crate) tls_active: bool,
+    /// Path to the workload state JSON file (mirrored when Postgres is enabled).
+    pub(crate) state_path: PathBuf,
+    /// Optional Postgres pool for shared workload state across API replicas.
+    pub(crate) workload_state_pg: Option<Arc<crate::state_postgres::WorkloadStatePool>>,
 }
 
 pub(crate) struct PortForwardSession {

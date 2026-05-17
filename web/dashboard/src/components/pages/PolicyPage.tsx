@@ -26,7 +26,7 @@ export default function PolicyPage() {
 
   return (
     <div>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+      <div className="dash-card mb-6">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Workload YAML</h2>
         <YamlInput
           buttonText="Check Policies"
@@ -42,7 +42,7 @@ export default function PolicyPage() {
       ) : (
         <div className="space-y-6">
           {/* Summary */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="dash-card">
             <div className="flex items-center gap-3">
               <Badge
                 text={result.passed ? 'PASSED' : 'FAILED'}
@@ -56,7 +56,7 @@ export default function PolicyPage() {
 
           {/* Violations */}
           {result.violations.length > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="dash-card">
               <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
                 <AlertCircle size={20} className="text-red-400" />
                 Violations ({result.violations.length})
@@ -81,7 +81,7 @@ export default function PolicyPage() {
 
           {/* Warnings */}
           {result.warnings.length > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="dash-card">
               <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
                 <AlertTriangle size={20} className="text-amber-400" />
                 Warnings ({result.warnings.length})

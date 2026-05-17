@@ -79,7 +79,7 @@ export default function AuditPage() {
       {audit.recent_events.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No recent events" />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="dash-card">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4">Recent Events</h2>
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {audit.recent_events.map((ev) => (

@@ -36,6 +36,7 @@ pub mod secrets;
 pub mod sla;
 pub mod spec;
 pub mod state;
+pub mod state_postgres;
 pub mod templates;
 pub mod ui;
 
