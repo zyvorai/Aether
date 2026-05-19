@@ -1,69 +1,283 @@
-import { useState, useEffect } from 'react';
-import { TrendingUp, Cpu, Search, Inbox, ArrowRightLeft, Target } from 'lucide-react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { Cpu, Search, Target, TrendingUp, Zap } from 'lucide-react';
 import { apiFetch, apiPost } from '../../utils/api';
+import { formatPercent, formatUSD } from '../../utils/formatters';
 import YamlInput from '../YamlInput';
-import CodeBlock from '../CodeBlock';
-import EmptyState from '../EmptyState';
-import Badge, { RuntimeBadge } from '../Badge';
 import BarChart from '../BarChart';
-import Modal from '../Modal';
-import type { WorkloadResponse, ScoringResult, ScalingAdvice, MigrationAdvice } from '../../types/api';
+import Badge, { RuntimeBadge } from '../Badge';
+import EmptyState from '../EmptyState';
+import PageTabs from '../PageTabs';
+import WorkloadSelect from '../WorkloadSelect';
+import type { WorkloadResponse, ScoringResult, ScalingAdvice, RuntimeScore } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2 border-b border-slate-800/60 last:border-0">
+      <span className="text-xs font-medium uppercase tracking-wider text-slate-500 shrink-0">{label}</span>
+      <span className="text-sm text-slate-200 text-right">{value}</span>
+    </div>
+  );
+}
+
+function confidenceVariant(confidence: number): 'green' | 'yellow' | 'muted' {
+  if (confidence >= 0.8) return 'green';
+  if (confidence >= 0.6) return 'yellow';
+  return 'muted';
+}
+
+function ScoringResultPanel({ result }: { result: ScoringResult }) {
+  const sorted = [...result.scores].sort((a, b) => b.total_score - a.total_score);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <RuntimeBadge runtime={result.recommended} />
+        <Badge
+          text={`${formatPercent(result.confidence, 0)} confidence`}
+          variant={confidenceVariant(result.confidence)}
+        />
+        <Badge text={result.workload_class} variant="muted" />
+      </div>
+
+      <div className="space-y-4">
+        {sorted.map((s) => (
+          <RuntimeScoreBlock key={s.runtime} score={s} recommended={result.recommended} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recommended: string }) {
+  const isRecommended = score.runtime === recommended;
+
+  return (
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'border-slate-800/80 bg-slate-950/40'}`}>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <RuntimeBadge runtime={score.runtime} />
+        {isRecommended && <Badge text="Recommended" variant="accent" />}
+      </div>
+      <BarChart label="Overall score" percent={score.total_score * 100} />
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <BarChart label="Cost" percent={score.cost_score * 100} />
+        <BarChart label="Performance" percent={score.performance_score * 100} />
+        <BarChart label="Reliability" percent={score.reliability_score * 100} />
+        <BarChart label="Availability" percent={score.availability_score * 100} />
+      </div>
+      {score.reasons.length > 0 && (
+        <ul className="mt-3 space-y-1 text-xs text-slate-400">
+          {score.reasons.map((r, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="text-emerald-400 shrink-0">+</span>
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {score.warnings.length > 0 && (
+        <ul className="mt-2 space-y-1 text-xs text-amber-400/90">
+          {score.warnings.map((w, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="shrink-0">!</span>
+              <span>{w}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge text={advice.action} variant="blue" />
+        <Badge
+          text={`${formatPercent(advice.confidence, 0)} confidence`}
+          variant={confidenceVariant(advice.confidence)}
+        />
+      </div>
+      <dl className="space-y-0">
+        <DetailRow label="Current replicas" value={advice.current_replicas} />
+        <DetailRow label="Recommended replicas" value={advice.recommended_replicas} />
+        <DetailRow label="Reason" value={advice.reason} />
+      </dl>
+      {advice.forecast && (
+        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Forecast</h4>
+          <dl className="space-y-0">
+            <DetailRow label="Trend" value={advice.forecast.trend} />
+            <DetailRow label="Predicted" value={advice.forecast.predicted_value.toFixed(2)} />
+            <DetailRow
+              label="Range"
+              value={`${advice.forecast.lower_bound.toFixed(2)} – ${advice.forecast.upper_bound.toFixed(2)}`}
+            />
+            <DetailRow label="Horizon" value={`${advice.forecast.horizon_minutes} min`} />
+          </dl>
+        </div>
+      )}
+      {advice.cost_impact && (
+        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Cost impact</h4>
+          <dl className="space-y-0">
+            <DetailRow label="Current hourly" value={formatUSD(advice.cost_impact.current_hourly)} />
+            <DetailRow label="Projected hourly" value={formatUSD(advice.cost_impact.projected_hourly)} />
+            <DetailRow label="Delta hourly" value={formatUSD(advice.cost_impact.delta_hourly)} />
+            <DetailRow label="Delta monthly" value={formatUSD(advice.cost_impact.delta_monthly)} />
+          </dl>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface WorkloadProfileResult {
+  name: string;
+  classification: string;
+  optimization_score: number;
+  resource_analysis?: {
+    overall_efficiency: number;
+    waste_detected: boolean;
+    cpu_efficiency: number;
+    memory_efficiency: number;
+  };
+  recommendations?: Array<{
+    title: string;
+    description: string;
+    priority: string;
+    category: string;
+    estimated_savings_pct: number;
+  }>;
+}
+
+interface LogAnalysisResult {
+  total_lines: number;
+  error_count: number;
+  warning_count: number;
+  error_rate: number;
+  health_assessment?: { status: string; score: number; issues?: string[]; suggestions?: string[] };
+  patterns?: Array<{ pattern: string; count: number; severity: string }>;
+  anomalies?: Array<{ description: string; severity: string }>;
+}
+
+function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
+  const ra = data.resource_analysis;
+  return (
+    <div className="space-y-4">
+      <dl className="space-y-0">
+        <DetailRow label="Workload" value={data.name} />
+        <DetailRow label="Classification" value={String(data.classification).replace(/([A-Z])/g, ' $1').trim()} />
+        <DetailRow label="Optimization score" value={formatPercent(data.optimization_score, 0)} />
+        {ra && (
+          <>
+            <DetailRow label="Overall efficiency" value={formatPercent(ra.overall_efficiency, 0)} />
+            <DetailRow label="Waste detected" value={ra.waste_detected ? 'Yes' : 'No'} />
+            <DetailRow label="CPU efficiency" value={formatPercent(ra.cpu_efficiency, 0)} />
+            <DetailRow label="Memory efficiency" value={formatPercent(ra.memory_efficiency, 0)} />
+          </>
+        )}
+      </dl>
+      {data.recommendations && data.recommendations.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Recommendations</h4>
+          {data.recommendations.map((rec, i) => (
+            <div key={i} className="rounded-lg border border-slate-800/80 bg-slate-950/40 p-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <Badge text={rec.priority} variant={rec.priority === 'Critical' ? 'red' : 'blue'} />
+                <span className="font-medium text-slate-200">{rec.title}</span>
+              </div>
+              <p className="text-slate-400 text-xs">{rec.description}</p>
+              <p className="text-emerald-400 text-xs mt-1">Est. savings: {rec.estimated_savings_pct.toFixed(0)}%</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnalyzeResultPanel({ data }: { data: LogAnalysisResult }) {
+  return (
+    <div className="space-y-4">
+      <dl className="space-y-0">
+        <DetailRow label="Total lines" value={data.total_lines} />
+        <DetailRow label="Errors" value={data.error_count} />
+        <DetailRow label="Warnings" value={data.warning_count} />
+        <DetailRow label="Error rate" value={formatPercent(data.error_rate, 1)} />
+        {data.health_assessment && (
+          <>
+            <DetailRow label="Health" value={String(data.health_assessment.status)} />
+            <DetailRow label="Health score" value={formatPercent(data.health_assessment.score, 0)} />
+          </>
+        )}
+      </dl>
+      {data.patterns && data.patterns.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Top patterns</h4>
+          {data.patterns.slice(0, 5).map((p, i) => (
+            <DetailRow key={i} label={`${p.severity} (${p.count})`} value={<span className="font-mono text-xs">{p.pattern}</span>} />
+          ))}
+        </div>
+      )}
+      {data.anomalies && data.anomalies.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Anomalies</h4>
+          {data.anomalies.map((a, i) => (
+            <div key={i} className="text-sm text-amber-400/90">{a.description}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const AI_TABS = [
+  { id: 'recommend' as const, label: 'Recommendations', icon: <Zap size={16} /> },
+  { id: 'optimize' as const, label: 'Optimization', icon: <Target size={16} /> },
+  { id: 'analyze' as const, label: 'Analysis & Profiler', icon: <Cpu size={16} /> },
+];
+
 export default function AIPage() {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [recommendation, setRecommendation] = useState<ScoringResult | null>(null);
   const [scalingAdvice, setScalingAdvice] = useState<ScalingAdvice | null>(null);
-  const [profilerResults, setProfilerResults] = useState<Record<string, unknown> | null>(null);
-  const [analyzeResults, setAnalyzeResults] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState<string | null>(null);
   const [recommendLoading, setRecommendLoading] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'recommend' | 'optimize' | 'analyze'>('recommend');
+  const [selectedWorkload, setSelectedWorkload] = useState('');
 
-  // Migration Advice state
-  const [migrationWorkload, setMigrationWorkload] = useState('');
-  const [migrationTarget, setMigrationTarget] = useState('');
-  const [migrationAdvice, setMigrationAdvice] = useState<MigrationAdvice | null>(null);
-  const [migrationLoading, setMigrationLoading] = useState(false);
-  const [migrationModalOpen, setMigrationModalOpen] = useState(false);
-
-  // New: Intent Optimizer
-  const [intentWorkload, setIntentWorkload] = useState('');
-  const [intentResult, setIntentResult] = useState<any>(null);
+  const [intentResult, setIntentResult] = useState<{ recommendedIntent?: string; reason?: string } | null>(null);
   const [intentLoading, setIntentLoading] = useState(false);
-
-  // Right Sizing
-  const [resizeWorkload, setResizeWorkload] = useState('');
-  const [resizeResult, setResizeResult] = useState<any>(null);
+  const [resizeResult, setResizeResult] = useState<{ suggestion?: string; savings?: string } | null>(null);
   const [resizeLoading, setResizeLoading] = useState(false);
-
-  // Cost vs Performance
-  const [tradeoffWorkload, setTradeoffWorkload] = useState('');
-  const [tradeoffResult, setTradeoffResult] = useState<any>(null);
+  const [tradeoffResult, setTradeoffResult] = useState<{ bestRuntime?: string; score?: number } | null>(null);
   const [tradeoffLoading, setTradeoffLoading] = useState(false);
 
-  // Tab state for AI tools
-  const [activeTab, setActiveTab] = useState<'recommend' | 'optimize' | 'analyze'>('recommend');
+  const [profilerResults, setProfilerResults] = useState<WorkloadProfileResult | null>(null);
+  const [analyzeResults, setAnalyzeResults] = useState<LogAnalysisResult | null>(null);
+  const [profilerWorkload, setProfilerWorkload] = useState<string | null>(null);
 
-  const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
+  const loadWorkloads = useCallback(async () => {
+    const data = await apiFetch<WorkloadResponse[]>('/workloads');
+    setWorkloads(data ?? []);
+  }, []);
 
   useEffect(() => {
-    async function load() {
-      const data = await apiFetch<WorkloadResponse[]>('/workloads');
-      setWorkloads(data ?? []);
-    }
-    load();
-  }, []);
+    void loadWorkloads();
+  }, [loadWorkloads]);
+
+  const runningCount = workloads.filter((w) => w.status?.toLowerCase() === 'running').length;
 
   async function handleRecommend(yaml: string) {
     setRecommendLoading(true);
     const res = await apiPost<ScoringResult>('/ai/recommend', { yaml });
     setRecommendation(res.data ?? null);
-    if (!res.success) {
-      toast(res.error ?? 'Failed to generate recommendation', 'error');
-    }
+    if (!res.success) toast(res.error ?? 'Failed to generate recommendation', 'error');
     setRecommendLoading(false);
   }
 
@@ -75,10 +289,12 @@ export default function AIPage() {
   }
 
   async function handleIntentOptimize() {
-    if (!intentWorkload) return;
+    if (!selectedWorkload) return;
     setIntentLoading(true);
     try {
-      const res = await apiPost('/ai/intent-optimize', { workload: intentWorkload });
+      const res = await apiPost<{ recommendedIntent?: string; reason?: string }>('/ai/intent-optimize', {
+        workload: selectedWorkload,
+      });
       setIntentResult(res.data ?? { recommendedIntent: 'balanced', reason: 'Default recommendation' });
     } catch {
       setIntentResult({ recommendedIntent: 'balanced', reason: 'Analysis unavailable' });
@@ -87,10 +303,12 @@ export default function AIPage() {
   }
 
   async function handleRightSize() {
-    if (!resizeWorkload) return;
+    if (!selectedWorkload) return;
     setResizeLoading(true);
     try {
-      const res = await apiPost('/ai/right-size', { workload: resizeWorkload });
+      const res = await apiPost<{ suggestion?: string; savings?: string }>('/ai/right-size', {
+        workload: selectedWorkload,
+      });
       setResizeResult(res.data ?? { suggestion: 'No change needed', savings: '0%' });
     } catch {
       setResizeResult({ suggestion: 'Keep current resources', savings: '—' });
@@ -99,10 +317,12 @@ export default function AIPage() {
   }
 
   async function handleTradeoff() {
-    if (!tradeoffWorkload) return;
+    if (!selectedWorkload) return;
     setTradeoffLoading(true);
     try {
-      const res = await apiPost('/ai/tradeoff', { workload: tradeoffWorkload });
+      const res = await apiPost<{ bestRuntime?: string; score?: number }>('/ai/tradeoff', {
+        workload: selectedWorkload,
+      });
       setTradeoffResult(res.data ?? { bestRuntime: 'kubernetes', score: 85 });
     } catch {
       setTradeoffResult({ bestRuntime: 'kubernetes', score: 80 });
@@ -112,431 +332,242 @@ export default function AIPage() {
 
   async function handleProfile(name: string) {
     setLoading(`profile-${name}`);
-    const data = await apiFetch<Record<string, unknown>>(`/ai/profile/${name}`);
-    setProfilerResults(data);
-    if (data) {
-      toast(`Profile for "${name}" loaded`, 'success');
-    } else {
-      toast(`Failed to load profile for "${name}"`, 'error');
-    }
+    setProfilerWorkload(name);
+    const data = await apiFetch<WorkloadProfileResult>(`/ai/profile/${name}`);
+    setProfilerResults(data ?? null);
+    setAnalyzeResults(null);
     setLoading(null);
   }
 
   async function handleAnalyze(name: string) {
     setLoading(`analyze-${name}`);
-    const data = await apiFetch<Record<string, unknown>>(`/ai/analyze/${name}`);
-    setAnalyzeResults(data);
-    if (data) {
-      toast(`Analysis for "${name}" loaded`, 'success');
-    } else {
-      toast(`Failed to analyze "${name}"`, 'error');
-    }
+    setProfilerWorkload(name);
+    const data = await apiFetch<LogAnalysisResult>(`/ai/analyze/${name}`);
+    setAnalyzeResults(data ?? null);
+    setProfilerResults(null);
     setLoading(null);
   }
 
-  async function handleMigrationAdvice() {
-    if (!migrationWorkload || !migrationTarget) return;
-    setMigrationLoading(true);
-    const data = await apiFetch<MigrationAdvice>(`/ai/migration-advice/${migrationWorkload}/${migrationTarget}`);
-    if (data) {
-      setMigrationAdvice(data);
-      setMigrationModalOpen(true);
-      toast(`Migration advice for "${migrationWorkload}" loaded`, 'success');
-    } else {
-      toast(`Failed to get migration advice for "${migrationWorkload}"`, 'error');
-    }
-    setMigrationLoading(false);
-  }
-
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-aether/20 to-aether/5 flex items-center justify-center border border-aether/20">
-          <Brain className="text-aether" size={26} />
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="dash-card py-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wider">Workloads</div>
+          <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length}</div>
         </div>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">AI Engine</h1>
-          <p className="text-zinc-500 mt-1">Intelligent workload optimization, recommendations & insights</p>
+        <div className="dash-card py-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wider">Running</div>
+          <div className="text-2xl font-semibold text-slate-100 mt-1">{runningCount}</div>
+        </div>
+        <div className="dash-card py-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wider">Stopped / other</div>
+          <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length - runningCount}</div>
+        </div>
+        <div className="dash-card py-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wider">Last recommendation</div>
+          <div className="text-2xl font-semibold text-slate-100 mt-1 truncate">
+            {recommendation?.recommended ?? '—'}
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-zinc-800">
-        <button
-          onClick={() => setActiveTab('recommend')}
-          className={`px-5 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'recommend' ? 'border-aether text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
-        >
-          Recommendations
-        </button>
-        <button
-          onClick={() => setActiveTab('optimize')}
-          className={`px-5 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'optimize' ? 'border-aether text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
-        >
-          Optimization
-        </button>
-        <button
-          onClick={() => setActiveTab('analyze')}
-          className={`px-5 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'analyze' ? 'border-aether text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
-        >
-          Analysis & Profiler
-        </button>
-      </div>
+      <PageTabs tabs={AI_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {/* Recommendations Tab Content */}
       {activeTab === 'recommend' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* AI Recommendation */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="dash-card">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-4">AI Recommendation</h2>
-          <YamlInput
-            buttonText="Get Recommendation"
-            onSubmit={handleRecommend}
-            loading={recommendLoading}
-            placeholder="Paste workload YAML for AI analysis..."
-          />
-
-          {recommendation && (
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-zinc-400">Recommended:</span>
-                <RuntimeBadge runtime={recommendation.recommended} />
-                <Badge
-                  text={`${(recommendation.confidence * 100).toFixed(0)}% confidence`}
-                  variant="green"
-                />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-aether/10 rounded-xl">
+                <Zap className="text-aether" size={20} />
               </div>
-              <div className="text-xs text-zinc-500">Class: {recommendation.workload_class}</div>
-              <div className="space-y-2">
-                {recommendation.scores.map((s) => (
-                  <div key={s.runtime} className="bg-zinc-950/50 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <RuntimeBadge runtime={s.runtime} />
-                      <span className="text-sm font-medium text-zinc-300">{s.total_score.toFixed(1)}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <BarChart label="Cost" percent={s.cost_score * 100} />
-                      <BarChart label="Performance" percent={s.performance_score * 100} />
-                      <BarChart label="Reliability" percent={s.reliability_score * 100} />
-                      <BarChart label="Availability" percent={s.availability_score * 100} />
-                    </div>
-                    {s.reasons.length > 0 && (
-                      <ul className="mt-2 space-y-0.5">
-                        {s.reasons.map((r, i) => (
-                          <li key={i} className="text-xs text-zinc-500">+ {r}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
+              <div>
+                <h3 className="font-semibold text-lg text-slate-100">AI Recommendation</h3>
+                <p className="text-xs text-slate-500">Get intelligent runtime suggestions</p>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Scaling Advice */}
-        <div className="dash-card">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-            <TrendingUp size={20} className="text-blue-400" />
-            Scaling Advice
-          </h2>
-          <button
-            onClick={handleScaling}
-            disabled={loading === 'scaling'}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            {loading === 'scaling' ? 'Loading...' : 'Get Scaling Advice'}
-          </button>
-
-          {scalingAdvice && (
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Badge
-                  text={scalingAdvice.action}
-                  variant={scalingAdvice.action === 'scale_up' ? 'yellow' : scalingAdvice.action === 'scale_down' ? 'blue' : 'green'}
-                />
-                <Badge
-                  text={`${(scalingAdvice.confidence * 100).toFixed(0)}% confidence`}
-                  variant="muted"
-                />
+            <YamlInput
+              buttonText="Get Recommendation"
+              onSubmit={handleRecommend}
+              loading={recommendLoading}
+              placeholder="Paste workload YAML for AI analysis..."
+            />
+            {recommendation && (
+              <div className="mt-6 pt-6 border-t border-slate-800/80">
+                <ScoringResultPanel result={recommendation} />
               </div>
-              <div className="bg-zinc-950/50 rounded-lg p-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-400">Current replicas</span>
-                  <span className="text-zinc-200">{scalingAdvice.current_replicas}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-400">Recommended replicas</span>
-                  <span className="text-amber-400 font-medium">{scalingAdvice.recommended_replicas}</span>
-                </div>
-                <div className="text-sm text-zinc-400">{scalingAdvice.reason}</div>
+            )}
+          </div>
+
+          <div className="dash-card">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-500/10 rounded-xl">
+                <TrendingUp className="text-blue-400" size={20} />
               </div>
-              {scalingAdvice.forecast && (
-                <CodeBlock title="Forecast">{JSON.stringify(scalingAdvice.forecast, null, 2)}</CodeBlock>
-              )}
-              {scalingAdvice.cost_impact && (
-                <CodeBlock title="Cost Impact">{JSON.stringify(scalingAdvice.cost_impact, null, 2)}</CodeBlock>
-              )}
+              <div>
+                <h3 className="font-semibold text-lg text-slate-100">Scaling Advice</h3>
+                <p className="text-xs text-slate-500">Horizontal scaling recommendations</p>
+              </div>
             </div>
-          )}
+            <button
+              type="button"
+              onClick={() => void handleScaling()}
+              disabled={loading === 'scaling'}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 rounded-xl font-medium transition text-white"
+            >
+              {loading === 'scaling' ? 'Analyzing…' : 'Get Scaling Advice'}
+            </button>
+            {scalingAdvice && (
+              <div className="mt-5 pt-5 border-t border-slate-800/80">
+                <ScalingAdvicePanel advice={scalingAdvice} />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Optimization Tab Content */}
       {activeTab === 'optimize' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Intent Optimizer */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="text-aether" size={18} />
-          <h3 className="font-semibold">Intent Optimizer</h3>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <input
-            value={intentWorkload}
-            onChange={(e) => setIntentWorkload(e.target.value)}
-            placeholder="workload name"
-            className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            onClick={handleIntentOptimize}
-            disabled={intentLoading || !intentWorkload}
-            className="px-4 py-2 bg-aether text-black rounded-lg text-sm font-medium disabled:opacity-50"
-          >
-            {intentLoading ? 'Analyzing...' : 'Optimize'}
-          </button>
-        </div>
-        {intentResult && (
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-zinc-400">Recommended Intent</span>
-              <span className="font-semibold text-emerald-400 bg-emerald-950 px-3 py-0.5 rounded-full text-xs">{intentResult.recommendedIntent}</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="dash-card">
+            <div className="flex items-center gap-3 mb-4">
+              <Target className="text-purple-400" size={20} />
+              <h3 className="font-semibold text-slate-100">Intent Optimizer</h3>
             </div>
-            <div className="text-zinc-400 mt-2 text-xs leading-relaxed">{intentResult.reason}</div>
-          </div>
-        )}
-      </div>
-
-      {/* Resource Right-Sizer */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Cpu className="text-aether" size={18} />
-          <h3 className="font-semibold">Resource Right-Sizer</h3>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <input
-            value={resizeWorkload}
-            onChange={(e) => setResizeWorkload(e.target.value)}
-            placeholder="workload name"
-            className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            onClick={handleRightSize}
-            disabled={resizeLoading || !resizeWorkload}
-            className="px-4 py-2 bg-aether text-black rounded-lg text-sm font-medium disabled:opacity-50"
-          >
-            {resizeLoading ? 'Analyzing...' : 'Analyze'}
-          </button>
-        </div>
-        {resizeResult && (
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-sm">
-            <div className="text-zinc-400">Suggestion</div>
-            <div className="font-medium mt-1">{resizeResult.suggestion}</div>
-            <div className="mt-3 inline-flex items-center gap-2 text-emerald-400 text-xs bg-emerald-950 px-3 py-1 rounded-full">
-              Potential savings: {resizeResult.savings}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Cost vs Performance Tradeoff */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="text-aether" size={18} />
-          <h3 className="font-semibold">Cost vs Performance</h3>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <input
-            value={tradeoffWorkload}
-            onChange={(e) => setTradeoffWorkload(e.target.value)}
-            placeholder="workload name"
-            className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            onClick={handleTradeoff}
-            disabled={tradeoffLoading || !tradeoffWorkload}
-            className="px-4 py-2 bg-aether text-black rounded-lg text-sm font-medium disabled:opacity-50"
-          >
-            {tradeoffLoading ? 'Analyzing...' : 'Compare'}
-          </button>
-        </div>
-        {tradeoffResult && (
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-sm">
-            <div className="text-zinc-400">Best Runtime</div>
-            <div className="font-semibold text-lg text-emerald-400 mt-1">{tradeoffResult.bestRuntime}</div>
-            <div className="mt-3">
-              <div className="text-xs text-zinc-400 mb-1">Confidence Score</div>
-              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-2 bg-emerald-500 rounded-full" style={{ width: `${tradeoffResult.score}%` }} />
-              </div>
-              <div className="text-right text-xs text-emerald-400 mt-0.5">{tradeoffResult.score}%</div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Migration Advice */}
-      <div className="dash-card mb-6">
-        <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-          <ArrowRightLeft size={20} className="text-purple-400" />
-          Migration Advice
-        </h2>
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="block text-xs text-zinc-400 mb-1">Workload</label>
-            <select
-              value={migrationWorkload}
-              onChange={(e) => setMigrationWorkload(e.target.value)}
-              className="px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-amber-500"
+            <WorkloadSelect
+              workloads={workloads}
+              value={selectedWorkload}
+              onChange={setSelectedWorkload}
+              className="w-full mb-3"
+            />
+            <button
+              type="button"
+              onClick={() => void handleIntentOptimize()}
+              disabled={intentLoading || !selectedWorkload}
+              className="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-medium disabled:opacity-60 text-white"
             >
-              <option value="">Select workload</option>
-              {workloads.map((w) => (
-                <option key={w.name} value={w.name}>{w.name}</option>
-              ))}
-            </select>
+              {intentLoading ? 'Optimizing…' : 'Optimize Intent'}
+            </button>
+            {intentResult && (
+              <dl className="mt-5 pt-5 border-t border-slate-800/80 space-y-0">
+                <DetailRow label="Recommended intent" value={intentResult.recommendedIntent} />
+                <DetailRow label="Reason" value={intentResult.reason} />
+              </dl>
+            )}
           </div>
-          <div>
-            <label className="block text-xs text-zinc-400 mb-1">Target Runtime</label>
-            <select
-              value={migrationTarget}
-              onChange={(e) => setMigrationTarget(e.target.value)}
-              className="px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-amber-500"
+
+          <div className="dash-card">
+            <div className="flex items-center gap-3 mb-4">
+              <Cpu className="text-emerald-400" size={20} />
+              <h3 className="font-semibold text-slate-100">Resource Right-Sizer</h3>
+            </div>
+            <WorkloadSelect
+              workloads={workloads}
+              value={selectedWorkload}
+              onChange={setSelectedWorkload}
+              className="w-full mb-3"
+            />
+            <button
+              type="button"
+              onClick={() => void handleRightSize()}
+              disabled={resizeLoading || !selectedWorkload}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-medium disabled:opacity-60 text-white"
             >
-              <option value="">Select runtime</option>
-              {runtimes.map((rt) => (
-                <option key={rt} value={rt}>{rt}</option>
-              ))}
-            </select>
+              {resizeLoading ? 'Analyzing…' : 'Analyze Resources'}
+            </button>
+            {resizeResult && (
+              <dl className="mt-5 pt-5 border-t border-slate-800/80 space-y-0">
+                <DetailRow label="Suggestion" value={resizeResult.suggestion} />
+                <DetailRow label="Potential savings" value={resizeResult.savings} />
+              </dl>
+            )}
           </div>
-          <button
-            onClick={handleMigrationAdvice}
-            disabled={migrationLoading || !migrationWorkload || !migrationTarget}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            {migrationLoading ? 'Loading...' : 'Get Advice'}
-          </button>
+
+          <div className="dash-card">
+            <div className="flex items-center gap-3 mb-4">
+              <TrendingUp className="text-orange-400" size={20} />
+              <h3 className="font-semibold text-slate-100">Cost vs Performance</h3>
+            </div>
+            <WorkloadSelect
+              workloads={workloads}
+              value={selectedWorkload}
+              onChange={setSelectedWorkload}
+              className="w-full mb-3"
+            />
+            <button
+              type="button"
+              onClick={() => void handleTradeoff()}
+              disabled={tradeoffLoading || !selectedWorkload}
+              className="w-full py-3 bg-orange-600 hover:bg-orange-500 rounded-xl font-medium disabled:opacity-60 text-white"
+            >
+              {tradeoffLoading ? 'Comparing…' : 'Compare Tradeoff'}
+            </button>
+            {tradeoffResult && (
+              <dl className="mt-5 pt-5 border-t border-slate-800/80 space-y-0">
+                <DetailRow label="Best runtime" value={tradeoffResult.bestRuntime} />
+                <DetailRow label="Score" value={tradeoffResult.score} />
+              </dl>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Migration Advice Modal */}
-      <Modal
-        isOpen={migrationModalOpen}
-        onClose={() => { setMigrationModalOpen(false); setMigrationAdvice(null); }}
-        title={`Migration Advice: ${migrationAdvice?.workload_name ?? ''}`}
-      >
-        {migrationAdvice && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge text={migrationAdvice.recommended_strategy} variant="blue" />
-              <Badge text={`Risk: ${migrationAdvice.risk_level}`} variant={migrationAdvice.risk_level === 'low' ? 'green' : migrationAdvice.risk_level === 'high' ? 'red' : 'yellow'} />
-              <span className="text-xs text-zinc-400">Downtime: ~{migrationAdvice.estimated_downtime_secs}s</span>
+      {activeTab === 'analyze' && (
+        <div className="dash-card">
+          <div className="flex items-center gap-3 mb-6">
+            <Cpu className="text-cyan-400" size={22} />
+            <h3 className="font-semibold text-xl text-slate-100">Workload Profiler & Analysis</h3>
+          </div>
+
+          {workloads.length === 0 ? (
+            <EmptyState
+              icon={<Search size={48} />}
+              title="No workloads found"
+              description="Deploy workloads to start profiling"
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {workloads.slice(0, 12).map((w) => (
+                <div key={w.name} className="flex gap-2 rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+                  <span className="flex-1 truncate text-sm text-slate-300 self-center font-mono">{w.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => void handleProfile(w.name)}
+                    disabled={loading === `profile-${w.name}`}
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs disabled:opacity-60"
+                  >
+                    <Cpu size={14} /> Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleAnalyze(w.name)}
+                    disabled={loading === `analyze-${w.name}`}
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs disabled:opacity-60"
+                  >
+                    <Search size={14} /> Analyze
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="text-sm text-zinc-300">
-              <span className="text-zinc-500">From</span> {migrationAdvice.source_runtime} <span className="text-zinc-500">to</span> {migrationAdvice.target_runtime}
+          )}
+
+          {profilerResults && (
+            <div className="mt-8 pt-6 border-t border-slate-800/80">
+              <h4 className="text-sm font-medium text-cyan-400 mb-4">
+                Profile: {profilerWorkload}
+              </h4>
+              <ProfileResultPanel data={profilerResults} />
             </div>
-            {migrationAdvice.reasons.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-zinc-300 mb-1">Reasons</h3>
-                <ul className="space-y-0.5">
-                  {migrationAdvice.reasons.map((r, i) => (
-                    <li key={i} className="text-xs text-zinc-400">+ {r}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {migrationAdvice.warnings.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-zinc-300 mb-1">Warnings</h3>
-                <ul className="space-y-0.5">
-                  {migrationAdvice.warnings.map((w, i) => (
-                    <li key={i} className="text-xs text-amber-400">! {w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <CodeBlock title="Full Advice">{JSON.stringify(migrationAdvice, null, 2)}</CodeBlock>
-          </div>
-        )}
-      </Modal>
+          )}
 
-      {/* Profiler */}
-      <div className="dash-card">
-        <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-          <Cpu size={20} className="text-cyan-400" />
-          Workload Profiler
-        </h2>
-        {workloads.length === 0 ? (
-          <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to profile it" />
-        ) : (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {workloads.map((w) => (
-              <div key={w.name} className="flex gap-1">
-                <button
-                  onClick={() => handleProfile(w.name)}
-                  disabled={loading === `profile-${w.name}`}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm text-zinc-200 transition-colors"
-                >
-                  <Cpu size={14} />
-                  Profile {w.name}
-                </button>
-                <button
-                  onClick={() => handleAnalyze(w.name)}
-                  disabled={loading === `analyze-${w.name}`}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm text-zinc-200 transition-colors"
-                >
-                  <Search size={14} />
-                  Analyze
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {profilerResults && (
-          <div className="mt-6 p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
-            <div className="text-sm font-medium text-zinc-400 mb-3">Profile Results</div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-zinc-400 text-xs">Workload</div>
-                <div className="font-medium">{(profilerResults as any)?.name || 'Unknown'}</div>
-              </div>
-              <div>
-                <div className="text-zinc-400 text-xs">Runtime</div>
-                <div className="font-medium">{(profilerResults as any)?.runtime || '—'}</div>
-              </div>
-              <div>
-                <div className="text-zinc-400 text-xs">CPU Usage</div>
-                <div className="font-medium text-emerald-400">{(profilerResults as any)?.cpu_usage || 'N/A'}</div>
-              </div>
-              <div>
-                <div className="text-zinc-400 text-xs">Memory Usage</div>
-                <div className="font-medium text-emerald-400">{(profilerResults as any)?.memory_usage || 'N/A'}</div>
-              </div>
+          {analyzeResults && (
+            <div className="mt-8 pt-6 border-t border-slate-800/80">
+              <h4 className="text-sm font-medium text-cyan-400 mb-4">
+                Log analysis: {profilerWorkload}
+              </h4>
+              <AnalyzeResultPanel data={analyzeResults} />
             </div>
-            {(profilerResults as any)?.recommendations && (
-              <div className="mt-4 text-xs text-zinc-400">
-                Recommendations: {(profilerResults as any).recommendations}
-              </div>
-            )}
-          </div>
-        )}
-
-        {analyzeResults && (
-          <div className="mt-4">
-            <CodeBlock title="Analysis Results">{JSON.stringify(analyzeResults, null, 2)}</CodeBlock>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { KeyRound, Shield, Trash2 } from 'lucide-react';
 import { apiFetch, apiPost } from '../../utils/api';
+import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import Modal from '../Modal';
@@ -15,17 +16,27 @@ export default function RbacPage() {
   const [name, setName] = useState('');
   const [role, setRole] = useState('viewer');
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
   const [revokeName, setRevokeName] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
+    setListLoading(true);
     const data = await apiFetch<ApiKeySummary[]>('/rbac/keys');
     setKeys(data ?? []);
-  }
+    setListLoading(false);
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return keys;
+    return keys.filter((k) => k.name.toLowerCase().includes(q) || k.role.toLowerCase().includes(q));
+  }, [keys, search]);
 
   async function handleCreate() {
     if (!name.trim()) return;
@@ -37,7 +48,7 @@ export default function RbacPage() {
       setName('');
       setRole('viewer');
       toast(`API key "${response.data.name}" created`, 'success');
-      load();
+      void load();
     } else {
       toast(response.error ?? 'Failed to create API key', 'error');
     }
@@ -49,7 +60,7 @@ export default function RbacPage() {
     if (response.success) {
       toast(`API key "${revokeName}" revoked`, 'success');
       setRevokeName(null);
-      load();
+      void load();
     } else {
       toast(response.error ?? 'Failed to revoke API key', 'error');
     }
@@ -57,16 +68,24 @@ export default function RbacPage() {
 
   return (
     <div>
-      <div className="rounded-2xl surface-panel p-6 mb-6">
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search keys…"
+        onRefresh={() => void load()}
+        refreshing={listLoading}
+      />
+
+      <div className="dash-card mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Shield className="w-5 h-5 text-aether" />
-          <h2 className="text-lg font-semibold text-slate-100">Create RBAC API Key</h2>
+          <h2 className="text-lg font-semibold text-slate-100">Create RBAC API key</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr_auto] gap-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Key name, e.g. ci-bot or ops-viewer"
+            placeholder="Key name, e.g. ci-bot"
             className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
           />
           <select
@@ -79,19 +98,20 @@ export default function RbacPage() {
             <option value="viewer">Viewer</option>
           </select>
           <button
-            onClick={handleCreate}
+            type="button"
+            onClick={() => void handleCreate()}
             disabled={loading || !name.trim()}
-            className="rounded-xl bg-aether hover:bg-aether-light disabled:opacity-50 px-4 py-2.5 text-sm font-medium text-white transition-colors"
+            className="rounded-xl bg-aether hover:bg-aether/90 disabled:opacity-50 px-4 py-2.5 text-sm font-medium text-white"
           >
-            {loading ? 'Creating...' : 'Create Key'}
+            {loading ? 'Creating…' : 'Create key'}
           </button>
         </div>
       </div>
 
-      {keys.length === 0 ? (
-        <EmptyState icon={<KeyRound size={48} />} title="No RBAC keys" description="Create admin, operator, or viewer API keys to expose role-based access." />
+      {keys.length === 0 && !listLoading ? (
+        <EmptyState icon={<KeyRound size={48} />} title="No RBAC keys" description="Create admin, operator, or viewer API keys." />
       ) : (
-        <div className="rounded-2xl surface-panel overflow-hidden">
+        <div className="dash-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -103,7 +123,7 @@ export default function RbacPage() {
                 </tr>
               </thead>
               <tbody>
-                {keys.map((entry) => (
+                {filtered.map((entry) => (
                   <tr key={entry.name} className="border-b border-slate-800/70 hover:bg-slate-900/40">
                     <td className="py-3 px-4 text-sm font-medium text-slate-100">{entry.name}</td>
                     <td className="py-3 px-4">
@@ -115,6 +135,7 @@ export default function RbacPage() {
                     <td className="py-3 px-4 text-sm text-slate-400">{entry.created_at}</td>
                     <td className="py-3 px-4">
                       <button
+                        type="button"
                         onClick={() => setRevokeName(entry.name)}
                         className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-red-300 hover:bg-red-500/10"
                       >
@@ -126,11 +147,14 @@ export default function RbacPage() {
                 ))}
               </tbody>
             </table>
+            {filtered.length === 0 && keys.length > 0 && (
+              <p className="text-sm text-slate-500 py-6 text-center">No keys match your search.</p>
+            )}
           </div>
         </div>
       )}
 
-      <Modal isOpen={created !== null} onClose={() => setCreated(null)} title={`New API Key: ${created?.name ?? ''}`}>
+      <Modal isOpen={created !== null} onClose={() => setCreated(null)} title={`New API key: ${created?.name ?? ''}`}>
         {created && (
           <div className="space-y-4">
             <p className="text-sm text-slate-400">This plaintext key is only returned once. Store it before closing.</p>
@@ -142,12 +166,18 @@ export default function RbacPage() {
         )}
       </Modal>
 
-      <Modal isOpen={revokeName !== null} onClose={() => setRevokeName(null)} title="Revoke API Key">
+      <Modal isOpen={revokeName !== null} onClose={() => setRevokeName(null)} title="Revoke API key">
         <div className="space-y-4">
-          <p className="text-sm text-slate-400">Revoke access for <span className="text-slate-200 font-medium">{revokeName}</span>?</p>
+          <p className="text-sm text-slate-400">
+            Revoke access for <span className="text-slate-200 font-medium">{revokeName}</span>?
+          </p>
           <div className="flex justify-end gap-3">
-            <button onClick={() => setRevokeName(null)} className="rounded-lg px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">Cancel</button>
-            <button onClick={handleRevoke} className="rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-sm font-medium text-white">Revoke</button>
+            <button type="button" onClick={() => setRevokeName(null)} className="rounded-lg px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+              Cancel
+            </button>
+            <button type="button" onClick={() => void handleRevoke()} className="rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-sm font-medium text-white">
+              Revoke
+            </button>
           </div>
         </div>
       </Modal>

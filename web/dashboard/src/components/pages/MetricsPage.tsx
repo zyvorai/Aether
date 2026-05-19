@@ -1,42 +1,58 @@
-import { useState, useEffect } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiText } from '../../utils/api';
+import PageToolbar from '../PageToolbar';
 import CodeBlock from '../CodeBlock';
 
 export default function MetricsPage() {
   const [metrics, setMetrics] = useState('');
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     const text = await apiText('/metrics');
-    setMetrics(text);
+    setMetrics(text ?? '');
     setLoading(false);
-  }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filteredMetrics = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return metrics;
+    return metrics
+      .split('\n')
+      .filter((line) => line.startsWith('#') || line.toLowerCase().includes(q))
+      .join('\n');
+  }, [metrics, search]);
+
+  const lineCount = filteredMetrics.split('\n').filter((l) => l && !l.startsWith('#')).length;
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-6">
-        <button
-          onClick={load}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-200 rounded-lg text-sm font-medium transition-colors"
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
-      </div>
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search metric names…"
+        onRefresh={() => void load()}
+        refreshing={loading}
+      />
 
       <div className="dash-card">
-        <h2 className="text-lg font-semibold text-zinc-100 mb-4">Prometheus Metrics</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-100">Prometheus metrics</h2>
+          {!loading && (
+            <span className="text-xs text-slate-500">{lineCount} metric lines</span>
+          )}
+        </div>
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
           </div>
         ) : (
-          <CodeBlock title="prometheus">{metrics}</CodeBlock>
+          <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>
         )}
       </div>
     </div>

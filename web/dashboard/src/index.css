@@ -14,9 +14,10 @@
   body {
     @apply bg-slate-950 text-slate-100 antialiased;
     background-image:
-      radial-gradient(circle at top left, rgba(99, 164, 255, 0.12), transparent 26%),
-      radial-gradient(circle at top right, rgba(56, 189, 248, 0.10), transparent 22%),
-      linear-gradient(180deg, #06111f 0%, #020817 28%, #020617 100%);
+      radial-gradient(circle at 18% 0%, rgba(99, 164, 255, 0.18), transparent 28%),
+      radial-gradient(circle at 82% 8%, rgba(45, 212, 191, 0.12), transparent 24%),
+      radial-gradient(circle at 50% 42%, rgba(168, 85, 247, 0.08), transparent 32%),
+      linear-gradient(180deg, #07111f 0%, #020817 30%, #020617 100%);
   }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -28,12 +29,16 @@
 @layer components {
   .app-shell {
     background:
-      linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.98)),
-      linear-gradient(120deg, rgba(99, 164, 255, 0.05), transparent 45%);
+      radial-gradient(circle at 8% 8%, rgba(99, 164, 255, 0.12), transparent 28%),
+      radial-gradient(circle at 94% 18%, rgba(45, 212, 191, 0.10), transparent 30%),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.98)),
+      linear-gradient(120deg, rgba(99, 164, 255, 0.08), transparent 45%);
   }
 
   .surface-panel {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(10, 15, 28, 0.94));
+    background:
+      linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(10, 15, 28, 0.94)),
+      radial-gradient(circle at top left, rgba(99, 164, 255, 0.08), transparent 42%);
     border: 1px solid rgba(148, 163, 184, 0.14);
     box-shadow: 0 22px 60px rgba(2, 6, 23, 0.36);
   }
@@ -53,8 +58,30 @@
 
   .page-frame {
     @apply rounded-[28px] p-4 sm:p-6 lg:p-8;
-    background: linear-gradient(180deg, rgba(2, 6, 23, 0.35), rgba(2, 6, 23, 0.12));
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(2, 6, 23, 0.48), rgba(2, 6, 23, 0.18)),
+      radial-gradient(circle at top right, rgba(99, 164, 255, 0.06), transparent 40%);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    animation: page-rise 420ms ease-out both;
+  }
+
+  .page-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.035), transparent),
+      radial-gradient(circle at 15% 0%, rgba(99, 164, 255, 0.08), transparent 28%);
+    opacity: 0.65;
+  }
+
+  .page-frame > * {
+    position: relative;
+    z-index: 1;
   }
 
   .dash-breadcrumb {
@@ -66,16 +93,42 @@
 
   .dash-card {
     @apply rounded-2xl p-6;
-    background: linear-gradient(165deg, rgba(15, 23, 42, 0.92) 0%, rgba(9, 14, 24, 0.96) 100%);
-    border: 1px solid rgba(148, 163, 184, 0.11);
-    box-shadow: 0 14px 40px rgba(2, 6, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(165deg, rgba(15, 23, 42, 0.90) 0%, rgba(9, 14, 24, 0.97) 100%),
+      radial-gradient(circle at top left, rgba(99, 164, 255, 0.08), transparent 36%);
+    border: 1px solid rgba(148, 163, 184, 0.13);
+    box-shadow: 0 18px 50px rgba(2, 6, 23, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .dash-card:hover {
+    border-color: rgba(99, 164, 255, 0.23);
+    box-shadow: 0 22px 64px rgba(2, 6, 23, 0.44), 0 0 0 1px rgba(99, 164, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .dash-card-flush {
     @apply rounded-2xl overflow-hidden;
-    background: linear-gradient(165deg, rgba(15, 23, 42, 0.92) 0%, rgba(9, 14, 24, 0.96) 100%);
-    border: 1px solid rgba(148, 163, 184, 0.11);
-    box-shadow: 0 14px 40px rgba(2, 6, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    position: relative;
+    background:
+      linear-gradient(165deg, rgba(15, 23, 42, 0.90) 0%, rgba(9, 14, 24, 0.97) 100%),
+      radial-gradient(circle at top left, rgba(99, 164, 255, 0.06), transparent 34%);
+    border: 1px solid rgba(148, 163, 184, 0.13);
+    box-shadow: 0 18px 50px rgba(2, 6, 23, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .dash-card-flush table thead {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.42));
+  }
+
+  .dash-card-flush table tbody tr {
+    transition: background-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .dash-card-flush table tbody tr:hover {
+    background: rgba(30, 41, 59, 0.38);
+    box-shadow: inset 3px 0 0 rgba(99, 164, 255, 0.55);
   }
 
   /** Wide shell: same horizontal rail as HyperSDK-style dashboards (nav / hero / body / footer). */
@@ -101,15 +154,15 @@
   }
 
   .metric-glow {
-    box-shadow: 0 0 0 1px rgba(99, 164, 255, 0.12), 0 14px 36px rgba(59, 130, 246, 0.12);
+    box-shadow: 0 0 0 1px rgba(99, 164, 255, 0.14), 0 16px 42px rgba(59, 130, 246, 0.14);
   }
 
-  .stat-card-orange { background: linear-gradient(135deg, #0f172a 0%, #172554 100%); }
-  .stat-card-green { background: linear-gradient(135deg, #052e2b 0%, #0f172a 100%); }
-  .stat-card-red { background: linear-gradient(135deg, #3a1020 0%, #111827 100%); }
-  .stat-card-blue { background: linear-gradient(135deg, #0f172a 0%, #172554 100%); }
-  .stat-card-purple { background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); }
-  .stat-card-yellow { background: linear-gradient(135deg, #3b2805 0%, #111827 100%); }
+  .stat-card-orange { background: radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.26), transparent 35%), linear-gradient(135deg, #111827 0%, #172554 100%); }
+  .stat-card-green { background: radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.25), transparent 35%), linear-gradient(135deg, #052e2b 0%, #0f172a 100%); }
+  .stat-card-red { background: radial-gradient(circle at 90% 10%, rgba(248, 113, 113, 0.26), transparent 35%), linear-gradient(135deg, #3a1020 0%, #111827 100%); }
+  .stat-card-blue { background: radial-gradient(circle at 90% 10%, rgba(96, 165, 250, 0.28), transparent 35%), linear-gradient(135deg, #0f172a 0%, #172554 100%); }
+  .stat-card-purple { background: radial-gradient(circle at 90% 10%, rgba(168, 85, 247, 0.30), transparent 35%), linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); }
+  .stat-card-yellow { background: radial-gradient(circle at 90% 10%, rgba(245, 158, 11, 0.28), transparent 35%), linear-gradient(135deg, #3b2805 0%, #111827 100%); }
 
   .card-metal {
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(9, 14, 24, 0.98) 100%);
@@ -118,6 +171,28 @@
 
   .card-glow:hover {
     box-shadow: 0 0 20px rgba(99, 164, 255, 0.08), 0 18px 42px rgba(2, 6, 23, 0.45);
+  }
+
+  .premium-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99, 164, 255, 0.35), rgba(45, 212, 191, 0.22), transparent);
+  }
+
+  .hero-orb {
+    filter: blur(64px);
+    animation: login-float 16s ease-in-out infinite;
+  }
+
+  .hero-orb-delayed {
+    animation-delay: -8s;
+  }
+
+  .interactive-lift {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+
+  .interactive-lift:hover {
+    transform: translateY(-2px);
   }
 
   .navbar-blur {
@@ -148,6 +223,17 @@
   @keyframes skeleton-shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
+  }
+
+  @keyframes page-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.995);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   @keyframes platform-pulse {

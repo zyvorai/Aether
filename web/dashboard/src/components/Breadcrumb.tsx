@@ -1,31 +1,6 @@
 import { ChevronRight, Home } from 'lucide-react';
 import type { AppView } from '../types/api';
-
-const VIEW_LABELS: Record<AppView, string> = {
-  overview: 'Dashboard',
-  workloads: 'Workloads',
-  clusters: 'Cluster Browser',
-  compose: 'Compose Import',
-  ai: 'AI Engine',
-  cost: 'Cost Estimation',
-  affinity: 'Runtime Affinity',
-  drift: 'Drift Detection',
-  policy: 'Policy Check',
-  scheduler: 'Scheduler',
-  health: 'Health Monitor',
-  events: 'Events',
-  sla: 'SLA Compliance',
-  deps: 'Dependencies',
-  envs: 'Environments',
-  secrets: 'Secrets',
-  backups: 'Backups',
-  templates: 'Templates',
-  plugins: 'Plugins',
-  rbac: 'Access Control',
-  audit: 'Audit Trail',
-  gitops: 'GitOps',
-  metrics: 'Metrics',
-};
+import { VIEW_LABELS } from '../utils/dashboardNav';
 
 interface BreadcrumbProps {
   currentView: AppView;

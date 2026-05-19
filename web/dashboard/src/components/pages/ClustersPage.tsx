@@ -4,6 +4,8 @@ import { apiFetch, apiPost, apiWebSocketUrl } from '../../utils/api';
 import Modal from '../Modal';
 import LogViewer from '../LogViewer';
 import EmptyState from '../EmptyState';
+import PageToolbar from '../PageToolbar';
+import PageTabs from '../PageTabs';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
 import { formatTimestamp } from '../../utils/formatters';
@@ -107,6 +109,7 @@ export default function ClustersPage() {
   const [helmRevision, setHelmRevision] = useState('');
   const [serverDiff, setServerDiff] = useState<ClusterDiffLine[]>([]);
   const [terminalExpanded, setTerminalExpanded] = useState(false);
+  const [detailTab, setDetailTab] = useState<'overview' | 'events' | 'logs' | 'terminal' | 'manifest'>('overview');
   const watchSocketRef = useRef<WebSocket | null>(null);
   const execSocketRef = useRef<WebSocket | null>(null);
 
@@ -790,6 +793,7 @@ export default function ClustersPage() {
           setSelectedEvents([]);
           setHealthSummary(null);
           setRollout(null);
+          setDetailTab('overview');
           setDetailLoading(false);
         }}
         title={selected ? `${selected.kind}: ${selected.name}` : 'Loading resource'}
@@ -801,6 +805,17 @@ export default function ClustersPage() {
           </div>
         ) : (
           <div className="space-y-4">
+            <PageTabs
+              tabs={[
+                { id: 'overview', label: 'Overview' },
+                { id: 'events', label: 'Events' },
+                { id: 'logs', label: 'Logs' },
+                { id: 'terminal', label: 'Terminal' },
+                { id: 'manifest', label: 'Manifest' },
+              ]}
+              active={detailTab}
+              onChange={setDetailTab}
+            />
             <div className="flex flex-wrap gap-2">
               {selected.kind === 'Node' && (
                 <>

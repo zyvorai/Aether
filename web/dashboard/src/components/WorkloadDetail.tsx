@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
-import { apiFetch, apiPost, apiDelete } from '../utils/api';
+import { useState, useEffect, useRef } from 'react';
+import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import LogViewer from './LogViewer';
-import Badge from './Badge';
-import type { ClusterResourceDetail, WorkloadResponse } from '../types/api';
+import Badge, { RuntimeBadge, SeverityBadge } from './Badge';
+import BarChart from './BarChart';
+import RadarChart from './RadarChart';
+import type { ClusterResourceDetail, Event, ScoringResult, WorkloadResponse } from '../types/api';
+
+export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events';
 
 interface WorkloadDetailProps {
   workload: WorkloadResponse;
   onClose: () => void;
   onAction: () => void;
+  initialTab?: DetailTab;
 }
-
-type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring';
 
 function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
   const s = status.toLowerCase();
@@ -20,7 +23,70 @@ function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' 
   return 'yellow';
 }
 
-export default function WorkloadDetail({ workload, onClose, onAction }: WorkloadDetailProps) {
+function ScoringResultsView({ data }: { data: ScoringResult }) {
+  const rec = data.scores.find((s) => s.runtime === data.recommended);
+  const radarDims = rec
+    ? [
+        { label: 'Cost', value: Math.min(rec.cost_score, 1) },
+        { label: 'Perf', value: Math.min(rec.performance_score, 1) },
+        { label: 'Reliability', value: Math.min(rec.reliability_score, 1) },
+        { label: 'Availability', value: Math.min(rec.availability_score, 1) },
+      ]
+    : [];
+
+  return (
+    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <span className="text-zinc-500 text-xs">RECOMMENDED RUNTIME</span>
+        <div className="mt-1 flex items-center gap-2">
+          <RuntimeBadge runtime={data.recommended} />
+          <span className="text-lg font-semibold text-aether">{data.recommended}</span>
+        </div>
+        <div className="mt-3">
+          <span className="text-zinc-500 text-xs">WORKLOAD CLASS</span>
+          <p className="text-white">{data.workload_class}</p>
+        </div>
+        <div className="mt-3">
+          <span className="text-zinc-500 text-xs">CONFIDENCE</span>
+          <BarChart label="Confidence" percent={data.confidence * 100} />
+        </div>
+        {rec && (
+          <div className="mt-4 space-y-2">
+            <BarChart label="Cost" percent={rec.cost_score * 100} />
+            <BarChart label="Performance" percent={rec.performance_score * 100} />
+            <BarChart label="Reliability" percent={rec.reliability_score * 100} />
+            <BarChart label="Availability" percent={rec.availability_score * 100} />
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col items-center">
+        {radarDims.length >= 3 && <RadarChart dimensions={radarDims} />}
+        <div className="w-full mt-3 space-y-2">
+          {data.scores.map((s) => (
+            <div
+              key={s.runtime}
+              className={`rounded-lg border px-3 py-2 ${
+                s.runtime === data.recommended
+                  ? 'border-aether/30 bg-aether/5'
+                  : 'border-zinc-700 bg-zinc-800/50'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <RuntimeBadge runtime={s.runtime} />
+                <span className={`text-sm font-medium ${s.runtime === data.recommended ? 'text-aether' : 'text-zinc-300'}`}>
+                  {(s.total_score * 100).toFixed(0)}%
+                </span>
+              </div>
+              <BarChart label="Total score" percent={s.total_score * 100} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function WorkloadDetail({ workload, onClose, onAction, initialTab = 'overview' }: WorkloadDetailProps) {
   const isAetherManaged = (workload.source ?? 'aether') === 'aether';
   const isScalableClusterWorkload = !isAetherManaged && ['Deployment', 'StatefulSet'].includes(workload.kind ?? '');
   const clusterResourceName = workload.name.split('/').pop() ?? workload.name;
@@ -30,9 +96,18 @@ export default function WorkloadDetail({ workload, onClose, onAction }: Workload
   const clusterResourcePath = !isAetherManaged && workload.cluster && workload.namespace && workload.kind
     ? `/cluster/resource?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`
     : undefined;
-  const [activeTab, setActiveTab] = useState<DetailTab>('overview');
+  const [activeTab, setActiveTab] = useState<DetailTab>(initialTab);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [shellOpen, setShellOpen] = useState(false);
+  const [shellOutput, setShellOutput] = useState('');
+  const [shellInput, setShellInput] = useState('');
+  const [shellConnected, setShellConnected] = useState(false);
+  const [shellFullscreen, setShellFullscreen] = useState(false);
+  const shellSocketRef = useRef<WebSocket | null>(null);
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
-  const [scoringData, setScoringData] = useState<Record<string, unknown> | null>(null);
+  const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
+  const [scoringError, setScoringError] = useState('');
   const [clusterDetail, setClusterDetail] = useState<ClusterResourceDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
@@ -45,6 +120,53 @@ export default function WorkloadDetail({ workload, onClose, onAction }: Workload
       });
     }
   }, [activeTab, isAetherManaged, workload.name]);
+
+  useEffect(() => {
+    if (activeTab !== 'events') return;
+    setEventsLoading(true);
+    apiFetch<Event[]>('/events').then((data) => {
+      setEvents((data ?? []).filter((ev) => ev.workload === workload.name));
+      setEventsLoading(false);
+    });
+  }, [activeTab, workload.name]);
+
+  // Shell WebSocket Connection
+  useEffect(() => {
+    if (!shellOpen || !workload.cluster || !workload.namespace) return;
+
+    const wsUrl = apiWebSocketUrl(
+      `/cluster/ws/exec?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&pod=${encodeURIComponent(workload.name)}&command=/bin/sh`
+    );
+
+    try {
+      const socket = new WebSocket(wsUrl);
+      shellSocketRef.current = socket;
+
+      socket.onopen = () => {
+        setShellConnected(true);
+        setShellOutput(prev => prev + '[aether] Connected to pod shell\n');
+      };
+
+      socket.onmessage = (event) => {
+        setShellOutput(prev => prev + event.data);
+      };
+
+      socket.onclose = () => {
+        setShellConnected(false);
+        setShellOutput(prev => prev + '\n[aether] Connection closed\n');
+      };
+
+      socket.onerror = () => {
+        setShellOutput(prev => prev + '\n[aether] Connection error\n');
+      };
+    } catch (e) {
+      setShellOutput('[aether] Failed to connect to shell\n');
+    }
+
+    return () => {
+      shellSocketRef.current?.close();
+    };
+  }, [shellOpen, workload.name, workload.cluster, workload.namespace]);
 
   useEffect(() => {
     if (activeTab === 'manifest' && clusterResourcePath && !clusterDetail) {
@@ -60,7 +182,7 @@ export default function WorkloadDetail({ workload, onClose, onAction }: Workload
     }
   }, [activeTab, clusterDetail, clusterResourcePath]);
 
-  const handleAction = async (action: string) => {
+  const handleAction = async (action: string, replicas?: number) => {
     setActionLoading(action);
     try {
       if (isAetherManaged) {
@@ -114,9 +236,11 @@ export default function WorkloadDetail({ workload, onClose, onAction }: Workload
     { id: 'manifest', label: 'Manifest' },
     { id: 'drift', label: 'Drift' },
     { id: 'scoring', label: 'Scoring' },
+    { id: 'events', label: 'Events' },
   ];
 
   return (
+    <>
     <div className="bg-zinc-900 border border-zinc-700 rounded-xl mt-4 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-zinc-800 border-b border-zinc-700">
@@ -151,7 +275,13 @@ export default function WorkloadDetail({ workload, onClose, onAction }: Workload
           <div>
             {/* Action Buttons */}
             {isAetherManaged ? (
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-4 flex-wrap">
+                <button
+                  onClick={() => setShellOpen(true)}
+                  className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
+                >
+                  Shell
+                </button>
                 {['start', 'stop', 'restart', 'delete'].map(action => (
                   <button
                     key={action}
@@ -321,27 +451,175 @@ export default function WorkloadDetail({ workload, onClose, onAction }: Workload
         )}
 
         {activeTab === 'scoring' && (
-          <div className="text-zinc-400 text-sm">
-            <p>Click &quot;Analyze&quot; to run the AI scoring engine for this workload.</p>
-            <button
-              onClick={async () => {
-                setLoading(true);
-                const r = await apiPost<Record<string, unknown>>('/ai/recommend', {});
-                if (r.success && r.data) setScoringData(r.data);
-                setLoading(false);
-              }}
-              className="mt-2 px-3 py-1.5 bg-aether/20 text-aether rounded border border-aether/30 hover:bg-aether/40"
-            >
-              {loading ? 'Analyzing...' : 'Analyze Runtime'}
-            </button>
+          <div className="text-sm text-zinc-400">
+            {!scoringData && (
+              <>
+                <p>Run the AI scoring engine to compare runtimes for this workload.</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setLoading(true);
+                    setScoringError('');
+                    const r = await apiPost<ScoringResult>('/ai/recommend', {});
+                    if (r.success && r.data) setScoringData(r.data);
+                    else setScoringError(r.error ?? 'Analysis failed');
+                    setLoading(false);
+                  }}
+                  disabled={loading}
+                  className="mt-2 px-3 py-1.5 bg-aether/20 text-aether rounded border border-aether/30 hover:bg-aether/40 disabled:opacity-50"
+                >
+                  {loading ? 'Analyzing...' : 'Analyze'}
+                </button>
+              </>
+            )}
+            {scoringError && <p className="mt-2 text-red-400">{scoringError}</p>}
             {scoringData && (
-              <div className="mt-3 bg-zinc-800 rounded p-3">
-                <pre className="text-xs text-zinc-300 overflow-x-auto">{JSON.stringify(scoringData, null, 2)}</pre>
+              <>
+                <div className="flex justify-end mb-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setLoading(true);
+                      setScoringError('');
+                      const r = await apiPost<ScoringResult>('/ai/recommend', {});
+                      if (r.success && r.data) setScoringData(r.data);
+                      else setScoringError(r.error ?? 'Analysis failed');
+                      setLoading(false);
+                    }}
+                    disabled={loading}
+                    className="text-xs text-aether hover:text-aether-light disabled:opacity-50"
+                  >
+                    {loading ? 'Analyzing...' : 'Re-analyze'}
+                  </button>
+                </div>
+                <ScoringResultsView data={scoringData} />
+              </>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'events' && (
+          <div className="text-sm">
+            {eventsLoading ? (
+              <p className="text-zinc-500">Loading events...</p>
+            ) : events.length === 0 ? (
+              <p className="text-zinc-500">No events recorded for this workload.</p>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-auto">
+                {events.map((ev, i) => (
+                  <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 rounded-lg bg-zinc-950/60 p-3">
+                    <SeverityBadge severity={ev.severity} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-zinc-200">{ev.title}</div>
+                      <div className="text-xs text-zinc-500 mt-0.5">{ev.message}</div>
+                      <div className="text-xs text-zinc-600 mt-1">{ev.timestamp?.slice(0, 19)}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         )}
       </div>
     </div>
+
+      {/* Shell Modal - Real WebSocket Terminal */}
+      {shellOpen && (
+        <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-[60] ${shellFullscreen ? 'p-0' : ''}`}>
+          <div className={`bg-zinc-950 border border-zinc-700 rounded-2xl overflow-hidden transition-all ${shellFullscreen ? 'w-full h-full max-w-none rounded-none' : 'w-full max-w-4xl mx-4'}`}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 bg-zinc-900">
+              <div className="flex items-center gap-3">
+                <div className="font-medium">Shell — {workload.name}</div>
+                <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-700 text-zinc-400'}`}>
+                  {shellConnected ? 'Connected' : 'Disconnected'}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => navigator.clipboard.writeText(shellOutput)}
+                  className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                >
+                  Copy
+                </button>
+                <button 
+                  onClick={() => setShellOutput('')}
+                  className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                >
+                  Clear
+                </button>
+                <button 
+                  onClick={() => setShellFullscreen(!shellFullscreen)}
+                  className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                >
+                  {shellFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                </button>
+                <button 
+                  onClick={() => {
+                    shellSocketRef.current?.close();
+                    setShellOpen(false);
+                    setShellConnected(false);
+                    setShellOutput('');
+                    setShellFullscreen(false);
+                  }} 
+                  className="text-zinc-400 hover:text-white text-xl leading-none ml-1"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <div 
+                ref={(el) => {
+                  if (el) el.scrollTop = el.scrollHeight;
+                }}
+                className="bg-[#0a0c10] rounded-xl p-4 font-mono text-sm text-emerald-400 h-[420px] overflow-auto whitespace-pre-wrap border border-zinc-800 shadow-inner"
+              >
+                {shellOutput || '[aether] Connecting to pod shell...\n'}
+              </div>
+
+              <div className="mt-4 flex gap-2 items-center">
+                <select 
+                  className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-400"
+                  defaultValue="/bin/sh"
+                >
+                  <option value="/bin/sh">/bin/sh</option>
+                  <option value="/bin/bash">/bin/bash</option>
+                </select>
+
+                <input
+                  value={shellInput}
+                  onChange={(e) => setShellInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && shellConnected && shellInput.trim()) {
+                      shellSocketRef.current?.send(shellInput + '\n');
+                      setShellOutput(prev => prev + `$ ${shellInput}\n`);
+                      setShellInput('');
+                    }
+                  }}
+                  className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-emerald-600"
+                  placeholder="Type command and press Enter..."
+                  disabled={!shellConnected}
+                />
+                <button
+                  onClick={() => {
+                    if (shellConnected && shellInput.trim()) {
+                      shellSocketRef.current?.send(shellInput + '\n');
+                      setShellOutput(prev => prev + `$ ${shellInput}\n`);
+                      setShellInput('');
+                    }
+                  }}
+                  disabled={!shellConnected || !shellInput.trim()}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
