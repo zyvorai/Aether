@@ -348,20 +348,41 @@ pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/dashboard/dist/i
 // Run `npm run build` in web/dashboard/ after UI changes (stable asset names in vite.config.ts).
 const DASHBOARD_CSS: &str = include_str!("../../web/dashboard/dist/assets/aether-dashboard.css");
 const DASHBOARD_JS: &str = include_str!("../../web/dashboard/dist/assets/aether-dashboard.js");
+const DASHBOARD_CACHE_CONTROL: &str = "no-store, no-cache, must-revalidate, max-age=0";
 
 /// GET / - Serve the web dashboard
 pub(crate) async fn serve_dashboard() -> impl IntoResponse {
-    Html(DASHBOARD_HTML)
+    (
+        [
+            (header::CACHE_CONTROL, DASHBOARD_CACHE_CONTROL),
+            (header::PRAGMA, "no-cache"),
+        ],
+        Html(DASHBOARD_HTML),
+    )
 }
 
 /// GET /assets/*.css - Serve embedded dashboard CSS
 pub(crate) async fn serve_dashboard_css() -> impl IntoResponse {
-    ([(header::CONTENT_TYPE, "text/css")], DASHBOARD_CSS)
+    (
+        [
+            (header::CONTENT_TYPE, "text/css"),
+            (header::CACHE_CONTROL, DASHBOARD_CACHE_CONTROL),
+            (header::PRAGMA, "no-cache"),
+        ],
+        DASHBOARD_CSS,
+    )
 }
 
 /// GET /assets/*.js - Serve embedded dashboard JS
 pub(crate) async fn serve_dashboard_js() -> impl IntoResponse {
-    ([(header::CONTENT_TYPE, "application/javascript")], DASHBOARD_JS)
+    (
+        [
+            (header::CONTENT_TYPE, "application/javascript"),
+            (header::CACHE_CONTROL, DASHBOARD_CACHE_CONTROL),
+            (header::PRAGMA, "no-cache"),
+        ],
+        DASHBOARD_JS,
+    )
 }
 
 /// SPA fallback: non-API GET requests serve the dashboard (deep links, refresh).
@@ -373,7 +394,13 @@ pub(crate) async fn serve_dashboard_spa_fallback(method: Method, uri: Uri) -> im
     if path.starts_with("/api") {
         return StatusCode::NOT_FOUND.into_response();
     }
-    Html(DASHBOARD_HTML).into_response()
+    (
+        [
+            (header::CACHE_CONTROL, DASHBOARD_CACHE_CONTROL),
+            (header::PRAGMA, "no-cache"),
+        ],
+        Html(DASHBOARD_HTML),
+    ).into_response()
 }
 
 /// GET /health - Health check endpoint

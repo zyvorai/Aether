@@ -91,11 +91,55 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           {clusterSummary.summary_note}
         </div>
       ) : null}
+      <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="surface-panel interactive-lift rounded-2xl p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Runtime Fabric</span>
+            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-300">
+              {sseConnected ? 'live' : 'syncing'}
+            </span>
+          </div>
+          <div className="text-2xl font-semibold text-white">{workloads.length + (clusterSummary?.workload_count ?? 0)}</div>
+          <p className="mt-1 text-sm text-slate-500">Managed and discovered workloads across every runtime.</p>
+        </div>
+        <div className="surface-panel interactive-lift rounded-2xl p-5">
+          <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Signal Quality</div>
+          <div className="flex items-end gap-3">
+            <div className="text-2xl font-semibold text-white">{healthy}</div>
+            <div className="pb-1 text-sm text-slate-500">healthy checks</div>
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-aether"
+              style={{ width: `${Math.min(100, Math.max(8, (healthy / Math.max(1, healthy + degraded)) * 100))}%` }}
+            />
+          </div>
+        </div>
+        <div className="surface-panel interactive-lift rounded-2xl p-5">
+          <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Control Surface</div>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-xl border border-slate-800 bg-slate-950/45 p-3">
+              <div className="text-lg font-semibold text-white">{plugins.length}</div>
+              <div className="text-[11px] text-slate-500">Plugins</div>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/45 p-3">
+              <div className="text-lg font-semibold text-white">{environments.length}</div>
+              <div className="text-[11px] text-slate-500">Envs</div>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/45 p-3">
+              <div className="text-lg font-semibold text-white">{apiKeys.length}</div>
+              <div className="text-[11px] text-slate-500">Keys</div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <button onClick={() => onNavigate('workloads')} className="text-left">
           <StatCard title="Workloads" value={workloads.length} color="orange" icon={<LayoutDashboard size={18} />} />
         </button>
-        <StatCard title="Clusters" value={clusterSummary?.cluster_count ?? 0} color="blue" icon={<Activity size={18} />} />
+        <button type="button" onClick={() => onNavigate('clusters')} className="text-left">
+          <StatCard title="Clusters" value={clusterSummary?.cluster_count ?? 0} color="blue" icon={<Activity size={18} />} />
+        </button>
         <button onClick={() => onNavigate('health')} className="text-left">
           <StatCard title="Healthy" value={healthy} color="green" icon={<Activity size={18} />} />
         </button>
@@ -168,7 +212,16 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
 
         {/* Recent Events */}
         <div className="dash-card">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Events</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-zinc-100">Events</h2>
+            <button
+              type="button"
+              onClick={() => onNavigate('events')}
+              className="text-sm text-aether hover:text-aether-light transition-colors"
+            >
+              View all
+            </button>
+          </div>
           {events.length === 0 ? (
             <EmptyState icon={<Inbox size={48} />} title="No events" description="No events have been recorded yet" />
           ) : (
@@ -189,7 +242,16 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
 
         {/* Health Summary */}
         <div className="dash-card">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-4">Health</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-zinc-100">Health</h2>
+            <button
+              type="button"
+              onClick={() => onNavigate('health')}
+              className="text-sm text-aether hover:text-aether-light transition-colors"
+            >
+              View all
+            </button>
+          </div>
           {healthSummary ? (
             <div className="grid grid-cols-2 gap-4">
               <StatCard title="Healthy" value={healthSummary.healthy} color="green" />

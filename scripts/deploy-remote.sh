@@ -277,7 +277,18 @@ else
   info "Source synced to ${REMOTE_DIR}"
 fi
 
-step "Step 2/${TOTAL_STEPS}: Building release binary"
+step "Step 2/${TOTAL_STEPS}: Building dashboard + release binary"
+if [ "${SKIP_RSYNC}" != "1" ] || [ -d "${REPO_ROOT}/web/dashboard/node_modules" ]; then
+  if [ -f "${REPO_ROOT}/web/dashboard/package.json" ]; then
+    info "Building embedded dashboard (web/dashboard/dist)..."
+    (cd "${REPO_ROOT}/web/dashboard" && (npm ci --prefer-offline 2>/dev/null || npm install) && npm run build)
+  fi
+elif [ -f "${REPO_ROOT}/web/dashboard/dist/index.html" ]; then
+  info "Using existing web/dashboard/dist (set AETHER_SKIP_RSYNC=0 and sync source to rebuild UI)"
+else
+  warn "No web/dashboard/dist — run: cd web/dashboard && npm install && npm run build"
+fi
+
 if [ "${LOCAL_BUILD}" = "1" ]; then
   (cd "${REPO_ROOT}" && cargo build --release)
   strip "${REPO_ROOT}/target/release/aether" 2>/dev/null || true
@@ -295,6 +306,9 @@ else
       source \$HOME/.cargo/env
     fi
     cd ${REMOTE_DIR}
+    if [ -f web/dashboard/package.json ]; then
+      cd web/dashboard && (npm ci --prefer-offline 2>/dev/null || npm install) && npm run build
+    fi
     cargo build --release
     strip target/release/aether 2>/dev/null || true
   "

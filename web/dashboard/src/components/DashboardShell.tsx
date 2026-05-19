@@ -90,6 +90,12 @@ export default function DashboardShell({
 
   return (
     <div className={shellClass}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-aether focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+      >
+        Skip to content
+      </a>
       <Navbar
         currentView={currentView}
         onNavigate={onNavigate}
@@ -100,7 +106,7 @@ export default function DashboardShell({
         sseConnected={sseConnected}
       />
       <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />
-      <main className="flex-1 dash-content py-8 lg:py-10">{children}</main>
+      <main id="main-content" className="flex-1 dash-content py-8 lg:py-10">{children}</main>
       <Footer />
       {commandPalette}
       {shortcutsHelp}

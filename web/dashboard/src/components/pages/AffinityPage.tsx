@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 import BarChart from '../BarChart';
 import EmptyState from '../EmptyState';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
 import type { AffinityScore } from '../../types/api';
 
 const WORKLOAD_CLASSES = [
@@ -19,34 +21,42 @@ const WORKLOAD_CLASSES = [
 export default function AffinityPage() {
   const [affinityData, setAffinityData] = useState<Record<string, AffinityScore[]>>({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const results: Record<string, AffinityScore[]> = {};
-      await Promise.all(
-        WORKLOAD_CLASSES.map(async (cls) => {
-          const data = await apiFetch<AffinityScore[]>(`/affinity/${cls}`);
-          if (data) results[cls] = data;
-        })
-      );
-      setAffinityData(results);
-      setLoading(false);
-    }
-    load();
+  const load = useCallback(async () => {
+    const results: Record<string, AffinityScore[]> = {};
+    await Promise.all(
+      WORKLOAD_CLASSES.map(async (cls) => {
+        const data = await apiFetch<AffinityScore[]>(`/affinity/${cls}`);
+        if (data) results[cls] = data;
+      }),
+    );
+    setAffinityData(results);
   }, []);
 
+  useEffect(() => {
+    void (async () => {
+      await load();
+      setLoading(false);
+    })();
+  }, [load]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
-      </div>
-    );
+    return <PageLoading rows={6} />;
   }
 
   const classes = Object.entries(affinityData);
 
   return (
     <div>
+      <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
+
       {classes.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No affinity data" description="Affinity scores are not available" />
       ) : (

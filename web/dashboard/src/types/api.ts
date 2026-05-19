@@ -412,6 +412,11 @@ export interface PluginInfo {
 }
 
 // ─── Dependencies ────────────────────────────────────────────────────
+export interface DependencyEdge {
+  from: string;
+  to: string;
+}
+
 export interface DependencyGraph {
   stats: {
     total_workloads: number;
@@ -423,6 +428,8 @@ export interface DependencyGraph {
   };
   startup_order: string[];
   issues: string[];
+  nodes?: string[];
+  edges?: DependencyEdge[];
 }
 
 // ─── SLA ─────────────────────────────────────────────────────────────
@@ -585,4 +592,5 @@ export type AppView =
   | 'rbac'
   | 'audit'
   | 'metrics'
-  | 'gitops';
+  | 'gitops'
+  | 'editor';

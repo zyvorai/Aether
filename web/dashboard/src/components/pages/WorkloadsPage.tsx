@@ -1,15 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus } from 'lucide-react';
-import { apiFetch, apiPost, apiDelete, apiText } from '../../utils/api';
+import { apiFetch, apiPost, apiDelete } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
 import Modal from '../Modal';
-import CodeBlock from '../CodeBlock';
 import YamlInput from '../YamlInput';
 import EmptyState from '../EmptyState';
-import WorkloadDetail from '../WorkloadDetail';
+import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
 import type { WorkloadResponse, ValidateResponse, BuildResponse } from '../../types/api';
+
+interface WorkloadsPageProps {
+  initialSelectedName?: string | null;
+  onClearInitialSelection?: () => void;
+}
 
 function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
   const s = status.toLowerCase();
@@ -27,7 +33,7 @@ function isAetherManaged(workload: WorkloadResponse): boolean {
   return (workload.source ?? 'aether') === 'aether';
 }
 
-export default function WorkloadsPage() {
+export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection }: WorkloadsPageProps) {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -35,7 +41,6 @@ export default function WorkloadsPage() {
   const [kindFilter, setKindFilter] = useState('all');
   const [clusterFilter, setClusterFilter] = useState('all');
   const [namespaceFilter, setNamespaceFilter] = useState('all');
-  const [logsModal, setLogsModal] = useState<{ name: string; content: string } | null>(null);
   const [migrateModal, setMigrateModal] = useState<string | null>(null);
   const [validateModal, setValidateModal] = useState(false);
   const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
@@ -45,6 +50,7 @@ export default function WorkloadsPage() {
   const [deployModal, setDeployModal] = useState(false);
   const [deployLoading, setDeployLoading] = useState(false);
   const [selectedWorkload, setSelectedWorkload] = useState<WorkloadResponse | null>(null);
+  const [detailInitialTab, setDetailInitialTab] = useState<DetailTab>('overview');
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
 
@@ -57,9 +63,19 @@ export default function WorkloadsPage() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleLogs(name: string) {
-    const text = await apiText(`/workloads/${name}/logs`);
-    setLogsModal({ name, content: text });
+  useEffect(() => {
+    if (!initialSelectedName || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === initialSelectedName);
+    if (match) {
+      setDetailInitialTab('overview');
+      setSelectedWorkload(match);
+    }
+    onClearInitialSelection?.();
+  }, [initialSelectedName, workloads, onClearInitialSelection]);
+
+  function openWorkloadDetail(workload: WorkloadResponse, tab: DetailTab) {
+    setDetailInitialTab(tab);
+    setSelectedWorkload(workload);
   }
 
   async function handleAction(name: string, action: string) {
@@ -91,21 +107,6 @@ export default function WorkloadsPage() {
       toast(`Build "${name}" failed: ${res.error ?? 'unknown error'}`, 'error');
     }
     load();
-  }
-
-  async function handleProfile(name: string) {
-    const data = await apiFetch<unknown>(`/ai/profile/${name}`);
-    setLogsModal({ name: `Profile: ${name}`, content: JSON.stringify(data, null, 2) });
-  }
-
-  async function handleAnalyze(name: string) {
-    const data = await apiFetch<unknown>(`/ai/analyze/${name}`);
-    setLogsModal({ name: `Analyze: ${name}`, content: JSON.stringify(data, null, 2) });
-  }
-
-  async function handleDrift(name: string) {
-    const data = await apiFetch<unknown>(`/drift/${name}`);
-    setLogsModal({ name: `Drift: ${name}`, content: JSON.stringify(data, null, 2) });
   }
 
   async function handleMigrate(name: string, target: string) {
@@ -148,11 +149,7 @@ export default function WorkloadsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
-      </div>
-    );
+    return <PageLoading rows={6} />;
   }
 
   const kinds = ['all', ...Array.from(new Set(workloads.map((w) => w.kind).filter((kind): kind is string => Boolean(kind)))).sort()];
@@ -176,33 +173,55 @@ export default function WorkloadsPage() {
     return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace;
   });
 
+  const filterSelectClass = 'rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100';
+
   return (
     <div>
-      <div className="flex items-center justify-end mb-6">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setDeployModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-aether hover:bg-aether-light text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus size={16} />
-            Deploy New Workload
-          </button>
-          <button
-            onClick={() => setValidateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <ClipboardCheck size={16} />
-            Validate YAML
-          </button>
-          <button
-            onClick={load}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm font-medium transition-colors"
-          >
-            <RefreshCw size={16} />
-            Refresh
-          </button>
-        </div>
-      </div>
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search name, image, cluster, namespace..."
+        onRefresh={load}
+        refreshing={loading}
+        filters={
+          <>
+            <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as 'all' | 'aether' | 'cluster')} className={filterSelectClass}>
+              <option value="all">All sources</option>
+              <option value="aether">Aether managed</option>
+              <option value="cluster">Kubernetes discovered</option>
+            </select>
+            <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass}>
+              {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
+            </select>
+            <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass}>
+              {clusters.map((cluster) => <option key={cluster} value={cluster}>{cluster === 'all' ? 'All clusters' : cluster}</option>)}
+            </select>
+            <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className={filterSelectClass}>
+              {namespaces.map((namespace) => <option key={namespace} value={namespace}>{namespace === 'all' ? 'All namespaces' : namespace}</option>)}
+            </select>
+          </>
+        }
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => setDeployModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white transition hover:bg-aether-light"
+            >
+              <Plus size={16} />
+              Deploy
+            </button>
+            <button
+              type="button"
+              onClick={() => setValidateModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
+            >
+              <ClipboardCheck size={16} />
+              Validate
+            </button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <StatCard title="Total" value={filteredWorkloads.length} color="orange" />
@@ -216,30 +235,21 @@ export default function WorkloadsPage() {
           value={filteredWorkloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length}
           color="red"
         />
-      </div>
-
-      <div className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-5">
-        <input
-          type="text"
-          placeholder="Search name, image, cluster, namespace..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+        <StatCard
+          title="Aether"
+          value={filteredWorkloads.filter((w) => (w.source ?? 'aether') === 'aether').length}
+          color="purple"
         />
-        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as 'all' | 'aether' | 'cluster')} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
-          <option value="all">All sources</option>
-          <option value="aether">Aether managed</option>
-          <option value="cluster">Kubernetes discovered</option>
-        </select>
-        <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
-          {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
-        </select>
-        <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
-          {clusters.map((cluster) => <option key={cluster} value={cluster}>{cluster === 'all' ? 'All clusters' : cluster}</option>)}
-        </select>
-        <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
-          {namespaces.map((namespace) => <option key={namespace} value={namespace}>{namespace === 'all' ? 'All namespaces' : namespace}</option>)}
-        </select>
+        <StatCard
+          title="Discovered"
+          value={filteredWorkloads.filter((w) => (w.source ?? 'aether') === 'cluster').length}
+          color="blue"
+        />
+        <StatCard
+          title="Namespaces"
+          value={namespaces.filter((namespace) => namespace !== 'all').length}
+          color="green"
+        />
       </div>
 
       {filteredWorkloads.length === 0 ? (
@@ -264,7 +274,7 @@ export default function WorkloadsPage() {
                     <td className="py-3 px-3 sm:px-4 font-medium text-zinc-200 align-top min-w-0">
                       <button
                         type="button"
-                        onClick={() => setSelectedWorkload(w)}
+                        onClick={() => openWorkloadDetail(w, 'overview')}
                         className="hover:text-aether transition-colors text-left w-full min-w-0 truncate block"
                         title={w.name}
                       >
@@ -298,15 +308,15 @@ export default function WorkloadsPage() {
                       <div className="flex flex-wrap gap-1">
                         {isAetherManaged(w) ? (
                           <>
-                            <button onClick={() => handleLogs(w.name)} className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
-                            <button onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
-                            <button onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
-                            <button onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
-                            <button onClick={() => setMigrateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
-                            <button onClick={() => handleProfile(w.name)} className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
-                            <button onClick={() => handleAnalyze(w.name)} className="p-1.5 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
-                            <button onClick={() => handleDrift(w.name)} className="p-1.5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
-                            <button onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
+                            <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
+                            <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
+                            <button type="button" onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
+                            <button type="button" onClick={() => setMigrateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'drift')} className="p-1.5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
+                            <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
                           </>
                         ) : (
                           <span className="text-xs text-zinc-500 px-2 py-1">
@@ -323,16 +333,16 @@ export default function WorkloadsPage() {
         </div>
       )}
 
-      {/* Workload Detail Panel */}
       {selectedWorkload && (
         <WorkloadDetail
+          key={`${selectedWorkload.name}-${detailInitialTab}`}
           workload={selectedWorkload}
+          initialTab={detailInitialTab}
           onClose={() => setSelectedWorkload(null)}
           onAction={() => load()}
         />
       )}
 
-      {/* Confirmation Modal */}
       <Modal
         isOpen={confirmAction !== null}
         onClose={() => setConfirmAction(null)}
@@ -345,12 +355,14 @@ export default function WorkloadsPage() {
         </p>
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             onClick={() => setConfirmAction(null)}
             className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm font-medium transition-colors"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleConfirmedAction}
             className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
               confirmAction?.type === 'delete'
@@ -363,18 +375,13 @@ export default function WorkloadsPage() {
         </div>
       </Modal>
 
-      {/* Logs Modal */}
-      <Modal isOpen={logsModal !== null} onClose={() => setLogsModal(null)} title={logsModal?.name ?? 'Logs'}>
-        <CodeBlock title="log">{logsModal?.content ?? ''}</CodeBlock>
-      </Modal>
-
-      {/* Migrate Modal */}
       <Modal isOpen={migrateModal !== null} onClose={() => setMigrateModal(null)} title={`Migrate: ${migrateModal}`}>
         <p className="text-sm text-zinc-400 mb-4">Select target runtime for migration:</p>
         <div className="grid grid-cols-2 gap-3">
           {runtimes.map((rt) => (
             <button
               key={rt}
+              type="button"
               onClick={() => migrateModal && handleMigrate(migrateModal, rt)}
               disabled={actionLoading !== null}
               className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm font-medium text-zinc-200 transition-colors capitalize"
@@ -385,7 +392,6 @@ export default function WorkloadsPage() {
         </div>
       </Modal>
 
-      {/* Deploy Modal */}
       <Modal isOpen={deployModal} onClose={() => setDeployModal(false)} title="Deploy New Workload">
         <YamlInput
           buttonText="Deploy"
@@ -395,7 +401,6 @@ export default function WorkloadsPage() {
         />
       </Modal>
 
-      {/* Validate Modal */}
       <Modal isOpen={validateModal} onClose={() => { setValidateModal(false); setValidateResult(null); }} title="Validate Workload YAML">
         <YamlInput
           buttonText="Validate"

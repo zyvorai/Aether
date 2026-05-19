@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { AppView } from '../types/api';
+import { DASHBOARD_VIEWS } from '../utils/dashboardNav';
 
 interface CommandAction {
   id: string;
@@ -19,31 +20,13 @@ interface CommandPaletteProps {
   onRefresh?: () => void;
 }
 
-const NAV_ITEMS: CommandAction[] = [
-  { id: 'nav-overview', label: 'Go to Overview', category: 'navigation', icon: 'Dashboard', view: 'overview' },
-  { id: 'nav-workloads', label: 'Go to Workloads', category: 'navigation', icon: 'Workloads', view: 'workloads' },
-  { id: 'nav-clusters', label: 'Go to Cluster Browser', category: 'navigation', icon: 'Cluster', view: 'clusters' },
-  { id: 'nav-compose', label: 'Go to Compose Import', category: 'navigation', icon: 'Compose', view: 'compose' },
-  { id: 'nav-ai', label: 'Go to AI Engine', category: 'navigation', icon: 'AI', view: 'ai' },
-  { id: 'nav-health', label: 'Go to Health', category: 'navigation', icon: 'Health', view: 'health' },
-  { id: 'nav-events', label: 'Go to Events', category: 'navigation', icon: 'Events', view: 'events' },
-  { id: 'nav-cost', label: 'Go to Cost', category: 'navigation', icon: 'Cost', view: 'cost' },
-  { id: 'nav-drift', label: 'Go to Drift', category: 'navigation', icon: 'Drift', view: 'drift' },
-  { id: 'nav-policy', label: 'Go to Policy', category: 'navigation', icon: 'Policy', view: 'policy' },
-  { id: 'nav-scheduler', label: 'Go to Scheduler', category: 'navigation', icon: 'Scheduler', view: 'scheduler' },
-  { id: 'nav-secrets', label: 'Go to Secrets', category: 'navigation', icon: 'Secrets', view: 'secrets' },
-  { id: 'nav-backups', label: 'Go to Backups', category: 'navigation', icon: 'Backups', view: 'backups' },
-  { id: 'nav-templates', label: 'Go to Templates', category: 'navigation', icon: 'Templates', view: 'templates' },
-  { id: 'nav-audit', label: 'Go to Audit', category: 'navigation', icon: 'Audit', view: 'audit' },
-  { id: 'nav-gitops', label: 'Go to GitOps', category: 'navigation', icon: 'GitOps', view: 'gitops' },
-  { id: 'nav-metrics', label: 'Go to Metrics', category: 'navigation', icon: 'Metrics', view: 'metrics' },
-  { id: 'nav-sla', label: 'Go to SLA', category: 'navigation', icon: 'SLA', view: 'sla' },
-  { id: 'nav-deps', label: 'Go to Dependencies', category: 'navigation', icon: 'Deps', view: 'deps' },
-  { id: 'nav-envs', label: 'Go to Environments', category: 'navigation', icon: 'Envs', view: 'envs' },
-  { id: 'nav-plugins', label: 'Go to Plugins', category: 'navigation', icon: 'Plugins', view: 'plugins' },
-  { id: 'nav-rbac', label: 'Go to Access Control', category: 'navigation', icon: 'RBAC', view: 'rbac' },
-  { id: 'nav-affinity', label: 'Go to Affinity', category: 'navigation', icon: 'Affinity', view: 'affinity' },
-];
+const NAV_ITEMS: CommandAction[] = DASHBOARD_VIEWS.filter((v) => v.view !== 'overview').map((v) => ({
+  id: `nav-${v.view}`,
+  label: `Go to ${v.label}`,
+  category: 'navigation' as const,
+  icon: v.label,
+  view: v.view,
+}));
 
 const ACTION_ITEMS: CommandAction[] = [
   { id: 'action-refresh', label: 'Refresh Dashboard', category: 'action', icon: 'Refresh' },
@@ -131,7 +114,13 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
   let lastCategory = '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
+    >
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-xl rounded-[24px] surface-panel overflow-hidden"

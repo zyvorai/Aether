@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Inbox, History } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Inbox } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
+import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { RuntimeBadge } from '../Badge';
-import Modal from '../Modal';
-import CodeBlock from '../CodeBlock';
 import EmptyState from '../EmptyState';
 import type { HealthSummary, ManagedWorkload, HealthHistorySummary } from '../../types/api';
 
@@ -24,46 +23,48 @@ function getCircuitVariant(circuit: string): 'green' | 'red' | 'yellow' | 'muted
   return 'muted';
 }
 
-function toast(message: string, type: 'success' | 'error') {
-  window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
-}
-
 export default function HealthPage() {
   const [summary, setSummary] = useState<HealthSummary | null>(null);
   const [workloads, setWorkloads] = useState<ManagedWorkload[]>([]);
   const [loading, setLoading] = useState(true);
-  const [historyModal, setHistoryModal] = useState<{ name: string; data: HealthHistorySummary } | null>(null);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<{ workload: ManagedWorkload; history: HealthHistorySummary } | null>(null);
   const [historyLoading, setHistoryLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      const [s, w] = await Promise.all([
-        apiFetch<HealthSummary>('/orchestrator/summary'),
-        apiFetch<ManagedWorkload[]>('/orchestrator/status'),
-      ]);
-      setSummary(s);
-      setWorkloads(w ?? []);
-      setLoading(false);
-    }
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [s, w] = await Promise.all([
+      apiFetch<HealthSummary>('/orchestrator/summary'),
+      apiFetch<ManagedWorkload[]>('/orchestrator/status'),
+    ]);
+    setSummary(s);
+    setWorkloads(w ?? []);
+    setLoading(false);
   }, []);
 
-  async function handleHealthHistory(name: string) {
-    setHistoryLoading(name);
-    const data = await apiFetch<HealthHistorySummary>(`/health/${name}`);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function handleRowClick(w: ManagedWorkload) {
+    if (selected?.workload.name === w.name) {
+      setSelected(null);
+      return;
+    }
+    setHistoryLoading(w.name);
+    const data = await apiFetch<HealthHistorySummary>(`/health/${w.name}`);
     setHistoryLoading(null);
     if (data) {
-      setHistoryModal({ name, data });
-      toast(`Health history for "${name}" loaded`, 'success');
-    } else {
-      toast(`Failed to load health history for "${name}"`, 'error');
+      setSelected({ workload: w, history: data });
     }
   }
 
-  if (loading) {
+  const filtered = workloads.filter((w) => w.name.toLowerCase().includes(search.toLowerCase()));
+
+  if (loading && workloads.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
       </div>
     );
   }
@@ -76,93 +77,111 @@ export default function HealthPage() {
           <StatCard title="Degraded" value={summary.degraded} color="yellow" />
           <StatCard title="Unhealthy" value={summary.unhealthy} color="red" />
           <StatCard title="Unknown" value={summary.unknown} color="blue" />
-          <StatCard title="Circuits Open" value={summary.circuits_open} color="orange" />
+          <StatCard title="Circuits open" value={summary.circuits_open} color="orange" />
         </div>
       )}
+
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Filter workloads…"
+        onRefresh={() => void load()}
+        refreshing={loading}
+      />
 
       {workloads.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No managed workloads" description="No workloads are being monitored" />
       ) : (
-        <div className="dash-card-flush">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Workload</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Runtime</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Health</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Circuit</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Restarts</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">History</th>
-                </tr>
-              </thead>
-              <tbody>
-                {workloads.map((w) => (
-                  <tr key={w.name} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
-                    <td className="py-3 px-4 font-medium text-zinc-200">{w.name}</td>
-                    <td className="py-3 px-4"><RuntimeBadge runtime={w.runtime} /></td>
-                    <td className="py-3 px-4">
-                      <Badge text={w.health} variant={getHealthVariant(w.health)} />
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge text={w.circuit} variant={getCircuitVariant(w.circuit)} />
-                    </td>
-                    <td className="py-3 px-4 text-sm text-zinc-300">{w.restart_count}</td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => handleHealthHistory(w.name)}
-                        disabled={historyLoading === w.name}
-                        className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
-                        title="Health History"
-                      >
-                        {historyLoading === w.name ? (
-                          <div className="animate-spin rounded-full h-3.5 w-3.5 border-b border-blue-400" />
-                        ) : (
-                          <History size={14} />
-                        )}
-                      </button>
-                    </td>
+        <>
+          <div className="dash-card overflow-hidden mb-6">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-800">
+                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workload</th>
+                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Runtime</th>
+                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Health</th>
+                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Circuit</th>
+                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Restarts</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((w) => (
+                    <tr
+                      key={w.name}
+                      onClick={() => void handleRowClick(w)}
+                      className={`border-b border-slate-800/50 cursor-pointer transition-colors ${
+                        selected?.workload.name === w.name ? 'bg-aether/10' : 'hover:bg-slate-800/30'
+                      }`}
+                    >
+                      <td className="py-3 px-4 font-medium text-slate-200">
+                        {historyLoading === w.name ? (
+                          <span className="text-slate-500">Loading…</span>
+                        ) : (
+                          w.name
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <RuntimeBadge runtime={w.runtime} />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge text={w.health} variant={getHealthVariant(w.health)} />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge text={w.circuit} variant={getCircuitVariant(w.circuit)} />
+                      </td>
+                      <td className="py-3 px-4 text-sm text-slate-300">{w.restart_count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filtered.length === 0 && (
+                <p className="text-sm text-slate-500 py-6 text-center">No workloads match your search.</p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Health History Modal */}
-      <Modal
-        isOpen={historyModal !== null}
-        onClose={() => setHistoryModal(null)}
-        title={`Health History: ${historyModal?.name ?? ''}`}
-      >
-        {historyModal && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-zinc-950/50 rounded-lg p-3">
-                <div className="text-xs text-zinc-500 mb-1">Total Checks</div>
-                <div className="text-lg font-semibold text-zinc-100">{historyModal.data.total_checks}</div>
+          {selected && (
+            <div className="dash-card">
+              <h3 className="text-lg font-semibold text-slate-100 mb-4">
+                Health detail: {selected.workload.name}
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <div className="text-xs text-slate-500 mb-1">Total checks</div>
+                  <div className="text-lg font-semibold text-slate-100">{selected.history.total_checks}</div>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <div className="text-xs text-slate-500 mb-1">Ready checks</div>
+                  <div className="text-lg font-semibold text-emerald-400">{selected.history.ready_checks}</div>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <div className="text-xs text-slate-500 mb-1">Uptime</div>
+                  <div className="text-lg font-semibold text-slate-100">{selected.history.uptime_percent.toFixed(2)}%</div>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <div className="text-xs text-slate-500 mb-1">Last state</div>
+                  <div className="text-lg font-semibold text-slate-100">{selected.history.last_state}</div>
+                </div>
               </div>
-              <div className="bg-zinc-950/50 rounded-lg p-3">
-                <div className="text-xs text-zinc-500 mb-1">Ready Checks</div>
-                <div className="text-lg font-semibold text-emerald-400">{historyModal.data.ready_checks}</div>
-              </div>
-              <div className="bg-zinc-950/50 rounded-lg p-3">
-                <div className="text-xs text-zinc-500 mb-1">Uptime</div>
-                <div className="text-lg font-semibold text-zinc-100">{historyModal.data.uptime_percent.toFixed(2)}%</div>
-              </div>
-              <div className="bg-zinc-950/50 rounded-lg p-3">
-                <div className="text-xs text-zinc-500 mb-1">Last State</div>
-                <div className="text-lg font-semibold text-zinc-100">{historyModal.data.last_state}</div>
+              <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                <span>
+                  Runtime: <span className="text-slate-200">{selected.workload.runtime}</span>
+                </span>
+                <span>
+                  Circuit: <Badge text={selected.workload.circuit} variant={getCircuitVariant(selected.workload.circuit)} />
+                </span>
+                <span>
+                  Last restart count: <span className="text-slate-200">{selected.history.last_restart_count}</span>
+                </span>
+                <span>
+                  Current restarts: <span className="text-slate-200">{selected.workload.restart_count}</span>
+                </span>
               </div>
             </div>
-            <div className="text-sm text-zinc-400">
-              Last restart count: {historyModal.data.last_restart_count}
-            </div>
-            <CodeBlock title="Full History">{JSON.stringify(historyModal.data, null, 2)}</CodeBlock>
-          </div>
-        )}
-      </Modal>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __AETHER_DASHBOARD_BUILD__: JSON.stringify(
+      process.env.AETHER_DASHBOARD_BUILD ?? new Date().toISOString()
+    ),
+  },
   server: {
     port: 5173,
     proxy: {

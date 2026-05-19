@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { Inbox, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { apiFetch, apiDelete } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
+import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import Modal from '../Modal';
-import CodeBlock from '../CodeBlock';
 import EmptyState from '../EmptyState';
 import type { SecretSummary, SecretDetail } from '../../types/api';
 
@@ -15,19 +15,30 @@ function toast(message: string, type: 'success' | 'error') {
 export default function SecretsPage() {
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [expandedSecret, setExpandedSecret] = useState<string | null>(null);
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     const data = await apiFetch<SecretSummary[]>('/secrets');
     setSecrets(data ?? []);
     setLoading(false);
-  }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return secrets;
+    return secrets.filter(
+      (s) => s.name.toLowerCase().includes(q) || s.namespace.toLowerCase().includes(q)
+    );
+  }, [secrets, search]);
 
   async function handleExpand(name: string) {
     if (expandedSecret === name) {
@@ -51,49 +62,58 @@ export default function SecretsPage() {
         setExpandedSecret(null);
         setSecretDetail(null);
       }
-      load();
+      void load();
     } else {
       toast(`Failed to delete secret "${name}": ${res.error ?? 'unknown error'}`, 'error');
     }
   }
 
-  if (loading) {
+  if (loading && secrets.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
       </div>
     );
   }
 
   return (
     <div>
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search secrets…"
+        onRefresh={() => void load()}
+        refreshing={loading}
+      />
+
       {secrets.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No secrets" description="No secrets have been stored" />
       ) : (
-        <div className="dash-card-flush">
+        <div className="dash-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Namespace</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Keys</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Rotation</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Updated</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Actions</th>
+                <tr className="border-b border-slate-800">
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Namespace</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Keys</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Rotation</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Updated</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {secrets.map((s) => (
-                  <>
-                    <tr key={`${s.namespace}/${s.name}`} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                {filtered.map((s) => (
+                  <Fragment key={`${s.namespace}/${s.name}`}>
+                    <tr className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                       <td className="py-3 px-4">
                         <button
-                          onClick={() => handleExpand(s.name)}
-                          className="flex items-center gap-1.5 font-medium text-zinc-200 hover:text-amber-400 transition-colors"
+                          type="button"
+                          onClick={() => void handleExpand(s.name)}
+                          className="flex items-center gap-1.5 font-medium text-slate-200 hover:text-aether transition-colors"
                         >
                           {detailLoading === s.name ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b border-amber-500" />
+                            <div className="animate-spin rounded-full h-3 w-3 border-b border-aether" />
                           ) : expandedSecret === s.name ? (
                             <ChevronDown size={14} />
                           ) : (
@@ -102,19 +122,20 @@ export default function SecretsPage() {
                           {s.name}
                         </button>
                       </td>
-                      <td className="py-3 px-4 text-sm text-zinc-400">{s.namespace}</td>
-                      <td className="py-3 px-4 text-sm text-zinc-300">{s.key_count}</td>
+                      <td className="py-3 px-4 text-sm text-slate-400">{s.namespace}</td>
+                      <td className="py-3 px-4 text-sm text-slate-300">{s.key_count}</td>
                       <td className="py-3 px-4">
                         <Badge
-                          text={s.needs_rotation ? 'Needs Rotation' : 'OK'}
+                          text={s.needs_rotation ? 'Needs rotation' : 'OK'}
                           variant={s.needs_rotation ? 'red' : 'green'}
                         />
                       </td>
-                      <td className="py-3 px-4 text-sm text-zinc-400">{formatTimestamp(s.updated_at)}</td>
+                      <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(s.updated_at)}</td>
                       <td className="py-3 px-4">
                         <button
+                          type="button"
                           onClick={() => setConfirmDelete(s.name)}
-                          className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={14} />
@@ -122,62 +143,57 @@ export default function SecretsPage() {
                       </td>
                     </tr>
                     {expandedSecret === s.name && secretDetail && (
-                      <tr key={`${s.namespace}/${s.name}-detail`} className="border-b border-zinc-800/50">
+                      <tr className="border-b border-slate-800/50">
                         <td colSpan={6} className="px-4 py-3">
-                          <div className="bg-zinc-950/50 rounded-lg p-4 space-y-3">
-                            <div className="text-sm text-zinc-300 font-medium">Secret Detail</div>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="bg-slate-950/50 rounded-xl p-4 space-y-3 border border-slate-800">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                               <div>
-                                <span className="text-zinc-500">Keys: </span>
-                                <span className="text-zinc-200">{secretDetail.keys.join(', ')}</span>
+                                <span className="text-slate-500">Keys: </span>
+                                <span className="text-slate-200">{secretDetail.keys.join(', ')}</span>
                               </div>
                               <div>
-                                <span className="text-zinc-500">Created: </span>
-                                <span className="text-zinc-200">{formatTimestamp(secretDetail.created_at)}</span>
+                                <span className="text-slate-500">Created: </span>
+                                <span className="text-slate-200">{formatTimestamp(secretDetail.created_at)}</span>
                               </div>
                             </div>
                             {secretDetail.rotation_policy && (
-                              <div className="text-sm">
-                                <span className="text-zinc-500">Rotation Policy: </span>
-                                <span className="text-zinc-300">
-                                  Every {secretDetail.rotation_policy.interval_days} days,
-                                  max age {secretDetail.rotation_policy.max_age_days} days,
-                                  notify {secretDetail.rotation_policy.notify_before_days} days before
-                                </span>
-                              </div>
+                              <p className="text-sm text-slate-400">
+                                Rotation every {secretDetail.rotation_policy.interval_days} days, max age{' '}
+                                {secretDetail.rotation_policy.max_age_days} days, notify{' '}
+                                {secretDetail.rotation_policy.notify_before_days} days before
+                              </p>
                             )}
-                            <CodeBlock title="json">{JSON.stringify(secretDetail, null, 2)}</CodeBlock>
                           </div>
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
+            {filtered.length === 0 && (
+              <p className="text-sm text-slate-500 py-6 text-center">No secrets match your search.</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={confirmDelete !== null}
-        onClose={() => setConfirmDelete(null)}
-        title="Confirm Delete"
-      >
-        <p className="text-sm text-zinc-300 mb-6">
-          Are you sure you want to delete secret &quot;{confirmDelete}&quot;? This action cannot be undone.
+      <Modal isOpen={confirmDelete !== null} onClose={() => setConfirmDelete(null)} title="Confirm delete">
+        <p className="text-sm text-slate-300 mb-6">
+          Are you sure you want to delete secret &quot;{confirmDelete}&quot;? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             onClick={() => setConfirmDelete(null)}
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium"
           >
             Cancel
           </button>
           <button
-            onClick={() => confirmDelete && handleDelete(confirmDelete)}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors"
+            type="button"
+            onClick={() => confirmDelete && void handleDelete(confirmDelete)}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium"
           >
             Delete
           </button>
