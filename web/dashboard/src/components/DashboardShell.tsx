@@ -59,7 +59,7 @@ function buildHeroBadges(
   }
 
   badges.push({
-    label: sseConnected ? 'Live stream' : 'Stream reconnecting',
+    label: sseConnected ? 'Live updates' : 'Reconnecting…',
     tone: sseConnected ? 'ok' : 'warn',
   });
 

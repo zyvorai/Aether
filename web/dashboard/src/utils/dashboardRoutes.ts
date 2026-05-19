@@ -24,6 +24,7 @@ export const VIEW_TO_PATH: Record<AppView, string> = {
   rbac: '/rbac',
   audit: '/audit',
   metrics: '/metrics',
+  gitops: '/gitops',
 };
 
 const PATH_TO_VIEW = new Map<string, AppView>();

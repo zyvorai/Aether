@@ -29,6 +29,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${SCRIPT_DIR}/lib-deploy-pretty.sh"
 # shellcheck source=lib-deploy-cluster.sh
 source "${SCRIPT_DIR}/lib-deploy-cluster.sh"
+# shellcheck source=lib-deploy-manifest.sh
+source "${SCRIPT_DIR}/lib-deploy-manifest.sh"
 
 REPO="${AETHER_REGISTRY:-localhost/aether}"
 VERSION="${VERSION:-$(grep '^version' "${REPO_ROOT}/Cargo.toml" | head -1 | sed 's/.*"\(.*\)".*/\1/')}"
@@ -76,36 +78,17 @@ detect_k8s_distro() {
 apply_manifests() {
   local deploy_stamp
   deploy_stamp="$(date +%s)-${RANDOM}"
-  local api_key_secret=""
-  local api_key_env=""
-  if [ -n "${AETHER_API_KEY}" ]; then
-    api_key_secret=$(cat <<EOF
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: aether-api-key
-  namespace: ${NAMESPACE}
-type: Opaque
-stringData:
-  api-key: ${AETHER_API_KEY}
-EOF
-)
-    api_key_env=$(cat <<'EOF'
-        - name: AETHER_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: aether-api-key
-              key: api-key
-EOF
-)
-  fi
+  local pull_policy
+  pull_policy="$(aether_deploy_image_pull_policy "${IMAGE_LATEST}")"
+  aether_deploy_build_secret_env_blocks "${NAMESPACE}"
+  local svc_ingress
+  svc_ingress="$(aether_deploy_service_ingress_yaml "${NAMESPACE}" "${AETHER_EXPOSE:-nodeport}" "${NODE_PORT}")"
 
   ${KUBECTL} create namespace "${NAMESPACE}" --dry-run=client -o yaml | ${KUBECTL} apply -f -
   aether_apply_rbac "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
   aether_apply_cilium_bootstrap "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
   {
-    [ -n "${api_key_secret}" ] && printf '%s\n' "${api_key_secret}"
+    printf '%s' "${AETHER_MANIFEST_SECRETS_YAML}"
     cat <<EOF
 ---
 apiVersion: apps/v1
@@ -129,7 +112,7 @@ spec:
       containers:
       - name: aether
         image: ${IMAGE_LATEST}
-        imagePullPolicy: Never
+        imagePullPolicy: ${pull_policy}
         args: ['serve', '--host=0.0.0.0', '--port=5090']
         ports:
         - containerPort: 5090
@@ -139,7 +122,7 @@ spec:
           value: json
         - name: RUST_LOG
           value: info
-${api_key_env}
+${AETHER_MANIFEST_EXTRA_ENV_YAML}
         readinessProbe:
           httpGet:
             path: /health
@@ -152,22 +135,7 @@ ${api_key_env}
             port: 5090
           initialDelaySeconds: 10
           periodSeconds: 30
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: aether
-  namespace: ${NAMESPACE}
-spec:
-  type: NodePort
-  selector:
-    app: aether
-  ports:
-  - port: 5090
-    targetPort: 5090
-    nodePort: ${NODE_PORT}
-    protocol: TCP
-    name: http
+${svc_ingress}
 EOF
   } | ${KUBECTL} apply -f -
 }

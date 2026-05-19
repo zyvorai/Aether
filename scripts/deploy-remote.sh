@@ -33,9 +33,22 @@
 #   AETHER_CILIUM_EGRESS_STRICT=1 — Cilium: kube-apiserver + DNS only (instead of toEntities: all)
 #   AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1 — with strict, also allow toEntities: cluster (in-cluster workloads)
 #   AETHER_SKIP_EXTERNAL_HEALTH=1 — skip curl from this machine to http://<host>:<nodePort>/health (useful in CI)
+#   AETHER_EXPOSE — nodeport | ingress | both (default nodeport)
+#   AETHER_INGRESS_HOST — hostname for Ingress (required when EXPOSE includes ingress)
+#   AETHER_INGRESS_CLASS — ingressClassName (e.g. traefik, nginx)
+#   AETHER_INGRESS_TLS_SECRET — TLS secret for Ingress (or set AETHER_INGRESS_TLS_ACME=1 for cert-manager)
+#   AETHER_INGRESS_TLS_ACME=1 — annotate Ingress for cert-manager (issuer: AETHER_INGRESS_ACME_ISSUER)
+#   AETHER_REGISTRY — image repo (default localhost/aether); set ghcr.io/user/aether with AETHER_PUSH_IMAGE=1
+#   AETHER_PUSH_IMAGE=1 — docker/podman push after build (non-localhost images)
+#   AETHER_STATE_DATABASE_URL — PostgreSQL URI for HA API replicas
+#   AETHER_REDIS_URL — Redis for OIDC sessions across replicas
+#   AETHER_OIDC_* — OIDC issuer, client, redirect, session secret (see src/oidc.rs)
+#   AETHER_BACKUP_REMOTE_URL / AETHER_BACKUP_REMOTE_TOKEN — HTTP PUT backup offload
+#   AETHER_AUDIT_WEBHOOK_URL — POST audit events to external sink
+#   AETHER_OPEN_FIREWALL=1 — best-effort ufw allow on remote (ports 80/443 and/or NodePort)
 #
-# Reachability: SSH keys only affect ssh/rsync. If the script finishes but the URL fails in a browser, open TCP
-#   AETHER_NODE_PORT (default 30090) on the host (ufw) and in your cloud firewall / security group (e.g. Hetzner).
+# Reachability: SSH keys only affect ssh/rsync. For NodePort, open TCP AETHER_NODE_PORT in cloud firewall.
+# Prefer AETHER_EXPOSE=ingress with AETHER_INGRESS_HOST for HTTPS on 443.
 # ============================================================================
 
 set -euo pipefail
@@ -44,6 +57,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=lib-deploy-pretty.sh
 source "${SCRIPT_DIR}/lib-deploy-pretty.sh"
+# shellcheck source=lib-deploy-manifest.sh
+source "${SCRIPT_DIR}/lib-deploy-manifest.sh"
 
 SKIP_RSYNC="${AETHER_SKIP_RSYNC:-0}"
 SKIP_CARGO="${AETHER_SKIP_CARGO:-0}"
@@ -86,8 +101,12 @@ fi
 }
 
 AETHER_NS="${AETHER_NAMESPACE:-aether-system}"
-AETHER_IMAGE="${AETHER_IMAGE:-localhost/aether:latest}"
+AETHER_REGISTRY="${AETHER_REGISTRY:-localhost/aether}"
+AETHER_IMAGE="${AETHER_IMAGE:-${AETHER_REGISTRY}:latest}"
 NODE_PORT="${AETHER_NODE_PORT:-30090}"
+AETHER_EXPOSE="${AETHER_EXPOSE:-nodeport}"
+AETHER_INGRESS_HOST="${AETHER_INGRESS_HOST:-}"
+IMAGE_PULL_POLICY="$(aether_deploy_image_pull_policy "${AETHER_IMAGE}")"
 DEPLOY_REPLICAS="${AETHER_DEPLOY_REPLICAS:-1}"
 DEPLOY_PDB="${AETHER_DEPLOY_PDB:-1}"
 case "${DEPLOY_REPLICAS}" in
@@ -215,13 +234,19 @@ aether_kv "Builder" "${BUILD_TOOL}"
 aether_kv "Import" "${IMPORT_CMD}"
 aether_kv "Namespace" "${AETHER_NS}"
 aether_kv "Image" "${AETHER_IMAGE}"
+aether_kv "Expose" "${AETHER_EXPOSE}"
 aether_kv "NodePort" "${NODE_PORT}"
+aether_kv "Ingress host" "${AETHER_INGRESS_HOST:-—}"
 aether_kv "Replicas" "${DEPLOY_REPLICAS}"
+aether_kv "Pull policy" "${IMAGE_PULL_POLICY}"
 aether_kv "Fast path" "rsync=${SKIP_RSYNC} cargo=${SKIP_CARGO} image=${SKIP_IMAGE} local_build=${LOCAL_BUILD}"
 echo ""
 
-if [ "${DEPLOY_REPLICAS}" -ge 2 ]; then
-  warn "AETHER_DEPLOY_REPLICAS>=2: remote YAML has no shared state volume — each pod has its own empty store. Use replicas=1 or extend the manifest with RWX persistence before scaling the API."
+if [ "${DEPLOY_REPLICAS}" -ge 2 ] && [ -z "${AETHER_STATE_DATABASE_URL:-}" ]; then
+  warn "AETHER_DEPLOY_REPLICAS>=2 without AETHER_STATE_DATABASE_URL — each pod has isolated JSON state. Set Postgres URL or use replicas=1."
+fi
+if { [ "${AETHER_EXPOSE}" = "ingress" ] || [ "${AETHER_EXPOSE}" = "both" ]; } && [ -z "${AETHER_INGRESS_HOST}" ]; then
+  error "AETHER_INGRESS_HOST is required when AETHER_EXPOSE=${AETHER_EXPOSE}"
 fi
 
 if [ "${UNINSTALL}" = "1" ]; then
@@ -292,46 +317,35 @@ ENTRYPOINT [\"/usr/local/bin/aether\"]
 CMD [\"serve\", \"--host=0.0.0.0\", \"--port=5090\"]
 EOF
     ${BUILD_TOOL} build --format docker -t ${AETHER_IMAGE} -f Dockerfile.deploy .
-    ${BUILD_TOOL} save ${AETHER_IMAGE} | ${IMPORT_CMD}
+    if [ \"${AETHER_PUSH_IMAGE:-0}\" = \"1\" ]; then
+      ${BUILD_TOOL} push ${AETHER_IMAGE}
+    fi
+    case \"${AETHER_IMAGE}\" in
+      localhost/*|127.0.0.1/*)
+        ${BUILD_TOOL} save ${AETHER_IMAGE} | ${IMPORT_CMD}
+        ;;
+      *)
+        echo \"Non-local image — skipping ctr import; cluster must pull ${AETHER_IMAGE}\"
+        ;;
+    esac
   "
   info "Image built and imported"
 fi
 
 step "Step 4/${TOTAL_STEPS}: Applying Kubernetes manifests"
 DEPLOY_STAMP="$(date +%s)-${RANDOM}"
-API_KEY_SECRET_BLOCK=""
-API_KEY_ENV_BLOCK=""
-if [ -n "${AETHER_API_KEY}" ]; then
-  API_KEY_SECRET_BLOCK=$(cat <<EOF
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: aether-api-key
-  namespace: ${AETHER_NS}
-type: Opaque
-stringData:
-  api-key: ${AETHER_API_KEY}
-EOF
-)
-  API_KEY_ENV_BLOCK=$(cat <<'EOF'
-        - name: AETHER_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: aether-api-key
-              key: api-key
-EOF
-)
-fi
+aether_deploy_build_secret_env_blocks "${AETHER_NS}"
+SVC_INGRESS_YAML="$(aether_deploy_service_ingress_yaml "${AETHER_NS}" "${AETHER_EXPOSE}" "${NODE_PORT}")"
 
 remote_bash <<REMOTE_APPLY
 set -euo pipefail
 ${K} create namespace ${AETHER_NS} --dry-run=client -o yaml | ${K} apply -f -
 source "${REMOTE_DIR}/scripts/lib-deploy-pretty.sh"
 source "${REMOTE_DIR}/scripts/lib-deploy-cluster.sh"
+source "${REMOTE_DIR}/scripts/lib-deploy-manifest.sh"
 aether_apply_rbac "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
 aether_apply_cilium_bootstrap "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
-$([ -n "${API_KEY_SECRET_BLOCK}" ] && printf '%s\n' "${API_KEY_SECRET_BLOCK}")
+printf '%s' "${AETHER_MANIFEST_SECRETS_YAML}"
 cat <<YAML | ${K} apply -f -
 ---
 apiVersion: apps/v1
@@ -355,7 +369,7 @@ spec:
       containers:
       - name: aether
         image: ${AETHER_IMAGE}
-        imagePullPolicy: Never
+        imagePullPolicy: ${IMAGE_PULL_POLICY}
         args: ['serve', '--host=0.0.0.0', '--port=5090']
         ports:
         - containerPort: 5090
@@ -365,7 +379,7 @@ spec:
           value: '${AETHER_LOG_FORMAT}'
         - name: RUST_LOG
           value: info
-${API_KEY_ENV_BLOCK}
+${AETHER_MANIFEST_EXTRA_ENV_YAML}
         readinessProbe:
           httpGet:
             path: /health
@@ -385,26 +399,13 @@ ${API_KEY_ENV_BLOCK}
           limits:
             cpu: '1'
             memory: 512Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: aether
-  namespace: ${AETHER_NS}
-spec:
-  type: NodePort
-  selector:
-    app: aether
-  ports:
-  - name: http
-    port: 5090
-    targetPort: 5090
-    nodePort: ${NODE_PORT}
+${SVC_INGRESS_YAML}
 ${PDB_YAML_APPEND}
 YAML
 ${K} -n ${AETHER_NS} rollout restart deployment/aether >/dev/null 2>&1 || true
 ${K} -n ${AETHER_NS} rollout status deployment/aether --timeout=180s
 REMOTE_APPLY
+aether_deploy_try_open_firewall ssh_cmd "${AETHER_EXPOSE}" "${NODE_PORT}"
 info "Kubernetes deployment applied"
 
 step "Step 5/${TOTAL_STEPS}: Verifying"
@@ -438,8 +439,32 @@ else
   warn "Multi-node cluster? imagePullPolicy:Never requires the image on every node that can run the pod. Re-run image import on each node or use a registry."
 fi
 
+if [ -n "${AETHER_INGRESS_HOST}" ] && { [ "${AETHER_EXPOSE}" = "ingress" ] || [ "${AETHER_EXPOSE}" = "both" ]; } && [ "${SKIP_EXT_HEALTH}" != "1" ] && command -v curl >/dev/null 2>&1; then
+  ING_SCHEME="http"
+  if [ -n "${AETHER_INGRESS_TLS_SECRET:-}" ] || [ "${AETHER_INGRESS_TLS_ACME:-}" = "1" ]; then
+    ING_SCHEME="https"
+  fi
+  ING_HP="$(curl -sS -m 12 -o /dev/null -w '%{http_code}' "${ING_SCHEME}://${AETHER_INGRESS_HOST}/health" 2>/dev/null || printf '%s' "000")"
+  if [ "${ING_HP}" = "200" ]; then
+    info "Ingress health → ${ING_SCHEME}://${AETHER_INGRESS_HOST}/health (200)"
+  else
+    warn "Ingress health → ${ING_SCHEME}://${AETHER_INGRESS_HOST}/health returned '${ING_HP}' (DNS must point at this cluster; Ingress controller required)."
+  fi
+fi
+
 echo ""
-info "Aether is available at http://${HOST}:${NODE_PORT}"
+PUBLIC_URL="http://${HOST}:${NODE_PORT}"
+if [ -n "${AETHER_INGRESS_HOST}" ] && { [ "${AETHER_EXPOSE}" = "ingress" ] || [ "${AETHER_EXPOSE}" = "both" ]; }; then
+  if [ -n "${AETHER_INGRESS_TLS_SECRET:-}" ] || [ "${AETHER_INGRESS_TLS_ACME:-}" = "1" ]; then
+    PUBLIC_URL="https://${AETHER_INGRESS_HOST}"
+  else
+    PUBLIC_URL="http://${AETHER_INGRESS_HOST}"
+  fi
+fi
+info "Aether is available at ${PUBLIC_URL}"
+if [ "${AETHER_EXPOSE}" = "nodeport" ] || [ "${AETHER_EXPOSE}" = "both" ]; then
+  info "NodePort health: http://${HOST}:${NODE_PORT}/health"
+fi
 if [ -n "${AETHER_API_KEY}" ]; then
   info "API authentication is enabled on the remote deployment"
 fi

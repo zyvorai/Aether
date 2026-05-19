@@ -2,35 +2,30 @@
 
 ## Current State
 
-Aether now has a native Kubernetes and KubeVirt browser with:
+Aether ships a native Kubernetes and KubeVirt cluster browser with exec, port-forward, live watch, and Helm release actions in the dashboard. Production deploy paths support:
 
-- multi-cluster kubeconfig discovery
-- workload and resource browsing
-- manifest inspect/edit/apply
-- delete/restart/start/stop/suspend/resume actions where supported
-- scale controls for scalable workloads
-- KubeVirt `VirtualMachine`, `VirtualMachineInstance`, and CDI `DataVolume` support
-- sanitized cluster `Secret` inspection
+- **Ingress + TLS** (`AETHER_EXPOSE`, `AETHER_INGRESS_HOST`, cert-manager annotations)
+- **HA workload state** (`AETHER_STATE_DATABASE_URL` + Helm `postgresql.*`)
+- **OIDC + Redis sessions** for multi-replica API
+- **Remote backup upload** (`AETHER_BACKUP_REMOTE_URL`) and **audit webhook** (`AETHER_AUDIT_WEBHOOK_URL`)
+- **Prometheus ServiceMonitor** in Helm (`metrics.serviceMonitor.enabled`)
 
 ## Remaining Work
 
-The main remaining gaps are the interactive and release-management features:
-
-- pod exec and terminal streaming
-- port-forward support
-- live watch / streaming updates for resource changes
-- Helm release browsing and lifecycle actions from the Aether UI
-- richer event correlation from resource detail views
+- Owner-reference graph in cluster detail (beyond audit name filter)
+- **OPA bundle sync** sidecar / ConfigMap reload in Helm
+- **Real cost/chargeback** integrations (cloud pricing APIs)
+- **Dashboard E2E** tests (exec WS, port-forward, OIDC login)
+- **Metal3 / KubeVirt** install guides and hardware e2e on reference clusters
 
 ## Recommended Next Order
 
-1. Add pod exec and terminal sessions to the cluster browser.
-2. Add port-forward creation and teardown for pods and services.
-3. Add Helm release inventory and release actions.
-4. Add watch-based live refresh for selected resources and workloads.
+1. Event correlation panel on cluster resource detail.
+2. OPA bundle sync + policy deny in API.
+3. Playwright smoke tests for dashboard auth and cluster browser.
+4. Reference Metal3/KubeVirt lab manifests.
 
 ## Notes
 
 - Keep `Secret` values redacted in cluster detail responses.
-- Keep KubeVirt support inside the same cluster browser instead of splitting into a separate VM UI.
 - Prefer expanding the native Aether backend and UX instead of reintroducing Headlamp dependencies.

@@ -93,9 +93,60 @@ securityContext:
 
 service:
   type: ClusterIP
-  port: 8080
-  targetPort: 8080
+  port: 5090
+  targetPort: 5090
   annotations: {}
+  # When type is NodePort, set nodePort (30000-32767)
+  nodePort: 30090
+
+apiServer:
+  enabled: true
+  port: 5090
+  args:
+    - serve
+    - --host=0.0.0.0
+    - --port=5090
+
+apiKey:
+  existingSecret: ""
+  secretKey: api-key
+  value: ""
+
+postgresql:
+  enabled: false
+  existingSecret: ""
+  secretKey: database-url
+  databaseUrl: ""
+  pollSecs: "2"
+
+redis:
+  enabled: false
+  existingSecret: ""
+  secretKey: redis-url
+  url: ""
+
+oidc:
+  enabled: false
+  existingSecret: ""
+  issuer: ""
+  clientId: ""
+  redirectUri: ""
+  sessionSecret: ""
+  clientSecret: ""
+  roleMap: ""
+
+backupRemote:
+  enabled: false
+  existingSecret: ""
+  url: ""
+  token: ""
+
+auditWebhook:
+  enabled: false
+  existingSecret: ""
+  url: ""
+
+extraEnv: []
 
 metrics:
   enabled: true

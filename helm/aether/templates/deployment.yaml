@@ -15,6 +15,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -43,44 +44,146 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command:
-          - /bin/sh
-          - -c
-          - |
-            # Keep container running (operator mode)
-            tail -f /dev/null
+        {{- if .Values.apiServer.enabled }}
+        args:
+          {{- toYaml .Values.apiServer.args | nindent 10 }}
+        {{- end }}
         env:
         - name: AETHER_NAMESPACE
           value: {{ .Values.aether.namespace | quote }}
         - name: RUST_LOG
           value: {{ .Values.aether.logging.level | quote }}
+        - name: AETHER_LOG_FORMAT
+          value: {{ .Values.aether.logging.format | quote }}
         {{- if .Values.aether.metrics.enabled }}
         - name: AETHER_METRICS_ENABLED
           value: "true"
         {{- end }}
+        {{- if .Values.apiKey.existingSecret }}
+        - name: AETHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.apiKey.existingSecret }}
+              key: {{ .Values.apiKey.secretKey }}
+        {{- else if .Values.apiKey.value }}
+        - name: AETHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "aether.fullname" . }}-secrets
+              key: api-key
+        {{- end }}
+        {{- if .Values.postgresql.enabled }}
+        - name: AETHER_STATE_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.postgresql.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: {{ .Values.postgresql.secretKey }}
+        {{- if .Values.postgresql.pollSecs }}
+        - name: AETHER_STATE_POLL_SECS
+          value: {{ .Values.postgresql.pollSecs | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.redis.enabled }}
+        - name: AETHER_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.redis.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: {{ .Values.redis.secretKey }}
+        {{- end }}
+        {{- if .Values.oidc.enabled }}
+        - name: AETHER_OIDC_ISSUER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: issuer
+        - name: AETHER_OIDC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: client-id
+        - name: AETHER_OIDC_REDIRECT_URI
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: redirect-uri
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: session-secret
+        {{- if .Values.oidc.clientSecret }}
+        - name: AETHER_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: client-secret
+        {{- end }}
+        {{- if .Values.oidc.roleMap }}
+        - name: AETHER_OIDC_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: role-map
+        {{- end }}
+        {{- end }}
+        {{- if .Values.backupRemote.enabled }}
+        - name: AETHER_BACKUP_REMOTE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.backupRemote.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: backup-remote-url
+        {{- if .Values.backupRemote.token }}
+        - name: AETHER_BACKUP_REMOTE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.backupRemote.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: backup-remote-token
+        {{- end }}
+        {{- end }}
+        {{- if .Values.auditWebhook.enabled }}
+        - name: AETHER_AUDIT_WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.auditWebhook.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: audit-webhook-url
+        {{- end }}
+        {{- with .Values.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         ports:
         - name: http
-          containerPort: {{ .Values.service.targetPort }}
+          containerPort: {{ .Values.apiServer.port }}
           protocol: TCP
         {{- if .Values.metrics.enabled }}
         - name: metrics
           containerPort: {{ .Values.metrics.port }}
           protocol: TCP
         {{- end }}
+        {{- if .Values.apiServer.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        {{- else }}
         livenessProbe:
           exec:
-            command:
-            - /usr/local/bin/aether
-            - --help
+            command: ["/usr/local/bin/aether", "--help"]
           initialDelaySeconds: 10
           periodSeconds: 30
         readinessProbe:
           exec:
-            command:
-            - /usr/local/bin/aether
-            - --help
+            command: ["/usr/local/bin/aether", "--help"]
           initialDelaySeconds: 5
           periodSeconds: 10
+        {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         volumeMounts:

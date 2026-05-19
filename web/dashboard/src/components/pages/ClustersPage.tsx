@@ -21,6 +21,7 @@ import type {
   ClusterResourceDetail,
   ClusterRolloutStatus,
   ClusterSummary,
+  AuditEvent,
 } from '../../types/api';
 
 const kindOptions = ['Namespace', 'Node', 'PersistentVolume', 'StorageClass', 'Pod', 'ServiceAccount', 'Secret', 'PersistentVolumeClaim', 'ResourceQuota', 'LimitRange', 'Deployment', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob', 'HorizontalPodAutoscaler', 'Service', 'EndpointSlice', 'Ingress', 'NetworkPolicy', 'ConfigMap', 'Event', 'HelmRelease', 'DataVolume', 'VirtualMachine', 'VirtualMachineInstance', 'CustomResource'];
@@ -75,6 +76,7 @@ export default function ClustersPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ClusterResourceDetail | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<ClusterRelatedEvent[]>([]);
+  const [relatedAudit, setRelatedAudit] = useState<AuditEvent[]>([]);
   const [healthSummary, setHealthSummary] = useState<ClusterHealthSummary | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [manifestDraft, setManifestDraft] = useState('');
@@ -261,7 +263,8 @@ export default function ClustersPage() {
     const canRollout = ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind);
     const shouldLoadTop = ['Pod', 'Deployment', 'StatefulSet', 'DaemonSet', 'Service', 'HelmRelease'].includes(resource.kind);
     const shouldLoadHelm = resource.kind === 'HelmRelease';
-    const [detail, events, rolloutStatus, top, helmRevisions, health] = await Promise.all([
+    const auditFilter = encodeURIComponent(resource.name);
+    const [detail, events, rolloutStatus, top, helmRevisions, health, auditResp] = await Promise.all([
       apiFetch<ClusterResourceDetail>(
         `/cluster/resource?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&kind=${encodeURIComponent(resource.kind)}&name=${encodeURIComponent(resource.name)}${resource.kind === 'CustomResource' ? `&api_version=${encodeURIComponent(customApiVersion)}&plural=${encodeURIComponent(customPlural)}&namespaced=${customNamespaced ? 'true' : 'false'}` : ''}`
       ),
@@ -286,9 +289,11 @@ export default function ClustersPage() {
       apiFetch<ClusterHealthSummary>(
         `/cluster/health?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&kind=${encodeURIComponent(resource.kind)}&name=${encodeURIComponent(resource.name)}${resource.kind === 'CustomResource' ? `&api_version=${encodeURIComponent(customApiVersion)}&plural=${encodeURIComponent(customPlural)}&namespaced=${customNamespaced ? 'true' : 'false'}` : ''}`
       ),
+      apiFetch<{ recent_events: AuditEvent[] }>(`/audit?workload=${auditFilter}&limit=30`),
     ]);
     setSelected(detail);
     setSelectedEvents(events ?? []);
+    setRelatedAudit(auditResp?.recent_events ?? []);
     setRollout(rolloutStatus);
     setRolloutRevision(rolloutStatus?.history[0]?.revision ?? '');
     setTopMetrics(top ?? []);
@@ -969,7 +974,7 @@ export default function ClustersPage() {
 
             {selectedEvents.length > 0 && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Events</h4>
+                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Cluster events</h4>
                 <div className="space-y-2 max-h-64 overflow-auto">
                   {selectedEvents.map((event, index) => (
                     <div key={`${event.timestamp}:${event.reason}:${index}`} className="rounded-md bg-zinc-900 px-3 py-2 text-sm">
@@ -981,6 +986,26 @@ export default function ClustersPage() {
                       </div>
                       <div className="mt-1 text-xs text-zinc-400">{event.message || 'No event message'}</div>
                       <div className="mt-1 text-xs text-zinc-600">{formatTimestamp(event.timestamp)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {relatedAudit.length > 0 && (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Related audit trail</h4>
+                <div className="space-y-2 max-h-48 overflow-auto">
+                  {relatedAudit.map((entry) => (
+                    <div key={entry.id} className="rounded-md bg-zinc-900 px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-zinc-100">{String(entry.action)}</span>
+                        <span className="text-xs text-zinc-500">{String(entry.result)}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-zinc-400">{entry.message}</div>
+                      <div className="mt-1 text-xs text-zinc-600 truncate" title={entry.workload}>
+                        {entry.workload}
+                      </div>
                     </div>
                   ))}
                 </div>

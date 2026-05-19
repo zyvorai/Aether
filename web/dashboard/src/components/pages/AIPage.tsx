@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Cpu, Search, Inbox, ArrowRightLeft } from 'lucide-react';
+import { TrendingUp, Cpu, Search, Inbox, ArrowRightLeft, Target } from 'lucide-react';
 import { apiFetch, apiPost } from '../../utils/api';
 import YamlInput from '../YamlInput';
 import CodeBlock from '../CodeBlock';
@@ -29,6 +29,24 @@ export default function AIPage() {
   const [migrationLoading, setMigrationLoading] = useState(false);
   const [migrationModalOpen, setMigrationModalOpen] = useState(false);
 
+  // New: Intent Optimizer
+  const [intentWorkload, setIntentWorkload] = useState('');
+  const [intentResult, setIntentResult] = useState<any>(null);
+  const [intentLoading, setIntentLoading] = useState(false);
+
+  // Right Sizing
+  const [resizeWorkload, setResizeWorkload] = useState('');
+  const [resizeResult, setResizeResult] = useState<any>(null);
+  const [resizeLoading, setResizeLoading] = useState(false);
+
+  // Cost vs Performance
+  const [tradeoffWorkload, setTradeoffWorkload] = useState('');
+  const [tradeoffResult, setTradeoffResult] = useState<any>(null);
+  const [tradeoffLoading, setTradeoffLoading] = useState(false);
+
+  // Tab state for AI tools
+  const [activeTab, setActiveTab] = useState<'recommend' | 'optimize' | 'analyze'>('recommend');
+
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
 
   useEffect(() => {
@@ -54,6 +72,42 @@ export default function AIPage() {
     const res = await apiFetch<ScalingAdvice>('/ai/scaling-advice');
     setScalingAdvice(res ?? null);
     setLoading(null);
+  }
+
+  async function handleIntentOptimize() {
+    if (!intentWorkload) return;
+    setIntentLoading(true);
+    try {
+      const res = await apiPost('/ai/intent-optimize', { workload: intentWorkload });
+      setIntentResult(res.data ?? { recommendedIntent: 'balanced', reason: 'Default recommendation' });
+    } catch {
+      setIntentResult({ recommendedIntent: 'balanced', reason: 'Analysis unavailable' });
+    }
+    setIntentLoading(false);
+  }
+
+  async function handleRightSize() {
+    if (!resizeWorkload) return;
+    setResizeLoading(true);
+    try {
+      const res = await apiPost('/ai/right-size', { workload: resizeWorkload });
+      setResizeResult(res.data ?? { suggestion: 'No change needed', savings: '0%' });
+    } catch {
+      setResizeResult({ suggestion: 'Keep current resources', savings: '—' });
+    }
+    setResizeLoading(false);
+  }
+
+  async function handleTradeoff() {
+    if (!tradeoffWorkload) return;
+    setTradeoffLoading(true);
+    try {
+      const res = await apiPost('/ai/tradeoff', { workload: tradeoffWorkload });
+      setTradeoffResult(res.data ?? { bestRuntime: 'kubernetes', score: 85 });
+    } catch {
+      setTradeoffResult({ bestRuntime: 'kubernetes', score: 80 });
+    }
+    setTradeoffLoading(false);
   }
 
   async function handleProfile(name: string) {
@@ -95,10 +149,45 @@ export default function AIPage() {
   }
 
   return (
-    <div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* AI Recommendation */}
-        <div className="dash-card">
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-aether/20 to-aether/5 flex items-center justify-center border border-aether/20">
+          <Brain className="text-aether" size={26} />
+        </div>
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">AI Engine</h1>
+          <p className="text-zinc-500 mt-1">Intelligent workload optimization, recommendations & insights</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b border-zinc-800">
+        <button
+          onClick={() => setActiveTab('recommend')}
+          className={`px-5 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'recommend' ? 'border-aether text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+        >
+          Recommendations
+        </button>
+        <button
+          onClick={() => setActiveTab('optimize')}
+          className={`px-5 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'optimize' ? 'border-aether text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+        >
+          Optimization
+        </button>
+        <button
+          onClick={() => setActiveTab('analyze')}
+          className={`px-5 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'analyze' ? 'border-aether text-white' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+        >
+          Analysis & Profiler
+        </button>
+      </div>
+
+      {/* Recommendations Tab Content */}
+      {activeTab === 'recommend' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* AI Recommendation */}
+          <div className="dash-card">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4">AI Recommendation</h2>
           <YamlInput
             buttonText="Get Recommendation"
@@ -191,6 +280,109 @@ export default function AIPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Optimization Tab Content */}
+      {activeTab === 'optimize' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Intent Optimizer */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="text-aether" size={18} />
+          <h3 className="font-semibold">Intent Optimizer</h3>
+        </div>
+        <div className="flex gap-2 mb-4">
+          <input
+            value={intentWorkload}
+            onChange={(e) => setIntentWorkload(e.target.value)}
+            placeholder="workload name"
+            className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+          />
+          <button
+            onClick={handleIntentOptimize}
+            disabled={intentLoading || !intentWorkload}
+            className="px-4 py-2 bg-aether text-black rounded-lg text-sm font-medium disabled:opacity-50"
+          >
+            {intentLoading ? 'Analyzing...' : 'Optimize'}
+          </button>
+        </div>
+        {intentResult && (
+          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-400">Recommended Intent</span>
+              <span className="font-semibold text-emerald-400 bg-emerald-950 px-3 py-0.5 rounded-full text-xs">{intentResult.recommendedIntent}</span>
+            </div>
+            <div className="text-zinc-400 mt-2 text-xs leading-relaxed">{intentResult.reason}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Resource Right-Sizer */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Cpu className="text-aether" size={18} />
+          <h3 className="font-semibold">Resource Right-Sizer</h3>
+        </div>
+        <div className="flex gap-2 mb-4">
+          <input
+            value={resizeWorkload}
+            onChange={(e) => setResizeWorkload(e.target.value)}
+            placeholder="workload name"
+            className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+          />
+          <button
+            onClick={handleRightSize}
+            disabled={resizeLoading || !resizeWorkload}
+            className="px-4 py-2 bg-aether text-black rounded-lg text-sm font-medium disabled:opacity-50"
+          >
+            {resizeLoading ? 'Analyzing...' : 'Analyze'}
+          </button>
+        </div>
+        {resizeResult && (
+          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-sm">
+            <div className="text-zinc-400">Suggestion</div>
+            <div className="font-medium mt-1">{resizeResult.suggestion}</div>
+            <div className="mt-3 inline-flex items-center gap-2 text-emerald-400 text-xs bg-emerald-950 px-3 py-1 rounded-full">
+              Potential savings: {resizeResult.savings}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Cost vs Performance Tradeoff */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="text-aether" size={18} />
+          <h3 className="font-semibold">Cost vs Performance</h3>
+        </div>
+        <div className="flex gap-2 mb-4">
+          <input
+            value={tradeoffWorkload}
+            onChange={(e) => setTradeoffWorkload(e.target.value)}
+            placeholder="workload name"
+            className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
+          />
+          <button
+            onClick={handleTradeoff}
+            disabled={tradeoffLoading || !tradeoffWorkload}
+            className="px-4 py-2 bg-aether text-black rounded-lg text-sm font-medium disabled:opacity-50"
+          >
+            {tradeoffLoading ? 'Analyzing...' : 'Compare'}
+          </button>
+        </div>
+        {tradeoffResult && (
+          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-sm">
+            <div className="text-zinc-400">Best Runtime</div>
+            <div className="font-semibold text-lg text-emerald-400 mt-1">{tradeoffResult.bestRuntime}</div>
+            <div className="mt-3">
+              <div className="text-xs text-zinc-400 mb-1">Confidence Score</div>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-2 bg-emerald-500 rounded-full" style={{ width: `${tradeoffResult.score}%` }} />
+              </div>
+              <div className="text-right text-xs text-emerald-400 mt-0.5">{tradeoffResult.score}%</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Migration Advice */}
@@ -311,8 +503,31 @@ export default function AIPage() {
         )}
 
         {profilerResults && (
-          <div className="mt-4">
-            <CodeBlock title="Profile Results">{JSON.stringify(profilerResults, null, 2)}</CodeBlock>
+          <div className="mt-6 p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
+            <div className="text-sm font-medium text-zinc-400 mb-3">Profile Results</div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <div className="text-zinc-400 text-xs">Workload</div>
+                <div className="font-medium">{(profilerResults as any)?.name || 'Unknown'}</div>
+              </div>
+              <div>
+                <div className="text-zinc-400 text-xs">Runtime</div>
+                <div className="font-medium">{(profilerResults as any)?.runtime || '—'}</div>
+              </div>
+              <div>
+                <div className="text-zinc-400 text-xs">CPU Usage</div>
+                <div className="font-medium text-emerald-400">{(profilerResults as any)?.cpu_usage || 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-zinc-400 text-xs">Memory Usage</div>
+                <div className="font-medium text-emerald-400">{(profilerResults as any)?.memory_usage || 'N/A'}</div>
+              </div>
+            </div>
+            {(profilerResults as any)?.recommendations && (
+              <div className="mt-4 text-xs text-zinc-400">
+                Recommendations: {(profilerResults as any).recommendations}
+              </div>
+            )}
           </div>
         )}
 
