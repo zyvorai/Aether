@@ -35,6 +35,7 @@ const NAV_ITEMS: CommandAction[] = [
   { id: 'nav-backups', label: 'Go to Backups', category: 'navigation', icon: 'Backups', view: 'backups' },
   { id: 'nav-templates', label: 'Go to Templates', category: 'navigation', icon: 'Templates', view: 'templates' },
   { id: 'nav-audit', label: 'Go to Audit', category: 'navigation', icon: 'Audit', view: 'audit' },
+  { id: 'nav-gitops', label: 'Go to GitOps', category: 'navigation', icon: 'GitOps', view: 'gitops' },
   { id: 'nav-metrics', label: 'Go to Metrics', category: 'navigation', icon: 'Metrics', view: 'metrics' },
   { id: 'nav-sla', label: 'Go to SLA', category: 'navigation', icon: 'SLA', view: 'sla' },
   { id: 'nav-deps', label: 'Go to Dependencies', category: 'navigation', icon: 'Deps', view: 'deps' },

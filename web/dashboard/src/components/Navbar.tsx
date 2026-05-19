@@ -26,6 +26,7 @@ import {
   Menu,
   X,
   Palette,
+  FileText,
 } from 'lucide-react';
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
@@ -84,6 +85,7 @@ const intelligenceItems: DropdownItem[] = [
 const operationsItems: DropdownItem[] = [
   { label: 'Cluster Browser', view: 'clusters', icon: <Container className="w-4 h-4" /> },
   { label: 'Compose Import', view: 'compose', icon: <Layers className="w-4 h-4" /> },
+  { label: 'Visual Editor', view: 'editor', icon: <FileText className="w-4 h-4" /> },
   { label: 'Scheduler', view: 'scheduler', icon: <Settings className="w-4 h-4" /> },
   { label: 'Health Monitor', view: 'health', icon: <HeartPulse className="w-4 h-4" /> },
   { label: 'Events', view: 'events', icon: <Bell className="w-4 h-4" /> },
@@ -99,6 +101,7 @@ const resourcesItems: DropdownItem[] = [
   { label: 'Plugins', view: 'plugins', icon: <Puzzle className="w-4 h-4" /> },
   { label: 'Access Control', view: 'rbac', icon: <Shield className="w-4 h-4" /> },
   { label: 'Audit Trail', view: 'audit', icon: <ClipboardList className="w-4 h-4" /> },
+  { label: 'GitOps', view: 'gitops', icon: <GitBranch className="w-4 h-4" /> },
   { label: 'Metrics', view: 'metrics', icon: <BarChart3 className="w-4 h-4" /> },
 ];
 

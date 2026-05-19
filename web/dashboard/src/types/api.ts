@@ -514,6 +514,12 @@ export interface WorkloadStateBackendInfo {
   pollEnv: string;
 }
 
+export interface OpaEvaluation {
+  configured: boolean;
+  allowed: boolean;
+  denials: string[];
+}
+
 export interface PlatformInfo {
   version: string;
   persistence: 'local-json' | 'postgresql';
@@ -521,6 +527,11 @@ export interface PlatformInfo {
   haSharedCache: boolean;
   tls: boolean;
   workloadState: WorkloadStateBackendInfo;
+  opa?: {
+    configured: boolean;
+    enforce: boolean;
+    check_path?: string;
+  };
   oidc: {
     enabled: boolean;
     issuer?: string | null;
@@ -573,4 +584,5 @@ export type AppView =
   | 'plugins'
   | 'rbac'
   | 'audit'
-  | 'metrics';
+  | 'metrics'
+  | 'gitops';

@@ -92,13 +92,13 @@ fn get_styles() -> clap::builder::Styles {
 
 #[derive(Subcommand)]
 pub(crate) enum Commands {
-    /// Validate workload specification
+    /// Validate workload specification (checks syntax, intent, and runtime compatibility)
     Validate,
 
-    /// Build workload image
+    /// Build workload image (container + optional VM image for KubeVirt)
     Build,
 
-    /// Run workload instance
+    /// Run / deploy workload instance (auto-selects best runtime via intent engine)
     Run {
         /// Override runtime decision (podman, kube, kubevirt, metal)
         #[arg(short, long)]
@@ -142,7 +142,7 @@ pub(crate) enum Commands {
     /// List all instances
     List,
 
-    /// Migrate instance to different runtime
+    /// Migrate instance to different runtime (zero-downtime with rollback support)
     Migrate {
         /// Workload name
         name: String,
@@ -163,7 +163,7 @@ pub(crate) enum Commands {
         no_rollback: bool,
     },
 
-    /// Launch interactive TUI dashboard
+    /// Launch interactive TUI dashboard (k9s-style real-time monitoring)
     Tui,
 
     /// Generate shell completions

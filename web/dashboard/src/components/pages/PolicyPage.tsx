@@ -1,15 +1,26 @@
-import { useState } from 'react';
-import { AlertTriangle, AlertCircle, Inbox } from 'lucide-react';
-import { apiPost } from '../../utils/api';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, AlertCircle, Inbox, ShieldCheck } from 'lucide-react';
+import { apiFetch, apiPost } from '../../utils/api';
 import YamlInput from '../YamlInput';
 import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
-import type { PolicyResult } from '../../types/api';
+import type { OpaEvaluation, PolicyResult } from '../../types/api';
 
 export default function PolicyPage() {
   const [result, setResult] = useState<PolicyResult | null>(null);
+  const [opaResult, setOpaResult] = useState<OpaEvaluation | null>(null);
+  const [opaManifest, setOpaManifest] = useState('{\n  "apiVersion": "v1",\n  "kind": "ConfigMap",\n  "metadata": { "name": "example", "labels": { "owner": "team-a" } }\n}');
+  const [opaConfigured, setOpaConfigured] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [opaLoading, setOpaLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [opaError, setOpaError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void apiFetch<{ opa?: { configured?: boolean } }>('/server').then((s) => {
+      setOpaConfigured(Boolean(s?.opa?.configured));
+    });
+  }, []);
 
   async function handleCheck(yaml: string) {
     setLoading(true);
@@ -24,8 +35,69 @@ export default function PolicyPage() {
     setLoading(false);
   }
 
+  async function handleOpaCheck() {
+    setOpaLoading(true);
+    setOpaError(null);
+    try {
+      const manifest = JSON.parse(opaManifest) as Record<string, unknown>;
+      const res = await apiPost<OpaEvaluation>('/policy/opa', { manifest });
+      if (res.success && res.data) {
+        setOpaResult(res.data);
+      } else {
+        setOpaError(res.error ?? 'OPA check failed');
+        setOpaResult(null);
+      }
+    } catch (e) {
+      setOpaError(String(e));
+      setOpaResult(null);
+    }
+    setOpaLoading(false);
+  }
+
   return (
     <div>
+      {opaConfigured && (
+        <div className="dash-card mb-6">
+          <h2 className="text-lg font-semibold text-zinc-100 mb-2 flex items-center gap-2">
+            <ShieldCheck size={20} className="text-aether" />
+            OPA admission (live)
+          </h2>
+          <p className="text-sm text-zinc-500 mb-4">
+            Evaluates Kubernetes manifest JSON against the OPA server configured via <code className="text-zinc-400">AETHER_OPA_URL</code>.
+            With <code className="text-zinc-400">AETHER_OPA_ENFORCE=1</code>, cluster apply is blocked on deny.
+          </p>
+          <textarea
+            value={opaManifest}
+            onChange={(e) => setOpaManifest(e.target.value)}
+            rows={12}
+            className="w-full font-mono text-sm rounded-xl border border-zinc-700 bg-zinc-950/80 px-3 py-2 text-zinc-200"
+          />
+          <button
+            type="button"
+            onClick={() => void handleOpaCheck()}
+            disabled={opaLoading}
+            className="mt-3 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
+          >
+            {opaLoading ? 'Checking…' : 'Check with OPA'}
+          </button>
+          {opaError && <p className="mt-2 text-sm text-red-400">{opaError}</p>}
+          {opaResult && (
+            <div className="mt-4">
+              <Badge text={opaResult.allowed ? 'ALLOWED' : 'DENIED'} variant={opaResult.allowed ? 'green' : 'red'} />
+              {opaResult.denials.length > 0 && (
+                <ul className="mt-3 space-y-2 text-sm text-zinc-300">
+                  {opaResult.denials.map((d) => (
+                    <li key={d} className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="dash-card mb-6">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Workload YAML</h2>
         <YamlInput

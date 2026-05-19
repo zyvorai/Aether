@@ -39,16 +39,18 @@ import PluginsPage from './components/pages/PluginsPage';
 import RbacPage from './components/pages/RbacPage';
 import AuditPage from './components/pages/AuditPage';
 import MetricsPage from './components/pages/MetricsPage';
+import GitOpsPage from './components/pages/GitOpsPage';
+import EditorPage from './components/pages/EditorPage';
 
 const heroConfig: Record<AppView, { title: string; subtitle: string }> = {
-  overview: { title: 'Dashboard', subtitle: '' },
-  workloads: { title: 'Workloads', subtitle: '' },
+  overview: { title: 'Dashboard', subtitle: 'Real-time view across all runtimes' },
+  workloads: { title: 'Workloads', subtitle: 'Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3' },
   clusters: { title: 'Cluster Browser', subtitle: '' },
   compose: { title: 'Compose Import', subtitle: '' },
-  ai: { title: 'AI Engine', subtitle: '' },
-  cost: { title: 'Cost Estimation', subtitle: '' },
+  ai: { title: 'AI Engine', subtitle: 'Intent scoring, runtime recommendations & migration planning' },
+  cost: { title: 'Cost Estimation', subtitle: 'Resource cost projections across runtimes' },
   affinity: { title: 'Runtime Affinity', subtitle: '' },
-  drift: { title: 'Drift Detection', subtitle: '' },
+  drift: { title: 'Drift Detection', subtitle: 'Configuration drift & desired-state reconciliation' },
   policy: { title: 'Policy Check', subtitle: '' },
   scheduler: { title: 'Scheduler', subtitle: '' },
   health: { title: 'Health Monitor', subtitle: '' },
@@ -63,6 +65,8 @@ const heroConfig: Record<AppView, { title: string; subtitle: string }> = {
   rbac: { title: 'Access Control', subtitle: '' },
   audit: { title: 'Audit Trail', subtitle: '' },
   metrics: { title: 'Metrics', subtitle: '' },
+  gitops: { title: 'GitOps', subtitle: '' },
+  editor: { title: 'Visual Editor', subtitle: 'Form-based workload designer (no YAML required)' },
 };
 
 function AetherDashboard() {
@@ -281,6 +285,10 @@ function AetherDashboard() {
         return <AuditPage key={refreshKey} />;
       case 'metrics':
         return <MetricsPage key={refreshKey} />;
+      case 'gitops':
+        return <GitOpsPage key={refreshKey} />;
+      case 'editor':
+        return <EditorPage key={refreshKey} />;
       default:
         return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
     }
