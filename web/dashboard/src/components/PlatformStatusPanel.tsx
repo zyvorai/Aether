@@ -180,6 +180,31 @@ export default function PlatformStatusPanel({ platform, ready, sseConnected, loa
           tone={platform.oidc.enabled || platform.safety.mutation_confirm_required ? 'ok' : 'warn'}
         />
       </div>
+      {!systemReady && (
+        <div className="mt-4 rounded-2xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs text-amber-100/90 leading-relaxed">
+          <p className="font-semibold text-amber-200 mb-1">Remediation</p>
+          <ul className="list-disc pl-4 space-y-1 text-amber-100/80">
+            {postgresRequired && !postgresOk && (
+              <li>
+                Verify Postgres is reachable and <code className="text-amber-200/90">AETHER_STATE_DATABASE_URL</code> is set on
+                all API pods.
+              </li>
+            )}
+            {redisRequired && !redisOk && (
+              <li>
+                Start Redis and set <code className="text-amber-200/90">AETHER_REDIS_URL</code> for OIDC session cache across
+                replicas.
+              </li>
+            )}
+            {!platform.oidc.enabled && (
+              <li>
+                For production auth: set <code className="text-amber-200/90">AETHER_API_KEY</code> or configure OIDC (
+                <code className="text-amber-200/90">AETHER_OIDC_*</code>).
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

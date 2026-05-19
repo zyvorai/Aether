@@ -1152,10 +1152,16 @@ pub(crate) async fn create_backup(
     let manager = backup::BackupManager::new(backup::BackupManager::default_dir());
 
     match manager.create_backup(&state, request.name, request.description) {
-        Ok(path) => (
-            StatusCode::CREATED,
-            Json(ApiResponse::success(format!("Backup created: {:?}", path))),
-        ),
+        Ok(path) => {
+            let upload_path = path.clone();
+            tokio::spawn(async move {
+                crate::backup_remote::upload_backup_file_if_configured(&upload_path).await;
+            });
+            (
+                StatusCode::CREATED,
+                Json(ApiResponse::success(format!("Backup created: {:?}", path))),
+            )
+        }
         Err(e) => err_internal::<String>(e),
     }
 }
@@ -1378,6 +1384,26 @@ pub(crate) async fn api_drift_check(
     )
 }
 
+/// POST /api/policy/opa — Evaluate manifest or workload YAML against OPA (`AETHER_OPA_URL`).
+pub(crate) async fn api_policy_opa(Json(payload): Json<serde_json::Value>) -> impl IntoResponse {
+    let input = if let Some(manifest) = payload.get("manifest") {
+        crate::opa::evaluate_manifest_optional(manifest).await
+    } else {
+        let spec = match parse_workload_payload::<serde_json::Value>(payload) {
+            Ok(spec) => spec,
+            Err(error) => return error,
+        };
+        crate::opa::evaluate_manifest_optional(&serde_json::to_value(&spec).unwrap_or_default()).await
+    };
+    match input {
+        Ok(ev) => match serde_json::to_value(ev) {
+            Ok(v) => ok_json(v),
+            Err(e) => err_internal::<serde_json::Value>(e),
+        },
+        Err(e) => err_internal::<serde_json::Value>(e),
+    }
+}
+
 /// POST /api/policy/check - Check workload against policies
 pub(crate) async fn api_policy_check(Json(payload): Json<serde_json::Value>) -> impl IntoResponse {
     use crate::policy::PolicyEngine;
@@ -1476,27 +1502,33 @@ pub(crate) async fn api_deps_remove(Json(request): Json<AddDependencyRequest>) -
 }
 
 /// GET /api/audit - List audit events
-pub(crate) async fn api_audit_list(Query(page): Query<PaginationQuery>) -> impl IntoResponse {
+pub(crate) async fn api_audit_list(Query(query): Query<AuditListQuery>) -> impl IntoResponse {
     use crate::audit::AuditLog;
 
     let audit_path = AuditLog::default_path();
     match AuditLog::load(&audit_path) {
         Ok(log) => {
             let summary = log.summary();
-            let all: Vec<_> = log.events().iter().rev().cloned().collect();
+            let mut all: Vec<_> = log.events().iter().rev().cloned().collect();
+            if let Some(ref filter) = query.workload {
+                let needle = filter.to_lowercase();
+                if !needle.is_empty() {
+                    all.retain(|e| e.workload.to_lowercase().contains(&needle));
+                }
+            }
             let total = all.len();
-            let use_page = page.limit.is_some() || page.offset.is_some();
+            let use_page = query.limit.is_some() || query.offset.is_some();
             let recent: Vec<_> = if use_page {
-                let (lim, off) = clamp_page(page.limit, page.offset, 20, 500);
+                let (lim, off) = clamp_page(query.limit, query.offset, 20, 500);
                 all.into_iter().skip(off).take(lim).collect()
             } else {
-                log.last_n(20).into_iter().cloned().collect()
+                all.into_iter().take(20).collect()
             };
             let response = serde_json::json!({
                 "summary": summary,
                 "recent_events": recent,
             });
-            if use_page {
+            if use_page || query.workload.is_some() {
                 let json = match serde_json::to_string(&ApiResponse::success(response)) {
                     Ok(s) => s,
                     Err(e) => {
@@ -1943,6 +1975,33 @@ pub(crate) async fn api_cluster_apply(
     Json(request): Json<ClusterApplyRequestBody>,
 ) -> impl IntoResponse {
     let workload_ref = format!("{}:{}/{}:{}", request.cluster, request.namespace, request.kind, request.manifest.get("metadata").and_then(|m| m.get("name")).and_then(|n| n.as_str()).unwrap_or("unknown"));
+    if crate::opa::enforce_enabled() {
+        match crate::opa::evaluate_manifest_optional(&request.manifest).await {
+            Ok(ev) if !ev.allowed => {
+                let msg = if ev.denials.is_empty() {
+                    "OPA policy denied this manifest".to_string()
+                } else {
+                    format!("OPA denied: {}", ev.denials.join("; "))
+                };
+                record_audit_event(
+                    crate::audit::AuditAction::PolicyCheck,
+                    &workload_ref,
+                    Some("kubernetes"),
+                    crate::audit::ActionResult::Failure,
+                    &msg,
+                    None,
+                );
+                return (
+                    StatusCode::FORBIDDEN,
+                    Json(ApiResponse::<String>::error(msg)),
+                );
+            }
+            Err(e) => {
+                return err_internal::<String>(format!("OPA evaluation failed: {e}"));
+            }
+            _ => {}
+        }
+    }
     match crate::kubecluster::apply_manifest(
         &request.cluster,
         &request.namespace,
@@ -3303,6 +3362,14 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
         "plugins": {
             "ipc_timeout_env": "AETHER_PLUGIN_IPC_TIMEOUT_SEC",
             "ipc_max_output_env": "AETHER_PLUGIN_IPC_MAX_OUTPUT_BYTES",
+        },
+        "opa": {
+            "configured": crate::opa::configured(),
+            "enforce": crate::opa::enforce_enabled(),
+            "url_env": "AETHER_OPA_URL",
+            "package_env": "AETHER_OPA_PACKAGE",
+            "enforce_env": "AETHER_OPA_ENFORCE",
+            "check_path": "/api/policy/opa",
         },
     }))
 }

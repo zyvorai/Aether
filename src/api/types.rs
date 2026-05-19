@@ -563,6 +563,15 @@ pub(crate) struct PaginationQuery {
     pub(crate) offset: Option<usize>,
 }
 
+/// GET /api/audit query parameters.
+#[derive(Debug, Deserialize)]
+pub(crate) struct AuditListQuery {
+    pub(crate) limit: Option<usize>,
+    pub(crate) offset: Option<usize>,
+    /// Substring match on audit `workload` field (e.g. pod or cluster ref).
+    pub(crate) workload: Option<String>,
+}
+
 /// Trigger a webhook test by channel name (same as CLI `aether webhook test`).
 #[derive(Debug, Deserialize)]
 pub(crate) struct WebhookTestRequest {

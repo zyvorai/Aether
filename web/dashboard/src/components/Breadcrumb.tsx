@@ -23,6 +23,7 @@ const VIEW_LABELS: Record<AppView, string> = {
   plugins: 'Plugins',
   rbac: 'Access Control',
   audit: 'Audit Trail',
+  gitops: 'GitOps',
   metrics: 'Metrics',
 };
 

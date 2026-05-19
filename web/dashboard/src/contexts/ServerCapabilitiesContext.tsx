@@ -40,12 +40,19 @@ function parsePlatformPayload(data: Record<string, unknown>): PlatformInfo | nul
       ? 'postgresql'
       : 'local-json';
 
+  const opaRaw = (data.opa ?? {}) as Record<string, unknown>;
+
   return {
     version,
     persistence: backend,
     haMode: typeof data.ha_mode === 'string' ? data.ha_mode : 'single',
     haSharedCache: Boolean(data.ha_shared_cache),
     tls: Boolean(data.tls),
+    opa: {
+      configured: Boolean(opaRaw.configured),
+      enforce: Boolean(opaRaw.enforce),
+      check_path: typeof opaRaw.check_path === 'string' ? opaRaw.check_path : '/api/policy/opa',
+    },
     workloadState: {
       backend,
       configured: Boolean(workloadRaw?.configured ?? backend === 'postgresql'),

@@ -443,6 +443,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/scaling-advice", get(ai_scaling_advice))
         .route("/api/drift/:name", get(api_drift_check))
         .route("/api/policy/check", post(api_policy_check))
+        .route("/api/policy/opa", post(api_policy_opa))
         .route(
             "/api/dependencies",
             get(api_deps_show).post(api_deps_add).delete(api_deps_remove),

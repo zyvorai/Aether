@@ -146,6 +146,9 @@ impl AuditLog {
         event.integrity_hash = Some(Self::compute_integrity_hash(&event));
 
         self.events.push(event);
+        if let Some(ev) = self.events.last() {
+            emit_webhook_if_configured(ev);
+        }
         self.next_id += 1;
 
         // Auto-prune to prevent unbounded growth
@@ -242,6 +245,34 @@ impl AuditLog {
         });
     }
 
+}
+
+/// POST audit events to `AETHER_AUDIT_WEBHOOK_URL` when set (best-effort, non-blocking).
+pub fn emit_webhook_if_configured(event: &AuditEvent) {
+    let Ok(url) = std::env::var("AETHER_AUDIT_WEBHOOK_URL") else {
+        return;
+    };
+    if url.trim().is_empty() {
+        return;
+    }
+    let event = event.clone();
+    std::thread::spawn(move || {
+        let client = match reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(15))
+            .build()
+        {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::warn!(error = %e, "audit webhook: client");
+                return;
+            }
+        };
+        match client.post(&url).json(&event).send() {
+            Ok(resp) if resp.status().is_success() => {}
+            Ok(resp) => tracing::warn!(status = %resp.status(), "audit webhook rejected"),
+            Err(e) => tracing::warn!(error = %e, "audit webhook send failed"),
+        }
+    });
 }
 
 crate::impl_json_store!(AuditLog, "audit.json");
