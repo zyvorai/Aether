@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Inbox } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
+import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
@@ -11,24 +12,46 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [severity, setSeverity] = useState('all');
 
-  useEffect(() => {
-    async function load() {
-      const [ev, s] = await Promise.all([
-        apiFetch<Event[]>('/events'),
-        apiFetch<EventSummary>('/events/summary'),
-      ]);
-      setEvents(ev ?? []);
-      setSummary(s);
-      setLoading(false);
-    }
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [ev, s] = await Promise.all([
+      apiFetch<Event[]>('/events'),
+      apiFetch<EventSummary>('/events/summary'),
+    ]);
+    setEvents(ev ?? []);
+    setSummary(s);
+    setLoading(false);
   }, []);
 
-  if (loading) {
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const severityOptions = useMemo(() => {
+    const levels = new Set(events.map((e) => e.severity.toLowerCase()));
+    return ['all', ...Array.from(levels).sort()];
+  }, [events]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return events.filter((ev) => {
+      if (severity !== 'all' && ev.severity.toLowerCase() !== severity) return false;
+      if (!q) return true;
+      return (
+        ev.message.toLowerCase().includes(q) ||
+        ev.title.toLowerCase().includes(q) ||
+        (ev.workload?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [events, search, severity]);
+
+  if (loading && events.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
       </div>
     );
   }
@@ -43,21 +66,45 @@ export default function EventsPage() {
         </div>
       )}
 
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search message or workload…"
+        onRefresh={() => void load()}
+        refreshing={loading}
+        filters={
+          <select
+            value={severity}
+            onChange={(e) => setSeverity(e.target.value)}
+            className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+            aria-label="Severity filter"
+          >
+            {severityOptions.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt === 'all' ? 'All severities' : opt}
+              </option>
+            ))}
+          </select>
+        }
+      />
+
       {events.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No events" description="No events have been recorded" />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting search or severity filter" />
       ) : (
         <div className="dash-card">
           <div className="space-y-3 max-h-[600px] overflow-auto">
-            {events.map((ev, i) => (
-              <div key={i} className="flex items-start gap-3 p-4 bg-zinc-950/50 rounded-lg">
+            {filtered.map((ev, i) => (
+              <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">
                 <div className="flex flex-col gap-1.5 shrink-0">
                   <SeverityBadge severity={ev.severity} />
                   <Badge text={ev.category} variant="muted" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-zinc-200">{ev.title}</div>
-                  <div className="text-xs text-zinc-400 mt-1">{ev.message}</div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
+                  <div className="text-sm font-medium text-slate-200">{ev.title}</div>
+                  <div className="text-xs text-slate-400 mt-1">{ev.message}</div>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">
                     <span>{formatTimestamp(ev.timestamp)}</span>
                     {ev.workload && <span>Workload: {ev.workload}</span>}
                     <span>Source: {ev.source}</span>

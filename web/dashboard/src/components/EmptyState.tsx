@@ -4,16 +4,21 @@ interface EmptyStateProps {
   icon: ReactNode;
   title: string;
   description?: string;
+  action?: ReactNode;
 }
 
-export default function EmptyState({ icon, title, description }: EmptyStateProps) {
+export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="text-zinc-600 mb-4">{icon}</div>
-      <h3 className="text-lg font-medium text-zinc-400">{title}</h3>
+    <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-slate-800/70 bg-slate-950/35 px-6 py-16 text-center">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,164,255,0.10),transparent_42%)]" />
+      <div className="relative mb-4 rounded-2xl border border-slate-700/70 bg-slate-900/80 p-4 text-slate-500 shadow-inner">
+        {icon}
+      </div>
+      <h3 className="relative text-lg font-semibold text-slate-200">{title}</h3>
       {description && (
-        <p className="text-sm text-zinc-500 mt-1 max-w-md">{description}</p>
+        <p className="relative mt-2 max-w-md text-sm leading-relaxed text-slate-500">{description}</p>
       )}
+      {action && <div className="relative mt-5">{action}</div>}
     </div>
   );
 }

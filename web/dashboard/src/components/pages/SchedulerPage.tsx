@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
@@ -6,37 +6,46 @@ import StatCard from '../StatCard';
 import BarChart from '../BarChart';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
 import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 
 export default function SchedulerPage() {
   const [utilization, setUtilization] = useState<RuntimeUtilization[]>([]);
   const [suggestions, setSuggestions] = useState<OptimizeSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const [u, s] = await Promise.all([
-        apiFetch<RuntimeUtilization[]>('/scheduler/utilization'),
-        apiFetch<OptimizeSuggestion[]>('/scheduler/optimize'),
-      ]);
-      setUtilization(u ?? []);
-      setSuggestions(s ?? []);
-      setLoading(false);
-    }
-    load();
+  const load = useCallback(async () => {
+    const [u, s] = await Promise.all([
+      apiFetch<RuntimeUtilization[]>('/scheduler/utilization'),
+      apiFetch<OptimizeSuggestion[]>('/scheduler/optimize'),
+    ]);
+    setUtilization(u ?? []);
+    setSuggestions(s ?? []);
   }, []);
 
+  useEffect(() => {
+    void (async () => {
+      await load();
+      setLoading(false);
+    })();
+  }, [load]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
-      </div>
-    );
+    return <PageLoading rows={6} />;
   }
 
   return (
     <div>
-      {/* Runtime Utilization */}
+      <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {utilization.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No utilization data" description="No runtimes are reporting utilization" />
@@ -67,7 +76,6 @@ export default function SchedulerPage() {
         )}
       </div>
 
-      {/* Optimization Suggestions */}
       <div className="dash-card">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Optimization Suggestions</h2>
         {suggestions.length === 0 ? (

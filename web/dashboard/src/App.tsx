@@ -12,6 +12,7 @@ import { useSequenceShortcuts } from './hooks/useSequenceShortcut';
 import { useTheme } from './contexts/ThemeContext';
 import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext';
 import { pathToView, viewToPath } from './utils/dashboardRoutes';
+import { HERO_CONFIG } from './utils/dashboardNav';
 import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode } from './utils/api';
 import CommandPalette from './components/CommandPalette';
 import LoginGate from './components/LoginGate';
@@ -42,33 +43,6 @@ import MetricsPage from './components/pages/MetricsPage';
 import GitOpsPage from './components/pages/GitOpsPage';
 import EditorPage from './components/pages/EditorPage';
 
-const heroConfig: Record<AppView, { title: string; subtitle: string }> = {
-  overview: { title: 'Dashboard', subtitle: 'Real-time view across all runtimes' },
-  workloads: { title: 'Workloads', subtitle: 'Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3' },
-  clusters: { title: 'Cluster Browser', subtitle: '' },
-  compose: { title: 'Compose Import', subtitle: '' },
-  ai: { title: 'AI Engine', subtitle: 'Intent scoring, runtime recommendations & migration planning' },
-  cost: { title: 'Cost Estimation', subtitle: 'Resource cost projections across runtimes' },
-  affinity: { title: 'Runtime Affinity', subtitle: '' },
-  drift: { title: 'Drift Detection', subtitle: 'Configuration drift & desired-state reconciliation' },
-  policy: { title: 'Policy Check', subtitle: '' },
-  scheduler: { title: 'Scheduler', subtitle: '' },
-  health: { title: 'Health Monitor', subtitle: '' },
-  events: { title: 'Events', subtitle: '' },
-  sla: { title: 'SLA Compliance', subtitle: '' },
-  deps: { title: 'Dependencies', subtitle: '' },
-  envs: { title: 'Environments', subtitle: '' },
-  secrets: { title: 'Secrets', subtitle: '' },
-  backups: { title: 'Backups', subtitle: '' },
-  templates: { title: 'Templates', subtitle: '' },
-  plugins: { title: 'Plugins', subtitle: '' },
-  rbac: { title: 'Access Control', subtitle: '' },
-  audit: { title: 'Audit Trail', subtitle: '' },
-  metrics: { title: 'Metrics', subtitle: '' },
-  gitops: { title: 'GitOps', subtitle: '' },
-  editor: { title: 'Visual Editor', subtitle: 'Form-based workload designer (no YAML required)' },
-};
-
 function AetherDashboard() {
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -83,6 +57,7 @@ function AetherDashboard() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [workloadNames, setWorkloadNames] = useState<string[]>([]);
+  const [selectedWorkloadFromPalette, setSelectedWorkloadFromPalette] = useState<string | null>(null);
   const { toast, ToastContainer } = useToast();
 
   useEffect(() => {
@@ -230,7 +205,7 @@ function AetherDashboard() {
     return <LoginGate onAuthenticated={(u) => { setUsername(u); setIsAuthenticated(true); }} />;
   }
 
-  const hero = heroConfig[currentView];
+  const hero = HERO_CONFIG[currentView];
 
   const shellClass =
     theme === 'steel'
@@ -244,7 +219,13 @@ function AetherDashboard() {
       case 'overview':
         return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
       case 'workloads':
-        return <WorkloadsPage key={refreshKey} />;
+        return (
+          <WorkloadsPage
+            key={`${refreshKey}-${selectedWorkloadFromPalette ?? ''}`}
+            initialSelectedName={selectedWorkloadFromPalette}
+            onClearInitialSelection={() => setSelectedWorkloadFromPalette(null)}
+          />
+        );
       case 'clusters':
         return <ClustersPage key={refreshKey} />;
       case 'compose':
@@ -313,6 +294,7 @@ function AetherDashboard() {
             onClose={() => setCommandPaletteOpen(false)}
             onNavigate={handleNavigate}
             workloads={workloadNames}
+            onSelectWorkload={(name) => setSelectedWorkloadFromPalette(name)}
             onRefresh={() => {
               setRefreshKey((k) => k + 1);
               setLastRefreshed(new Date());

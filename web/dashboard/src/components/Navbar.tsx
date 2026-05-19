@@ -209,7 +209,7 @@ function useRelativeTime(date: Date): string {
   return `Updated ${minutes}m ago`;
 }
 
-export default function Navbar({ currentView, onNavigate, username, onLogout: _onLogout, onRefresh, lastRefreshed, sseConnected }: NavbarProps) {
+export default function Navbar({ currentView, onNavigate, username, onLogout, onRefresh, lastRefreshed, sseConnected }: NavbarProps) {
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [spinning, setSpinning] = useState(false);
@@ -255,13 +255,14 @@ export default function Navbar({ currentView, onNavigate, username, onLogout: _o
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => onNavigate('overview')}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              className="group flex items-center gap-2 transition-opacity hover:opacity-90"
             >
-              <div className="w-9 h-9 rounded-xl border border-aether/20 bg-aether/10 flex items-center justify-center shadow-[0_0_0_1px_rgba(99,164,255,0.08)]">
+              <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-aether/25 bg-aether/10 shadow-[0_0_0_1px_rgba(99,164,255,0.08),0_0_30px_rgba(99,164,255,0.08)] transition group-hover:border-aether/40">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-aether/10" />
                 <Hexagon className="w-5 h-5 text-aether" />
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-lg font-semibold text-white tracking-tight">Aether</span>
+                <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-lg font-semibold tracking-tight text-transparent">Aether</span>
                 <span className="hidden lg:block text-[11px] uppercase tracking-[0.22em] text-slate-500">Universal Runtime Control Plane</span>
               </div>
             </button>
@@ -364,6 +365,17 @@ export default function Navbar({ currentView, onNavigate, username, onLogout: _o
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className={`text-sm ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>{username}</span>
             </div>
+            <button
+              type="button"
+              onClick={onLogout}
+              className={`hidden sm:inline-flex px-3 py-2 rounded-xl text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 ${
+                theme === 'light'
+                  ? 'text-slate-600 hover:bg-slate-100'
+                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+              }`}
+            >
+              Sign out
+            </button>
 
             {/* Mobile hamburger */}
             <button
