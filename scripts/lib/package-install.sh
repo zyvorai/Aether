@@ -46,6 +46,6 @@ pkg_summary "Install complete"
 pkg_next_steps \
   "https://zyvor.dev · © @zyvor 2026" \
   "./aether serve --host 0.0.0.0 --port 5090" \
-  "https://<this-server>:5090/web/dashboard/" \
+  "$(pkg_access_url https 5090)/web/dashboard/ ($(pkg_primary_host_label))" \
   "./test-package.sh" \
   "./uninstall.sh --yes [--remove-dir]"
