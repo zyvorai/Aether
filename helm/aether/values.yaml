@@ -146,6 +146,18 @@ auditWebhook:
   existingSecret: ""
   url: ""
 
+# Optional OPA admission (set url to your OPA Service; enable bundle ConfigMap for GitOps reload).
+opa:
+  enabled: false
+  enforce: false
+  url: ""
+  package: aether.k8s.admit
+  bundle:
+    enabled: false
+    version: "1"
+    # Mount path when using an OPA sidecar that watches this ConfigMap (see labs/opa README).
+    mountPath: /policies
+
 extraEnv: []
 
 metrics:

@@ -594,7 +594,7 @@ pub fn format_live_diff(report: &LiveDiffReport) -> String {
 }
 
 /// Result of a single reconciliation action execution.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ReconcileResult {
     pub action_type: String,
     pub success: bool,

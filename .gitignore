@@ -1,3 +1,10 @@
+# Client packages
+/dist/
+
+# Dashboard
+web/dashboard/node_modules/
+web/dashboard/test-results/
+
 # Rust
 /target/
 Cargo.lock

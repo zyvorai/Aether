@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus } from 'lucide-react';
-import { apiFetch, apiPost, apiDelete } from '../../utils/api';
+import { apiFetch, apiPost, apiDelete, apiPut } from '../../utils/api';
+import { useQueryParam } from '../../utils/urlState';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -10,7 +11,7 @@ import EmptyState from '../EmptyState';
 import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
-import type { WorkloadResponse, ValidateResponse, BuildResponse } from '../../types/api';
+import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice } from '../../types/api';
 
 interface WorkloadsPageProps {
   initialSelectedName?: string | null;
@@ -36,12 +37,18 @@ function isAetherManaged(workload: WorkloadResponse): boolean {
 export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection }: WorkloadsPageProps) {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'aether' | 'cluster'>('all');
-  const [kindFilter, setKindFilter] = useState('all');
-  const [clusterFilter, setClusterFilter] = useState('all');
-  const [namespaceFilter, setNamespaceFilter] = useState('all');
+  const [search, setSearch] = useQueryParam('q');
+  const [sourceFilter, setSourceFilter] = useQueryParam('source', 'all');
+  const [kindFilter, setKindFilter] = useQueryParam('kind', 'all');
+  const [clusterFilter, setClusterFilter] = useQueryParam('cluster', 'all');
+  const [namespaceFilter, setNamespaceFilter] = useQueryParam('namespace', 'all');
+  const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
+  const [updateModal, setUpdateModal] = useState<string | null>(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
   const [migrateModal, setMigrateModal] = useState<string | null>(null);
+  const [migrateAdvice, setMigrateAdvice] = useState<MigrationAdvice | null>(null);
+  const [migrateTarget, setMigrateTarget] = useState<string | null>(null);
+  const [adviceLoading, setAdviceLoading] = useState(false);
   const [validateModal, setValidateModal] = useState(false);
   const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
   const [validateLoading, setValidateLoading] = useState(false);
@@ -109,10 +116,20 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     load();
   }
 
+  async function loadMigrationAdvice(name: string, target: string) {
+    setAdviceLoading(true);
+    setMigrateTarget(target);
+    const data = await apiFetch<MigrationAdvice>(`/ai/migration-advice/${encodeURIComponent(name)}/${encodeURIComponent(target)}`);
+    setMigrateAdvice(data);
+    setAdviceLoading(false);
+  }
+
   async function handleMigrate(name: string, target: string) {
     setActionLoading(`${name}-migrate`);
     const res = await apiPost(`/workloads/${name}/migrate`, { target_runtime: target });
     setMigrateModal(null);
+    setMigrateAdvice(null);
+    setMigrateTarget(null);
     setActionLoading(null);
     if (res.success) {
       toast(`Migration of "${name}" to ${target} started`, 'success');
@@ -142,6 +159,44 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     }
   }
 
+  function toggleSelect(name: string) {
+    setSelectedNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  async function bulkAction(action: 'start' | 'stop') {
+    const names = [...selectedNames].filter((n) => {
+      const w = workloads.find((x) => x.name === n);
+      return w && isAetherManaged(w);
+    });
+    if (names.length === 0) return;
+    setActionLoading(`bulk-${action}`);
+    for (const name of names) {
+      await apiPost(`/workloads/${name}/${action}`);
+    }
+    setActionLoading(null);
+    setSelectedNames(new Set());
+    toast(`Bulk ${action} completed for ${names.length} workload(s)`, 'success');
+    load();
+  }
+
+  async function handleUpdate(name: string, yaml: string) {
+    setUpdateLoading(true);
+    const res = await apiPut(`/workloads/${name}`, { yaml });
+    setUpdateLoading(false);
+    if (res.success) {
+      toast(`Workload "${name}" updated`, 'success');
+      setUpdateModal(null);
+      load();
+    } else {
+      toast(res.error ?? 'Update failed', 'error');
+    }
+  }
+
   function handleConfirmedAction() {
     if (!confirmAction) return;
     handleAction(confirmAction.name, confirmAction.type);
@@ -156,6 +211,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const clusters = ['all', ...Array.from(new Set(workloads.map((w) => w.cluster).filter((cluster): cluster is string => Boolean(cluster)))).sort()];
   const namespaces = ['all', ...Array.from(new Set(workloads.map((w) => w.namespace).filter((namespace): namespace is string => Boolean(namespace)))).sort()];
 
+  const sourceFilterVal = sourceFilter as 'all' | 'aether' | 'cluster';
+
   const filteredWorkloads = workloads.filter((workload) => {
     const matchesSearch = !search || [
       workload.name,
@@ -166,7 +223,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       workload.kind ?? '',
     ].some((value) => value.toLowerCase().includes(search.toLowerCase()));
     const source = workload.source ?? 'aether';
-    const matchesSource = sourceFilter === 'all' || source === sourceFilter;
+    const matchesSource = sourceFilterVal === 'all' || source === sourceFilterVal;
     const matchesKind = kindFilter === 'all' || workload.kind === kindFilter;
     const matchesCluster = clusterFilter === 'all' || workload.cluster === clusterFilter;
     const matchesNamespace = namespaceFilter === 'all' || workload.namespace === namespaceFilter;
@@ -185,7 +242,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         refreshing={loading}
         filters={
           <>
-            <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as 'all' | 'aether' | 'cluster')} className={filterSelectClass}>
+            <select value={sourceFilterVal} onChange={(e) => setSourceFilter(e.target.value)} className={filterSelectClass}>
               <option value="all">All sources</option>
               <option value="aether">Aether managed</option>
               <option value="cluster">Kubernetes discovered</option>
@@ -252,6 +309,15 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         />
       </div>
 
+      {selectedNames.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3">
+          <span className="text-sm text-slate-300">{selectedNames.size} selected</span>
+          <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Start all</button>
+          <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">Stop all</button>
+          <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200">Clear</button>
+        </div>
+      )}
+
       {filteredWorkloads.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to see it here" />
       ) : (
@@ -260,6 +326,20 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-zinc-800">
+                  <th className="w-10 py-3 px-2">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={filteredWorkloads.length > 0 && filteredWorkloads.every((w) => selectedNames.has(w.name))}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedNames(new Set(filteredWorkloads.map((w) => w.name)));
+                        } else {
+                          setSelectedNames(new Set());
+                        }
+                      }}
+                    />
+                  </th>
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[18%] min-w-0">Name</th>
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[12%] min-w-0">Runtime</th>
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[36%] min-w-0">Image</th>
@@ -271,6 +351,16 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               <tbody>
                 {filteredWorkloads.map((w) => (
                   <tr key={w.name} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                    <td className="py-3 px-2 align-top">
+                      {isAetherManaged(w) && (
+                        <input
+                          type="checkbox"
+                          checked={selectedNames.has(w.name)}
+                          onChange={() => toggleSelect(w.name)}
+                          aria-label={`Select ${w.name}`}
+                        />
+                      )}
+                    </td>
                     <td className="py-3 px-3 sm:px-4 font-medium text-zinc-200 align-top min-w-0">
                       <button
                         type="button"
@@ -312,6 +402,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                             <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
                             <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
                             <button type="button" onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
+                            <button type="button" onClick={() => setUpdateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-sky-400 hover:bg-sky-500/10 rounded transition-colors" title="Update spec"><FileText size={14} /></button>
                             <button type="button" onClick={() => setMigrateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
                             <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
                             <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
@@ -375,21 +466,93 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         </div>
       </Modal>
 
-      <Modal isOpen={migrateModal !== null} onClose={() => setMigrateModal(null)} title={`Migrate: ${migrateModal}`}>
-        <p className="text-sm text-zinc-400 mb-4">Select target runtime for migration:</p>
-        <div className="grid grid-cols-2 gap-3">
+      <Modal
+        isOpen={migrateModal !== null}
+        onClose={() => {
+          setMigrateModal(null);
+          setMigrateAdvice(null);
+          setMigrateTarget(null);
+        }}
+        title={`Migrate: ${migrateModal}`}
+        size="wide"
+      >
+        <p className="text-sm text-zinc-400 mb-4">Select target runtime to load migration advice:</p>
+        <div className="grid grid-cols-2 gap-3 mb-6">
           {runtimes.map((rt) => (
             <button
               key={rt}
               type="button"
-              onClick={() => migrateModal && handleMigrate(migrateModal, rt)}
-              disabled={actionLoading !== null}
-              className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm font-medium text-zinc-200 transition-colors capitalize"
+              onClick={() => migrateModal && void loadMigrationAdvice(migrateModal, rt)}
+              disabled={adviceLoading || actionLoading !== null}
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors capitalize ${
+                migrateTarget === rt
+                  ? 'border-aether/50 bg-aether/10 text-aether'
+                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200'
+              }`}
             >
-              {rt}
+              {adviceLoading && migrateTarget === rt ? 'Loading advice…' : rt}
             </button>
           ))}
         </div>
+
+        {migrateAdvice && migrateTarget && (
+          <div className="rounded-xl border border-zinc-700 bg-zinc-950/60 p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-zinc-100">
+              Advice: {migrateAdvice.source_runtime} → {migrateAdvice.target_runtime}
+            </h4>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-zinc-500">Strategy</span>
+                <p className="text-zinc-200">{migrateAdvice.recommended_strategy}</p>
+              </div>
+              <div>
+                <span className="text-zinc-500">Risk</span>
+                <p className="text-zinc-200">{migrateAdvice.risk_level}</p>
+              </div>
+              <div>
+                <span className="text-zinc-500">Est. downtime</span>
+                <p className="text-zinc-200">{migrateAdvice.estimated_downtime_secs}s</p>
+              </div>
+              {migrateAdvice.timing && (
+                <div>
+                  <span className="text-zinc-500">Timing</span>
+                  <p className="text-zinc-200">{migrateAdvice.timing.recommendation}</p>
+                </div>
+              )}
+            </div>
+            {migrateAdvice.reasons.length > 0 && (
+              <ul className="text-xs text-slate-400 space-y-1">
+                {migrateAdvice.reasons.map((r, i) => (
+                  <li key={i}>+ {r}</li>
+                ))}
+              </ul>
+            )}
+            {migrateAdvice.warnings.length > 0 && (
+              <ul className="text-xs text-amber-400/90 space-y-1">
+                {migrateAdvice.warnings.map((w, i) => (
+                  <li key={i}>! {w}</li>
+                ))}
+              </ul>
+            )}
+            <button
+              type="button"
+              onClick={() => migrateModal && handleMigrate(migrateModal, migrateTarget)}
+              disabled={actionLoading !== null}
+              className="w-full py-3 bg-aether hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-white"
+            >
+              {actionLoading ? 'Starting migration…' : `Start migration to ${migrateTarget}`}
+            </button>
+          </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={updateModal !== null} onClose={() => setUpdateModal(null)} title={`Update: ${updateModal}`}>
+        <YamlInput
+          buttonText="Apply update"
+          onSubmit={(yaml) => updateModal && handleUpdate(updateModal, yaml)}
+          loading={updateLoading}
+          placeholder="Paste updated workload YAML (metadata.name must match)..."
+        />
       </Modal>
 
       <Modal isOpen={deployModal} onClose={() => setDeployModal(false)} title="Deploy New Workload">

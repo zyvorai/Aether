@@ -4,6 +4,7 @@ import LogViewer from './LogViewer';
 import Badge, { RuntimeBadge, SeverityBadge } from './Badge';
 import BarChart from './BarChart';
 import RadarChart from './RadarChart';
+import IntentDebugger from './IntentDebugger';
 import type { ClusterResourceDetail, Event, ScoringResult, WorkloadResponse } from '../types/api';
 
 export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events';
@@ -495,6 +496,9 @@ export default function WorkloadDetail({ workload, onClose, onAction, initialTab
                 <ScoringResultsView data={scoringData} />
               </>
             )}
+            <div className="mt-6 border-t border-zinc-800 pt-4">
+              <IntentDebugger />
+            </div>
           </div>
         )}
 

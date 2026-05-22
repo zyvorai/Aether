@@ -14,14 +14,32 @@ interface GitOpsPayload {
   status?: string | Record<string, unknown>;
 }
 
-function formatSyncResult(raw: string | null): { summary: string; details: Record<string, unknown> | null } {
-  if (!raw) return { summary: '', details: null };
+interface GitOpsChangeRow {
+  file_path: string;
+  change_type: string;
+  commit: string;
+}
+
+function formatSyncResult(raw: string | null): {
+  summary: string;
+  details: Record<string, unknown> | null;
+  changes: GitOpsChangeRow[];
+} {
+  if (!raw) return { summary: '', details: null, changes: [] };
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const msg = typeof parsed.message === 'string' ? parsed.message : typeof parsed.status === 'string' ? parsed.status : 'Sync completed';
-    return { summary: msg, details: parsed };
+    const msg =
+      typeof parsed.message === 'string'
+        ? parsed.message
+        : typeof parsed.status === 'string'
+          ? parsed.status
+          : 'Sync completed';
+    const changes = Array.isArray(parsed.changes)
+      ? (parsed.changes as GitOpsChangeRow[]).filter((c) => c && typeof c.file_path === 'string')
+      : [];
+    return { summary: msg, details: parsed, changes };
   } catch {
-    return { summary: raw, details: null };
+    return { summary: raw, details: null, changes: [] };
   }
 }
 
@@ -45,7 +63,7 @@ export default function GitOpsPage() {
   const sync = async () => {
     setSyncing(true);
     setSyncResult(null);
-    const res = await apiPost<{ changes?: unknown; status?: unknown }>('/gitops/sync', {});
+    const res = await apiPost<{ changes?: GitOpsChangeRow[]; status?: unknown }>('/gitops/sync', {});
     setSyncing(false);
     if (res.success) {
       setSyncResult(JSON.stringify(res.data, null, 2));
@@ -122,16 +140,53 @@ export default function GitOpsPage() {
         <div className="dash-card">
           <h3 className="text-sm font-semibold text-slate-100 mb-3">Last sync result</h3>
           <p className="text-sm text-slate-300 mb-3">{parsedSync.summary}</p>
+          {parsedSync.changes.length > 0 && (
+            <div className="mb-4 overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
+                    <th className="py-2 pr-4">Change</th>
+                    <th className="py-2 pr-4">File</th>
+                    <th className="py-2">Commit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedSync.changes.map((c) => (
+                    <tr key={`${c.commit}-${c.file_path}`} className="border-b border-slate-800/50">
+                      <td className="py-2 pr-4">
+                        <Badge
+                          text={c.change_type}
+                          variant={
+                            c.change_type === 'Added'
+                              ? 'green'
+                              : c.change_type === 'Deleted'
+                                ? 'red'
+                                : 'yellow'
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-4 font-mono text-xs text-slate-300">{c.file_path}</td>
+                      <td className="py-2 font-mono text-xs text-slate-500 truncate max-w-[12rem]" title={c.commit}>
+                        {c.commit.slice(0, 12)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           {parsedSync.details && (
             <dl className="space-y-2 text-sm">
-              {Object.entries(parsedSync.details).map(([key, value]) => (
-                <div key={key} className="flex gap-2">
-                  <dt className="text-slate-500 shrink-0">{key}:</dt>
-                  <dd className="text-slate-300 break-all">
-                    {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                  </dd>
-                </div>
-              ))}
+              {Object.entries(parsedSync.details)
+                .filter(([key]) => key !== 'changes')
+                .map(([key, value]) => (
+                  <div key={key} className="flex gap-2">
+                    <dt className="text-slate-500 shrink-0">{key}:</dt>
+                    <dd className="text-slate-300 break-all">
+                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                    </dd>
+                  </div>
+                ))}
             </dl>
           )}
         </div>

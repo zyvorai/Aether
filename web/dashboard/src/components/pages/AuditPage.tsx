@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Inbox, ShieldCheck } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
+import { useQueryParam } from '../../utils/urlState';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
@@ -12,7 +13,8 @@ export default function AuditPage() {
   const [audit, setAudit] = useState<AuditResponse | null>(null);
   const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
+  const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -32,14 +34,17 @@ export default function AuditPage() {
   const filteredEvents = useMemo(() => {
     if (!audit) return [];
     const q = search.trim().toLowerCase();
-    if (!q) return audit.recent_events;
-    return audit.recent_events.filter(
-      (ev) =>
+    const wl = workloadFilter.trim().toLowerCase();
+    return audit.recent_events.filter((ev) => {
+      if (wl && !ev.workload.toLowerCase().includes(wl)) return false;
+      if (!q) return true;
+      return (
         ev.action.toLowerCase().includes(q) ||
         ev.workload.toLowerCase().includes(q) ||
         ev.message.toLowerCase().includes(q)
-    );
-  }, [audit, search]);
+      );
+    });
+  }, [audit, search, workloadFilter]);
 
   if (loading && !audit) {
     return (
@@ -63,6 +68,15 @@ export default function AuditPage() {
         searchPlaceholder="Search action, workload, message…"
         onRefresh={() => void load()}
         refreshing={loading}
+        filters={
+          <input
+            type="text"
+            value={workloadFilter}
+            onChange={(e) => setWorkloadFilter(e.target.value)}
+            placeholder="Filter by workload…"
+            className="rounded-xl border border-slate-700/80 bg-slate-950/70 px-3 py-2.5 text-sm text-slate-100 min-w-[10rem]"
+          />
+        }
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">

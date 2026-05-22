@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { LayoutDashboard, Activity, AlertTriangle, Calendar, Shield, Lock, Inbox, Boxes, KeySquare, Workflow } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import type { AppView } from '../../types/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
@@ -16,7 +19,13 @@ interface OverviewPageProps {
 }
 
 export default function OverviewPage({ onNavigate, sseConnected = false }: OverviewPageProps) {
+  const navigate = useNavigate();
   const { capabilities, ready, loading: platformLoading } = useServerCapabilities();
+
+  const goFiltered = (view: AppView, params?: Record<string, string>) => {
+    navigate(pathWithQuery(viewToPath(view), params ?? {}));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [eventSummary, setEventSummary] = useState<EventSummary | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
@@ -134,7 +143,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         </div>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <button onClick={() => onNavigate('workloads')} className="text-left">
+        <button type="button" onClick={() => goFiltered('workloads', { source: 'aether' })} className="text-left">
           <StatCard title="Workloads" value={workloads.length} color="orange" icon={<LayoutDashboard size={18} />} />
         </button>
         <button type="button" onClick={() => onNavigate('clusters')} className="text-left">
@@ -146,7 +155,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         <button onClick={() => onNavigate('health')} className="text-left">
           <StatCard title="Degraded" value={degraded} color="red" icon={<AlertTriangle size={18} />} />
         </button>
-        <button onClick={() => onNavigate('events')} className="text-left">
+        <button type="button" onClick={() => goFiltered('events')} className="text-left">
           <StatCard title="Events" value={eventSummary?.total_events ?? 0} color="blue" icon={<Calendar size={18} />} />
         </button>
         <button onClick={() => onNavigate('backups')} className="text-left">
@@ -161,9 +170,34 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         <button onClick={() => onNavigate('envs')} className="text-left">
           <StatCard title="Environments" value={environments.length} color="green" icon={<Workflow size={18} />} />
         </button>
-        <button onClick={() => onNavigate('rbac')} className="text-left">
+        <button type="button" onClick={() => onNavigate('rbac')} className="text-left">
           <StatCard title="API Keys" value={apiKeys.length} color="purple" icon={<KeySquare size={18} />} />
         </button>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <span className="w-full text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-1">Quick links</span>
+        {(
+          [
+            { label: 'Platform & HA', onClick: () => onNavigate('platform') },
+            { label: 'Alerts & webhooks', onClick: () => onNavigate('alerts') },
+            { label: 'GitOps sync', onClick: () => onNavigate('gitops') },
+            { label: 'Audit trail', onClick: () => goFiltered('audit') },
+            { label: 'Dependencies', onClick: () => onNavigate('deps') },
+            { label: 'Metrics & Grafana', onClick: () => onNavigate('metrics') },
+            { label: 'Intent violations', onClick: () => goFiltered('events', { category: 'intent-violation' }) },
+            { label: 'Discovered workloads', onClick: () => goFiltered('workloads', { source: 'cluster' }) },
+          ] as const
+        ).map((link) => (
+          <button
+            key={link.label}
+            type="button"
+            onClick={link.onClick}
+            className="rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+          >
+            {link.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -216,7 +250,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             <h2 className="text-lg font-semibold text-zinc-100">Events</h2>
             <button
               type="button"
-              onClick={() => onNavigate('events')}
+              onClick={() => goFiltered('events')}
               className="text-sm text-aether hover:text-aether-light transition-colors"
             >
               View all

@@ -42,10 +42,21 @@ function parsePlatformPayload(data: Record<string, unknown>): PlatformInfo | nul
 
   const opaRaw = (data.opa ?? {}) as Record<string, unknown>;
 
+  const integrationsRaw = (data.integrations ?? {}) as Record<string, unknown>;
+  const haRec = typeof data.ha_recommendation === 'string' ? data.ha_recommendation : '';
+
   return {
     version,
     persistence: backend,
     haMode: typeof data.ha_mode === 'string' ? data.ha_mode : 'single',
+    haRecommendation: haRec || undefined,
+    embeddedUiBuild: typeof data.embedded_ui_build === 'string' ? data.embedded_ui_build : undefined,
+    integrations: {
+      backup_remote_configured: Boolean(integrationsRaw.backup_remote_configured),
+      audit_webhook_configured: Boolean(integrationsRaw.audit_webhook_configured),
+      grafana_url: typeof integrationsRaw.grafana_url === 'string' ? integrationsRaw.grafana_url : null,
+      prometheus_url: typeof integrationsRaw.prometheus_url === 'string' ? integrationsRaw.prometheus_url : null,
+    },
     haSharedCache: Boolean(data.ha_shared_cache),
     tls: Boolean(data.tls),
     opa: {

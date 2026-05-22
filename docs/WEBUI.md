@@ -861,10 +861,9 @@ aether serve
 ## Limitations
 
 Current limitations:
-- No HTTPS support (use reverse proxy)
+- Browser OIDC login flows are not covered by automated E2E (API bootstrap is tested; use Ingress TLS or `--tls-cert` / `--tls-key` for HTTPS).
 
-Future enhancements planned:
-- OAuth / SSO integration
+Enterprise SSO is provided via **OIDC** (`AETHER_OIDC_*` env vars). Additional SAML IdPs are not built-in yet.
 
 ## Support
 

@@ -53,15 +53,61 @@ export interface ClusterConditionSummary {
   message?: string | null;
 }
 
+export interface ClusterOwnerReference {
+  api_version: string;
+  kind: string;
+  name: string;
+  uid: string | null;
+  controller: boolean;
+}
+
+export interface ClusterOwnedResource {
+  kind: string;
+  name: string;
+  api_version: string | null;
+}
+
 export interface ClusterResourceDetail {
   cluster: string;
   namespace: string;
   kind: string;
   name: string;
   api_version: string | null;
+  uid?: string | null;
   pods: ClusterPodSummary[];
   conditions: ClusterConditionSummary[];
+  owner_references?: ClusterOwnerReference[];
+  owned_resources?: ClusterOwnedResource[];
   manifest: Record<string, unknown>;
+}
+
+export interface DriftReconcileResult {
+  action_type: string;
+  success: boolean;
+  message: string;
+}
+
+export interface AlertChannelSummary {
+  name: string;
+  enabled: boolean;
+  channel_type: string;
+  min_severity: string;
+  categories: string[];
+}
+
+export interface AlertRuleSummary {
+  name: string;
+  enabled: boolean;
+  condition: string;
+  severity: string;
+  message_template: string;
+  cooldown_seconds: number;
+  last_triggered: string | null;
+}
+
+export interface AlertsStatus {
+  channels: AlertChannelSummary[];
+  rules: AlertRuleSummary[];
 }
 
 export interface ClusterRelatedEvent {
@@ -531,6 +577,14 @@ export interface PlatformInfo {
   version: string;
   persistence: 'local-json' | 'postgresql';
   haMode: string;
+  haRecommendation?: string;
+  embeddedUiBuild?: string;
+  integrations?: {
+    backup_remote_configured?: boolean;
+    audit_webhook_configured?: boolean;
+    grafana_url?: string | null;
+    prometheus_url?: string | null;
+  };
   haSharedCache: boolean;
   tls: boolean;
   workloadState: WorkloadStateBackendInfo;
@@ -582,6 +636,8 @@ export type AppView =
   | 'scheduler'
   | 'health'
   | 'events'
+  | 'alerts'
+  | 'platform'
   | 'sla'
   | 'deps'
   | 'envs'

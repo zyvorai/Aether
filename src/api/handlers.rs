@@ -241,6 +241,44 @@ fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Js
     )
 }
 
+/// Shorthand for a forbidden JSON response.
+fn err_forbidden<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
+    (
+        StatusCode::FORBIDDEN,
+        Json(ApiResponse::error(msg.into())),
+    )
+}
+
+/// When `AETHER_OPA_ENFORCE` is set, reject workload deploy/update on OPA deny.
+async fn opa_enforce_workload<T: serde::Serialize>(
+    spec: &Workload,
+    workload_ref: &str,
+) -> Option<(StatusCode, Json<ApiResponse<T>>)> {
+    if !crate::opa::enforce_enabled() {
+        return None;
+    }
+    match crate::opa::evaluate_workload_optional(spec).await {
+        Ok(ev) if !ev.allowed => {
+            let msg = if ev.denials.is_empty() {
+                "OPA policy denied this workload".to_string()
+            } else {
+                format!("OPA denied: {}", ev.denials.join("; "))
+            };
+            record_audit_event(
+                crate::audit::AuditAction::PolicyCheck,
+                workload_ref,
+                None,
+                crate::audit::ActionResult::Failure,
+                &msg,
+                None,
+            );
+            Some(err_forbidden(msg))
+        }
+        Err(e) => Some(err_internal(format!("OPA evaluation failed: {e}"))),
+        _ => None,
+    }
+}
+
 fn record_audit_event(
     action: crate::audit::AuditAction,
     workload: &str,
@@ -768,6 +806,10 @@ pub(crate) async fn create_workload(
         Err(response) => return response,
     };
 
+    if let Some(resp) = opa_enforce_workload::<String>(&request.spec, &request.spec.metadata.name).await {
+        return resp;
+    }
+
     // Select runtime
     let runtime_kind = if let Some(runtime_name) = request.runtime {
         match runtime_name.parse::<RuntimeKind>() {
@@ -1024,6 +1066,10 @@ pub(crate) async fn update_workload(
         ));
     }
 
+    if let Some(resp) = opa_enforce_workload::<String>(&spec, &name).await {
+        return resp;
+    }
+
     let workload_state = match lookup_workload::<String>(&app_state, &name).await {
         Ok(w) => w,
         Err(e) => return e,
@@ -1126,6 +1172,40 @@ pub(crate) async fn estimate_cost(Json(payload): Json<serde_json::Value>) -> imp
     match cost::estimate_all_providers(&spec) {
         Ok(estimates) => ok_json(estimates),
         Err(e) => err_internal::<Vec<cost::CostEstimate>>(e),
+    }
+}
+
+/// GET /api/cost/pricing — Active pricing source, region, and purchase-model discounts.
+pub(crate) async fn api_cost_pricing() -> impl IntoResponse {
+    ok_json(cost::pricing_config())
+}
+
+/// GET /api/cost/chargeback — Fleet showback/chargeback by owner and project.
+pub(crate) async fn api_cost_chargeback(
+    AxumState(app_state): AxumState<AppState>,
+    Query(query): Query<CostChargebackQuery>,
+) -> impl IntoResponse {
+    let provider = query
+        .provider
+        .as_deref()
+        .unwrap_or("aws")
+        .parse::<cost::CloudProvider>()
+        .unwrap_or(cost::CloudProvider::AWS);
+    let rows: Vec<(String, PathBuf)> = {
+        let state = app_state.state.read().await;
+        state
+            .list()
+            .iter()
+            .map(|ws| (ws.name.clone(), ws.spec_path.clone()))
+            .collect()
+    };
+    let refs: Vec<(&str, &PathBuf)> = rows
+        .iter()
+        .map(|(n, p)| (n.as_str(), p))
+        .collect();
+    match cost::chargeback_report(&refs, provider) {
+        Ok(report) => ok_json(report),
+        Err(e) => err_internal::<cost::ChargebackReport>(e),
     }
 }
 
@@ -1380,6 +1460,244 @@ pub(crate) async fn ai_scaling_advice() -> impl IntoResponse {
     ok_json(response)
 }
 
+fn intent_goal_label(goal: &crate::spec::IntentGoal) -> &'static str {
+    match goal {
+        crate::spec::IntentGoal::LowLatency => "low-latency",
+        crate::spec::IntentGoal::HighThroughput => "high-throughput",
+        crate::spec::IntentGoal::CostOptimized => "cost-optimized",
+        crate::spec::IntentGoal::Balanced => "balanced",
+    }
+}
+
+async fn workload_spec_for_ai_request(
+    app_state: &AppState,
+    payload: serde_json::Value,
+) -> Result<Workload, (StatusCode, Json<ApiResponse<serde_json::Value>>)> {
+    if let Some(name) = payload.get("workload").and_then(|v| v.as_str()) {
+        let workload_state = lookup_workload::<serde_json::Value>(app_state, name).await?;
+        return load_spec_safe::<serde_json::Value>(&workload_state.spec_path);
+    }
+    parse_workload_payload(payload)
+}
+
+/// POST /api/ai/intent-optimize — Recommend intent goal from scoring across goals.
+pub(crate) async fn ai_intent_optimize(
+    AxumState(app_state): AxumState<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    use crate::ai::scoring::ScoringEngine;
+    use crate::config::Config;
+    use crate::spec::{IntentGoal, IntentSpec};
+
+    let spec = match workload_spec_for_ai_request(&app_state, payload).await {
+        Ok(spec) => spec,
+        Err(error) => return error,
+    };
+
+    let current_intent = spec
+        .intent
+        .as_ref()
+        .map(|i| intent_goal_label(&i.goal).to_string());
+
+    let config = Config::load();
+    let engine = ScoringEngine::new(config.engine);
+
+    let goals = [
+        IntentGoal::Balanced,
+        IntentGoal::LowLatency,
+        IntentGoal::HighThroughput,
+        IntentGoal::CostOptimized,
+    ];
+
+    let mut best_goal = IntentGoal::Balanced;
+    let mut best_score = 0.0_f64;
+    let mut scores_by_goal = Vec::new();
+
+    for goal in goals {
+        let mut trial = spec.clone();
+        match &mut trial.intent {
+            Some(intent) => intent.goal = goal.clone(),
+            None => {
+                trial.intent = Some(IntentSpec {
+                    goal: goal.clone(),
+                    sla: None,
+                    budget: None,
+                    resilience: None,
+                    compliance: None,
+                    trust: None,
+                });
+            }
+        }
+        let result = engine.score(&trial);
+        let top = result
+            .scores
+            .first()
+            .map(|s| s.total_score)
+            .unwrap_or(0.0);
+        scores_by_goal.push(json!({
+            "goal": intent_goal_label(&goal),
+            "top_runtime_score": top,
+            "recommended_runtime": format!("{}", result.recommended),
+        }));
+        if top > best_score {
+            best_score = top;
+            best_goal = goal.clone();
+        }
+    }
+
+    let baseline = engine.score(&spec);
+    let reason = if current_intent.as_deref() == Some(intent_goal_label(&best_goal)) {
+        format!(
+            "Current intent '{}' already aligns with the best scoring profile (top score {:.0}%).",
+            intent_goal_label(&best_goal),
+            best_score * 100.0
+        )
+    } else {
+        format!(
+            "Switching intent to '{}' improves the top runtime score from {:.0}% to {:.0}% (recommended runtime: {}).",
+            intent_goal_label(&best_goal),
+            baseline.scores.first().map(|s| s.total_score * 100.0).unwrap_or(0.0),
+            best_score * 100.0,
+            baseline.recommended
+        )
+    };
+
+    ok_json(json!({
+        "recommended_intent": intent_goal_label(&best_goal),
+        "reason": reason,
+        "current_intent": current_intent,
+        "scores_by_goal": scores_by_goal,
+    }))
+}
+
+/// POST /api/ai/right-size — Right-sizing suggestions from workload profiler.
+pub(crate) async fn ai_right_size(
+    AxumState(app_state): AxumState<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    use crate::ai::profiler::{Profiler, RecommendationCategory};
+    use crate::config::Config;
+
+    let name = payload
+        .get("workload")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let (spec, runtime) = if let Some(name) = name {
+        let workload_state = match lookup_workload::<serde_json::Value>(&app_state, &name).await {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let spec = match load_spec_safe::<serde_json::Value>(&workload_state.spec_path) {
+            Ok(s) => s,
+            Err(e) => return e,
+        };
+        (spec, Some(workload_state.runtime))
+    } else {
+        let spec = match parse_workload_payload::<serde_json::Value>(payload) {
+            Ok(s) => s,
+            Err(e) => return e,
+        };
+        (spec, None)
+    };
+
+    let config = Config::load();
+    let profiler = Profiler::new(config.profiler.waste_threshold);
+    let profile = profiler.profile(&spec, runtime);
+
+    let right_sizing = profile
+        .recommendations
+        .iter()
+        .find(|r| r.category == RecommendationCategory::RightSizing);
+
+    let (suggestion, savings) = if let Some(rec) = right_sizing {
+        (
+            rec.description.clone(),
+            format!("{:.0}%", rec.estimated_savings_pct),
+        )
+    } else if profile.resource_analysis.waste_detected {
+        (
+            "Resources appear over-provisioned; review CPU and memory requests.".to_string(),
+            format!(
+                "{:.0}%",
+                (1.0 - profile.resource_analysis.overall_efficiency) * 100.0
+            ),
+        )
+    } else {
+        (
+            "Current resource requests look well matched.".to_string(),
+            "0%".to_string(),
+        )
+    };
+
+    ok_json(json!({
+        "suggestion": suggestion,
+        "savings": savings,
+        "optimization_score": profile.optimization_score,
+        "overall_efficiency": profile.resource_analysis.overall_efficiency,
+    }))
+}
+
+/// POST /api/ai/tradeoff — Compare top two runtimes (cost vs performance tradeoff).
+pub(crate) async fn ai_tradeoff(
+    AxumState(app_state): AxumState<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    use crate::ai::scoring::ScoringEngine;
+    use crate::config::Config;
+
+    let spec = match workload_spec_for_ai_request(&app_state, payload).await {
+        Ok(spec) => spec,
+        Err(error) => return error,
+    };
+
+    let config = Config::load();
+    let engine = ScoringEngine::new(config.engine);
+    let result = engine.score(&spec);
+    let mut sorted = result.scores.clone();
+    sorted.sort_by(|a, b| {
+        b.total_score
+            .partial_cmp(&a.total_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    let best = sorted.first();
+    let runner_up = sorted.get(1);
+    let best_runtime = best.map(|s| format!("{}", s.runtime)).unwrap_or_default();
+    let score = best.map(|s| (s.total_score * 100.0).round() as u32).unwrap_or(0);
+
+    let summary = match (best, runner_up) {
+        (Some(a), Some(b)) => {
+            let cost_delta = (a.cost_score - b.cost_score) * 100.0;
+            let perf_delta = (a.performance_score - b.performance_score) * 100.0;
+            format!(
+                "{} leads overall ({:.0}% vs {:.0}%). Cost edge: {:+.0} pts; performance edge: {:+.0} pts vs {}.",
+                a.runtime,
+                a.total_score * 100.0,
+                b.total_score * 100.0,
+                cost_delta,
+                perf_delta,
+                b.runtime
+            )
+        }
+        (Some(a), None) => format!("{} is the only viable runtime ({:.0}% score).", a.runtime, a.total_score * 100.0),
+        _ => "No runtime candidates scored.".to_string(),
+    };
+
+    ok_json(json!({
+        "best_runtime": best_runtime,
+        "score": score,
+        "runner_up_runtime": runner_up.map(|s| format!("{}", s.runtime)),
+        "runner_up_score": runner_up.map(|s| (s.total_score * 100.0).round() as u32),
+        "summary": summary,
+        "scores": sorted.iter().take(4).map(|s| json!({
+            "runtime": format!("{}", s.runtime),
+            "total_score": s.total_score,
+            "cost_score": s.cost_score,
+            "performance_score": s.performance_score,
+        })).collect::<Vec<_>>(),
+    }))
+}
+
 /// GET /api/drift/:name - Check drift for a workload
 pub(crate) async fn api_drift_check(
     AxumState(app_state): AxumState<AppState>,
@@ -1411,6 +1729,123 @@ pub(crate) async fn api_drift_check(
     )
 }
 
+/// POST /api/drift/:name/reconcile — Execute drift reconciliation actions.
+pub(crate) async fn api_drift_reconcile(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    use crate::drift::{execute_reconciliation, DriftDetector};
+    use crate::events::{EventBus, EventCategory, EventSeverity};
+
+    let workload_state = match lookup_workload::<serde_json::Value>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+
+    let spec = match load_spec_safe::<serde_json::Value>(&workload_state.spec_path) {
+        Ok(s) => s,
+        Err(e) => return e,
+    };
+
+    let detector = DriftDetector::new();
+    let report = detector.detect(&spec, &workload_state);
+
+    if !report.has_drift {
+        return ok_json(json!({
+            "workload_name": name,
+            "reconciled": false,
+            "message": "No drift detected",
+            "results": [],
+        }));
+    }
+
+    let mut store = app_state.state.write().await;
+
+    let results = match execute_reconciliation(&report, &mut store).await {
+        Ok(r) => r,
+        Err(e) => return err_internal::<serde_json::Value>(e.to_string()),
+    };
+
+    if let Err(e) = persist_workload_api(&app_state, &store).await {
+        return err_internal::<serde_json::Value>(e.to_string());
+    }
+
+    let path = EventBus::default_path();
+    if let Ok(mut bus) = EventBus::load(&path) {
+        bus.emit_simple(
+            EventSeverity::Info,
+            EventCategory::DriftDetected,
+            "api",
+            Some(&name),
+            "Drift reconciled",
+            &format!("{} action(s) executed", results.len()),
+        );
+        let _ = bus.save(&path);
+    }
+
+    let value = json!({
+        "workload_name": name,
+        "reconciled": true,
+        "results": results,
+    });
+    ok_json(value)
+}
+
+/// GET /api/alerts/status — Notification channels and alert rules.
+pub(crate) async fn api_alerts_status() -> impl IntoResponse {
+    use crate::events::{ChannelType, EventBus};
+
+    let path = EventBus::default_path();
+    let bus = match EventBus::load(&path) {
+        Ok(b) => b,
+        Err(e) => return err_internal::<serde_json::Value>(e),
+    };
+
+    let channels: Vec<serde_json::Value> = bus
+        .channels()
+        .iter()
+        .map(|ch| {
+            let channel_type = match &ch.channel_type {
+                ChannelType::Console => "console",
+                ChannelType::File { .. } => "file",
+                ChannelType::Webhook { .. } => "webhook",
+                ChannelType::Slack { .. } => "slack",
+                ChannelType::PagerDuty { .. } => "pagerduty",
+                ChannelType::Email { .. } => "email",
+                ChannelType::Teams { .. } => "teams",
+            };
+            json!({
+                "name": ch.name,
+                "enabled": ch.enabled,
+                "channel_type": channel_type,
+                "min_severity": format!("{}", ch.min_severity),
+                "categories": ch.categories.iter().map(|c| format!("{}", c)).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+
+    let rules: Vec<serde_json::Value> = bus
+        .rules()
+        .iter()
+        .map(|rule| {
+            json!({
+                "name": rule.name,
+                "enabled": rule.enabled,
+                "condition": format!("{}", rule.condition),
+                "severity": format!("{}", rule.severity),
+                "message_template": rule.message_template,
+                "cooldown_seconds": rule.cooldown_seconds,
+                "last_triggered": rule.last_triggered,
+            })
+        })
+        .collect();
+
+    ok_json(json!({
+        "channels": channels,
+        "rules": rules,
+    }))
+}
+
 /// POST /api/policy/opa — Evaluate manifest or workload YAML against OPA (`AETHER_OPA_URL`).
 pub(crate) async fn api_policy_opa(Json(payload): Json<serde_json::Value>) -> impl IntoResponse {
     let input = if let Some(manifest) = payload.get("manifest") {
@@ -1420,7 +1855,7 @@ pub(crate) async fn api_policy_opa(Json(payload): Json<serde_json::Value>) -> im
             Ok(spec) => spec,
             Err(error) => return error,
         };
-        crate::opa::evaluate_manifest_optional(&serde_json::to_value(&spec).unwrap_or_default()).await
+        crate::opa::evaluate_workload_optional(&spec).await
     };
     match input {
         Ok(ev) => match serde_json::to_value(ev) {
@@ -1471,9 +1906,17 @@ pub(crate) async fn api_deps_show() -> impl IntoResponse {
         Ok(graph) => {
             let stats = graph.stats();
             let order = graph.startup_order().ok();
+            let nodes = graph.node_names();
+            let edges: Vec<serde_json::Value> = graph
+                .dependency_edges()
+                .into_iter()
+                .map(|(from, to)| serde_json::json!({ "from": from, "to": to }))
+                .collect();
             let response = serde_json::json!({
                 "stats": stats,
                 "startup_order": order,
+                "nodes": nodes,
+                "edges": edges,
                 "issues": graph.validate(),
             });
             ok_json(response)
@@ -1763,20 +2206,47 @@ pub(crate) async fn create_secret(Json(request): Json<CreateSecretRequest>) -> i
 }
 
 /// GET /api/events - List recent events
-pub(crate) async fn api_events_list(Query(page): Query<PaginationQuery>) -> impl IntoResponse {
-    use crate::events::EventBus;
+pub(crate) async fn api_events_list(Query(query): Query<EventsListQuery>) -> impl IntoResponse {
+    use crate::events::{EventBus, EventCategory};
 
     let path = EventBus::default_path();
     match EventBus::load(&path) {
         Ok(bus) => {
-            let all: Vec<_> = bus.events().iter().rev().cloned().collect();
+            let mut all: Vec<_> = bus.events().iter().rev().cloned().collect();
+            if let Some(ref cat) = query.category {
+                let parsed = match cat.to_ascii_lowercase().as_str() {
+                    "drift" => Some(EventCategory::DriftDetected),
+                    "intent" | "intent-violation" | "intentviolation" => {
+                        Some(EventCategory::IntentViolation)
+                    }
+                    "policy" | "policy-violation" => Some(EventCategory::PolicyViolation),
+                    "sla" => Some(EventCategory::SlaViolation),
+                    "health" => Some(EventCategory::HealthCheck),
+                    "migration" => Some(EventCategory::Migration),
+                    "deploy" | "deployment" => Some(EventCategory::Deployment),
+                    "alert" | "system" => Some(EventCategory::SystemAlert),
+                    _ => None,
+                };
+                if let Some(category) = parsed {
+                    all.retain(|e| e.category == category);
+                }
+            }
+            if let Some(ref workload) = query.workload {
+                let w = workload.to_ascii_lowercase();
+                all.retain(|e| {
+                    e.workload
+                        .as_ref()
+                        .map(|n| n.to_ascii_lowercase().contains(&w))
+                        .unwrap_or(false)
+                });
+            }
             let total = all.len();
-            let use_page = page.limit.is_some() || page.offset.is_some();
+            let use_page = query.limit.is_some() || query.offset.is_some();
             let events: Vec<_> = if use_page {
-                let (lim, off) = clamp_page(page.limit, page.offset, 50, 500);
+                let (lim, off) = clamp_page(query.limit, query.offset, 50, 500);
                 all.into_iter().skip(off).take(lim).collect()
             } else {
-                bus.last_n(50).into_iter().cloned().collect()
+                all.into_iter().take(50).collect()
             };
             if use_page {
                 let json = match serde_json::to_string(&ApiResponse::success(
@@ -3289,6 +3759,67 @@ pub(crate) async fn api_gitops_sync() -> impl IntoResponse {
     }
 }
 
+/// GET /api/dashboard/version — API and embedded UI build identifiers.
+pub(crate) async fn api_dashboard_version() -> impl IntoResponse {
+    ok_json(serde_json::json!({
+        "api_version": env!("CARGO_PKG_VERSION"),
+        "embedded_ui_build": env!("AETHER_EMBEDDED_UI_BUILD"),
+    }))
+}
+
+/// POST /api/webhooks/channels — Register a webhook notification channel.
+pub(crate) async fn api_webhook_channel_create(
+    Json(req): Json<WebhookChannelCreateRequest>,
+) -> impl IntoResponse {
+    use crate::events::{ChannelType, EventBus, EventSeverity, NotificationChannel};
+
+    let min_severity: EventSeverity = match req.severity.parse() {
+        Ok(s) => s,
+        Err(e) => return err_bad_request::<String>(e),
+    };
+    let path = EventBus::default_path();
+    let mut bus = match EventBus::load(&path) {
+        Ok(b) => b,
+        Err(e) => return err_internal::<String>(e),
+    };
+    if bus.channels().iter().any(|c| c.name == req.name) {
+        return err_bad_request::<String>(format!("Channel '{}' already exists", req.name));
+    }
+    bus.add_channel(NotificationChannel {
+        name: req.name.clone(),
+        channel_type: ChannelType::Webhook {
+            url: req.url.clone(),
+            method: req.method.clone(),
+        },
+        enabled: true,
+        min_severity,
+        categories: vec![],
+    });
+    if let Err(e) = bus.save(&path) {
+        return err_internal::<String>(e);
+    }
+    ok_json(format!("Channel '{}' created", req.name))
+}
+
+/// DELETE /api/webhooks/channels/:name — Remove a notification channel.
+pub(crate) async fn api_webhook_channel_delete(Path(name): Path<String>) -> impl IntoResponse {
+    use crate::events::EventBus;
+
+    let path = EventBus::default_path();
+    let mut bus = match EventBus::load(&path) {
+        Ok(b) => b,
+        Err(e) => return err_internal::<String>(e),
+    };
+    if bus.remove_channel(&name) {
+        if let Err(e) = bus.save(&path) {
+            return err_internal::<String>(e);
+        }
+        ok_json(format!("Channel '{}' removed", name))
+    } else {
+        err_not_found::<String>(format!("Channel '{}' not found", name))
+    }
+}
+
 /// POST /api/webhooks/test — Queue a test notification for a channel (see `aether webhook test`).
 pub(crate) async fn api_webhook_test(Json(req): Json<WebhookTestRequest>) -> impl IntoResponse {
     use crate::events::{EventBus, EventCategory, EventSeverity};
@@ -3397,6 +3928,28 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
             "package_env": "AETHER_OPA_PACKAGE",
             "enforce_env": "AETHER_OPA_ENFORCE",
             "check_path": "/api/policy/opa",
+            "enforced_paths": ["POST /api/workloads", "PUT /api/workloads/:name", "POST /api/cluster/apply"],
+        },
+        "cost": {
+            "pricing_path": "/api/cost/pricing",
+            "chargeback_path": "/api/cost/chargeback",
+            "provider_env": "AETHER_COST_PROVIDER",
+            "region_env": "AETHER_COST_REGION",
+            "live_pricing_env": "AETHER_PRICING_URL",
+        },
+        "embedded_ui_build": env!("AETHER_EMBEDDED_UI_BUILD"),
+        "integrations": {
+            "backup_remote_configured": std::env::var("AETHER_BACKUP_REMOTE_URL").ok().filter(|s| !s.is_empty()).is_some(),
+            "audit_webhook_configured": std::env::var("AETHER_AUDIT_WEBHOOK_URL").ok().filter(|s| !s.is_empty()).is_some(),
+            "grafana_url": std::env::var("AETHER_GRAFANA_URL").ok().filter(|s| !s.is_empty()),
+            "prometheus_url": std::env::var("AETHER_PROMETHEUS_URL").ok().filter(|s| !s.is_empty()),
+        },
+        "ha_recommendation": if !postgres_configured {
+            "Set AETHER_STATE_DATABASE_URL (Helm postgresql.enabled) before running multiple API replicas."
+        } else if !redis_configured {
+            "Consider AETHER_REDIS_URL for shared SSE sessions across API replicas."
+        } else {
+            ""
         },
     }))
 }

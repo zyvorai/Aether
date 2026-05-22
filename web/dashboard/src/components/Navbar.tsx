@@ -12,6 +12,7 @@ import {
   Settings,
   HeartPulse,
   Bell,
+  BellRing,
   FileCheck,
   GitBranch,
   Layers,
@@ -27,6 +28,7 @@ import {
   X,
   Palette,
   FileText,
+  Server,
 } from 'lucide-react';
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
@@ -89,6 +91,8 @@ const operationsItems: DropdownItem[] = [
   { label: 'Scheduler', view: 'scheduler', icon: <Settings className="w-4 h-4" /> },
   { label: 'Health Monitor', view: 'health', icon: <HeartPulse className="w-4 h-4" /> },
   { label: 'Events', view: 'events', icon: <Bell className="w-4 h-4" /> },
+  { label: 'Platform & HA', view: 'platform', icon: <Server className="w-4 h-4" /> },
+  { label: 'Alerts', view: 'alerts', icon: <BellRing className="w-4 h-4" /> },
   { label: 'SLA Compliance', view: 'sla', icon: <FileCheck className="w-4 h-4" /> },
   { label: 'Dependencies', view: 'deps', icon: <GitBranch className="w-4 h-4" /> },
   { label: 'Environments', view: 'envs', icon: <Layers className="w-4 h-4" /> },

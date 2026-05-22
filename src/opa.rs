@@ -3,7 +3,7 @@
 //! Environment:
 //! - `AETHER_OPA_URL` — OPA base URL (e.g. `http://opa:8181`)
 //! - `AETHER_OPA_PACKAGE` — Rego package path (default `aether.k8s.admit` → `/v1/data/aether/k8s/admit`)
-//! - `AETHER_OPA_ENFORCE` — when `1`/`true`, cluster apply and enforced API paths reject on OPA deny
+//! - `AETHER_OPA_ENFORCE` — when `1`/`true`, cluster apply and workload deploy paths reject on OPA deny
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -74,6 +74,28 @@ impl OpaConfig {
     pub async fn evaluate_manifest(&self, manifest: &Value) -> Result<OpaEvaluation> {
         self.evaluate(serde_json::json!({ "manifest": manifest }))
             .await
+    }
+
+    pub async fn evaluate_workload(&self, spec: &Value) -> Result<OpaEvaluation> {
+        self.evaluate(serde_json::json!({ "workload": spec }))
+            .await
+    }
+}
+
+/// Evaluate a workload spec when OPA is configured; otherwise allow.
+pub async fn evaluate_workload_optional(spec: &crate::spec::Workload) -> Result<OpaEvaluation> {
+    let value = serde_json::to_value(spec).context("serialize workload for OPA")?;
+    match OpaConfig::from_env() {
+        Some(cfg) => {
+            let mut ev = cfg.evaluate_workload(&value).await?;
+            ev.configured = true;
+            Ok(ev)
+        }
+        None => Ok(OpaEvaluation {
+            configured: false,
+            allowed: true,
+            denials: vec![],
+        }),
     }
 }
 

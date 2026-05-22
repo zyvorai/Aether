@@ -563,6 +563,12 @@ pub(crate) struct PaginationQuery {
     pub(crate) offset: Option<usize>,
 }
 
+/// GET /api/cost/chargeback query parameters.
+#[derive(Debug, Default, Deserialize)]
+pub(crate) struct CostChargebackQuery {
+    pub(crate) provider: Option<String>,
+}
+
 /// GET /api/audit query parameters.
 #[derive(Debug, Deserialize)]
 pub(crate) struct AuditListQuery {
@@ -576,6 +582,35 @@ pub(crate) struct AuditListQuery {
 #[derive(Debug, Deserialize)]
 pub(crate) struct WebhookTestRequest {
     pub(crate) channel: String,
+}
+
+/// Create a webhook notification channel.
+#[derive(Debug, Deserialize)]
+pub(crate) struct WebhookChannelCreateRequest {
+    pub(crate) name: String,
+    pub(crate) url: String,
+    #[serde(default = "default_webhook_method")]
+    pub(crate) method: String,
+    #[serde(default = "default_webhook_severity")]
+    pub(crate) severity: String,
+}
+
+fn default_webhook_method() -> String {
+    "POST".to_string()
+}
+
+fn default_webhook_severity() -> String {
+    "warning".to_string()
+}
+
+/// GET /api/events query parameters.
+#[derive(Debug, Default, Deserialize)]
+pub(crate) struct EventsListQuery {
+    pub(crate) limit: Option<usize>,
+    pub(crate) offset: Option<usize>,
+    /// Event category filter: drift, intent-violation, policy, etc.
+    pub(crate) category: Option<String>,
+    pub(crate) workload: Option<String>,
 }
 
 /// Template generation request

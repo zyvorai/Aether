@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Live Metal3 / KubeVirt checks. Skips when no cluster credentials are present.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+AETHER="${AETHER_BIN:-./target/release/aether}"
+
+run_lab() {
+  local name="$1"
+  local spec="$2"
+  local runtime="$3"
+
+  echo "== Lab: $name =="
+  "$AETHER" --spec "$spec" validate
+  "$AETHER" run --spec "$spec" --runtime "$runtime" --dry-run
+
+  if [[ -z "${KUBECONFIG:-}" ]] && [[ ! -f "${HOME}/.kube/config" ]]; then
+    echo "  (skip live deploy: no kubeconfig)"
+    return 0
+  fi
+
+  if [[ "${AETHER_LABS_LIVE:-}" != "1" ]]; then
+    echo "  (skip live deploy: set AETHER_LABS_LIVE=1 to run against cluster)"
+    return 0
+  fi
+
+  "$AETHER" run --spec "$spec" --runtime "$runtime"
+  echo "  live deploy OK"
+}
+
+if [[ ! -x "$AETHER" ]]; then
+  cargo build --release
+fi
+
+run_lab "metal3" "examples/labs/metal3/workload.yaml" "metal"
+run_lab "kubevirt" "examples/labs/kubevirt/workload.yaml" "kubevirt"
+
+echo "Labs e2e finished."
