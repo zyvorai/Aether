@@ -33,17 +33,24 @@ LOCAL_DIST="${REPO_DIR}/dist"
 
 RSYNC_EXCLUDES=(--exclude='.git/' --exclude='target/' --exclude='web/dashboard/node_modules/')
 
-log() { printf '  %s\n' "$*"; }
-step() { echo ""; printf '── %s\n' "$*"; }
+# shellcheck source=lib/package-remote-ui.sh
+source "${SCRIPT_DIR}/lib/package-remote-ui.sh"
 
-[[ "${AETHER_REMOTE_SKIP_SSH_CHECK:-}" != "1" ]] && { step "Preflight: SSH"; ssh -o BatchMode=yes -o ConnectTimeout="${SSH_TIMEOUT}" "${REMOTE}" "true"; }
+pkg_remote_banner "Aether" "${VERSION}" "${REMOTE}" "${ARCH}"
 
-step "Sync → ${BUILD_DIR}"
+if [[ "${AETHER_REMOTE_SKIP_SSH_CHECK:-}" != "1" ]]; then
+    pkg_remote_phase "Preflight"
+    ssh -o BatchMode=yes -o ConnectTimeout="${SSH_TIMEOUT}" -o StrictHostKeyChecking=accept-new "${REMOTE}" "true"
+    pkg_ok "SSH ${REMOTE}"
+fi
+
+pkg_remote_phase "Sync source"
+pkg_remote_kv "Build dir" "${BUILD_DIR}"
 ssh "${REMOTE}" "mkdir -p '${BUILD_DIR}'"
 rsync -az --delete "${RSYNC_EXCLUDES[@]}" -e "ssh -o StrictHostKeyChecking=no" "${REPO_DIR}/" "${REMOTE}:${BUILD_DIR}/"
 
 if ! $SKIP_DEPS; then
-    step "Install build deps (rust, npm)"
+    pkg_remote_phase "Build dependencies"
     ssh "${REMOTE}" bash -s <<REMOTE_DEPS
 set -euo pipefail
 SUDO=""; [ "\$(id -u)" -ne 0 ] && SUDO=sudo
@@ -55,10 +62,11 @@ REMOTE_DEPS
 fi
 
 BUILD_NEEDED=true
-$REUSE_BUILD && ssh "${REMOTE}" "test -x '${BUILD_DIR}/target/release/aether'" && BUILD_NEEDED=false && log "Reuse build"
+$REUSE_BUILD && ssh "${REMOTE}" "test -x '${BUILD_DIR}/target/release/aether'" && BUILD_NEEDED=false && pkg_ok "Reuse build"
 
 if $BUILD_NEEDED; then
-    step "Build (npm + cargo release)"
+    pkg_remote_phase "Compile"
+    pkg_info "npm dashboard + cargo release…"
     ssh "${REMOTE}" bash -s <<REMOTE_BUILD
 set -euo pipefail
 cd '${BUILD_DIR}'
@@ -69,7 +77,8 @@ strip target/release/aether 2>/dev/null || true
 REMOTE_BUILD
 fi
 
-step "Assemble tarball"
+pkg_remote_phase "Assemble customer bundle"
+pkg_remote_kv "Output" "${OUT_DIR}/${ARTIFACT}"
 ssh "${REMOTE}" bash -s <<REMOTE_PACK
 set -euo pipefail
 STAGE='${OUT_DIR}/${ARTIFACT}'
@@ -80,6 +89,7 @@ cp "\${LIB}/package-install.sh" "\${STAGE}/install.sh"
 cp "\${LIB}/package-client-install.sh" "\${STAGE}/install-client-deps.sh"
 cp "\${LIB}/package-client-test.sh" "\${STAGE}/test-package.sh"
 mkdir -p "\${STAGE}/.package-lib"
+cp "\${LIB}/package-ui.sh" "\${STAGE}/.package-lib/"
 cp "\${LIB}/package-uninstall-lib.sh" "\${STAGE}/.package-lib/"
 cp "\${LIB}/package-uninstall.sh" "\${STAGE}/uninstall.sh"
 chmod +x "\${STAGE}/"install.sh "\${STAGE}/install-client-deps.sh" "\${STAGE}/test-package.sh" "\${STAGE}/uninstall.sh"
@@ -105,5 +115,15 @@ for req in install.sh uninstall.sh README.txt QUICKSTART.txt aether; do test -e 
 cd '${OUT_DIR}' && tar czf '${ARTIFACT}.tar.gz' '${ARTIFACT}' && sha256sum '${ARTIFACT}.tar.gz' | tee '${ARTIFACT}.tar.gz.sha256'
 REMOTE_PACK
 
-$FETCH && mkdir -p "${LOCAL_DIST}" && scp "${REMOTE}:${OUT_DIR}/${ARTIFACT}.tar.gz" "${REMOTE}:${OUT_DIR}/${ARTIFACT}.tar.gz.sha256" "${LOCAL_DIST}/"
-echo "Done: ${OUT_DIR}/${ARTIFACT}.tar.gz"
+TARBALL="${ARTIFACT}.tar.gz"
+REMOTE_TARBALL="${OUT_DIR}/${TARBALL}"
+if $FETCH; then
+    pkg_remote_phase "Fetch to laptop"
+    mkdir -p "${LOCAL_DIST}"
+    scp -o StrictHostKeyChecking=no \
+        "${REMOTE}:${REMOTE_TARBALL}" \
+        "${REMOTE}:${OUT_DIR}/${TARBALL}.sha256" \
+        "${LOCAL_DIST}/"
+    (cd "${LOCAL_DIST}" && shasum -a 256 -c "${TARBALL}.sha256" 2>/dev/null || sha256sum -c "${TARBALL}.sha256") && pkg_ok "Checksum verified"
+fi
+pkg_remote_done "Aether" "${REMOTE}:${REMOTE_TARBALL}" "${REMOTE}:${OUT_DIR}/${TARBALL}.sha256"
