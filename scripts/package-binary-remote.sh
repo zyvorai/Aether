@@ -105,7 +105,12 @@ cat > "\${STAGE}/QUICKSTART.txt" <<'Q'
 3. ./aether serve --host 0.0.0.0 --port 5090
 4. https://<host>:5090/web/dashboard/
 5. ./test-package.sh
+
+Packaged by Zyvor — https://zyvor.dev · © @zyvor 2026
 Q
+
+cp "\${BUILD_DIR}/scripts/zyvor-branding/ZYVOR_INSTALL.txt" "\${STAGE}/ZYVOR_INSTALL.txt" 2>/dev/null || true
+
 cat > "\${STAGE}/README.txt" <<README
 Aether ${VERSION} — client bundle
 install.sh, uninstall.sh | aether binary includes embedded dashboard
