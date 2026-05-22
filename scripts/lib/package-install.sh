@@ -2,6 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
+export PKG_INSTALL_ROOT="${ROOT}"
 # shellcheck source=/dev/null
 [[ -f "${ROOT}/.package-lib/package-ui.sh" ]] && source "${ROOT}/.package-lib/package-ui.sh"
 
@@ -29,5 +30,6 @@ pkg_step_done
 
 pkg_install_finish "Aether" https 5090 "/web/dashboard/" \
   "Start: ./aether serve --host 0.0.0.0 --port 5090" \
+  "Help: cat HELP.txt · ./install.sh --help" \
   "Kubeconfig: ./install.sh --kubeconfig /path/to/config" \
   "Remove: ./uninstall.sh --yes [--remove-dir]"
