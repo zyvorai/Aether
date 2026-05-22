@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
+[[ -f "${ROOT}/.package-lib/package-ui.sh" ]] && source "${ROOT}/.package-lib/package-ui.sh"
 if [[ -f "${ROOT}/.package-lib/package-uninstall-lib.sh" ]]; then
   # shellcheck source=/dev/null
   source "${ROOT}/.package-lib/package-uninstall-lib.sh"
