@@ -95,6 +95,9 @@ cp "\${LIB}/package-uninstall-lib.sh" "\${STAGE}/.package-lib/"
 cp "\${LIB}/package-uninstall.sh" "\${STAGE}/uninstall.sh"
 chmod +x "\${STAGE}/install.sh" "\${STAGE}/install-client-deps.sh" "\${STAGE}/test-package.sh" \
   "\${STAGE}/install-everything.sh" "\${STAGE}/uninstall.sh"
+chmod +x "\${LIB}/write-customer-help.sh"
+"\${LIB}/write-customer-help.sh" "\${STAGE}" "Aether" k8s
+cp "\${LIB}/START_HERE.txt" "\${STAGE}/"
 cat > "\${STAGE}/.package-lib/product.meta" <<'META'
 PRODUCT_NAME=Aether
 ACCESS_SCHEME=https
@@ -128,7 +131,7 @@ Aether ${VERSION} — client bundle
 install.sh, uninstall.sh | aether binary includes embedded dashboard
 ./aether serve --host 0.0.0.0 --port 5090
 README
-for req in install.sh uninstall.sh README.txt QUICKSTART.txt aether; do test -e "\${STAGE}/\${req}" || exit 1; done
+for req in HELP.txt START_HERE.txt install.sh uninstall.sh README.txt QUICKSTART.txt aether; do test -e "\${STAGE}/\${req}" || exit 1; done
 cd '${OUT_DIR}' && tar czf '${ARTIFACT}.tar.gz' '${ARTIFACT}' && sha256sum '${ARTIFACT}.tar.gz' | tee '${ARTIFACT}.tar.gz.sha256'
 REMOTE_PACK
 
