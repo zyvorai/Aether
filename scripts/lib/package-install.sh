@@ -7,6 +7,8 @@ cd "$ROOT"
 [[ -f "${ROOT}/.package-lib/package-ui.sh" ]] && source "${ROOT}/.package-lib/package-ui.sh"
 
 _PKG_SESSION_START=${SECONDS}
+pkg_install_welcome "Aether"
+
 pkg_banner "Aether client install" "Kubernetes dashboard · client bundle"
 pkg_step_init 4
 
@@ -42,6 +44,7 @@ pkg_step_done
 
 pkg_summary "Install complete"
 pkg_next_steps \
+  "https://zyvor.dev · © @zyvor 2026" \
   "./aether serve --host 0.0.0.0 --port 5090" \
   "https://<this-server>:5090/web/dashboard/" \
   "./test-package.sh" \
