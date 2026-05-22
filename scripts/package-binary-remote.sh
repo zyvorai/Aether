@@ -90,9 +90,21 @@ cp "\${LIB}/package-client-install.sh" "\${STAGE}/install-client-deps.sh"
 cp "\${LIB}/package-client-test.sh" "\${STAGE}/test-package.sh"
 mkdir -p "\${STAGE}/.package-lib"
 cp "\${LIB}/package-ui.sh" "\${STAGE}/.package-lib/"
+cp "\${LIB}/install-everything.sh" "\${STAGE}/"
 cp "\${LIB}/package-uninstall-lib.sh" "\${STAGE}/.package-lib/"
 cp "\${LIB}/package-uninstall.sh" "\${STAGE}/uninstall.sh"
-chmod +x "\${STAGE}/"install.sh "\${STAGE}/install-client-deps.sh" "\${STAGE}/test-package.sh" "\${STAGE}/uninstall.sh"
+chmod +x "\${STAGE}/install.sh" "\${STAGE}/install-client-deps.sh" "\${STAGE}/test-package.sh" \
+  "\${STAGE}/install-everything.sh" "\${STAGE}/uninstall.sh"
+cat > "\${STAGE}/.package-lib/product.meta" <<'META'
+PRODUCT_NAME=Aether
+ACCESS_SCHEME=https
+ACCESS_PORT=5090
+ACCESS_PATH=/web/dashboard/
+AUTO_FULL_INSTALL=0
+FINISH_EXTRA_1=Start: ./aether serve --host 0.0.0.0 --port 5090
+FINISH_EXTRA_2=
+FINISH_EXTRA_3=
+META
 cat > "\${STAGE}/aether.env.example" <<'ENV'
 # Copy to aether.env
 KUBECONFIG=/path/to/kubeconfig.yaml
