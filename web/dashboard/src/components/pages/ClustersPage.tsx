@@ -8,6 +8,7 @@ import PageToolbar from '../PageToolbar';
 import PageTabs from '../PageTabs';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
+import EventCorrelationPanel from '../EventCorrelationPanel';
 import { formatTimestamp } from '../../utils/formatters';
 import type {
   AuthStatus,
@@ -816,6 +817,7 @@ export default function ClustersPage() {
               active={detailTab}
               onChange={setDetailTab}
             />
+            {detailTab === 'overview' && (
             <div className="flex flex-wrap gap-2">
               {selected.kind === 'Node' && (
                 <>
@@ -918,15 +920,55 @@ export default function ClustersPage() {
                 {selected.kind === 'Node' ? 'Delete Disabled' : actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
               </button>
             </div>
+            )}
 
+            {(detailTab === 'overview' || detailTab === 'manifest') && (
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div><span className="text-zinc-500">Cluster</span><p className="text-white">{selected.cluster}</p></div>
               <div><span className="text-zinc-500">Namespace</span><p className="text-white">{selected.namespace}</p></div>
               <div><span className="text-zinc-500">Kind</span><p className="text-white">{selected.kind}</p></div>
               <div><span className="text-zinc-500">API Version</span><p className="text-white">{selected.api_version ?? 'unknown'}</p></div>
             </div>
+            )}
 
-            {healthSummary && (
+            {detailTab === 'overview' && ((selected.owner_references?.length ?? 0) > 0 || (selected.owned_resources?.length ?? 0) > 0) && (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Owner graph</h4>
+                {(selected.owner_references?.length ?? 0) > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-zinc-500 mb-2">Owned by</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selected.owner_references!.map((owner) => (
+                        <span
+                          key={`${owner.kind}/${owner.name}`}
+                          className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs text-zinc-200"
+                        >
+                          {owner.kind}/{owner.name}
+                          {owner.controller ? ' (controller)' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(selected.owned_resources?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="text-xs text-zinc-500 mb-2">Owns</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selected.owned_resources!.map((child) => (
+                        <span
+                          key={`${child.kind}/${child.name}`}
+                          className="rounded-full border border-amber-800/40 bg-amber-950/30 px-3 py-1 text-xs text-amber-100"
+                        >
+                          {child.kind}/{child.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {detailTab === 'overview' && healthSummary && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Health</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 text-sm">
@@ -950,7 +992,7 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {selected.conditions.length > 0 && (
+            {detailTab === 'overview' && selected.conditions.length > 0 && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Conditions</h4>
                 <div className="space-y-2">
@@ -968,7 +1010,7 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {selected.pods.length > 0 && (
+            {detailTab === 'overview' && selected.pods.length > 0 && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Pods</h4>
                 <div className="space-y-2">
@@ -987,7 +1029,14 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {selectedEvents.length > 0 && (
+            {detailTab === 'events' && (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Event correlation</h4>
+                <EventCorrelationPanel events={selectedEvents} resourceName={selected.name} />
+              </div>
+            )}
+
+            {detailTab === 'events' && selectedEvents.length > 0 && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Cluster events</h4>
                 <div className="space-y-2 max-h-64 overflow-auto">
@@ -1007,7 +1056,7 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {relatedAudit.length > 0 && (
+            {detailTab === 'overview' && relatedAudit.length > 0 && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Related audit trail</h4>
                 <div className="space-y-2 max-h-48 overflow-auto">
@@ -1027,7 +1076,7 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {topMetrics.length > 0 && (
+            {detailTab === 'overview' && topMetrics.length > 0 && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Metrics</h4>
                 <div className="space-y-2">
@@ -1042,7 +1091,7 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {rollout && (
+            {detailTab === 'overview' && rollout && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-zinc-200">Rollout</h4>
@@ -1103,7 +1152,7 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {selected.kind === 'HelmRelease' && (
+            {detailTab === 'overview' && selected.kind === 'HelmRelease' && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-zinc-200">Helm</h4>
@@ -1171,14 +1220,14 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {selectedLogsPath && (
+            {detailTab === 'logs' && selectedLogsPath && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Logs</h4>
                 <LogViewer workloadName={selected.name} logsPath={selectedLogsPath} />
               </div>
             )}
 
-            {((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) && (
+            {detailTab === 'terminal' && ((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-zinc-200">Terminal</h4>
@@ -1254,7 +1303,7 @@ export default function ClustersPage() {
               </div>
             )}
 
-            {(((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) || selected.kind === 'Service') && (
+            {detailTab === 'terminal' && (((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) || selected.kind === 'Service') && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-zinc-200">Port Forward</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
@@ -1302,6 +1351,7 @@ export default function ClustersPage() {
               </div>
             )}
 
+            {detailTab === 'manifest' && (
             <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
               <div className="mb-3 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-zinc-200">Manifest</h4>
@@ -1344,6 +1394,7 @@ export default function ClustersPage() {
                 </pre>
               </div>
             </div>
+            )}
           </div>
         )}
       </Modal>

@@ -5,6 +5,7 @@ import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import DependencyGraphVisual from '../DependencyGraphVisual';
 import type { DependencyGraph, DependencyEdge } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -172,9 +173,16 @@ export default function DepsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="dash-card">
+            <div className="dash-card lg:col-span-2">
               <h2 className="text-lg font-semibold text-slate-100 mb-4">Dependency graph</h2>
-              <GraphVisual graph={graph} />
+              {(graph.edges?.length ?? 0) > 0 && (graph.nodes?.length ?? 0) > 0 ? (
+                <DependencyGraphVisual
+                  nodes={graph.nodes ?? []}
+                  edges={graph.edges ?? []}
+                />
+              ) : (
+                <GraphVisual graph={graph} />
+              )}
             </div>
 
             <div className="dash-card">

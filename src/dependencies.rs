@@ -137,6 +137,22 @@ impl DependencyGraph {
         issues
     }
 
+    /// All workload node names in the graph.
+    pub fn node_names(&self) -> Vec<String> {
+        self.nodes.iter().cloned().collect()
+    }
+
+    /// Directed dependency edges `(workload, depends_on)`.
+    pub fn dependency_edges(&self) -> Vec<(String, String)> {
+        self.edges
+            .iter()
+            .flat_map(|(workload, deps)| {
+                deps.iter()
+                    .map(move |dep| (workload.clone(), dep.clone()))
+            })
+            .collect()
+    }
+
     /// Get graph statistics
     pub fn stats(&self) -> GraphStats {
         let total_workloads = self.nodes.len();

@@ -152,6 +152,14 @@ Deploy once. Run anywhere. Migrate seamlessly.
 
 ## 🚀 Quick Start
 
+**Client tarball** (remote build, hand off to customers):
+
+```bash
+./scripts/package-binary-remote.sh HOST USER --fetch
+```
+
+See **[docs/PACKAGE_BINARY_REMOTE.md](docs/PACKAGE_BINARY_REMOTE.md)**.
+
 ### Installation
 
 #### Option 1: Container (Recommended)

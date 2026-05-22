@@ -30,6 +30,8 @@ import PolicyPage from './components/pages/PolicyPage';
 import SchedulerPage from './components/pages/SchedulerPage';
 import HealthPage from './components/pages/HealthPage';
 import EventsPage from './components/pages/EventsPage';
+import AlertsPage from './components/pages/AlertsPage';
+import PlatformPage from './components/pages/PlatformPage';
 import SLAPage from './components/pages/SLAPage';
 import DepsPage from './components/pages/DepsPage';
 import EnvsPage from './components/pages/EnvsPage';
@@ -246,6 +248,10 @@ function AetherDashboard() {
         return <HealthPage key={refreshKey} />;
       case 'events':
         return <EventsPage key={refreshKey} />;
+      case 'alerts':
+        return <AlertsPage key={refreshKey} />;
+      case 'platform':
+        return <PlatformPage key={refreshKey} />;
       case 'sla':
         return <SLAPage key={refreshKey} />;
       case 'deps':

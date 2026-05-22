@@ -16,6 +16,9 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if .Values.opa.bundle.enabled }}
+        checksum/opa-bundle: {{ include (print $.Template.BasePath "/opa-bundle-configmap.yaml") . | sha256sum }}
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -146,6 +149,18 @@ spec:
             secretKeyRef:
               name: {{ .Values.auditWebhook.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
               key: audit-webhook-url
+        {{- end }}
+        {{- if .Values.opa.enabled }}
+        {{- if .Values.opa.url }}
+        - name: AETHER_OPA_URL
+          value: {{ .Values.opa.url | quote }}
+        {{- end }}
+        - name: AETHER_OPA_PACKAGE
+          value: {{ .Values.opa.package | quote }}
+        {{- if .Values.opa.enforce }}
+        - name: AETHER_OPA_ENFORCE
+          value: "true"
+        {{- end }}
         {{- end }}
         {{- with .Values.extraEnv }}
         {{- toYaml . | nindent 8 }}

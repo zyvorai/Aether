@@ -10,22 +10,30 @@ Aether ships a native Kubernetes and KubeVirt cluster browser with exec, port-fo
 - **Remote backup upload** (`AETHER_BACKUP_REMOTE_URL`) and **audit webhook** (`AETHER_AUDIT_WEBHOOK_URL`)
 - **Prometheus ServiceMonitor** in Helm (`metrics.serviceMonitor.enabled`)
 
-## Remaining Work
+CI builds the embedded dashboard first, validates example specs (including Metal3/KubeVirt labs), runs Playwright API/UI smoke tests, and runs `scripts/labs-e2e.sh` (validate + dry-run; live deploy when `AETHER_LABS_LIVE=1`).
 
-- Owner-reference graph in cluster detail (beyond audit name filter)
-- **OPA bundle sync** sidecar / ConfigMap reload in Helm
-- **Real cost/chargeback** integrations (cloud pricing APIs)
-- **Dashboard E2E** tests (exec WS, port-forward, OIDC login)
-- **Metal3 / KubeVirt** install guides and hardware e2e on reference clusters
+## Recently completed
+
+- **OPA enforce** on `POST /api/workloads`, `PUT /api/workloads/:name`, and `POST /api/cluster/apply` when `AETHER_OPA_ENFORCE=true`
+- **Alert rules** `ErrorRateAbove` and `CostExceeds` wired to health failure rates and priced fleet/workload costs
+- **Cost / chargeback**: `GET /api/cost/pricing`, `GET /api/cost/chargeback`, optional live overlay via `AETHER_PRICING_URL`, regional multiplier via `AETHER_COST_REGION`
+- **Dashboard**: chargeback table on Metrics page; Playwright tests for auth, cost, cluster API
+- **Labs CI**: `labs-e2e` job + `scripts/labs-e2e.sh`
+
+## Remaining / optional
+
+- **Live cluster E2E** in CI (set `AETHER_LABS_LIVE=1` + kubeconfig on a dedicated runner)
+- **Playwright UI flows** for in-browser OIDC login, cluster exec terminal, and port-forward (needs IdP + cluster fixtures)
+- **SAML / additional IdPs** beyond OIDC (enterprise SSO catalogs)
 
 ## Recommended Next Order
 
-1. Event correlation panel on cluster resource detail.
-2. OPA bundle sync + policy deny in API.
-3. Playwright smoke tests for dashboard auth and cluster browser.
-4. Reference Metal3/KubeVirt lab manifests.
+1. Dedicated reference-cluster runner with `AETHER_LABS_LIVE=1` for Metal3/KubeVirt apply smoke.
+2. Playwright UI tests with mock IdP and kind cluster for exec/port-forward.
+3. Optional: wire cloud vendor pricing APIs (AWS Price List, Azure Retail) behind `AETHER_PRICING_URL` fetcher service.
 
 ## Notes
 
+- Validate specs with: `aether --spec <file> validate` (global `--spec` before subcommand).
+- Embedded UI updates require `cd web/dashboard && npm run build` then `cargo build`.
 - Keep `Secret` values redacted in cluster detail responses.
-- Prefer expanding the native Aether backend and UX instead of reintroducing Headlamp dependencies.

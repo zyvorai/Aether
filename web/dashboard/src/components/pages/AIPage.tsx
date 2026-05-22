@@ -8,6 +8,7 @@ import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageTabs from '../PageTabs';
 import WorkloadSelect from '../WorkloadSelect';
+import IntentDebugger from '../IntentDebugger';
 import type { WorkloadResponse, ScoringResult, ScalingAdvice, RuntimeScore } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -374,7 +375,7 @@ export default function AIPage() {
       <PageTabs tabs={AI_TABS} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'recommend' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-min">
           <div className="dash-card">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-aether/10 rounded-xl">
@@ -396,6 +397,10 @@ export default function AIPage() {
                 <ScoringResultPanel result={recommendation} />
               </div>
             )}
+          </div>
+
+          <div className="dash-card lg:col-span-2">
+            <IntentDebugger />
           </div>
 
           <div className="dash-card">

@@ -78,6 +78,9 @@ export default function SecretsPage() {
 
   return (
     <div>
+      <p className="mb-4 text-sm text-slate-500 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3">
+        Secrets stored with <code className="text-slate-400">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.
+      </p>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

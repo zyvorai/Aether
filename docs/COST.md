@@ -470,20 +470,24 @@ echo "Payback Period: ${PAYBACK_MONTHS} months"
 ## Limitations
 
 Current limitations:
-- Baseline pricing only (not region-specific)
-- Doesn't include network egress
-- No GPU pricing
-- No reserved instance pricing
-- No spot instance pricing
-- Manual updates required for price changes
+- Live pricing requires you to host or point `AETHER_PRICING_URL` at a JSON price sheet (no built-in AWS/Azure API client yet)
+- Chargeback uses on-disk workload specs; workloads created only via API without persisted YAML are omitted
+- Network egress and load balancer costs are included in extended CLI estimates but not in the default chargeback line items
 
-Future enhancements planned:
-- Live pricing API integration
-- Regional pricing support
-- GPU cost estimation
-- Reserved/spot instance modeling
-- Network cost estimation
-- TCO (Total Cost of Ownership) calculator
+## API & configuration
+
+| Endpoint / env | Purpose |
+|----------------|---------|
+| `GET /api/cost/pricing` | Active source (`baseline` / `live`), region multiplier, spot/reserved discount % |
+| `GET /api/cost/chargeback` | Fleet showback by owner/project with 36-month TCO |
+| `POST /api/cost` | Per-provider estimates for a workload spec |
+| `AETHER_COST_PROVIDER` | Default provider (`aws`, `azure`, `gcp`, …) |
+| `AETHER_COST_REGION` | Regional multiplier (e.g. `eu-west-1`) |
+| `AETHER_PRICING_URL` | Optional HTTP JSON overlay (cached 1h) |
+| `AETHER_COST_SPOT_DISCOUNT_PCT` | Spot/preemptible discount (default 60) |
+| `AETHER_COST_RESERVED_DISCOUNT_PCT` | Reserved discount (default 35) |
+
+Alert rule `CostExceeds` compares fleet and per-workload estimates from this pricing path during reconciliation and API health loops.
 
 ## Support
 

@@ -4,6 +4,7 @@ use crate::output;
 use crate::spec::Workload;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Cloud provider for cost estimation
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -71,7 +72,7 @@ impl CostEstimate {
 }
 
 /// Resource pricing for a cloud provider
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 struct ProviderPricing {
     cpu_per_core_monthly: f64,      // $ per vCPU per month
     memory_per_gb_monthly: f64,     // $ per GB RAM per month
@@ -405,6 +406,264 @@ impl CostComparison {
     }
 }
 
+// ─── Regional / live pricing & chargeback ─────────────────────────────
+
+/// Active pricing configuration (baseline table, optional live overlay, regional multiplier).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PricingConfig {
+    pub provider: CloudProvider,
+    pub region: String,
+    pub source: String,
+    pub regional_multiplier: f64,
+    pub spot_discount_pct: f64,
+    pub reserved_discount_pct: f64,
+}
+
+/// Per-workload chargeback line.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChargebackLine {
+    pub workload: String,
+    pub owner: String,
+    pub project: String,
+    pub monthly_usd: f64,
+    pub spot_monthly_usd: f64,
+    pub reserved_monthly_usd: f64,
+}
+
+/// Fleet chargeback / showback report.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChargebackReport {
+    pub provider: CloudProvider,
+    pub region: String,
+    pub pricing_source: String,
+    pub total_monthly_usd: f64,
+    pub total_spot_monthly_usd: f64,
+    pub total_reserved_monthly_usd: f64,
+    pub tco_36_months_usd: f64,
+    pub lines: Vec<ChargebackLine>,
+    pub by_owner: HashMap<String, f64>,
+    pub by_project: HashMap<String, f64>,
+}
+
+/// Optional live pricing document from `AETHER_PRICING_URL` (JSON object with provider keys).
+#[derive(Debug, Clone, Deserialize)]
+struct LivePricingDoc {
+    #[serde(default)]
+    cpu_per_core_monthly: Option<f64>,
+    #[serde(default)]
+    memory_per_gb_monthly: Option<f64>,
+    #[serde(default)]
+    storage_per_gb_monthly: Option<f64>,
+    #[serde(default)]
+    gpu_per_unit_monthly: Option<f64>,
+}
+
+static LIVE_PRICING_CACHE: std::sync::OnceLock<std::sync::Mutex<Option<(std::time::Instant, ProviderPricing)>>> =
+    std::sync::OnceLock::new();
+
+/// Default provider for chargeback (`AETHER_COST_PROVIDER` or AWS).
+pub fn default_chargeback_provider() -> CloudProvider {
+    std::env::var("AETHER_COST_PROVIDER")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(CloudProvider::AWS)
+}
+
+/// Region for pricing multiplier (`AETHER_COST_REGION`, default `us-east-1`).
+pub fn pricing_region() -> String {
+    std::env::var("AETHER_COST_REGION")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "us-east-1".to_string())
+}
+
+/// Regional cost multiplier (baseline table is US-centric).
+pub fn regional_multiplier(region: &str) -> f64 {
+    match region.to_lowercase().as_str() {
+        "us-east-1" | "us-west-2" | "eastus" | "us-central1" | "global" => 1.0,
+        "eu-west-1" | "eu-central-1" | "westeurope" | "northeurope" | "europe-west1" => 1.08,
+        "ap-southeast-1" | "ap-northeast-1" | "southeastasia" | "asia-southeast1" => 1.12,
+        "ap-south-1" | "southindia" => 1.10,
+        _ => 1.05,
+    }
+}
+
+fn spot_discount_pct() -> f64 {
+    std::env::var("AETHER_COST_SPOT_DISCOUNT_PCT")
+        .ok()
+        .and_then(|s| s.parse::<f64>().ok())
+        .unwrap_or(60.0)
+        .clamp(0.0, 90.0)
+}
+
+fn reserved_discount_pct() -> f64 {
+    std::env::var("AETHER_COST_RESERVED_DISCOUNT_PCT")
+        .ok()
+        .and_then(|s| s.parse::<f64>().ok())
+        .unwrap_or(35.0)
+        .clamp(0.0, 70.0)
+}
+
+fn fetch_live_pricing(provider: CloudProvider) -> Option<ProviderPricing> {
+    let url = std::env::var("AETHER_PRICING_URL")
+        .ok()
+        .filter(|s| !s.trim().is_empty())?;
+    let cache = LIVE_PRICING_CACHE.get_or_init(|| std::sync::Mutex::new(None));
+    let mut guard = cache.lock().ok()?;
+    if let Some((at, pricing)) = guard.as_ref() {
+        if at.elapsed() < std::time::Duration::from_secs(3600) {
+            return Some(*pricing);
+        }
+    }
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .build()
+        .ok()?;
+    let resp = client.get(&url).send().ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let doc: serde_json::Value = resp.json().ok()?;
+    let key = provider.to_string().to_lowercase();
+    let node = doc.get(&key).or_else(|| doc.get("default"))?;
+    let live: LivePricingDoc = serde_json::from_value(node.clone()).ok()?;
+    let mut base = ProviderPricing::for_provider(provider);
+    if let Some(v) = live.cpu_per_core_monthly {
+        base.cpu_per_core_monthly = v;
+    }
+    if let Some(v) = live.memory_per_gb_monthly {
+        base.memory_per_gb_monthly = v;
+    }
+    if let Some(v) = live.storage_per_gb_monthly {
+        base.storage_per_gb_monthly = v;
+    }
+    if let Some(v) = live.gpu_per_unit_monthly {
+        base.gpu_per_unit_monthly = v;
+    }
+    *guard = Some((std::time::Instant::now(), base));
+    Some(base)
+}
+
+fn resolve_pricing(provider: CloudProvider) -> (ProviderPricing, String) {
+    if std::env::var("AETHER_PRICING_URL")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .is_some()
+    {
+        if let Some(live) = fetch_live_pricing(provider) {
+            return (live, "live".to_string());
+        }
+    }
+    (ProviderPricing::for_provider(provider), "baseline".to_string())
+}
+
+/// Current pricing configuration for `/api/cost/pricing`.
+pub fn pricing_config() -> PricingConfig {
+    let provider = default_chargeback_provider();
+    let region = pricing_region();
+    let (_, source) = resolve_pricing(provider);
+    PricingConfig {
+        provider,
+        region: region.clone(),
+        source,
+        regional_multiplier: regional_multiplier(&region),
+        spot_discount_pct: spot_discount_pct(),
+        reserved_discount_pct: reserved_discount_pct(),
+    }
+}
+
+/// Estimate monthly cost with regional multiplier and optional live pricing overlay.
+pub fn estimate_cost_priced(workload: &Workload, provider: CloudProvider) -> Result<CostEstimate> {
+    let (pricing, _) = resolve_pricing(provider);
+    let region = pricing_region();
+    let mult = regional_multiplier(&region);
+
+    let cpu_cores = parse_cpu(&workload.requirements.cpu)?;
+    let memory_gb = parse_memory(&workload.requirements.memory)?;
+    let storage_gb = parse_storage(&workload.requirements.storage)?;
+
+    let cpu_cost = cpu_cores * pricing.cpu_per_core_monthly * mult;
+    let memory_cost = memory_gb * pricing.memory_per_gb_monthly * mult;
+    let storage_cost = storage_gb * pricing.storage_per_gb_monthly * mult;
+    let total_monthly = cpu_cost + memory_cost + storage_cost;
+    let total_hourly = total_monthly / 730.0;
+
+    Ok(CostEstimate {
+        provider,
+        cpu_cost_monthly: cpu_cost,
+        memory_cost_monthly: memory_cost,
+        storage_cost_monthly: storage_cost,
+        total_monthly,
+        total_hourly,
+        currency: "USD".to_string(),
+    })
+}
+
+fn apply_purchase_model(monthly: f64) -> (f64, f64) {
+    let spot = monthly * (1.0 - spot_discount_pct() / 100.0);
+    let reserved = monthly * (1.0 - reserved_discount_pct() / 100.0);
+    (spot, reserved)
+}
+
+/// Build a chargeback report from deployed workloads and on-disk specs.
+pub fn chargeback_report(
+    workloads: &[(&str, &std::path::PathBuf)],
+    provider: CloudProvider,
+) -> Result<ChargebackReport> {
+    let region = pricing_region();
+    let (_, source) = resolve_pricing(provider);
+    let mut lines = Vec::new();
+    let mut by_owner = HashMap::new();
+    let mut by_project = HashMap::new();
+    let mut total = 0.0;
+    let mut total_spot = 0.0;
+    let mut total_reserved = 0.0;
+
+    for (name, spec_path) in workloads {
+        let spec = match Workload::from_file(spec_path) {
+            Ok(s) => s,
+            Err(_) => continue,
+        };
+        let est = estimate_cost_priced(&spec, provider)?;
+        let (spot, reserved) = apply_purchase_model(est.total_monthly);
+        total += est.total_monthly;
+        total_spot += spot;
+        total_reserved += reserved;
+        *by_owner.entry(spec.metadata.owner.clone()).or_insert(0.0) += est.total_monthly;
+        *by_project.entry(spec.metadata.project.clone()).or_insert(0.0) += est.total_monthly;
+        lines.push(ChargebackLine {
+            workload: (*name).to_string(),
+            owner: spec.metadata.owner.clone(),
+            project: spec.metadata.project.clone(),
+            monthly_usd: est.total_monthly,
+            spot_monthly_usd: spot,
+            reserved_monthly_usd: reserved,
+        });
+    }
+
+    lines.sort_by(|a, b| {
+        b.monthly_usd
+            .partial_cmp(&a.monthly_usd)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    Ok(ChargebackReport {
+        provider,
+        region,
+        pricing_source: source,
+        total_monthly_usd: total,
+        total_spot_monthly_usd: total_spot,
+        total_reserved_monthly_usd: total_reserved,
+        tco_36_months_usd: total * 36.0,
+        lines,
+        by_owner,
+        by_project,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -502,6 +761,19 @@ mod tests {
         let report = comparison.display();
         assert!(report.contains("test-app"));
         assert!(report.contains("Savings"));
+    }
+
+    #[test]
+    fn test_regional_multiplier() {
+        assert_eq!(regional_multiplier("us-east-1"), 1.0);
+        assert!(regional_multiplier("eu-west-1") > 1.0);
+    }
+
+    #[test]
+    fn test_estimate_cost_priced() {
+        let workload = create_test_workload();
+        let est = estimate_cost_priced(&workload, CloudProvider::AWS).unwrap();
+        assert!(est.total_monthly > 0.0);
     }
 
     #[test]

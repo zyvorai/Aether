@@ -6,25 +6,32 @@ import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
+import { useQueryParam } from '../../utils/urlState';
 import type { Event, EventSummary } from '../../types/api';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [severity, setSeverity] = useState('all');
+  const [search, setSearch] = useQueryParam('q');
+  const [severity, setSeverity] = useQueryParam('severity', 'all');
+  const [category, setCategory] = useQueryParam('category', 'all');
+  const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
 
   const load = useCallback(async () => {
     setLoading(true);
+    const qs = new URLSearchParams();
+    if (category && category !== 'all') qs.set('category', category);
+    if (workloadFilter.trim()) qs.set('workload', workloadFilter.trim());
+    const query = qs.toString() ? `?${qs}` : '';
     const [ev, s] = await Promise.all([
-      apiFetch<Event[]>('/events'),
+      apiFetch<Event[]>(`/events${query}`),
       apiFetch<EventSummary>('/events/summary'),
     ]);
     setEvents(ev ?? []);
     setSummary(s);
     setLoading(false);
-  }, []);
+  }, [category, workloadFilter]);
 
   useEffect(() => {
     void load();
@@ -73,18 +80,41 @@ export default function EventsPage() {
         onRefresh={() => void load()}
         refreshing={loading}
         filters={
-          <select
-            value={severity}
-            onChange={(e) => setSeverity(e.target.value)}
-            className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
-            aria-label="Severity filter"
-          >
-            {severityOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt === 'all' ? 'All severities' : opt}
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+              aria-label="Category filter"
+            >
+              <option value="all">All categories</option>
+              <option value="intent-violation">Intent violations</option>
+              <option value="drift">Drift</option>
+              <option value="policy">Policy</option>
+              <option value="sla">SLA</option>
+              <option value="health">Health</option>
+            </select>
+            <input
+              type="text"
+              value={workloadFilter}
+              onChange={(e) => setWorkloadFilter(e.target.value)}
+              placeholder="Workload name…"
+              className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200 min-w-[10rem]"
+              aria-label="Workload filter"
+            />
+            <select
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value)}
+              className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+              aria-label="Severity filter"
+            >
+              {severityOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt === 'all' ? 'All severities' : opt}
+                </option>
+              ))}
+            </select>
+          </>
         }
       />
 
