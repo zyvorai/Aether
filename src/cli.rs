@@ -16,7 +16,7 @@ pub(crate) struct Cli {
     pub(crate) command: Commands,
 
     /// Workload specification file
-    #[arg(short, long, default_value = "workload.yaml")]
+    #[arg(short, long, default_value = "workload.yaml", global = true)]
     pub(crate) spec: PathBuf,
 
     /// Enable verbose logging
@@ -40,7 +40,7 @@ pub(crate) struct Cli {
     pub(crate) yes: bool,
 
     /// Show what would happen without executing (for mutating commands)
-    #[arg(long)]
+    #[arg(long, global = true)]
     pub(crate) dry_run: bool,
 
     /// Skip policy checks on deploy (use with caution)

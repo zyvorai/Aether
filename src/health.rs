@@ -113,6 +113,15 @@ impl HealthHistory {
         (ready as f64 / total as f64) * 100.0
     }
 
+    /// Failure rate as a percentage (100 − uptime). Used for `ErrorRateAbove` alert rules.
+    pub fn failure_rate_percent(&self, workload: &str) -> f64 {
+        let uptime = self.uptime_percent(workload);
+        if uptime <= 0.0 {
+            return 0.0;
+        }
+        (100.0 - uptime).max(0.0)
+    }
+
     /// Return the latest restart count for a workload.
     ///
     /// Returns `0` if there are no records for the workload.
@@ -503,6 +512,15 @@ mod tests {
         assert_eq!(sb.total_checks, 2);
         assert_eq!(sb.ready_checks, 1);
         assert_eq!(sb.last_restart_count, 2);
+    }
+
+    #[test]
+    fn test_failure_rate_percent() {
+        let mut history = HealthHistory::default();
+        history.record(make_record("svc", true, 0, InstanceState::Running));
+        history.record(make_record("svc", false, 0, InstanceState::Failed));
+        assert_eq!(history.uptime_percent("svc"), 50.0);
+        assert_eq!(history.failure_rate_percent("svc"), 50.0);
     }
 
     #[test]

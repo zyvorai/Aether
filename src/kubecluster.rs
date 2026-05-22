@@ -2,7 +2,7 @@
 
 use anyhow::{Context, Result};
 use chrono::Utc;
-use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, StatefulSet};
+use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
 use k8s_openapi::api::autoscaling::v2::HorizontalPodAutoscaler;
 use k8s_openapi::api::batch::v1::{CronJob, Job};
 use k8s_openapi::api::core::v1::{ConfigMap, Endpoints, Event as KubeEvent, LimitRange, Namespace, Node, PersistentVolume, PersistentVolumeClaim, Pod, ResourceQuota, Secret, Service, ServiceAccount};
@@ -123,14 +123,33 @@ pub struct ClusterPodSummary {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct ClusterOwnerReference {
+    pub api_version: String,
+    pub kind: String,
+    pub name: String,
+    pub uid: Option<String>,
+    pub controller: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ClusterOwnedResource {
+    pub kind: String,
+    pub name: String,
+    pub api_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct ClusterResourceDetail {
     pub cluster: String,
     pub namespace: String,
     pub kind: String,
     pub name: String,
     pub api_version: Option<String>,
+    pub uid: Option<String>,
     pub pods: Vec<ClusterPodSummary>,
     pub conditions: Vec<ClusterConditionSummary>,
+    pub owner_references: Vec<ClusterOwnerReference>,
+    pub owned_resources: Vec<ClusterOwnedResource>,
     pub manifest: serde_json::Value,
 }
 
@@ -475,6 +494,19 @@ pub async fn workload_detail(req: &ClusterLogsRequest) -> Result<ClusterResource
         Vec::new()
     };
 
+    let uid = manifest
+        .pointer("/metadata/uid")
+        .and_then(|value| value.as_str())
+        .map(str::to_string);
+    let owner_references = owner_references_from_manifest(&manifest);
+    let owned_resources = if req.namespace != "all" {
+        list_owned_resources(&client, &req.namespace, uid.as_deref(), &req.kind, &req.name)
+            .await
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
     Ok(ClusterResourceDetail {
         cluster: req.cluster.clone(),
         namespace: req.namespace.clone(),
@@ -484,10 +516,117 @@ pub async fn workload_detail(req: &ClusterLogsRequest) -> Result<ClusterResource
             .get("apiVersion")
             .and_then(|value| value.as_str())
             .map(str::to_string),
+        uid,
         pods,
         conditions,
+        owner_references,
+        owned_resources,
         manifest,
     })
+}
+
+fn owner_references_from_manifest(manifest: &serde_json::Value) -> Vec<ClusterOwnerReference> {
+    manifest
+        .pointer("/metadata/ownerReferences")
+        .and_then(|value| value.as_array())
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| {
+                    Some(ClusterOwnerReference {
+                        api_version: item.get("apiVersion")?.as_str()?.to_string(),
+                        kind: item.get("kind")?.as_str()?.to_string(),
+                        name: item.get("name")?.as_str()?.to_string(),
+                        uid: item
+                            .get("uid")
+                            .and_then(|value| value.as_str())
+                            .map(str::to_string),
+                        controller: item
+                            .get("controller")
+                            .and_then(|value| value.as_bool())
+                            .unwrap_or(false),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn owner_matches(
+    owner: &k8s_openapi::apimachinery::pkg::apis::meta::v1::OwnerReference,
+    owner_uid: Option<&str>,
+    owner_kind: &str,
+    owner_name: &str,
+) -> bool {
+    if let Some(uid) = owner_uid {
+        owner.uid == uid
+    } else {
+        owner.kind == owner_kind && owner.name == owner_name
+    }
+}
+
+async fn list_owned_resources(
+    client: &Client,
+    namespace: &str,
+    owner_uid: Option<&str>,
+    owner_kind: &str,
+    owner_name: &str,
+) -> Result<Vec<ClusterOwnedResource>> {
+    let mut owned = Vec::new();
+
+    let pod_api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+    if let Ok(list) = pod_api.list(&ListParams::default()).await {
+        for pod in list.items {
+            let owners = pod.metadata.owner_references.as_deref().unwrap_or(&[]);
+            if owners
+                .iter()
+                .any(|owner| owner_matches(owner, owner_uid, owner_kind, owner_name))
+            {
+                owned.push(ClusterOwnedResource {
+                    kind: "Pod".to_string(),
+                    name: pod.metadata.name.clone().unwrap_or_default(),
+                    api_version: Some("v1".to_string()),
+                });
+            }
+        }
+    }
+
+    let rs_api: Api<ReplicaSet> = Api::namespaced(client.clone(), namespace);
+    if let Ok(list) = rs_api.list(&ListParams::default()).await {
+        for rs in list.items {
+            let owners = rs.metadata.owner_references.as_deref().unwrap_or(&[]);
+            if owners
+                .iter()
+                .any(|owner| owner_matches(owner, owner_uid, owner_kind, owner_name))
+            {
+                owned.push(ClusterOwnedResource {
+                    kind: "ReplicaSet".to_string(),
+                    name: rs.metadata.name.clone().unwrap_or_default(),
+                    api_version: Some("apps/v1".to_string()),
+                });
+            }
+        }
+    }
+
+    let svc_api: Api<Service> = Api::namespaced(client.clone(), namespace);
+    if let Ok(list) = svc_api.list(&ListParams::default()).await {
+        for svc in list.items {
+            let owners = svc.metadata.owner_references.as_deref().unwrap_or(&[]);
+            if owners
+                .iter()
+                .any(|owner| owner_matches(owner, owner_uid, owner_kind, owner_name))
+            {
+                owned.push(ClusterOwnedResource {
+                    kind: "Service".to_string(),
+                    name: svc.metadata.name.clone().unwrap_or_default(),
+                    api_version: Some("v1".to_string()),
+                });
+            }
+        }
+    }
+
+    owned.sort_by(|a, b| (&a.kind, &a.name).cmp(&(&b.kind, &b.name)));
+    Ok(owned)
 }
 
 pub async fn health_summary(req: &ClusterLogsRequest) -> Result<ClusterHealthSummary> {

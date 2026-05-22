@@ -309,7 +309,28 @@ async fn run_background_health_check(state: &Arc<RwLock<StateStore>>) -> anyhow:
         tracing::info!("Background health check: {} action(s)", actions.len());
     }
 
+    run_alert_evaluation(state).await;
+
     Ok(())
+}
+
+/// Evaluate alert rules against current health, cost, and policy metrics.
+async fn run_alert_evaluation(state: &Arc<RwLock<StateStore>>) {
+    let events_path = crate::events::EventBus::default_path();
+    let Ok(mut bus) = crate::events::EventBus::load(&events_path) else {
+        return;
+    };
+    let policy = crate::config::Config::load().policy;
+    let workloads: Vec<_> = {
+        let store = state.read().await;
+        store.list().into_iter().cloned().collect()
+    };
+    let metrics = crate::events::SystemMetrics::collect(&workloads, &policy);
+    let fired = bus.evaluate_rules(&metrics);
+    if !fired.is_empty() {
+        tracing::info!("Alert evaluation: {} rule(s) triggered", fired.len());
+        let _ = bus.save(&events_path);
+    }
 }
 
 /// Start the API server
@@ -429,6 +450,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/secrets/:name", delete(delete_secret))
         .route("/api/metrics", get(get_metrics))
         .route("/api/cost", post(estimate_cost))
+        .route("/api/cost/pricing", get(api_cost_pricing))
+        .route("/api/cost/chargeback", get(api_cost_chargeback))
         .route("/api/backups", get(list_backups))
         .route("/api/backups", post(create_backup))
         .route("/api/backups/restore", post(restore_backup))
@@ -441,7 +464,12 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/analyze/:name", get(ai_analyze_logs))
         .route("/api/ai/migration-advice/:name/:target", get(ai_migration_advice))
         .route("/api/ai/scaling-advice", get(ai_scaling_advice))
+        .route("/api/ai/intent-optimize", post(ai_intent_optimize))
+        .route("/api/ai/right-size", post(ai_right_size))
+        .route("/api/ai/tradeoff", post(ai_tradeoff))
         .route("/api/drift/:name", get(api_drift_check))
+        .route("/api/drift/:name/reconcile", post(api_drift_reconcile))
+        .route("/api/alerts/status", get(api_alerts_status))
         .route("/api/policy/check", post(api_policy_check))
         .route("/api/policy/opa", post(api_policy_opa))
         .route(
@@ -489,6 +517,9 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/gitops/status", get(api_gitops_status))
         .route("/api/gitops/sync", post(api_gitops_sync))
         .route("/api/webhooks/test", post(api_webhook_test))
+        .route("/api/webhooks/channels", post(api_webhook_channel_create))
+        .route("/api/webhooks/channels/:name", delete(api_webhook_channel_delete))
+        .route("/api/dashboard/version", get(api_dashboard_version))
         .route("/api/server", get(api_server_info))
         .route("/api/openapi.json", get(serve_openapi))
         .route("/api/rbac/keys", get(rbac_list_keys))

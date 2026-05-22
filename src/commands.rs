@@ -2302,36 +2302,10 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                 {
                     let events_path = aether::events::EventBus::default_path();
                     if let Ok(mut bus) = aether::events::EventBus::load(&events_path) {
-                        let health_path = aether::health::HealthHistory::default_path();
-                        let history = aether::health::HealthHistory::load(&health_path)
-                            .unwrap_or_default();
-
-                        let mut metrics = aether::events::SystemMetrics::default();
                         let alert_policy_config = aether::config::Config::load().policy;
-                        for ws in state_store.list() {
-                            let uptime = history.uptime_percent(&ws.name);
-                            if uptime > 0.0 {
-                                metrics.sla_uptimes.insert(ws.name.clone(), uptime);
-                            }
-                            metrics.restart_counts.insert(
-                                ws.name.clone(),
-                                history.restart_count(&ws.name),
-                            );
-
-                            // Check for drift on each workload
-                            if let Ok(spec) = aether::spec::Workload::from_file(&ws.spec_path) {
-                                let detector = aether::drift::DriftDetector::new();
-                                let report = detector.detect(&spec, ws);
-                                if report.has_drift {
-                                    metrics.drift_detected = true;
-                                }
-
-                                // Check for policy violations
-                                if aether::policy::gate_deploy(&spec, &alert_policy_config).is_err() {
-                                    metrics.policy_violations = true;
-                                }
-                            }
-                        }
+                        let workloads: Vec<_> = state_store.list().into_iter().cloned().collect();
+                        let metrics =
+                            aether::events::SystemMetrics::collect(&workloads, &alert_policy_config);
 
                         let fired = bus.evaluate_rules(&metrics);
                         if !fired.is_empty() {

@@ -1,0 +1,49 @@
+import { useEffect, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { apiFetch } from '../utils/api';
+
+interface VersionPayload {
+  api_version?: string;
+  embedded_ui_build?: string;
+}
+
+export default function VersionRefreshBanner() {
+  const [remoteBuild, setRemoteBuild] = useState<string | null>(null);
+  const localBuild = __AETHER_DASHBOARD_BUILD__;
+
+  useEffect(() => {
+    const load = async () => {
+      const data = await apiFetch<VersionPayload>('/dashboard/version');
+      if (data?.embedded_ui_build) {
+        setRemoteBuild(data.embedded_ui_build);
+      }
+    };
+    void load();
+    const id = window.setInterval(() => void load(), 120_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  if (!remoteBuild || remoteBuild === localBuild) {
+    return null;
+  }
+
+  return (
+    <div
+      role="status"
+      className="border-b border-amber-800/50 bg-amber-950/40 px-4 py-2 text-center text-sm text-amber-100"
+    >
+      <RefreshCw className="inline-block w-4 h-4 mr-2 -mt-0.5" aria-hidden />
+      A new dashboard build is available on the server.{' '}
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="underline font-medium hover:text-white"
+      >
+        Reload to update
+      </button>
+      <span className="ml-2 text-xs text-amber-300/80 font-mono">
+        server {remoteBuild.slice(0, 19)} · local {localBuild.slice(0, 19)}
+      </span>
+    </div>
+  );
+}

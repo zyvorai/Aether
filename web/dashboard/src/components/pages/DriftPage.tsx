@@ -1,16 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GitBranch, Inbox } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetch, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import Badge, { SeverityBadge } from '../Badge';
-import type { WorkloadResponse, DriftReport } from '../../types/api';
+import type { WorkloadResponse, DriftReport, DriftReconcileResult } from '../../types/api';
+
+function toast(message: string, type: 'success' | 'error') {
+  window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+}
 
 export default function DriftPage() {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkLoading, setCheckLoading] = useState<string | null>(null);
   const [driftResult, setDriftResult] = useState<DriftReport | null>(null);
+  const [reconcileLoading, setReconcileLoading] = useState(false);
   const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
@@ -29,6 +34,26 @@ export default function DriftPage() {
     const data = await apiFetch<DriftReport>(`/drift/${name}`);
     setDriftResult(data);
     setCheckLoading(null);
+  }
+
+  async function handleReconcile(name: string) {
+    setReconcileLoading(true);
+    const res = await apiPost<{
+      reconciled: boolean;
+      message?: string;
+      results: DriftReconcileResult[];
+    }>(`/drift/${name}/reconcile`, {});
+    setReconcileLoading(false);
+    if (res.success && res.data) {
+      if (res.data.reconciled) {
+        toast(`Reconciled "${name}": ${res.data.results.length} action(s)`, 'success');
+      } else {
+        toast(res.data.message ?? 'No drift to reconcile', 'success');
+      }
+      void handleCheckDrift(name);
+    } else {
+      toast(res.error ?? 'Reconciliation failed', 'error');
+    }
   }
 
   const filtered = workloads.filter((w) =>
@@ -121,6 +146,19 @@ export default function DriftPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {driftResult.has_drift && driftResult.reconciliation_plan.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleReconcile(driftResult.workload_name)}
+                      disabled={reconcileLoading}
+                      className="px-4 py-2 bg-aether hover:bg-aether-light disabled:opacity-50 rounded-xl text-sm font-medium text-white"
+                    >
+                      {reconcileLoading ? 'Reconciling…' : 'Apply reconciliation'}
+                    </button>
                   </div>
                 )}
 

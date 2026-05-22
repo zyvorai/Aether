@@ -830,12 +830,85 @@ pub struct SystemMetrics {
     pub sla_uptimes: HashMap<String, f64>,
     /// Per-workload restart counts
     pub restart_counts: HashMap<String, u32>,
+    /// Per-workload health failure rate percentage (0.0 -- 100.0)
+    pub error_rates: HashMap<String, f64>,
+    /// Per-workload estimated monthly cost (USD)
+    pub workload_monthly_costs: HashMap<String, f64>,
+    /// Sum of per-workload monthly costs (USD)
+    pub fleet_monthly_cost_usd: f64,
     /// Whether drift was detected on any workload
     pub drift_detected: bool,
     /// Whether any policy violation was found
     pub policy_violations: bool,
     /// Per-secret days until expiry
     pub secrets_expiring_days: HashMap<String, u32>,
+}
+
+impl SystemMetrics {
+    /// Build metrics from workload state, health history, and optional cost estimates.
+    pub fn collect(
+        workloads: &[crate::state::WorkloadState],
+        policy_config: &crate::config::PolicyConfig,
+    ) -> Self {
+        let mut metrics = Self::default();
+        Self::collect_into(&mut metrics, workloads, policy_config);
+        metrics
+    }
+
+    /// Populate an existing metrics snapshot.
+    pub fn collect_into(
+        metrics: &mut Self,
+        workloads: &[crate::state::WorkloadState],
+        policy_config: &crate::config::PolicyConfig,
+    ) {
+        *metrics = Self::default();
+        let health_path = crate::health::HealthHistory::default_path();
+        let history = crate::health::HealthHistory::load(&health_path).unwrap_or_default();
+        let provider = crate::cost::default_chargeback_provider();
+
+        for ws in workloads {
+            let uptime = history.uptime_percent(&ws.name);
+            if uptime > 0.0 {
+                metrics.sla_uptimes.insert(ws.name.clone(), uptime);
+                metrics
+                    .error_rates
+                    .insert(ws.name.clone(), history.failure_rate_percent(&ws.name));
+            }
+            metrics
+                .restart_counts
+                .insert(ws.name.clone(), history.restart_count(&ws.name));
+
+            if let Ok(spec) = crate::spec::Workload::from_file(&ws.spec_path) {
+                if let Ok(est) = crate::cost::estimate_cost_priced(&spec, provider) {
+                    metrics
+                        .workload_monthly_costs
+                        .insert(ws.name.clone(), est.total_monthly);
+                    metrics.fleet_monthly_cost_usd += est.total_monthly;
+                }
+
+                let detector = crate::drift::DriftDetector::new();
+                let report = detector.detect(&spec, ws);
+                if report.has_drift {
+                    metrics.drift_detected = true;
+                }
+                if crate::policy::gate_deploy(&spec, policy_config).is_err() {
+                    metrics.policy_violations = true;
+                }
+            }
+        }
+
+        let secrets_path = crate::secrets::SecretStore::default_path();
+        if let Ok(store) = crate::secrets::SecretStore::load(&secrets_path) {
+            for alert in store.audit_rotation() {
+                let days_left = alert.max_age_days.saturating_sub(alert.age_days);
+                metrics
+                    .secrets_expiring_days
+                    .entry(alert.secret.clone())
+                    .and_modify(|d| *d = (*d).min(days_left))
+                    .or_insert(days_left);
+            }
+        }
+    }
 }
 
 impl EventBus {
@@ -868,8 +941,17 @@ impl EventBus {
                 AlertCondition::SlaUptimeBelow(threshold) => {
                     metrics.sla_uptimes.values().any(|u| *u < *threshold && *u > 0.0)
                 }
-                AlertCondition::ErrorRateAbove(_) => false, // No error rate data source yet
-                AlertCondition::CostExceeds(_) => false,    // No live cost data source yet
+                AlertCondition::ErrorRateAbove(threshold) => metrics
+                    .error_rates
+                    .values()
+                    .any(|rate| *rate > *threshold),
+                AlertCondition::CostExceeds(threshold) => {
+                    metrics.fleet_monthly_cost_usd > *threshold
+                        || metrics
+                            .workload_monthly_costs
+                            .values()
+                            .any(|c| *c > *threshold)
+                }
                 AlertCondition::ExcessiveRestarts(max) => {
                     metrics.restart_counts.values().any(|c| *c > *max)
                 }
@@ -1429,6 +1511,26 @@ mod tests {
 
         let fired = bus.evaluate_rules(&metrics);
         assert!(fired.is_empty());
+    }
+
+    #[test]
+    fn test_evaluate_rules_error_rate_above() {
+        let mut bus = make_bus_with_rule(AlertCondition::ErrorRateAbove(5.0), 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.error_rates.insert("api".to_string(), 8.0);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
+    }
+
+    #[test]
+    fn test_evaluate_rules_cost_exceeds_fleet() {
+        let mut bus = make_bus_with_rule(AlertCondition::CostExceeds(100.0), 0);
+        let mut metrics = SystemMetrics::default();
+        metrics.fleet_monthly_cost_usd = 250.0;
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
     }
 
     #[test]
