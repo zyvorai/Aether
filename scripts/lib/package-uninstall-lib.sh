@@ -41,7 +41,7 @@ package_uninstall_parse_args() {
 
 package_uninstall_confirm() {
     local msg="$1"
-    $YES && return 0
+    [[ "${YES}" == true ]] && return 0
     read -r -p "${msg} [y/N] " ans
     [[ "${ans,,}" == "y" || "${ans,,}" == "yes" ]]
 }
@@ -75,7 +75,10 @@ package_uninstall_remove_local_configs() {
             echo "  removed ${root}/${f}"
         fi
     done
-    [[ -f "${root}/.client-install-state" ]] && rm -f "${root}/.client-install-state"
+    if [[ -f "${root}/.client-install-state" ]]; then
+        rm -f "${root}/.client-install-state"
+    fi
+    return 0
 }
 
 package_uninstall_remove_system_paths() {
@@ -105,7 +108,7 @@ package_uninstall_remove_systemd() {
 }
 
 package_uninstall_purge_deps_note() {
-    $PURGE_DEPS || return 0
+    [[ "${PURGE_DEPS}" == true ]] || return 0
     echo ""
     echo "  OS packages (kubectl, libvirt, etc.) were NOT removed automatically."
     echo "  Remove manually if needed, or use your distro package manager."
@@ -155,7 +158,7 @@ package_uninstall_main() {
     echo "► Stopping processes…"
     package_uninstall_stop_processes "${ROOT}"
 
-    if ! $KEEP_CONFIG; then
+    if [[ "${KEEP_CONFIG}" != true ]]; then
         echo "► Removing configuration…"
         package_uninstall_remove_local_configs "${ROOT}"
         package_uninstall_remove_system_paths
@@ -166,7 +169,7 @@ package_uninstall_main() {
 
     package_uninstall_purge_deps_note "${ROOT}"
 
-    if $REMOVE_DIR; then
+    if [[ "${REMOVE_DIR}" == true ]]; then
         package_uninstall_confirm "Delete entire bundle directory ${ROOT}?" || exit 0
         package_uninstall_remove_bundle_dir "${ROOT}"
         echo ""
@@ -181,4 +184,5 @@ package_uninstall_main() {
     echo "    ./uninstall.sh --yes --remove-dir"
     echo "  Or: cd .. && rm -rf $(basename "${ROOT}")"
     echo "══════════════════════════════════════════════════════════"
+    exit 0
 }
