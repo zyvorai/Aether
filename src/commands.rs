@@ -1012,9 +1012,31 @@ pub(crate) async fn list_backups_command() -> Result<()> {
 pub(crate) async fn cost_command(spec_path: &PathBuf, provider: &str) -> Result<()> {
     use aether::cost::{estimate_cost, CloudProvider, CostComparison};
 
-    output::section_with_icon("💰", "Cost Estimation");
-
     let workload = Workload::from_file(spec_path)?;
+
+    if output::is_json() {
+        if provider == "all" {
+            let comparison = CostComparison::for_workload(&workload)?;
+            println!("{}", serde_json::to_string_pretty(&comparison)?);
+        } else {
+            let cloud_provider: CloudProvider = provider.parse()?;
+            let estimate = estimate_cost(&workload, cloud_provider)?;
+            let val = serde_json::json!({
+                "workload": workload.metadata.name,
+                "resources": {
+                    "cpu": workload.requirements.cpu,
+                    "memory": workload.requirements.memory,
+                    "storage": workload.requirements.storage,
+                },
+                "provider": provider,
+                "estimate": estimate,
+            });
+            println!("{}", serde_json::to_string_pretty(&val)?);
+        }
+        return Ok(());
+    }
+
+    output::section_with_icon("💰", "Cost Estimation");
 
     if provider == "all" {
         // Show comparison across all providers
@@ -3263,6 +3285,50 @@ pub(crate) async fn port_forward_command(name: &str, ports: &str, timeout: u64) 
     Ok(())
 }
 
+// ─── cp: copy files to/from a workload pod ───────────────────────────
+pub(crate) async fn cp_command(name: &str, src: &str, dest: &str, timeout: u64) -> Result<()> {
+    let (_state, ws, _rt) = load_state_and_runtime(name).await?;
+
+    output::header("📋", &format!("Copy files for {}", name));
+
+    match ws.runtime {
+        RuntimeKind::Podman | RuntimeKind::Docker => {
+            let bin = if ws.runtime == RuntimeKind::Docker {
+                "docker"
+            } else {
+                "podman"
+            };
+            let mut cmd = std::process::Command::new(bin);
+            cmd.args(["cp", src, dest]);
+            run_with_timeout(cmd, &format!("{} cp", bin), timeout).await?;
+        }
+        RuntimeKind::Kubernetes | RuntimeKind::KubeVirt => {
+            let pod = ws.instance.name.clone();
+            let src_arg = if src.starts_with("pod:") {
+                format!("{}/{}", pod, &src[4..])
+            } else {
+                src.to_string()
+            };
+            let dest_arg = if dest.starts_with("pod:") {
+                format!("{}/{}", pod, &dest[4..])
+            } else {
+                dest.to_string()
+            };
+            let mut cmd = std::process::Command::new("kubectl");
+            cmd.args(["cp", &src_arg, &dest_arg]);
+            run_with_timeout(cmd, "kubectl cp", timeout).await?;
+        }
+        RuntimeKind::Metal3 => {
+            anyhow::bail!(
+                "Copy is not supported for Metal3 bare-metal hosts.\n\
+                 Hint: Use scp or rsync to transfer files to the host."
+            );
+        }
+    }
+    output::success("Copy completed");
+    Ok(())
+}
+
 // ─── watch: file-watch and auto-redeploy ─────────────────────────────
 pub(crate) async fn watch_command(spec_path: &PathBuf, runtime: Option<String>) -> Result<()> {
     use std::time::{Instant, SystemTime};
@@ -4068,6 +4134,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+        kubernetes: None,
         }
     }
 
@@ -4152,6 +4219,16 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = write_valid_spec(dir.path());
         let result = cost_command(&path, "gcp").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_cost_command_json_output() {
+        output::set_json(true);
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_valid_spec(dir.path());
+        let result = cost_command(&path, "aws").await;
+        output::set_json(false);
         assert!(result.is_ok());
     }
 

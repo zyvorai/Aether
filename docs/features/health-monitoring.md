@@ -485,8 +485,8 @@ Each watch cycle collects the following metrics for evaluation:
 | `DriftDetected` | Configuration drift is found on any workload |
 | `PolicyViolation` | Any active policy violation exists |
 | `SecretExpiring(days)` | Any secret expires within the specified number of days |
-| `ErrorRateAbove(rate)` | (Reserved for future use) |
-| `CostExceeds(amount)` | (Reserved for future use) |
+| `ErrorRateAbove(rate)` | Fleet or workload health failure rate exceeds `rate` (0.0–1.0) |
+| `CostExceeds(amount)` | Monthly priced cost for fleet or a workload exceeds `amount` (USD) |
 
 ### Cooldown
 

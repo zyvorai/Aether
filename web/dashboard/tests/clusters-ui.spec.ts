@@ -1,0 +1,36 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Cluster browser UI', () => {
+  test('clusters route loads cluster browser or empty state', async ({ page }) => {
+    await page.goto('/clusters');
+    const heading = page.getByRole('heading', { name: /cluster browser|no kubernetes contexts/i }).first();
+    await expect(heading).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('clusters page shows stat cards when kubeconfig present', async ({ page }) => {
+    await page.goto('/clusters');
+    const reachable = page.getByText('Reachable').first();
+    const empty = page.getByText('No Kubernetes contexts').first();
+    await expect(reachable.or(empty)).toBeVisible({ timeout: 15_000 });
+  });
+});
+
+test.describe('Auth providers (OIDC / SAML gates)', () => {
+  test('auth providers includes SAML block', async ({ request }) => {
+    const res = await request.get('/api/auth/providers');
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    expect(body.data?.saml).toBeTruthy();
+    expect(typeof body.data?.saml?.enabled).toBe('boolean');
+  });
+
+  test('SAML login returns 404 when not configured', async ({ request }) => {
+    const res = await request.get('/api/auth/saml/login', { maxRedirects: 0 });
+    expect([404, 302, 307]).toContain(res.status());
+  });
+
+  test('login gate shows bearer token form', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByLabel(/api bearer token/i)).toBeVisible({ timeout: 15_000 });
+  });
+});

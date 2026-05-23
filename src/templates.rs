@@ -214,6 +214,7 @@ fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<Ru
         mesh: None,
         intent: None,
         schedule: None,
+    kubernetes: None,
     }
 }
 
@@ -252,6 +253,7 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
             initial_delay_seconds: 5,
             period_seconds: 5,
         }),
+        startup: None,
     });
 
     let host = params.host.clone().unwrap_or_else(|| {
@@ -325,6 +327,7 @@ fn generate_rest_api(params: &TemplateParams) -> Workload {
             initial_delay_seconds: 5,
             period_seconds: 5,
         }),
+        startup: None,
     });
 
     let replicas = params.replicas.unwrap_or(2);
@@ -379,6 +382,7 @@ fn generate_database(params: &TemplateParams) -> Workload {
             initial_delay_seconds: 15,
             period_seconds: 5,
         }),
+    startup: None,
     });
 
     w
@@ -414,6 +418,7 @@ fn generate_cache(params: &TemplateParams) -> Workload {
             initial_delay_seconds: 5,
             period_seconds: 5,
         }),
+    startup: None,
     });
 
     w
@@ -523,6 +528,7 @@ fn generate_microservice(params: &TemplateParams) -> Workload {
             initial_delay_seconds: 3,
             period_seconds: 5,
         }),
+        startup: None,
     });
 
     w

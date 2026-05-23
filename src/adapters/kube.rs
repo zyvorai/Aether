@@ -1,22 +1,20 @@
 //! Kubernetes runtime adapter
 
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
-use crate::spec::{AccessMode, Workload};
+use crate::spec::{AccessMode, K8sWorkloadKind, Workload};
 use async_trait::async_trait;
 use k8s_openapi::api::autoscaling::v2::{
     HorizontalPodAutoscaler, HorizontalPodAutoscalerSpec, MetricIdentifier, MetricSpec,
     MetricTarget, PodsMetricSource, ResourceMetricSource,
 };
-use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
-use k8s_openapi::api::batch::v1::{
-    CronJob, CronJobSpec, JobSpec, JobTemplateSpec,
-};
+use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, StatefulSet};
+use k8s_openapi::api::batch::v1::{CronJob, Job};
 use k8s_openapi::api::core::v1::{
-    ConfigMap, Container, ContainerPort, EnvFromSource as K8sEnvFromSource, HTTPGetAction,
-    PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, PodSpec, Probe,
-    ResourceRequirements as K8sResourceRequirements, Secret, Service, ServicePort, ServiceSpec,
-    VolumeResourceRequirements, ConfigMapEnvSource, SecretEnvSource,
+    ConfigMap, PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, Secret, Service,
+    ResourceRequirements as K8sResourceRequirements, ServicePort, ServiceSpec,
+    VolumeResourceRequirements,
 };
+use k8s_openapi::api::policy::v1::PodDisruptionBudget;
 use k8s_openapi::api::networking::v1::{
     HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
     IngressServiceBackend, IngressSpec, IngressTLS, ServiceBackendPort,
@@ -28,7 +26,9 @@ use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use kube::{
     api::{Api, DeleteParams, ListParams, LogParams, PostParams},
-    Client,
+    core::DynamicObject,
+    discovery::ApiResource,
+    Client, ResourceExt,
 };
 use std::collections::BTreeMap;
 
@@ -73,6 +73,53 @@ impl KubernetesRuntime {
                 "cronjob" => {
                     let api: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "statefulset" => {
+                    let api: Api<StatefulSet> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "daemonset" => {
+                    let api: Api<DaemonSet> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "job" => {
+                    let api: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "pdb" => {
+                    let api: Api<PodDisruptionBudget> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "httproute" => {
+                    delete_dynamic_resource(
+                        &self.client,
+                        &self.namespace,
+                        name,
+                        http_route_api_resource(),
+                    )
+                    .await;
+                    Ok(())
+                }
+                "vpa" => {
+                    delete_dynamic_resource(
+                        &self.client,
+                        &self.namespace,
+                        name,
+                        vpa_api_resource(),
+                    )
+                    .await;
+                    Ok(())
+                }
+                "keda" => {
+                    delete_dynamic_resource(
+                        &self.client,
+                        &self.namespace,
+                        name,
+                        keda_api_resource(),
+                    )
+                    .await;
+                    Ok(())
                 }
                 "networkpolicy" => {
                     let api: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -210,6 +257,7 @@ fn sanitize_volume_name(name: &str) -> String {
 ///
 /// Supports burstable QoS: when `cpu_request`/`memory_request` are set and
 /// differ from the limits, Kubernetes assigns the Burstable QoS class.
+#[allow(dead_code)]
 fn build_resource_requirements(spec: &Workload) -> K8sResourceRequirements {
     let mut limits = BTreeMap::new();
     let mut requests = BTreeMap::new();
@@ -240,264 +288,7 @@ fn build_resource_requirements(spec: &Workload) -> K8sResourceRequirements {
 
 /// Build a Deployment manifest from workload spec.
 fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) -> Deployment {
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "aether".to_string());
-
-    // Add user labels
-    for (k, v) in &spec.metadata.labels {
-        labels.insert(k.clone(), v.clone());
-    }
-
-    // Container ports
-    let ports: Vec<ContainerPort> = spec
-        .network
-        .ports
-        .iter()
-        .map(|p| ContainerPort {
-            container_port: p.container_port as i32,
-            protocol: Some(p.protocol.clone()),
-            ..Default::default()
-        })
-        .collect();
-
-    let resources = build_resource_requirements(spec);
-
-    // Health probes
-    let liveness_probe = spec.health.as_ref().and_then(|h| {
-        h.liveness.as_ref().map(|probe| {
-            let http_get = match &probe.probe_type {
-                crate::spec::ProbeType::HttpGet { path, port } => Some(HTTPGetAction {
-                    path: Some(path.clone()),
-                    port: IntOrString::Int(*port as i32),
-                    ..Default::default()
-                }),
-                _ => None,
-            };
-
-            Probe {
-                http_get,
-                initial_delay_seconds: Some(probe.initial_delay_seconds as i32),
-                period_seconds: Some(probe.period_seconds as i32),
-                ..Default::default()
-            }
-        })
-    });
-
-    let readiness_probe = spec.health.as_ref().and_then(|h| {
-        h.readiness.as_ref().map(|probe| {
-            let http_get = match &probe.probe_type {
-                crate::spec::ProbeType::HttpGet { path, port } => Some(HTTPGetAction {
-                    path: Some(path.clone()),
-                    port: IntOrString::Int(*port as i32),
-                    ..Default::default()
-                }),
-                _ => None,
-            };
-
-            Probe {
-                http_get,
-                initial_delay_seconds: Some(probe.initial_delay_seconds as i32),
-                period_seconds: Some(probe.period_seconds as i32),
-                ..Default::default()
-            }
-        })
-    });
-
-    // Environment variables from ConfigMaps and Secrets
-    let env_from: Vec<K8sEnvFromSource> = spec
-        .config
-        .as_ref()
-        .map(|c| {
-            c.env_from
-                .iter()
-                .map(|e| match e.source_type {
-                    crate::spec::EnvSourceType::ConfigMap => K8sEnvFromSource {
-                        config_map_ref: Some(ConfigMapEnvSource {
-                            name: e.name.clone(),
-                            ..Default::default()
-                        }),
-                        ..Default::default()
-                    },
-                    crate::spec::EnvSourceType::Secret => K8sEnvFromSource {
-                        secret_ref: Some(SecretEnvSource {
-                            name: e.name.clone(),
-                            ..Default::default()
-                        }),
-                        ..Default::default()
-                    },
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-
-    // Inline environment variables from config maps (e.g. compose env injection)
-    let inline_env: Vec<k8s_openapi::api::core::v1::EnvVar> = spec
-        .config
-        .as_ref()
-        .map(|c| {
-            c.config_maps
-                .iter()
-                .flat_map(|cm| {
-                    cm.data.iter().map(|(k, v)| k8s_openapi::api::core::v1::EnvVar {
-                        name: k.clone(),
-                        value: Some(v.clone()),
-                        ..Default::default()
-                    })
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-
-    // Volume mounts for ConfigMaps, Secrets, and PVCs
-    let mut volumes: Vec<k8s_openapi::api::core::v1::Volume> = Vec::new();
-    let mut volume_mounts: Vec<k8s_openapi::api::core::v1::VolumeMount> = Vec::new();
-
-    if let Some(config) = &spec.config {
-        for cm in &config.config_maps {
-            if let Some(mount_path) = &cm.mount_path {
-                let vol_name = sanitize_volume_name(&format!("cm-{}", cm.name));
-                volumes.push(k8s_openapi::api::core::v1::Volume {
-                    name: vol_name.clone(),
-                    config_map: Some(k8s_openapi::api::core::v1::ConfigMapVolumeSource {
-                        name: cm.name.clone(),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                });
-                volume_mounts.push(k8s_openapi::api::core::v1::VolumeMount {
-                    name: vol_name,
-                    mount_path: mount_path.clone(),
-                    read_only: Some(true),
-                    ..Default::default()
-                });
-            }
-        }
-        for secret in &config.secrets {
-            if let Some(mount_path) = &secret.mount_path {
-                let vol_name = sanitize_volume_name(&format!("secret-{}", secret.name));
-                volumes.push(k8s_openapi::api::core::v1::Volume {
-                    name: vol_name.clone(),
-                    secret: Some(k8s_openapi::api::core::v1::SecretVolumeSource {
-                        secret_name: Some(secret.name.clone()),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                });
-                volume_mounts.push(k8s_openapi::api::core::v1::VolumeMount {
-                    name: vol_name,
-                    mount_path: mount_path.clone(),
-                    read_only: Some(true),
-                    ..Default::default()
-                });
-            }
-        }
-    }
-
-    // Mount PVC when persistence is enabled
-    if spec.persistence.enabled {
-        let vol_name = format!("{}-storage", spec.metadata.name);
-        volumes.push(k8s_openapi::api::core::v1::Volume {
-            name: vol_name.clone(),
-            persistent_volume_claim: Some(
-                k8s_openapi::api::core::v1::PersistentVolumeClaimVolumeSource {
-                    claim_name: format!("{}-pvc", spec.metadata.name),
-                    read_only: Some(false),
-                },
-            ),
-            ..Default::default()
-        });
-        volume_mounts.push(k8s_openapi::api::core::v1::VolumeMount {
-            name: vol_name,
-            mount_path: "/data".to_string(),
-            ..Default::default()
-        });
-    }
-
-    // Container spec
-    let container = Container {
-        name: spec.metadata.name.clone(),
-        image: Some(image.full_name()),
-        ports: Some(ports),
-        resources: Some(resources),
-        liveness_probe,
-        readiness_probe,
-        env: if inline_env.is_empty() { None } else { Some(inline_env) },
-        env_from: if env_from.is_empty() {
-            None
-        } else {
-            Some(env_from)
-        },
-        volume_mounts: if volume_mounts.is_empty() { None } else { Some(volume_mounts) },
-        ..Default::default()
-    };
-
-    // Determine replica count: use scaling min_replicas if configured, otherwise 1
-    let replicas = spec
-        .scaling
-        .as_ref()
-        .filter(|s| s.enabled)
-        .map(|s| s.min_replicas as i32)
-        .unwrap_or(1);
-
-    let mut match_labels = BTreeMap::new();
-    match_labels.insert("app".to_string(), spec.metadata.name.clone());
-    match_labels.insert("managed-by".to_string(), "aether".to_string());
-
-    // Build pod template annotations from workload metadata + mesh config
-    let mut pod_annotations: BTreeMap<String, String> = spec.metadata.annotations.clone().into_iter().collect();
-
-    if let Some(mesh) = &spec.mesh {
-        match mesh.provider.as_str() {
-            "istio" => {
-                pod_annotations.insert("sidecar.istio.io/inject".to_string(), mesh.inject.to_string());
-            }
-            "linkerd" => {
-                pod_annotations.insert("linkerd.io/inject".to_string(), if mesh.inject { "enabled" } else { "disabled" }.to_string());
-            }
-            "consul" => {
-                pod_annotations.insert("consul.hashicorp.com/connect-inject".to_string(), mesh.inject.to_string());
-            }
-            _ => {
-                tracing::warn!("Unknown mesh provider '{}', adding custom annotations only", mesh.provider);
-            }
-        }
-        // Add any custom mesh annotations
-        for (k, v) in &mesh.annotations {
-            pod_annotations.insert(k.clone(), v.clone());
-        }
-    }
-
-    Deployment {
-        metadata: ObjectMeta {
-            name: Some(spec.metadata.name.clone()),
-            namespace: Some(namespace.to_string()),
-            labels: Some(labels.clone()),
-            annotations: Some(spec.metadata.annotations.clone().into_iter().collect()),
-            ..Default::default()
-        },
-        spec: Some(DeploymentSpec {
-            replicas: Some(replicas),
-            selector: LabelSelector {
-                match_labels: Some(match_labels),
-                ..Default::default()
-            },
-            template: k8s_openapi::api::core::v1::PodTemplateSpec {
-                metadata: Some(ObjectMeta {
-                    labels: Some(labels),
-                    annotations: Some(pod_annotations),
-                    ..Default::default()
-                }),
-                spec: Some(PodSpec {
-                    containers: vec![container],
-                    volumes: if volumes.is_empty() { None } else { Some(volumes) },
-                    ..Default::default()
-                }),
-            },
-            ..Default::default()
-        }),
-        ..Default::default()
-    }
+    crate::adapters::kube_manifest::build_deployment_manifest_v2(namespace, image, spec)
 }
 
 /// Build a Service manifest from workload spec.
@@ -958,106 +749,89 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
 }
 
 /// Build a CronJob manifest from workload spec.
-/// Used when `spec.schedule` is set, creating a Kubernetes CronJob instead of a Deployment.
 fn build_cronjob_manifest(namespace: &str, image: &Image, spec: &Workload) -> CronJob {
-    let schedule_spec = spec.schedule.as_ref().expect("schedule must be set for CronJob");
+    crate::adapters::kube_manifest::build_cronjob_manifest_v2(namespace, image, spec)
+}
 
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "aether".to_string());
-
-    for (k, v) in &spec.metadata.labels {
-        labels.insert(k.clone(), v.clone());
+fn http_route_api_resource() -> ApiResource {
+    ApiResource {
+        group: "gateway.networking.k8s.io".into(),
+        version: "v1".into(),
+        api_version: "gateway.networking.k8s.io/v1".into(),
+        kind: "HTTPRoute".into(),
+        plural: "httproutes".into(),
     }
+}
 
-    // Container ports
-    let ports: Vec<ContainerPort> = spec
-        .network
-        .ports
-        .iter()
-        .map(|p| ContainerPort {
-            container_port: p.container_port as i32,
-            protocol: Some(p.protocol.clone()),
-            ..Default::default()
-        })
-        .collect();
+fn vpa_api_resource() -> ApiResource {
+    ApiResource {
+        group: "autoscaling.k8s.io".into(),
+        version: "v1".into(),
+        api_version: "autoscaling.k8s.io/v1".into(),
+        kind: "VerticalPodAutoscaler".into(),
+        plural: "verticalpodautoscalers".into(),
+    }
+}
 
-    let resources = build_resource_requirements(spec);
+fn keda_api_resource() -> ApiResource {
+    ApiResource {
+        group: "keda.sh".into(),
+        version: "v1alpha1".into(),
+        api_version: "keda.sh/v1alpha1".into(),
+        kind: "ScaledObject".into(),
+        plural: "scaledobjects".into(),
+    }
+}
 
-    // Environment variables from ConfigMaps
-    let inline_env: Vec<k8s_openapi::api::core::v1::EnvVar> = spec
-        .config
-        .as_ref()
-        .map(|c| {
-            c.config_maps
-                .iter()
-                .flat_map(|cm| {
-                    cm.data.iter().map(|(k, v)| k8s_openapi::api::core::v1::EnvVar {
-                        name: k.clone(),
-                        value: Some(v.clone()),
-                        ..Default::default()
-                    })
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+async fn create_dynamic_resource(
+    client: &Client,
+    namespace: &str,
+    manifest: serde_json::Value,
+    api_resource: ApiResource,
+) -> crate::Result<()> {
+    let resource: DynamicObject = serde_json::from_value(manifest)?;
+    let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
+    let name = resource.name_any();
+    match kube_with_timeout(
+        &format!("{} create", api_resource.kind),
+        api.create(&PostParams::default(), &resource),
+    )
+    .await
+    {
+        Ok(_) => {
+            tracing::info!("Created {}: {}", api_resource.kind, name);
+            Ok(())
+        }
+        Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+            tracing::info!("{} already exists: {}", api_resource.kind, name);
+            Ok(())
+        }
+        Err(e) => Err(e.into()),
+    }
+}
 
-    let restart_policy = match schedule_spec.restart_policy {
-        crate::spec::JobRestartPolicy::Never => "Never",
-        crate::spec::JobRestartPolicy::OnFailure => "OnFailure",
-    };
+async fn delete_dynamic_resource(
+    client: &Client,
+    namespace: &str,
+    name: &str,
+    api_resource: ApiResource,
+) {
+    let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
+    if let Err(e) = api.delete(name, &DeleteParams::default()).await {
+        tracing::debug!("{} deletion failed (may not exist): {}", api_resource.kind, e);
+    }
+}
 
-    let container = Container {
-        name: spec.metadata.name.clone(),
-        image: Some(image.full_name()),
-        ports: if ports.is_empty() { None } else { Some(ports) },
-        resources: Some(resources),
-        env: if inline_env.is_empty() { None } else { Some(inline_env) },
-        ..Default::default()
-    };
-
-    let concurrency_policy = match schedule_spec.concurrency_policy {
-        crate::spec::ConcurrencyPolicy::Allow => "Allow",
-        crate::spec::ConcurrencyPolicy::Forbid => "Forbid",
-        crate::spec::ConcurrencyPolicy::Replace => "Replace",
-    };
-
-    CronJob {
-        metadata: ObjectMeta {
-            name: Some(spec.metadata.name.clone()),
-            namespace: Some(namespace.to_string()),
-            labels: Some(labels.clone()),
-            annotations: Some(spec.metadata.annotations.clone().into_iter().collect()),
-            ..Default::default()
-        },
-        spec: Some(CronJobSpec {
-            schedule: schedule_spec.cron.clone(),
-            concurrency_policy: Some(concurrency_policy.to_string()),
-            job_template: JobTemplateSpec {
-                metadata: Some(ObjectMeta {
-                    labels: Some(labels.clone()),
-                    ..Default::default()
-                }),
-                spec: Some(JobSpec {
-                    backoff_limit: Some(schedule_spec.backoff_limit as i32),
-                    active_deadline_seconds: schedule_spec.active_deadline_seconds,
-                    template: k8s_openapi::api::core::v1::PodTemplateSpec {
-                        metadata: Some(ObjectMeta {
-                            labels: Some(labels),
-                            ..Default::default()
-                        }),
-                        spec: Some(PodSpec {
-                            containers: vec![container],
-                            restart_policy: Some(restart_policy.to_string()),
-                            ..Default::default()
-                        }),
-                    },
-                    ..Default::default()
-                }),
-            },
-            ..Default::default()
-        }),
-        ..Default::default()
+async fn create_hpa_if_needed(client: &Client, namespace: &str, spec: &Workload) {
+    if let Some(hpa) = build_hpa_manifest(namespace, spec) {
+        let hpas: Api<HorizontalPodAutoscaler> = Api::namespaced(client.clone(), namespace);
+        match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa)).await {
+            Ok(_) => tracing::info!("Created HPA: {}-hpa", spec.metadata.name),
+            Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                tracing::info!("HPA already exists: {}-hpa", spec.metadata.name)
+            }
+            Err(e) => tracing::warn!("HPA creation failed: {}", e),
+        }
     }
 }
 
@@ -1143,8 +917,9 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
-        // Create PVC if needed
-        if let Some(pvc) = build_pvc_manifest(&self.namespace, spec) {
+        // Create PVC if needed (Deployment/Job — StatefulSet uses volumeClaimTemplates)
+        if crate::adapters::kube_manifest::needs_standalone_pvc(spec) {
+            if let Some(pvc) = build_pvc_manifest(&self.namespace, spec) {
             let pvcs: Api<PersistentVolumeClaim> =
                 Api::namespaced(self.client.clone(), &self.namespace);
 
@@ -1153,12 +928,12 @@ impl Runtime for KubernetesRuntime {
                 Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("PVC already exists: {}-pvc", spec.metadata.name),
                 Err(e) => { tracing::error!("PVC creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
             }
+            }
         }
 
         // Create Service if needed
         if let Some(service) = build_service_manifest(&self.namespace, spec) {
             let services: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
-
             match kube_with_timeout("Service create", services.create(&PostParams::default(), &service)).await {
                 Ok(_) => { tracing::info!("Created Service: {}-service", spec.metadata.name); new_resources.push(("service", format!("{}-service", spec.metadata.name))); }
                 Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("Service already exists: {}-service", spec.metadata.name),
@@ -1169,7 +944,6 @@ impl Runtime for KubernetesRuntime {
         // Create Ingress if needed
         if let Some(ingress) = build_ingress_manifest(&self.namespace, spec) {
             let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
-
             match kube_with_timeout("Ingress create", ingresses.create(&PostParams::default(), &ingress)).await {
                 Ok(_) => { tracing::info!("Created Ingress: {}-ingress", spec.metadata.name); new_resources.push(("ingress", format!("{}-ingress", spec.metadata.name))); }
                 Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("Ingress already exists: {}-ingress", spec.metadata.name),
@@ -1181,7 +955,6 @@ impl Runtime for KubernetesRuntime {
         if let Some(netpol) = build_networkpolicy_manifest(&self.namespace, spec) {
             let netpols: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
             let netpol_name = format!("{}-netpol", spec.metadata.name);
-
             match kube_with_timeout("NetworkPolicy create", netpols.create(&PostParams::default(), &netpol)).await {
                 Ok(_) => { tracing::info!("Created NetworkPolicy: {}", netpol_name); new_resources.push(("networkpolicy", netpol_name)); }
                 Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("NetworkPolicy already exists: {}", netpol_name),
@@ -1189,74 +962,264 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
-        // Create CronJob or Deployment depending on schedule
-        let (resource_name, resource_uid) = if spec.schedule.is_some() {
-            // Scheduled workload → CronJob
-            let cronjob = build_cronjob_manifest(&self.namespace, image, spec);
-            let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
-
-            let created = match kube_with_timeout("CronJob create", cronjobs.create(&PostParams::default(), &cronjob)).await {
-                Ok(c) => c,
-                Err(e) => {
-                    tracing::error!("CronJob creation failed, cleaning up {} resources", new_resources.len());
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
+        // PodDisruptionBudget
+        if let Some(pdb) =
+            crate::adapters::kube_manifest::build_pdb_manifest(&self.namespace, spec)
+        {
+            let pdb_name = format!("{}-pdb", spec.metadata.name);
+            let pdbs: Api<PodDisruptionBudget> =
+                Api::namespaced(self.client.clone(), &self.namespace);
+            match kube_with_timeout("PDB create", pdbs.create(&PostParams::default(), &pdb)).await {
+                Ok(_) => {
+                    tracing::info!("Created PDB: {}", pdb_name);
+                    new_resources.push(("pdb", pdb_name));
                 }
-            };
-
-            let name = created.metadata.name.unwrap_or_else(|| spec.metadata.name.clone());
-            let uid = created.metadata.uid.unwrap_or_else(|| "unknown".to_string());
-            new_resources.push(("cronjob", name.clone()));
-            tracing::info!("Created CronJob: {}", name);
-            (name, uid)
-        } else {
-            // Long-running workload → Deployment
-            let deployment = build_deployment_manifest(&self.namespace, image, spec);
-            let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
-
-            let created = match kube_with_timeout("Deployment create", deployments.create(&PostParams::default(), &deployment)).await {
-                Ok(d) => d,
-                Err(e) => {
-                    tracing::error!("Deployment creation failed, cleaning up {} resources", new_resources.len());
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    tracing::info!("PDB already exists: {}", pdb_name);
                 }
-            };
-
-            let name = created.metadata.name.unwrap_or_else(|| spec.metadata.name.clone());
-            let uid = created.metadata.uid.unwrap_or_else(|| "unknown".to_string());
-            new_resources.push(("deployment", name.clone()));
-            tracing::info!("Created Deployment: {}", name);
-
-            // Create HPA if needed (non-critical, don't clean up on failure)
-            // HPA does not apply to CronJobs, so only create for Deployments
-            if let Some(hpa) = build_hpa_manifest(&self.namespace, spec) {
-                let hpas: Api<HorizontalPodAutoscaler> =
-                    Api::namespaced(self.client.clone(), &self.namespace);
-
-                match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa)).await {
-                    Ok(_) => tracing::info!("Created HPA: {}-hpa", spec.metadata.name),
-                    Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("HPA already exists: {}-hpa", spec.metadata.name),
-                    Err(e) => tracing::warn!("HPA creation failed: {}", e),
+                Err(e) => {
+                    tracing::warn!("PDB creation failed: {}", e);
                 }
             }
+        }
 
-            (name, uid)
+        // Create workload controller
+        let workload_kind = spec.resolved_k8s_workload_kind();
+        let (resource_name, resource_uid) = match workload_kind {
+            K8sWorkloadKind::CronJob => {
+                let cronjob = build_cronjob_manifest(&self.namespace, image, spec);
+                let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
+                let created = match kube_with_timeout(
+                    "CronJob create",
+                    cronjobs.create(&PostParams::default(), &cronjob),
+                )
+                .await
+                {
+                    Ok(c) => c,
+                    Err(e) => {
+                        tracing::error!(
+                            "CronJob creation failed, cleaning up {} resources",
+                            new_resources.len()
+                        );
+                        self.cleanup_resources(&new_resources).await;
+                        return Err(e);
+                    }
+                };
+                let name = created
+                    .metadata
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| spec.metadata.name.clone());
+                let uid = created
+                    .metadata
+                    .uid
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string());
+                new_resources.push(("cronjob", name.clone()));
+                tracing::info!("Created CronJob: {}", name);
+                (name, uid)
+            }
+            K8sWorkloadKind::Job => {
+                let job =
+                    crate::adapters::kube_manifest::build_job_manifest(&self.namespace, image, spec);
+                let jobs: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
+                let created = match kube_with_timeout(
+                    "Job create",
+                    jobs.create(&PostParams::default(), &job),
+                )
+                .await
+                {
+                    Ok(j) => j,
+                    Err(e) => {
+                        self.cleanup_resources(&new_resources).await;
+                        return Err(e);
+                    }
+                };
+                let name = created
+                    .metadata
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| spec.metadata.name.clone());
+                let uid = created
+                    .metadata
+                    .uid
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string());
+                new_resources.push(("job", name.clone()));
+                (name, uid)
+            }
+            K8sWorkloadKind::StatefulSet => {
+                let sts = crate::adapters::kube_manifest::build_statefulset_manifest(
+                    &self.namespace,
+                    image,
+                    spec,
+                );
+                let sets: Api<StatefulSet> = Api::namespaced(self.client.clone(), &self.namespace);
+                let created = match kube_with_timeout(
+                    "StatefulSet create",
+                    sets.create(&PostParams::default(), &sts),
+                )
+                .await
+                {
+                    Ok(s) => s,
+                    Err(e) => {
+                        self.cleanup_resources(&new_resources).await;
+                        return Err(e);
+                    }
+                };
+                let name = created
+                    .metadata
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| spec.metadata.name.clone());
+                let uid = created
+                    .metadata
+                    .uid
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string());
+                new_resources.push(("statefulset", name.clone()));
+                create_hpa_if_needed(&self.client, &self.namespace, spec).await;
+                (name, uid)
+            }
+            K8sWorkloadKind::DaemonSet => {
+                let ds = crate::adapters::kube_manifest::build_daemonset_manifest(
+                    &self.namespace,
+                    image,
+                    spec,
+                );
+                let sets: Api<DaemonSet> = Api::namespaced(self.client.clone(), &self.namespace);
+                let created = match kube_with_timeout(
+                    "DaemonSet create",
+                    sets.create(&PostParams::default(), &ds),
+                )
+                .await
+                {
+                    Ok(d) => d,
+                    Err(e) => {
+                        self.cleanup_resources(&new_resources).await;
+                        return Err(e);
+                    }
+                };
+                let name = created
+                    .metadata
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| spec.metadata.name.clone());
+                let uid = created
+                    .metadata
+                    .uid
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string());
+                new_resources.push(("daemonset", name.clone()));
+                (name, uid)
+            }
+            K8sWorkloadKind::Deployment => {
+                let deployment = build_deployment_manifest(&self.namespace, image, spec);
+                let deployments: Api<Deployment> =
+                    Api::namespaced(self.client.clone(), &self.namespace);
+                let created = match kube_with_timeout(
+                    "Deployment create",
+                    deployments.create(&PostParams::default(), &deployment),
+                )
+                .await
+                {
+                    Ok(d) => d,
+                    Err(e) => {
+                        tracing::error!(
+                            "Deployment creation failed, cleaning up {} resources",
+                            new_resources.len()
+                        );
+                        self.cleanup_resources(&new_resources).await;
+                        return Err(e);
+                    }
+                };
+                let name = created
+                    .metadata
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| spec.metadata.name.clone());
+                let uid = created
+                    .metadata
+                    .uid
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string());
+                new_resources.push(("deployment", name.clone()));
+                create_hpa_if_needed(&self.client, &self.namespace, spec).await;
+                (name, uid)
+            }
         };
 
-        Ok(Instance::new(resource_uid, resource_name, RuntimeKind::Kubernetes, image.full_name()))
+        if let Some(route) =
+            crate::adapters::kube_manifest::build_gateway_http_route_json(&self.namespace, spec)
+        {
+            if create_dynamic_resource(
+                &self.client,
+                &self.namespace,
+                route,
+                http_route_api_resource(),
+            )
+            .await
+            .is_ok()
+            {
+                new_resources.push(("httproute", format!("{}-route", spec.metadata.name)));
+            }
+        }
+
+        let vpa_target = match workload_kind {
+            K8sWorkloadKind::StatefulSet => "StatefulSet",
+            _ => "Deployment",
+        };
+        if let Some(vpa) =
+            crate::adapters::kube_manifest::build_vpa_json(&self.namespace, spec, vpa_target)
+        {
+            if create_dynamic_resource(&self.client, &self.namespace, vpa, vpa_api_resource())
+                .await
+                .is_ok()
+            {
+                new_resources.push(("vpa", format!("{}-vpa", spec.metadata.name)));
+            }
+        }
+
+        if matches!(workload_kind, K8sWorkloadKind::Deployment | K8sWorkloadKind::StatefulSet) {
+            if let Some(keda) =
+                crate::adapters::kube_manifest::build_keda_json(&self.namespace, spec)
+            {
+                if create_dynamic_resource(&self.client, &self.namespace, keda, keda_api_resource())
+                    .await
+                    .is_ok()
+                {
+                    new_resources.push(("keda", format!("{}-keda", spec.metadata.name)));
+                }
+            }
+        }
+
+        Ok(Instance::new(
+            resource_uid,
+            resource_name,
+            RuntimeKind::Kubernetes,
+            image.full_name(),
+        ))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
         validate_kube_name(&instance.name)?;
-        tracing::info!("Stopping (deleting) Deployment: {}", instance.name);
+        tracing::info!("Stopping workload: {}", instance.name);
+        let dp = graceful_delete_params();
 
         let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
-        let dp = DeleteParams {
-            grace_period_seconds: Some(30),
-            ..Default::default()
-        };
-        kube_with_timeout("Deployment delete", deployments.delete(&instance.name, &dp)).await?;
+        let _ = deployments.delete(&instance.name, &dp).await;
+
+        let sets: Api<StatefulSet> = Api::namespaced(self.client.clone(), &self.namespace);
+        let _ = sets.delete(&instance.name, &dp).await;
+
+        let daemon: Api<DaemonSet> = Api::namespaced(self.client.clone(), &self.namespace);
+        let _ = daemon.delete(&instance.name, &dp).await;
+
+        let jobs: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
+        let _ = jobs.delete(&instance.name, &DeleteParams::default()).await;
+
+        let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
+        kube_with_timeout("CronJob delete", cronjobs.delete(&instance.name, &DeleteParams::default())).await?;
 
         Ok(())
     }
@@ -1294,6 +1257,59 @@ impl Runtime for KubernetesRuntime {
         match hpas.delete(&hpa_name, &DeleteParams::default()).await {
             Ok(_) => tracing::info!("Deleted HPA: {}", hpa_name),
             Err(e) => tracing::debug!("HPA deletion failed (may not exist): {}", e),
+        }
+
+        // Delete dynamic autoscaling / routing CRs
+        delete_dynamic_resource(
+            &self.client,
+            &self.namespace,
+            &format!("{}-keda", instance.name),
+            keda_api_resource(),
+        )
+        .await;
+        delete_dynamic_resource(
+            &self.client,
+            &self.namespace,
+            &format!("{}-vpa", instance.name),
+            vpa_api_resource(),
+        )
+        .await;
+        delete_dynamic_resource(
+            &self.client,
+            &self.namespace,
+            &format!("{}-route", instance.name),
+            http_route_api_resource(),
+        )
+        .await;
+
+        // Delete PDB
+        let pdbs: Api<PodDisruptionBudget> =
+            Api::namespaced(self.client.clone(), &self.namespace);
+        let pdb_name = format!("{}-pdb", instance.name);
+        match pdbs.delete(&pdb_name, &DeleteParams::default()).await {
+            Ok(_) => tracing::info!("Deleted PDB: {}", pdb_name),
+            Err(e) => tracing::debug!("PDB deletion failed (may not exist): {}", e),
+        }
+
+        // Delete Job
+        let jobs: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
+        match jobs.delete(&instance.name, &DeleteParams::default()).await {
+            Ok(_) => tracing::info!("Deleted Job: {}", instance.name),
+            Err(e) => tracing::debug!("Job deletion failed (may not exist): {}", e),
+        }
+
+        // Delete StatefulSet
+        let sets: Api<StatefulSet> = Api::namespaced(self.client.clone(), &self.namespace);
+        match sets.delete(&instance.name, &graceful_delete_params()).await {
+            Ok(_) => tracing::info!("Deleted StatefulSet: {}", instance.name),
+            Err(e) => tracing::debug!("StatefulSet deletion failed (may not exist): {}", e),
+        }
+
+        // Delete DaemonSet
+        let daemon: Api<DaemonSet> = Api::namespaced(self.client.clone(), &self.namespace);
+        match daemon.delete(&instance.name, &graceful_delete_params()).await {
+            Ok(_) => tracing::info!("Deleted DaemonSet: {}", instance.name),
+            Err(e) => tracing::debug!("DaemonSet deletion failed (may not exist): {}", e),
         }
 
         // Delete Deployment (cascades to ReplicaSet and Pods)
@@ -1584,6 +1600,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         }
     }
 
@@ -1823,6 +1840,7 @@ mod tests {
                 period_seconds: 20,
             }),
             readiness: None,
+            startup: None,
         });
         let image = create_test_image();
 
@@ -1852,6 +1870,7 @@ mod tests {
                 initial_delay_seconds: 5,
                 period_seconds: 10,
             }),
+            startup: None,
         });
         let image = create_test_image();
 
@@ -1890,6 +1909,7 @@ mod tests {
                 initial_delay_seconds: 5,
                 period_seconds: 5,
             }),
+            startup: None,
         });
         let image = create_test_image();
 
@@ -1925,6 +1945,7 @@ mod tests {
                 period_seconds: 10,
             }),
             readiness: None,
+            startup: None,
         });
         let image = create_test_image();
 
@@ -1932,10 +1953,9 @@ mod tests {
         let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
-        // TcpSocket probe type falls into the _ => None arm for http_get
         assert!(probe.http_get.is_none());
-        assert_eq!(probe.initial_delay_seconds, Some(10));
-        assert_eq!(probe.period_seconds, Some(10));
+        assert!(probe.tcp_socket.is_some());
+        assert_eq!(probe.tcp_socket.as_ref().unwrap().port, IntOrString::Int(3306));
     }
 
     #[test]
@@ -1951,6 +1971,7 @@ mod tests {
                 period_seconds: 5,
             }),
             readiness: None,
+            startup: None,
         });
         let image = create_test_image();
 
@@ -1959,7 +1980,7 @@ mod tests {
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.http_get.is_none());
-        assert_eq!(probe.initial_delay_seconds, Some(5));
+        assert!(probe.exec.is_some());
     }
 
     // -----------------------------------------------------------------------
@@ -2914,6 +2935,7 @@ mod tests {
                 initial_delay_seconds: 5,
                 period_seconds: 5,
             }),
+            startup: None,
         });
 
         // Set env from

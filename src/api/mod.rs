@@ -149,6 +149,10 @@ async fn auth_middleware(
         || path == "/api/auth/oidc/login"
         || path == "/api/auth/oidc/callback"
         || path == "/api/auth/oidc/logout"
+        || path == "/api/auth/saml/login"
+        || path == "/api/auth/saml/acs"
+        || path == "/api/auth/saml/logout"
+        || path.starts_with("/api/mock-idp/")
         || (*req.method() == Method::GET && !path.starts_with("/api"));
     if public_unauthenticated {
         return Ok(next.run(req).await);
@@ -156,6 +160,8 @@ async fn auth_middleware(
 
     let legacy_key = std::env::var("AETHER_API_KEY").ok().filter(|k| !k.is_empty());
     let oidc_enabled = app_state.oidc.is_some();
+    let saml_enabled = app_state.saml.is_some();
+    let session_auth_enabled = oidc_enabled || saml_enabled;
 
     // Extract Bearer token before acquiring lock
     let header_token = req
@@ -188,7 +194,7 @@ async fn auth_middleware(
     let (has_rbac_keys, verified) = rbac_result;
 
     // If no auth configured at all, allow everything (local development)
-    if legacy_key.is_none() && !has_rbac_keys && !oidc_enabled {
+    if legacy_key.is_none() && !has_rbac_keys && !session_auth_enabled {
         ensure_mutation_confirm(req.method(), path, req.headers())?;
         return Ok(next.run(req).await);
     }
@@ -214,9 +220,18 @@ async fn auth_middleware(
         return Err(StatusCode::UNAUTHORIZED);
     }
 
-    if oidc_enabled {
+    if session_auth_enabled {
         if let Some(oidc) = app_state.oidc.as_ref() {
             if let Some((role, _username)) = oidc.verify_session_cookie(req.headers()) {
+                if !crate::rbac::check_permission(&role, &http_method, path) {
+                    return Err(StatusCode::FORBIDDEN);
+                }
+                ensure_mutation_confirm(req.method(), path, req.headers())?;
+                return Ok(next.run(req).await);
+            }
+        }
+        if let Some(saml) = app_state.saml.as_ref() {
+            if let Some((role, _username)) = saml.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
@@ -365,10 +380,16 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .unwrap_or_default();
 
     let tls_enabled = config.tls_cert.is_some() && config.tls_key.is_some();
+    let scheme = if tls_enabled { "https" } else { "http" };
+    let base_url = format!("{}://{}:{}", scheme, config.host, config.port);
+    if crate::mock_idp::enabled() {
+        crate::mock_idp::apply_env_defaults(&base_url);
+    }
 
     let redis_url = std::env::var("AETHER_REDIS_URL").ok();
     let shared_cache = crate::ha::SharedCache::connect(redis_url.as_deref()).await?;
     let oidc = crate::oidc::OidcRuntime::new(shared_cache.clone())?;
+    let saml = crate::saml::SamlRuntime::new(shared_cache.clone())?;
 
     let app_state = AppState {
         state: Arc::new(RwLock::new(state_store)),
@@ -377,6 +398,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         port_forwards: Arc::new(Mutex::new(std::collections::HashMap::new())),
         shared_cache,
         oidc,
+        saml,
         tls_active: tls_enabled,
         state_path,
         workload_state_pg: workload_state_pg.clone(),
@@ -417,7 +439,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .allow_origin(Any);
 
     // Build router — dashboard assets are embedded in the binary via include_str!
-    let app = Router::new()
+    let mut app = Router::new()
         .route("/", get(serve_dashboard))
         .route("/assets/aether-dashboard.css", get(serve_dashboard_css))
         .route("/assets/aether-dashboard.js", get(serve_dashboard_js))
@@ -428,6 +450,9 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/auth/oidc/login", get(api_oidc_login))
         .route("/api/auth/oidc/callback", get(api_oidc_callback))
         .route("/api/auth/oidc/logout", get(api_oidc_logout))
+        .route("/api/auth/saml/login", get(api_saml_login))
+        .route("/api/auth/saml/acs", post(api_saml_acs))
+        .route("/api/auth/saml/logout", get(api_saml_logout))
         .route("/api/system/ready", get(api_system_ready))
         .route("/api/workloads", get(list_workloads))
         .route("/api/workloads", post(create_workload))
@@ -524,7 +549,21 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/openapi.json", get(serve_openapi))
         .route("/api/rbac/keys", get(rbac_list_keys))
         .route("/api/rbac/keys", post(rbac_create_key))
-        .route("/api/rbac/keys/revoke", post(rbac_revoke_key))
+        .route("/api/rbac/keys/revoke", post(rbac_revoke_key));
+
+    if crate::mock_idp::enabled() {
+        app = app
+            .route("/api/mock-idp/saml/sso", get(crate::mock_idp::saml_sso))
+            .route(
+                "/api/mock-idp/oidc/.well-known/openid-configuration",
+                get(crate::mock_idp::oidc_discovery),
+            )
+            .route("/api/mock-idp/oidc/authorize", get(crate::mock_idp::oidc_authorize))
+            .route("/api/mock-idp/oidc/token", post(crate::mock_idp::oidc_token))
+            .route("/api/mock-idp/oidc/jwks", get(crate::mock_idp::oidc_jwks));
+    }
+
+    let app = app
         .fallback(get(serve_dashboard_spa_fallback))
         .layer(
             ServiceBuilder::new()
