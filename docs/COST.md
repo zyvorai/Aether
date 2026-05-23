@@ -64,6 +64,25 @@ aether -s workload.yaml cost -p digitalocean
 aether -s workload.yaml cost -p linode
 ```
 
+### JSON output
+
+```bash
+aether --output json -s workload.yaml cost
+aether --output json -s workload.yaml cost --provider aws
+```
+
+### Live pricing overlay
+
+Publish pricing JSON (from `scripts/fetch-pricing.sh`) and point the API or CLI at it:
+
+```bash
+./scripts/fetch-pricing.sh > /tmp/pricing.json
+export AETHER_PRICING_URL=http://127.0.0.1:8080/pricing.json   # or file:// when supported
+aether -s workload.yaml cost
+```
+
+See `GET /api/cost/pricing` for the active source (`baseline` vs `live`) and regional multiplier.
+
 ## Pricing Models
 
 ### AWS

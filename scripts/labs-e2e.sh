@@ -37,4 +37,9 @@ fi
 run_lab "metal3" "examples/labs/metal3/workload.yaml" "metal"
 run_lab "kubevirt" "examples/labs/kubevirt/workload.yaml" "kubevirt"
 
+if [[ -x scripts/k8s-labs-e2e.sh ]] || [[ -f scripts/k8s-labs-e2e.sh ]]; then
+  chmod +x scripts/k8s-labs-e2e.sh
+  AETHER_BIN="$AETHER" scripts/k8s-labs-e2e.sh
+fi
+
 echo "Labs e2e finished."

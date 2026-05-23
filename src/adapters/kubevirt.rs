@@ -526,6 +526,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+        kubernetes: None,
         }
     }
 

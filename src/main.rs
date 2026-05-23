@@ -205,6 +205,9 @@ async fn main() -> Result<()> {
         Commands::PortForward { name, ports, timeout } => {
             commands::port_forward_command(&name, &ports, timeout).await
         }
+        Commands::Cp { name, src, dest, timeout } => {
+            commands::cp_command(&name, &src, &dest, timeout).await
+        }
         Commands::Watch { runtime } => {
             commands::watch_command(&cli.spec, runtime).await
         }

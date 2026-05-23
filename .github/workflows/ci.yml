@@ -54,7 +54,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Validate example specs
         run: |
-          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/labs/metal3/workload.yaml examples/labs/kubevirt/workload.yaml; do
+          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/labs/metal3/workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
             cargo run --quiet -- --spec "$f" validate
           done
       - name: Run tests
@@ -114,6 +114,28 @@ jobs:
       - name: Metal3 / KubeVirt labs
         run: chmod +x scripts/labs-e2e.sh && AETHER_BIN=./target/release/aether scripts/labs-e2e.sh
 
+  k8s-live-e2e:
+    name: Kubernetes live E2E (kind)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build aether
+        run: cargo build --release
+      - name: Create kind cluster and run live lab
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.26.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+          chmod +x scripts/k8s-labs-e2e.sh
+          AETHER_BIN=./target/release/aether \
+            AETHER_LABS_LIVE=1 \
+            AETHER_K8S_KIND_SETUP=1 \
+            scripts/k8s-labs-e2e.sh
+
   dashboard-e2e:
     name: Dashboard E2E
     runs-on: ubuntu-latest
@@ -148,8 +170,23 @@ jobs:
           AETHER_E2E_BASE_URL: http://127.0.0.1:5090
         run: |
           ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          SERVER_PID=$!
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           npm run test:e2e
+          kill $SERVER_PID || true
+      - name: Run Playwright mock IdP auth
+        working-directory: web/dashboard
+        env:
+          AETHER_E2E_SKIP_SERVER: "1"
+          AETHER_E2E_BASE_URL: http://127.0.0.1:5090
+          AETHER_MOCK_IDP: "1"
+        run: |
+          AETHER_MOCK_IDP=1 AETHER_SESSION_SECRET=mock-idp-dev-session-key-32chars \
+            ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          SERVER_PID=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
+          npm run test:e2e -- tests/mock-idp-auth.spec.ts
+          kill $SERVER_PID || true
 
   coverage:
     name: Code Coverage

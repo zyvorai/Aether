@@ -37,11 +37,14 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [oidcEnabled, setOidcEnabled] = useState(false);
+  const [samlEnabled, setSamlEnabled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void apiFetchAuthProviders().then((p) => {
-      if (!cancelled && p?.oidc?.enabled) setOidcEnabled(true);
+      if (cancelled) return;
+      if (p?.oidc?.enabled) setOidcEnabled(true);
+      if (p?.saml?.enabled) setSamlEnabled(true);
     });
     return () => {
       cancelled = true;
@@ -51,6 +54,11 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
   const startOidc = useCallback(() => {
     const next = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/';
     window.location.assign(`/api/auth/oidc/login?next=${encodeURIComponent(next)}`);
+  }, []);
+
+  const startSaml = useCallback(() => {
+    const next = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/';
+    window.location.assign(`/api/auth/saml/login?next=${encodeURIComponent(next)}`);
   }, []);
 
   const submit = useCallback(
@@ -161,16 +169,28 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
               </p>
             </div>
 
-            {oidcEnabled ? (
+            {(oidcEnabled || samlEnabled) ? (
               <div className="mb-6">
-                <button
-                  type="button"
-                  onClick={startOidc}
-                  className="group flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-600/80 bg-slate-900/70 py-3 text-sm font-medium text-slate-100 transition hover:border-aether/40 hover:bg-slate-800/90 hover:shadow-[0_0_24px_rgba(99,164,255,0.12)]"
-                >
-                  <LogIn className="h-4 w-4 text-aether transition group-hover:scale-110" aria-hidden />
-                  Sign in with OIDC
-                </button>
+                {oidcEnabled ? (
+                  <button
+                    type="button"
+                    onClick={startOidc}
+                    className="group flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-600/80 bg-slate-900/70 py-3 text-sm font-medium text-slate-100 transition hover:border-aether/40 hover:bg-slate-800/90 hover:shadow-[0_0_24px_rgba(99,164,255,0.12)]"
+                  >
+                    <LogIn className="h-4 w-4 text-aether transition group-hover:scale-110" aria-hidden />
+                    Sign in with OIDC
+                  </button>
+                ) : null}
+                {samlEnabled ? (
+                  <button
+                    type="button"
+                    onClick={startSaml}
+                    className={`group flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-600/80 bg-slate-900/70 py-3 text-sm font-medium text-slate-100 transition hover:border-aether/40 hover:bg-slate-800/90 hover:shadow-[0_0_24px_rgba(99,164,255,0.12)]${oidcEnabled ? ' mt-3' : ''}`}
+                  >
+                    <LogIn className="h-4 w-4 text-aether transition group-hover:scale-110" aria-hidden />
+                    Sign in with SAML
+                  </button>
+                ) : null}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center" aria-hidden>
                     <div className="w-full border-t border-slate-700/80" />
