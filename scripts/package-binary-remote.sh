@@ -104,7 +104,7 @@ ACCESS_SCHEME=https
 ACCESS_PORT=5090
 ACCESS_PATH=/web/dashboard/
 AUTO_FULL_INSTALL=0
-FINISH_EXTRA_1=Start: ./aether serve --host 0.0.0.0 --port 5090
+FINISH_EXTRA_1='Start: ./aether serve --host 0.0.0.0 --port 5090'
 FINISH_EXTRA_2=
 FINISH_EXTRA_3=
 META
@@ -124,7 +124,7 @@ cat > "\${STAGE}/QUICKSTART.txt" <<'Q'
 Packaged by Zyvor — https://zyvor.dev · © @zyvor 2026
 Q
 
-cp "\${BUILD_DIR}/scripts/zyvor-branding/ZYVOR_INSTALL.txt" "\${STAGE}/ZYVOR_INSTALL.txt" 2>/dev/null || true
+cp '${BUILD_DIR}/scripts/zyvor-branding/ZYVOR_INSTALL.txt' "\${STAGE}/ZYVOR_INSTALL.txt" 2>/dev/null || true
 
 cat > "\${STAGE}/README.txt" <<README
 Aether ${VERSION} — client bundle
