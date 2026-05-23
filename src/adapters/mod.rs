@@ -5,6 +5,8 @@ pub mod docker;
 pub mod podman;
 pub mod kube;
 pub mod kube_manifest;
+pub mod kube_extras;
+pub mod kube_policy_extras;
 pub mod kubevirt;
 pub mod metal;
 

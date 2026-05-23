@@ -4,23 +4,25 @@ use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Statu
 use crate::spec::{AccessMode, K8sWorkloadKind, Workload};
 use async_trait::async_trait;
 use k8s_openapi::api::autoscaling::v2::{
-    HorizontalPodAutoscaler, HorizontalPodAutoscalerSpec, MetricIdentifier, MetricSpec,
-    MetricTarget, PodsMetricSource, ResourceMetricSource,
+    ExternalMetricSource, HorizontalPodAutoscaler, HorizontalPodAutoscalerBehavior,
+    HorizontalPodAutoscalerSpec, HPAScalingRules, MetricIdentifier, MetricSpec, MetricTarget,
+    ObjectMetricSource, PodsMetricSource, ResourceMetricSource,
 };
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, StatefulSet};
 use k8s_openapi::api::batch::v1::{CronJob, Job};
 use k8s_openapi::api::core::v1::{
-    ConfigMap, PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, Secret, Service,
-    ResourceRequirements as K8sResourceRequirements, ServicePort, ServiceSpec,
-    VolumeResourceRequirements,
+    ConfigMap, LimitRange, PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, ResourceQuota,
+    Secret, Service, ResourceRequirements as K8sResourceRequirements, VolumeResourceRequirements,
 };
 use k8s_openapi::api::policy::v1::PodDisruptionBudget;
 use k8s_openapi::api::networking::v1::{
     HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
-    IngressServiceBackend, IngressSpec, IngressTLS, ServiceBackendPort,
-    NetworkPolicy, NetworkPolicyEgressRule, NetworkPolicyIngressRule, NetworkPolicyPeer,
-    NetworkPolicySpec,
+    IngressServiceBackend, IngressSpec, IngressTLS, IPBlock, NetworkPolicy,
+    NetworkPolicyEgressRule, NetworkPolicyIngressRule, NetworkPolicyPeer, NetworkPolicyPort,
+    NetworkPolicySpec, ServiceBackendPort,
 };
+use k8s_openapi::api::rbac::v1::{Role, RoleBinding};
+use k8s_openapi::api::core::v1::ServiceAccount;
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
@@ -124,6 +126,34 @@ impl KubernetesRuntime {
                 "networkpolicy" => {
                     let api: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "resourcequota" => {
+                    let api: Api<ResourceQuota> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "limitrange" => {
+                    let api: Api<LimitRange> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "cilium" => {
+                    delete_dynamic_resource(
+                        &self.client,
+                        &self.namespace,
+                        name,
+                        crate::adapters::kube_policy_extras::cilium_network_policy_api_resource(),
+                    )
+                    .await;
+                    Ok(())
+                }
+                "calico" => {
+                    delete_dynamic_resource(
+                        &self.client,
+                        &self.namespace,
+                        name,
+                        crate::adapters::kube_policy_extras::calico_network_policy_api_resource(),
+                    )
+                    .await;
+                    Ok(())
                 }
                 _ => Ok(()),
             };
@@ -236,23 +266,6 @@ fn is_already_exists(err: &kube::Error) -> bool {
 // Standalone manifest-generation functions (testable without a kube::Client)
 // ---------------------------------------------------------------------------
 
-/// Sanitize a string into a valid Kubernetes DNS-1123 label for use as a
-/// volume name.  Replaces invalid characters with hyphens, lowercases,
-/// trims leading/trailing hyphens, and truncates to 63 characters.
-fn sanitize_volume_name(name: &str) -> String {
-    let sanitized: String = name
-        .to_ascii_lowercase()
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '-' })
-        .collect();
-    let trimmed = sanitized.trim_matches('-');
-    if trimmed.is_empty() {
-        "vol".to_string()
-    } else {
-        trimmed.chars().take(63).collect()
-    }
-}
-
 /// Build Kubernetes resource requirements from workload spec.
 ///
 /// Supports burstable QoS: when `cpu_request`/`memory_request` are set and
@@ -293,50 +306,7 @@ fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) ->
 
 /// Build a Service manifest from workload spec.
 fn build_service_manifest(namespace: &str, spec: &Workload) -> Option<Service> {
-    if !spec.network.service {
-        return None;
-    }
-
-    let mut labels = BTreeMap::new();
-    labels.insert("app".to_string(), spec.metadata.name.clone());
-    labels.insert("managed-by".to_string(), "aether".to_string());
-
-    let ports: Vec<ServicePort> = spec
-        .network
-        .ports
-        .iter()
-        .map(|p| ServicePort {
-            port: p.service_port as i32,
-            target_port: Some(IntOrString::Int(p.container_port as i32)),
-            protocol: Some(p.protocol.clone()),
-            ..Default::default()
-        })
-        .collect();
-
-    let service_type = match spec.network.service_type {
-        crate::spec::ServiceType::ClusterIP => "ClusterIP",
-        crate::spec::ServiceType::NodePort => "NodePort",
-        crate::spec::ServiceType::LoadBalancer => "LoadBalancer",
-    };
-
-    let mut selector = BTreeMap::new();
-    selector.insert("app".to_string(), spec.metadata.name.clone());
-
-    Some(Service {
-        metadata: ObjectMeta {
-            name: Some(format!("{}-service", spec.metadata.name)),
-            namespace: Some(namespace.to_string()),
-            labels: Some(labels),
-            ..Default::default()
-        },
-        spec: Some(ServiceSpec {
-            type_: Some(service_type.to_string()),
-            ports: Some(ports),
-            selector: Some(selector),
-            ..Default::default()
-        }),
-        ..Default::default()
-    })
+    crate::adapters::kube_manifest::build_service_manifest(namespace, spec)
 }
 
 /// Parse "key=value" label strings into NetworkPolicyPeer selectors.
@@ -363,6 +333,86 @@ fn parse_label_peers(labels: &[String], direction: &str) -> Vec<NetworkPolicyPee
         .collect()
 }
 
+fn parse_namespace_peers(labels: &[String]) -> Vec<NetworkPolicyPeer> {
+    labels
+        .iter()
+        .filter_map(|label| {
+            let parts: Vec<&str> = label.splitn(2, '=').collect();
+            if parts.len() == 2 {
+                let mut match_labels = BTreeMap::new();
+                match_labels.insert(parts[0].to_string(), parts[1].to_string());
+                Some(NetworkPolicyPeer {
+                    namespace_selector: Some(LabelSelector {
+                        match_labels: Some(match_labels),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                })
+            } else {
+                tracing::warn!(
+                    "Invalid allow_from_namespaces label '{}', expected key=value",
+                    label
+                );
+                None
+            }
+        })
+        .collect()
+}
+
+fn parse_cidr_peers(cidrs: &[String]) -> Vec<NetworkPolicyPeer> {
+    cidrs
+        .iter()
+        .map(|cidr| NetworkPolicyPeer {
+            ip_block: Some(IPBlock {
+                cidr: cidr.clone(),
+                except: None,
+            }),
+            ..Default::default()
+        })
+        .collect()
+}
+
+fn parse_cidr_block_peers(blocks: &[crate::spec::NetworkPolicyCidrSpec]) -> Vec<NetworkPolicyPeer> {
+    blocks
+        .iter()
+        .map(|block| NetworkPolicyPeer {
+            ip_block: Some(IPBlock {
+                cidr: block.cidr.clone(),
+                except: if block.except.is_empty() {
+                    None
+                } else {
+                    Some(block.except.clone())
+                },
+            }),
+            ..Default::default()
+        })
+        .collect()
+}
+
+fn ports_from_specs(ports: &[crate::spec::NetworkPolicyPortSpec]) -> Option<Vec<NetworkPolicyPort>> {
+    if ports.is_empty() {
+        return None;
+    }
+    Some(
+        ports
+            .iter()
+            .map(|p| NetworkPolicyPort {
+                port: Some(IntOrString::Int(p.port as i32)),
+                protocol: Some(p.protocol.clone()),
+                ..Default::default()
+            })
+            .collect(),
+    )
+}
+
+fn ingress_policy_ports(np: &crate::spec::NetworkPolicyConfig) -> Option<Vec<NetworkPolicyPort>> {
+    ports_from_specs(&np.ingress_ports).or_else(|| ports_from_specs(&np.ports))
+}
+
+fn egress_policy_ports(np: &crate::spec::NetworkPolicyConfig) -> Option<Vec<NetworkPolicyPort>> {
+    ports_from_specs(&np.egress_ports).or_else(|| ports_from_specs(&np.ports))
+}
+
 /// Build a NetworkPolicy manifest from workload spec.
 fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> Option<NetworkPolicy> {
     let np_config = spec.network.network_policy.as_ref()?;
@@ -376,31 +426,48 @@ fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> Option<Netw
         ..Default::default()
     };
 
-    // Build ingress rules from allow_from labels
-    let ingress = if np_config.deny_all_ingress || !np_config.allow_from.is_empty() {
-        let peers = parse_label_peers(&np_config.allow_from, "allow_from");
+    // Build ingress rules from allow_from labels, namespaces, and CIDRs
+    let ingress = if np_config.deny_all_ingress
+        || !np_config.allow_from.is_empty()
+        || !np_config.allow_from_namespaces.is_empty()
+        || !np_config.allow_from_cidrs.is_empty()
+        || !np_config.allow_from_cidr_blocks.is_empty()
+    {
+        let mut peers = parse_label_peers(&np_config.allow_from, "allow_from");
+        peers.extend(parse_namespace_peers(&np_config.allow_from_namespaces));
+        peers.extend(parse_cidr_peers(&np_config.allow_from_cidrs));
+        peers.extend(parse_cidr_block_peers(&np_config.allow_from_cidr_blocks));
+        let ports = ingress_policy_ports(np_config);
         if peers.is_empty() {
-            // deny_all with no allow_from → empty rules = deny all
             Some(vec![])
         } else {
             Some(vec![NetworkPolicyIngressRule {
                 from: Some(peers),
-                ..Default::default()
+                ports,
             }])
         }
     } else {
         None
     };
 
-    // Build egress rules from allow_to labels
-    let egress = if np_config.deny_all_egress || !np_config.allow_to.is_empty() {
-        let peers = parse_label_peers(&np_config.allow_to, "allow_to");
+    // Build egress rules from allow_to labels, namespaces, and CIDRs
+    let egress = if np_config.deny_all_egress
+        || !np_config.allow_to.is_empty()
+        || !np_config.allow_to_namespaces.is_empty()
+        || !np_config.allow_to_cidrs.is_empty()
+        || !np_config.allow_to_cidr_blocks.is_empty()
+    {
+        let mut peers = parse_label_peers(&np_config.allow_to, "allow_to");
+        peers.extend(parse_namespace_peers(&np_config.allow_to_namespaces));
+        peers.extend(parse_cidr_peers(&np_config.allow_to_cidrs));
+        peers.extend(parse_cidr_block_peers(&np_config.allow_to_cidr_blocks));
+        let ports = egress_policy_ports(np_config);
         if peers.is_empty() {
             Some(vec![])
         } else {
             Some(vec![NetworkPolicyEgressRule {
                 to: Some(peers),
-                ..Default::default()
+                ports,
             }])
         }
     } else {
@@ -575,7 +642,12 @@ fn build_ingress_manifest(namespace: &str, spec: &Workload) -> Option<Ingress> {
     let tls = if ingress_spec.tls {
         Some(vec![IngressTLS {
             hosts: Some(vec![ingress_spec.host.clone()]),
-            secret_name: Some(format!("{}-tls", spec.metadata.name)),
+            secret_name: Some(
+                ingress_spec
+                    .tls_secret_name
+                    .clone()
+                    .unwrap_or_else(|| format!("{}-tls", spec.metadata.name)),
+            ),
         }])
     } else {
         None
@@ -590,6 +662,7 @@ fn build_ingress_manifest(namespace: &str, spec: &Workload) -> Option<Ingress> {
             ..Default::default()
         },
         spec: Some(IngressSpec {
+            ingress_class_name: ingress_spec.ingress_class_name.clone(),
             rules: Some(vec![rule]),
             tls,
             ..Default::default()
@@ -603,6 +676,11 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
     let scaling_spec = match &spec.scaling {
         Some(s) if s.enabled => s,
         _ => return None,
+    };
+
+    let target_kind = match spec.resolved_k8s_workload_kind() {
+        K8sWorkloadKind::StatefulSet => "StatefulSet",
+        _ => "Deployment",
     };
 
     let mut labels = BTreeMap::new();
@@ -704,6 +782,51 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
                     ..Default::default()
                 })
             }
+            crate::spec::MetricType::External => {
+                let metric_name = m.metric_name.clone().filter(|n| !n.is_empty())?;
+                let target_value = m.target_value.parse::<i32>().ok()?;
+                Some(MetricSpec {
+                    type_: "External".to_string(),
+                    external: Some(ExternalMetricSource {
+                        metric: MetricIdentifier {
+                            name: metric_name,
+                            selector: None,
+                        },
+                        target: MetricTarget {
+                            type_: "AverageValue".to_string(),
+                            average_value: Some(Quantity(target_value.to_string())),
+                            ..Default::default()
+                        },
+                    }),
+                    ..Default::default()
+                })
+            }
+            crate::spec::MetricType::Object => {
+                let metric_name = m.metric_name.clone().filter(|n| !n.is_empty())?;
+                let object_kind = m.object_kind.clone().filter(|n| !n.is_empty())?;
+                let object_name = m.object_name.clone().filter(|n| !n.is_empty())?;
+                let target_value = m.target_value.parse::<i32>().ok()?;
+                Some(MetricSpec {
+                    type_: "Object".to_string(),
+                    object: Some(ObjectMetricSource {
+                        described_object: k8s_openapi::api::autoscaling::v2::CrossVersionObjectReference {
+                            api_version: m.object_api_version.clone(),
+                            kind: object_kind,
+                            name: object_name,
+                        },
+                        metric: MetricIdentifier {
+                            name: metric_name,
+                            selector: None,
+                        },
+                        target: MetricTarget {
+                            type_: "AverageValue".to_string(),
+                            average_value: Some(Quantity(target_value.to_string())),
+                            ..Default::default()
+                        },
+                    }),
+                    ..Default::default()
+                })
+            }
         })
         .collect();
 
@@ -726,6 +849,17 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
     let mut match_labels = BTreeMap::new();
     match_labels.insert("app".to_string(), spec.metadata.name.clone());
 
+    let behavior = scaling_spec.behavior.as_ref().map(|b| HorizontalPodAutoscalerBehavior {
+        scale_up: b.scale_up_stabilization_seconds.map(|s| HPAScalingRules {
+            stabilization_window_seconds: Some(s),
+            ..Default::default()
+        }),
+        scale_down: b.scale_down_stabilization_seconds.map(|s| HPAScalingRules {
+            stabilization_window_seconds: Some(s),
+            ..Default::default()
+        }),
+    });
+
     Some(HorizontalPodAutoscaler {
         metadata: ObjectMeta {
             name: Some(format!("{}-hpa", spec.metadata.name)),
@@ -736,13 +870,13 @@ fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodA
         spec: Some(HorizontalPodAutoscalerSpec {
             scale_target_ref: k8s_openapi::api::autoscaling::v2::CrossVersionObjectReference {
                 api_version: Some("apps/v1".to_string()),
-                kind: "Deployment".to_string(),
+                kind: target_kind.to_string(),
                 name: spec.metadata.name.clone(),
             },
             min_replicas: Some(scaling_spec.min_replicas as i32),
             max_replicas: scaling_spec.max_replicas as i32,
             metrics: Some(metrics),
-            ..Default::default()
+            behavior,
         }),
         ..Default::default()
     })
@@ -806,7 +940,7 @@ async fn create_dynamic_resource(
             tracing::info!("{} already exists: {}", api_resource.kind, name);
             Ok(())
         }
-        Err(e) => Err(e.into()),
+        Err(e) => Err(e),
     }
 }
 
@@ -838,19 +972,42 @@ async fn create_hpa_if_needed(client: &Client, namespace: &str, spec: &Workload)
 #[async_trait]
 impl Runtime for KubernetesRuntime {
     async fn build(&self, spec: &Workload) -> crate::Result<Image> {
-        // For Kubernetes, we assume the image is already built and pushed to registry
-        // In a real implementation, you might want to:
-        // 1. Build with Podman locally
-        // 2. Push to the registry specified in spec.build.registry
+        let tag = spec
+            .build
+            .tag
+            .clone()
+            .unwrap_or_else(|| "latest".to_string());
+        let image_ref = spec.container_image_ref();
+        let should_push = spec.build.push
+            || spec
+                .kubernetes
+                .as_ref()
+                .and_then(|k| k.build_and_push)
+                .unwrap_or(false);
 
-        tracing::info!(
-            "Kubernetes: Using pre-built image {} (ensure it's pushed to registry)",
-            spec.image_name()
-        );
+        if should_push {
+            tracing::info!("Building and pushing image for Kubernetes: {}", image_ref);
+            let podman = crate::adapters::PodmanRuntime::new()?;
+            podman.build(spec).await?;
+            let mut cmd = tokio::process::Command::new("podman");
+            cmd.args(["push", &image_ref]);
+            let output = cmd.output().await?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                anyhow::bail!("podman push failed: {}", stderr);
+            }
+            tracing::info!("Pushed image: {}", image_ref);
+        } else {
+            tracing::info!(
+                "Kubernetes: Using image {} (set build.push: true to build and push)",
+                image_ref
+            );
+        }
 
+        let registry = spec.build.registry.trim_end_matches('/');
         Ok(Image {
-            name: spec.metadata.name.clone(),
-            tag: "latest".to_string(),
+            name: format!("{}/{}", registry, spec.metadata.name),
+            tag,
             digest: None,
             runtime: RuntimeKind::Kubernetes,
         })
@@ -917,6 +1074,83 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
+        // Docker registry pull secret (optional)
+        if let Some(secret) =
+            crate::adapters::kube_extras::build_docker_registry_secret(&self.namespace, spec)
+        {
+            let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
+            let secret_name = secret.metadata.name.clone().unwrap_or_default();
+            match kube_with_timeout("Registry Secret create", secrets.create(&PostParams::default(), &secret)).await {
+                Ok(_) => {
+                    tracing::info!("Created registry Secret: {}", secret_name);
+                    new_resources.push(("secret", secret_name));
+                }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    tracing::info!("Registry Secret already exists: {}", secret_name);
+                }
+                Err(e) => {
+                    tracing::error!("Registry Secret creation failed: {}", e);
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
+            }
+        }
+
+        // ServiceAccount + RBAC (optional)
+        if let Some(sa) =
+            crate::adapters::kube_extras::build_service_account(spec, &self.namespace)
+        {
+            let sa_name = sa.metadata.name.clone().unwrap_or_default();
+            let accounts: Api<ServiceAccount> =
+                Api::namespaced(self.client.clone(), &self.namespace);
+            match kube_with_timeout("ServiceAccount create", accounts.create(&PostParams::default(), &sa)).await {
+                Ok(_) => {
+                    tracing::info!("Created ServiceAccount: {}", sa_name);
+                    new_resources.push(("serviceaccount", sa_name));
+                }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    tracing::info!("ServiceAccount already exists: {}", sa_name);
+                }
+                Err(e) => {
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
+            }
+        }
+        if let Some(role) = crate::adapters::kube_extras::build_role(spec, &self.namespace) {
+            let role_name = role.metadata.name.clone().unwrap_or_default();
+            let roles: Api<Role> = Api::namespaced(self.client.clone(), &self.namespace);
+            match kube_with_timeout("Role create", roles.create(&PostParams::default(), &role)).await {
+                Ok(_) => {
+                    tracing::info!("Created Role: {}", role_name);
+                    new_resources.push(("role", role_name));
+                }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {}
+                Err(e) => {
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
+            }
+        }
+        if let Some(binding) =
+            crate::adapters::kube_extras::build_role_binding(spec, &self.namespace)
+        {
+            let binding_name = binding.metadata.name.clone().unwrap_or_default();
+            let bindings: Api<RoleBinding> =
+                Api::namespaced(self.client.clone(), &self.namespace);
+            match kube_with_timeout("RoleBinding create", bindings.create(&PostParams::default(), &binding)).await {
+                Ok(_) => {
+                    tracing::info!("Created RoleBinding: {}", binding_name);
+                    new_resources.push(("rolebinding", binding_name));
+                }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {}
+                Err(e) => {
+                    self.cleanup_resources(&new_resources).await;
+                    return Err(e);
+                }
+            }
+        }
+
         // Create PVC if needed (Deployment/Job — StatefulSet uses volumeClaimTemplates)
         if crate::adapters::kube_manifest::needs_standalone_pvc(spec) {
             if let Some(pvc) = build_pvc_manifest(&self.namespace, spec) {
@@ -951,6 +1185,57 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
+        // cert-manager Certificate (optional)
+        if let Some(cert) =
+            crate::adapters::kube_extras::build_certificate_json(&self.namespace, spec)
+        {
+            if create_dynamic_resource(
+                &self.client,
+                &self.namespace,
+                cert,
+                crate::adapters::kube_extras::certificate_api_resource(),
+            )
+            .await
+            .is_ok()
+            {
+                new_resources.push(("certificate", format!("{}-cert", spec.metadata.name)));
+            }
+        }
+
+        // ResourceQuota / LimitRange (optional namespace guardrails)
+        if let Some(rq) = crate::adapters::kube_extras::build_resource_quota(&self.namespace, spec) {
+            let name = rq.metadata.name.clone().unwrap_or_default();
+            let quotas: Api<ResourceQuota> = Api::namespaced(self.client.clone(), &self.namespace);
+            match kube_with_timeout("ResourceQuota create", quotas.create(&PostParams::default(), &rq)).await {
+                Ok(_) => {
+                    tracing::info!("Created ResourceQuota: {}", name);
+                    new_resources.push(("resourcequota", name));
+                }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    tracing::info!("ResourceQuota already exists: {}", name);
+                }
+                Err(e) => {
+                    tracing::warn!("ResourceQuota creation failed: {}", e);
+                }
+            }
+        }
+        if let Some(lr) = crate::adapters::kube_extras::build_limit_range(&self.namespace, spec) {
+            let name = lr.metadata.name.clone().unwrap_or_default();
+            let ranges: Api<LimitRange> = Api::namespaced(self.client.clone(), &self.namespace);
+            match kube_with_timeout("LimitRange create", ranges.create(&PostParams::default(), &lr)).await {
+                Ok(_) => {
+                    tracing::info!("Created LimitRange: {}", name);
+                    new_resources.push(("limitrange", name));
+                }
+                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    tracing::info!("LimitRange already exists: {}", name);
+                }
+                Err(e) => {
+                    tracing::warn!("LimitRange creation failed: {}", e);
+                }
+            }
+        }
+
         // Create NetworkPolicy if needed
         if let Some(netpol) = build_networkpolicy_manifest(&self.namespace, spec) {
             let netpols: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -959,6 +1244,38 @@ impl Runtime for KubernetesRuntime {
                 Ok(_) => { tracing::info!("Created NetworkPolicy: {}", netpol_name); new_resources.push(("networkpolicy", netpol_name)); }
                 Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("NetworkPolicy already exists: {}", netpol_name),
                 Err(e) => { tracing::error!("NetworkPolicy creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
+            }
+        }
+
+        if let Some(cnp) =
+            crate::adapters::kube_policy_extras::build_cilium_network_policy_json(&self.namespace, spec)
+        {
+            if create_dynamic_resource(
+                &self.client,
+                &self.namespace,
+                cnp,
+                crate::adapters::kube_policy_extras::cilium_network_policy_api_resource(),
+            )
+            .await
+            .is_ok()
+            {
+                new_resources.push(("cilium", format!("{}-cilium", spec.metadata.name)));
+            }
+        }
+
+        if let Some(calico) =
+            crate::adapters::kube_policy_extras::build_calico_network_policy_json(&self.namespace, spec)
+        {
+            if create_dynamic_resource(
+                &self.client,
+                &self.namespace,
+                calico,
+                crate::adapters::kube_policy_extras::calico_network_policy_api_resource(),
+            )
+            .await
+            .is_ok()
+            {
+                new_resources.push(("calico", format!("{}-calico", spec.metadata.name)));
             }
         }
 
@@ -1193,11 +1510,27 @@ impl Runtime for KubernetesRuntime {
             }
         }
 
+        if let Some(monitor) =
+            crate::adapters::kube_extras::build_service_monitor_json(&self.namespace, spec)
+        {
+            if create_dynamic_resource(
+                &self.client,
+                &self.namespace,
+                monitor,
+                crate::adapters::kube_extras::service_monitor_api_resource(),
+            )
+            .await
+            .is_ok()
+            {
+                new_resources.push(("servicemonitor", format!("{}-monitor", spec.metadata.name)));
+            }
+        }
+
         Ok(Instance::new(
             resource_uid,
             resource_name,
             RuntimeKind::Kubernetes,
-            image.full_name(),
+            image.reference(),
         ))
     }
 
@@ -1281,6 +1614,34 @@ impl Runtime for KubernetesRuntime {
             http_route_api_resource(),
         )
         .await;
+        delete_dynamic_resource(
+            &self.client,
+            &self.namespace,
+            &format!("{}-cert", instance.name),
+            crate::adapters::kube_extras::certificate_api_resource(),
+        )
+        .await;
+        delete_dynamic_resource(
+            &self.client,
+            &self.namespace,
+            &format!("{}-monitor", instance.name),
+            crate::adapters::kube_extras::service_monitor_api_resource(),
+        )
+        .await;
+        delete_dynamic_resource(
+            &self.client,
+            &self.namespace,
+            &format!("{}-cilium", instance.name),
+            crate::adapters::kube_policy_extras::cilium_network_policy_api_resource(),
+        )
+        .await;
+        delete_dynamic_resource(
+            &self.client,
+            &self.namespace,
+            &format!("{}-calico", instance.name),
+            crate::adapters::kube_policy_extras::calico_network_policy_api_resource(),
+        )
+        .await;
 
         // Delete PDB
         let pdbs: Api<PodDisruptionBudget> =
@@ -1343,6 +1704,20 @@ impl Runtime for KubernetesRuntime {
         match netpols.delete(&netpol_name, &DeleteParams::default()).await {
             Ok(_) => tracing::info!("Deleted NetworkPolicy: {}", netpol_name),
             Err(e) => tracing::debug!("NetworkPolicy deletion failed (may not exist): {}", e),
+        }
+
+        let quotas: Api<ResourceQuota> = Api::namespaced(self.client.clone(), &self.namespace);
+        let quota_name = format!("{}-quota", instance.name);
+        match quotas.delete(&quota_name, &DeleteParams::default()).await {
+            Ok(_) => tracing::info!("Deleted ResourceQuota: {}", quota_name),
+            Err(e) => tracing::debug!("ResourceQuota deletion failed (may not exist): {}", e),
+        }
+
+        let ranges: Api<LimitRange> = Api::namespaced(self.client.clone(), &self.namespace);
+        let limits_name = format!("{}-limits", instance.name);
+        match ranges.delete(&limits_name, &DeleteParams::default()).await {
+            Ok(_) => tracing::info!("Deleted LimitRange: {}", limits_name),
+            Err(e) => tracing::debug!("LimitRange deletion failed (may not exist): {}", e),
         }
 
         // Delete Service
@@ -1456,20 +1831,109 @@ impl Runtime for KubernetesRuntime {
 
     async fn update(&self, instance: &Instance, image: &Image, spec: &Workload) -> crate::Result<Instance> {
         validate_kube_name(&spec.metadata.name)?;
-        tracing::info!("Updating Deployment: {}", instance.name);
-
-        let deployment = build_deployment_manifest(&self.namespace, image, spec);
-        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
-
-        let patch = kube::api::Patch::Apply(deployment);
         let pp = kube::api::PatchParams::apply("aether").force();
-        let patched = kube_with_timeout("Deployment patch", deployments.patch(&instance.name, &pp, &patch)).await?;
 
-        let uid = patched.metadata.uid.unwrap_or_else(|| "unknown".to_string());
-        let name = patched.metadata.name.unwrap_or_else(|| instance.name.clone());
+        let (uid, name) = match spec.resolved_k8s_workload_kind() {
+            K8sWorkloadKind::StatefulSet => {
+                tracing::info!("Updating StatefulSet: {}", instance.name);
+                let sts = crate::adapters::kube_manifest::build_statefulset_manifest(
+                    &self.namespace,
+                    image,
+                    spec,
+                );
+                let sets: Api<StatefulSet> = Api::namespaced(self.client.clone(), &self.namespace);
+                let patched = kube_with_timeout(
+                    "StatefulSet patch",
+                    sets.patch(&instance.name, &pp, &kube::api::Patch::Apply(sts)),
+                )
+                .await?;
+                (
+                    patched.metadata.uid.unwrap_or_else(|| instance.id.clone()),
+                    patched
+                        .metadata
+                        .name
+                        .unwrap_or_else(|| instance.name.clone()),
+                )
+            }
+            K8sWorkloadKind::DaemonSet => {
+                tracing::info!("Updating DaemonSet: {}", instance.name);
+                let ds = crate::adapters::kube_manifest::build_daemonset_manifest(
+                    &self.namespace,
+                    image,
+                    spec,
+                );
+                let sets: Api<DaemonSet> = Api::namespaced(self.client.clone(), &self.namespace);
+                let patched = kube_with_timeout(
+                    "DaemonSet patch",
+                    sets.patch(&instance.name, &pp, &kube::api::Patch::Apply(ds)),
+                )
+                .await?;
+                (
+                    patched.metadata.uid.unwrap_or_else(|| instance.id.clone()),
+                    patched
+                        .metadata
+                        .name
+                        .unwrap_or_else(|| instance.name.clone()),
+                )
+            }
+            K8sWorkloadKind::Job => {
+                tracing::info!("Updating Job: {}", instance.name);
+                let job =
+                    crate::adapters::kube_manifest::build_job_manifest(&self.namespace, image, spec);
+                let jobs: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
+                let patched = kube_with_timeout(
+                    "Job patch",
+                    jobs.patch(&instance.name, &pp, &kube::api::Patch::Apply(job)),
+                )
+                .await?;
+                (
+                    patched.metadata.uid.unwrap_or_else(|| instance.id.clone()),
+                    patched
+                        .metadata
+                        .name
+                        .unwrap_or_else(|| instance.name.clone()),
+                )
+            }
+            K8sWorkloadKind::CronJob => {
+                tracing::info!("Updating CronJob: {}", instance.name);
+                let cronjob = build_cronjob_manifest(&self.namespace, image, spec);
+                let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
+                let patched = kube_with_timeout(
+                    "CronJob patch",
+                    cronjobs.patch(&instance.name, &pp, &kube::api::Patch::Apply(cronjob)),
+                )
+                .await?;
+                (
+                    patched.metadata.uid.unwrap_or_else(|| instance.id.clone()),
+                    patched
+                        .metadata
+                        .name
+                        .unwrap_or_else(|| instance.name.clone()),
+                )
+            }
+            K8sWorkloadKind::Deployment => {
+                tracing::info!("Updating Deployment: {}", instance.name);
+                let deployment = build_deployment_manifest(&self.namespace, image, spec);
+                let deployments: Api<Deployment> =
+                    Api::namespaced(self.client.clone(), &self.namespace);
+                let patched = kube_with_timeout(
+                    "Deployment patch",
+                    deployments.patch(&instance.name, &pp, &kube::api::Patch::Apply(deployment)),
+                )
+                .await?;
+                (
+                    patched.metadata.uid.unwrap_or_else(|| instance.id.clone()),
+                    patched
+                        .metadata
+                        .name
+                        .unwrap_or_else(|| instance.name.clone()),
+                )
+            }
+        };
 
-        tracing::info!("Updated Deployment: {} (rolling update triggered)", name);
-        Ok(Instance::new(uid, name, RuntimeKind::Kubernetes, image.full_name()))
+        create_hpa_if_needed(&self.client, &self.namespace, spec).await;
+        tracing::info!("Updated {} (rolling update triggered)", name);
+        Ok(Instance::new(uid, name, RuntimeKind::Kubernetes, image.reference()))
     }
 
     async fn capacity(&self) -> crate::Result<Option<crate::runtime::Capacity>> {
@@ -1564,6 +2028,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+            ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1586,6 +2051,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
+        ..Default::default()
             },
             persistence: PersistenceSpec {
                 enabled: false,
@@ -2513,6 +2979,7 @@ mod tests {
             paths: vec![],
             tls: false,
             annotations: HashMap::new(),
+            ..Default::default()
         });
 
         let ingress = build_ingress_manifest("default", &spec);
@@ -2533,6 +3000,7 @@ mod tests {
             }],
             tls: false,
             annotations: HashMap::new(),
+            ..Default::default()
         });
 
         let ingress = build_ingress_manifest("default", &spec).unwrap();
@@ -2572,6 +3040,7 @@ mod tests {
             }],
             tls: true,
             annotations: HashMap::new(),
+            ..Default::default()
         });
 
         let ingress = build_ingress_manifest("default", &spec).unwrap();
@@ -2612,6 +3081,7 @@ mod tests {
             ],
             tls: false,
             annotations: HashMap::new(),
+            ..Default::default()
         });
 
         let ingress = build_ingress_manifest("default", &spec).unwrap();
@@ -2654,6 +3124,7 @@ mod tests {
             }],
             tls: true,
             annotations,
+            ..Default::default()
         });
 
         let ingress = build_ingress_manifest("default", &spec).unwrap();
@@ -2683,6 +3154,7 @@ mod tests {
             }],
             tls: false,
             annotations: HashMap::new(),
+            ..Default::default()
         });
 
         let ingress = build_ingress_manifest("production", &spec).unwrap();
@@ -2714,6 +3186,7 @@ mod tests {
             min_replicas: 1,
             max_replicas: 5,
             metrics: vec![],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec);
@@ -2732,7 +3205,9 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "80%".to_string(),
                 metric_name: None,
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
@@ -2770,7 +3245,9 @@ mod tests {
                 metric_type: MetricType::Memory,
                 target_value: "70%".to_string(),
                 metric_name: None,
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
@@ -2796,13 +3273,16 @@ mod tests {
                     metric_type: MetricType::CPU,
                     target_value: "75".to_string(),
                     metric_name: None,
+                    ..Default::default()
                 },
                 ScalingMetric {
                     metric_type: MetricType::Memory,
                     target_value: "85".to_string(),
                     metric_name: None,
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
@@ -2836,13 +3316,16 @@ mod tests {
                     metric_type: MetricType::CPU,
                     target_value: "80".to_string(),
                     metric_name: None,
+                    ..Default::default()
                 },
                 ScalingMetric {
                     metric_type: MetricType::Custom,
                     target_value: "100".to_string(),
                     metric_name: None,
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
@@ -2864,7 +3347,9 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "50".to_string(),
                 metric_name: None,
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("staging", &spec).unwrap();
@@ -2886,7 +3371,9 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "90".to_string(),
                 metric_name: None,
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
@@ -3051,6 +3538,7 @@ mod tests {
             }],
             tls: true,
             annotations: HashMap::new(),
+            ..Default::default()
         });
 
         // Enable scaling
@@ -3062,7 +3550,9 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "70%".to_string(),
                 metric_name: None,
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         // Add config
@@ -3142,50 +3632,6 @@ mod tests {
         assert!(build_hpa_manifest("default", &spec).is_none());
         assert!(build_configmap_manifests("default", &spec).is_empty());
         assert!(build_secret_manifests("default", &spec).is_empty());
-    }
-
-    // ── sanitize_volume_name ─────────────────────────────────────────
-
-    #[test]
-    fn test_sanitize_volume_name_valid_input() {
-        assert_eq!(sanitize_volume_name("cm-app-config"), "cm-app-config");
-    }
-
-    #[test]
-    fn test_sanitize_volume_name_uppercase() {
-        assert_eq!(sanitize_volume_name("CM-MyConfig"), "cm-myconfig");
-    }
-
-    #[test]
-    fn test_sanitize_volume_name_underscores() {
-        assert_eq!(sanitize_volume_name("cm-my_config"), "cm-my-config");
-    }
-
-    #[test]
-    fn test_sanitize_volume_name_dots_and_special() {
-        assert_eq!(sanitize_volume_name("secret-tls.crt@v2"), "secret-tls-crt-v2");
-    }
-
-    #[test]
-    fn test_sanitize_volume_name_leading_trailing_hyphens() {
-        assert_eq!(sanitize_volume_name("--name--"), "name");
-    }
-
-    #[test]
-    fn test_sanitize_volume_name_all_invalid_chars() {
-        assert_eq!(sanitize_volume_name("___"), "vol");
-    }
-
-    #[test]
-    fn test_sanitize_volume_name_truncates_to_63() {
-        let long_name = "a".repeat(100);
-        let result = sanitize_volume_name(&long_name);
-        assert_eq!(result.len(), 63);
-    }
-
-    #[test]
-    fn test_sanitize_volume_name_empty() {
-        assert_eq!(sanitize_volume_name(""), "vol");
     }
 
     // ── volume mount generation ──────────────────────────────────────
@@ -3279,7 +3725,9 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "30".to_string(),
                 metric_name: Some("http_requests_per_second".to_string()),
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
@@ -3304,7 +3752,9 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "50".to_string(),
                 metric_name: None,
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         // No valid metrics → no HPA generated
@@ -3323,7 +3773,9 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "50".to_string(),
                 metric_name: Some(String::new()),
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec);
@@ -3342,13 +3794,16 @@ mod tests {
                     metric_type: MetricType::CPU,
                     target_value: "70".to_string(),
                     metric_name: None,
+                    ..Default::default()
                 },
                 ScalingMetric {
                     metric_type: MetricType::Custom,
                     target_value: "100".to_string(),
                     metric_name: Some("queue_depth".to_string()),
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
@@ -3375,7 +3830,9 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "abc".to_string(),
                 metric_name: Some("requests".to_string()),
+                    ..Default::default()
             }],
+            ..Default::default()
         });
 
         // Invalid target value → metric skipped → no valid metrics → no HPA
@@ -3389,6 +3846,7 @@ mod tests {
             metric_type: MetricType::Custom,
             target_value: "42".to_string(),
             metric_name: Some("rps".to_string()),
+                    ..Default::default()
         };
         let yaml = serde_yaml::to_string(&metric).unwrap();
         let parsed: ScalingMetric = serde_yaml::from_str(&yaml).unwrap();
@@ -3416,6 +3874,7 @@ mod tests {
             allow_to: vec![],
             deny_all_ingress: true,
             deny_all_egress: false,
+            ..Default::default()
         });
 
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
@@ -3437,6 +3896,7 @@ mod tests {
             allow_to: vec![],
             deny_all_ingress: false,
             deny_all_egress: false,
+            ..Default::default()
         });
 
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
@@ -3459,6 +3919,7 @@ mod tests {
             allow_to: vec![],
             deny_all_ingress: false,
             deny_all_egress: true,
+            ..Default::default()
         });
 
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
@@ -3477,6 +3938,7 @@ mod tests {
             allow_to: vec!["app=database".to_string()],
             deny_all_ingress: false,
             deny_all_egress: false,
+            ..Default::default()
         });
 
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
@@ -3499,6 +3961,7 @@ mod tests {
             allow_to: vec![],
             deny_all_ingress: true,
             deny_all_egress: false,
+            ..Default::default()
         });
 
         let netpol = build_networkpolicy_manifest("production", &spec).unwrap();
@@ -3517,6 +3980,7 @@ mod tests {
             allow_to: vec!["app=database".to_string()],
             deny_all_ingress: false,
             deny_all_egress: false,
+            ..Default::default()
         });
 
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
@@ -3538,6 +4002,7 @@ mod tests {
             allow_to: vec![],
             deny_all_ingress: true,
             deny_all_egress: true,
+            ..Default::default()
         });
 
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
@@ -3546,5 +4011,158 @@ mod tests {
         let selector_labels = np_spec.pod_selector.match_labels.as_ref().unwrap();
         assert_eq!(selector_labels.get("app"), Some(&"test-app".to_string()));
         assert_eq!(selector_labels.get("managed-by"), Some(&"aether".to_string()));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_egress_to_namespaces() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_to_namespaces: vec!["team=platform".to_string()],
+            ..Default::default()
+        });
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let egress = netpol.spec.as_ref().unwrap().egress.as_ref().unwrap();
+        let peer = &egress[0].to.as_ref().unwrap()[0];
+        assert!(peer.namespace_selector.is_some());
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_separate_ingress_egress_ports() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from: vec!["app=frontend".to_string()],
+            allow_to: vec!["app=db".to_string()],
+            ingress_ports: vec![crate::spec::NetworkPolicyPortSpec {
+                port: 8080,
+                protocol: "TCP".to_string(),
+            }],
+            egress_ports: vec![crate::spec::NetworkPolicyPortSpec {
+                port: 5432,
+                protocol: "TCP".to_string(),
+            }],
+            ..Default::default()
+        });
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let np = netpol.spec.as_ref().unwrap();
+        let ing_port = np.ingress.as_ref().unwrap()[0]
+            .ports
+            .as_ref()
+            .unwrap()[0]
+            .port
+            .as_ref()
+            .unwrap();
+        let egr_port = np.egress.as_ref().unwrap()[0]
+            .ports
+            .as_ref()
+            .unwrap()[0]
+            .port
+            .as_ref()
+            .unwrap();
+        assert_eq!(*ing_port, IntOrString::Int(8080));
+        assert_eq!(*egr_port, IntOrString::Int(5432));
+    }
+
+    #[test]
+    fn test_generate_networkpolicy_cidr_except() {
+        let mut spec = create_test_workload();
+        spec.network.network_policy = Some(crate::spec::NetworkPolicyConfig {
+            allow_from_cidr_blocks: vec![crate::spec::NetworkPolicyCidrSpec {
+                cidr: "10.0.0.0/8".to_string(),
+                except: vec!["10.0.0.0/24".to_string()],
+            }],
+            ..Default::default()
+        });
+        let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
+        let peer = &netpol.spec.as_ref().unwrap().ingress.as_ref().unwrap()[0]
+            .from
+            .as_ref()
+            .unwrap()[0];
+        let block = peer.ip_block.as_ref().unwrap();
+        assert_eq!(block.cidr, "10.0.0.0/8");
+        assert_eq!(block.except.as_ref().unwrap(), &vec!["10.0.0.0/24".to_string()]);
+    }
+
+    #[test]
+    fn test_build_resource_quota_manifest() {
+        let mut spec = create_test_workload();
+        spec.kubernetes = Some(crate::spec::KubernetesSpec {
+            resource_quota: Some(crate::spec::K8sResourceQuotaSpec {
+                enabled: true,
+                hard: HashMap::from([
+                    ("cpu".to_string(), "4".to_string()),
+                    ("pods".to_string(), "10".to_string()),
+                ]),
+                scopes: vec![],
+            }),
+            ..Default::default()
+        });
+        let rq = crate::adapters::kube_extras::build_resource_quota("default", &spec).unwrap();
+        assert_eq!(rq.metadata.name.as_deref(), Some("test-app-quota"));
+        assert!(rq.spec.as_ref().unwrap().hard.is_some());
+    }
+
+    #[test]
+    fn test_build_limit_range_manifest() {
+        let mut spec = create_test_workload();
+        spec.kubernetes = Some(crate::spec::KubernetesSpec {
+            limit_range: Some(crate::spec::K8sLimitRangeSpec {
+                enabled: true,
+                limits: vec![crate::spec::K8sLimitRangeItemSpec {
+                    limit_type: "Container".to_string(),
+                    default: HashMap::from([("memory".to_string(), "512Mi".to_string())]),
+                    default_request: HashMap::new(),
+                    max: HashMap::new(),
+                    min: HashMap::new(),
+                }],
+            }),
+            ..Default::default()
+        });
+        let lr = crate::adapters::kube_extras::build_limit_range("default", &spec).unwrap();
+        assert_eq!(lr.metadata.name.as_deref(), Some("test-app-limits"));
+    }
+
+    #[test]
+    fn test_build_cilium_network_policy_json() {
+        let mut spec = create_test_workload();
+        spec.network.cilium_network_policy = Some(crate::spec::CiliumNetworkPolicySpec {
+            enabled: true,
+            ingress: vec![crate::spec::CiliumPolicyRuleSpec {
+                from_endpoints: vec![HashMap::from([("role".to_string(), "frontend".to_string())])],
+                ..Default::default()
+            }],
+            egress: vec![],
+        });
+        let cnp = crate::adapters::kube_policy_extras::build_cilium_network_policy_json(
+            "default",
+            &spec,
+        )
+        .unwrap();
+        assert_eq!(cnp["kind"], "CiliumNetworkPolicy");
+        assert!(cnp["spec"]["ingress"].is_array());
+    }
+
+    #[test]
+    fn test_build_calico_network_policy_json() {
+        let mut spec = create_test_workload();
+        spec.network.calico_network_policy = Some(crate::spec::CalicoNetworkPolicySpec {
+            enabled: true,
+            types: vec!["Ingress".to_string()],
+            ingress: vec![crate::spec::CalicoPolicyRuleSpec {
+                action: "Allow".to_string(),
+                source_selector: Some("role == 'frontend'".to_string()),
+                destination_selector: None,
+                destination_nets: vec![],
+                protocol: None,
+                destination_ports: vec![],
+            }],
+            egress: vec![],
+        });
+        let calico = crate::adapters::kube_policy_extras::build_calico_network_policy_json(
+            "default",
+            &spec,
+        )
+        .unwrap();
+        assert_eq!(calico["apiVersion"], "projectcalico.org/v3");
+        assert!(calico["spec"]["ingress"].is_array());
     }
 }

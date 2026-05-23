@@ -58,6 +58,25 @@ pub struct BuildSpec {
     pub registry: String,
     #[serde(default)]
     pub build_args: HashMap<String, String>,
+    /// Image tag (defaults to `latest`).
+    #[serde(default)]
+    pub tag: Option<String>,
+    /// Build with Podman and push to `registry` before deploy (Kubernetes).
+    #[serde(default)]
+    pub push: bool,
+}
+
+impl Default for BuildSpec {
+    fn default() -> Self {
+        Self {
+            context: PathBuf::from("."),
+            dockerfile: PathBuf::from("Dockerfile"),
+            registry: "local".to_string(),
+            build_args: HashMap::new(),
+            tag: None,
+            push: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -117,9 +136,27 @@ pub struct NetworkSpec {
     pub ports: Vec<PortMapping>,
     #[serde(default)]
     pub network_policy: Option<NetworkPolicyConfig>,
+    /// Headless ClusterIP service (`clusterIP: None`).
+    #[serde(default)]
+    pub headless: bool,
+    /// ExternalName target when `serviceType: externalName`.
+    #[serde(default)]
+    pub external_name: Option<String>,
+    /// Service session affinity: None, ClientIP.
+    #[serde(default)]
+    pub session_affinity: Option<String>,
+    /// externalTrafficPolicy for LoadBalancer/NodePort: Cluster or Local.
+    #[serde(default)]
+    pub external_traffic_policy: Option<String>,
+    /// CiliumNetworkPolicy (requires Cilium CNI)
+    #[serde(default)]
+    pub cilium_network_policy: Option<CiliumNetworkPolicySpec>,
+    /// Calico NetworkPolicy CR (requires Calico CNI)
+    #[serde(default)]
+    pub calico_network_policy: Option<CalicoNetworkPolicySpec>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct NetworkPolicyConfig {
     /// Allow ingress from specific labels
@@ -128,6 +165,33 @@ pub struct NetworkPolicyConfig {
     /// Allow egress to specific labels
     #[serde(default)]
     pub allow_to: Vec<String>,
+    /// Allow ingress from CIDR blocks (e.g. `10.0.0.0/8`)
+    #[serde(default)]
+    pub allow_from_cidrs: Vec<String>,
+    /// Allow egress to CIDR blocks
+    #[serde(default)]
+    pub allow_to_cidrs: Vec<String>,
+    /// Allow ingress from namespaces matching these labels (`key=value`)
+    #[serde(default)]
+    pub allow_from_namespaces: Vec<String>,
+    /// Allow egress to namespaces matching these labels (`key=value`)
+    #[serde(default)]
+    pub allow_to_namespaces: Vec<String>,
+    /// Ingress CIDR blocks with optional `except` subnets
+    #[serde(default)]
+    pub allow_from_cidr_blocks: Vec<NetworkPolicyCidrSpec>,
+    /// Egress CIDR blocks with optional `except` subnets
+    #[serde(default)]
+    pub allow_to_cidr_blocks: Vec<NetworkPolicyCidrSpec>,
+    /// Restrict ingress to these ports (falls back to `ports` when empty)
+    #[serde(default)]
+    pub ingress_ports: Vec<NetworkPolicyPortSpec>,
+    /// Restrict egress to these ports (falls back to `ports` when empty)
+    #[serde(default)]
+    pub egress_ports: Vec<NetworkPolicyPortSpec>,
+    /// Restrict policy to these ports (legacy fallback for both directions)
+    #[serde(default)]
+    pub ports: Vec<NetworkPolicyPortSpec>,
     /// Deny all ingress by default
     #[serde(default)]
     pub deny_all_ingress: bool,
@@ -136,12 +200,104 @@ pub struct NetworkPolicyConfig {
     pub deny_all_egress: bool,
 }
 
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkPolicyCidrSpec {
+    pub cidr: String,
+    #[serde(default)]
+    pub except: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkPolicyPortSpec {
+    pub port: u16,
+    #[serde(default = "default_protocol")]
+    pub protocol: String,
+}
+
+/// CiliumNetworkPolicy (`cilium.io/v2`) — L3/L4/L7 rules beyond standard NetworkPolicy.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CiliumNetworkPolicySpec {
+    pub enabled: bool,
+    #[serde(default)]
+    pub ingress: Vec<CiliumPolicyRuleSpec>,
+    #[serde(default)]
+    pub egress: Vec<CiliumPolicyRuleSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CiliumPolicyRuleSpec {
+    #[serde(default)]
+    pub from_endpoints: Vec<HashMap<String, String>>,
+    #[serde(default)]
+    pub to_endpoints: Vec<HashMap<String, String>>,
+    #[serde(default)]
+    pub from_cidr: Vec<String>,
+    #[serde(default)]
+    pub to_cidr: Vec<String>,
+    #[serde(default)]
+    pub to_ports: Vec<CiliumPortRuleSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CiliumPortRuleSpec {
+    pub port: u16,
+    #[serde(default = "default_protocol")]
+    pub protocol: String,
+}
+
+/// Calico projectcalico.org/v3 NetworkPolicy — rich selector-based rules.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CalicoNetworkPolicySpec {
+    pub enabled: bool,
+    #[serde(default = "default_calico_policy_types")]
+    pub types: Vec<String>,
+    #[serde(default)]
+    pub ingress: Vec<CalicoPolicyRuleSpec>,
+    #[serde(default)]
+    pub egress: Vec<CalicoPolicyRuleSpec>,
+}
+
+fn default_calico_policy_types() -> Vec<String> {
+    vec!["Ingress".to_string(), "Egress".to_string()]
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CalicoPolicyRuleSpec {
+    #[serde(default = "default_calico_action")]
+    pub action: String,
+    #[serde(default)]
+    pub source_selector: Option<String>,
+    #[serde(default)]
+    pub destination_selector: Option<String>,
+    #[serde(default)]
+    pub destination_nets: Vec<String>,
+    #[serde(default)]
+    pub protocol: Option<String>,
+    #[serde(default)]
+    pub destination_ports: Vec<u16>,
+}
+
+fn default_calico_action() -> String {
+    "Allow".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum ServiceType {
     #[default]
     ClusterIP,
     NodePort,
     LoadBalancer,
+    /// ClusterIP with `clusterIP: None` (required for StatefulSet pod DNS).
+    Headless,
+    ExternalName,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -213,6 +369,7 @@ pub enum ProbeType {
     HttpGet { path: String, port: u16 },
     TcpSocket { port: u16 },
     Exec { command: Vec<String> },
+    Grpc { port: u16, service: String },
 }
 
 impl Workload {
@@ -322,10 +479,10 @@ impl Workload {
         if self.schedule.is_some() && k8s_kind == K8sWorkloadKind::Job {
             anyhow::bail!("schedule and kubernetes.workloadKind job are mutually exclusive");
         }
-        if k8s_kind == K8sWorkloadKind::DaemonSet {
-            if self.scaling.as_ref().is_some_and(|s| s.enabled) {
-                anyhow::bail!("scaling is not supported for kubernetes.workloadKind daemonSet");
-            }
+        if k8s_kind == K8sWorkloadKind::DaemonSet
+            && self.scaling.as_ref().is_some_and(|s| s.enabled)
+        {
+            anyhow::bail!("scaling is not supported for kubernetes.workloadKind daemonSet");
         }
         if let Some(ref k8s) = self.kubernetes {
             if let Some(ref pdb) = k8s.pod_disruption_budget {
@@ -383,6 +540,21 @@ impl Workload {
             return K8sWorkloadKind::CronJob;
         }
         K8sWorkloadKind::Deployment
+    }
+
+    /// Whether the workload needs a headless ClusterIP service.
+    pub fn wants_headless_service(&self) -> bool {
+        if matches!(self.network.service_type, ServiceType::Headless) || self.network.headless {
+            return true;
+        }
+        if self.resolved_k8s_workload_kind() == K8sWorkloadKind::StatefulSet {
+            return self
+                .kubernetes
+                .as_ref()
+                .and_then(|k| k.headless_service)
+                .unwrap_or(true);
+        }
+        false
     }
 
     /// Validate a string as a DNS label (RFC 1123):
@@ -511,9 +683,20 @@ impl Workload {
         Ok(())
     }
 
-    /// Get full image name with registry
+    /// Full container image reference `{registry}/{name}:{tag}`.
     pub fn image_name(&self) -> String {
-        format!("{}/{}:latest", self.build.registry, self.metadata.name)
+        self.container_image_ref()
+    }
+
+    /// Container image reference for Kubernetes manifests and registry push.
+    pub fn container_image_ref(&self) -> String {
+        let tag = self.build.tag.as_deref().unwrap_or("latest");
+        let registry = self.build.registry.trim_end_matches('/');
+        if registry == "local" || registry == "localhost" {
+            format!("{}:{}", self.metadata.name, tag)
+        } else {
+            format!("{}/{}:{}", registry, self.metadata.name, tag)
+        }
     }
 
     /// Return a copy with additional environment variables injected.
@@ -629,7 +812,7 @@ pub enum EnvSourceType {
 }
 
 /// Ingress specification
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct IngressSpec {
     pub enabled: bool,
     pub host: String,
@@ -639,7 +822,14 @@ pub struct IngressSpec {
     pub tls: bool,
     #[serde(default)]
     pub annotations: HashMap<String, String>,
+    /// Maps to `spec.ingressClassName` (e.g. `nginx`, `traefik`).
+    #[serde(default)]
+    pub ingress_class_name: Option<String>,
+    /// TLS secret name (defaults to `{name}-tls`).
+    #[serde(default)]
+    pub tls_secret_name: Option<String>,
 }
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct IngressPath {
@@ -662,6 +852,29 @@ pub struct ScalingSpec {
     pub max_replicas: u32,
     #[serde(default)]
     pub metrics: Vec<ScalingMetric>,
+    #[serde(default)]
+    pub behavior: Option<ScalingBehaviorSpec>,
+}
+
+impl Default for ScalingSpec {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            min_replicas: 1,
+            max_replicas: 1,
+            metrics: vec![],
+            behavior: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScalingBehaviorSpec {
+    #[serde(default)]
+    pub scale_up_stabilization_seconds: Option<i32>,
+    #[serde(default)]
+    pub scale_down_stabilization_seconds: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -669,9 +882,31 @@ pub struct ScalingSpec {
 pub struct ScalingMetric {
     pub metric_type: MetricType,
     pub target_value: String,
-    /// Custom metric name (required when metric_type is Custom)
+    /// Custom/external/object metric name
     #[serde(default)]
     pub metric_name: Option<String>,
+    /// Object metric: API version (e.g. `v1`)
+    #[serde(default)]
+    pub object_api_version: Option<String>,
+    /// Object metric: kind (e.g. `Ingress`)
+    #[serde(default)]
+    pub object_kind: Option<String>,
+    /// Object metric: resource name
+    #[serde(default)]
+    pub object_name: Option<String>,
+}
+
+impl Default for ScalingMetric {
+    fn default() -> Self {
+        Self {
+            metric_type: MetricType::CPU,
+            target_value: "80".to_string(),
+            metric_name: None,
+            object_api_version: None,
+            object_kind: None,
+            object_name: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -679,6 +914,10 @@ pub enum MetricType {
     CPU,
     Memory,
     Custom,
+    /// Cluster-external metric (Prometheus adapter, etc.).
+    External,
+    /// Object metric (e.g. Ingress QPS).
+    Object,
 }
 
 /// Service mesh sidecar injection configuration
@@ -749,6 +988,30 @@ pub struct KubernetesSpec {
     /// One-off Job settings when `workloadKind: job`.
     #[serde(default)]
     pub job: Option<K8sJobSpec>,
+    /// Build with Podman and push before deploy (overrides `build.push` when set).
+    #[serde(default)]
+    pub build_and_push: Option<bool>,
+    /// Headless service for StatefulSet (defaults to `true` for StatefulSet).
+    #[serde(default)]
+    pub headless_service: Option<bool>,
+    #[serde(default)]
+    pub pod: Option<K8sPodSettings>,
+    #[serde(default)]
+    pub rollout_strategy: Option<K8sRolloutStrategySpec>,
+    #[serde(default)]
+    pub service_account: Option<K8sServiceAccountSpec>,
+    #[serde(default)]
+    pub docker_registry_secret: Option<K8sDockerRegistrySecretSpec>,
+    #[serde(default)]
+    pub cert_manager: Option<K8sCertManagerSpec>,
+    #[serde(default)]
+    pub service_monitor: Option<K8sServiceMonitorSpec>,
+    #[serde(default)]
+    pub workload_identity: Option<K8sWorkloadIdentitySpec>,
+    #[serde(default)]
+    pub resource_quota: Option<K8sResourceQuotaSpec>,
+    #[serde(default)]
+    pub limit_range: Option<K8sLimitRangeSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -774,6 +1037,41 @@ pub struct K8sAffinitySpec {
     pub pod_affinity: Vec<K8sPodAffinityTermSpec>,
     #[serde(default)]
     pub pod_anti_affinity: Vec<K8sPodAffinityTermSpec>,
+    #[serde(default)]
+    pub node_affinity: Option<K8sNodeAffinitySpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sNodeAffinitySpec {
+    #[serde(default)]
+    pub required: Vec<K8sNodeSelectorTermSpec>,
+    #[serde(default)]
+    pub preferred: Vec<K8sPreferredSchedulingTermSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sNodeSelectorTermSpec {
+    #[serde(default)]
+    pub match_expressions: Vec<K8sNodeSelectorRequirementSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sPreferredSchedulingTermSpec {
+    pub weight: i32,
+    #[serde(default)]
+    pub match_expressions: Vec<K8sNodeSelectorRequirementSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sNodeSelectorRequirementSpec {
+    pub key: String,
+    pub operator: String,
+    #[serde(default)]
+    pub values: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -837,6 +1135,8 @@ pub struct K8sExtraVolumeSpec {
     pub mount_path: String,
     #[serde(default)]
     pub read_only: bool,
+    #[serde(default)]
+    pub sub_path: Option<String>,
     #[serde(flatten)]
     pub source: K8sVolumeSource,
 }
@@ -854,6 +1154,38 @@ pub enum K8sVolumeSource {
         #[serde(default = "default_host_path_type")]
         host_path_type: String,
     },
+    ConfigMap {
+        name: String,
+    },
+    Secret {
+        name: String,
+    },
+    Nfs {
+        server: String,
+        path: String,
+        #[serde(default)]
+        read_only: bool,
+    },
+    Csi {
+        driver: String,
+        volume_handle: String,
+        #[serde(default)]
+        fs_type: Option<String>,
+    },
+    Projected {
+        sources: Vec<K8sProjectedVolumeSourceSpec>,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sProjectedVolumeSourceSpec {
+    #[serde(default)]
+    pub config_map_name: Option<String>,
+    #[serde(default)]
+    pub secret_name: Option<String>,
+    #[serde(default)]
+    pub service_account_token: bool,
 }
 
 fn default_host_path_type() -> String {
@@ -931,6 +1263,188 @@ fn default_job_completions() -> u32 {
 
 fn default_job_parallelism() -> u32 {
     1
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sPodSettings {
+    #[serde(default)]
+    pub termination_grace_period_seconds: Option<i64>,
+    #[serde(default)]
+    pub host_network: Option<bool>,
+    #[serde(default)]
+    pub dns_policy: Option<String>,
+    #[serde(default)]
+    pub topology_spread_constraints: Vec<K8sTopologySpreadSpec>,
+    #[serde(default)]
+    pub lifecycle: Option<K8sLifecycleSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sTopologySpreadSpec {
+    pub max_skew: i32,
+    pub topology_key: String,
+    #[serde(default = "default_when_unsatisfiable")]
+    pub when_unsatisfiable: String,
+    #[serde(default)]
+    pub label_selector: HashMap<String, String>,
+}
+
+fn default_when_unsatisfiable() -> String {
+    "ScheduleAnyway".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sLifecycleSpec {
+    #[serde(default)]
+    pub pre_stop: Option<K8sLifecycleHandler>,
+    #[serde(default)]
+    pub post_start: Option<K8sLifecycleHandler>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "handlerType", content = "handlerConfig")]
+pub enum K8sLifecycleHandler {
+    Exec { command: Vec<String> },
+    HttpGet { path: String, port: u16 },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sRolloutStrategySpec {
+    #[serde(default = "default_rollout_strategy_type")]
+    pub strategy_type: String,
+    #[serde(default)]
+    pub max_surge: Option<String>,
+    #[serde(default)]
+    pub max_unavailable: Option<String>,
+}
+
+fn default_rollout_strategy_type() -> String {
+    "RollingUpdate".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sServiceAccountSpec {
+    pub create: bool,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub rules: Vec<K8sRbacRuleSpec>,
+    #[serde(default)]
+    pub annotations: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sRbacRuleSpec {
+    #[serde(default)]
+    pub api_groups: Vec<String>,
+    pub resources: Vec<String>,
+    pub verbs: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sDockerRegistrySecretSpec {
+    pub name: String,
+    pub registry: String,
+    pub username: String,
+    pub password: String,
+    #[serde(default)]
+    pub email: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sCertManagerSpec {
+    pub enabled: bool,
+    pub issuer_name: String,
+    #[serde(default = "default_cert_issuer_kind")]
+    pub issuer_kind: String,
+    #[serde(default)]
+    pub secret_name: Option<String>,
+}
+
+fn default_cert_issuer_kind() -> String {
+    "ClusterIssuer".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sServiceMonitorSpec {
+    pub enabled: bool,
+    #[serde(default = "default_scrape_interval")]
+    pub interval: String,
+    #[serde(default = "default_metrics_path")]
+    pub path: String,
+    #[serde(default = "default_monitor_port")]
+    pub port: String,
+}
+
+fn default_scrape_interval() -> String {
+    "30s".to_string()
+}
+
+fn default_metrics_path() -> String {
+    "/metrics".to_string()
+}
+
+fn default_monitor_port() -> String {
+    "http".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sWorkloadIdentitySpec {
+    pub provider: String,
+    #[serde(default)]
+    pub role_arn: Option<String>,
+    #[serde(default)]
+    pub client_id: Option<String>,
+    #[serde(default)]
+    pub gcp_service_account: Option<String>,
+    #[serde(default)]
+    pub annotations: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sResourceQuotaSpec {
+    pub enabled: bool,
+    /// Quota limits, e.g. `cpu: "4"`, `memory: 8Gi`, `pods: "10"`
+    #[serde(default)]
+    pub hard: HashMap<String, String>,
+    #[serde(default)]
+    pub scopes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sLimitRangeSpec {
+    pub enabled: bool,
+    #[serde(default)]
+    pub limits: Vec<K8sLimitRangeItemSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sLimitRangeItemSpec {
+    /// Container, Pod, or PersistentVolumeClaim
+    #[serde(rename = "type")]
+    pub limit_type: String,
+    #[serde(default)]
+    pub default: HashMap<String, String>,
+    #[serde(default)]
+    pub default_request: HashMap<String, String>,
+    #[serde(default)]
+    pub max: HashMap<String, String>,
+    #[serde(default)]
+    pub min: HashMap<String, String>,
 }
 
 /// Intent-based deployment specification
@@ -1078,6 +1592,8 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+                tag: None,
+                push: false,
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1123,6 +1639,8 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/yourorg".to_string(),
                 build_args: HashMap::new(),
+                tag: None,
+                push: false,
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1168,6 +1686,8 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+                tag: None,
+                push: false,
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1215,6 +1735,8 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+                tag: None,
+                push: false,
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1262,6 +1784,8 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+                tag: None,
+                push: false,
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1309,6 +1833,8 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+                tag: None,
+                push: false,
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1359,6 +1885,8 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+                tag: None,
+                push: false,
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1696,6 +2224,7 @@ mod tests {
             min_replicas: 2,
             max_replicas: 10,
             metrics: vec![],
+            behavior: None,
         });
         assert!(w.validate().is_ok());
     }
@@ -1708,6 +2237,7 @@ mod tests {
             min_replicas: 0,
             max_replicas: 5,
             metrics: vec![],
+            behavior: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("minReplicas"), "{}", err);
@@ -1721,6 +2251,7 @@ mod tests {
             min_replicas: 1,
             max_replicas: 0,
             metrics: vec![],
+            behavior: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("maxReplicas"), "{}", err);
@@ -1734,6 +2265,7 @@ mod tests {
             min_replicas: 10,
             max_replicas: 5,
             metrics: vec![],
+            behavior: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("minReplicas"), "{}", err);
@@ -1748,6 +2280,7 @@ mod tests {
             min_replicas: 3,
             max_replicas: 3,
             metrics: vec![],
+            behavior: None,
         });
         assert!(w.validate().is_ok());
     }
@@ -1765,6 +2298,8 @@ mod tests {
             paths: vec![],
             tls: false,
             annotations: HashMap::new(),
+            ingress_class_name: None,
+            tls_secret_name: None,
         });
         assert!(w.validate().is_ok());
     }
@@ -1778,6 +2313,8 @@ mod tests {
             paths: vec![],
             tls: false,
             annotations: HashMap::new(),
+            ingress_class_name: None,
+            tls_secret_name: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("ingress.host"), "{}", err);
@@ -1792,6 +2329,8 @@ mod tests {
             paths: vec![],
             tls: false,
             annotations: HashMap::new(),
+            ingress_class_name: None,
+            tls_secret_name: None,
         });
         assert!(w.validate().is_ok());
     }

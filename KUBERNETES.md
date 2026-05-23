@@ -133,7 +133,7 @@ kubectl logs -l app=web-app -f
 ### 7. Delete Resources
 
 ```bash
-# Clean up all resources (Pod, Service, PVC)
+# Clean up all resources (Deployment/StatefulSet, Service, Ingress, HPA, etc.)
 aether delete web-app
 
 # Verify deletion
@@ -142,44 +142,51 @@ kubectl get all -l managed-by=aether
 
 ## What Aether Creates
 
-When you deploy a workload to Kubernetes, Aether automatically creates:
+When you deploy a workload to Kubernetes, Aether creates controller-based resources (not standalone Pods):
 
-### 1. Pod
+### 1. Workload controller (Deployment by default)
 
 ```yaml
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: web-app
   labels:
     app: web-app
     managed-by: aether
 spec:
-  containers:
-  - name: web-app
-    image: docker.io/yourorg/web-app:latest
-    ports:
-    - containerPort: 80
-    resources:
-      limits:
-        cpu: "1"
-        memory: 2Gi
-      requests:
-        cpu: "1"
-        memory: 2Gi
-    livenessProbe:
-      httpGet:
-        path: /health
-        port: 80
-      initialDelaySeconds: 30
-      periodSeconds: 10
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: 80
-      initialDelaySeconds: 10
-      periodSeconds: 5
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: web-app
+        image: docker.io/yourorg/web-app:v1.2.3
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: "500m"
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
 ```
+
+Set `kubernetes.workloadKind` to `statefulSet`, `daemonSet`, `job`, or `cronJob` for other controllers.
 
 ### 2. Service (if `network.service: true`)
 
@@ -192,14 +199,19 @@ metadata:
     app: web-app
     managed-by: aether
 spec:
-  type: ClusterIP  # or NodePort, LoadBalancer
+  type: ClusterIP  # or NodePort, LoadBalancer, Headless, ExternalName
+  clusterIP: None  # StatefulSet headless service (default for statefulSet)
   selector:
     app: web-app
   ports:
   - port: 8080
     targetPort: 80
     protocol: TCP
+  sessionAffinity: ClientIP          # optional
+  externalTrafficPolicy: Local       # optional (NodePort/LB)
 ```
+
+Headless services (`clusterIP: None`) are created automatically for StatefulSets, or set `network.serviceType: headless` / `network.headless: true`.
 
 ### 3. PersistentVolumeClaim (if `persistence.enabled: true`)
 
@@ -603,9 +615,242 @@ health:
     periodSeconds: 5
 ```
 
+### Build and push images
+
+Set `build.tag` for the image tag (default `latest`) and enable automatic build+push:
+
+```yaml
+build:
+  registry: ghcr.io/myorg
+  tag: v1.2.3
+  push: true   # builds with Podman and pushes before deploy
+```
+
+Or use `kubernetes.buildAndPush: true`.
+
+Container images use `{registry}/{metadata.name}:{tag}` in manifests.
+
 Gateway API (`kubernetes.gateway`), VPA (`kubernetes.verticalPodAutoscaler`), and KEDA (`kubernetes.keda`) generate optional CR manifests when enabled.
 
-### Image pull secrets
+### Probes (HTTP, TCP, Exec, gRPC)
+
+```yaml
+health:
+  liveness:
+    grpc:
+      port: 9090
+      service: my.Service
+    initialDelaySeconds: 10
+    periodSeconds: 10
+```
+
+### Ingress TLS and cert-manager
+
+```yaml
+ingress:
+  enabled: true
+  host: app.example.com
+  tls: true
+  ingressClassName: nginx
+  tlsSecretName: app-tls
+
+kubernetes:
+  certManager:
+    enabled: true
+    issuerName: letsencrypt-prod
+    issuerKind: ClusterIssuer
+```
+
+### ServiceAccount + RBAC
+
+```yaml
+kubernetes:
+  serviceAccount:
+    create: true
+    name: app
+    rules:
+      - resources: ["configmaps"]
+        verbs: ["get", "list"]
+```
+
+### Docker registry secret (auto-create)
+
+```yaml
+kubernetes:
+  dockerRegistrySecret:
+    name: regcred
+    registry: ghcr.io
+    username: myuser
+    password: "${REGISTRY_PASSWORD}"
+```
+
+### Advanced scheduling and pod settings
+
+```yaml
+kubernetes:
+  pod:
+    terminationGracePeriodSeconds: 60
+    hostNetwork: false
+    dnsPolicy: ClusterFirst
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+    lifecycle:
+      preStop:
+        handlerType: exec
+        handlerConfig:
+          command: ["/bin/sh", "-c", "sleep 15"]
+  rolloutStrategy:
+    strategyType: RollingUpdate
+    maxSurge: "25%"
+    maxUnavailable: "25%"
+  affinity:
+    nodeAffinity:
+      required:
+        - matchExpressions:
+            - key: node.kubernetes.io/instance-type
+              operator: In
+              values: ["m5.large"]
+```
+
+### Extra volume types
+
+`kubernetes.extraVolumes` supports `emptyDir`, `hostPath`, `configMap`, `secret`, `nfs`, `csi`, and `projected` (with optional `subPath`).
+
+### HPA external/object metrics and scale behavior
+
+```yaml
+scaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 20
+  behavior:
+    scaleUpStabilizationSeconds: 60
+    scaleDownStabilizationSeconds: 300
+  metrics:
+    - metricType: external
+      metricName: queue_depth
+      targetValue: "30"
+    - metricType: object
+      metricName: requests-per-second
+      objectKind: Ingress
+      objectName: web-app-ingress
+      objectApiVersion: networking.k8s.io/v1
+      targetValue: "1000"
+```
+
+### NetworkPolicy (labels, namespaces, CIDRs, separate ports)
+
+```yaml
+network:
+  networkPolicy:
+    denyAllIngress: true
+    denyAllEgress: true
+    allowFrom:
+      - "role=frontend"
+    allowFromNamespaces:
+      - "team=platform"
+    allowFromCidrs:
+      - "10.0.0.0/8"
+    allowFromCidrBlocks:
+      - cidr: 10.0.0.0/8
+        except:
+          - 10.0.0.0/24
+    allowTo:
+      - "app=postgres"
+    allowToNamespaces:
+      - "team=data"
+    allowToCidrBlocks:
+      - cidr: 10.1.0.0/16
+    ingressPorts:
+      - port: 8080
+        protocol: TCP
+    egressPorts:
+      - port: 5432
+        protocol: TCP
+```
+
+Legacy `ports` still applies to both directions when direction-specific lists are empty.
+
+### Cilium NetworkPolicy (Cilium CNI)
+
+```yaml
+network:
+  ciliumNetworkPolicy:
+    enabled: true
+    ingress:
+      - fromEndpoints:
+          - role: frontend
+    egress:
+      - toCIDR:
+          - 10.0.0.0/8
+        toPorts:
+          - port: 443
+            protocol: TCP
+```
+
+### Calico NetworkPolicy (Calico CNI)
+
+```yaml
+network:
+  calicoNetworkPolicy:
+    enabled: true
+    types: [Ingress, Egress]
+    ingress:
+      - action: Allow
+        sourceSelector: "role == 'frontend'"
+    egress:
+      - action: Allow
+        destinationNets: ["10.0.0.0/8"]
+        destinationPorts: [5432]
+        protocol: TCP
+```
+
+### ResourceQuota and LimitRange
+
+```yaml
+kubernetes:
+  resourceQuota:
+    enabled: true
+    hard:
+      cpu: "4"
+      memory: 8Gi
+      pods: "10"
+  limitRange:
+    enabled: true
+    limits:
+      - type: Container
+        default:
+          memory: 512Mi
+        max:
+          cpu: "2"
+          memory: 4Gi
+```
+
+### Prometheus ServiceMonitor
+
+```yaml
+kubernetes:
+  serviceMonitor:
+    enabled: true
+    port: http
+    path: /metrics
+    interval: 30s
+```
+
+Requires Prometheus Operator in the cluster.
+
+### Workload identity
+
+```yaml
+kubernetes:
+  workloadIdentity:
+    provider: aws   # aws | azure | gcp
+    roleArn: arn:aws:iam::123456789012:role/my-app
+```
+
+### Image pull secrets (reference existing)
 
 ```yaml
 kubernetes:
@@ -613,7 +858,7 @@ kubernetes:
     - regcred
 ```
 
-Create the secret with kubectl, then reference it in the workload spec above.
+Create the secret with kubectl or `kubernetes.dockerRegistrySecret`, then reference it via `kubernetes.imagePullSecrets`.
 
 ### Port Forwarding (Development)
 

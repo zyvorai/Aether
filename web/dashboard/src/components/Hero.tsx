@@ -35,7 +35,7 @@ export default function Hero({ title, subtitle, badges }: HeroProps) {
               <span className="h-1.5 w-1.5 rounded-full bg-aether shadow-[0_0_14px_rgba(99,164,255,0.9)]" />
               Control Plane
             </div>
-            <h1 className="max-w-4xl bg-gradient-to-br from-white via-slate-100 to-slate-400 bg-clip-text text-3xl font-semibold tracking-tight text-transparent sm:text-4xl lg:text-6xl">
+            <h1 className="max-w-4xl bg-gradient-to-br from-white via-slate-100 to-slate-400 bg-clip-text text-3xl font-semibold tracking-tight text-transparent sm:text-4xl lg:text-5xl">
               {title}
             </h1>
             {subtitle.trim() ? (

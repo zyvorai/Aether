@@ -533,6 +533,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/testorg".to_string(),
                 build_args: HashMap::new(),
+            ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: cpu.to_string(),

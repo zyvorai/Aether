@@ -690,6 +690,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+            ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -712,6 +713,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
+        ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,
@@ -780,6 +782,7 @@ mod tests {
             paths: vec![],
             tls: false,
             annotations: HashMap::new(),
+            ..Default::default()
         });
         let state = test_state();
         let report = detector.detect(&spec, &state);

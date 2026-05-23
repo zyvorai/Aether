@@ -567,6 +567,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+            ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "4".to_string(),
@@ -589,6 +590,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
+        ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,
@@ -635,6 +637,7 @@ mod tests {
             paths: vec![],
             tls,
             annotations: HashMap::new(),
+            ..Default::default()
         }
     }
 
@@ -1153,6 +1156,7 @@ mod tests {
             min_replicas: 1,
             max_replicas: 5,
             metrics: vec![],
+            ..Default::default()
         });
         let mut recs = Vec::new();
         profiler.check_runtime(
@@ -1420,6 +1424,7 @@ mod tests {
             min_replicas: 2,
             max_replicas: 10,
             metrics: vec![],
+            ..Default::default()
         });
         let profile = profiler.profile(&spec, Some(RuntimeKind::Kubernetes));
         assert!(

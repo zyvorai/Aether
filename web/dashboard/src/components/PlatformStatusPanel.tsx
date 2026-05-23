@@ -73,13 +73,25 @@ function StatusTile({
 }
 
 export default function PlatformStatusPanel({ platform, ready, sseConnected, loading }: PlatformStatusPanelProps) {
-  if (loading || !platform) {
+  if (loading) {
     return (
       <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="skeleton h-36 rounded-2xl" />
+          <div key={i} className="skeleton h-28 rounded-2xl" />
         ))}
       </div>
+    );
+  }
+
+  if (!platform) {
+    return (
+      <section className="mb-8 rounded-2xl border border-slate-700/40 bg-slate-900/40 px-4 py-4 text-sm text-slate-400">
+        <p className="font-medium text-slate-300">Platform status unavailable</p>
+        <p className="mt-1 text-xs leading-relaxed">
+          Could not load <code className="text-slate-300">/api/server</code>. Check that the API is running and your
+          session is valid, then refresh the page.
+        </p>
+      </section>
     );
   }
 

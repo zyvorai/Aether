@@ -1,19 +1,27 @@
 //! Kubernetes manifest generation helpers (Deployment, StatefulSet, Job, PDB, Gateway, VPA, KEDA).
 
+#![allow(clippy::needless_update)]
+
 use crate::runtime::Image;
 use crate::spec::{
     AccessMode, HealthProbe, K8sContainerSpec, K8sVolumeSource, K8sWorkloadKind, ProbeType,
     Workload,
 };
 use k8s_openapi::api::apps::v1::{
-    DaemonSet, DaemonSetSpec, Deployment, DeploymentSpec, StatefulSet, StatefulSetSpec,
+    DaemonSet, DaemonSetSpec, Deployment, DeploymentSpec, DeploymentStrategy,
+    RollingUpdateDeployment, StatefulSet, StatefulSetSpec,
 };
 use k8s_openapi::api::batch::v1::{CronJob, CronJobSpec, Job, JobSpec, JobTemplateSpec};
 use k8s_openapi::api::core::v1::{
     Affinity, Container, ContainerPort, EmptyDirVolumeSource, EnvFromSource as K8sEnvFromSource,
-    ExecAction, HostPathVolumeSource, LocalObjectReference, PodAffinity, PodAffinityTerm,
-    PodAntiAffinity, PodSecurityContext, PodSpec, PodTemplateSpec, Probe, SecurityContext,
-    TCPSocketAction, Toleration, Volume, VolumeMount, ConfigMapEnvSource, SecretEnvSource,
+    ExecAction, GRPCAction, HostPathVolumeSource, Lifecycle, LifecycleHandler,
+    LocalObjectReference, NFSVolumeSource, NodeAffinity, NodeSelector, NodeSelectorRequirement,
+    NodeSelectorTerm, PodAffinity, PodAffinityTerm, PodAntiAffinity, PodSecurityContext, PodSpec,
+    PodTemplateSpec, PreferredSchedulingTerm, Probe, CSIVolumeSource,
+    ProjectedVolumeSource, VolumeProjection, ConfigMapProjection, SecretProjection,
+    ServiceAccountTokenProjection, SecurityContext, Service, ServicePort, ServiceSpec,
+    TCPSocketAction, Toleration, TopologySpreadConstraint, Volume, VolumeMount,
+    ConfigMapEnvSource, SecretEnvSource, ConfigMapVolumeSource, SecretVolumeSource,
     PersistentVolumeClaim, PersistentVolumeClaimSpec, VolumeResourceRequirements,
 };
 use k8s_openapi::api::policy::v1::{PodDisruptionBudget, PodDisruptionBudgetSpec};
@@ -23,7 +31,7 @@ use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 
-fn sanitize_volume_name(name: &str) -> String {
+pub(crate) fn sanitize_volume_name(name: &str) -> String {
     let sanitized: String = name
         .to_ascii_lowercase()
         .chars()
@@ -74,15 +82,16 @@ fn int_or_string_from_str(value: &str) -> IntOrString {
     }
 }
 
-/// Map Aether health probe to a Kubernetes probe (HTTP, TCP, or Exec).
+/// Map Aether health probe to a Kubernetes probe (HTTP, TCP, Exec, or gRPC).
 pub(crate) fn build_k8s_probe(probe: &HealthProbe) -> Probe {
-    let (http_get, tcp_socket, exec) = match &probe.probe_type {
+    let (http_get, tcp_socket, exec, grpc) = match &probe.probe_type {
         ProbeType::HttpGet { path, port } => (
             Some(k8s_openapi::api::core::v1::HTTPGetAction {
                 path: Some(path.clone()),
                 port: IntOrString::Int(*port as i32),
                 ..Default::default()
             }),
+            None,
             None,
             None,
         ),
@@ -93,13 +102,23 @@ pub(crate) fn build_k8s_probe(probe: &HealthProbe) -> Probe {
                 ..Default::default()
             }),
             None,
+            None,
         ),
         ProbeType::Exec { command } => (
             None,
             None,
             Some(ExecAction {
                 command: Some(command.clone()),
-                ..Default::default()
+            }),
+            None,
+        ),
+        ProbeType::Grpc { port, service } => (
+            None,
+            None,
+            None,
+            Some(GRPCAction {
+                port: *port as i32,
+                service: Some(service.clone()),
             }),
         ),
     };
@@ -108,6 +127,7 @@ pub(crate) fn build_k8s_probe(probe: &HealthProbe) -> Probe {
         http_get,
         tcp_socket,
         exec,
+        grpc,
         initial_delay_seconds: Some(probe.initial_delay_seconds as i32),
         period_seconds: Some(probe.period_seconds as i32),
         ..Default::default()
@@ -147,6 +167,38 @@ fn pod_annotations(spec: &Workload) -> BTreeMap<String, String> {
             _ => {}
         }
         for (k, v) in &mesh.annotations {
+            pod_annotations.insert(k.clone(), v.clone());
+        }
+    }
+    if let Some(wi) = spec.kubernetes.as_ref().and_then(|k| k.workload_identity.as_ref()) {
+        match wi.provider.as_str() {
+            "aws" => {
+                if let Some(arn) = &wi.role_arn {
+                    pod_annotations.insert(
+                        "eks.amazonaws.com/role-arn".to_string(),
+                        arn.clone(),
+                    );
+                }
+            }
+            "azure" => {
+                if let Some(id) = &wi.client_id {
+                    pod_annotations.insert(
+                        "azure.workload.identity/client-id".to_string(),
+                        id.clone(),
+                    );
+                }
+            }
+            "gcp" => {
+                if let Some(sa) = &wi.gcp_service_account {
+                    pod_annotations.insert(
+                        "iam.gke.io/gcp-service-account".to_string(),
+                        sa.clone(),
+                    );
+                }
+            }
+            _ => {}
+        }
+        for (k, v) in &wi.annotations {
             pod_annotations.insert(k.clone(), v.clone());
         }
     }
@@ -245,14 +297,22 @@ fn build_main_container(image: &Image, spec: &Workload) -> Container {
         })
     });
 
+    let lifecycle = spec
+        .kubernetes
+        .as_ref()
+        .and_then(|k| k.pod.as_ref())
+        .and_then(|p| p.lifecycle.as_ref())
+        .map(build_container_lifecycle);
+
     Container {
         name: spec.metadata.name.clone(),
-        image: Some(image.full_name()),
+        image: Some(image.reference()),
         ports: Some(ports),
         resources: Some(resources),
         liveness_probe,
         readiness_probe,
         startup_probe,
+        lifecycle,
         env: if inline_env.is_empty() { None } else { Some(inline_env) },
         env_from: if env_from.is_empty() { None } else { Some(env_from) },
         volume_mounts: if volume_mounts.is_empty() {
@@ -295,6 +355,7 @@ fn build_config_volume_mounts(spec: &Workload) -> Vec<VolumeMount> {
                 name: vol.name.clone(),
                 mount_path: vol.mount_path.clone(),
                 read_only: Some(vol.read_only),
+                sub_path: vol.sub_path.clone(),
                 ..Default::default()
             });
         }
@@ -367,6 +428,59 @@ fn build_volumes(spec: &Workload) -> Vec<Volume> {
                     host_path: Some(HostPathVolumeSource {
                         path: path.clone(),
                         type_: Some(host_path_type.clone()),
+                    }),
+                    ..Default::default()
+                },
+                K8sVolumeSource::ConfigMap { name } => Volume {
+                    name: vol.name.clone(),
+                    config_map: Some(ConfigMapVolumeSource {
+                        name: name.clone(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                K8sVolumeSource::Secret { name } => Volume {
+                    name: vol.name.clone(),
+                    secret: Some(SecretVolumeSource {
+                        secret_name: Some(name.clone()),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                K8sVolumeSource::Nfs { server, path, read_only } => Volume {
+                    name: vol.name.clone(),
+                    nfs: Some(NFSVolumeSource {
+                        server: server.clone(),
+                        path: path.clone(),
+                        read_only: Some(*read_only),
+                    }),
+                    ..Default::default()
+                },
+                K8sVolumeSource::Csi { driver, volume_handle, fs_type } => {
+                    let mut attrs = BTreeMap::new();
+                    attrs.insert("volumeHandle".to_string(), volume_handle.clone());
+                    if let Some(fs) = fs_type {
+                        attrs.insert("fsType".to_string(), fs.clone());
+                    }
+                    Volume {
+                        name: vol.name.clone(),
+                        csi: Some(CSIVolumeSource {
+                            driver: driver.clone(),
+                            volume_attributes: Some(attrs),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    }
+                }
+                K8sVolumeSource::Projected { sources } => Volume {
+                    name: vol.name.clone(),
+                    projected: Some(ProjectedVolumeSource {
+                        sources: Some(
+                            sources
+                                .iter()
+                                .filter_map(projected_source_from_spec)
+                                .collect(),
+                        ),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -375,6 +489,39 @@ fn build_volumes(spec: &Workload) -> Vec<Volume> {
         }
     }
     volumes
+}
+
+fn projected_source_from_spec(
+    src: &crate::spec::K8sProjectedVolumeSourceSpec,
+) -> Option<VolumeProjection> {
+    if src.service_account_token {
+        return Some(VolumeProjection {
+            service_account_token: Some(ServiceAccountTokenProjection {
+                path: "token".to_string(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+    }
+    if let Some(name) = &src.config_map_name {
+        return Some(VolumeProjection {
+            config_map: Some(ConfigMapProjection {
+                name: name.clone(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+    }
+    if let Some(name) = &src.secret_name {
+        return Some(VolumeProjection {
+            secret: Some(SecretProjection {
+                name: name.clone(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+    }
+    None
 }
 
 fn container_from_spec(c: &K8sContainerSpec) -> Container {
@@ -401,10 +548,70 @@ fn container_from_spec(c: &K8sContainerSpec) -> Container {
     }
 }
 
+fn build_container_lifecycle(spec: &crate::spec::K8sLifecycleSpec) -> Lifecycle {
+    Lifecycle {
+        pre_stop: spec.pre_stop.as_ref().map(lifecycle_handler),
+        post_start: spec.post_start.as_ref().map(lifecycle_handler),
+    }
+}
+
+fn lifecycle_handler(handler: &crate::spec::K8sLifecycleHandler) -> LifecycleHandler {
+    match handler {
+        crate::spec::K8sLifecycleHandler::Exec { command } => LifecycleHandler {
+            exec: Some(ExecAction {
+                command: Some(command.clone()),
+            }),
+            ..Default::default()
+        },
+        crate::spec::K8sLifecycleHandler::HttpGet { path, port } => LifecycleHandler {
+            http_get: Some(k8s_openapi::api::core::v1::HTTPGetAction {
+                path: Some(path.clone()),
+                port: IntOrString::Int(*port as i32),
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
+    }
+}
+
+fn build_topology_spread(spec: &Workload) -> Option<Vec<TopologySpreadConstraint>> {
+    let pod = spec.kubernetes.as_ref()?.pod.as_ref()?;
+    if pod.topology_spread_constraints.is_empty() {
+        return None;
+    }
+    Some(
+        pod.topology_spread_constraints
+            .iter()
+            .map(|t| {
+                let mut match_labels = BTreeMap::new();
+                for (k, v) in &t.label_selector {
+                    match_labels.insert(k.clone(), v.clone());
+                }
+                TopologySpreadConstraint {
+                    max_skew: t.max_skew,
+                    topology_key: t.topology_key.clone(),
+                    when_unsatisfiable: t.when_unsatisfiable.clone(),
+                    label_selector: if match_labels.is_empty() {
+                        None
+                    } else {
+                        Some(LabelSelector {
+                            match_labels: Some(match_labels),
+                            ..Default::default()
+                        })
+                    },
+                    ..Default::default()
+                }
+            })
+            .collect(),
+    )
+}
+
 fn build_affinity(spec: &Workload) -> Option<Affinity> {
     let k8s = spec.kubernetes.as_ref()?;
-    let aff = k8s.affinity.as_ref()?;
-    if aff.pod_affinity.is_empty() && aff.pod_anti_affinity.is_empty() {
+    let aff = k8s.affinity.as_ref();
+    let has_pod = aff.is_some_and(|a| !a.pod_affinity.is_empty() || !a.pod_anti_affinity.is_empty());
+    let node_affinity = aff.and_then(|a| a.node_affinity.as_ref()).map(build_node_affinity);
+    if !has_pod && node_affinity.is_none() {
         return None;
     }
     let to_terms = |terms: &[crate::spec::K8sPodAffinityTermSpec]| -> Vec<PodAffinityTerm> {
@@ -427,28 +634,83 @@ fn build_affinity(spec: &Workload) -> Option<Affinity> {
             .collect()
     };
     Some(Affinity {
-        pod_affinity: if aff.pod_affinity.is_empty() {
-            None
-        } else {
-            Some(PodAffinity {
+        node_affinity,
+        pod_affinity: aff.filter(|a| !a.pod_affinity.is_empty()).map(|a| PodAffinity {
+            required_during_scheduling_ignored_during_execution: Some(to_terms(&a.pod_affinity)),
+            ..Default::default()
+        }),
+        pod_anti_affinity: aff
+            .filter(|a| !a.pod_anti_affinity.is_empty())
+            .map(|a| PodAntiAffinity {
                 required_during_scheduling_ignored_during_execution: Some(to_terms(
-                    &aff.pod_affinity,
+                    &a.pod_anti_affinity,
                 )),
                 ..Default::default()
-            })
-        },
-        pod_anti_affinity: if aff.pod_anti_affinity.is_empty() {
-            None
-        } else {
-            Some(PodAntiAffinity {
-                required_during_scheduling_ignored_during_execution: Some(to_terms(
-                    &aff.pod_anti_affinity,
-                )),
-                ..Default::default()
-            })
-        },
+            }),
         ..Default::default()
     })
+}
+
+fn build_node_affinity(spec: &crate::spec::K8sNodeAffinitySpec) -> NodeAffinity {
+    let required: Vec<NodeSelectorTerm> = spec
+        .required
+        .iter()
+        .map(|term| NodeSelectorTerm {
+            match_expressions: Some(
+                term.match_expressions
+                    .iter()
+                    .map(|e| NodeSelectorRequirement {
+                        key: e.key.clone(),
+                        operator: e.operator.clone(),
+                        values: if e.values.is_empty() {
+                            None
+                        } else {
+                            Some(e.values.clone())
+                        },
+                    })
+                    .collect(),
+            ),
+            ..Default::default()
+        })
+        .collect();
+    let preferred: Vec<PreferredSchedulingTerm> = spec
+        .preferred
+        .iter()
+        .map(|p| PreferredSchedulingTerm {
+            weight: p.weight,
+            preference: NodeSelectorTerm {
+                match_expressions: Some(
+                    p.match_expressions
+                        .iter()
+                        .map(|e| NodeSelectorRequirement {
+                            key: e.key.clone(),
+                            operator: e.operator.clone(),
+                            values: if e.values.is_empty() {
+                                None
+                            } else {
+                                Some(e.values.clone())
+                            },
+                        })
+                        .collect(),
+                ),
+                ..Default::default()
+            },
+        })
+        .collect();
+    NodeAffinity {
+        required_during_scheduling_ignored_during_execution: if required.is_empty() {
+            None
+        } else {
+            Some(NodeSelector {
+                node_selector_terms: required,
+            })
+        },
+        preferred_during_scheduling_ignored_during_execution: if preferred.is_empty() {
+            None
+        } else {
+            Some(preferred)
+        },
+    }
 }
 
 fn build_tolerations(spec: &Workload) -> Option<Vec<Toleration>> {
@@ -540,6 +802,17 @@ pub(crate) fn build_pod_template_spec(
         .filter(|k| !k.init_containers.is_empty())
         .map(|k| k.init_containers.iter().map(container_from_spec).collect());
     let volumes = build_volumes(spec);
+    let pod_settings = spec.kubernetes.as_ref().and_then(|k| k.pod.as_ref());
+    let mut image_pull_secrets = build_image_pull_secrets(spec).unwrap_or_default();
+    if let Some(reg) = spec
+        .kubernetes
+        .as_ref()
+        .and_then(|k| k.docker_registry_secret.as_ref())
+    {
+        if !image_pull_secrets.iter().any(|s| s.name == reg.name) {
+            image_pull_secrets.push(LocalObjectReference { name: reg.name.clone() });
+        }
+    }
     PodTemplateSpec {
         metadata: Some(ObjectMeta {
             labels: Some(labels),
@@ -551,11 +824,16 @@ pub(crate) fn build_pod_template_spec(
             init_containers,
             volumes: if volumes.is_empty() { None } else { Some(volumes) },
             restart_policy: restart_policy.map(str::to_string),
-            image_pull_secrets: build_image_pull_secrets(spec),
-            service_account_name: spec
-                .kubernetes
-                .as_ref()
-                .and_then(|k| k.service_account_name.clone()),
+            image_pull_secrets: if image_pull_secrets.is_empty() {
+                None
+            } else {
+                Some(image_pull_secrets)
+            },
+            service_account_name: crate::adapters::kube_extras::service_account_name(spec).or_else(|| {
+                spec.kubernetes
+                    .as_ref()
+                    .and_then(|k| k.service_account_name.clone())
+            }),
             priority_class_name: spec
                 .kubernetes
                 .as_ref()
@@ -566,6 +844,11 @@ pub(crate) fn build_pod_template_spec(
             tolerations: build_tolerations(spec),
             affinity: build_affinity(spec),
             security_context: build_pod_security_context(spec),
+            termination_grace_period_seconds: pod_settings
+                .and_then(|p| p.termination_grace_period_seconds),
+            host_network: pod_settings.and_then(|p| p.host_network),
+            dns_policy: pod_settings.and_then(|p| p.dns_policy.clone()),
+            topology_spread_constraints: build_topology_spread(spec),
             ..Default::default()
         }),
     }
@@ -815,11 +1098,97 @@ pub(crate) fn build_deployment_manifest_v2(
                 match_labels: Some(selector_labels(spec)),
                 ..Default::default()
             },
+            strategy: build_deployment_strategy(spec),
             template: build_pod_template_spec(image, spec, None),
             ..Default::default()
         }),
         ..Default::default()
     }
+}
+
+fn build_deployment_strategy(spec: &Workload) -> Option<DeploymentStrategy> {
+    let rs = spec.kubernetes.as_ref()?.rollout_strategy.as_ref()?;
+    Some(DeploymentStrategy {
+        type_: Some(rs.strategy_type.clone()),
+        rolling_update: if rs.strategy_type.eq_ignore_ascii_case("RollingUpdate") {
+            Some(RollingUpdateDeployment {
+                max_surge: rs
+                    .max_surge
+                    .as_ref()
+                    .map(|s| int_or_string_from_str(s.as_str())),
+                max_unavailable: rs
+                    .max_unavailable
+                    .as_ref()
+                    .map(|s| int_or_string_from_str(s.as_str())),
+            })
+        } else {
+            None
+        },
+    })
+}
+
+/// Build a Service manifest (ClusterIP, NodePort, LoadBalancer, Headless, ExternalName).
+pub(crate) fn build_service_manifest(namespace: &str, spec: &Workload) -> Option<Service> {
+    if !spec.network.service {
+        return None;
+    }
+
+    let labels = workload_labels(spec);
+
+    let ports: Vec<ServicePort> = spec
+        .network
+        .ports
+        .iter()
+        .map(|p| ServicePort {
+            port: p.service_port as i32,
+            target_port: Some(IntOrString::Int(p.container_port as i32)),
+            protocol: Some(p.protocol.clone()),
+            ..Default::default()
+        })
+        .collect();
+
+    let headless = spec.wants_headless_service();
+    let service_type = if spec.network.external_name.is_some() {
+        "ExternalName"
+    } else if headless {
+        "ClusterIP"
+    } else {
+        match spec.network.service_type {
+            crate::spec::ServiceType::ClusterIP | crate::spec::ServiceType::Headless => "ClusterIP",
+            crate::spec::ServiceType::NodePort => "NodePort",
+            crate::spec::ServiceType::LoadBalancer => "LoadBalancer",
+            crate::spec::ServiceType::ExternalName => "ExternalName",
+        }
+    };
+
+    let mut selector = selector_labels(spec);
+    if service_type == "ExternalName" {
+        selector.clear();
+    }
+
+    Some(Service {
+        metadata: ObjectMeta {
+            name: Some(format!("{}-service", spec.metadata.name)),
+            namespace: Some(namespace.to_string()),
+            labels: Some(labels),
+            ..Default::default()
+        },
+        spec: Some(ServiceSpec {
+            type_: Some(service_type.to_string()),
+            cluster_ip: if headless {
+                Some("None".to_string())
+            } else {
+                None
+            },
+            external_name: spec.network.external_name.clone(),
+            session_affinity: spec.network.session_affinity.clone(),
+            external_traffic_policy: spec.network.external_traffic_policy.clone(),
+            ports: if ports.is_empty() { None } else { Some(ports) },
+            selector: if selector.is_empty() { None } else { Some(selector) },
+            ..Default::default()
+        }),
+        ..Default::default()
+    })
 }
 
 pub(crate) fn build_cronjob_manifest_v2(
@@ -891,6 +1260,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+            ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "1".to_string(),
@@ -976,6 +1346,52 @@ mod tests {
     }
 
     #[test]
+    fn test_grpc_probe_maps_to_k8s() {
+        let mut spec = test_workload();
+        spec.health = Some(HealthSpec {
+            liveness: Some(HealthProbe {
+                probe_type: ProbeType::Grpc {
+                    port: 9090,
+                    service: "my.Service".to_string(),
+                },
+                initial_delay_seconds: 5,
+                period_seconds: 10,
+            }),
+            readiness: None,
+            startup: None,
+        });
+        let deploy = build_deployment_manifest_v2("default", &test_image(), &spec);
+        let probe = deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0]
+            .liveness_probe
+            .as_ref()
+            .unwrap();
+        assert!(probe.grpc.is_some());
+    }
+
+    #[test]
+    fn test_headless_service_for_statefulset() {
+        let mut spec = test_workload();
+        spec.network.service = true;
+        spec.kubernetes = Some(crate::spec::KubernetesSpec {
+            workload_kind: Some(K8sWorkloadKind::StatefulSet),
+            ..Default::default()
+        });
+        let svc = build_service_manifest("default", &spec).unwrap();
+        assert_eq!(
+            svc.spec.as_ref().unwrap().cluster_ip.as_deref(),
+            Some("None")
+        );
+    }
+
+    #[test]
     fn test_job_manifest() {
         let mut spec = test_workload();
         spec.kubernetes = Some(crate::spec::KubernetesSpec {
@@ -987,5 +1403,15 @@ mod tests {
             job.metadata.name.as_deref(),
             Some("test-app")
         );
+    }
+
+    #[test]
+    fn test_sanitize_volume_name() {
+        assert_eq!(sanitize_volume_name("cm-app-config"), "cm-app-config");
+        assert_eq!(sanitize_volume_name("CM-MyConfig"), "cm-myconfig");
+        assert_eq!(sanitize_volume_name("secret-tls.crt@v2"), "secret-tls-crt-v2");
+        assert_eq!(sanitize_volume_name("--name--"), "name");
+        assert_eq!(sanitize_volume_name(""), "vol");
+        assert_eq!(sanitize_volume_name(&"a".repeat(100)).len(), 63);
     }
 }
