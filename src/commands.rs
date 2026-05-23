@@ -3304,13 +3304,13 @@ pub(crate) async fn cp_command(name: &str, src: &str, dest: &str, timeout: u64) 
         }
         RuntimeKind::Kubernetes | RuntimeKind::KubeVirt => {
             let pod = ws.instance.name.clone();
-            let src_arg = if src.starts_with("pod:") {
-                format!("{}/{}", pod, &src[4..])
+            let src_arg = if let Some(path) = src.strip_prefix("pod:") {
+                format!("{}/{}", pod, path)
             } else {
                 src.to_string()
             };
-            let dest_arg = if dest.starts_with("pod:") {
-                format!("{}/{}", pod, &dest[4..])
+            let dest_arg = if let Some(path) = dest.strip_prefix("pod:") {
+                format!("{}/{}", pod, path)
             } else {
                 dest.to_string()
             };
@@ -4112,6 +4112,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
+            ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),

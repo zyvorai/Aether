@@ -42,6 +42,7 @@ struct SamlRoleMapping {
 
 pub struct SamlRuntime {
     idp_sso_url: String,
+    #[allow(dead_code)]
     idp_entity_id: String,
     sp_entity_id: String,
     acs_url: String,
@@ -342,7 +343,7 @@ fn extract_xml_attr(xml: &str, attr: &str) -> Option<String> {
     extract_between(xml, &pattern, "\"")
 }
 
-fn extract_between<'a>(haystack: &'a str, start: &str, end: &str) -> Option<String> {
+fn extract_between(haystack: &str, start: &str, end: &str) -> Option<String> {
     let s = haystack.find(start)? + start.len();
     let e = haystack[s..].find(end)? + s;
     Some(haystack[s..e].to_string())

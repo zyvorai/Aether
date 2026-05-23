@@ -40,7 +40,10 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
 
   useEffect(() => {
     async function load() {
-      const [w, es, hs, b, s, ev, cs, p, envs, keys] = await Promise.all([
+      const timeout = new Promise<null>((resolve) => {
+        window.setTimeout(() => resolve(null), 20_000);
+      });
+      const dataPromise = Promise.all([
         apiFetch<WorkloadResponse[]>('/workloads'),
         apiFetch<EventSummary>('/events/summary'),
         apiFetch<HealthSummary>('/orchestrator/summary'),
@@ -52,6 +55,12 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         apiFetch<Environment[]>('/environments'),
         apiFetch<ApiKeySummary[]>('/rbac/keys'),
       ]);
+      const result = await Promise.race([dataPromise, timeout]);
+      if (!result) {
+        setLoading(false);
+        return;
+      }
+      const [w, es, hs, b, s, ev, cs, p, envs, keys] = result;
       setWorkloads(w ?? []);
       setEventSummary(es);
       setHealthSummary(hs);
@@ -77,8 +86,8 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="skeleton h-72 rounded-xl" />
-          <div className="skeleton h-72 rounded-xl" />
+          <div className="skeleton h-48 rounded-xl" />
+          <div className="skeleton h-48 rounded-xl" />
         </div>
       </div>
     );
@@ -93,7 +102,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         platform={capabilities?.platform ?? null}
         ready={ready}
         sseConnected={sseConnected}
-        loading={platformLoading && !capabilities}
+        loading={platformLoading}
       />
       {clusterSummary?.summary_note ? (
         <div className="mb-5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95 leading-relaxed">

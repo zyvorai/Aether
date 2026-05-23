@@ -126,6 +126,12 @@ impl Runtime for PodmanRuntime {
                             .collect::<Vec<_>>()
                             .join(" ")
                     }
+                    crate::spec::ProbeType::Grpc { port, service } => {
+                        format!(
+                            "grpc_health_probe -addr=localhost:{} -service={} || exit 1",
+                            port, service
+                        )
+                    }
                 };
                 cmd.arg("--health-cmd").arg(&health_cmd);
                 cmd.arg("--health-interval")
@@ -340,6 +346,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: std::collections::HashMap::new(),
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "1".to_string(),
@@ -362,6 +369,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
+        ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,

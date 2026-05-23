@@ -122,6 +122,12 @@ impl Runtime for DockerRuntime {
                             .collect::<Vec<_>>()
                             .join(" ")
                     }
+                    crate::spec::ProbeType::Grpc { port, service } => {
+                        format!(
+                            "grpc_health_probe -addr=localhost:{} -service={} || exit 1",
+                            port, service
+                        )
+                    }
                 };
                 cmd.arg("--health-cmd").arg(&health_cmd);
                 cmd.arg("--health-interval")

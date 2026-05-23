@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   define: {
     __AETHER_DASHBOARD_BUILD__: JSON.stringify(
-      process.env.AETHER_DASHBOARD_BUILD ?? new Date().toISOString()
+      process.env.AETHER_DASHBOARD_BUILD ?? 'dev'
     ),
   },
   server: {
