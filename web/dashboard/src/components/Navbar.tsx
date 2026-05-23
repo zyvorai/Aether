@@ -33,6 +33,7 @@ import {
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
+import { ZyvorInline } from './ZyvorBrand';
 import PlatformHealthChip from './PlatformHealthChip';
 
 function maskBearer(token: string | null): string {
@@ -380,6 +381,10 @@ export default function Navbar({ currentView, onNavigate, username, onLogout, on
             >
               Sign out
             </button>
+
+            <div className="hidden lg:flex items-center pl-3 border-l border-slate-700/50">
+              <ZyvorInline product="Aether" />
+            </div>
 
             {/* Mobile hamburger */}
             <button
