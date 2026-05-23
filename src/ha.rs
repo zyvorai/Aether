@@ -11,6 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
 const OIDC_PENDING_PREFIX: &str = "aether:oidc:pending:";
+const SAML_PENDING_PREFIX: &str = "aether:saml:pending:";
 
 #[derive(Clone)]
 pub struct SharedCache {
@@ -18,14 +19,34 @@ pub struct SharedCache {
 }
 
 enum Inner {
-    Memory(Mutex<HashMap<String, PendingOidcJson>>),
+    Memory(Mutex<CacheMaps>),
     Redis(redis::aio::ConnectionManager),
+}
+
+struct CacheMaps {
+    oidc: HashMap<String, PendingOidcJson>,
+    saml: HashMap<String, PendingSamlJson>,
+}
+
+impl CacheMaps {
+    fn new() -> Self {
+        Self {
+            oidc: HashMap::new(),
+            saml: HashMap::new(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PendingOidcJson {
     pub nonce: String,
     pub pkce_verifier: String,
+    pub exp_unix: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PendingSamlJson {
+    pub relay_state: String,
     pub exp_unix: u64,
 }
 
@@ -43,7 +64,7 @@ impl SharedCache {
         }
         tracing::info!("HA: in-memory OIDC state cache (set AETHER_REDIS_URL for multi-node)");
         Ok(Self {
-            inner: Arc::new(Inner::Memory(Mutex::new(HashMap::new()))),
+            inner: Arc::new(Inner::Memory(Mutex::new(CacheMaps::new()))),
         })
     }
 
@@ -73,8 +94,8 @@ impl SharedCache {
             }
             Inner::Memory(map) => {
                 let mut g = map.lock().await;
-                g.retain(|_, v| v.exp_unix > now_unix());
-                g.insert(key, pending.clone());
+                g.oidc.retain(|_, v| v.exp_unix > now_unix());
+                g.oidc.insert(key, pending.clone());
             }
         }
         Ok(())
@@ -99,14 +120,58 @@ impl SharedCache {
             }
             Inner::Memory(map) => {
                 let mut g = map.lock().await;
-                g.retain(|_, v| v.exp_unix > now_unix());
-                Ok(g.remove(&key))
+                g.oidc.retain(|_, v| v.exp_unix > now_unix());
+                Ok(g.oidc.remove(&key))
             }
         }
     }
 
     pub fn uses_redis(&self) -> bool {
         matches!(self.inner.as_ref(), Inner::Redis(_))
+    }
+
+    pub async fn put_saml_pending(&self, request_id: &str, pending: &PendingSamlJson) -> anyhow::Result<()> {
+        let key = format!("{SAML_PENDING_PREFIX}{request_id}");
+        let payload = serde_json::to_string(pending)?;
+        match self.inner.as_ref() {
+            Inner::Redis(m) => {
+                use redis::AsyncCommands;
+                let mut c = m.clone();
+                let ttl: u64 = 600;
+                let _: () = c.set_ex(&key, payload, ttl).await?;
+            }
+            Inner::Memory(map) => {
+                let mut g = map.lock().await;
+                g.saml.retain(|_, v| v.exp_unix > now_unix());
+                g.saml.insert(key, pending.clone());
+            }
+        }
+        Ok(())
+    }
+
+    pub async fn take_saml_pending(&self, request_id: &str) -> anyhow::Result<Option<PendingSamlJson>> {
+        let key = format!("{SAML_PENDING_PREFIX}{request_id}");
+        match self.inner.as_ref() {
+            Inner::Redis(m) => {
+                use redis::AsyncCommands;
+                let mut c = m.clone();
+                let v: Option<String> = c.get(&key).await?;
+                if v.is_some() {
+                    let _: () = c.del(&key).await?;
+                }
+                let Some(s) = v else { return Ok(None) };
+                let p: PendingSamlJson = serde_json::from_str(&s)?;
+                if p.exp_unix <= now_unix() {
+                    return Ok(None);
+                }
+                Ok(Some(p))
+            }
+            Inner::Memory(map) => {
+                let mut g = map.lock().await;
+                g.saml.retain(|_, v| v.exp_unix > now_unix());
+                Ok(g.saml.remove(&key))
+            }
+        }
     }
 }
 

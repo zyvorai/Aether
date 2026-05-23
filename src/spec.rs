@@ -35,6 +35,9 @@ pub struct Workload {
     pub intent: Option<IntentSpec>,
     #[serde(default)]
     pub schedule: Option<ScheduleSpec>,
+    /// Kubernetes-only options (workload kind, scheduling, security, Gateway API, etc.)
+    #[serde(default)]
+    pub kubernetes: Option<KubernetesSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -181,6 +184,8 @@ pub struct HealthSpec {
     pub liveness: Option<HealthProbe>,
     #[serde(default)]
     pub readiness: Option<HealthProbe>,
+    #[serde(default)]
+    pub startup: Option<HealthProbe>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -310,6 +315,38 @@ impl Workload {
             }
         }
 
+        let k8s_kind = self.resolved_k8s_workload_kind();
+        if k8s_kind == K8sWorkloadKind::CronJob && self.schedule.is_none() {
+            anyhow::bail!("kubernetes.workloadKind cronJob requires schedule.cron");
+        }
+        if self.schedule.is_some() && k8s_kind == K8sWorkloadKind::Job {
+            anyhow::bail!("schedule and kubernetes.workloadKind job are mutually exclusive");
+        }
+        if k8s_kind == K8sWorkloadKind::DaemonSet {
+            if self.scaling.as_ref().is_some_and(|s| s.enabled) {
+                anyhow::bail!("scaling is not supported for kubernetes.workloadKind daemonSet");
+            }
+        }
+        if let Some(ref k8s) = self.kubernetes {
+            if let Some(ref pdb) = k8s.pod_disruption_budget {
+                if pdb.min_available.is_none() && pdb.max_unavailable.is_none() {
+                    anyhow::bail!(
+                        "kubernetes.podDisruptionBudget requires minAvailable or maxUnavailable"
+                    );
+                }
+            }
+            if let Some(ref gw) = k8s.gateway {
+                if gw.enabled && gw.gateway_name.is_empty() {
+                    anyhow::bail!("kubernetes.gateway.gatewayName cannot be empty");
+                }
+            }
+            if let Some(ref keda) = k8s.keda {
+                if keda.enabled && keda.max_replica_count == 0 {
+                    anyhow::bail!("kubernetes.keda.maxReplicaCount must be > 0 when enabled");
+                }
+            }
+        }
+
         // Validate runtime preference is in allowed list
         let preferred_in_allow = match self.runtime.preferred {
             RuntimePreference::Auto => true,
@@ -331,6 +368,21 @@ impl Workload {
         }
 
         Ok(())
+    }
+
+    /// Resolve the Kubernetes controller kind for this workload.
+    pub fn resolved_k8s_workload_kind(&self) -> K8sWorkloadKind {
+        if let Some(kind) = self
+            .kubernetes
+            .as_ref()
+            .and_then(|k| k.workload_kind.clone())
+        {
+            return kind;
+        }
+        if self.schedule.is_some() {
+            return K8sWorkloadKind::CronJob;
+        }
+        K8sWorkloadKind::Deployment
     }
 
     /// Validate a string as a DNS label (RFC 1123):
@@ -645,6 +697,242 @@ pub struct MeshConfig {
 
 fn default_true() -> bool { true }
 
+/// Kubernetes controller kind for `runtime.preferred: kube`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum K8sWorkloadKind {
+    #[default]
+    Deployment,
+    StatefulSet,
+    DaemonSet,
+    Job,
+    CronJob,
+}
+
+/// Kubernetes-specific workload options (ignored by Podman/Docker/KubeVirt/Metal3).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct KubernetesSpec {
+    /// Explicit controller kind. When omitted: `schedule` → CronJob, else Deployment.
+    #[serde(default)]
+    pub workload_kind: Option<K8sWorkloadKind>,
+    #[serde(default)]
+    pub image_pull_secrets: Vec<String>,
+    #[serde(default)]
+    pub service_account_name: Option<String>,
+    #[serde(default)]
+    pub priority_class_name: Option<String>,
+    #[serde(default)]
+    pub node_selector: HashMap<String, String>,
+    #[serde(default)]
+    pub tolerations: Vec<K8sTolerationSpec>,
+    #[serde(default)]
+    pub affinity: Option<K8sAffinitySpec>,
+    #[serde(default)]
+    pub pod_disruption_budget: Option<K8sPdbSpec>,
+    #[serde(default)]
+    pub pod_security_context: Option<K8sPodSecurityContextSpec>,
+    #[serde(default)]
+    pub container_security_context: Option<K8sContainerSecurityContextSpec>,
+    #[serde(default)]
+    pub init_containers: Vec<K8sContainerSpec>,
+    #[serde(default)]
+    pub sidecars: Vec<K8sContainerSpec>,
+    #[serde(default)]
+    pub extra_volumes: Vec<K8sExtraVolumeSpec>,
+    #[serde(default)]
+    pub gateway: Option<K8sGatewaySpec>,
+    #[serde(default)]
+    pub vertical_pod_autoscaler: Option<K8sVpaSpec>,
+    #[serde(default)]
+    pub keda: Option<K8sKedaSpec>,
+    /// One-off Job settings when `workloadKind: job`.
+    #[serde(default)]
+    pub job: Option<K8sJobSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sTolerationSpec {
+    pub key: String,
+    #[serde(default = "default_toleration_operator")]
+    pub operator: String,
+    #[serde(default)]
+    pub value: Option<String>,
+    #[serde(default)]
+    pub effect: Option<String>,
+}
+
+fn default_toleration_operator() -> String {
+    "Equal".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sAffinitySpec {
+    #[serde(default)]
+    pub pod_affinity: Vec<K8sPodAffinityTermSpec>,
+    #[serde(default)]
+    pub pod_anti_affinity: Vec<K8sPodAffinityTermSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sPodAffinityTermSpec {
+    pub topology_key: String,
+    #[serde(default)]
+    pub label_selector: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sPdbSpec {
+    #[serde(default)]
+    pub min_available: Option<String>,
+    #[serde(default)]
+    pub max_unavailable: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sPodSecurityContextSpec {
+    #[serde(default)]
+    pub run_as_non_root: Option<bool>,
+    #[serde(default)]
+    pub run_as_user: Option<i64>,
+    #[serde(default)]
+    pub fs_group: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sContainerSecurityContextSpec {
+    #[serde(default)]
+    pub run_as_non_root: Option<bool>,
+    #[serde(default)]
+    pub run_as_user: Option<i64>,
+    #[serde(default)]
+    pub read_only_root_filesystem: Option<bool>,
+    #[serde(default)]
+    pub allow_privilege_escalation: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sContainerSpec {
+    pub name: String,
+    pub image: String,
+    #[serde(default)]
+    pub command: Vec<String>,
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub env: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sExtraVolumeSpec {
+    pub name: String,
+    pub mount_path: String,
+    #[serde(default)]
+    pub read_only: bool,
+    #[serde(flatten)]
+    pub source: K8sVolumeSource,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "volumeType", content = "volumeConfig")]
+pub enum K8sVolumeSource {
+    EmptyDir {
+        #[serde(default)]
+        medium: Option<String>,
+    },
+    HostPath {
+        path: String,
+        #[serde(default = "default_host_path_type")]
+        host_path_type: String,
+    },
+}
+
+fn default_host_path_type() -> String {
+    "Directory".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sGatewaySpec {
+    pub enabled: bool,
+    pub gateway_name: String,
+    #[serde(default = "default_gateway_namespace")]
+    pub gateway_namespace: String,
+    pub host: String,
+    #[serde(default)]
+    pub paths: Vec<IngressPath>,
+}
+
+fn default_gateway_namespace() -> String {
+    "default".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sVpaSpec {
+    pub enabled: bool,
+    #[serde(default = "default_vpa_update_mode")]
+    pub update_mode: String,
+}
+
+fn default_vpa_update_mode() -> String {
+    "Auto".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sKedaSpec {
+    pub enabled: bool,
+    #[serde(default)]
+    pub min_replica_count: u32,
+    pub max_replica_count: u32,
+    #[serde(default)]
+    pub triggers: Vec<K8sKedaTriggerSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sKedaTriggerSpec {
+    #[serde(rename = "type")]
+    pub trigger_type: String,
+    #[serde(default)]
+    pub metadata: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct K8sJobSpec {
+    #[serde(default = "default_backoff_limit")]
+    pub backoff_limit: u32,
+    #[serde(default = "default_job_completions")]
+    pub completions: u32,
+    #[serde(default = "default_job_parallelism")]
+    pub parallelism: u32,
+    #[serde(default)]
+    pub active_deadline_seconds: Option<i64>,
+    #[serde(default)]
+    pub ttl_seconds_after_finished: Option<i32>,
+    #[serde(default)]
+    pub restart_policy: JobRestartPolicy,
+}
+
+fn default_job_completions() -> u32 {
+    1
+}
+
+fn default_job_parallelism() -> u32 {
+    1
+}
+
 /// Intent-based deployment specification
 ///
 /// Declares high-level goals (latency, budget, resilience, compliance) that
@@ -812,6 +1100,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         };
 
         assert!(workload.validate().is_ok());
@@ -856,6 +1145,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         };
 
         assert_eq!(workload.image_name(), "ghcr.io/yourorg/my-app:latest");
@@ -900,6 +1190,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         };
 
         let result = workload.validate();
@@ -946,6 +1237,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         };
 
         let result = workload.validate();
@@ -992,6 +1284,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         };
 
         let result = workload.validate();
@@ -1038,6 +1331,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         };
 
         let result = workload.validate();
@@ -1087,6 +1381,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+            kubernetes: None,
         }
     }
 

@@ -4,6 +4,7 @@ pub mod common;
 pub mod docker;
 pub mod podman;
 pub mod kube;
+pub mod kube_manifest;
 pub mod kubevirt;
 pub mod metal;
 

@@ -470,6 +470,22 @@ pub(crate) enum Commands {
         timeout: u64,
     },
 
+    /// Copy files to/from a running workload pod (kubectl cp wrapper)
+    Cp {
+        /// Workload name
+        name: String,
+
+        /// Source path (local file or `pod:/path/in/container`)
+        src: String,
+
+        /// Destination path (local file or `pod:/path/in/container`)
+        dest: String,
+
+        /// Timeout in seconds (0 = no timeout)
+        #[arg(short, long, default_value = "120")]
+        timeout: u64,
+    },
+
     /// Watch spec file and auto-redeploy on changes
     Watch {
         /// Override runtime
@@ -582,6 +598,7 @@ impl Commands {
             Self::Deploy { .. } => "deploy",
             Self::Exec { .. } => "exec",
             Self::PortForward { .. } => "port-forward",
+            Self::Cp { .. } => "cp",
             Self::Watch { .. } => "watch",
             Self::Compare => "compare",
             Self::Intent => "intent",

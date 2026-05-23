@@ -598,6 +598,7 @@ mod tests {
             mesh: None,
             intent: None,
             schedule: None,
+        kubernetes: None,
         }
     }
 
@@ -623,6 +624,7 @@ mod tests {
             } else {
                 None
             },
+            startup: None,
         }
     }
 

@@ -570,6 +570,51 @@ kubectl create secret docker-registry regcred \
 
 ## Advanced Features
 
+### Workload kinds (`kubernetes.workloadKind`)
+
+| Kind | Use case |
+|------|----------|
+| `deployment` | Default stateless apps |
+| `statefulset` | Databases / stable pod identity (uses `volumeClaimTemplates` when persistence enabled) |
+| `daemonset` | Node agents |
+| `job` | One-off batch runs (`kubernetes.job` settings) |
+| `cronJob` | Scheduled jobs (`schedule.cron`) |
+
+Example StatefulSet with image pull secret and TCP startup probe:
+
+```yaml
+kubernetes:
+  workloadKind: statefulset
+  imagePullSecrets:
+    - regcred
+  serviceAccountName: app
+  podDisruptionBudget:
+    minAvailable: "1"
+  extraVolumes:
+    - name: cache
+      mountPath: /cache
+      volumeType: emptyDir
+      volumeConfig: {}
+health:
+  startup:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+```
+
+Gateway API (`kubernetes.gateway`), VPA (`kubernetes.verticalPodAutoscaler`), and KEDA (`kubernetes.keda`) generate optional CR manifests when enabled.
+
+### Image pull secrets
+
+```yaml
+kubernetes:
+  imagePullSecrets:
+    - regcred
+```
+
+Create the secret with kubectl, then reference it in the workload spec above.
+
 ### Port Forwarding (Development)
 
 ```bash
@@ -590,6 +635,16 @@ kubectl exec web-app -- ls /app
 ```
 
 ### Copy Files
+
+```bash
+# Copy to pod (prefix remote path with pod:)
+aether cp web-app ./local-file.txt pod:/tmp/local-file.txt
+
+# Copy from pod
+aether cp web-app pod:/app/output.log ./output.log
+```
+
+Or use kubectl directly:
 
 ```bash
 # Copy to pod
@@ -622,10 +677,8 @@ kubectl delete namespace aether-demo
 
 ## Next Steps
 
-- **Horizontal Pod Autoscaler** - Auto-scale based on CPU/memory
-- **Ingress** - HTTP/HTTPS routing
-- **StatefulSets** - For databases and stateful apps
-- **Jobs & CronJobs** - Batch workloads
+- **Multi-cluster GitOps** — extend `AETHER_CONTEXT` per-environment pipelines
+- **Live cluster E2E** — enable `AETHER_LABS_LIVE=1` on a reference runner
 
 ---
 

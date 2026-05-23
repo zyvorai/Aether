@@ -861,9 +861,10 @@ aether serve
 ## Limitations
 
 Current limitations:
-- Browser OIDC login flows are not covered by automated E2E (API bootstrap is tested; use Ingress TLS or `--tls-cert` / `--tls-key` for HTTPS).
+- In-browser exec terminal flows are not covered by automated E2E (cluster browser route and SSO login are tested).
+- Use Ingress TLS or `--tls-cert` / `--tls-key` for HTTPS in production.
 
-Enterprise SSO is provided via **OIDC** (`AETHER_OIDC_*` env vars). Additional SAML IdPs are not built-in yet.
+Enterprise SSO is provided via **OIDC** (`AETHER_OIDC_*`) and **SAML** (`AETHER_SAML_*`). For local/CI testing, set `AETHER_MOCK_IDP=1` to embed a mock IdP (see `docs/NEXT-STEPS.md`).
 
 ## Support
 

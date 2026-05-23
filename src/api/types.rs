@@ -65,6 +65,7 @@ pub(crate) struct AppState {
     pub(crate) port_forwards: Arc<Mutex<HashMap<String, PortForwardSession>>>,
     pub(crate) shared_cache: crate::ha::SharedCache,
     pub(crate) oidc: Option<Arc<crate::oidc::OidcRuntime>>,
+    pub(crate) saml: Option<Arc<crate::saml::SamlRuntime>>,
     /// True when the API is serving HTTPS (used for Secure session cookies).
     pub(crate) tls_active: bool,
     /// Path to the workload state JSON file (mirrored when Postgres is enabled).

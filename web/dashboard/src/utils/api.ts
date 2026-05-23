@@ -72,6 +72,10 @@ export interface AuthProvidersOidc {
 export interface AuthProvidersPayload {
   methods: string[];
   oidc: AuthProvidersOidc;
+  saml?: {
+    enabled: boolean;
+    login_url?: string;
+  };
 }
 
 export async function apiFetchAuthProviders(): Promise<AuthProvidersPayload | null> {

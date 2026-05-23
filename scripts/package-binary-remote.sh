@@ -121,7 +121,7 @@ cat > "\${STAGE}/QUICKSTART.txt" <<'Q'
 4. https://<host>:5090/web/dashboard/
 5. ./test-package.sh
 
-Packaged by Zyvor — https://zyvor.dev · © @zyvor 2026
+Packaged by Zyvor — zyvor.dev · HyperSDK · © 2026
 Q
 
 cp '${BUILD_DIR}/scripts/zyvor-branding/ZYVOR_INSTALL.txt' "\${STAGE}/ZYVOR_INSTALL.txt" 2>/dev/null || true

@@ -13,7 +13,7 @@ use crate::{backup, cost, Runtime};
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        Path, Query, RawQuery, State as AxumState,
+        Form, Path, Query, RawQuery, State as AxumState,
     },
     body::Body,
     http::HeaderMap,
@@ -24,6 +24,7 @@ use axum::{
 };
 use axum::http::header;
 use futures::{SinkExt, stream::StreamExt};
+use serde::Deserialize;
 use serde_json::json;
 use std::path::PathBuf;
 use tokio::{
@@ -319,6 +320,12 @@ fn kubectl_resource_name(kind: &str) -> Option<&'static str> {
         "NetworkPolicy" => Some("networkpolicies.networking.k8s.io"),
         "ConfigMap" => Some("configmaps"),
         "Event" => Some("events"),
+        "Node" => Some("nodes"),
+        "PersistentVolume" => Some("persistentvolumes"),
+        "ResourceQuota" => Some("resourcequotas"),
+        "LimitRange" => Some("limitranges"),
+        "EndpointSlice" => Some("endpointslices.discovery.k8s.io"),
+        "StorageClass" => Some("storageclasses.storage.k8s.io"),
         "DataVolume" => Some("datavolumes.cdi.kubevirt.io"),
         "VirtualMachine" => Some("virtualmachines.kubevirt.io"),
         "VirtualMachineInstance" => Some("virtualmachineinstances.kubevirt.io"),
@@ -548,6 +555,68 @@ pub(crate) async fn api_oidc_logout(AxumState(app_state): AxumState<AppState>) -
         res.headers_mut().insert(
             header::SET_COOKIE,
             crate::oidc::OidcRuntime::clear_session_cookie(app_state.tls_active),
+        );
+    }
+    if app_state.saml.is_some() {
+        res.headers_mut().insert(
+            header::SET_COOKIE,
+            crate::saml::SamlRuntime::clear_session_cookie(app_state.tls_active),
+        );
+    }
+    res
+}
+
+/// GET /api/auth/saml/login — redirect to IdP SSO URL with AuthnRequest.
+pub(crate) async fn api_saml_login(
+    AxumState(app_state): AxumState<AppState>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> impl IntoResponse {
+    let Some(saml) = app_state.saml.as_ref() else {
+        return (StatusCode::NOT_FOUND, "SAML not configured").into_response();
+    };
+    let next = params.get("next").map(|s| s.as_str());
+    match saml.begin_login(next).await {
+        Ok(r) => r.into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SamlAcsForm {
+    #[serde(rename = "SAMLResponse")]
+    saml_response: String,
+    #[serde(default, rename = "RelayState")]
+    relay_state: Option<String>,
+}
+
+/// POST /api/auth/saml/acs — consume SAMLResponse and set session cookie.
+pub(crate) async fn api_saml_acs(
+    AxumState(app_state): AxumState<AppState>,
+    Form(form): Form<SamlAcsForm>,
+) -> impl IntoResponse {
+    let Some(saml) = app_state.saml.as_ref() else {
+        return (StatusCode::NOT_FOUND, "SAML not configured").into_response();
+    };
+    match saml
+        .finish_acs(
+            &form.saml_response,
+            form.relay_state.as_deref(),
+            app_state.tls_active,
+        )
+        .await
+    {
+        Ok(r) => r.into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/auth/saml/logout — clear SAML session cookie and redirect to `/`.
+pub(crate) async fn api_saml_logout(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
+    let mut res = axum::response::Redirect::to("/").into_response();
+    if app_state.saml.is_some() {
+        res.headers_mut().insert(
+            header::SET_COOKIE,
+            crate::saml::SamlRuntime::clear_session_cookie(app_state.tls_active),
         );
     }
     res
@@ -3962,8 +4031,18 @@ pub(crate) async fn api_auth_providers() -> impl IntoResponse {
         && std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty()).is_some()
         && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
     let role_map = std::env::var("AETHER_OIDC_ROLE_MAP").ok().filter(|s| !s.is_empty());
+    let saml_idp = std::env::var("AETHER_SAML_IDP_SSO_URL").ok().filter(|s| !s.is_empty());
+    let saml_ready = saml_idp.is_some()
+        && std::env::var("AETHER_SAML_IDP_ENTITY_ID").ok().filter(|s| !s.is_empty()).is_some()
+        && std::env::var("AETHER_SAML_ACS_URL").ok().filter(|s| !s.is_empty()).is_some()
+        && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
+    let saml_role_map = std::env::var("AETHER_SAML_ROLE_MAP").ok().filter(|s| !s.is_empty());
+    let mut methods = vec!["bearer", "legacy_env"];
+    if oidc_ready || saml_ready {
+        methods.push("oidc_session_cookie");
+    }
     ok_json(serde_json::json!({
-        "methods": ["bearer", "legacy_env", "oidc_session_cookie"],
+        "methods": methods,
         "oidc": {
             "enabled": oidc_ready,
             "issuer": issuer,
@@ -3974,6 +4053,16 @@ pub(crate) async fn api_auth_providers() -> impl IntoResponse {
             "groups_claim_env": "AETHER_OIDC_GROUPS_CLAIM",
             "role_mapping_env": "AETHER_OIDC_ROLE_MAP",
             "note": "Dashboard: Sign in with OIDC or use bearer token. Map IdP groups via AETHER_OIDC_ROLE_MAP (admin=group1;operator=group2)."
+        },
+        "saml": {
+            "enabled": saml_ready,
+            "idp_sso_url": saml_idp,
+            "login_url": "/api/auth/saml/login",
+            "acs_url": "/api/auth/saml/acs",
+            "logout_url": "/api/auth/saml/logout",
+            "role_mapping_configured": saml_role_map.is_some(),
+            "role_mapping_env": "AETHER_SAML_ROLE_MAP",
+            "note": "Dashboard: Sign in with SAML when configured. Map IdP group attributes via AETHER_SAML_ROLE_MAP."
         },
     }))
 }
