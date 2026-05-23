@@ -192,6 +192,7 @@ fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<Ru
             dockerfile: PathBuf::from("Dockerfile"),
             registry: params.registry.clone(),
             build_args: HashMap::new(),
+            ..Default::default()
         },
         requirements: ResourceRequirements {
             cpu: params.cpu.clone().unwrap_or_else(|| "1".to_string()),
@@ -234,6 +235,7 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
             protocol: "TCP".to_string(),
         }],
         network_policy: None,
+        ..Default::default()
     };
 
     w.health = Some(HealthSpec {
@@ -275,6 +277,7 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
         }],
         tls: true,
         annotations: HashMap::new(),
+        ..Default::default()
     });
 
     let replicas = params.replicas.unwrap_or(2);
@@ -286,7 +289,9 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
             metric_type: MetricType::CPU,
             target_value: "70".to_string(),
             metric_name: None,
+            ..Default::default()
         }],
+        ..Default::default()
     });
 
     w
@@ -308,6 +313,7 @@ fn generate_rest_api(params: &TemplateParams) -> Workload {
             protocol: "TCP".to_string(),
         }],
         network_policy: None,
+        ..Default::default()
     };
 
     w.health = Some(HealthSpec {
@@ -339,7 +345,9 @@ fn generate_rest_api(params: &TemplateParams) -> Workload {
             metric_type: MetricType::CPU,
             target_value: "75".to_string(),
             metric_name: None,
+            ..Default::default()
         }],
+        ..Default::default()
     });
 
     w
@@ -362,6 +370,7 @@ fn generate_database(params: &TemplateParams) -> Workload {
             protocol: "TCP".to_string(),
         }],
         network_policy: None,
+        ..Default::default()
     };
 
     w.persistence = PersistenceSpec {
@@ -405,6 +414,7 @@ fn generate_cache(params: &TemplateParams) -> Workload {
             protocol: "TCP".to_string(),
         }],
         network_policy: None,
+        ..Default::default()
     };
 
     w.health = Some(HealthSpec {
@@ -442,7 +452,9 @@ fn generate_worker(params: &TemplateParams) -> Workload {
             metric_type: MetricType::Memory,
             target_value: "80".to_string(),
             metric_name: None,
+            ..Default::default()
         }],
+        ..Default::default()
     });
 
     w
@@ -509,6 +521,7 @@ fn generate_microservice(params: &TemplateParams) -> Workload {
             protocol: "TCP".to_string(),
         }],
         network_policy: None,
+        ..Default::default()
     };
 
     w.health = Some(HealthSpec {

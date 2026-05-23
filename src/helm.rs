@@ -171,9 +171,10 @@ resources:
     // service
     let service_enabled = spec.network.service;
     let svc_type = match spec.network.service_type {
-        ServiceType::ClusterIP => "ClusterIP",
+        ServiceType::ClusterIP | ServiceType::Headless => "ClusterIP",
         ServiceType::NodePort => "NodePort",
         ServiceType::LoadBalancer => "LoadBalancer",
+        ServiceType::ExternalName => "ExternalName",
     };
     let svc_port = spec
         .network
@@ -517,6 +518,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/myorg".to_string(),
                 build_args: HashMap::new(),
+            ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -539,6 +541,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
+        ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,
@@ -627,6 +630,7 @@ mod tests {
             paths: vec![],
             tls: true,
             annotations: HashMap::new(),
+            ..Default::default()
         });
 
         export_helm_chart(&spec, dir.path(), None).unwrap();
@@ -679,6 +683,7 @@ mod tests {
             min_replicas: 2,
             max_replicas: 10,
             metrics: vec![],
+            ..Default::default()
         });
 
         export_helm_chart(&spec, dir.path(), None).unwrap();
@@ -708,6 +713,7 @@ mod tests {
             min_replicas: 1,
             max_replicas: 5,
             metrics: vec![],
+            ..Default::default()
         });
 
         export_helm_chart(&spec, dir.path(), None).unwrap();

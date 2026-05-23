@@ -208,6 +208,7 @@ pub async fn oidc_authorize(Query(params): Query<HashMap<String, String>>) -> im
 pub struct TokenForm {
     code: String,
     #[serde(default)]
+    #[allow(dead_code)]
     grant_type: Option<String>,
 }
 

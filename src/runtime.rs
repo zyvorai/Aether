@@ -69,6 +69,15 @@ impl Image {
     pub fn full_name(&self) -> String {
         format!("{}:{}", self.name, self.tag)
     }
+
+    /// Image reference for manifests (supports name-only refs from Kubernetes build).
+    pub fn reference(&self) -> String {
+        if self.tag.is_empty() {
+            self.name.clone()
+        } else {
+            self.full_name()
+        }
+    }
 }
 
 /// Running instance
