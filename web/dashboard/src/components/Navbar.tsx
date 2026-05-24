@@ -656,6 +656,35 @@ export default function Navbar({
                     <BookOpen className="w-4 h-4" />
                     Help &amp; documentation
                   </a>
+                  <a
+                    href={ZYVOR_HELP.contact}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                    }`}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Contact support
+                  </a>
+                  <div
+                    className={`px-4 py-2 text-[11px] ${
+                      theme === 'light' ? 'text-slate-500' : 'text-slate-500'
+                    }`}
+                  >
+                    <a
+                      href={ZYVOR_HELP.platform}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMobileOpen(false)}
+                      className="text-orange-400 hover:text-orange-300"
+                    >
+                      zyvor.dev · © 2026
+                    </a>
+                  </div>
                 </div>
               </div>
             ) : null}

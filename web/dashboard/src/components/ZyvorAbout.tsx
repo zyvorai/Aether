@@ -1,6 +1,7 @@
 import { ExternalLink, Hexagon } from 'lucide-react';
 import { ZYVOR_URL, ZYVOR_BRAND, ZYVOR_COPY, ZYVOR_LINE } from './ZyvorBrand';
 import { ZYVOR_HELP, AETHER_HELP } from '../config/zyvorHelp';
+import { useTheme } from '../contexts/ThemeContext';
 
 export const AETHER_PRODUCT = AETHER_HELP.name;
 export const AETHER_VERSION = AETHER_HELP.version;
@@ -46,8 +47,11 @@ export const AETHER_HELP_LINKS: HelpDocLink[] = [
 ];
 
 export default function ZyvorAbout({ className = '' }: { className?: string }) {
+  const { theme } = useTheme();
+  const light = theme === 'light';
+
   return (
-    <div className={`space-y-5 text-sm text-slate-300 ${className}`.trim()}>
+    <div className={`space-y-5 text-sm ${light ? 'text-slate-700' : 'text-slate-300'} ${className}`.trim()}>
       <div className="flex items-start gap-4">
         <div
           className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center border shadow-lg overflow-hidden"
@@ -60,13 +64,13 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
           <Hexagon className="w-8 h-8 text-aether" aria-hidden />
         </div>
         <div className="min-w-0 pt-0.5">
-          <h3 className="text-lg font-semibold text-slate-100">{AETHER_PRODUCT}</h3>
+          <h3 className={`text-lg font-semibold ${light ? 'text-slate-900' : 'text-slate-100'}`}>{AETHER_PRODUCT}</h3>
           <p className="text-xs text-slate-500 mt-0.5">Version {AETHER_VERSION}</p>
-          <p className="text-sm text-slate-400 mt-2 leading-relaxed">{AETHER_TAGLINE}</p>
+          <p className={`text-sm mt-2 leading-relaxed ${light ? 'text-slate-600' : 'text-slate-400'}`}>{AETHER_TAGLINE}</p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-700/60 bg-slate-950/50 p-4 space-y-3">
+      <div className={`rounded-xl border p-4 space-y-3 ${light ? 'border-slate-200 bg-slate-50' : 'border-slate-700/60 bg-slate-950/50'}`}>
         <p className="leading-relaxed">
           Part of the{' '}
           <a
@@ -99,7 +103,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-slate-300 hover:text-aether transition-colors"
+                className={`inline-flex items-center gap-1.5 hover:text-aether transition-colors ${light ? 'text-slate-700' : 'text-slate-300'}`}
               >
                 <span>{link.label}</span>
                 <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-60" aria-hidden />
@@ -109,7 +113,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
         </ul>
       </div>
 
-      <p className="text-center text-xs text-slate-500 pt-2 border-t border-slate-700/50">
+      <p className={`text-center text-xs text-slate-500 pt-2 border-t ${light ? 'border-slate-200' : 'border-slate-700/50'}`}>
         {ZYVOR_COPY} {ZYVOR_BRAND}. All rights reserved.
       </p>
     </div>

@@ -20,6 +20,7 @@ import { formatTimestamp } from '../../utils/formatters';
 import type { AppView } from '../../types/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
+import { hasValidatedSpec } from '../../utils/onboardingState';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import OnboardingStrip from '../OnboardingStrip';
@@ -91,6 +92,13 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
   const [loading, setLoading] = useState(true);
   const [failedEndpoints, setFailedEndpoints] = useState<OverviewEndpoint[]>([]);
   const [totalFailure, setTotalFailure] = useState(false);
+  const [specValidated, setSpecValidated] = useState(() => hasValidatedSpec());
+
+  useEffect(() => {
+    const onValidated = () => setSpecValidated(true);
+    window.addEventListener('aether:spec-validated', onValidated);
+    return () => window.removeEventListener('aether:spec-validated', onValidated);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -257,9 +265,11 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         <div className="mb-6 space-y-4">
           <OnboardingStrip
             hasWorkloads={workloads.length > 0}
+            hasValidated={specValidated}
             hasHealthChecks={(healthSummary?.healthy ?? 0) + (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0) > 0}
             onNavigate={onNavigate}
             onDeploy={() => goFiltered('workloads', { deploy: '1' })}
+            onValidate={() => goFiltered('workloads', { validate: '1' })}
           />
           <EmptyState
             icon={<Rocket size={48} />}
