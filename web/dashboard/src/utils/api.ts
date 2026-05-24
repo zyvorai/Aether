@@ -158,16 +158,23 @@ export function apiWebSocketUrl(path: string): string {
 }
 
 /** Verify bearer token (or open dev) against GET /api/auth/me. */
-export async function apiTryAuth(token: string): Promise<boolean> {
+export type AuthTryResult =
+  | { ok: true }
+  | { ok: false; reason: 'network' | 'unauthorized' | 'rejected' };
+
+export async function apiTryAuth(token: string): Promise<AuthTryResult> {
   const headers: Record<string, string> = {};
   const t = token.trim();
   if (t) headers.Authorization = `Bearer ${t}`;
   try {
     const res = await fetch(`${BASE}/auth/me`, withCreds({ headers }));
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, reason: 'unauthorized' };
+    }
     const json: ApiResponse<unknown> = await res.json();
-    return json.success === true;
+    return json.success === true ? { ok: true } : { ok: false, reason: 'rejected' };
   } catch {
-    return false;
+    return { ok: false, reason: 'network' };
   }
 }
 
@@ -178,6 +185,24 @@ export async function apiFetch<T>(path: string): Promise<T | null> {
     return json.success ? json.data : null;
   } catch {
     return null;
+  }
+}
+
+export type FetchSettledResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: 'network' | 'api' };
+
+/** Like apiFetch but distinguishes network vs API failures for page-level error UI. */
+export async function apiFetchSettled<T>(path: string): Promise<FetchSettledResult<T>> {
+  try {
+    const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+    const json: ApiResponse<T> = await res.json();
+    if (json.success && json.data !== undefined && json.data !== null) {
+      return { ok: true, data: json.data };
+    }
+    return { ok: false, error: 'api' };
+  } catch {
+    return { ok: false, error: 'network' };
   }
 }
 
@@ -256,5 +281,15 @@ export async function apiText(path: string): Promise<string> {
     return await res.text();
   } catch {
     return 'Failed to fetch';
+  }
+}
+
+export async function apiTextSettled(path: string): Promise<FetchSettledResult<string>> {
+  try {
+    const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+    if (!res.ok) return { ok: false, error: 'api' };
+    return { ok: true, data: await res.text() };
+  } catch {
+    return { ok: false, error: 'network' };
   }
 }

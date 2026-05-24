@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Rocket, Wand2, Inbox, Settings2 } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import Modal from '../Modal';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { Template } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -33,6 +35,7 @@ function specPreview(spec: Record<string, unknown> | null): string {
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [generateResult, setGenerateResult] = useState<string | null>(null);
   const [generateName, setGenerateName] = useState<string | null>(null);
   const [generatedSpec, setGeneratedSpec] = useState<Record<string, unknown> | null>(null);
@@ -53,8 +56,14 @@ export default function TemplatesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<Template[]>('/templates');
-    setTemplates(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<Template[]>('/templates');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setTemplates([]);
+    } else {
+      setTemplates(result.data);
+    }
     setLoading(false);
   }, []);
 
@@ -107,12 +116,12 @@ export default function TemplatesPage() {
       t.description.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading && templates.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && templates.length === 0 && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Templates unavailable" onRetry={() => void load()} />;
   }
 
   return (

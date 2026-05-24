@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { Cpu, Search, Target, TrendingUp, Zap } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatPercent, formatUSD } from '../../utils/formatters';
 import YamlInput from '../YamlInput';
 import BarChart from '../BarChart';
 import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import PageTabs from '../PageTabs';
 import WorkloadSelect from '../WorkloadSelect';
 import IntentDebugger from '../IntentDebugger';
@@ -245,6 +247,8 @@ const AI_TABS = [
 
 export default function AIPage() {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
+  const [workloadsLoading, setWorkloadsLoading] = useState(true);
+  const [workloadsLoadFailed, setWorkloadsLoadFailed] = useState(false);
   const [recommendation, setRecommendation] = useState<ScoringResult | null>(null);
   const [scalingAdvice, setScalingAdvice] = useState<ScalingAdvice | null>(null);
   const [recommendLoading, setRecommendLoading] = useState(false);
@@ -264,8 +268,16 @@ export default function AIPage() {
   const [profilerWorkload, setProfilerWorkload] = useState<string | null>(null);
 
   const loadWorkloads = useCallback(async () => {
-    const data = await apiFetch<WorkloadResponse[]>('/workloads');
-    setWorkloads(data ?? []);
+    setWorkloadsLoading(true);
+    setWorkloadsLoadFailed(false);
+    const result = await apiFetchSettled<WorkloadResponse[]>('/workloads');
+    if (!result.ok) {
+      setWorkloadsLoadFailed(true);
+      setWorkloads([]);
+    } else {
+      setWorkloads(result.data);
+    }
+    setWorkloadsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -347,6 +359,20 @@ export default function AIPage() {
     setAnalyzeResults(data ?? null);
     setProfilerResults(null);
     setLoading(null);
+  }
+
+  if (workloadsLoading && workloads.length === 0 && !workloadsLoadFailed) {
+    return <PageLoading rows={6} />;
+  }
+
+  if (workloadsLoadFailed) {
+    return (
+      <PageLoadError
+        title="AI engine unavailable"
+        description="Could not load workloads from the API. Check that aether serve is running."
+        onRetry={() => void loadWorkloads()}
+      />
+    );
   }
 
   return (

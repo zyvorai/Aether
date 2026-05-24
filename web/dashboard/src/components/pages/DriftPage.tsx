@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GitBranch, Inbox } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { Inbox } from 'lucide-react';
+import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import Badge, { SeverityBadge } from '../Badge';
 import type { WorkloadResponse, DriftReport, DriftReconcileResult } from '../../types/api';
 
@@ -13,6 +15,7 @@ function toast(message: string, type: 'success' | 'error') {
 export default function DriftPage() {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [checkLoading, setCheckLoading] = useState<string | null>(null);
   const [driftResult, setDriftResult] = useState<DriftReport | null>(null);
   const [reconcileLoading, setReconcileLoading] = useState(false);
@@ -20,8 +23,14 @@ export default function DriftPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<WorkloadResponse[]>('/workloads');
-    setWorkloads(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<WorkloadResponse[]>('/workloads');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setWorkloads([]);
+    } else {
+      setWorkloads(result.data);
+    }
     setLoading(false);
   }, []);
 
@@ -60,12 +69,12 @@ export default function DriftPage() {
     w.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading && workloads.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && workloads.length === 0 && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Drift data unavailable" onRetry={() => void load()} />;
   }
 
   return (

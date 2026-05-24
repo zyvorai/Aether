@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus } from 'lucide-react';
-import { apiFetch, apiPost, apiDelete, apiPut } from '../../utils/api';
+import { useNavigate } from 'react-router';
+import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers } from 'lucide-react';
+import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam } from '../../utils/urlState';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -11,6 +13,7 @@ import EmptyState from '../EmptyState';
 import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice } from '../../types/api';
 
 interface WorkloadsPageProps {
@@ -35,13 +38,17 @@ function isAetherManaged(workload: WorkloadResponse): boolean {
 }
 
 export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection }: WorkloadsPageProps) {
+  const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
   const [sourceFilter, setSourceFilter] = useQueryParam('source', 'all');
   const [kindFilter, setKindFilter] = useQueryParam('kind', 'all');
   const [clusterFilter, setClusterFilter] = useQueryParam('cluster', 'all');
   const [namespaceFilter, setNamespaceFilter] = useQueryParam('namespace', 'all');
+  const [workloadParam, setWorkloadParam] = useQueryParam('workload');
+  const [tabParam, setTabParam] = useQueryParam('tab');
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
   const [updateModal, setUpdateModal] = useState<string | null>(null);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -63,12 +70,28 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   async function load() {
     setLoading(true);
-    const data = await apiFetch<WorkloadResponse[]>('/workloads');
-    setWorkloads(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<WorkloadResponse[]>('/workloads');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setWorkloads([]);
+    } else {
+      setWorkloads(result.data);
+    }
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('deploy') === '1') {
+      setDeployModal(true);
+      params.delete('deploy');
+      const qs = params.toString();
+      window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     if (!initialSelectedName || workloads.length === 0) return;
@@ -76,13 +99,39 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     if (match) {
       setDetailInitialTab('overview');
       setSelectedWorkload(match);
+      setWorkloadParam(match.name);
     }
     onClearInitialSelection?.();
-  }, [initialSelectedName, workloads, onClearInitialSelection]);
+  }, [initialSelectedName, workloads, onClearInitialSelection, setWorkloadParam]);
+
+  useEffect(() => {
+    if (!workloadParam || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === workloadParam);
+    if (!match) return;
+    const tab = (['overview', 'logs', 'manifest', 'drift', 'scoring', 'events'] as const).includes(
+      tabParam as DetailTab,
+    )
+      ? (tabParam as DetailTab)
+      : 'overview';
+    setDetailInitialTab(tab);
+    setSelectedWorkload(match);
+  }, [workloadParam, tabParam, workloads]);
 
   function openWorkloadDetail(workload: WorkloadResponse, tab: DetailTab) {
     setDetailInitialTab(tab);
     setSelectedWorkload(workload);
+    setWorkloadParam(workload.name);
+    if (tab !== 'overview') {
+      setTabParam(tab);
+    } else {
+      setTabParam('');
+    }
+  }
+
+  function closeWorkloadDetail() {
+    setSelectedWorkload(null);
+    setWorkloadParam('');
+    setTabParam('');
   }
 
   async function handleAction(name: string, action: string) {
@@ -203,8 +252,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setConfirmAction(null);
   }
 
-  if (loading) {
+  if (loading && workloads.length === 0 && !loadFailed) {
     return <PageLoading rows={6} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Workloads unavailable" onRetry={() => void load()} />;
   }
 
   const kinds = ['all', ...Array.from(new Set(workloads.map((w) => w.kind).filter((kind): kind is string => Boolean(kind)))).sort()];
@@ -319,7 +372,43 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       )}
 
       {filteredWorkloads.length === 0 ? (
-        <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to see it here" />
+        workloads.length === 0 ? (
+          <EmptyState
+            icon={<Rocket size={48} />}
+            title="No workloads yet"
+            description="Deploy a YAML spec, design one in the visual editor, or import Docker Compose to get started."
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeployModal(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Deploy YAML
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(viewToPath('editor'))}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                >
+                  <FileCode2 className="h-4 w-4" />
+                  Visual Editor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(viewToPath('compose'))}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                >
+                  <Layers className="h-4 w-4" />
+                  Import Compose
+                </button>
+              </div>
+            }
+          />
+        ) : (
+          <EmptyState icon={<Inbox size={48} />} title="No matching workloads" description="Try adjusting your search or filters" />
+        )
       ) : (
         <div className="dash-card-flush">
           <div className="overflow-x-auto min-w-0">
@@ -429,7 +518,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           key={`${selectedWorkload.name}-${detailInitialTab}`}
           workload={selectedWorkload}
           initialTab={detailInitialTab}
-          onClose={() => setSelectedWorkload(null)}
+          onClose={closeWorkloadDetail}
           onAction={() => load()}
         />
       )}

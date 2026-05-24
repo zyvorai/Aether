@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Inbox } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import type { BackupInfo } from '../../types/api';
 
 export default function BackupsPage() {
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -18,8 +21,14 @@ export default function BackupsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<BackupInfo[]>('/backups');
-    setBackups(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<BackupInfo[]>('/backups');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setBackups([]);
+    } else {
+      setBackups(result.data);
+    }
     setLoading(false);
   }, []);
 
@@ -50,12 +59,12 @@ export default function BackupsPage() {
     void load();
   }
 
-  if (loading && backups.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && backups.length === 0 && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Backups unavailable" onRetry={() => void load()} />;
   }
 
   return (

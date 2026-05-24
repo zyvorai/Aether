@@ -1,22 +1,73 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { LayoutDashboard, Activity, AlertTriangle, Calendar, Shield, Lock, Inbox, Boxes, KeySquare, Workflow } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import {
+  LayoutDashboard,
+  Activity,
+  AlertTriangle,
+  Calendar,
+  Shield,
+  Lock,
+  Inbox,
+  Boxes,
+  KeySquare,
+  Workflow,
+  RefreshCw,
+  Rocket,
+  WifiOff,
+} from 'lucide-react';
+import { apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import type { AppView } from '../../types/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
+import OnboardingStrip from '../OnboardingStrip';
 import EmptyState from '../EmptyState';
 import PlatformStatusPanel from '../PlatformStatusPanel';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
-import type { WorkloadResponse, EventSummary, HealthSummary, BackupInfo, SecretSummary, Event, ClusterSummary, PluginInfo, Environment, ApiKeySummary } from '../../types/api';
+import type {
+  WorkloadResponse,
+  EventSummary,
+  HealthSummary,
+  BackupInfo,
+  SecretSummary,
+  Event,
+  ClusterSummary,
+  PluginInfo,
+  Environment,
+  ApiKeySummary,
+} from '../../types/api';
 
 interface OverviewPageProps {
   onNavigate: (view: AppView) => void;
   sseConnected?: boolean;
 }
+
+type OverviewEndpoint =
+  | 'workloads'
+  | 'eventsSummary'
+  | 'health'
+  | 'backups'
+  | 'secrets'
+  | 'events'
+  | 'clusters'
+  | 'plugins'
+  | 'environments'
+  | 'apiKeys';
+
+const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
+  workloads: 'Workloads',
+  eventsSummary: 'Event summary',
+  health: 'Health',
+  backups: 'Backups',
+  secrets: 'Secrets',
+  events: 'Events',
+  clusters: 'Clusters',
+  plugins: 'Plugins',
+  environments: 'Environments',
+  apiKeys: 'API keys',
+};
 
 export default function OverviewPage({ onNavigate, sseConnected = false }: OverviewPageProps) {
   const navigate = useNavigate();
@@ -26,6 +77,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
     navigate(pathWithQuery(viewToPath(view), params ?? {}));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [eventSummary, setEventSummary] = useState<EventSummary | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
@@ -37,44 +89,93 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKeySummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failedEndpoints, setFailedEndpoints] = useState<OverviewEndpoint[]>([]);
+  const [totalFailure, setTotalFailure] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const timeout = new Promise<null>((resolve) => {
-        window.setTimeout(() => resolve(null), 20_000);
-      });
-      const dataPromise = Promise.all([
-        apiFetch<WorkloadResponse[]>('/workloads'),
-        apiFetch<EventSummary>('/events/summary'),
-        apiFetch<HealthSummary>('/orchestrator/summary'),
-        apiFetch<BackupInfo[]>('/backups'),
-        apiFetch<SecretSummary[]>('/secrets'),
-        apiFetch<Event[]>('/events'),
-        apiFetch<ClusterSummary>('/cluster/summary'),
-        apiFetch<PluginInfo[]>('/plugins'),
-        apiFetch<Environment[]>('/environments'),
-        apiFetch<ApiKeySummary[]>('/rbac/keys'),
-      ]);
-      const result = await Promise.race([dataPromise, timeout]);
-      if (!result) {
-        setLoading(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setTotalFailure(false);
+    setFailedEndpoints([]);
+
+    const requests = await Promise.allSettled([
+      apiFetchSettled<WorkloadResponse[]>('/workloads'),
+      apiFetchSettled<EventSummary>('/events/summary'),
+      apiFetchSettled<HealthSummary>('/orchestrator/summary'),
+      apiFetchSettled<BackupInfo[]>('/backups'),
+      apiFetchSettled<SecretSummary[]>('/secrets'),
+      apiFetchSettled<Event[]>('/events'),
+      apiFetchSettled<ClusterSummary>('/cluster/summary'),
+      apiFetchSettled<PluginInfo[]>('/plugins'),
+      apiFetchSettled<Environment[]>('/environments'),
+      apiFetchSettled<ApiKeySummary[]>('/rbac/keys'),
+    ]);
+
+    const keys: OverviewEndpoint[] = [
+      'workloads',
+      'eventsSummary',
+      'health',
+      'backups',
+      'secrets',
+      'events',
+      'clusters',
+      'plugins',
+      'environments',
+      'apiKeys',
+    ];
+
+    const failed: OverviewEndpoint[] = [];
+    let successCount = 0;
+
+    requests.forEach((result, i) => {
+      const key = keys[i];
+      if (result.status === 'rejected' || !result.value.ok) {
+        failed.push(key);
         return;
       }
-      const [w, es, hs, b, s, ev, cs, p, envs, keys] = result;
-      setWorkloads(w ?? []);
-      setEventSummary(es);
-      setHealthSummary(hs);
-      setBackups(b ?? []);
-      setSecrets(s ?? []);
-      setEvents(ev ?? []);
-      setClusterSummary(cs);
-      setPlugins(p ?? []);
-      setEnvironments(envs ?? []);
-      setApiKeys(keys ?? []);
-      setLoading(false);
-    }
-    load();
+      successCount += 1;
+      const data = result.value.data;
+      switch (key) {
+        case 'workloads':
+          setWorkloads(data as WorkloadResponse[]);
+          break;
+        case 'eventsSummary':
+          setEventSummary(data as EventSummary);
+          break;
+        case 'health':
+          setHealthSummary(data as HealthSummary);
+          break;
+        case 'backups':
+          setBackups(data as BackupInfo[]);
+          break;
+        case 'secrets':
+          setSecrets(data as SecretSummary[]);
+          break;
+        case 'events':
+          setEvents(data as Event[]);
+          break;
+        case 'clusters':
+          setClusterSummary(data as ClusterSummary);
+          break;
+        case 'plugins':
+          setPlugins(data as PluginInfo[]);
+          break;
+        case 'environments':
+          setEnvironments(data as Environment[]);
+          break;
+        case 'apiKeys':
+          setApiKeys(data as ApiKeySummary[]);
+          break;
+      }
+    });
+
+    setFailedEndpoints(failed);
+    setTotalFailure(successCount === 0);
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   if (loading) {
     return (
@@ -93,8 +194,37 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
     );
   }
 
+  if (totalFailure) {
+    return (
+      <div>
+        <PlatformStatusPanel
+          platform={capabilities?.platform ?? null}
+          ready={ready}
+          sseConnected={sseConnected}
+          loading={platformLoading}
+        />
+        <EmptyState
+          icon={<WifiOff size={48} />}
+          title="API unreachable"
+          description="Could not load dashboard data. Check that aether serve is running and your bearer token is valid."
+          action={
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </button>
+          }
+        />
+      </div>
+    );
+  }
+
   const healthy = healthSummary?.healthy ?? 0;
   const degraded = (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0);
+  const isEmptyPlatform = workloads.length === 0 && (clusterSummary?.workload_count ?? 0) === 0;
 
   return (
     <div>
@@ -104,6 +234,66 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         sseConnected={sseConnected}
         loading={platformLoading}
       />
+
+      {failedEndpoints.length > 0 ? (
+        <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex flex-wrap items-center gap-3">
+          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+          <p className="text-sm text-amber-200 flex-1 min-w-0">
+            Some sections failed to load:{' '}
+            {failedEndpoints.map((e) => ENDPOINT_LABELS[e]).join(', ')}.
+          </p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-500/15 transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {isEmptyPlatform ? (
+        <div className="mb-6 space-y-4">
+          <OnboardingStrip
+            hasWorkloads={workloads.length > 0}
+            hasHealthChecks={(healthSummary?.healthy ?? 0) + (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0) > 0}
+            onNavigate={onNavigate}
+            onDeploy={() => goFiltered('workloads', { deploy: '1' })}
+          />
+          <EmptyState
+            icon={<Rocket size={48} />}
+            title="Deploy your first workload"
+            description="Aether is connected but no workloads are running yet. Deploy a YAML spec, use the visual editor, or import Docker Compose."
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goFiltered('workloads', { deploy: '1' })}
+                  className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 transition-colors"
+                >
+                  Deploy YAML
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('editor')}
+                  className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                >
+                  Visual Editor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('compose')}
+                  className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                >
+                  Import Compose
+                </button>
+              </div>
+            }
+          />
+        </div>
+      ) : null}
+
       <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="surface-panel interactive-lift rounded-2xl p-5">
           <div className="mb-3 flex items-center justify-between">
@@ -146,6 +336,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           </div>
         </div>
       </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <button type="button" onClick={() => goFiltered('workloads', { source: 'aether' })} className="text-left">
           <StatCard title="Workloads" value={workloads.length} color="orange" icon={<LayoutDashboard size={18} />} />
@@ -207,7 +398,18 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="dash-card">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4">Clusters</h2>
-          {!clusterSummary || !clusterSummary.enabled ? (
+          {failedEndpoints.includes('clusters') ? (
+            <EmptyState
+              icon={<WifiOff size={40} />}
+              title="Cluster data unavailable"
+              description="Could not load cluster summary from the API."
+              action={
+                <button type="button" onClick={() => void load()} className="text-sm text-aether hover:underline">
+                  Retry
+                </button>
+              }
+            />
+          ) : !clusterSummary || !clusterSummary.enabled ? (
             <EmptyState
               icon={<Activity size={48} />}
               title="No kubeconfig clusters"
@@ -215,11 +417,13 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             />
           ) : (
             <div className="space-y-4">
-              <div className={`rounded-lg border px-4 py-3 text-sm ${
-                clusterSummary.connected
-                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                  : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-              }`}>
+              <div
+                className={`rounded-lg border px-4 py-3 text-sm ${
+                  clusterSummary.connected
+                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                    : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+                }`}
+              >
                 {clusterSummary.connected
                   ? `${clusterSummary.healthy_clusters}/${clusterSummary.cluster_count} cluster contexts reachable`
                   : clusterSummary.error ?? 'Kubernetes cluster discovery unavailable'}
@@ -231,7 +435,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
               </div>
               {clusterSummary.clusters.length > 0 && (
                 <div className="space-y-2">
-                  {clusterSummary.clusters.slice(0, 6).map(cluster => (
+                  {clusterSummary.clusters.slice(0, 6).map((cluster) => (
                     <div key={cluster.name} className="flex items-center justify-between rounded-lg bg-zinc-950/60 px-3 py-2 text-sm">
                       <div>
                         <div className="text-zinc-200 font-medium">{cluster.name}</div>
@@ -248,7 +452,6 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           )}
         </div>
 
-        {/* Recent Events */}
         <div className="dash-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-zinc-100">Events</h2>
@@ -260,7 +463,18 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
               View all
             </button>
           </div>
-          {events.length === 0 ? (
+          {failedEndpoints.includes('events') ? (
+            <EmptyState
+              icon={<WifiOff size={40} />}
+              title="Events unavailable"
+              description="Could not load events from the API."
+              action={
+                <button type="button" onClick={() => void load()} className="text-sm text-aether hover:underline">
+                  Retry
+                </button>
+              }
+            />
+          ) : events.length === 0 ? (
             <EmptyState icon={<Inbox size={48} />} title="No events" description="No events have been recorded yet" />
           ) : (
             <div className="space-y-3 max-h-96 overflow-auto">
@@ -278,7 +492,6 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           )}
         </div>
 
-        {/* Health Summary */}
         <div className="dash-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-zinc-100">Health</h2>
@@ -290,7 +503,18 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
               View all
             </button>
           </div>
-          {healthSummary ? (
+          {failedEndpoints.includes('health') ? (
+            <EmptyState
+              icon={<WifiOff size={40} />}
+              title="Health data unavailable"
+              description="Could not load health summary from the API."
+              action={
+                <button type="button" onClick={() => void load()} className="text-sm text-aether hover:underline">
+                  Retry
+                </button>
+              }
+            />
+          ) : healthSummary ? (
             <div className="grid grid-cols-2 gap-4">
               <StatCard title="Healthy" value={healthSummary.healthy} color="green" />
               <StatCard title="Degraded" value={healthSummary.degraded} color="yellow" />

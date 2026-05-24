@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
-import { apiFetch, apiText } from '../../utils/api';
+import { apiFetchSettled, apiTextSettled } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import CodeBlock from '../CodeBlock';
 
 interface ChargebackReport {
@@ -16,25 +18,40 @@ interface ChargebackReport {
 export default function MetricsPage() {
   const [metrics, setMetrics] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [grafanaUrl, setGrafanaUrl] = useState<string | null>(null);
   const [chargeback, setChargeback] = useState<ChargebackReport | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const text = await apiText('/metrics');
-    setMetrics(text ?? '');
+    setLoadFailed(false);
+    const [metricsRes, serverRes, chargebackRes] = await Promise.all([
+      apiTextSettled('/metrics'),
+      apiFetchSettled<Record<string, unknown>>('/server'),
+      apiFetchSettled<ChargebackReport>('/cost/chargeback?provider=aws'),
+    ]);
+    if (!metricsRes.ok) {
+      setLoadFailed(true);
+      setMetrics('');
+      setGrafanaUrl(null);
+      setChargeback(null);
+    } else {
+      setMetrics(metricsRes.data);
+      if (serverRes.ok) {
+        const integrations = serverRes.data?.integrations as Record<string, unknown> | undefined;
+        const url = integrations?.grafana_url;
+        setGrafanaUrl(typeof url === 'string' ? url : null);
+      } else {
+        setGrafanaUrl(null);
+      }
+      setChargeback(chargebackRes.ok ? chargebackRes.data : null);
+    }
     setLoading(false);
   }, []);
 
   useEffect(() => {
     void load();
-    void apiFetch<Record<string, unknown>>('/server').then((s) => {
-      const integrations = s?.integrations as Record<string, unknown> | undefined;
-      const url = integrations?.grafana_url;
-      setGrafanaUrl(typeof url === 'string' ? url : null);
-    });
-    void apiFetch<ChargebackReport>('/cost/chargeback?provider=aws').then(setChargeback);
   }, [load]);
 
   const filteredMetrics = useMemo(() => {
@@ -47,6 +64,14 @@ export default function MetricsPage() {
   }, [metrics, search]);
 
   const lineCount = filteredMetrics.split('\n').filter((l) => l && !l.startsWith('#')).length;
+
+  if (loading && !metrics && !loadFailed) {
+    return <PageLoading rows={6} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Metrics unavailable" onRetry={() => void load()} />;
+  }
 
   return (
     <div>
@@ -111,17 +136,9 @@ export default function MetricsPage() {
       <div className="dash-card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-100">Prometheus metrics</h2>
-          {!loading && (
-            <span className="text-xs text-slate-500">{lineCount} metric lines</span>
-          )}
+          <span className="text-xs text-slate-500">{lineCount} metric lines</span>
         </div>
-        {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-          </div>
-        ) : (
-          <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>
-        )}
+        <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>
       </div>
     </div>
   );

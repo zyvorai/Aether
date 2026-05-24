@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import BarChart from '../BarChart';
 import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { AffinityScore } from '../../types/api';
 
 const WORKLOAD_CLASSES = [
@@ -21,17 +22,31 @@ const WORKLOAD_CLASSES = [
 export default function AffinityPage() {
   const [affinityData, setAffinityData] = useState<Record<string, AffinityScore[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const results: Record<string, AffinityScore[]> = {};
-    await Promise.all(
+    const results = await Promise.all(
       WORKLOAD_CLASSES.map(async (cls) => {
-        const data = await apiFetch<AffinityScore[]>(`/affinity/${cls}`);
-        if (data) results[cls] = data;
+        const result = await apiFetchSettled<AffinityScore[]>(`/affinity/${cls}`);
+        return { cls, result };
       }),
     );
-    setAffinityData(results);
+    const merged: Record<string, AffinityScore[]> = {};
+    let anyOk = false;
+    for (const { cls, result } of results) {
+      if (result.ok) {
+        anyOk = true;
+        merged[cls] = result.data;
+      }
+    }
+    if (!anyOk) {
+      setLoadFailed(true);
+      setAffinityData({});
+    } else {
+      setLoadFailed(false);
+      setAffinityData(merged);
+    }
   }, []);
 
   useEffect(() => {
@@ -47,8 +62,12 @@ export default function AffinityPage() {
     setRefreshing(false);
   }
 
-  if (loading) {
+  if (loading && !loadFailed) {
     return <PageLoading rows={6} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Affinity data unavailable" onRetry={() => void load()} />;
   }
 
   const classes = Object.entries(affinityData);

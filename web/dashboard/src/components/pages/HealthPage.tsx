@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetch, apiFetchSettled } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { HealthSummary, ManagedWorkload, HealthHistorySummary } from '../../types/api';
 
 function getHealthVariant(health: string): 'green' | 'yellow' | 'red' | 'muted' {
@@ -27,18 +29,26 @@ export default function HealthPage() {
   const [summary, setSummary] = useState<HealthSummary | null>(null);
   const [workloads, setWorkloads] = useState<ManagedWorkload[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<{ workload: ManagedWorkload; history: HealthHistorySummary } | null>(null);
   const [historyLoading, setHistoryLoading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     const [s, w] = await Promise.all([
-      apiFetch<HealthSummary>('/orchestrator/summary'),
-      apiFetch<ManagedWorkload[]>('/orchestrator/status'),
+      apiFetchSettled<HealthSummary>('/orchestrator/summary'),
+      apiFetchSettled<ManagedWorkload[]>('/orchestrator/status'),
     ]);
-    setSummary(s);
-    setWorkloads(w ?? []);
+    if (!s.ok && !w.ok) {
+      setLoadFailed(true);
+      setSummary(null);
+      setWorkloads([]);
+    } else {
+      setSummary(s.ok ? s.data : null);
+      setWorkloads(w.ok ? w.data : []);
+    }
     setLoading(false);
   }, []);
 
@@ -61,12 +71,12 @@ export default function HealthPage() {
 
   const filtered = workloads.filter((w) => w.name.toLowerCase().includes(search.toLowerCase()));
 
-  if (loading && workloads.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && workloads.length === 0 && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Health data unavailable" onRetry={() => void load()} />;
   }
 
   return (
