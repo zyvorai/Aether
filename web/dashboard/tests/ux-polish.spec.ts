@@ -1,21 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
-
-async function ensureAuthenticated(page: Page) {
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
-
-  const helpMenu = page.getByRole('button', { name: 'Help menu' });
-  if (await helpMenu.isVisible({ timeout: 5000 }).catch(() => false)) {
-    return;
-  }
-
-  const continueBtn = page.getByRole('button', { name: /continue to dashboard/i });
-  if (await continueBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await continueBtn.click();
-  }
-
-  await expect(helpMenu).toBeVisible({ timeout: 20_000 });
-}
+import { test, expect } from '@playwright/test';
+import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Dashboard UX polish', () => {
   test.beforeEach(async ({ page }) => {
@@ -48,6 +32,13 @@ test.describe('Dashboard UX polish', () => {
     });
   });
 
+  test('workloads deploy query opens modal', async ({ page }) => {
+    await page.goto('/workloads?deploy=1');
+    await expect(page.getByRole('heading', { name: 'Deploy New Workload' })).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
   test('GitOps page shows retry UI when status API fails', async ({ page }) => {
     await page.route('**/api/gitops/status', (route) =>
       route.fulfill({
@@ -73,6 +64,16 @@ test.describe('Dashboard UX polish', () => {
     await expect(validateStep).toBeVisible({ timeout: 15_000 });
     await validateStep.click();
     await expect(page.getByRole('heading', { name: 'Validate Workload YAML' })).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
+  test('onboarding deploy step opens deploy modal', async ({ page }) => {
+    await page.goto('/');
+    const deployStep = page.getByRole('button', { name: /Deploy first workload/i });
+    await expect(deployStep).toBeVisible({ timeout: 15_000 });
+    await deployStep.click();
+    await expect(page.getByRole('heading', { name: 'Deploy New Workload' })).toBeVisible({
       timeout: 15_000,
     });
   });

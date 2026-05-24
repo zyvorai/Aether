@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Send, Loader2 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface YamlInputProps {
   placeholder?: string;
@@ -9,6 +10,8 @@ interface YamlInputProps {
 }
 
 export default function YamlInput({ placeholder, buttonText, onSubmit, loading }: YamlInputProps) {
+  const { theme } = useTheme();
+  const light = theme === 'light';
   const [value, setValue] = useState('');
 
   function handleSubmit() {
@@ -25,7 +28,11 @@ export default function YamlInput({ placeholder, buttonText, onSubmit, loading }
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder ?? 'Paste YAML here...'}
         rows={10}
-        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-4 text-sm text-zinc-300 font-mono placeholder-zinc-600 resize-y focus:outline-none focus:border-aether focus:ring-1 focus:ring-aether/30 transition-colors leading-relaxed"
+        className={`w-full rounded-xl p-4 text-sm font-mono resize-y focus:outline-none focus:border-aether focus:ring-1 focus:ring-aether/30 transition-colors leading-relaxed ${
+          light
+            ? 'bg-white border border-slate-300 text-slate-800 placeholder-slate-400'
+            : 'bg-zinc-950 border border-zinc-700 text-zinc-300 placeholder-zinc-600'
+        }`}
         spellCheck={false}
       />
       <div className="flex justify-end">
