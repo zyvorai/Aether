@@ -4,6 +4,8 @@ import { apiFetch } from '../../utils/api';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
+import PlatformRecommendations from '../PlatformRecommendations';
+import type { PlatformRecommendation } from '../../types/api';
 
 interface Integrations {
   backup_remote_configured?: boolean;
@@ -21,16 +23,24 @@ interface ServerPayload {
 }
 
 export default function PlatformPage() {
-  const { capabilities, refreshPlatform } = useServerCapabilities();
+  const { capabilities, ready, refreshPlatform } = useServerCapabilities();
   const [server, setServer] = useState<ServerPayload | null>(null);
+  const [recommendations, setRecommendations] = useState<PlatformRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recLoading, setRecLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<ServerPayload>('/server');
+    setRecLoading(true);
+    const [data, rec] = await Promise.all([
+      apiFetch<ServerPayload>('/server'),
+      apiFetch<{ items?: PlatformRecommendation[] }>('/platform/recommendations'),
+    ]);
     setServer(data);
+    setRecommendations(rec?.items ?? []);
     await refreshPlatform();
     setLoading(false);
+    setRecLoading(false);
   }, [refreshPlatform]);
 
   useEffect(() => {
@@ -39,10 +49,15 @@ export default function PlatformPage() {
 
   const integrations = server?.integrations ?? {};
   const platform = capabilities?.platform;
+  const systemReady = ready?.ready ?? true;
 
   return (
     <div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+
+      <div className="mb-6">
+        <PlatformRecommendations items={recommendations} loading={recLoading} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="dash-card">
@@ -58,6 +73,12 @@ export default function PlatformPage() {
             <div className="flex justify-between">
               <dt className="text-slate-500">HA mode</dt>
               <dd><Badge text={server?.ha_mode ?? platform?.haMode ?? 'single'} variant="blue" /></dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">System ready</dt>
+              <dd>
+                <Badge text={systemReady ? 'ready' : 'degraded'} variant={systemReady ? 'green' : 'red'} />
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-slate-500">State backend</dt>

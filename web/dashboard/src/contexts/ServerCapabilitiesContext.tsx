@@ -43,13 +43,11 @@ function parsePlatformPayload(data: Record<string, unknown>): PlatformInfo | nul
   const opaRaw = (data.opa ?? {}) as Record<string, unknown>;
 
   const integrationsRaw = (data.integrations ?? {}) as Record<string, unknown>;
-  const haRec = typeof data.ha_recommendation === 'string' ? data.ha_recommendation : '';
 
   return {
     version,
     persistence: backend,
     haMode: typeof data.ha_mode === 'string' ? data.ha_mode : 'single',
-    haRecommendation: haRec || undefined,
     embeddedUiBuild: typeof data.embedded_ui_build === 'string' ? data.embedded_ui_build : undefined,
     integrations: {
       backup_remote_configured: Boolean(integrationsRaw.backup_remote_configured),
