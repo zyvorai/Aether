@@ -11,24 +11,28 @@ interface OnboardingStep {
 
 interface OnboardingStripProps {
   hasWorkloads: boolean;
+  hasValidated?: boolean;
   hasHealthChecks?: boolean;
   onNavigate: (view: AppView) => void;
   onDeploy: () => void;
+  onValidate: () => void;
 }
 
 export default function OnboardingStrip({
   hasWorkloads,
+  hasValidated = false,
   hasHealthChecks = false,
   onNavigate,
   onDeploy,
+  onValidate,
 }: OnboardingStripProps) {
   const steps: OnboardingStep[] = [
     {
       id: 'validate',
       label: 'Validate a spec',
       description: 'Paste YAML and check policy rules',
-      done: false,
-      onClick: () => onNavigate('workloads'),
+      done: hasValidated,
+      onClick: onValidate,
     },
     {
       id: 'deploy',

@@ -4,6 +4,7 @@ import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardC
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { markSpecValidated } from '../../utils/onboardingState';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -88,6 +89,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     if (params.get('deploy') === '1') {
       setDeployModal(true);
       params.delete('deploy');
+      const qs = params.toString();
+      window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+    }
+    if (params.get('validate') === '1') {
+      setValidateModal(true);
+      params.delete('validate');
       const qs = params.toString();
       window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
     }
@@ -193,6 +200,10 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     const result = await apiPost<ValidateResponse>('/validate', { yaml });
     setValidateResult(result.data ?? null);
     setValidateLoading(false);
+    if (result.data?.valid) {
+      markSpecValidated();
+      window.dispatchEvent(new Event('aether:spec-validated'));
+    }
   }
 
   async function handleDeploy(yaml: string) {
