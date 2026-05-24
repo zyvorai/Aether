@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Container, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
-import { apiFetch, apiPost, apiWebSocketUrl } from '../../utils/api';
+import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
 import Modal from '../Modal';
 import LogViewer from '../LogViewer';
 import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import PageTabs from '../PageTabs';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
@@ -77,6 +79,8 @@ export default function ClustersPage() {
   const [namespaces, setNamespaces] = useState<ClusterNamespaceSummary[]>([]);
   const [resources, setResources] = useState<ClusterBrowseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bootstrapLoading, setBootstrapLoading] = useState(true);
+  const [bootstrapFailed, setBootstrapFailed] = useState(false);
   const [selected, setSelected] = useState<ClusterResourceDetail | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<ClusterRelatedEvent[]>([]);
   const [relatedAudit, setRelatedAudit] = useState<AuditEvent[]>([]);
@@ -139,17 +143,30 @@ export default function ClustersPage() {
     setLoading(false);
   }
 
-  useEffect(() => {
-    apiFetch<AuthStatus>('/auth/me').then((data) => {
-      setAuthStatus(data);
-    });
-    apiFetch<ClusterSummary>('/cluster/summary').then((data) => {
+  const loadBootstrap = useCallback(async () => {
+    setBootstrapLoading(true);
+    setBootstrapFailed(false);
+    const [authRes, summaryRes] = await Promise.all([
+      apiFetchSettled<AuthStatus>('/auth/me'),
+      apiFetchSettled<ClusterSummary>('/cluster/summary'),
+    ]);
+    if (authRes.ok) setAuthStatus(authRes.data);
+    if (summaryRes.ok) {
+      const data = summaryRes.data;
       setSummary(data);
       const firstCluster = data?.clusters.find((item) => item.reachable)?.name ?? data?.clusters[0]?.name ?? '';
       setCluster(firstCluster);
-      setLoading(false);
-    });
+    } else {
+      setBootstrapFailed(true);
+      setSummary(null);
+    }
+    setBootstrapLoading(false);
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    void loadBootstrap();
+  }, [loadBootstrap]);
 
   useEffect(() => {
     if (!cluster) return;
@@ -618,6 +635,20 @@ export default function ClustersPage() {
     }
   }
 
+  if (bootstrapLoading) {
+    return <PageLoading rows={6} />;
+  }
+
+  if (bootstrapFailed) {
+    return (
+      <PageLoadError
+        title="Cluster browser unavailable"
+        description="Could not load Kubernetes cluster summary from the API."
+        onRetry={() => void loadBootstrap()}
+      />
+    );
+  }
+
   if (!summary || !summary.enabled) {
     return (
       <EmptyState
@@ -736,9 +767,7 @@ export default function ClustersPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
-        </div>
+        <PageLoading rows={4} />
       ) : resources.length === 0 ? (
         <EmptyState
           icon={<Container size={48} />}

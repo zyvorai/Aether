@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import type { AppView } from './types/api';
 import DashboardShell from './components/DashboardShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import Breadcrumb from './components/Breadcrumb';
-import ShortcutsHelp from './components/ShortcutsHelp';
+import HelpDialog, { type HelpTab } from './components/HelpDialog';
 import { useToast } from './components/Toast';
 import { useEventStream } from './hooks/useEventStream';
 import { useKeyboard } from './hooks/useKeyboard';
@@ -15,6 +15,7 @@ import { pathToView, viewToPath } from './utils/dashboardRoutes';
 import { HERO_CONFIG } from './utils/dashboardNav';
 import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode } from './utils/api';
 import CommandPalette from './components/CommandPalette';
+import { pushRecentView } from './utils/recentViews';
 import LoginGate from './components/LoginGate';
 
 // Page components — each is written by the pages agent
@@ -53,14 +54,20 @@ function AetherDashboard() {
   const currentView = useMemo(() => pathToView(location.pathname), [location.pathname]);
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authBootstrapping, setAuthBootstrapping] = useState(true);
   const [username, setUsername] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpTab, setHelpTab] = useState<HelpTab>('shortcuts');
   const [workloadNames, setWorkloadNames] = useState<string[]>([]);
   const [selectedWorkloadFromPalette, setSelectedWorkloadFromPalette] = useState<string | null>(null);
+  const [sseBannerVisible, setSseBannerVisible] = useState(false);
   const { toast, ToastContainer } = useToast();
+  const sseWasConnectedRef = useRef(false);
+  const sseDisconnectedAtRef = useRef<number | null>(null);
+  const sseDisconnectToastShownRef = useRef(false);
 
   useEffect(() => {
     const run = async () => {
@@ -74,6 +81,7 @@ function AetherDashboard() {
           if (parsed.authenticated && typeof parsed.username === 'string') {
             setIsAuthenticated(true);
             setUsername(parsed.username);
+            setAuthBootstrapping(false);
             return;
           }
         } catch {
@@ -93,6 +101,7 @@ function AetherDashboard() {
             authMode: 'cookie',
           }),
         );
+        setAuthBootstrapping(false);
         return;
       }
 
@@ -109,10 +118,12 @@ function AetherDashboard() {
             authMode: 'dev',
           }),
         );
+        setAuthBootstrapping(false);
         return;
       }
 
       setIsAuthenticated(false);
+      setAuthBootstrapping(false);
     };
     void run();
   }, []);
@@ -124,6 +135,50 @@ function AetherDashboard() {
       setLastRefreshed(new Date());
     }
   }, isAuthenticated);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      sseWasConnectedRef.current = false;
+      sseDisconnectedAtRef.current = null;
+      sseDisconnectToastShownRef.current = false;
+      setSseBannerVisible(false);
+      return;
+    }
+
+    if (sseConnected) {
+      if (sseDisconnectedAtRef.current !== null) {
+        const offlineMs = Date.now() - sseDisconnectedAtRef.current;
+        if (offlineMs >= 10_000) {
+          toast('Live updates reconnected', 'info');
+        }
+        sseDisconnectedAtRef.current = null;
+        sseDisconnectToastShownRef.current = false;
+      }
+      setSseBannerVisible(false);
+      sseWasConnectedRef.current = true;
+      return;
+    }
+
+    if (sseWasConnectedRef.current && sseDisconnectedAtRef.current === null) {
+      sseDisconnectedAtRef.current = Date.now();
+    }
+  }, [sseConnected, isAuthenticated, toast]);
+
+  useEffect(() => {
+    if (!isAuthenticated || sseConnected) return;
+
+    const interval = window.setInterval(() => {
+      const since = sseDisconnectedAtRef.current;
+      if (since === null || sseDisconnectToastShownRef.current) return;
+      if (Date.now() - since >= 10_000) {
+        toast('Live updates disconnected — falling back to 60s polling', 'info');
+        sseDisconnectToastShownRef.current = true;
+        setSseBannerVisible(true);
+      }
+    }, 2000);
+
+    return () => window.clearInterval(interval);
+  }, [isAuthenticated, sseConnected, toast]);
 
   // Auto-refresh every 60 seconds (fallback since SSE provides instant updates)
   useEffect(() => {
@@ -151,6 +206,25 @@ function AetherDashboard() {
     [navigate],
   );
 
+  useEffect(() => {
+    if (isAuthenticated && currentView) {
+      pushRecentView(currentView);
+    }
+  }, [currentView, isAuthenticated]);
+
+  const openHelp = useCallback((tab: HelpTab = 'shortcuts') => {
+    setHelpTab(tab);
+    setHelpOpen(true);
+  }, []);
+
+  const toggleHelp = useCallback(() => {
+    setHelpOpen((open) => {
+      if (open) return false;
+      setHelpTab('shortcuts');
+      return true;
+    });
+  }, []);
+
   // Keyboard shortcuts
   useKeyboard({
     onRefresh: () => {
@@ -158,7 +232,7 @@ function AetherDashboard() {
       setLastRefreshed(new Date());
     },
     onCommandPalette: () => setCommandPaletteOpen((o) => !o),
-    onShortcutsHelp: () => setShortcutsOpen((o) => !o),
+    onOpenHelp: toggleHelp,
     enabled: isAuthenticated,
   });
 
@@ -201,6 +275,15 @@ function AetherDashboard() {
 
   if (currentView === null) {
     return <Navigate to="/" replace />;
+  }
+
+  if (authBootstrapping) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-400">
+        <div className="w-10 h-10 rounded-xl border border-aether/30 bg-aether/10 mb-4 animate-pulse" aria-hidden />
+        <p className="text-sm">Connecting to Aether…</p>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -291,9 +374,11 @@ function AetherDashboard() {
         username={username}
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
+        sseBannerVisible={sseBannerVisible}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
         onRefresh={handleRefresh}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         commandPalette={
           <CommandPalette
             open={commandPaletteOpen}
@@ -305,9 +390,22 @@ function AetherDashboard() {
               setRefreshKey((k) => k + 1);
               setLastRefreshed(new Date());
             }}
+            onLogout={handleLogout}
+            onOpenHelp={(tab) => {
+              setCommandPaletteOpen(false);
+              openHelp(tab);
+            }}
           />
         }
-        shortcutsHelp={shortcutsOpen ? <ShortcutsHelp onClose={() => setShortcutsOpen(false)} /> : null}
+        onOpenHelp={openHelp}
+        helpDialog={
+          <HelpDialog
+            open={helpOpen}
+            tab={helpTab}
+            onClose={() => setHelpOpen(false)}
+            onTabChange={setHelpTab}
+          />
+        }
         toastContainer={<ToastContainer />}
       >
         <ErrorBoundary>

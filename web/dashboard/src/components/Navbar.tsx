@@ -29,7 +29,16 @@ import {
   Palette,
   FileText,
   Server,
+  Command,
+  LogOut,
+  CircleHelp,
+  Keyboard,
+  Info,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react';
+import { ZYVOR_HELP } from '../config/zyvorHelp';
+import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
@@ -61,6 +70,8 @@ interface NavbarProps {
   username: string;
   onLogout: () => void;
   onRefresh: () => void;
+  onOpenCommandPalette?: () => void;
+  onOpenHelp?: (tab?: HelpTab) => void;
   lastRefreshed: Date;
   sseConnected?: boolean;
 }
@@ -113,6 +124,16 @@ const dropdownGroups: DropdownGroup[] = [
   { label: 'Intelligence', items: intelligenceItems },
   { label: 'Operations', items: operationsItems },
   { label: 'Resources', items: resourcesItems },
+];
+
+const primaryItems: DropdownItem[] = [
+  { label: 'Dashboard', view: 'overview', icon: <LayoutDashboard className="w-4 h-4" /> },
+  { label: 'Workloads', view: 'workloads', icon: <Container className="w-4 h-4" /> },
+];
+
+const mobileNavGroups: DropdownGroup[] = [
+  { label: 'Primary', items: primaryItems },
+  ...dropdownGroups,
 ];
 
 function Dropdown({
@@ -213,12 +234,35 @@ function useRelativeTime(date: Date): string {
   return `Updated ${minutes}m ago`;
 }
 
-export default function Navbar({ currentView, onNavigate, username, onLogout, onRefresh, lastRefreshed, sseConnected }: NavbarProps) {
+export default function Navbar({
+  currentView,
+  onNavigate,
+  username,
+  onLogout,
+  onRefresh,
+  onOpenCommandPalette,
+  onOpenHelp,
+  lastRefreshed,
+  sseConnected,
+}: NavbarProps) {
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
+  const helpRef = useRef<HTMLDivElement>(null);
   const [spinning, setSpinning] = useState(false);
   const relativeTime = useRelativeTime(lastRefreshed);
   const { mode: authModeLabel, preview: bearerPreview } = authSessionLabel();
+
+  useEffect(() => {
+    if (!helpMenuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (helpRef.current && !helpRef.current.contains(e.target as Node)) {
+        setHelpMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [helpMenuOpen]);
 
   const handleRefreshClick = useCallback(() => {
     setSpinning(true);
@@ -233,15 +277,6 @@ export default function Navbar({ currentView, onNavigate, username, onLogout, on
     },
     [onNavigate],
   );
-
-  // All nav items flattened for mobile menu
-  const allNavItems: DropdownItem[] = [
-    { label: 'Dashboard', view: 'overview', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { label: 'Workloads', view: 'workloads', icon: <Container className="w-4 h-4" /> },
-    ...intelligenceItems,
-    ...operationsItems,
-    ...resourcesItems,
-  ];
 
   return (
     <nav
@@ -335,6 +370,120 @@ export default function Navbar({ currentView, onNavigate, username, onLogout, on
               </select>
             </label>
             <PlatformHealthChip sseConnected={sseConnected ?? false} />
+            {onOpenHelp ? (
+              <div className="relative hidden sm:block shrink-0" ref={helpRef}>
+                <button
+                  type="button"
+                  onClick={() => setHelpMenuOpen((v) => !v)}
+                  aria-expanded={helpMenuOpen}
+                  aria-haspopup="menu"
+                  className={`flex items-center gap-1 px-2 py-2 rounded-xl text-sm transition-colors ${
+                    theme === 'light'
+                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      : helpMenuOpen
+                        ? 'text-slate-100 bg-slate-800/80'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                  }`}
+                  title="Help (?)"
+                  aria-label="Help menu"
+                >
+                  <CircleHelp className="w-4 h-4 shrink-0" aria-hidden />
+                  <span className="hidden md:inline text-xs font-medium">Help</span>
+                  <ChevronDown
+                    className={`w-3 h-3 hidden md:block transition-transform ${helpMenuOpen ? 'rotate-180' : ''}`}
+                    aria-hidden
+                  />
+                </button>
+                {helpMenuOpen && (
+                  <div
+                    className={`absolute top-full right-0 mt-1.5 z-50 min-w-[12.5rem] rounded-xl py-1.5 shadow-xl animate-scale-in border ${
+                      theme === 'light'
+                        ? 'bg-white border-slate-200'
+                        : 'bg-zinc-900 border-zinc-700'
+                    }`}
+                    role="menu"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setHelpMenuOpen(false);
+                        onOpenHelp('shortcuts');
+                      }}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
+                        theme === 'light'
+                          ? 'text-slate-700 hover:bg-slate-100'
+                          : 'text-slate-300 hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <Keyboard className="w-4 h-4 shrink-0" aria-hidden />
+                      Keyboard shortcuts
+                      <kbd className="ml-auto text-[10px] px-1 py-0.5 rounded bg-slate-800/80 text-slate-500 font-mono">?</kbd>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setHelpMenuOpen(false);
+                        onOpenHelp('about');
+                      }}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
+                        theme === 'light'
+                          ? 'text-slate-700 hover:bg-slate-100'
+                          : 'text-slate-300 hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <Info className="w-4 h-4 shrink-0" aria-hidden />
+                      About
+                    </button>
+                    <a
+                      role="menuitem"
+                      href={ZYVOR_HELP.docs}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setHelpMenuOpen(false)}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
+                        theme === 'light'
+                          ? 'text-slate-700 hover:bg-slate-100'
+                          : 'text-slate-300 hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <BookOpen className="w-4 h-4 shrink-0" aria-hidden />
+                      Help &amp; documentation
+                      <ExternalLink className="w-3 h-3 ml-auto opacity-60" aria-hidden />
+                    </a>
+                    <a
+                      role="menuitem"
+                      href={ZYVOR_HELP.contact}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setHelpMenuOpen(false)}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
+                        theme === 'light'
+                          ? 'text-slate-700 hover:bg-slate-100'
+                          : 'text-slate-300 hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <ExternalLink className="w-4 h-4 shrink-0" aria-hidden />
+                      Contact support
+                    </a>
+                    <div className={`px-3 py-2 border-t text-[11px] ${
+                      theme === 'light' ? 'border-slate-200' : 'border-slate-700/50'
+                    }`}>
+                      <a
+                        href={ZYVOR_HELP.platform}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-orange-400 hover:text-orange-300"
+                        onClick={() => setHelpMenuOpen(false)}
+                      >
+                        zyvor.dev · © 2026
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
             <span
               className={`sm:hidden inline-block w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 platform-pulse' : 'bg-red-400'}`}
               title={sseConnected ? 'SSE Connected' : 'SSE Disconnected'}
@@ -398,35 +547,155 @@ export default function Navbar({ currentView, onNavigate, username, onLogout, on
       {/* Mobile menu overlay */}
       {mobileOpen && (
         <div
-          className={`md:hidden border-t animate-fade-in backdrop-blur-lg ${
+          className={`md:hidden border-t animate-fade-in backdrop-blur-lg max-h-[min(70vh,32rem)] overflow-y-auto ${
             theme === 'light' ? 'border-slate-200 bg-white/95' : 'border-slate-800/60 bg-slate-950/95'
           }`}
         >
-          <div className="dash-content py-3 space-y-1">
-            <div className="mb-3 rounded-2xl surface-panel-soft px-4 py-3">
+          <div className="dash-content py-3 space-y-4">
+            {onOpenCommandPalette ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenCommandPalette();
+                  setMobileOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border ${
+                  theme === 'light'
+                    ? 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100'
+                    : 'border-aether/30 bg-aether/10 text-aether hover:bg-aether/15'
+                }`}
+              >
+                <Command className="w-4 h-4" />
+                Command palette
+                <kbd className="ml-auto text-[10px] opacity-70">⌘K</kbd>
+              </button>
+            ) : null}
+
+            <div className="rounded-2xl surface-panel-soft px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{authModeLabel}</div>
               <div className={`mt-1 text-sm font-medium font-mono tracking-tight ${theme === 'light' ? 'text-slate-800' : 'text-slate-200'}`}>
                 {bearerPreview}
               </div>
+              <div className={`mt-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-400'}`}>{username}</div>
             </div>
-            {allNavItems.map((item) => (
+
+            {mobileNavGroups.map((group) => (
+              <div key={group.label}>
+                <div className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  {group.label}
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => (
+                    <button
+                      key={item.view}
+                      type="button"
+                      onClick={() => handleMobileNavigate(item.view)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                        currentView === item.view
+                          ? 'text-aether bg-aether/10'
+                          : theme === 'light'
+                            ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <span className={currentView === item.view ? 'text-aether' : theme === 'light' ? 'text-slate-400' : 'text-slate-500'}>
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {onOpenHelp ? (
+              <div className="px-2">
+                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Help</div>
+                <div className="space-y-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenHelp('shortcuts');
+                      setMobileOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                    }`}
+                  >
+                    <Keyboard className="w-4 h-4" />
+                    Keyboard shortcuts
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenHelp('about');
+                      setMobileOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                    }`}
+                  >
+                    <Info className="w-4 h-4" />
+                    About
+                  </button>
+                  <a
+                    href={ZYVOR_HELP.docs}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                    }`}
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    Help &amp; documentation
+                  </a>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-2 px-2 pt-2 border-t border-slate-800/60">
+              <label className="flex items-center gap-2 flex-1 min-w-[8rem]">
+                <Palette className="w-4 h-4 text-slate-500 shrink-0" aria-hidden />
+                <select
+                  aria-label="Theme"
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value as AppTheme)}
+                  className={`flex-1 text-xs rounded-xl border px-2 py-2 cursor-pointer outline-none ${
+                    theme === 'light'
+                      ? 'bg-white border-slate-300 text-slate-800'
+                      : theme === 'steel'
+                        ? 'nav-steel-select text-[#d7dde5]'
+                        : 'bg-slate-900/80 border-slate-600 text-slate-200'
+                  }`}
+                >
+                  <option value="dark">Dark</option>
+                  <option value="steel">Steel</option>
+                  <option value="light">Light</option>
+                </select>
+              </label>
               <button
-                key={item.view}
-                onClick={() => handleMobileNavigate(item.view)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  currentView === item.view
-                    ? 'text-aether bg-aether/10'
-                    : theme === 'light'
-                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                type="button"
+                onClick={() => {
+                  onLogout();
+                  setMobileOpen(false);
+                }}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-colors ${
+                  theme === 'light'
+                    ? 'text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 border border-slate-700/60'
                 }`}
               >
-                <span className={currentView === item.view ? 'text-aether' : theme === 'light' ? 'text-slate-400' : 'text-slate-500'}>
-                  {item.icon}
-                </span>
-                {item.label}
+                <LogOut className="w-4 h-4" />
+                Sign out
               </button>
-            ))}
+            </div>
           </div>
         </div>
       )}

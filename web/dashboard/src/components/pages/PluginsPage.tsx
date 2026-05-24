@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Inbox } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import type { PluginInfo } from '../../types/api';
 
 export default function PluginsPage() {
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [discovering, setDiscovering] = useState(false);
   const [discoverSummary, setDiscoverSummary] = useState<string | null>(null);
   const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
@@ -18,8 +21,14 @@ export default function PluginsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<PluginInfo[]>('/plugins');
-    setPlugins(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<PluginInfo[]>('/plugins');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setPlugins([]);
+    } else {
+      setPlugins(result.data);
+    }
     setLoading(false);
   }, []);
 
@@ -60,12 +69,12 @@ export default function PluginsPage() {
     });
   }, [plugins, runtimeFilter, search]);
 
-  if (loading && plugins.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && plugins.length === 0 && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Plugins unavailable" onRetry={() => void load()} />;
   }
 
   return (

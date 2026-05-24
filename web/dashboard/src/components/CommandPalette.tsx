@@ -1,15 +1,26 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import type { AppView } from '../types/api';
 import { DASHBOARD_VIEWS } from '../utils/dashboardNav';
+import { viewToPath } from '../utils/dashboardRoutes';
+import { pathWithQuery } from '../utils/urlState';
+import { apiPost } from '../utils/api';
+import { getRecentViews } from '../utils/recentViews';
+
+type CommandCategory = 'recent' | 'navigation' | 'workload' | 'workload-action' | 'action';
 
 interface CommandAction {
   id: string;
   label: string;
-  category: 'navigation' | 'workload' | 'action';
-  icon: string;
+  category: CommandCategory;
+  searchText: string;
   view?: AppView;
   workloadName?: string;
+  workloadTab?: string;
+  run?: () => void | Promise<void>;
 }
+
+import type { HelpTab } from './HelpDialog';
 
 interface CommandPaletteProps {
   open: boolean;
@@ -18,47 +29,222 @@ interface CommandPaletteProps {
   workloads: string[];
   onSelectWorkload?: (name: string) => void;
   onRefresh?: () => void;
+  onLogout?: () => void;
+  onOpenHelp?: (tab?: HelpTab) => void;
 }
 
-const NAV_ITEMS: CommandAction[] = DASHBOARD_VIEWS.filter((v) => v.view !== 'overview').map((v) => ({
+const NAV_ITEMS: CommandAction[] = DASHBOARD_VIEWS.map((v) => ({
   id: `nav-${v.view}`,
-  label: `Go to ${v.label}`,
+  label: v.view === 'overview' ? 'Dashboard' : `Go to ${v.label}`,
   category: 'navigation' as const,
-  icon: v.label,
+  searchText: `${v.label} ${v.subtitle} ${v.view}`,
   view: v.view,
 }));
 
-const ACTION_ITEMS: CommandAction[] = [
-  { id: 'action-refresh', label: 'Refresh Dashboard', category: 'action', icon: 'Refresh' },
-];
+function fuzzyScore(query: string, text: string): number {
+  const q = query.toLowerCase().trim();
+  const t = text.toLowerCase();
+  if (!q) return 1;
+  if (t.includes(q)) return 100 + (t.startsWith(q) ? 20 : 0) + (t === q ? 30 : 0);
+  let qi = 0;
+  let score = 0;
+  for (let i = 0; i < t.length && qi < q.length; i++) {
+    if (t[i] === q[qi]) {
+      score += 10 - Math.min(i, 5);
+      qi++;
+    }
+  }
+  return qi === q.length ? score : 0;
+}
 
-export default function CommandPalette({ open, onClose, onNavigate, workloads, onSelectWorkload, onRefresh }: CommandPaletteProps) {
+function paletteToast(message: string, type: 'success' | 'error') {
+  window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+}
+
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform);
+
+export default function CommandPalette({
+  open,
+  onClose,
+  onNavigate,
+  workloads,
+  onSelectWorkload,
+  onRefresh,
+  onLogout,
+  onOpenHelp,
+}: CommandPaletteProps) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentViews, setRecentViews] = useState<AppView[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Build command list
-  const allCommands: CommandAction[] = [
-    ...NAV_ITEMS,
-    ...workloads.map(name => ({
-      id: `workload-${name}`,
-      label: `Workload: ${name}`,
-      category: 'workload' as const,
-      icon: 'Workload',
-      workloadName: name,
-    })),
-    ...ACTION_ITEMS,
-  ];
+  const allCommands = useMemo((): CommandAction[] => {
+    const workloadItems: CommandAction[] = workloads.flatMap((name) => [
+      {
+        id: `workload-${name}`,
+        label: `Open workload: ${name}`,
+        category: 'workload' as const,
+        searchText: `workload ${name}`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('workloads'), { workload: name }));
+          onSelectWorkload?.(name);
+        },
+      },
+      {
+        id: `workload-${name}-logs`,
+        label: `View logs: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `logs ${name} workload`,
+        workloadName: name,
+        workloadTab: 'logs',
+        run: () => {
+          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'logs' }));
+          onSelectWorkload?.(name);
+        },
+      },
+      {
+        id: `workload-${name}-scoring`,
+        label: `Open scoring: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `scoring ai intent ${name}`,
+        workloadName: name,
+        workloadTab: 'scoring',
+        run: () => {
+          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'scoring' }));
+          onSelectWorkload?.(name);
+        },
+      },
+      {
+        id: `workload-${name}-start`,
+        label: `Start workload: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `start run ${name}`,
+        workloadName: name,
+        run: async () => {
+          const res = await apiPost(`/workloads/${name}/start`);
+          paletteToast(
+            res.success ? `Started "${name}"` : `Start failed: ${res.error ?? 'unknown error'}`,
+            res.success ? 'success' : 'error',
+          );
+          onRefresh?.();
+        },
+      },
+      {
+        id: `workload-${name}-stop`,
+        label: `Stop workload: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `stop halt ${name}`,
+        workloadName: name,
+        run: async () => {
+          const res = await apiPost(`/workloads/${name}/stop`);
+          paletteToast(
+            res.success ? `Stopped "${name}"` : `Stop failed: ${res.error ?? 'unknown error'}`,
+            res.success ? 'success' : 'error',
+          );
+          onRefresh?.();
+        },
+      },
+    ]);
 
-  const filtered = query
-    ? allCommands.filter(c => c.label.toLowerCase().includes(query.toLowerCase()))
-    : allCommands.slice(0, 15);
+    const actionItems: CommandAction[] = [
+      {
+        id: 'action-refresh',
+        label: 'Refresh dashboard',
+        category: 'action',
+        searchText: 'refresh reload sync',
+        run: () => onRefresh?.(),
+      },
+      {
+        id: 'action-deploy',
+        label: 'Deploy workload',
+        category: 'action',
+        searchText: 'deploy yaml create workload',
+        run: () => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1' })),
+      },
+      {
+        id: 'action-editor',
+        label: 'Open visual editor',
+        category: 'action',
+        searchText: 'editor visual form designer',
+        view: 'editor',
+      },
+      {
+        id: 'action-compose',
+        label: 'Import Docker Compose',
+        category: 'action',
+        searchText: 'compose docker import',
+        view: 'compose',
+      },
+    ];
+
+    if (onLogout) {
+      actionItems.push({
+        id: 'action-logout',
+        label: 'Sign out',
+        category: 'action',
+        searchText: 'logout sign out exit',
+        run: () => onLogout(),
+      });
+    }
+
+    if (onOpenHelp) {
+      actionItems.push(
+        {
+          id: 'action-help-shortcuts',
+          label: 'Help: keyboard shortcuts',
+          category: 'action',
+          searchText: 'help shortcuts keyboard ?',
+          run: () => onOpenHelp('shortcuts'),
+        },
+        {
+          id: 'action-help-about',
+          label: 'Help: about Aether',
+          category: 'action',
+          searchText: 'help about zyvor copyright documentation',
+          run: () => onOpenHelp('about'),
+        },
+      );
+    }
+
+    return [...NAV_ITEMS, ...workloadItems, ...actionItems];
+  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp]);
+
+  const recentCommands = useMemo((): CommandAction[] => {
+    const items: CommandAction[] = [];
+    for (const view of recentViews) {
+      const meta = DASHBOARD_VIEWS.find((v) => v.view === view);
+      if (!meta) continue;
+      items.push({
+        id: `recent-${view}`,
+        label: meta.label,
+        category: 'recent',
+        searchText: `recent ${meta.label} ${meta.subtitle} ${view}`,
+        view,
+      });
+    }
+    return items;
+  }, [recentViews]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim();
+    const recentIds = new Set(recentCommands.map((c) => c.view));
+    const base = allCommands.filter((cmd) => !cmd.view || !recentIds.has(cmd.view));
+    const pool = q ? [...recentCommands, ...base] : [...recentCommands, ...base];
+    const scored = pool
+      .map((cmd) => ({ cmd, score: fuzzyScore(q, cmd.searchText || cmd.label) }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score);
+    return (q ? scored.map(({ cmd }) => cmd) : pool).slice(0, 40);
+  }, [allCommands, query, recentCommands]);
 
   useEffect(() => {
     if (open) {
       setQuery('');
       setSelectedIndex(0);
+      setRecentViews(getRecentViews());
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -67,36 +253,33 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
     setSelectedIndex(0);
   }, [query]);
 
-  // Scroll the selected item into view
   useEffect(() => {
     if (!listRef.current) return;
     const selected = listRef.current.querySelector('[data-selected="true"]');
-    if (selected) {
-      selected.scrollIntoView({ block: 'nearest' });
-    }
+    selected?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
 
-  const executeCommand = useCallback((cmd: CommandAction) => {
-    if (cmd.view) {
-      onNavigate(cmd.view);
-    } else if (cmd.workloadName && onSelectWorkload) {
-      onNavigate('workloads');
-      setTimeout(() => onSelectWorkload(cmd.workloadName!), 100);
-    } else if (cmd.id === 'action-refresh' && onRefresh) {
-      onRefresh();
-    }
-    onClose();
-  }, [onNavigate, onSelectWorkload, onRefresh, onClose]);
+  const executeCommand = useCallback(
+    async (cmd: CommandAction) => {
+      if (cmd.view) {
+        onNavigate(cmd.view);
+      } else if (cmd.run) {
+        await cmd.run();
+      }
+      onClose();
+    },
+    [onNavigate, onClose],
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex(i => Math.min(i + 1, filtered.length - 1));
+      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex(i => Math.max(i - 1, 0));
+      setSelectedIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter' && filtered[selectedIndex]) {
-      executeCommand(filtered[selectedIndex]);
+      void executeCommand(filtered[selectedIndex]);
     } else if (e.key === 'Escape') {
       onClose();
     }
@@ -104,18 +287,19 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
 
   if (!open) return null;
 
-  const categoryLabels: Record<string, string> = {
+  const categoryLabels: Record<CommandCategory, string> = {
+    recent: 'Recent',
     navigation: 'Navigation',
     workload: 'Workloads',
+    'workload-action': 'Workload actions',
     action: 'Actions',
   };
 
-  // Group by category
-  let lastCategory = '';
+  let lastCategory: CommandCategory | '' = '';
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -124,26 +308,24 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-xl rounded-[24px] surface-panel overflow-hidden"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Search Input */}
         <div className="flex items-center px-4 py-4 border-b border-slate-800">
           <span className="text-slate-500 mr-2 text-sm font-mono">{'>'}</span>
           <input
             ref={inputRef}
             type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a command or search..."
+            placeholder="Search pages, workloads, and actions…"
             className="flex-1 bg-transparent text-white text-sm outline-none placeholder-slate-500"
             autoComplete="off"
           />
           <kbd className="text-xs text-slate-500 bg-slate-800/90 px-1.5 py-0.5 rounded border border-slate-700">ESC</kbd>
         </div>
 
-        {/* Results */}
-        <div ref={listRef} className="max-h-80 overflow-y-auto py-1">
+        <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">
           {filtered.length === 0 ? (
             <div className="px-4 py-8 text-center text-slate-500 text-sm">No results found</div>
           ) : (
@@ -152,22 +334,23 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
               lastCategory = cmd.category;
               return (
                 <div key={cmd.id}>
-                  {showCategory && (
+                  {showCategory ? (
                     <div className="px-4 pt-2 pb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      {categoryLabels[cmd.category] || cmd.category}
+                      {categoryLabels[cmd.category]}
                     </div>
-                  )}
+                  ) : null}
                   <button
-                    onClick={() => executeCommand(cmd)}
+                    type="button"
+                    onClick={() => void executeCommand(cmd)}
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}
                     className={`w-full px-4 py-2 flex items-center gap-3 text-sm text-left transition-colors ${
                       i === selectedIndex ? 'bg-aether/20 text-aether' : 'text-slate-300 hover:bg-slate-800/80'
                     }`}
                   >
-                    <span className="text-slate-500 text-xs font-mono w-16 shrink-0">{cmd.icon}</span>
-                    <span className="flex-1">{cmd.label}</span>
-                    {cmd.view && <span className="text-xs text-slate-600">Navigate</span>}
+                    <span className="flex-1 truncate">{cmd.label}</span>
+                    {cmd.view ? <span className="text-xs text-slate-600 shrink-0">Navigate</span> : null}
+                    {cmd.workloadTab ? <span className="text-xs text-slate-600 shrink-0">{cmd.workloadTab}</span> : null}
                   </button>
                 </div>
               );
@@ -175,11 +358,11 @@ export default function CommandPalette({ open, onClose, onNavigate, workloads, o
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-slate-800 flex items-center gap-4 text-xs text-slate-500">
-          <span>Arrow keys navigate</span>
-          <span>Enter to select</span>
-          <span>Esc to close</span>
+        <div className="px-4 py-3 border-t border-slate-800 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+          <span>{isMac ? '⌘K' : 'Ctrl+K'} open</span>
+          <span>↑↓ navigate</span>
+          <span>Enter select</span>
+          <span>Esc close</span>
         </div>
       </div>
     </div>

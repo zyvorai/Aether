@@ -1,20 +1,31 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetch, apiFetchSettled } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { WorkloadResponse, SlaTarget } from '../../types/api';
 
 export default function SLAPage() {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [slaData, setSlaData] = useState<Record<string, SlaTarget | null>>({});
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<WorkloadResponse[]>('/workloads');
-    const wl = data ?? [];
+    setLoadFailed(false);
+    const result = await apiFetchSettled<WorkloadResponse[]>('/workloads');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setWorkloads([]);
+      setSlaData({});
+      setLoading(false);
+      return;
+    }
+    const wl = result.data;
     setWorkloads(wl);
     const results: Record<string, SlaTarget | null> = {};
     await Promise.all(
@@ -33,12 +44,12 @@ export default function SLAPage() {
 
   const filtered = workloads.filter((w) => w.name.toLowerCase().includes(search.toLowerCase()));
 
-  if (loading && workloads.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && workloads.length === 0 && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="SLA data unavailable" onRetry={() => void load()} />;
   }
 
   return (

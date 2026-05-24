@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link2 } from 'lucide-react';
 import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
+import { viewToPath } from '../utils/dashboardRoutes';
+import { pathWithQuery } from '../utils/urlState';
 import LogViewer from './LogViewer';
 import Badge, { RuntimeBadge, SeverityBadge } from './Badge';
 import BarChart from './BarChart';
@@ -112,6 +115,20 @@ export default function WorkloadDetail({ workload, onClose, onAction, initialTab
   const [clusterDetail, setClusterDetail] = useState<ClusterResourceDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  async function copyShareLink() {
+    const params: Record<string, string> = { workload: workload.name };
+    if (activeTab !== 'overview') params.tab = activeTab;
+    const url = `${window.location.origin}${pathWithQuery(viewToPath('workloads'), params)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
   const [replicasInput, setReplicasInput] = useState('1');
 
   useEffect(() => {
@@ -250,7 +267,18 @@ export default function WorkloadDetail({ workload, onClose, onAction, initialTab
           <Badge text={workload.status} variant={getStatusVariant(workload.status)} />
           <span className="text-sm text-zinc-400">{workload.runtime}</span>
         </div>
-        <button onClick={onClose} className="text-zinc-400 hover:text-white text-xl leading-none">&times;</button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void copyShareLink()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-2.5 py-1 text-xs text-zinc-300 hover:border-aether/40 hover:text-aether transition-colors"
+            title="Copy shareable link"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            {linkCopied ? 'Copied' : 'Share link'}
+          </button>
+          <button type="button" onClick={onClose} className="text-zinc-400 hover:text-white text-xl leading-none" aria-label="Close">&times;</button>
+        </div>
       </div>
 
       {/* Tabs */}
