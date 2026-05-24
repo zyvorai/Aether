@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Save, FileText, Eye, CheckCircle } from 'lucide-react';
 import { apiPost } from '../../utils/api';
+import { markSpecValidated } from '../../utils/onboardingState';
 import Badge from '../Badge';
 import type { ValidateResponse } from '../../types/api';
 
@@ -73,6 +74,10 @@ ${form.healthCheck ? `healthCheck:\n  httpGet:\n    path: /health\n    port: 80`
     const res = await apiPost<ValidateResponse>('/validate', { yaml });
     if (res.success && res.data) {
       setValidateResult(res.data);
+      if (res.data.valid) {
+        markSpecValidated();
+        window.dispatchEvent(new Event('aether:spec-validated'));
+      }
     } else {
       setValidateResult({ valid: false, workload_name: null, errors: [res.error ?? 'Validation failed'] });
     }
