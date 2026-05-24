@@ -3,7 +3,9 @@ import Navbar from './Navbar';
 import Hero, { type HeroBadge } from './Hero';
 import Footer from './Footer';
 import VersionRefreshBanner from './VersionRefreshBanner';
+import SseReconnectBanner from './SseReconnectBanner';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
+import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
 
 interface DashboardShellProps {
@@ -14,12 +16,15 @@ interface DashboardShellProps {
   username: string;
   lastRefreshed: Date;
   sseConnected: boolean;
+  sseBannerVisible?: boolean;
   onNavigate: (view: AppView) => void;
   onLogout: () => void;
   onRefresh: () => void;
+  onOpenCommandPalette?: () => void;
+  onOpenHelp?: (tab?: HelpTab) => void;
   children: ReactNode;
   commandPalette: ReactNode;
-  shortcutsHelp: ReactNode;
+  helpDialog: ReactNode;
   toastContainer: ReactNode;
 }
 
@@ -75,12 +80,15 @@ export default function DashboardShell({
   username,
   lastRefreshed,
   sseConnected,
+  sseBannerVisible = false,
   onNavigate,
   onLogout,
   onRefresh,
+  onOpenCommandPalette,
+  onOpenHelp,
   children,
   commandPalette,
-  shortcutsHelp,
+  helpDialog,
   toastContainer,
 }: DashboardShellProps) {
   const { capabilities, ready } = useServerCapabilities();
@@ -103,15 +111,18 @@ export default function DashboardShell({
         username={username}
         onLogout={onLogout}
         onRefresh={onRefresh}
+        onOpenCommandPalette={onOpenCommandPalette}
+        onOpenHelp={onOpenHelp}
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
       />
+      {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
       <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />
       <main id="main-content" className="flex-1 dash-content py-8 lg:py-10">{children}</main>
       <Footer />
       {commandPalette}
-      {shortcutsHelp}
+      {helpDialog}
       {toastContainer}
     </div>
   );

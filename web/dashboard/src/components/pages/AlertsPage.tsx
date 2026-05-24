@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BellRing, Radio, Send, Plus, Trash2 } from 'lucide-react';
-import { apiFetch, apiPost, apiDelete } from '../../utils/api';
+import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { AlertsStatus } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -13,6 +15,7 @@ function toast(message: string, type: 'success' | 'error') {
 export default function AlertsPage() {
   const [status, setStatus] = useState<AlertsStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [testChannel, setTestChannel] = useState('');
   const [testLoading, setTestLoading] = useState(false);
   const [showAddChannel, setShowAddChannel] = useState(false);
@@ -25,13 +28,19 @@ export default function AlertsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<AlertsStatus>('/alerts/status');
-    setStatus(data);
-    if (data?.channels?.length && !testChannel) {
-      setTestChannel(data.channels[0].name);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<AlertsStatus>('/alerts/status');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setStatus(null);
+    } else {
+      setStatus(result.data);
+      if (result.data.channels?.length && !testChannel) {
+        setTestChannel(result.data.channels[0].name);
+      }
     }
     setLoading(false);
-  }, []);
+  }, [testChannel]);
 
   useEffect(() => {
     void load();
@@ -88,12 +97,12 @@ export default function AlertsPage() {
     }
   }
 
-  if (loading && !status) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && !status && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Alerts unavailable" onRetry={() => void load()} />;
   }
 
   const channels = status?.channels ?? [];

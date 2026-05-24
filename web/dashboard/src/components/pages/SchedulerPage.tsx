@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetchSettled } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import StatCard from '../StatCard';
 import BarChart from '../BarChart';
@@ -8,21 +8,30 @@ import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 
 export default function SchedulerPage() {
   const [utilization, setUtilization] = useState<RuntimeUtilization[]>([]);
   const [suggestions, setSuggestions] = useState<OptimizeSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
+    setLoadFailed(false);
     const [u, s] = await Promise.all([
-      apiFetch<RuntimeUtilization[]>('/scheduler/utilization'),
-      apiFetch<OptimizeSuggestion[]>('/scheduler/optimize'),
+      apiFetchSettled<RuntimeUtilization[]>('/scheduler/utilization'),
+      apiFetchSettled<OptimizeSuggestion[]>('/scheduler/optimize'),
     ]);
-    setUtilization(u ?? []);
-    setSuggestions(s ?? []);
+    if (!u.ok && !s.ok) {
+      setLoadFailed(true);
+      setUtilization([]);
+      setSuggestions([]);
+    } else {
+      setUtilization(u.ok ? u.data : []);
+      setSuggestions(s.ok ? s.data : []);
+    }
   }, []);
 
   useEffect(() => {
@@ -38,8 +47,12 @@ export default function SchedulerPage() {
     setRefreshing(false);
   }
 
-  if (loading) {
+  if (loading && !loadFailed) {
     return <PageLoading rows={6} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Scheduler data unavailable" onRetry={() => void load()} />;
   }
 
   return (

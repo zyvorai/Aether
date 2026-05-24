@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { KeyRound, Shield, Trash2 } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import Modal from '../Modal';
@@ -17,14 +19,21 @@ export default function RbacPage() {
   const [role, setRole] = useState('viewer');
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
   const [revokeName, setRevokeName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setListLoading(true);
-    const data = await apiFetch<ApiKeySummary[]>('/rbac/keys');
-    setKeys(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<ApiKeySummary[]>('/rbac/keys');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setKeys([]);
+    } else {
+      setKeys(result.data);
+    }
     setListLoading(false);
   }, []);
 
@@ -64,6 +73,14 @@ export default function RbacPage() {
     } else {
       toast(response.error ?? 'Failed to revoke API key', 'error');
     }
+  }
+
+  if (listLoading && keys.length === 0 && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="RBAC keys unavailable" onRetry={() => void load()} />;
   }
 
   return (

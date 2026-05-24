@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox, Plus, ArrowRight } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import DependencyGraphVisual from '../DependencyGraphVisual';
 import type { DependencyGraph, DependencyEdge } from '../../types/api';
 
@@ -72,14 +74,21 @@ function GraphVisual({ graph }: { graph: DependencyGraph }) {
 export default function DepsPage() {
   const [graph, setGraph] = useState<DependencyGraph | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [addWorkload, setAddWorkload] = useState('');
   const [addDependency, setAddDependency] = useState('');
   const [addLoading, setAddLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<DependencyGraph>('/dependencies');
-    setGraph(data);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<DependencyGraph>('/dependencies');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setGraph(null);
+    } else {
+      setGraph(result.data);
+    }
     setLoading(false);
   }, []);
 
@@ -105,12 +114,12 @@ export default function DepsPage() {
     }
   }
 
-  if (loading && !graph) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && !graph && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Dependencies unavailable" onRetry={() => void load()} />;
   }
 
   return (

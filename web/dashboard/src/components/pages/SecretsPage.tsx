@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { Inbox, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
-import { apiFetch, apiDelete } from '../../utils/api';
+import { apiFetch, apiDelete, apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import Modal from '../Modal';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { SecretSummary, SecretDetail } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -15,6 +17,7 @@ function toast(message: string, type: 'success' | 'error') {
 export default function SecretsPage() {
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [expandedSecret, setExpandedSecret] = useState<string | null>(null);
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
@@ -23,8 +26,14 @@ export default function SecretsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<SecretSummary[]>('/secrets');
-    setSecrets(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<SecretSummary[]>('/secrets');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setSecrets([]);
+    } else {
+      setSecrets(result.data);
+    }
     setLoading(false);
   }, []);
 
@@ -68,12 +77,12 @@ export default function SecretsPage() {
     }
   }
 
-  if (loading && secrets.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && secrets.length === 0 && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Secrets unavailable" onRetry={() => void load()} />;
   }
 
   return (

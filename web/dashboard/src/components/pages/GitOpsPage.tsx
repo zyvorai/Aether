@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { GitBranch } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 
 interface GitOpsPayload {
@@ -47,12 +49,19 @@ export default function GitOpsPage() {
   const [data, setData] = useState<GitOpsPayload | null>(null);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const raw = await apiFetch<GitOpsPayload>('/gitops/status');
-    setData(raw ?? { configured: false });
+    setLoadFailed(false);
+    const result = await apiFetchSettled<GitOpsPayload>('/gitops/status');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setData(null);
+    } else {
+      setData(result.data ?? { configured: false });
+    }
     setLoading(false);
   }, []);
 
@@ -74,6 +83,14 @@ export default function GitOpsPage() {
   };
 
   const parsedSync = formatSyncResult(syncResult);
+
+  if (loading && !data && !loadFailed) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="GitOps status unavailable" onRetry={() => void load()} />;
+  }
 
   return (
     <div className="space-y-6">

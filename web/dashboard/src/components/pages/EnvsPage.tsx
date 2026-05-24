@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import type { Environment } from '../../types/api';
 
@@ -20,13 +22,20 @@ function getTierVariant(tier: string): 'green' | 'yellow' | 'red' | 'blue' | 'mu
 export default function EnvsPage() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<Environment[]>('/environments');
-    setEnvironments(data ?? []);
+    setLoadFailed(false);
+    const result = await apiFetchSettled<Environment[]>('/environments');
+    if (!result.ok) {
+      setLoadFailed(true);
+      setEnvironments([]);
+    } else {
+      setEnvironments(result.data);
+    }
     setLoading(false);
   }, []);
 
@@ -40,12 +49,12 @@ export default function EnvsPage() {
     return environments.filter((env) => env.name.toLowerCase().includes(q) || env.tier.toLowerCase().includes(q));
   }, [environments, search]);
 
-  if (loading && environments.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && environments.length === 0 && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Environments unavailable" onRetry={() => void load()} />;
   }
 
   return (

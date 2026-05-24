@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import { useQueryParam } from '../../utils/urlState';
 import type { Event, EventSummary } from '../../types/api';
 
@@ -13,6 +15,7 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
   const [severity, setSeverity] = useQueryParam('severity', 'all');
   const [category, setCategory] = useQueryParam('category', 'all');
@@ -20,16 +23,23 @@ export default function EventsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     const qs = new URLSearchParams();
     if (category && category !== 'all') qs.set('category', category);
     if (workloadFilter.trim()) qs.set('workload', workloadFilter.trim());
     const query = qs.toString() ? `?${qs}` : '';
     const [ev, s] = await Promise.all([
-      apiFetch<Event[]>(`/events${query}`),
-      apiFetch<EventSummary>('/events/summary'),
+      apiFetchSettled<Event[]>(`/events${query}`),
+      apiFetchSettled<EventSummary>('/events/summary'),
     ]);
-    setEvents(ev ?? []);
-    setSummary(s);
+    if (!ev.ok && !s.ok) {
+      setLoadFailed(true);
+      setEvents([]);
+      setSummary(null);
+    } else {
+      setEvents(ev.ok ? ev.data : []);
+      setSummary(s.ok ? s.data : null);
+    }
     setLoading(false);
   }, [category, workloadFilter]);
 
@@ -55,12 +65,12 @@ export default function EventsPage() {
     });
   }, [events, search, severity]);
 
-  if (loading && events.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && events.length === 0 && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Events unavailable" onRetry={() => void load()} />;
   }
 
   return (

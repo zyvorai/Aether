@@ -1,29 +1,39 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Inbox, ShieldCheck } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetch, apiFetchSettled } from '../../utils/api';
 import { useQueryParam } from '../../utils/urlState';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import type { AuditResponse, AuditVerifyResponse } from '../../types/api';
 
 export default function AuditPage() {
   const [audit, setAudit] = useState<AuditResponse | null>(null);
   const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
   const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     const [data, verifyData] = await Promise.all([
-      apiFetch<AuditResponse>('/audit'),
-      apiFetch<AuditVerifyResponse>('/audit/verify'),
+      apiFetchSettled<AuditResponse>('/audit'),
+      apiFetchSettled<AuditVerifyResponse>('/audit/verify'),
     ]);
-    setAudit(data);
-    setVerify(verifyData);
+    if (!data.ok && !verifyData.ok) {
+      setLoadFailed(true);
+      setAudit(null);
+      setVerify(null);
+    } else {
+      setAudit(data.ok ? data.data : null);
+      setVerify(verifyData.ok ? verifyData.data : null);
+    }
     setLoading(false);
   }, []);
 
@@ -46,12 +56,12 @@ export default function AuditPage() {
     });
   }, [audit, search, workloadFilter]);
 
-  if (loading && !audit) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aether" />
-      </div>
-    );
+  if (loading && !audit && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Audit trail unavailable" onRetry={() => void load()} />;
   }
 
   if (!audit) {

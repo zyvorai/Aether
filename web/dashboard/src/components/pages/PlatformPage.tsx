@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Server, Shield, Database, ExternalLink } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetchSettled } from '../../utils/api';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 import PlatformRecommendations from '../PlatformRecommendations';
 import type { PlatformRecommendation } from '../../types/api';
@@ -27,18 +29,26 @@ export default function PlatformPage() {
   const [server, setServer] = useState<ServerPayload | null>(null);
   const [recommendations, setRecommendations] = useState<PlatformRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [recLoading, setRecLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     setRecLoading(true);
-    const [data, rec] = await Promise.all([
-      apiFetch<ServerPayload>('/server'),
-      apiFetch<{ items?: PlatformRecommendation[] }>('/platform/recommendations'),
+    setLoadFailed(false);
+    const [serverRes, recRes] = await Promise.all([
+      apiFetchSettled<ServerPayload>('/server'),
+      apiFetchSettled<{ items?: PlatformRecommendation[] }>('/platform/recommendations'),
     ]);
-    setServer(data);
-    setRecommendations(rec?.items ?? []);
-    await refreshPlatform();
+    if (!serverRes.ok && !recRes.ok) {
+      setLoadFailed(true);
+      setServer(null);
+      setRecommendations([]);
+    } else {
+      setServer(serverRes.ok ? serverRes.data : null);
+      setRecommendations(recRes.ok ? (recRes.data.items ?? []) : []);
+      await refreshPlatform();
+    }
     setLoading(false);
     setRecLoading(false);
   }, [refreshPlatform]);
@@ -50,6 +60,14 @@ export default function PlatformPage() {
   const integrations = server?.integrations ?? {};
   const platform = capabilities?.platform;
   const systemReady = ready?.ready ?? true;
+
+  if (loading && !server && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Platform data unavailable" onRetry={() => void load()} />;
+  }
 
   return (
     <div>
