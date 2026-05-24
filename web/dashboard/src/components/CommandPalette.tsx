@@ -203,7 +203,7 @@ export default function CommandPalette({
           id: 'action-help-about',
           label: 'Help: about Aether',
           category: 'action',
-          searchText: 'help about zyvor copyright documentation',
+          searchText: 'help about aether zyvor copyright documentation',
           run: () => onOpenHelp('about'),
         },
       );

@@ -825,9 +825,7 @@ export default function ClustersPage() {
         size="wide"
       >
         {detailLoading || !selected ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
-          </div>
+          <PageLoading label="Loading resource details…" className="h-48" />
         ) : (
           <div className="space-y-4">
             <PageTabs
