@@ -6,6 +6,7 @@
 
 mod types;
 mod handlers;
+mod platform_recommendations;
 
 pub use types::ApiConfig;
 
@@ -508,6 +509,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/sla/:workload", get(api_sla_check))
         .route("/api/events", get(api_events_list))
         .route("/api/events/summary", get(api_events_summary))
+        .route("/api/platform/recommendations", get(api_platform_recommendations))
         .route("/api/cluster/summary", get(api_cluster_summary))
         .route("/api/cluster/namespaces", get(api_cluster_namespaces))
         .route("/api/cluster/browse", get(api_cluster_browse))

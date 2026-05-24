@@ -2399,6 +2399,14 @@ pub(crate) async fn api_cluster_summary() -> impl IntoResponse {
     ok_json(crate::kubecluster::cluster_summary().await)
 }
 
+/// GET /api/platform/recommendations — optional setup items for the Platform page (not inline banners).
+pub(crate) async fn api_platform_recommendations(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let items = super::platform_recommendations::collect(&app_state).await;
+    ok_json(serde_json::json!({ "items": items }))
+}
+
 /// GET /api/cluster/logs - Get logs for a kubeconfig-backed Kubernetes workload
 pub(crate) async fn api_cluster_logs(
     Query(query): Query<ClusterLogsQuery>,
@@ -4012,13 +4020,6 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
             "audit_webhook_configured": std::env::var("AETHER_AUDIT_WEBHOOK_URL").ok().filter(|s| !s.is_empty()).is_some(),
             "grafana_url": std::env::var("AETHER_GRAFANA_URL").ok().filter(|s| !s.is_empty()),
             "prometheus_url": std::env::var("AETHER_PROMETHEUS_URL").ok().filter(|s| !s.is_empty()),
-        },
-        "ha_recommendation": if !postgres_configured {
-            "Set AETHER_STATE_DATABASE_URL (Helm postgresql.enabled) before running multiple API replicas."
-        } else if !redis_configured {
-            "Consider AETHER_REDIS_URL for shared SSE sessions across API replicas."
-        } else {
-            ""
         },
     }))
 }

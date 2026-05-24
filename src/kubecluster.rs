@@ -240,11 +240,7 @@ pub async fn cluster_summary() -> ClusterSummaryResponse {
         Err(error) => {
             if let Some(fallback) = cluster_summary_from_default_client().await {
                 ClusterSummaryResponse {
-                    summary_note: Some(format!(
-                        "Kubeconfig multi-context inventory unavailable ({}). \
-                         Showing the active default Kubernetes client only — same source as live workload discovery.",
-                        error
-                    )),
+                    summary_note: None,
                     ..fallback
                 }
             } else {
@@ -259,6 +255,21 @@ pub async fn cluster_summary() -> ClusterSummaryResponse {
                     error: Some(error.to_string()),
                     summary_note: None,
                 }
+            }
+        }
+    }
+}
+
+/// When multi-context inventory fails but the default client works, return the inventory error
+/// for the Platform setup recommendations page (not inline dashboard banners).
+pub async fn kubeconfig_inventory_fallback_error() -> Option<String> {
+    match list_clusters().await {
+        Ok(_) => None,
+        Err(e) => {
+            if cluster_summary_from_default_client().await.is_some() {
+                Some(e.to_string())
+            } else {
+                None
             }
         }
     }

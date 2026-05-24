@@ -27,7 +27,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'health', path: '/health', label: 'Health Monitor', breadcrumb: 'Health Monitor', subtitle: 'Workload health checks and status', group: 'operations' },
   { view: 'events', path: '/events', label: 'Events', breadcrumb: 'Events', subtitle: 'Platform and workload events', group: 'operations' },
   { view: 'alerts', path: '/alerts', label: 'Alerts', breadcrumb: 'Alerts & Webhooks', subtitle: 'Notification channels, alert rules, and webhook tests', group: 'operations' },
-  { view: 'platform', path: '/platform', label: 'Platform', breadcrumb: 'Platform & HA', subtitle: 'HA mode, OPA, integrations, and observability links', group: 'operations' },
+  { view: 'platform', path: '/platform', label: 'Platform', breadcrumb: 'Platform & HA', subtitle: 'HA mode, setup recommendations, OPA, and observability', group: 'operations' },
   { view: 'sla', path: '/sla', label: 'SLA Compliance', breadcrumb: 'SLA Compliance', subtitle: 'SLA tracking and compliance', group: 'operations' },
   { view: 'deps', path: '/deps', label: 'Dependencies', breadcrumb: 'Dependencies', subtitle: 'Workload dependency graph', group: 'operations' },
   { view: 'envs', path: '/envs', label: 'Environments', breadcrumb: 'Environments', subtitle: 'Environment tiers and configuration', group: 'operations' },
