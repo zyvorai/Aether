@@ -104,11 +104,6 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         sseConnected={sseConnected}
         loading={platformLoading}
       />
-      {clusterSummary?.summary_note ? (
-        <div className="mb-5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95 leading-relaxed">
-          {clusterSummary.summary_note}
-        </div>
-      ) : null}
       <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="surface-panel interactive-lift rounded-2xl p-5">
           <div className="mb-3 flex items-center justify-between">

@@ -577,7 +577,6 @@ export interface PlatformInfo {
   version: string;
   persistence: 'local-json' | 'postgresql';
   haMode: string;
-  haRecommendation?: string;
   embeddedUiBuild?: string;
   integrations?: {
     backup_remote_configured?: boolean;
@@ -620,6 +619,15 @@ export interface SystemReadyStatus {
     redis?: SystemReadyCheck;
     postgres?: SystemReadyCheck;
   };
+}
+
+export interface PlatformRecommendation {
+  id: string;
+  category: string;
+  severity: 'info' | 'warn' | 'critical' | string;
+  title: string;
+  detail: string;
+  action: string;
 }
 
 // ─── View types ──────────────────────────────────────────────────────

@@ -3,7 +3,6 @@ import Navbar from './Navbar';
 import Hero, { type HeroBadge } from './Hero';
 import Footer from './Footer';
 import VersionRefreshBanner from './VersionRefreshBanner';
-import PlatformBanner from './PlatformBanner';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import type { AppView } from '../types/api';
 
@@ -108,9 +107,6 @@ export default function DashboardShell({
         sseConnected={sseConnected}
       />
       <VersionRefreshBanner />
-      <div className="dash-content pt-0">
-        <PlatformBanner />
-      </div>
       <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />
       <main id="main-content" className="flex-1 dash-content py-8 lg:py-10">{children}</main>
       <Footer />
