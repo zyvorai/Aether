@@ -60,4 +60,34 @@ test.describe('Dashboard UX polish', () => {
     await expect(page.getByText('GitOps status unavailable')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
   });
+
+  test('empty overview shows onboarding strip', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/0\/3 steps complete/i)).toBeVisible();
+  });
+
+  test('onboarding validate step opens validate modal', async ({ page }) => {
+    await page.goto('/');
+    const validateStep = page.getByRole('button', { name: /Validate a spec/i });
+    await expect(validateStep).toBeVisible({ timeout: 15_000 });
+    await validateStep.click();
+    await expect(page.getByRole('heading', { name: 'Validate Workload YAML' })).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
+  test('Policy page shows OPA probe retry when server API fails', async ({ page }) => {
+    await page.route('**/api/server', (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, error: 'unavailable' }),
+      }),
+    );
+    await page.goto('/policy');
+    await expect(page.getByText(/Could not load OPA status/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: 'Retry' }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Workload policy check' })).toBeVisible();
+  });
 });
