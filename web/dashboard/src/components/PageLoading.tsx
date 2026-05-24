@@ -1,3 +1,5 @@
+import { useTheme } from '../contexts/ThemeContext';
+
 interface PageLoadingProps {
   rows?: number;
   variant?: 'skeleton' | 'spinner';
@@ -6,11 +8,14 @@ interface PageLoadingProps {
 }
 
 export default function PageLoading({ rows = 4, variant = 'skeleton', label, className }: PageLoadingProps) {
+  const { theme } = useTheme();
+  const light = theme === 'light';
+
   if (variant === 'spinner' || label) {
     return (
       <div className={`flex flex-col items-center justify-center gap-3 ${className ?? 'py-16'}`}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-aether border-t-transparent" />
-        {label ? <p className="text-sm text-slate-500">{label}</p> : null}
+        {label ? <p className={`text-sm ${light ? 'text-slate-600' : 'text-slate-500'}`}>{label}</p> : null}
       </div>
     );
   }

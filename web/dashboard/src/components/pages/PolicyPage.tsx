@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { AlertTriangle, AlertCircle, ShieldCheck } from 'lucide-react';
-import { apiFetch, apiPost } from '../../utils/api';
+import { useEffect, useState, useCallback } from 'react';
+import { AlertTriangle, AlertCircle, ShieldCheck, RefreshCw, WifiOff } from 'lucide-react';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import SpecWorkbench from '../SpecWorkbench';
 import Badge, { SeverityBadge } from '../Badge';
 import type { OpaEvaluation, PolicyResult } from '../../types/api';
@@ -10,16 +10,29 @@ export default function PolicyPage() {
   const [opaResult, setOpaResult] = useState<OpaEvaluation | null>(null);
   const [opaManifest, setOpaManifest] = useState('{\n  "apiVersion": "v1",\n  "kind": "ConfigMap",\n  "metadata": { "name": "example", "labels": { "owner": "team-a" } }\n}');
   const [opaConfigured, setOpaConfigured] = useState(false);
+  const [opaProbeFailed, setOpaProbeFailed] = useState(false);
+  const [opaProbeLoading, setOpaProbeLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [opaLoading, setOpaLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [opaError, setOpaError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void apiFetch<{ opa?: { configured?: boolean } }>('/server').then((s) => {
-      setOpaConfigured(Boolean(s?.opa?.configured));
-    });
+  const loadOpaStatus = useCallback(async () => {
+    setOpaProbeLoading(true);
+    setOpaProbeFailed(false);
+    const result = await apiFetchSettled<{ opa?: { configured?: boolean } }>('/server');
+    if (!result.ok) {
+      setOpaProbeFailed(true);
+      setOpaConfigured(false);
+    } else {
+      setOpaConfigured(Boolean(result.data?.opa?.configured));
+    }
+    setOpaProbeLoading(false);
   }, []);
+
+  useEffect(() => {
+    void loadOpaStatus();
+  }, [loadOpaStatus]);
 
   async function handleCheck(yaml: string) {
     setLoading(true);
@@ -106,6 +119,27 @@ export default function PolicyPage() {
 
   return (
     <div>
+      {opaProbeFailed ? (
+        <div
+          role="status"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <WifiOff className="h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+            <span>Could not load OPA status from the API. Built-in policy check still works below.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadOpaStatus()}
+            disabled={opaProbeLoading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 px-3 py-1 text-xs font-medium text-amber-100 hover:bg-amber-500/15 transition-colors shrink-0 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5${opaProbeLoading ? ' animate-spin' : ''}`} />
+            Retry
+          </button>
+        </div>
+      ) : null}
+
       {opaConfigured && (
         <div className="dash-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
