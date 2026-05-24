@@ -12,6 +12,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { apiTryAuth, DEFAULT_DASHBOARD_USERNAME, apiFetchAuthProviders } from '../utils/api';
+import { ZyvorFooter } from './ZyvorBrand';
 
 interface LoginGateProps {
   onAuthenticated: (username: string) => void;
@@ -309,6 +310,7 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
           </div>
         </main>
       </div>
+      <ZyvorFooter />
     </div>
   );
 }
