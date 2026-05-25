@@ -93,13 +93,15 @@ test.describe('Dashboard UX polish', () => {
   });
 
   test('light theme deploy modal opens with readable dialog', async ({ page }) => {
+    await page.getByLabel('Theme').selectOption('light');
     await page.goto('/workloads?deploy=1');
     await expect(page.getByRole('heading', { name: 'Deploy New Workload' })).toBeVisible({
       timeout: 15_000,
     });
-    await page.getByLabel('Theme').selectOption('light');
-    await expect(page.getByRole('dialog', { name: 'Deploy New Workload' })).toBeVisible();
-    await expect(page.getByPlaceholder('Paste workload YAML spec here...')).toBeVisible();
+    const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Deploy' })).toBeEnabled();
+    await expect(dialog.locator('textarea')).toHaveValue(/apiVersion: aether\/v1/);
   });
 
   test('editor validate marks onboarding validate step in localStorage', async ({ page }) => {
