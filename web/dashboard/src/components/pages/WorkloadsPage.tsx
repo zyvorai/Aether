@@ -6,7 +6,7 @@ import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
-import { DEFAULT_DEPLOY_WORKLOAD_YAML, workloadJsonToYaml } from '../../utils/workloadYaml';
+import { DEFAULT_DEPLOY_WORKLOAD_YAML, freshDeployWorkloadYaml, workloadJsonToYaml } from '../../utils/workloadYaml';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -93,6 +93,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('deploy') === '1') {
+      setDeployInitialYaml(freshDeployWorkloadYaml());
       setDeployModal(true);
       params.delete('deploy');
       const qs = params.toString();
@@ -367,7 +368,10 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <>
             <button
               type="button"
-              onClick={() => setDeployModal(true)}
+              onClick={() => {
+                setDeployInitialYaml(freshDeployWorkloadYaml());
+                setDeployModal(true);
+              }}
               className="inline-flex items-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white transition hover:bg-aether-light"
             >
               <Plus size={16} />
