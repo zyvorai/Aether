@@ -7,8 +7,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { buildEditorWorkloadYaml } from '../../utils/workloadYaml';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
-import Badge from '../Badge';
-import type { ValidateResponse } from '../../types/api';
+import ValidateResultPanel from '../ValidateResultPanel';
+import type { ValidateResponse, PolicyResult } from '../../types/api';
 
 interface EditorForm {
   name: string;
@@ -42,6 +42,7 @@ export default function EditorPage() {
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
+  const [policyResult, setPolicyResult] = useState<PolicyResult | null>(null);
   const [showPreview, setShowPreview] = useState(true);
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
@@ -56,16 +57,21 @@ export default function EditorPage() {
   const handleValidate = async () => {
     setValidating(true);
     setValidateResult(null);
+    setPolicyResult(null);
     const yaml = generateYaml();
-    const res = await apiPost<ValidateResponse>('/validate', { yaml });
-    if (res.success && res.data) {
-      setValidateResult(res.data);
-      if (res.data.valid) {
+    const [validateRes, policyRes] = await Promise.all([
+      apiPost<ValidateResponse>('/validate', { yaml }),
+      apiPost<PolicyResult>('/policy/check', { yaml }),
+    ]);
+    if (validateRes.success && validateRes.data) {
+      setValidateResult(validateRes.data);
+      if (validateRes.data.valid) {
         markSpecValidated();
       }
     } else {
-      setValidateResult({ valid: false, workload_name: null, errors: [res.error ?? 'Validation failed'] });
+      setValidateResult({ valid: false, workload_name: null, errors: [validateRes.error ?? 'Validation failed'] });
     }
+    setPolicyResult(policyRes.data ?? null);
     setValidating(false);
   };
 
@@ -79,6 +85,23 @@ export default function EditorPage() {
     setSaving(true);
     setResult(null);
     const yaml = generateYaml();
+
+    const validateRes = await apiPost<ValidateResponse>('/validate', { yaml });
+    setValidateResult(validateRes.data ?? null);
+    if (!validateRes.data?.valid) {
+      setSaving(false);
+      setResult('Error: Fix validation errors before deploying.');
+      return;
+    }
+
+    const policyRes = await apiPost<PolicyResult>('/policy/check', { yaml });
+    setPolicyResult(policyRes.data ?? null);
+    if (policyRes.data && !policyRes.data.passed) {
+      setSaving(false);
+      setResult('Error: Policy check failed — review violations before deploying.');
+      return;
+    }
+
     const res = await apiPost('/workloads', { spec_yaml: yaml });
     if (res.success) {
       markFirstDeploy();
@@ -223,21 +246,7 @@ export default function EditorPage() {
           </label>
 
           {validateResult && (
-            <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge text={validateResult.valid ? 'VALID' : 'INVALID'} variant={validateResult.valid ? 'green' : 'red'} />
-                {validateResult.workload_name && (
-                  <span className="text-sm text-slate-400">{validateResult.workload_name}</span>
-                )}
-              </div>
-              {validateResult.errors.length > 0 && (
-                <ul className="text-sm text-red-400 space-y-1">
-                  {validateResult.errors.map((err, i) => (
-                    <li key={i}>• {err}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <ValidateResultPanel validate={validateResult} policy={policyResult} />
           )}
 
           {result && (

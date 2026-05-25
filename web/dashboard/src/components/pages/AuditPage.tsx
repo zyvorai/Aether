@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Inbox, ShieldCheck } from 'lucide-react';
+import { Download, Inbox, ShieldCheck } from 'lucide-react';
 import { apiFetch, apiFetchSettled } from '../../utils/api';
 import { useQueryParam } from '../../utils/urlState';
 import { formatTimestamp } from '../../utils/formatters';
@@ -56,6 +56,35 @@ export default function AuditPage() {
     });
   }, [audit, search, workloadFilter]);
 
+  function downloadExport(format: 'json' | 'csv') {
+    const rows = filteredEvents;
+    if (rows.length === 0) return;
+    let body: string;
+    let mime: string;
+    let filename: string;
+    if (format === 'json') {
+      body = JSON.stringify(rows, null, 2);
+      mime = 'application/json';
+      filename = 'aether-audit-export.json';
+    } else {
+      const header = 'id,timestamp,action,workload,result,runtime,message';
+      const lines = rows.map(
+        (ev) =>
+          `"${ev.id}","${ev.timestamp}","${ev.action.replace(/"/g, '""')}","${ev.workload.replace(/"/g, '""')}","${ev.result}","${(ev.runtime ?? '').replace(/"/g, '""')}","${ev.message.replace(/"/g, '""')}"`,
+      );
+      body = [header, ...lines].join('\n');
+      mime = 'text/csv';
+      filename = 'aether-audit-export.csv';
+    }
+    const blob = new Blob([body], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (loading && !audit && !loadFailed) {
     return <PageLoading rows={5} />;
   }
@@ -78,6 +107,28 @@ export default function AuditPage() {
         searchPlaceholder="Search action, workload, message…"
         onRefresh={() => void load()}
         refreshing={loading}
+        actions={
+          filteredEvents.length > 0 ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => downloadExport('json')}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+              >
+                <Download className="w-3.5 h-3.5" />
+                JSON
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadExport('csv')}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+              >
+                <Download className="w-3.5 h-3.5" />
+                CSV
+              </button>
+            </div>
+          ) : undefined
+        }
         filters={
           <input
             type="text"

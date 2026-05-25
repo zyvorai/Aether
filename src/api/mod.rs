@@ -540,6 +540,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/plugins/discover", post(api_plugins_discover))
         .route("/api/health/:workload", get(api_health_summary))
         .route("/api/compose/validate", post(api_compose_validate))
+        .route("/api/compose/up", post(api_compose_up))
         .route("/api/audit/verify", get(api_audit_verify))
         .route("/api/gitops/status", get(api_gitops_status))
         .route("/api/gitops/sync", post(api_gitops_sync))

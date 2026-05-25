@@ -71,6 +71,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [migrateModal, setMigrateModal] = useState<string | null>(null);
   const [migrateAdvice, setMigrateAdvice] = useState<MigrationAdvice | null>(null);
   const [migrateTarget, setMigrateTarget] = useState<string | null>(null);
+  const [migrateStrategy, setMigrateStrategy] = useState('blue-green');
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [validateModal, setValidateModal] = useState(false);
   const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
@@ -248,15 +249,23 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setMigrateTarget(target);
     const data = await apiFetch<MigrationAdvice>(`/ai/migration-advice/${encodeURIComponent(name)}/${encodeURIComponent(target)}`);
     setMigrateAdvice(data);
+    if (data?.recommended_strategy) {
+      const s = data.recommended_strategy.toLowerCase().replace(/_/g, '-');
+      if (s.includes('immediate')) setMigrateStrategy('immediate');
+      else if (s.includes('rolling')) setMigrateStrategy('rolling');
+      else if (s.includes('canary')) setMigrateStrategy('canary');
+      else setMigrateStrategy('blue-green');
+    }
     setAdviceLoading(false);
   }
 
-  async function handleMigrate(name: string, target: string) {
+  async function handleMigrate(name: string, target: string, strategy: string) {
     setActionLoading(`${name}-migrate`);
-    const res = await apiPost(`/workloads/${name}/migrate`, { target_runtime: target });
+    const res = await apiPost(`/workloads/${name}/migrate`, { target_runtime: target, strategy });
     setMigrateModal(null);
     setMigrateAdvice(null);
     setMigrateTarget(null);
+    setMigrateStrategy('blue-green');
     setActionLoading(null);
     if (res.success) {
       toast(`Migration of "${name}" to ${target} started`, 'success');
@@ -723,6 +732,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           initialTab={detailInitialTab}
           canMutate={canMutate}
           onClose={closeWorkloadDetail}
+          onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
           onAction={() => load()}
         />
       )}
@@ -783,6 +793,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           setMigrateModal(null);
           setMigrateAdvice(null);
           setMigrateTarget(null);
+          setMigrateStrategy('blue-green');
         }}
         title={`Migrate: ${migrateModal}`}
         size="wide"
@@ -831,6 +842,29 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 </div>
               )}
             </div>
+            <div>
+              <span className="text-xs uppercase tracking-wider text-zinc-500 mb-2 block">Migration strategy</span>
+              <div className="flex flex-wrap gap-2">
+                {(['immediate', 'blue-green', 'rolling'] as const).map((s) => (
+                  <label key={s} className="inline-flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="migrate-strategy"
+                      value={s}
+                      checked={migrateStrategy === s}
+                      onChange={() => setMigrateStrategy(s)}
+                      className="accent-aether"
+                    />
+                    {s}
+                  </label>
+                ))}
+              </div>
+              {migrateStrategy === 'blue-green' && (
+                <p className="text-xs text-amber-400/90 mt-2">
+                  Blue-green may drain connections for up to 30 seconds during traffic switch.
+                </p>
+              )}
+            </div>
             {migrateAdvice.reasons.length > 0 && (
               <ul className="text-xs text-slate-400 space-y-1">
                 {migrateAdvice.reasons.map((r, i) => (
@@ -847,7 +881,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             )}
             <button
               type="button"
-              onClick={() => migrateModal && handleMigrate(migrateModal, migrateTarget)}
+              onClick={() => migrateModal && migrateTarget && handleMigrate(migrateModal, migrateTarget, migrateStrategy)}
               disabled={actionLoading !== null}
               className="w-full py-3 bg-aether hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-white"
             >
