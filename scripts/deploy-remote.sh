@@ -92,7 +92,7 @@ USER="${POSITIONAL[1]:-${DEPLOY_USER:-root}}"
 PASS="${DEPLOY_PASS:-}"
 
 if [ "${#POSITIONAL[@]}" -gt 2 ]; then
-  warn "Ignoring extra argument(s) after <host> [user]: only '${HOST}' and '${USER}' are used (${#POSITIONAL[@]} args given)."
+  aether_warn "Ignoring extra argument(s) after <host> [user]: only '${HOST}' and '${USER}' are used (${#POSITIONAL[@]} args given)."
 fi
 
 [ -n "${HOST}" ] || {
