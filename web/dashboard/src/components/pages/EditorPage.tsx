@@ -4,6 +4,7 @@ import { Save, FileText, Eye, CheckCircle } from 'lucide-react';
 import { apiPost } from '../../utils/api';
 import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
+import { buildEditorWorkloadYaml } from '../../utils/workloadYaml';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import Badge from '../Badge';
@@ -22,7 +23,7 @@ interface EditorForm {
 }
 
 const defaultForm: EditorForm = {
-  name: 'my-app',
+  name: 'nginx',
   image: 'nginx:latest',
   runtime: 'kubernetes',
   replicas: 2,
@@ -50,28 +51,7 @@ export default function EditorPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const generateYaml = (): string => {
-    const envLines = form.env
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        const [key, ...rest] = line.split('=');
-        return `    - name: ${key}\n      value: "${rest.join('=') || ''}"`;
-      })
-      .join('\n');
-
-    return `name: ${form.name}
-image: ${form.image}
-runtime: ${form.runtime}
-replicas: ${form.replicas}
-resources:
-  cpu: ${form.cpu}
-  memory: ${form.memory}
-intent: ${form.intent}
-${form.env.trim() ? `env:\n${envLines}` : ''}
-${form.healthCheck ? `healthCheck:\n  httpGet:\n    path: /health\n    port: 80` : ''}`;
-  };
+  const generateYaml = (): string => buildEditorWorkloadYaml(form);
 
   const handleValidate = async () => {
     setValidating(true);
@@ -90,6 +70,12 @@ ${form.healthCheck ? `healthCheck:\n  httpGet:\n    path: /health\n    port: 80`
   };
 
   const handleSave = async () => {
+    if (!canMutate) {
+      window.dispatchEvent(
+        new CustomEvent('aether-toast', { detail: { message: 'Read-only session — deploy is disabled', type: 'error' } }),
+      );
+      return;
+    }
     setSaving(true);
     setResult(null);
     const yaml = generateYaml();

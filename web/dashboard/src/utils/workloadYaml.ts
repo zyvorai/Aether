@@ -1,0 +1,219 @@
+/** Build and parse aether/v1 workload YAML for deploy and validate modals. */
+
+export interface EditorWorkloadInput {
+  name: string;
+  image: string;
+  runtime: string;
+  replicas: number;
+  cpu: string;
+  memory: string;
+  intent: string;
+  healthCheck: boolean;
+  owner?: string;
+  project?: string;
+}
+
+export const DEFAULT_DEPLOY_WORKLOAD_YAML = `apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: nginx
+  owner: dashboard
+  project: default
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+requirements:
+  cpu: 500m
+  memory: 512Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+network:
+  service: true
+  ports:
+    - containerPort: 80
+      servicePort: 80
+      protocol: TCP
+`;
+
+function runtimeBlock(runtime: string): { preferred: string; allow: string[] } {
+  switch (runtime.toLowerCase()) {
+    case 'podman':
+    case 'docker':
+      return { preferred: 'container', allow: ['container'] };
+    case 'kubernetes':
+    case 'kube':
+      return { preferred: 'kube', allow: ['kube'] };
+    case 'kubevirt':
+      return { preferred: 'kubevirt', allow: ['kubevirt'] };
+    case 'metal3':
+    case 'metal':
+      return { preferred: 'metal', allow: ['metal'] };
+    default:
+      return { preferred: 'auto', allow: ['container', 'kube', 'kubevirt', 'metal'] };
+  }
+}
+
+function intentGoal(intent: string): string {
+  switch (intent.toLowerCase()) {
+    case 'low-latency':
+      return 'low-latency';
+    case 'high-throughput':
+      return 'high-throughput';
+    case 'cost-optimized':
+      return 'cost-optimized';
+    default:
+      return 'balanced';
+  }
+}
+
+function parseImageRef(image: string): { registry: string; tag: string; repo: string } {
+  const trimmed = image.trim();
+  let tag = 'latest';
+  let rest = trimmed;
+  const colon = trimmed.lastIndexOf(':');
+  if (colon > 0) {
+    const base = trimmed.slice(0, colon);
+    if (!base.includes('/') || base.includes('.') || base.startsWith('localhost')) {
+      rest = base;
+      tag = trimmed.slice(colon + 1);
+    }
+  }
+  const parts = rest.split('/');
+  if (parts.length === 1) {
+    return { registry: 'docker.io/library', tag, repo: parts[0] };
+  }
+  if (parts.length === 2 && (parts[0].includes('.') || parts[0].includes(':') || parts[0] === 'localhost')) {
+    return { registry: parts[0], tag, repo: parts[1] };
+  }
+  const repo = parts[parts.length - 1];
+  return { registry: parts.slice(0, -1).join('/'), tag, repo };
+}
+
+/** Generate aether/v1 workload YAML from the visual editor form. */
+export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
+  const { preferred, allow } = runtimeBlock(input.runtime);
+  const { registry, tag, repo } = parseImageRef(input.image);
+  const metadataName = input.name.trim() || repo;
+  const owner = input.owner?.trim() || 'dashboard';
+  const project = input.project?.trim() || 'default';
+
+  const lines: string[] = [
+    'apiVersion: aether/v1',
+    'kind: Workload',
+    'metadata:',
+    `  name: ${metadataName}`,
+    `  owner: ${owner}`,
+    `  project: ${project}`,
+  ];
+  if (input.image.trim() && metadataName !== input.name.trim()) {
+    lines.push(`  labels:`);
+    lines.push(`    aether.io/display-name: ${input.name.trim()}`);
+  }
+  lines.push(
+    'build:',
+    '  context: .',
+    '  dockerfile: Dockerfile',
+    `  registry: ${registry}`,
+    `  tag: ${tag}`,
+    'requirements:',
+    `  cpu: ${input.cpu}`,
+    `  memory: ${input.memory}`,
+    '  storage: 1Gi',
+    'runtime:',
+    `  preferred: ${preferred}`,
+    '  allow:',
+    ...allow.map((r) => `    - ${r}`),
+  );
+
+  if (input.replicas > 1) {
+    lines.push(
+      'scaling:',
+      '  enabled: true',
+      `  minReplicas: ${input.replicas}`,
+      `  maxReplicas: ${input.replicas}`,
+    );
+  }
+
+  if (input.intent) {
+    lines.push('intent:', `  goal: ${intentGoal(input.intent)}`);
+  }
+
+  if (input.healthCheck) {
+    lines.push(
+      'health:',
+      '  readiness:',
+      '    httpGet:',
+      '      path: /health',
+      '      port: 80',
+      '    initialDelaySeconds: 5',
+      '    periodSeconds: 10',
+    );
+  }
+
+  if (preferred === 'kube' || preferred === 'container') {
+    lines.push(
+      'network:',
+      '  service: true',
+      '  ports:',
+      '    - containerPort: 80',
+      '      servicePort: 80',
+      '      protocol: TCP',
+    );
+  }
+
+  return lines.join('\n');
+}
+
+function yamlScalar(value: unknown, indent: number): string[] {
+  const pad = ' '.repeat(indent);
+  if (value === null || value === undefined) return [];
+  if (typeof value === 'boolean' || typeof value === 'number') {
+    return [`${pad}${value}`];
+  }
+  if (typeof value === 'string') {
+    return [`${pad}${value}`];
+  }
+  if (Array.isArray(value)) {
+    const out: string[] = [];
+    for (const item of value) {
+      if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+        out.push(`${pad}-`);
+        out.push(...yamlObject(item as Record<string, unknown>, indent + 2));
+      } else {
+        out.push(`${pad}- ${item}`);
+      }
+    }
+    return out;
+  }
+  if (typeof value === 'object') {
+    return yamlObject(value as Record<string, unknown>, indent);
+  }
+  return [`${pad}${String(value)}`];
+}
+
+function yamlObject(obj: Record<string, unknown>, indent: number): string[] {
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) continue;
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      lines.push(`${' '.repeat(indent)}${key}:`);
+      lines.push(...yamlObject(value as Record<string, unknown>, indent + 2));
+    } else if (Array.isArray(value)) {
+      lines.push(`${' '.repeat(indent)}${key}:`);
+      lines.push(...yamlScalar(value, indent + 2));
+    } else {
+      lines.push(`${' '.repeat(indent)}${key}: ${value}`);
+    }
+  }
+  return lines;
+}
+
+/** Convert template API JSON (camelCase Workload) to YAML for the deploy modal. */
+export function workloadJsonToYaml(spec: Record<string, unknown>): string {
+  const lines = yamlObject(spec, 0);
+  return lines.join('\n');
+}

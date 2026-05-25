@@ -4,11 +4,13 @@ import { Rocket, Wand2, Inbox, Settings2, FileCode2 } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
+import { markFirstDeploy } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
 import Modal from '../Modal';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { workloadJsonToYaml } from '../../utils/workloadYaml';
 import type { Template } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -17,22 +19,7 @@ function toast(message: string, type: 'success' | 'error') {
 
 function specPreview(spec: Record<string, unknown> | null): string {
   if (!spec) return '';
-  const name = spec.name ?? spec.workload_name;
-  const image = spec.image;
-  const runtime = spec.runtime;
-  const lines = ['# Generated workload preview'];
-  if (name) lines.push(`name: ${name}`);
-  if (image) lines.push(`image: ${image}`);
-  if (runtime) lines.push(`runtime: ${runtime}`);
-  if (spec.replicas != null) lines.push(`replicas: ${spec.replicas}`);
-  if (spec.resources && typeof spec.resources === 'object') {
-    const r = spec.resources as Record<string, string>;
-    lines.push('resources:');
-    if (r.cpu) lines.push(`  cpu: ${r.cpu}`);
-    if (r.memory) lines.push(`  memory: ${r.memory}`);
-  }
-  if (lines.length <= 1) return JSON.stringify(spec, null, 2);
-  return lines.join('\n');
+  return workloadJsonToYaml(spec);
 }
 
 export default function TemplatesPage() {
@@ -100,9 +87,10 @@ export default function TemplatesPage() {
   async function handleDeployGenerated() {
     if (!generatedSpec || deployLoading) return;
     setDeployLoading(true);
-    const res = await apiPost<string>('/workloads', { spec: generatedSpec });
+    const res = await apiPost('/workloads', { spec_yaml: workloadJsonToYaml(generatedSpec) });
     setDeployLoading(false);
     if (res.success) {
+      markFirstDeploy();
       toast(`Template "${generateName}" deployed successfully`, 'success');
     } else {
       toast(`Failed to deploy template "${generateName}": ${res.error ?? 'unknown error'}`, 'error');
