@@ -91,4 +91,53 @@ test.describe('Dashboard UX polish', () => {
     await expect(page.getByRole('button', { name: 'Retry' }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Workload policy check' })).toBeVisible();
   });
+
+  test('light theme deploy modal opens with readable dialog', async ({ page }) => {
+    await page.goto('/workloads?deploy=1');
+    await expect(page.getByRole('heading', { name: 'Deploy New Workload' })).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByLabel('Theme').selectOption('light');
+    await expect(page.getByRole('dialog', { name: 'Deploy New Workload' })).toBeVisible();
+    await expect(page.getByPlaceholder('Paste workload YAML spec here...')).toBeVisible();
+  });
+
+  test('editor validate marks onboarding validate step in localStorage', async ({ page }) => {
+    await page.route('**/api/validate', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { valid: true, workload_name: 'my-app', errors: [] },
+        }),
+      }),
+    );
+    await ensureAuthenticated(page);
+    await page.goto('/editor');
+    await page.evaluate(() => localStorage.removeItem('aether_onboarding_validated'));
+    await page.getByRole('button', { name: 'Validate' }).click();
+    await expect
+      .poll(async () => page.evaluate(() => localStorage.getItem('aether_onboarding_validated')))
+      .toBe('1');
+  });
+
+  test('viewer role hides deploy button on workloads page', async ({ page }) => {
+    await page.route('**/api/auth/me', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { authenticated: true, username: 'viewer-user', role: 'viewer' },
+        }),
+      }),
+    );
+    await ensureAuthenticated(page);
+    await page.reload();
+    await page.goto('/workloads');
+    await expect(page.getByText(/Read-only session/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: 'Deploy' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Deploy YAML' })).toHaveCount(0);
+  });
 });

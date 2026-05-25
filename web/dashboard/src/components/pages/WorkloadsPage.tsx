@@ -4,7 +4,8 @@ import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardC
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { markSpecValidated } from '../../utils/onboardingState';
+import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
+import { useAuth } from '../../contexts/AuthContext';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -38,8 +39,26 @@ function isAetherManaged(workload: WorkloadResponse): boolean {
   return (workload.source ?? 'aether') === 'aether';
 }
 
+function specToYaml(spec: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const name = spec.name ?? spec.workload_name;
+  if (name) lines.push(`name: ${name}`);
+  if (spec.image) lines.push(`image: ${spec.image}`);
+  if (spec.runtime) lines.push(`runtime: ${spec.runtime}`);
+  if (spec.replicas != null) lines.push(`replicas: ${spec.replicas}`);
+  if (spec.intent) lines.push(`intent: ${spec.intent}`);
+  if (spec.resources && typeof spec.resources === 'object') {
+    const r = spec.resources as Record<string, string>;
+    lines.push('resources:');
+    if (r.cpu) lines.push(`  cpu: ${r.cpu}`);
+    if (r.memory) lines.push(`  memory: ${r.memory}`);
+  }
+  return lines.join('\n');
+}
+
 export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection }: WorkloadsPageProps) {
   const navigate = useNavigate();
+  const { canMutate } = useAuth();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -62,7 +81,9 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [validateLoading, setValidateLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'stop'; name: string } | null>(null);
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
   const [deployModal, setDeployModal] = useState(false);
+  const [deployInitialYaml, setDeployInitialYaml] = useState<string | undefined>();
   const [deployLoading, setDeployLoading] = useState(false);
   const [selectedWorkload, setSelectedWorkload] = useState<WorkloadResponse | null>(null);
   const [detailInitialTab, setDetailInitialTab] = useState<DetailTab>('overview');
@@ -78,6 +99,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       setWorkloads([]);
     } else {
       setWorkloads(result.data);
+      syncDeployFromWorkloads(result.data.length);
     }
     setLoading(false);
   }
@@ -97,6 +119,18 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       params.delete('validate');
       const qs = params.toString();
       window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+    }
+    const template = params.get('template');
+    if (template) {
+      setDeployModal(true);
+      params.delete('template');
+      const qs = params.toString();
+      window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+      void apiPost<Record<string, unknown>>(`/templates/${encodeURIComponent(template)}`, {}).then((res) => {
+        if (res.success && res.data) {
+          setDeployInitialYaml(specToYaml(res.data));
+        }
+      });
     }
   }, []);
 
@@ -202,17 +236,19 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setValidateLoading(false);
     if (result.data?.valid) {
       markSpecValidated();
-      window.dispatchEvent(new Event('aether:spec-validated'));
     }
   }
 
   async function handleDeploy(yaml: string) {
+    if (!canMutate) return;
     setDeployLoading(true);
     const res = await apiPost('/workloads', { spec_yaml: yaml });
     setDeployLoading(false);
     if (res.success) {
+      markFirstDeploy();
       toast('Workload deployed successfully', 'success');
       setDeployModal(false);
+      setDeployInitialYaml(undefined);
       load();
     } else {
       toast(`Deploy failed: ${res.error ?? 'unknown error'}`, 'error');
@@ -241,6 +277,23 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setActionLoading(null);
     setSelectedNames(new Set());
     toast(`Bulk ${action} completed for ${names.length} workload(s)`, 'success');
+    load();
+  }
+
+  async function bulkDelete() {
+    const names = [...selectedNames].filter((n) => {
+      const w = workloads.find((x) => x.name === n);
+      return w && isAetherManaged(w);
+    });
+    if (names.length === 0) return;
+    setActionLoading('bulk-delete');
+    for (const name of names) {
+      await apiDelete(`/workloads/${name}`, { label: `Delete workload "${name}"` });
+    }
+    setActionLoading(null);
+    setSelectedNames(new Set());
+    setBulkConfirmDelete(false);
+    toast(`Deleted ${names.length} workload(s)`, 'success');
     load();
   }
 
@@ -323,6 +376,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           </>
         }
         actions={
+          canMutate ? (
           <>
             <button
               type="button"
@@ -341,6 +395,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               Validate
             </button>
           </>
+          ) : null
         }
       />
 
@@ -373,11 +428,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         />
       </div>
 
-      {selectedNames.size > 0 && (
+      {selectedNames.size > 0 && canMutate && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3">
           <span className="text-sm text-slate-300">{selectedNames.size} selected</span>
           <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Start all</button>
           <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">Stop all</button>
+          <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-500">Delete all</button>
           <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200">Clear</button>
         </div>
       )}
@@ -389,6 +445,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             title="No workloads yet"
             description="Deploy a YAML spec, design one in the visual editor, or import Docker Compose to get started."
             action={
+              canMutate ? (
               <div className="flex flex-wrap justify-center gap-2">
                 <button
                   type="button"
@@ -415,6 +472,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                   Import Compose
                 </button>
               </div>
+              ) : null
             }
           />
         ) : (
@@ -499,15 +557,21 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                         {isAetherManaged(w) ? (
                           <>
                             <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
+                            {canMutate ? (
+                              <>
                             <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
                             <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
                             <button type="button" onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
                             <button type="button" onClick={() => setUpdateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-sky-400 hover:bg-sky-500/10 rounded transition-colors" title="Update spec"><FileText size={14} /></button>
                             <button type="button" onClick={() => setMigrateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
+                              </>
+                            ) : null}
                             <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
                             <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
                             <button type="button" onClick={() => openWorkloadDetail(w, 'drift')} className="p-1.5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
+                            {canMutate ? (
                             <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
+                            ) : null}
                           </>
                         ) : (
                           <span className="text-xs text-zinc-500 px-2 py-1">
@@ -529,10 +593,29 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           key={`${selectedWorkload.name}-${detailInitialTab}`}
           workload={selectedWorkload}
           initialTab={detailInitialTab}
+          canMutate={canMutate}
           onClose={closeWorkloadDetail}
           onAction={() => load()}
         />
       )}
+
+      <Modal
+        isOpen={bulkConfirmDelete}
+        onClose={() => setBulkConfirmDelete(false)}
+        title="Confirm bulk delete"
+      >
+        <p className="text-sm text-zinc-300 mb-6">
+          Delete {selectedNames.size} selected workload(s)? This cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={() => setBulkConfirmDelete(false)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm font-medium transition-colors">
+            Cancel
+          </button>
+          <button type="button" onClick={() => void bulkDelete()} className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors">
+            Delete all
+          </button>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={confirmAction !== null}
@@ -655,8 +738,10 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         />
       </Modal>
 
-      <Modal isOpen={deployModal} onClose={() => setDeployModal(false)} title="Deploy New Workload">
+      <Modal isOpen={deployModal} onClose={() => { setDeployModal(false); setDeployInitialYaml(undefined); }} title="Deploy New Workload">
         <YamlInput
+          key={deployInitialYaml ?? 'empty'}
+          initialValue={deployInitialYaml}
           buttonText="Deploy"
           onSubmit={handleDeploy}
           loading={deployLoading}

@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Rocket, Wand2, Inbox, Settings2 } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Rocket, Wand2, Inbox, Settings2, FileCode2 } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import Modal from '../Modal';
 import EmptyState from '../EmptyState';
@@ -33,6 +36,7 @@ function specPreview(spec: Record<string, unknown> | null): string {
 }
 
 export default function TemplatesPage() {
+  const navigate = useNavigate();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -69,6 +73,14 @@ export default function TemplatesPage() {
 
   useEffect(() => {
     void load();
+    const params = new URLSearchParams(window.location.search);
+    const template = params.get('template');
+    if (template) {
+      params.delete('template');
+      const qs = params.toString();
+      window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+      void handleGenerate(template);
+    }
   }, [load]);
 
   async function handleGenerate(name: string, overrides?: Record<string, unknown>) {
@@ -166,6 +178,14 @@ export default function TemplatesPage() {
                         >
                           <Wand2 size={12} />
                           {generateLoading === t.name ? 'Generating…' : 'Generate'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', template: t.name }))}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors"
+                        >
+                          <FileCode2 size={12} />
+                          Use template
                         </button>
                         <button
                           type="button"

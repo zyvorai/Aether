@@ -6,8 +6,11 @@ import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { apiPost } from '../utils/api';
 import { getRecentViews } from '../utils/recentViews';
+import { getRecentActions, pushRecentAction } from '../utils/recentActions';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
-type CommandCategory = 'recent' | 'navigation' | 'workload' | 'workload-action' | 'action';
+type CommandCategory = 'recent' | 'recent-action' | 'navigation' | 'workload' | 'workload-action' | 'action';
 
 interface CommandAction {
   id: string;
@@ -74,9 +77,13 @@ export default function CommandPalette({
   onOpenHelp,
 }: CommandPaletteProps) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const light = theme === 'light';
+  const { canMutate } = useAuth();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentViews, setRecentViews] = useState<AppView[]>([]);
+  const [recentActionIds, setRecentActionIds] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -124,6 +131,7 @@ export default function CommandPalette({
         searchText: `start run ${name}`,
         workloadName: name,
         run: async () => {
+          if (!canMutate) return;
           const res = await apiPost(`/workloads/${name}/start`);
           paletteToast(
             res.success ? `Started "${name}"` : `Start failed: ${res.error ?? 'unknown error'}`,
@@ -139,6 +147,7 @@ export default function CommandPalette({
         searchText: `stop halt ${name}`,
         workloadName: name,
         run: async () => {
+          if (!canMutate) return;
           const res = await apiPost(`/workloads/${name}/stop`);
           paletteToast(
             res.success ? `Stopped "${name}"` : `Stop failed: ${res.error ?? 'unknown error'}`,
@@ -149,20 +158,25 @@ export default function CommandPalette({
       },
     ]);
 
-    const actionItems: CommandAction[] = [
+    const actionItems: CommandAction[] = [];
+
+    if (canMutate) {
+      actionItems.unshift({
+        id: 'action-deploy',
+        label: 'Deploy workload',
+        category: 'action',
+        searchText: 'deploy yaml create workload',
+        run: () => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1' })),
+      });
+    }
+
+    actionItems.push(
       {
         id: 'action-refresh',
         label: 'Refresh dashboard',
         category: 'action',
         searchText: 'refresh reload sync',
         run: () => onRefresh?.(),
-      },
-      {
-        id: 'action-deploy',
-        label: 'Deploy workload',
-        category: 'action',
-        searchText: 'deploy yaml create workload',
-        run: () => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1' })),
       },
       {
         id: 'action-editor',
@@ -178,7 +192,7 @@ export default function CommandPalette({
         searchText: 'compose docker import',
         view: 'compose',
       },
-    ];
+    );
 
     if (onLogout) {
       actionItems.push({
@@ -210,10 +224,16 @@ export default function CommandPalette({
     }
 
     return [...NAV_ITEMS, ...workloadItems, ...actionItems];
-  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp]);
+  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, canMutate]);
 
   const recentCommands = useMemo((): CommandAction[] => {
     const items: CommandAction[] = [];
+    for (const id of recentActionIds) {
+      const cmd = allCommands.find((c) => c.id === id);
+      if (cmd) {
+        items.push({ ...cmd, category: 'recent-action' });
+      }
+    }
     for (const view of recentViews) {
       const meta = DASHBOARD_VIEWS.find((v) => v.view === view);
       if (!meta) continue;
@@ -226,12 +246,12 @@ export default function CommandPalette({
       });
     }
     return items;
-  }, [recentViews]);
+  }, [recentViews, recentActionIds, allCommands]);
 
   const filtered = useMemo(() => {
     const q = query.trim();
-    const recentIds = new Set(recentCommands.map((c) => c.view));
-    const base = allCommands.filter((cmd) => !cmd.view || !recentIds.has(cmd.view));
+    const recentIds = new Set(recentCommands.map((c) => c.id));
+    const base = allCommands.filter((cmd) => !recentIds.has(cmd.id));
     const pool = q ? [...recentCommands, ...base] : [...recentCommands, ...base];
     const scored = pool
       .map((cmd) => ({ cmd, score: fuzzyScore(q, cmd.searchText || cmd.label) }))
@@ -245,6 +265,7 @@ export default function CommandPalette({
       setQuery('');
       setSelectedIndex(0);
       setRecentViews(getRecentViews());
+      setRecentActionIds(getRecentActions().map((a) => a.id));
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -261,6 +282,7 @@ export default function CommandPalette({
 
   const executeCommand = useCallback(
     async (cmd: CommandAction) => {
+      pushRecentAction({ id: cmd.id, label: cmd.label, searchText: cmd.searchText || cmd.label });
       if (cmd.view) {
         onNavigate(cmd.view);
       } else if (cmd.run) {
@@ -288,7 +310,8 @@ export default function CommandPalette({
   if (!open) return null;
 
   const categoryLabels: Record<CommandCategory, string> = {
-    recent: 'Recent',
+    recent: 'Recent pages',
+    'recent-action': 'Recent actions',
     navigation: 'Navigation',
     workload: 'Workloads',
     'workload-action': 'Workload actions',
@@ -310,7 +333,7 @@ export default function CommandPalette({
         className="relative w-full max-w-xl rounded-[24px] surface-panel overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center px-4 py-4 border-b border-slate-800">
+        <div className={`flex items-center px-4 py-4 border-b ${light ? 'border-slate-200' : 'border-slate-800'}`}>
           <span className="text-slate-500 mr-2 text-sm font-mono">{'>'}</span>
           <input
             ref={inputRef}
@@ -319,10 +342,10 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pages, workloads, and actions…"
-            className="flex-1 bg-transparent text-white text-sm outline-none placeholder-slate-500"
+            className={`flex-1 bg-transparent text-sm outline-none ${light ? 'text-slate-900 placeholder-slate-400' : 'text-white placeholder-slate-500'}`}
             autoComplete="off"
           />
-          <kbd className="text-xs text-slate-500 bg-slate-800/90 px-1.5 py-0.5 rounded border border-slate-700">ESC</kbd>
+          <kbd className={`text-xs px-1.5 py-0.5 rounded border ${light ? 'text-slate-500 bg-slate-100 border-slate-300' : 'text-slate-500 bg-slate-800/90 border-slate-700'}`}>ESC</kbd>
         </div>
 
         <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">
@@ -345,7 +368,11 @@ export default function CommandPalette({
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}
                     className={`w-full px-4 py-2 flex items-center gap-3 text-sm text-left transition-colors ${
-                      i === selectedIndex ? 'bg-aether/20 text-aether' : 'text-slate-300 hover:bg-slate-800/80'
+                      i === selectedIndex
+                        ? 'bg-aether/20 text-aether'
+                        : light
+                          ? 'text-slate-700 hover:bg-slate-100'
+                          : 'text-slate-300 hover:bg-slate-800/80'
                     }`}
                   >
                     <span className="flex-1 truncate">{cmd.label}</span>
@@ -358,7 +385,7 @@ export default function CommandPalette({
           )}
         </div>
 
-        <div className="px-4 py-3 border-t border-slate-800 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+        <div className={`px-4 py-3 border-t flex flex-wrap items-center gap-x-4 gap-y-1 text-xs ${light ? 'border-slate-200 text-slate-500' : 'border-slate-800 text-slate-500'}`}>
           <span>{isMac ? '⌘K' : 'Ctrl+K'} open</span>
           <span>↑↓ navigate</span>
           <span>Enter select</span>
