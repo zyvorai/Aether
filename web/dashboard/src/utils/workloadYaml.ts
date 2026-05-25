@@ -32,6 +32,19 @@ runtime:
   preferred: kube
   allow:
     - kube
+health:
+  liveness:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5
 network:
   service: true
   ports:
