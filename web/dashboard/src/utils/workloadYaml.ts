@@ -45,6 +45,13 @@ export function freshDeployWorkloadYaml(): string {
   return DEFAULT_DEPLOY_WORKLOAD_YAML;
 }
 
+export function workloadNameFromYaml(yaml: string): string | null {
+  const v1 = yaml.match(/metadata:\s*\n(?:[ \t][^\n]*\n)*?[ \t]+name:\s*(\S+)/);
+  if (v1) return v1[1];
+  const legacy = yaml.match(/^name:\s*(\S+)/m);
+  return legacy?.[1] ?? null;
+}
+
 function runtimeBlock(runtime: string): { preferred: string; allow: string[] } {
   switch (runtime.toLowerCase()) {
     case 'podman':

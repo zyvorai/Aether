@@ -21,6 +21,7 @@ import type { AppView } from '../../types/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import { hasValidatedSpec, hasDeployedWorkload, hasReviewedHealth, syncDeployFromWorkloads, syncHealthFromSummary } from '../../utils/onboardingState';
+import { countAetherManaged } from '../../utils/workloadFilters';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import OnboardingStrip from '../OnboardingStrip';
@@ -153,11 +154,13 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
       successCount += 1;
       const data = result.value.data;
       switch (key) {
-        case 'workloads':
-          setWorkloads(data as WorkloadResponse[]);
-          syncDeployFromWorkloads((data as WorkloadResponse[]).length);
-          if ((data as WorkloadResponse[]).length > 0) setDeployDone(true);
+        case 'workloads': {
+          const list = data as WorkloadResponse[];
+          setWorkloads(list);
+          syncDeployFromWorkloads(list);
+          if (countAetherManaged(list) > 0) setDeployDone(true);
           break;
+        }
         case 'eventsSummary':
           setEventSummary(data as EventSummary);
           break;
@@ -249,7 +252,8 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
 
   const healthy = healthSummary?.healthy ?? 0;
   const degraded = (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0);
-  const isEmptyPlatform = workloads.length === 0 && (clusterSummary?.workload_count ?? 0) === 0;
+  const aetherManagedCount = countAetherManaged(workloads);
+  const isEmptyPlatform = aetherManagedCount === 0;
 
   return (
     <div>
@@ -281,7 +285,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
       {isEmptyPlatform ? (
         <div className="mb-6 space-y-4">
           <OnboardingStrip
-            hasWorkloads={deployDone || workloads.length > 0}
+            hasWorkloads={deployDone || aetherManagedCount > 0}
             hasValidated={specValidated}
             hasHealthChecks={healthDone || (healthSummary?.healthy ?? 0) + (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0) > 0}
             onNavigate={onNavigate}
@@ -373,7 +377,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <button type="button" onClick={() => goFiltered('workloads', { source: 'aether' })} className="text-left">
-          <StatCard title="Workloads" value={workloads.length} color="orange" icon={<LayoutDashboard size={18} />} />
+          <StatCard title="Aether workloads" value={aetherManagedCount} color="orange" icon={<LayoutDashboard size={18} />} />
         </button>
         <button type="button" onClick={() => onNavigate('clusters')} className="text-left">
           <StatCard title="Clusters" value={clusterSummary?.cluster_count ?? 0} color="blue" icon={<Activity size={18} />} />
