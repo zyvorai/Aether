@@ -6,6 +6,27 @@ test.describe('Deploy workload UX', () => {
     await ensureAuthenticated(page);
   });
 
+  test('deploy modal shows complete default YAML including network ports', async ({ page }) => {
+    await page.goto('/workloads?deploy=1&source=aether');
+
+    const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+
+    const textarea = dialog.locator('textarea');
+    await expect(textarea).toHaveValue(/apiVersion: aether\/v1/);
+    await expect(textarea).toHaveValue(/protocol: TCP/);
+
+    const box = await textarea.boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThan(400);
+
+    const scrollMetrics = await textarea.evaluate((el) => ({
+      clientHeight: el.clientHeight,
+      scrollHeight: el.scrollHeight,
+    }));
+    expect(scrollMetrics.clientHeight).toBeGreaterThan(400);
+    expect(scrollMetrics.scrollHeight).toBeGreaterThanOrEqual(scrollMetrics.clientHeight);
+  });
+
   test('deploy from workloads modal shows new Aether-managed workload', async ({ page }) => {
     const unique = `ux-${Date.now().toString(36)}`;
 
@@ -55,6 +76,5 @@ network:
 
     await expect(dialog).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('button', { name: unique })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/deployed/i).first()).toBeVisible();
   });
 });

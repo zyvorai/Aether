@@ -7,7 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
-  size?: 'default' | 'wide';
+  size?: 'default' | 'wide' | 'yaml';
 }
 
 export default function Modal({ isOpen, onClose, title, children, size = 'default' }: ModalProps) {
@@ -34,6 +34,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
 
   if (!isOpen) return null;
 
+  const isYaml = size === 'yaml';
+  const isWide = size === 'wide' || isYaml;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
       <div
@@ -45,7 +48,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`surface-panel relative flex max-h-[85vh] w-full ${size === 'wide' ? 'max-w-[min(96rem,calc(100vw-2rem))]' : 'max-w-2xl'} animate-scale-in flex-col overflow-hidden rounded-[28px] shadow-2xl ${
+        className={`surface-panel relative flex w-full animate-scale-in flex-col overflow-hidden rounded-[28px] shadow-2xl ${
+          isYaml ? 'max-h-[92vh] min-h-[min(720px,92vh)]' : 'max-h-[85vh]'
+        } ${isWide ? 'max-w-[min(96rem,calc(100vw-2rem))]' : 'max-w-2xl'} ${
           light ? 'border border-slate-200 bg-white' : ''
         }`}
       >
@@ -66,7 +71,11 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
           </button>
         </div>
 
-        <div className="overflow-y-auto px-6 py-5">{children}</div>
+        <div
+          className={`px-6 py-5 ${isYaml ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'overflow-y-auto'}`}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
