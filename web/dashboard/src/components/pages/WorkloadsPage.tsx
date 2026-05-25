@@ -6,7 +6,13 @@ import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
-import { DEFAULT_DEPLOY_WORKLOAD_YAML, freshDeployWorkloadYaml, workloadJsonToYaml } from '../../utils/workloadYaml';
+import { DEFAULT_DEPLOY_WORKLOAD_YAML, freshDeployWorkloadYaml, workloadJsonToYaml, workloadNameFromYaml } from '../../utils/workloadYaml';
+import {
+  countAetherManaged,
+  isAetherManaged,
+  parseCreatedWorkloadName,
+  sortWorkloadsForDisplay,
+} from '../../utils/workloadFilters';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -26,7 +32,7 @@ interface WorkloadsPageProps {
 
 function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
   const s = status.toLowerCase();
-  if (s === 'running' || s === 'healthy') return 'green';
+  if (s === 'running' || s === 'healthy' || s.includes('deployed')) return 'green';
   if (s === 'error' || s === 'failed') return 'red';
   if (s === 'stopped' || s === 'exited') return 'muted';
   return 'yellow';
@@ -36,8 +42,12 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-function isAetherManaged(workload: WorkloadResponse): boolean {
-  return (workload.source ?? 'aether') === 'aether';
+function openDeployModal(
+  setDeployInitialYaml: (yaml: string) => void,
+  setDeployModal: (open: boolean) => void,
+) {
+  setDeployInitialYaml(freshDeployWorkloadYaml());
+  setDeployModal(true);
 }
 
 export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection }: WorkloadsPageProps) {
@@ -47,7 +57,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
-  const [sourceFilter, setSourceFilter] = useQueryParam('source', 'all');
+  const [sourceFilter, setSourceFilter] = useQueryParam('source', 'aether');
   const [kindFilter, setKindFilter] = useQueryParam('kind', 'all');
   const [clusterFilter, setClusterFilter] = useQueryParam('cluster', 'all');
   const [namespaceFilter, setNamespaceFilter] = useQueryParam('namespace', 'all');
@@ -69,6 +79,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [deployModal, setDeployModal] = useState(false);
   const [deployInitialYaml, setDeployInitialYaml] = useState<string | undefined>();
   const [deployLoading, setDeployLoading] = useState(false);
+  const [pendingSelectName, setPendingSelectName] = useState<string | null>(null);
   const [selectedWorkload, setSelectedWorkload] = useState<WorkloadResponse | null>(null);
   const [detailInitialTab, setDetailInitialTab] = useState<DetailTab>('overview');
 
@@ -83,7 +94,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       setWorkloads([]);
     } else {
       setWorkloads(result.data);
-      syncDeployFromWorkloads(result.data.length);
+      syncDeployFromWorkloads(result.data);
     }
     setLoading(false);
   }
@@ -118,6 +129,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       });
     }
   }, []);
+
+  useEffect(() => {
+    if (!pendingSelectName || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === pendingSelectName);
+    if (!match) return;
+    openWorkloadDetail(match, 'overview');
+    setPendingSelectName(null);
+  }, [pendingSelectName, workloads]);
 
   useEffect(() => {
     if (!initialSelectedName || workloads.length === 0) return;
@@ -233,13 +252,25 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     const res = await apiPost('/workloads', { spec_yaml: yaml });
     setDeployLoading(false);
     if (res.success) {
+      const createdName =
+        parseCreatedWorkloadName(typeof res.data === 'string' ? res.data : undefined) ??
+        workloadNameFromYaml(yaml);
       markFirstDeploy();
-      toast('Workload deployed successfully', 'success');
+      toast(
+        createdName ? `Deployed "${createdName}" successfully` : 'Workload deployed successfully',
+        'success',
+      );
       setDeployModal(false);
       setDeployInitialYaml(undefined);
+      setSourceFilter('aether');
+      if (createdName) setPendingSelectName(createdName);
       load();
     } else {
-      toast(`Deploy failed: ${res.error ?? 'unknown error'}`, 'error');
+      const err = res.error ?? 'unknown error';
+      const friendly = err.includes('AlreadyExists') || err.includes('already exists')
+        ? 'A workload with this name already exists in the cluster. Change metadata.name in the YAML and try again.'
+        : err;
+      toast(`Deploy failed: ${friendly}`, 'error');
     }
   }
 
@@ -318,7 +349,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   const sourceFilterVal = sourceFilter as 'all' | 'aether' | 'cluster';
 
-  const filteredWorkloads = workloads.filter((workload) => {
+  const filteredWorkloads = sortWorkloadsForDisplay(
+    workloads.filter((workload) => {
     const matchesSearch = !search || [
       workload.name,
       workload.image,
@@ -333,7 +365,11 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     const matchesCluster = clusterFilter === 'all' || workload.cluster === clusterFilter;
     const matchesNamespace = namespaceFilter === 'all' || workload.namespace === namespaceFilter;
     return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace;
-  });
+    }),
+  );
+
+  const aetherManagedCount = countAetherManaged(workloads);
+  const clusterDiscoveredCount = workloads.length - aetherManagedCount;
 
   const filterSelectClass = 'rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100';
 
@@ -368,10 +404,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <>
             <button
               type="button"
-              onClick={() => {
-                setDeployInitialYaml(freshDeployWorkloadYaml());
-                setDeployModal(true);
-              }}
+              onClick={() => openDeployModal(setDeployInitialYaml, setDeployModal)}
               className="inline-flex items-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white transition hover:bg-aether-light"
             >
               <Plus size={16} />
@@ -390,11 +423,29 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         }
       />
 
+      {sourceFilterVal === 'aether' && clusterDiscoveredCount > 0 ? (
+        <div className="mb-4 rounded-xl border border-slate-700/80 bg-slate-950/50 px-4 py-3 text-sm text-slate-400">
+          Showing <span className="text-slate-200">{aetherManagedCount}</span> Aether-managed workload
+          {aetherManagedCount === 1 ? '' : 's'}.
+          {' '}
+          <button type="button" onClick={() => setSourceFilter('all')} className="text-aether hover:underline">
+            {clusterDiscoveredCount} Kubernetes-discovered hidden
+          </button>
+          {' · '}
+          <button type="button" onClick={() => setSourceFilter('cluster')} className="text-aether hover:underline">
+            show discovered
+          </button>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <StatCard title="Total" value={filteredWorkloads.length} color="orange" />
         <StatCard
           title="Running"
-          value={filteredWorkloads.filter((w) => w.status.toLowerCase() === 'running').length}
+          value={filteredWorkloads.filter((w) => {
+            const s = w.status.toLowerCase();
+            return s === 'running' || s.includes('deployed');
+          }).length}
           color="green"
         />
         <StatCard
@@ -440,7 +491,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               <div className="flex flex-wrap justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setDeployModal(true)}
+                  onClick={() => openDeployModal(setDeployInitialYaml, setDeployModal)}
                   className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 transition-colors"
                 >
                   <Plus className="h-4 w-4" />

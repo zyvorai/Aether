@@ -43,8 +43,8 @@ export function AuthProvider({ enabled, children }: { enabled: boolean; children
   }, [refresh]);
 
   const role = auth?.role ?? 'admin';
-  const canMutate = !loading && (role === 'admin' || role === 'operator');
-  const canAdmin = !loading && role === 'admin';
+  const canMutate = role === 'admin' || role === 'operator';
+  const canAdmin = role === 'admin';
   const isViewer = !loading && role === 'viewer';
 
   const value = useMemo(

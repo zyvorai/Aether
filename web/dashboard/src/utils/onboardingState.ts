@@ -1,3 +1,5 @@
+import type { WorkloadResponse } from '../types/api';
+
 const VALIDATED_KEY = 'aether_onboarding_validated';
 const DEPLOYED_KEY = 'aether_onboarding_deployed';
 const HEALTH_KEY = 'aether_onboarding_health';
@@ -45,7 +47,8 @@ export function hasReviewedHealth(): boolean {
   return hasKey(HEALTH_KEY);
 }
 
-export function syncDeployFromWorkloads(count: number): void {
+export function syncDeployFromWorkloads(workloads: WorkloadResponse[]): void {
+  const count = workloads.filter((w) => (w.source ?? 'aether') === 'aether').length;
   if (count > 0 && !hasDeployedWorkload()) {
     markFirstDeploy();
   }
