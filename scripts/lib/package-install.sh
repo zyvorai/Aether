@@ -16,7 +16,7 @@ pkg_step_init 4
 pkg_step "System dependencies"
 [[ -x ./install-client-deps.sh ]] && { ./install-client-deps.sh || pkg_warn "deps issues"; pkg_step_done; } || { pkg_skip "install-client-deps.sh"; pkg_step_done; }
 
-pkg_step "Configuration & Kubernetes access"
+pkg_step "Configuration, admin login & Kubernetes access"
 pkg_k8s_env_configure aether.env.example aether.env "Aether"
 pkg_step_done
 

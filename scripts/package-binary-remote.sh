@@ -90,6 +90,7 @@ cp "\${LIB}/package-client-install.sh" "\${STAGE}/install-client-deps.sh"
 cp "\${LIB}/package-client-test.sh" "\${STAGE}/test-package.sh"
 mkdir -p "\${STAGE}/.package-lib"
 cp "\${LIB}/package-ui.sh" "\${STAGE}/.package-lib/"
+cp "\${LIB}/package-auth-bootstrap.sh" "\${STAGE}/.package-lib/"
 cp "\${LIB}/install-everything.sh" "\${STAGE}/"
 cp "\${LIB}/package-uninstall-lib.sh" "\${STAGE}/.package-lib/"
 cp "\${LIB}/package-uninstall.sh" "\${STAGE}/uninstall.sh"
@@ -109,8 +110,9 @@ FINISH_EXTRA_2=
 FINISH_EXTRA_3=
 META
 cat > "\${STAGE}/aether.env.example" <<'ENV'
-# Copy to aether.env
+# Copy to aether.env (install.sh sets AETHER_API_KEY=Admin@321 if missing)
 KUBECONFIG=/path/to/kubeconfig.yaml
+AETHER_API_KEY=Admin@321
 # AETHER_STATE_DIR=/var/lib/aether
 RUST_LOG=info
 ENV
