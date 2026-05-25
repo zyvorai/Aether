@@ -5,6 +5,7 @@ import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import Modal from '../Modal';
 import Badge from '../Badge';
 
 interface GitOpsPayload {
@@ -51,6 +52,7 @@ export default function GitOpsPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncConfirmOpen, setSyncConfirmOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,7 +102,7 @@ export default function GitOpsPage() {
         actions={
           <button
             type="button"
-            onClick={() => void sync()}
+            onClick={() => setSyncConfirmOpen(true)}
             disabled={syncing || data?.configured === false}
             className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm font-medium text-aether hover:bg-aether/20 disabled:opacity-40"
           >
@@ -208,6 +210,32 @@ export default function GitOpsPage() {
           )}
         </div>
       )}
+
+      <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
+        <p className="text-sm text-slate-300 mb-4">
+          Pull from <span className="font-mono text-aether">{data?.repo_url ?? 'repository'}</span> and apply
+          detected YAML changes. Review the diff preview after sync completes.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setSyncConfirmOpen(false)}
+            className="px-4 py-2 rounded-lg text-sm bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSyncConfirmOpen(false);
+              void sync();
+            }}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-aether text-white hover:bg-aether/90"
+          >
+            Sync now
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

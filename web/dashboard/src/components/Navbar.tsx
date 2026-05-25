@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import {
   Hexagon,
   LayoutDashboard,
@@ -42,6 +42,9 @@ import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
+import { filterNavViews } from '../utils/navCapabilities';
+import { getClusterContext } from '../utils/clusterContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
 import PlatformHealthChip from './PlatformHealthChip';
 
@@ -248,12 +251,41 @@ export default function Navbar({
 }: NavbarProps) {
   const { theme, setTheme } = useTheme();
   const { role } = useAuth();
+  const { capabilities, gitopsConfigured } = useServerCapabilities();
+  const [clusterCtx, setClusterCtx] = useState<string | null>(() => getClusterContext());
   const [mobileOpen, setMobileOpen] = useState(false);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
   const [spinning, setSpinning] = useState(false);
   const relativeTime = useRelativeTime(lastRefreshed);
   const { mode: authModeLabel, preview: bearerPreview } = authSessionLabel();
+
+  useEffect(() => {
+    const onCluster = () => setClusterCtx(getClusterContext());
+    window.addEventListener('aether-cluster-context', onCluster);
+    return () => window.removeEventListener('aether-cluster-context', onCluster);
+  }, []);
+
+  const navExtras = useMemo(() => ({ gitopsConfigured }), [gitopsConfigured]);
+  const platform = capabilities?.platform ?? null;
+
+  const filteredDropdownGroups = useMemo(
+    () =>
+      dropdownGroups.map((group) => ({
+        ...group,
+        items: filterNavViews(group.items, platform, navExtras),
+      })),
+    [platform, navExtras],
+  );
+
+  const filteredMobileNavGroups = useMemo(
+    () =>
+      mobileNavGroups.map((group) => ({
+        ...group,
+        items: filterNavViews(group.items, platform, navExtras),
+      })),
+    [platform, navExtras],
+  );
 
   useEffect(() => {
     if (!helpMenuOpen) return;
@@ -335,7 +367,8 @@ export default function Navbar({
               Workloads
             </button>
 
-            {dropdownGroups.map((group) => {
+            {filteredDropdownGroups.map((group) => {
+              if (group.items.length === 0) return null;
               const isActive = group.items.some((item) => item.view === currentView);
               return (
                 <Dropdown
@@ -372,6 +405,15 @@ export default function Navbar({
               </select>
             </label>
             <PlatformHealthChip sseConnected={sseConnected ?? false} />
+            {clusterCtx ? (
+              <span
+                className="hidden lg:inline-flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[11px] text-slate-400 max-w-[10rem] truncate"
+                title={`K8s context: ${clusterCtx}`}
+              >
+                <Container className="w-3 h-3 shrink-0 text-aether/80" />
+                {clusterCtx}
+              </span>
+            ) : null}
             {onOpenHelp ? (
               <div className="relative hidden sm:block shrink-0" ref={helpRef}>
                 <button
@@ -584,7 +626,8 @@ export default function Navbar({
               <div className={`mt-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-400'}`}>{username}</div>
             </div>
 
-            {mobileNavGroups.map((group) => (
+            {filteredMobileNavGroups.map((group) => (
+              group.items.length === 0 ? null : (
               <div key={group.label}>
                 <div className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
                   {group.label}
@@ -611,7 +654,8 @@ export default function Navbar({
                   ))}
                 </div>
               </div>
-            ))}
+              ))
+            )}
 
             {onOpenHelp ? (
               <div className="px-2">

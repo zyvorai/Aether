@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Container, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
 import Modal from '../Modal';
 import LogViewer from '../LogViewer';
@@ -11,6 +12,7 @@ import PageTabs from '../PageTabs';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
 import EventCorrelationPanel from '../EventCorrelationPanel';
+import { setClusterContext } from '../../utils/clusterContext';
 import { formatTimestamp } from '../../utils/formatters';
 import type {
   AuthStatus,
@@ -67,6 +69,11 @@ function manifestContainerNames(manifest: Record<string, unknown>): string[] {
 }
 
 export default function ClustersPage() {
+  const { theme } = useTheme();
+  const light = theme === 'light';
+  const panelClass = light
+    ? 'rounded-xl border border-slate-200 bg-white text-slate-800'
+    : 'rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100';
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
   const [metricsSummary, setMetricsSummary] = useState<ClusterMetricsSummary | null>(null);
@@ -696,7 +703,14 @@ export default function ClustersPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-        <select value={cluster} onChange={(e) => setCluster(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+        <select
+          value={cluster}
+          onChange={(e) => {
+            setCluster(e.target.value);
+            setClusterContext(e.target.value);
+          }}
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+        >
           {summary.clusters.map((item) => (
             <option key={item.name} value={item.name}>
               {item.name} {item.reachable ? '' : '(offline)'}
@@ -775,7 +789,7 @@ export default function ClustersPage() {
           description="Try a different cluster, namespace, or resource kind."
         />
       ) : (
-        <div className="dash-card-flush">
+        <div className={`dash-card-flush ${panelClass}`}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

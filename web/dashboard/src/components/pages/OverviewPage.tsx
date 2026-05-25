@@ -28,6 +28,7 @@ import OnboardingStrip from '../OnboardingStrip';
 import EmptyState from '../EmptyState';
 import PlatformStatusPanel from '../PlatformStatusPanel';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
+import { platformSetupNeeded } from '../../utils/navCapabilities';
 import type {
   WorkloadResponse,
   EventSummary,
@@ -255,6 +256,8 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
   const aetherManagedCount = countAetherManaged(workloads);
   const isEmptyPlatform = aetherManagedCount === 0;
 
+  const setupHints = platformSetupNeeded(capabilities?.platform ?? null);
+
   return (
     <div>
       <PlatformStatusPanel
@@ -263,6 +266,24 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         sseConnected={sseConnected}
         loading={platformLoading}
       />
+
+      {setupHints.length > 0 ? (
+        <div className="mb-6 rounded-xl border border-blue-500/25 bg-blue-500/10 px-4 py-3">
+          <p className="text-sm text-blue-200 mb-2">Platform setup recommended:</p>
+          <ul className="text-sm text-blue-100/90 space-y-1 list-disc list-inside">
+            {setupHints.map((hint) => (
+              <li key={hint}>{hint}</li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => onNavigate('platform')}
+            className="mt-3 text-sm font-medium text-aether hover:underline"
+          >
+            Open Platform &amp; HA →
+          </button>
+        </div>
+      ) : null}
 
       {failedEndpoints.length > 0 ? (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex flex-wrap items-center gap-3">
