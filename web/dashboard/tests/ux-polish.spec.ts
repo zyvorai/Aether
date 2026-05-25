@@ -103,7 +103,8 @@ test.describe('Dashboard UX polish', () => {
     await expect(dialog.getByRole('button', { name: 'Deploy' })).toBeEnabled();
     const textarea = dialog.locator('textarea');
     await expect(textarea).toHaveValue(/apiVersion: aether\/v1/);
-    await expect(dialog.getByText(/\d+ lines · scroll to review full spec/)).toBeVisible();
+    await expect(dialog.getByText(/\d+ lines — scroll inside the box to see the full spec/)).toBeVisible();
+    await expect(textarea).toHaveValue(/protocol: TCP/);
   });
 
   test('editor validate marks onboarding validate step in localStorage', async ({ page }) => {

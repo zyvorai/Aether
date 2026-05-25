@@ -780,10 +780,11 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         />
       </Modal>
 
-      <Modal isOpen={deployModal} onClose={() => { setDeployModal(false); setDeployInitialYaml(undefined); }} title="Deploy New Workload" size="wide">
+      <Modal isOpen={deployModal} onClose={() => { setDeployModal(false); setDeployInitialYaml(undefined); }} title="Deploy New Workload" size="yaml">
         <YamlInput
           key={deployInitialYaml ?? 'default'}
           initialValue={deployInitialYaml ?? DEFAULT_DEPLOY_WORKLOAD_YAML}
+          layout="editor"
           buttonText="Deploy"
           onSubmit={handleDeploy}
           loading={deployLoading}
@@ -791,10 +792,11 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         />
       </Modal>
 
-      <Modal isOpen={validateModal} onClose={() => { setValidateModal(false); setValidateResult(null); }} title="Validate Workload YAML" size="wide">
+      <Modal isOpen={validateModal} onClose={() => { setValidateModal(false); setValidateResult(null); }} title="Validate Workload YAML" size="yaml">
         <YamlInput
           key="validate-default"
           initialValue={DEFAULT_DEPLOY_WORKLOAD_YAML}
+          layout="editor"
           buttonText="Validate"
           onSubmit={handleValidate}
           loading={validateLoading}
