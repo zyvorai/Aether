@@ -63,6 +63,19 @@ runtime:
   preferred: kube
   allow:
     - kube
+health:
+  liveness:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5
 network:
   service: true
   ports:
@@ -75,11 +88,9 @@ network:
     await page.keyboard.insertText(yaml);
     await dialog.getByRole('button', { name: 'Deploy' }).click();
 
-    await expect(page.getByText(new RegExp(`Deployed "${unique}" successfully`, 'i'))).toBeVisible({
-      timeout: 30_000,
-    });
-
-    await expect(dialog.getByTestId('deploy-success-panel')).toBeVisible({ timeout: 10_000 });
+    const successPanel = dialog.getByTestId('deploy-success-panel');
+    await expect(successPanel).toBeVisible({ timeout: 30_000 });
+    await expect(successPanel).toContainText(unique);
     await dialog.getByRole('button', { name: 'Close' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('button', { name: unique })).toBeVisible({ timeout: 15_000 });
