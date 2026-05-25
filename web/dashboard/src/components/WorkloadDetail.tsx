@@ -17,6 +17,7 @@ interface WorkloadDetailProps {
   onClose: () => void;
   onAction: () => void;
   initialTab?: DetailTab;
+  canMutate?: boolean;
 }
 
 function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
@@ -90,7 +91,7 @@ function ScoringResultsView({ data }: { data: ScoringResult }) {
   );
 }
 
-export default function WorkloadDetail({ workload, onClose, onAction, initialTab = 'overview' }: WorkloadDetailProps) {
+export default function WorkloadDetail({ workload, onClose, onAction, initialTab = 'overview', canMutate = true }: WorkloadDetailProps) {
   const isAetherManaged = (workload.source ?? 'aether') === 'aether';
   const isScalableClusterWorkload = !isAetherManaged && ['Deployment', 'StatefulSet'].includes(workload.kind ?? '');
   const clusterResourceName = workload.name.split('/').pop() ?? workload.name;
@@ -130,6 +131,35 @@ export default function WorkloadDetail({ workload, onClose, onAction, initialTab
     }
   }
   const [replicasInput, setReplicasInput] = useState('1');
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab, workload.name]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      const shortcuts: Record<string, DetailTab> = {
+        '1': 'overview',
+        '2': 'logs',
+        '3': 'manifest',
+        '4': 'drift',
+        '5': 'scoring',
+        '6': 'events',
+        l: 'logs',
+        m: 'manifest',
+        d: 'drift',
+      };
+      const tab = shortcuts[e.key];
+      if (tab) {
+        e.preventDefault();
+        setActiveTab(tab);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'drift' && isAetherManaged) {
@@ -303,7 +333,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, initialTab
         {activeTab === 'overview' && (
           <div>
             {/* Action Buttons */}
-            {isAetherManaged ? (
+            {isAetherManaged && canMutate ? (
               <div className="flex gap-2 mb-4 flex-wrap">
                 <button
                   onClick={() => setShellOpen(true)}

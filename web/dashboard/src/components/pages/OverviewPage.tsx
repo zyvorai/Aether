@@ -20,7 +20,7 @@ import { formatTimestamp } from '../../utils/formatters';
 import type { AppView } from '../../types/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
-import { hasValidatedSpec } from '../../utils/onboardingState';
+import { hasValidatedSpec, hasDeployedWorkload, hasReviewedHealth, syncDeployFromWorkloads, syncHealthFromSummary } from '../../utils/onboardingState';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import OnboardingStrip from '../OnboardingStrip';
@@ -93,11 +93,21 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
   const [failedEndpoints, setFailedEndpoints] = useState<OverviewEndpoint[]>([]);
   const [totalFailure, setTotalFailure] = useState(false);
   const [specValidated, setSpecValidated] = useState(() => hasValidatedSpec());
+  const [deployDone, setDeployDone] = useState(() => hasDeployedWorkload());
+  const [healthDone, setHealthDone] = useState(() => hasReviewedHealth());
 
   useEffect(() => {
     const onValidated = () => setSpecValidated(true);
+    const onDeploy = () => setDeployDone(true);
+    const onHealth = () => setHealthDone(true);
     window.addEventListener('aether:spec-validated', onValidated);
-    return () => window.removeEventListener('aether:spec-validated', onValidated);
+    window.addEventListener('aether:first-deploy', onDeploy);
+    window.addEventListener('aether:health-reviewed', onHealth);
+    return () => {
+      window.removeEventListener('aether:spec-validated', onValidated);
+      window.removeEventListener('aether:first-deploy', onDeploy);
+      window.removeEventListener('aether:health-reviewed', onHealth);
+    };
   }, []);
 
   const load = useCallback(async () => {
@@ -145,12 +155,19 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
       switch (key) {
         case 'workloads':
           setWorkloads(data as WorkloadResponse[]);
+          syncDeployFromWorkloads((data as WorkloadResponse[]).length);
+          if ((data as WorkloadResponse[]).length > 0) setDeployDone(true);
           break;
         case 'eventsSummary':
           setEventSummary(data as EventSummary);
           break;
         case 'health':
           setHealthSummary(data as HealthSummary);
+          {
+            const hs = data as HealthSummary;
+            syncHealthFromSummary(hs.healthy, hs.degraded, hs.unhealthy);
+            if (hs.healthy + hs.degraded + hs.unhealthy > 0) setHealthDone(true);
+          }
           break;
         case 'backups':
           setBackups(data as BackupInfo[]);
@@ -264,9 +281,9 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
       {isEmptyPlatform ? (
         <div className="mb-6 space-y-4">
           <OnboardingStrip
-            hasWorkloads={workloads.length > 0}
+            hasWorkloads={deployDone || workloads.length > 0}
             hasValidated={specValidated}
-            hasHealthChecks={(healthSummary?.healthy ?? 0) + (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0) > 0}
+            hasHealthChecks={healthDone || (healthSummary?.healthy ?? 0) + (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0) > 0}
             onNavigate={onNavigate}
             onDeploy={() => goFiltered('workloads', { deploy: '1' })}
             onValidate={() => goFiltered('workloads', { validate: '1' })}
@@ -290,6 +307,13 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
                   className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
                 >
                   Visual Editor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('templates')}
+                  className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                >
+                  Try a template
                 </button>
                 <button
                   type="button"
@@ -528,7 +552,13 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             <div className="grid grid-cols-2 gap-4">
               <StatCard title="Healthy" value={healthSummary.healthy} color="green" />
               <StatCard title="Degraded" value={healthSummary.degraded} color="yellow" />
-              <StatCard title="Unhealthy" value={healthSummary.unhealthy} color="red" />
+              <button
+                type="button"
+                onClick={() => goFiltered('health', { status: 'unhealthy' })}
+                className="text-left"
+              >
+                <StatCard title="Unhealthy" value={healthSummary.unhealthy} color="red" />
+              </button>
               <StatCard title="Unknown" value={healthSummary.unknown} color="blue" />
               <StatCard title="Circuits Open" value={healthSummary.circuits_open} color="orange" />
             </div>

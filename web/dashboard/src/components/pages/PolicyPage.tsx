@@ -3,9 +3,12 @@ import { AlertTriangle, AlertCircle, ShieldCheck, RefreshCw, WifiOff } from 'luc
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import SpecWorkbench from '../SpecWorkbench';
 import Badge, { SeverityBadge } from '../Badge';
+import { useTheme } from '../../contexts/ThemeContext';
 import type { OpaEvaluation, PolicyResult } from '../../types/api';
 
 export default function PolicyPage() {
+  const { theme } = useTheme();
+  const light = theme === 'light';
   const [result, setResult] = useState<PolicyResult | null>(null);
   const [opaResult, setOpaResult] = useState<OpaEvaluation | null>(null);
   const [opaManifest, setOpaManifest] = useState('{\n  "apiVersion": "v1",\n  "kind": "ConfigMap",\n  "metadata": { "name": "example", "labels": { "owner": "team-a" } }\n}');
@@ -155,7 +158,11 @@ export default function PolicyPage() {
             value={opaManifest}
             onChange={(e) => setOpaManifest(e.target.value)}
             rows={12}
-            className="w-full font-mono text-sm rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-slate-200"
+            className={`w-full font-mono text-sm rounded-xl border px-3 py-2 ${
+              light
+                ? 'border-slate-300 bg-white text-slate-800'
+                : 'border-slate-700 bg-slate-950/80 text-slate-200'
+            }`}
           />
           <button
             type="button"

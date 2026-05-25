@@ -7,6 +7,7 @@ import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import Modal from '../Modal';
+import { useAuth } from '../../contexts/AuthContext';
 import type { ApiKeySummary, CreateApiKeyResponse } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -14,6 +15,7 @@ function toast(message: string, type: 'success' | 'error') {
 }
 
 export default function RbacPage() {
+  const { canAdmin } = useAuth();
   const [keys, setKeys] = useState<ApiKeySummary[]>([]);
   const [name, setName] = useState('');
   const [role, setRole] = useState('viewer');
@@ -98,6 +100,7 @@ export default function RbacPage() {
           <Shield className="w-5 h-5 text-aether" />
           <h2 className="text-lg font-semibold text-slate-100">Create RBAC API key</h2>
         </div>
+        {canAdmin ? (
         <div className="grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr_auto] gap-3">
           <input
             value={name}
@@ -123,6 +126,9 @@ export default function RbacPage() {
             {loading ? 'Creating…' : 'Create key'}
           </button>
         </div>
+        ) : (
+          <p className="text-sm text-slate-400">Only admin users can create or revoke API keys.</p>
+        )}
       </div>
 
       {keys.length === 0 && !listLoading ? (
@@ -151,6 +157,7 @@ export default function RbacPage() {
                     </td>
                     <td className="py-3 px-4 text-sm text-slate-400">{entry.created_at}</td>
                     <td className="py-3 px-4">
+                      {canAdmin ? (
                       <button
                         type="button"
                         onClick={() => setRevokeName(entry.name)}
@@ -159,6 +166,9 @@ export default function RbacPage() {
                         <Trash2 size={14} />
                         Revoke
                       </button>
+                      ) : (
+                        <span className="text-xs text-slate-500">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
