@@ -16,13 +16,14 @@ export interface EditorWorkloadInput {
 export const DEFAULT_DEPLOY_WORKLOAD_YAML = `apiVersion: aether/v1
 kind: Workload
 metadata:
-  name: nginx
+  name: httpd
   owner: dashboard
   project: default
 build:
   context: .
   dockerfile: Dockerfile
   registry: docker.io/library
+  tag: latest
 requirements:
   cpu: 500m
   memory: 512Mi
@@ -38,6 +39,11 @@ network:
       servicePort: 80
       protocol: TCP
 `;
+
+/** Prefill YAML for a new deploy (stable pullable image: docker.io/library/httpd:latest). */
+export function freshDeployWorkloadYaml(): string {
+  return DEFAULT_DEPLOY_WORKLOAD_YAML;
+}
 
 function runtimeBlock(runtime: string): { preferred: string; allow: string[] } {
   switch (runtime.toLowerCase()) {

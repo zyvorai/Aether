@@ -23,8 +23,8 @@ interface EditorForm {
 }
 
 const defaultForm: EditorForm = {
-  name: 'nginx',
-  image: 'nginx:latest',
+  name: 'httpd',
+  image: 'httpd:latest',
   runtime: 'kubernetes',
   replicas: 2,
   cpu: '500m',
