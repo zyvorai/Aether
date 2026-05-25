@@ -1,5 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import { ensureAuthenticated } from './helpers/auth';
+
+async function yamlText(dialog: Locator) {
+  const editor = dialog.getByRole('textbox', { name: /workload yaml/i });
+  await expect(editor).toBeVisible();
+  return editor;
+}
 
 test.describe('Deploy workload UX', () => {
   test.beforeEach(async ({ page }) => {
@@ -12,19 +18,16 @@ test.describe('Deploy workload UX', () => {
     const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
     await expect(dialog).toBeVisible({ timeout: 15_000 });
 
-    const textarea = dialog.locator('textarea');
-    await expect(textarea).toHaveValue(/apiVersion: aether\/v1/);
-    await expect(textarea).toHaveValue(/protocol: TCP/);
+    const editor = await yamlText(dialog);
+    await expect(editor).toContainText('apiVersion: aether/v1');
+    await expect(editor).toContainText('protocol: TCP');
 
-    const box = await textarea.boundingBox();
+    const editorShell = dialog.getByTestId('yaml-editor');
+    const box = await editorShell.boundingBox();
     expect(box?.height ?? 0).toBeGreaterThan(400);
 
-    const scrollMetrics = await textarea.evaluate((el) => ({
-      clientHeight: el.clientHeight,
-      scrollHeight: el.scrollHeight,
-    }));
-    expect(scrollMetrics.clientHeight).toBeGreaterThan(400);
-    expect(scrollMetrics.scrollHeight).toBeGreaterThanOrEqual(scrollMetrics.clientHeight);
+    await expect(dialog.getByRole('button', { name: 'Copy' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Validate' })).toBeVisible();
   });
 
   test('deploy from workloads modal shows new Aether-managed workload', async ({ page }) => {
@@ -38,8 +41,8 @@ test.describe('Deploy workload UX', () => {
     const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
     await expect(dialog).toBeVisible({ timeout: 10_000 });
 
-    const textarea = dialog.locator('textarea');
-    await expect(textarea).toHaveValue(/apiVersion: aether\/v1/);
+    const editor = await yamlText(dialog);
+    await expect(editor).toContainText('apiVersion: aether/v1');
 
     const yaml = `apiVersion: aether/v1
 kind: Workload
@@ -67,13 +70,17 @@ network:
       servicePort: 80
       protocol: TCP
 `;
-    await textarea.fill(yaml);
+    await editor.click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.insertText(yaml);
     await dialog.getByRole('button', { name: 'Deploy' }).click();
 
     await expect(page.getByText(new RegExp(`Deployed "${unique}" successfully`, 'i'))).toBeVisible({
       timeout: 30_000,
     });
 
+    await expect(dialog.getByTestId('deploy-success-panel')).toBeVisible({ timeout: 10_000 });
+    await dialog.getByRole('button', { name: 'Close' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('button', { name: unique })).toBeVisible({ timeout: 15_000 });
   });

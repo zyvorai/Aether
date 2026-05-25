@@ -18,12 +18,14 @@ import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
 import Modal from '../Modal';
 import YamlInput from '../YamlInput';
+import ValidateResultPanel from '../ValidateResultPanel';
+import DeploySuccessPanel from '../DeploySuccessPanel';
 import EmptyState from '../EmptyState';
-import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
+import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice, PolicyResult } from '../../types/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice } from '../../types/api';
+import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
 
 interface WorkloadsPageProps {
   initialSelectedName?: string | null;
@@ -79,7 +81,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [deployModal, setDeployModal] = useState(false);
   const [deployInitialYaml, setDeployInitialYaml] = useState<string | undefined>();
   const [deployLoading, setDeployLoading] = useState(false);
-  const [pendingSelectName, setPendingSelectName] = useState<string | null>(null);
+  const [deployTemplateLoading, setDeployTemplateLoading] = useState(false);
+  const [deployValidateResult, setDeployValidateResult] = useState<ValidateResponse | null>(null);
+  const [deployPolicyResult, setDeployPolicyResult] = useState<PolicyResult | null>(null);
+  const [deployInlineValidateLoading, setDeployInlineValidateLoading] = useState(false);
+  const [deploySuccess, setDeploySuccess] = useState<{ name: string; status: string } | null>(null);
+  const [pendingSelect, setPendingSelect] = useState<{ name: string; tab: DetailTab } | null>(null);
   const [selectedWorkload, setSelectedWorkload] = useState<WorkloadResponse | null>(null);
   const [detailInitialTab, setDetailInitialTab] = useState<DetailTab>('overview');
 
@@ -119,24 +126,50 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     const template = params.get('template');
     if (template) {
       setDeployModal(true);
+      setDeployTemplateLoading(true);
+      setDeployInitialYaml(undefined);
       params.delete('template');
       const qs = params.toString();
       window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
-      void apiPost<Record<string, unknown>>(`/templates/${encodeURIComponent(template)}`, {}).then((res) => {
-        if (res.success && res.data) {
-          setDeployInitialYaml(workloadJsonToYaml(res.data));
-        }
-      });
+      void apiPost<Record<string, unknown>>(`/templates/${encodeURIComponent(template)}`, {})
+        .then((res) => {
+          if (res.success && res.data) {
+            setDeployInitialYaml(workloadJsonToYaml(res.data));
+          }
+        })
+        .finally(() => setDeployTemplateLoading(false));
     }
   }, []);
 
   useEffect(() => {
-    if (!pendingSelectName || workloads.length === 0) return;
-    const match = workloads.find((w) => w.name === pendingSelectName);
+    if (!pendingSelect || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === pendingSelect.name);
     if (!match) return;
-    openWorkloadDetail(match, 'overview');
-    setPendingSelectName(null);
-  }, [pendingSelectName, workloads]);
+    openWorkloadDetail(match, pendingSelect.tab);
+    setPendingSelect(null);
+  }, [pendingSelect, workloads]);
+
+  useEffect(() => {
+    if (!deploySuccess) return;
+    const workloadName = deploySuccess.name;
+    let cancelled = false;
+
+    async function pollStatus() {
+      const data = await apiFetch<WorkloadResponse[]>('/workloads');
+      if (cancelled || !data) return;
+      const match = data.find((w) => w.name === workloadName);
+      if (match) {
+        setDeploySuccess((prev) => (prev ? { ...prev, status: match.status } : null));
+      }
+    }
+
+    void pollStatus();
+    const interval = window.setInterval(pollStatus, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [deploySuccess?.name]);
 
   useEffect(() => {
     if (!initialSelectedName || workloads.length === 0) return;
@@ -243,12 +276,60 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     }
   }
 
+  function closeDeployModal() {
+    setDeployModal(false);
+    setDeployInitialYaml(undefined);
+    setDeployValidateResult(null);
+    setDeployPolicyResult(null);
+    setDeploySuccess(null);
+    setDeployTemplateLoading(false);
+  }
+
+  function finishDeploySuccess(tab: DetailTab) {
+    if (!deploySuccess) return;
+    setPendingSelect({ name: deploySuccess.name, tab });
+    closeDeployModal();
+  }
+
+  async function handleDeployValidate(yaml: string) {
+    setDeployInlineValidateLoading(true);
+    const [validateRes, policyRes] = await Promise.all([
+      apiPost<ValidateResponse>('/validate', { yaml }),
+      apiPost<PolicyResult>('/policy/check', { yaml }),
+    ]);
+    setDeployValidateResult(validateRes.data ?? null);
+    setDeployPolicyResult(policyRes.data ?? null);
+    setDeployInlineValidateLoading(false);
+    if (validateRes.data?.valid) {
+      markSpecValidated();
+    }
+  }
+
   async function handleDeploy(yaml: string) {
     if (!canMutate) {
       toast('Read-only session — deploy is disabled', 'error');
       return;
     }
     setDeployLoading(true);
+    setDeployValidateResult(null);
+    setDeployPolicyResult(null);
+
+    const validateRes = await apiPost<ValidateResponse>('/validate', { yaml });
+    setDeployValidateResult(validateRes.data ?? null);
+    if (!validateRes.data?.valid) {
+      setDeployLoading(false);
+      toast('Fix validation errors before deploying', 'error');
+      return;
+    }
+
+    const policyRes = await apiPost<PolicyResult>('/policy/check', { yaml });
+    setDeployPolicyResult(policyRes.data ?? null);
+    if (policyRes.data && !policyRes.data.passed) {
+      setDeployLoading(false);
+      toast('Policy check failed — review violations before deploying', 'error');
+      return;
+    }
+
     const res = await apiPost('/workloads', { spec_yaml: yaml });
     setDeployLoading(false);
     if (res.success) {
@@ -256,15 +337,20 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         parseCreatedWorkloadName(typeof res.data === 'string' ? res.data : undefined) ??
         workloadNameFromYaml(yaml);
       markFirstDeploy();
+      if (validateRes.data?.valid) {
+        markSpecValidated();
+      }
       toast(
         createdName ? `Deployed "${createdName}" successfully` : 'Workload deployed successfully',
         'success',
       );
-      setDeployModal(false);
-      setDeployInitialYaml(undefined);
       setSourceFilter('aether');
-      if (createdName) setPendingSelectName(createdName);
-      load();
+      void load();
+      if (createdName) {
+        setDeploySuccess({ name: createdName, status: 'pending' });
+      } else {
+        closeDeployModal();
+      }
     } else {
       const err = res.error ?? 'unknown error';
       const friendly = err.includes('AlreadyExists') || err.includes('already exists')
@@ -771,8 +857,9 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         )}
       </Modal>
 
-      <Modal isOpen={updateModal !== null} onClose={() => setUpdateModal(null)} title={`Update: ${updateModal}`}>
+      <Modal isOpen={updateModal !== null} onClose={() => setUpdateModal(null)} title={`Update: ${updateModal}`} size="yaml">
         <YamlInput
+          layout="editor"
           buttonText="Apply update"
           onSubmit={(yaml) => updateModal && handleUpdate(updateModal, yaml)}
           loading={updateLoading}
@@ -780,46 +867,47 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         />
       </Modal>
 
-      <Modal isOpen={deployModal} onClose={() => { setDeployModal(false); setDeployInitialYaml(undefined); }} title="Deploy New Workload" size="yaml">
-        <YamlInput
-          key={deployInitialYaml ?? 'default'}
-          initialValue={deployInitialYaml ?? DEFAULT_DEPLOY_WORKLOAD_YAML}
-          layout="editor"
-          buttonText="Deploy"
-          onSubmit={handleDeploy}
-          loading={deployLoading}
-          placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
-        />
+      <Modal isOpen={deployModal} onClose={closeDeployModal} title="Deploy New Workload" size="yaml">
+        {deploySuccess ? (
+          <DeploySuccessPanel
+            name={deploySuccess.name}
+            status={deploySuccess.status}
+            onViewLogs={() => finishDeploySuccess('logs')}
+            onClose={() => finishDeploySuccess('overview')}
+          />
+        ) : (
+          <YamlInput
+            key={deployInitialYaml ?? 'default'}
+            initialValue={deployInitialYaml ?? DEFAULT_DEPLOY_WORKLOAD_YAML}
+            resetValue={DEFAULT_DEPLOY_WORKLOAD_YAML}
+            layout="editor"
+            buttonText="Deploy"
+            onSubmit={handleDeploy}
+            loading={deployLoading}
+            editorLoading={deployTemplateLoading}
+            showValidateButton
+            onValidate={handleDeployValidate}
+            validateLoading={deployInlineValidateLoading}
+            placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
+            footer={
+              <ValidateResultPanel validate={deployValidateResult} policy={deployPolicyResult} />
+            }
+          />
+        )}
       </Modal>
 
       <Modal isOpen={validateModal} onClose={() => { setValidateModal(false); setValidateResult(null); }} title="Validate Workload YAML" size="yaml">
         <YamlInput
           key="validate-default"
           initialValue={DEFAULT_DEPLOY_WORKLOAD_YAML}
+          resetValue={DEFAULT_DEPLOY_WORKLOAD_YAML}
           layout="editor"
           buttonText="Validate"
           onSubmit={handleValidate}
           loading={validateLoading}
           placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
+          footer={<ValidateResultPanel validate={validateResult} />}
         />
-        {validateResult && (
-          <div className="mt-4">
-            <Badge
-              text={validateResult.valid ? 'VALID' : 'INVALID'}
-              variant={validateResult.valid ? 'green' : 'red'}
-            />
-            {validateResult.workload_name && (
-              <p className="text-sm text-zinc-300 mt-2">Workload: {validateResult.workload_name}</p>
-            )}
-            {validateResult.errors.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {validateResult.errors.map((e, i) => (
-                  <li key={i} className="text-sm text-red-400">- {e}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
       </Modal>
     </div>
   );
