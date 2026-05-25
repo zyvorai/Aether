@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { Save, FileText, Eye, CheckCircle } from 'lucide-react';
 import { apiPost } from '../../utils/api';
-import { markSpecValidated } from '../../utils/onboardingState';
+import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState';
+import { useAuth } from '../../contexts/AuthContext';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import Badge from '../Badge';
 import type { ValidateResponse } from '../../types/api';
 
@@ -30,6 +34,8 @@ const defaultForm: EditorForm = {
 };
 
 export default function EditorPage() {
+  const navigate = useNavigate();
+  const { canMutate } = useAuth();
   const [form, setForm] = useState<EditorForm>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -76,7 +82,6 @@ ${form.healthCheck ? `healthCheck:\n  httpGet:\n    path: /health\n    port: 80`
       setValidateResult(res.data);
       if (res.data.valid) {
         markSpecValidated();
-        window.dispatchEvent(new Event('aether:spec-validated'));
       }
     } else {
       setValidateResult({ valid: false, workload_name: null, errors: [res.error ?? 'Validation failed'] });
@@ -87,9 +92,13 @@ ${form.healthCheck ? `healthCheck:\n  httpGet:\n    path: /health\n    port: 80`
   const handleSave = async () => {
     setSaving(true);
     setResult(null);
-    const res = await apiPost('/workloads', { spec_yaml: generateYaml() });
+    const yaml = generateYaml();
+    const res = await apiPost('/workloads', { spec_yaml: yaml });
     if (res.success) {
+      markFirstDeploy();
       setResult('Workload deployed successfully.');
+      window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message: 'Workload deployed from editor', type: 'success' } }));
+      navigate(pathWithQuery(viewToPath('workloads'), { workload: form.name }));
     } else {
       setResult(`Error: ${res.error ?? 'Unknown error'}`);
     }
@@ -261,6 +270,7 @@ ${form.healthCheck ? `healthCheck:\n  httpGet:\n    path: /health\n    port: 80`
               <CheckCircle className="w-4 h-4" />
               {validating ? 'Validating…' : 'Validate'}
             </button>
+            {canMutate ? (
             <button
               type="button"
               onClick={() => void handleSave()}
@@ -270,6 +280,7 @@ ${form.healthCheck ? `healthCheck:\n  httpGet:\n    path: /health\n    port: 80`
               <Save className="w-4 h-4" />
               {saving ? 'Deploying…' : 'Deploy workload'}
             </button>
+            ) : null}
             <button
               type="button"
               onClick={() => {

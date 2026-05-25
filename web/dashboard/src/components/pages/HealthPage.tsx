@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled } from '../../utils/api';
+import { useQueryParam } from '../../utils/urlState';
+import { markHealthReviewed } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { RuntimeBadge } from '../Badge';
@@ -31,6 +33,7 @@ export default function HealthPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useQueryParam('status', 'all');
   const [selected, setSelected] = useState<{ workload: ManagedWorkload; history: HealthHistorySummary } | null>(null);
   const [historyLoading, setHistoryLoading] = useState<string | null>(null);
 
@@ -50,6 +53,9 @@ export default function HealthPage() {
       setWorkloads(w.ok ? w.data : []);
     }
     setLoading(false);
+    if (s.ok || w.ok) {
+      markHealthReviewed();
+    }
   }, []);
 
   useEffect(() => {
@@ -69,7 +75,12 @@ export default function HealthPage() {
     }
   }
 
-  const filtered = workloads.filter((w) => w.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = workloads.filter((w) => {
+    const matchesSearch = w.name.toLowerCase().includes(search.toLowerCase());
+    const status = statusFilter.toLowerCase();
+    const matchesStatus = status === 'all' || w.health.toLowerCase() === status;
+    return matchesSearch && matchesStatus;
+  });
 
   if (loading && workloads.length === 0 && !loadFailed) {
     return <PageLoading rows={5} />;
@@ -97,6 +108,20 @@ export default function HealthPage() {
         searchPlaceholder="Filter workloads…"
         onRefresh={() => void load()}
         refreshing={loading}
+        filters={
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100"
+            aria-label="Health status filter"
+          >
+            <option value="all">All statuses</option>
+            <option value="healthy">Healthy</option>
+            <option value="degraded">Degraded</option>
+            <option value="unhealthy">Unhealthy</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        }
       />
 
       {workloads.length === 0 ? (

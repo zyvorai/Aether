@@ -41,6 +41,7 @@ import { ZYVOR_HELP } from '../config/zyvorHelp';
 import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
 import PlatformHealthChip from './PlatformHealthChip';
 
@@ -246,6 +247,7 @@ export default function Navbar({
   sseConnected,
 }: NavbarProps) {
   const { theme, setTheme } = useTheme();
+  const { role } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
@@ -517,6 +519,9 @@ export default function Navbar({
             <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl surface-panel-soft">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className={`text-sm ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>{username}</span>
+              <span className="rounded-full border border-aether/30 bg-aether/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-aether">
+                {role}
+              </span>
             </div>
             <button
               type="button"

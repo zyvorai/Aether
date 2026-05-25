@@ -4,6 +4,7 @@ import Hero, { type HeroBadge } from './Hero';
 import Footer from './Footer';
 import VersionRefreshBanner from './VersionRefreshBanner';
 import SseReconnectBanner from './SseReconnectBanner';
+import ViewerBanner from './ViewerBanner';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
@@ -116,6 +117,7 @@ export default function DashboardShell({
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
       />
+      <ViewerBanner />
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
       <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />

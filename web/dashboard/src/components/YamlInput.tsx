@@ -7,12 +7,13 @@ interface YamlInputProps {
   buttonText: string;
   onSubmit: (yaml: string) => void;
   loading?: boolean;
+  initialValue?: string;
 }
 
-export default function YamlInput({ placeholder, buttonText, onSubmit, loading }: YamlInputProps) {
+export default function YamlInput({ placeholder, buttonText, onSubmit, loading, initialValue }: YamlInputProps) {
   const { theme } = useTheme();
   const light = theme === 'light';
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initialValue ?? '');
 
   function handleSubmit() {
     const trimmed = value.trim();

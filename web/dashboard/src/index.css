@@ -364,3 +364,46 @@
   background: linear-gradient(165deg, rgba(20, 26, 34, 0.94) 0%, rgba(12, 16, 22, 0.98) 100%);
   border-color: rgba(140, 160, 190, 0.14);
 }
+
+/* Log viewer / zinc surfaces — light & steel readability */
+.light-theme .bg-zinc-950,
+.light-theme .bg-zinc-900 {
+  background-color: #f8fafc !important;
+}
+
+.light-theme .bg-zinc-800 {
+  background-color: #f1f5f9 !important;
+}
+
+.light-theme .bg-zinc-700 {
+  background-color: #e2e8f0 !important;
+}
+
+.light-theme .border-zinc-700,
+.light-theme .border-zinc-800,
+.light-theme .border-zinc-600 {
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme .text-zinc-300,
+.light-theme .text-zinc-100 {
+  color: #334155 !important;
+}
+
+.light-theme .text-zinc-400,
+.light-theme .text-zinc-500 {
+  color: #64748b !important;
+}
+
+.steel-theme .bg-zinc-950 {
+  background-color: rgba(8, 12, 18, 0.95) !important;
+}
+
+.steel-theme .bg-zinc-900 {
+  background-color: rgba(14, 18, 26, 0.92) !important;
+}
+
+.steel-theme .border-zinc-700,
+.steel-theme .border-zinc-800 {
+  border-color: rgba(140, 160, 190, 0.2) !important;
+}

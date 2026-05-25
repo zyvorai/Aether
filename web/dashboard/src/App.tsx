@@ -11,6 +11,7 @@ import { useKeyboard } from './hooks/useKeyboard';
 import { useSequenceShortcuts } from './hooks/useSequenceShortcut';
 import { useTheme } from './contexts/ThemeContext';
 import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { pathToView, viewToPath } from './utils/dashboardRoutes';
 import { HERO_CONFIG } from './utils/dashboardNav';
 import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode } from './utils/api';
@@ -212,6 +213,17 @@ function AetherDashboard() {
     }
   }, [currentView, isAuthenticated]);
 
+  useEffect(() => {
+    const onPageToast = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: string; type?: 'success' | 'error' | 'info' }>).detail;
+      if (detail?.message) {
+        toast(detail.message, detail.type ?? 'info');
+      }
+    };
+    window.addEventListener('aether-toast', onPageToast);
+    return () => window.removeEventListener('aether-toast', onPageToast);
+  }, [toast]);
+
   const openHelp = useCallback((tab: HelpTab = 'shortcuts') => {
     setHelpTab(tab);
     setHelpOpen(true);
@@ -365,6 +377,7 @@ function AetherDashboard() {
   }
 
   return (
+    <AuthProvider enabled={isAuthenticated}>
     <ServerCapabilitiesProvider>
       <DashboardShell
         shellClass={shellClass}
@@ -414,6 +427,7 @@ function AetherDashboard() {
         </ErrorBoundary>
       </DashboardShell>
     </ServerCapabilitiesProvider>
+    </AuthProvider>
   );
 }
 
