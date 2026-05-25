@@ -1434,6 +1434,7 @@ impl Runtime for KubernetesRuntime {
                 let deployment = build_deployment_manifest(&self.namespace, image, spec);
                 let deployments: Api<Deployment> =
                     Api::namespaced(self.client.clone(), &self.namespace);
+                let pp = kube::api::PatchParams::apply("aether").force();
                 let created = match kube_with_timeout(
                     "Deployment create",
                     deployments.create(&PostParams::default(), &deployment),
@@ -1441,6 +1442,32 @@ impl Runtime for KubernetesRuntime {
                 .await
                 {
                     Ok(d) => d,
+                    Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                        tracing::info!(
+                            "Deployment already exists, applying update: {}",
+                            spec.metadata.name
+                        );
+                        match kube_with_timeout(
+                            "Deployment patch",
+                            deployments.patch(
+                                &spec.metadata.name,
+                                &pp,
+                                &kube::api::Patch::Apply(deployment),
+                            ),
+                        )
+                        .await
+                        {
+                            Ok(d) => d,
+                            Err(e) => {
+                                tracing::error!(
+                                    "Deployment patch failed, cleaning up {} resources",
+                                    new_resources.len()
+                                );
+                                self.cleanup_resources(&new_resources).await;
+                                return Err(e);
+                            }
+                        }
+                    }
                     Err(e) => {
                         tracing::error!(
                             "Deployment creation failed, cleaning up {} resources",
