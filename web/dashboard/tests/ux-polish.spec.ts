@@ -101,7 +101,9 @@ test.describe('Dashboard UX polish', () => {
     const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Deploy' })).toBeEnabled();
-    await expect(dialog.locator('textarea')).toHaveValue(/apiVersion: aether\/v1/);
+    const textarea = dialog.locator('textarea');
+    await expect(textarea).toHaveValue(/apiVersion: aether\/v1/);
+    await expect(dialog.getByText(/\d+ lines · scroll to review full spec/)).toBeVisible();
   });
 
   test('editor validate marks onboarding validate step in localStorage', async ({ page }) => {

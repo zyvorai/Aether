@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -8,16 +8,49 @@ interface YamlInputProps {
   onSubmit: (yaml: string) => void;
   loading?: boolean;
   initialValue?: string;
+  /** Minimum visible rows (default 16). */
+  minRows?: number;
 }
 
-export default function YamlInput({ placeholder, buttonText, onSubmit, loading, initialValue }: YamlInputProps) {
+function countLines(text: string): number {
+  if (!text) return 1;
+  return text.split('\n').length;
+}
+
+export default function YamlInput({
+  placeholder,
+  buttonText,
+  onSubmit,
+  loading,
+  initialValue,
+  minRows = 16,
+}: YamlInputProps) {
   const { theme } = useTheme();
   const light = theme === 'light';
   const [value, setValue] = useState(initialValue ?? '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setValue(initialValue ?? '');
   }, [initialValue]);
+
+  const syncHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const maxPx = Math.min(window.innerHeight * 0.55, 520);
+    el.style.height = `${Math.min(el.scrollHeight, maxPx)}px`;
+  }, []);
+
+  useEffect(() => {
+    syncHeight();
+  }, [value, syncHeight]);
+
+  useEffect(() => {
+    const onResize = () => syncHeight();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [syncHeight]);
 
   function handleSubmit() {
     const trimmed = value.trim();
@@ -26,25 +59,31 @@ export default function YamlInput({ placeholder, buttonText, onSubmit, loading, 
     }
   }
 
+  const rows = Math.max(countLines(value), minRows);
+
   return (
     <div className="space-y-3">
       <textarea
+        ref={textareaRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder ?? 'Paste YAML here...'}
-        rows={10}
-        className={`w-full rounded-xl p-4 text-sm font-mono resize-y focus:outline-none focus:border-aether focus:ring-1 focus:ring-aether/30 transition-colors leading-relaxed ${
+        rows={rows}
+        className={`block w-full min-h-[18rem] max-h-[min(55vh,32rem)] overflow-y-auto overflow-x-auto rounded-xl p-4 text-sm font-mono whitespace-pre resize-y focus:outline-none focus:border-aether focus:ring-1 focus:ring-aether/30 transition-colors leading-relaxed ${
           light
             ? 'bg-white border border-slate-300 text-slate-800 placeholder-slate-400'
             : 'bg-zinc-950 border border-zinc-700 text-zinc-300 placeholder-zinc-600'
         }`}
         spellCheck={false}
       />
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <span className={`text-xs ${light ? 'text-slate-500' : 'text-zinc-500'}`}>
+          {countLines(value)} lines · scroll to review full spec
+        </span>
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || loading}
-          className="flex items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether-light disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-aether/50"
+          className="flex shrink-0 items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether-light disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-aether/50"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
