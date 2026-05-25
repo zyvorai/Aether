@@ -23,8 +23,12 @@ pub struct ComposeSpec {
 /// A single workload entry inside a compose file
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ComposeWorkload {
-    /// Path to the workload YAML spec file
+    /// Path to the workload YAML spec file (relative to compose file on disk)
+    #[serde(default)]
     pub spec: PathBuf,
+    /// Inline workload YAML (API / dashboard compose deploy)
+    #[serde(default)]
+    pub spec_yaml: Option<String>,
     /// Optional runtime override (e.g. "container", "kube")
     #[serde(default)]
     pub runtime: Option<String>,
@@ -34,6 +38,33 @@ pub struct ComposeWorkload {
     /// Extra environment variables injected at deploy time
     #[serde(default)]
     pub env: HashMap<String, String>,
+}
+
+impl ComposeWorkload {
+    /// Load workload spec from inline YAML or from a file path.
+    pub fn load_workload(&self, base_dir: Option<&Path>) -> Result<crate::spec::Workload> {
+        use crate::legacy_workload_yaml::parse_workload_yaml;
+
+        if let Some(yaml) = &self.spec_yaml {
+            let trimmed = yaml.trim();
+            if trimmed.is_empty() {
+                bail!("spec_yaml is empty");
+            }
+            return parse_workload_yaml(trimmed).context("failed to parse inline spec_yaml");
+        }
+        if self.spec.as_os_str().is_empty() {
+            bail!("workload entry requires spec (file path) or spec_yaml (inline YAML)");
+        }
+        let path = if self.spec.is_absolute() {
+            self.spec.clone()
+        } else if let Some(base) = base_dir {
+            base.join(&self.spec)
+        } else {
+            self.spec.clone()
+        };
+        crate::spec::Workload::from_file(&path)
+            .with_context(|| format!("failed to load workload spec '{}'", path.display()))
+    }
 }
 
 // ── Loading ─────────────────────────────────────────────────────────
@@ -124,6 +155,12 @@ pub fn validate(spec: &ComposeSpec) -> Result<()> {
                 );
             }
         }
+        if workload.spec_yaml.is_none() && workload.spec.as_os_str().is_empty() {
+            bail!(
+                "workload '{}' must define spec (file path) or spec_yaml (inline YAML)",
+                name
+            );
+        }
     }
 
     // Check for circular dependencies (resolve_order returns Err on cycles)
@@ -145,6 +182,7 @@ mod tests {
     fn make_workload(spec_path: &str, deps: Vec<&str>) -> ComposeWorkload {
         ComposeWorkload {
             spec: PathBuf::from(spec_path),
+            spec_yaml: None,
             runtime: None,
             depends_on: deps.into_iter().map(String::from).collect(),
             env: HashMap::new(),
@@ -352,6 +390,37 @@ workloads:
             workloads: HashMap::new(),
         };
         assert!(validate(&spec).is_ok());
+    }
+
+    #[test]
+    fn test_validate_requires_spec_or_spec_yaml() {
+        let spec = make_compose(vec![(
+            "web",
+            ComposeWorkload {
+                spec: PathBuf::new(),
+                spec_yaml: None,
+                runtime: None,
+                depends_on: vec![],
+                env: HashMap::new(),
+            },
+        )]);
+        assert!(validate(&spec).is_err());
+    }
+
+    #[test]
+    fn test_parse_inline_spec_yaml() {
+        let yaml = r#"
+version: "1"
+workloads:
+  web:
+    spec_yaml: |
+      apiVersion: aether/v1
+      kind: Workload
+      metadata:
+        name: inline-web
+"#;
+        let spec: ComposeSpec = serde_yaml::from_str(yaml).unwrap();
+        assert!(spec.workloads["web"].spec_yaml.is_some());
     }
 
     // ---------------------------------------------------------------

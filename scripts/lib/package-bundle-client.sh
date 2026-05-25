@@ -40,4 +40,36 @@ package_bundle_customer_docs() {
     [[ -f "${lib}/START_HERE.txt" ]] && cp "${lib}/START_HERE.txt" "${stage}/"
     [[ -f "${build_dir}/scripts/zyvor-branding/ZYVOR_INSTALL.txt" ]] && \
         cp "${build_dir}/scripts/zyvor-branding/ZYVOR_INSTALL.txt" "${stage}/" 2>/dev/null || true
+
+    package_bundle_finalize "${stage}" "${build_dir}" "${product}"
+}
+
+# Branded PDFs, welcome page, OPEN_FIRST.txt, and bundle path verification.
+package_bundle_finalize() {
+    local stage="$1" build_dir="$2" product="$3"
+    local version="${4:-${V9S_PACKAGE_VERSION:-latest}}"
+    local lib="${build_dir}/scripts/lib"
+    if [[ ! -x "${lib}/finalize-customer-bundle.sh" ]]; then
+        echo "ERROR: missing ${lib}/finalize-customer-bundle.sh — cannot finalize customer bundle" >&2
+        return 1
+    fi
+    chmod +x "${lib}/finalize-customer-bundle.sh"
+    "${lib}/finalize-customer-bundle.sh" "${stage}" "${build_dir}" "${product}" "${version}"
+}
+
+# Assert required customer bundle artifacts exist (call after finalize).
+package_bundle_assert_required() {
+    local stage="$1"
+    local -a req=(
+        HELP.txt START_HERE.txt OPEN_FIRST.txt
+        docs/welcome.html docs/pdf/WELCOME.pdf
+        install.sh uninstall.sh README.txt QUICKSTART.txt
+    )
+    local f
+    for f in "${req[@]}"; do
+        [[ -e "${stage}/${f}" ]] || {
+            echo "ERROR: missing required bundle file: ${stage}/${f}" >&2
+            return 1
+        }
+    done
 }

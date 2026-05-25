@@ -865,6 +865,54 @@ pub(crate) async fn list_workloads(
     }
 }
 
+/// Deploy a workload spec through the API (shared by create and compose-up).
+async fn deploy_workload_spec(
+    app_state: &AppState,
+    request: CreateWorkloadRequest,
+) -> Result<String, (StatusCode, Json<ApiResponse<String>>)> {
+    if let Some(resp) = opa_enforce_workload::<String>(&request.spec, &request.spec.metadata.name).await {
+        return Err(resp);
+    }
+
+    let runtime_kind = if let Some(runtime_name) = request.runtime {
+        match runtime_name.parse::<RuntimeKind>() {
+            Ok(rt) => rt,
+            Err(e) => return Err(err_bad_request(e)),
+        }
+    } else {
+        let engine = Engine::new();
+        match engine.decide(&request.spec) {
+            Ok(runtime) => runtime,
+            Err(e) => return Err(err_internal(e)),
+        }
+    };
+
+    let runtime = make_runtime::<String>(&runtime_kind).await?;
+    let image = runtime.build(&request.spec).await.map_err(err_internal)?;
+    let instance = runtime.run(&image, &request.spec).await.map_err(err_internal)?;
+
+    let name = request.spec.metadata.name.clone();
+    let mut state = app_state.state.write().await;
+    state.upsert(
+        name.clone(),
+        WorkloadState::new(name.clone(), runtime_kind, instance, PathBuf::from("api_created")),
+    );
+
+    if let Err(e) = persist_workload_api(app_state, &state).await {
+        return Err(err_internal(e));
+    }
+
+    emit_sse(
+        app_state,
+        &ServerEvent::WorkloadChanged {
+            name: name.clone(),
+            action: "created".to_string(),
+        },
+    );
+
+    Ok(format!("Workload {} created", name))
+}
+
 /// POST /api/workloads - Create and deploy a workload
 pub(crate) async fn create_workload(
     AxumState(app_state): AxumState<AppState>,
@@ -875,65 +923,10 @@ pub(crate) async fn create_workload(
         Err(response) => return response,
     };
 
-    if let Some(resp) = opa_enforce_workload::<String>(&request.spec, &request.spec.metadata.name).await {
-        return resp;
+    match deploy_workload_spec(&app_state, request).await {
+        Ok(msg) => created_json(msg),
+        Err(resp) => resp,
     }
-
-    // Select runtime
-    let runtime_kind = if let Some(runtime_name) = request.runtime {
-        match runtime_name.parse::<RuntimeKind>() {
-            Ok(rt) => rt,
-            Err(e) => {
-                return err_bad_request::<String>(e)
-            }
-        }
-    } else {
-        // Use decision engine
-        let engine = Engine::new();
-        match engine.decide(&request.spec) {
-            Ok(runtime) => runtime,
-            Err(e) => {
-                return err_internal::<String>(e)
-            }
-        }
-    };
-
-    // Build and run based on runtime
-    let runtime = match make_runtime::<String>(&runtime_kind).await {
-        Ok(r) => r,
-        Err(e) => return e,
-    };
-    let image = match runtime.build(&request.spec).await {
-        Ok(img) => img,
-        Err(e) => {
-            return err_internal::<String>(e)
-        }
-    };
-    let instance = match runtime.run(&image, &request.spec).await {
-        Ok(inst) => inst,
-        Err(e) => {
-            return err_internal::<String>(e)
-        }
-    };
-
-    // Save state
-    let mut state = app_state.state.write().await;
-    state.upsert(
-        request.spec.metadata.name.clone(),
-        WorkloadState::new(
-            request.spec.metadata.name.clone(),
-            runtime_kind,
-            instance,
-            PathBuf::from("api_created"),
-        ),
-    );
-
-    // Persist to disk
-    if let Err(e) = persist_workload_api(&app_state, &state).await {
-        return err_internal::<String>(e);
-    }
-
-    created_json(format!("Workload {} created", request.spec.metadata.name))
 }
 
 /// GET /api/workloads/:name - Get workload details
@@ -3327,6 +3320,64 @@ pub(crate) async fn api_compose_validate(
             (StatusCode::BAD_REQUEST, Json(ApiResponse::error(msg)))
         }
     }
+}
+
+// POST /api/compose/up - Validate and deploy workloads in dependency order
+pub(crate) async fn api_compose_up(
+    AxumState(app_state): AxumState<AppState>,
+    body: String,
+) -> (StatusCode, Json<ApiResponse<serde_json::Value>>) {
+    use crate::compose;
+
+    let spec = match serde_yaml::from_str::<compose::ComposeSpec>(&body) {
+        Ok(s) => s,
+        Err(e) => return err_bad_request::<serde_json::Value>(format!("Invalid YAML: {}", e)),
+    };
+
+    if let Err(e) = compose::validate(&spec) {
+        return err_bad_request::<serde_json::Value>(e.to_string());
+    }
+
+    let order = match compose::resolve_order(&spec) {
+        Ok(o) => o,
+        Err(e) => return err_bad_request::<serde_json::Value>(e.to_string()),
+    };
+
+    let mut deployed: Vec<String> = Vec::with_capacity(order.len());
+    for name in order {
+        let entry = spec.workloads.get(&name).expect("order key must exist");
+        let workload = match entry.load_workload(None) {
+            Ok(w) => w.with_env(&entry.env),
+            Err(e) => {
+                return err_bad_request::<serde_json::Value>(format!("{}: {}", name, e));
+            }
+        };
+
+        let request = CreateWorkloadRequest {
+            spec: workload,
+            runtime: entry.runtime.clone(),
+        };
+
+        match deploy_workload_spec(&app_state, request).await {
+            Ok(_) => deployed.push(name),
+            Err(resp) => {
+                let (status, json) = resp;
+                return (
+                    status,
+                    Json(ApiResponse {
+                        success: json.0.success,
+                        data: json.0.data.map(|s| serde_json::Value::String(s)),
+                        error: json.0.error,
+                    }),
+                );
+            }
+        }
+    }
+
+    ok_json(serde_json::json!({
+        "deployed": deployed,
+        "count": deployed.len(),
+    }))
 }
 
 /// POST /api/workloads/:name/migrate - Migrate a workload to a different runtime

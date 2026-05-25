@@ -9,6 +9,8 @@ import { getRecentViews } from '../utils/recentViews';
 import { getRecentActions, pushRecentAction } from '../utils/recentActions';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
+import { filterNavViews } from '../utils/navCapabilities';
 
 type CommandCategory = 'recent' | 'recent-action' | 'navigation' | 'workload' | 'workload-action' | 'action';
 
@@ -80,6 +82,7 @@ export default function CommandPalette({
   const { theme } = useTheme();
   const light = theme === 'light';
   const { canMutate } = useAuth();
+  const { capabilities, gitopsConfigured } = useServerCapabilities();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentViews, setRecentViews] = useState<AppView[]>([]);
@@ -223,8 +226,16 @@ export default function CommandPalette({
       );
     }
 
-    return [...NAV_ITEMS, ...workloadItems, ...actionItems];
-  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, canMutate]);
+    const visibleNav = NAV_ITEMS.filter(
+      (item) =>
+        !item.view ||
+        filterNavViews([{ view: item.view, label: item.label }], capabilities?.platform ?? null, {
+          gitopsConfigured,
+        }).length > 0,
+    );
+
+    return [...visibleNav, ...workloadItems, ...actionItems];
+  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, canMutate, capabilities, gitopsConfigured]);
 
   const recentCommands = useMemo((): CommandAction[] => {
     const items: CommandAction[] = [];

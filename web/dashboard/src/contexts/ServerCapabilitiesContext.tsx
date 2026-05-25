@@ -6,12 +6,14 @@ export interface ServerCapabilities {
   version: string;
   safety: ServerSafety;
   platform: PlatformInfo;
+  gitopsConfigured: boolean | null;
 }
 
 interface ServerCapabilitiesContextValue {
   capabilities: ServerCapabilities | null;
   ready: SystemReadyStatus | null;
   loading: boolean;
+  gitopsConfigured: boolean | null;
   refreshPlatform: () => Promise<void>;
 }
 
@@ -19,6 +21,7 @@ const ServerCapabilitiesContext = createContext<ServerCapabilitiesContextValue>(
   capabilities: null,
   ready: null,
   loading: true,
+  gitopsConfigured: null,
   refreshPlatform: async () => {},
 });
 
@@ -85,6 +88,7 @@ export function ServerCapabilitiesProvider({ children }: { children: ReactNode }
   const refreshPlatform = useCallback(async () => {
     const server = await apiFetch<Record<string, unknown>>('/server');
     let systemReady: SystemReadyStatus | null = null;
+    let gitopsConfigured: boolean | null = null;
     try {
       const res = await fetch('/api/system/ready', { credentials: 'include' });
       if (res.ok || res.status === 503) {
@@ -92,6 +96,15 @@ export function ServerCapabilitiesProvider({ children }: { children: ReactNode }
       }
     } catch {
       systemReady = null;
+    }
+
+    try {
+      const gitops = await apiFetch<{ configured?: boolean }>('/gitops/status');
+      if (gitops && typeof gitops.configured === 'boolean') {
+        gitopsConfigured = gitops.configured;
+      }
+    } catch {
+      gitopsConfigured = null;
     }
 
     if (server) {
@@ -102,6 +115,7 @@ export function ServerCapabilitiesProvider({ children }: { children: ReactNode }
           version: platform.version,
           safety: platform.safety,
           platform,
+          gitopsConfigured,
         });
       } else {
         primeServerSafety(null);
@@ -130,7 +144,15 @@ export function ServerCapabilitiesProvider({ children }: { children: ReactNode }
   }, [refreshPlatform]);
 
   return (
-    <ServerCapabilitiesContext.Provider value={{ capabilities, ready, loading, refreshPlatform }}>
+    <ServerCapabilitiesContext.Provider
+      value={{
+        capabilities,
+        ready,
+        loading,
+        gitopsConfigured: capabilities?.gitopsConfigured ?? null,
+        refreshPlatform,
+      }}
+    >
       {children}
     </ServerCapabilitiesContext.Provider>
   );

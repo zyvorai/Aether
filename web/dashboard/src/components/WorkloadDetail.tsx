@@ -16,6 +16,7 @@ interface WorkloadDetailProps {
   workload: WorkloadResponse;
   onClose: () => void;
   onAction: () => void;
+  onMigrate?: (name: string) => void;
   initialTab?: DetailTab;
   canMutate?: boolean;
 }
@@ -91,7 +92,7 @@ function ScoringResultsView({ data }: { data: ScoringResult }) {
   );
 }
 
-export default function WorkloadDetail({ workload, onClose, onAction, initialTab = 'overview', canMutate = true }: WorkloadDetailProps) {
+export default function WorkloadDetail({ workload, onClose, onAction, onMigrate, initialTab = 'overview', canMutate = true }: WorkloadDetailProps) {
   const isAetherManaged = (workload.source ?? 'aether') === 'aether';
   const isScalableClusterWorkload = !isAetherManaged && ['Deployment', 'StatefulSet'].includes(workload.kind ?? '');
   const clusterResourceName = workload.name.split('/').pop() ?? workload.name;
@@ -355,6 +356,15 @@ export default function WorkloadDetail({ workload, onClose, onAction, initialTab
                     {actionLoading === action ? '...' : action.charAt(0).toUpperCase() + action.slice(1)}
                   </button>
                 ))}
+                {onMigrate ? (
+                  <button
+                    type="button"
+                    onClick={() => onMigrate(workload.name)}
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-aether/15 text-aether hover:bg-aether/25 border border-aether/30 transition-colors"
+                  >
+                    Migrate
+                  </button>
+                ) : null}
               </div>
             ) : (
               <div className="mb-4 space-y-3">
