@@ -6,6 +6,7 @@ import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
+import { DEFAULT_DEPLOY_WORKLOAD_YAML, workloadJsonToYaml } from '../../utils/workloadYaml';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -37,23 +38,6 @@ function toast(message: string, type: 'success' | 'error') {
 
 function isAetherManaged(workload: WorkloadResponse): boolean {
   return (workload.source ?? 'aether') === 'aether';
-}
-
-function specToYaml(spec: Record<string, unknown>): string {
-  const lines: string[] = [];
-  const name = spec.name ?? spec.workload_name;
-  if (name) lines.push(`name: ${name}`);
-  if (spec.image) lines.push(`image: ${spec.image}`);
-  if (spec.runtime) lines.push(`runtime: ${spec.runtime}`);
-  if (spec.replicas != null) lines.push(`replicas: ${spec.replicas}`);
-  if (spec.intent) lines.push(`intent: ${spec.intent}`);
-  if (spec.resources && typeof spec.resources === 'object') {
-    const r = spec.resources as Record<string, string>;
-    lines.push('resources:');
-    if (r.cpu) lines.push(`  cpu: ${r.cpu}`);
-    if (r.memory) lines.push(`  memory: ${r.memory}`);
-  }
-  return lines.join('\n');
 }
 
 export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection }: WorkloadsPageProps) {
@@ -128,7 +112,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
       void apiPost<Record<string, unknown>>(`/templates/${encodeURIComponent(template)}`, {}).then((res) => {
         if (res.success && res.data) {
-          setDeployInitialYaml(specToYaml(res.data));
+          setDeployInitialYaml(workloadJsonToYaml(res.data));
         }
       });
     }
@@ -240,7 +224,10 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   }
 
   async function handleDeploy(yaml: string) {
-    if (!canMutate) return;
+    if (!canMutate) {
+      toast('Read-only session — deploy is disabled', 'error');
+      return;
+    }
     setDeployLoading(true);
     const res = await apiPost('/workloads', { spec_yaml: yaml });
     setDeployLoading(false);
@@ -740,21 +727,23 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
       <Modal isOpen={deployModal} onClose={() => { setDeployModal(false); setDeployInitialYaml(undefined); }} title="Deploy New Workload">
         <YamlInput
-          key={deployInitialYaml ?? 'empty'}
-          initialValue={deployInitialYaml}
+          key={deployInitialYaml ?? 'default'}
+          initialValue={deployInitialYaml ?? DEFAULT_DEPLOY_WORKLOAD_YAML}
           buttonText="Deploy"
           onSubmit={handleDeploy}
           loading={deployLoading}
-          placeholder="Paste workload YAML spec here..."
+          placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
         />
       </Modal>
 
       <Modal isOpen={validateModal} onClose={() => { setValidateModal(false); setValidateResult(null); }} title="Validate Workload YAML">
         <YamlInput
+          key={deployInitialYaml ?? 'default'}
+          initialValue={deployInitialYaml ?? DEFAULT_DEPLOY_WORKLOAD_YAML}
           buttonText="Validate"
           onSubmit={handleValidate}
           loading={validateLoading}
-          placeholder="Paste workload YAML here..."
+          placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
         />
         {validateResult && (
           <div className="mt-4">

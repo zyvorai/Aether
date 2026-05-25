@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -14,6 +14,10 @@ export default function YamlInput({ placeholder, buttonText, onSubmit, loading, 
   const { theme } = useTheme();
   const light = theme === 'light';
   const [value, setValue] = useState(initialValue ?? '');
+
+  useEffect(() => {
+    setValue(initialValue ?? '');
+  }, [initialValue]);
 
   function handleSubmit() {
     const trimmed = value.trim();

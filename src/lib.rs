@@ -22,6 +22,7 @@ pub mod ha;
 pub mod health;
 pub mod helm;
 pub mod kubecluster;
+pub mod legacy_workload_yaml;
 pub mod metrics;
 pub mod migration;
 pub mod mock_idp;

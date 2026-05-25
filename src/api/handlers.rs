@@ -147,7 +147,7 @@ fn parse_workload_payload<T: serde::Serialize>(
     }
 
     if let Some(yaml) = value.get("yaml").and_then(|v| v.as_str()) {
-        return serde_yaml::from_str::<Workload>(yaml)
+        return crate::legacy_workload_yaml::parse_workload_yaml(yaml)
             .map_err(|e| err_bad_request(format!("Invalid YAML: {}", e)));
     }
 
@@ -162,7 +162,7 @@ fn parse_create_workload_payload<T: serde::Serialize>(
     }
 
     if let Some(spec_yaml) = value.get("spec_yaml").and_then(|v| v.as_str()) {
-        let spec = serde_yaml::from_str::<Workload>(spec_yaml)
+        let spec = crate::legacy_workload_yaml::parse_workload_yaml(spec_yaml)
             .map_err(|e| err_bad_request(format!("Invalid workload YAML: {}", e)))?;
         let runtime = value
             .get("runtime")
@@ -3501,8 +3501,8 @@ pub(crate) async fn build_workload(
 pub(crate) async fn validate_workload(
     Json(request): Json<ValidateRequest>,
 ) -> impl IntoResponse {
-    // Try to parse the YAML as a Workload spec
-    let workload_result: Result<Workload, _> = serde_yaml::from_str(&request.yaml);
+    // Try to parse the YAML as a Workload spec (v1 or legacy dashboard format)
+    let workload_result = crate::legacy_workload_yaml::parse_workload_yaml(&request.yaml);
 
     match workload_result {
         Ok(workload) => {
