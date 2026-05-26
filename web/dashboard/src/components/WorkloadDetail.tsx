@@ -8,9 +8,10 @@ import Badge, { RuntimeBadge, SeverityBadge } from './Badge';
 import BarChart from './BarChart';
 import RadarChart from './RadarChart';
 import IntentDebugger from './IntentDebugger';
+import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
 import type { ClusterResourceDetail, Event, ScoringResult, WorkloadResponse } from '../types/api';
 
-export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events';
+export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust';
 
 interface WorkloadDetailProps {
   workload: WorkloadResponse;
@@ -288,12 +289,15 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
     }
   };
 
+  const isKubeVirt = workload.runtime.toLowerCase().includes('kubevirt');
+
   const tabs: { id: DetailTab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'logs', label: 'Logs' },
     { id: 'manifest', label: 'Manifest' },
     { id: 'drift', label: 'Drift' },
     { id: 'scoring', label: 'Scoring' },
+    ...(isKubeVirt ? [{ id: 'trust' as DetailTab, label: 'Trust' }] : []),
     { id: 'events', label: 'Events' },
   ];
 
@@ -604,6 +608,10 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
               <IntentDebugger />
             </div>
           </div>
+        )}
+
+        {activeTab === 'trust' && (
+          <ConfidentialWorkloadPanel workloadName={workload.name} />
         )}
 
         {activeTab === 'events' && (

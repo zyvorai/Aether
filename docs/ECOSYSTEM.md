@@ -15,7 +15,13 @@
         ┌───────────────────────┼───────────────────────┐
         ▼                       ▼                       ▼
    Podman/K8s              KubeVirt                 Metal3
-        │                       │                       │
+        │                       │
+        │              ┌────────┴────────┐
+        │              │    Ragnarok     │  (optional composite)
+        │              │ attestation ·   │
+        │              │ measured images │
+        │              └────────┬────────┘
+        │                       │
         └───────────────────────┼───────────────────────┘
                                 ▼
                     ┌─────────────────────────┐
@@ -38,7 +44,7 @@
 | Product | Role |
 |---------|------|
 | **Aether** | Universal runtime portability — deploy, migrate, intent placement |
-| **Ragnarok** | Confidential execution layer — attestation, measured images, attest-gated secrets |
+| **Ragnarok** | Confidential execution layer — attestation, measured images, attest-gated secrets; standalone binary + UI, optional composite with Aether via `RAGNAROK_URL` |
 | **PacketWolf** | Network/workload observability |
 | **GuestKit** | Guest VM inspection and tooling |
 | **HyperSDK** | Shared runtime SDK foundation |
@@ -58,4 +64,5 @@ Use Aether when you need **one spec** across dev (Podman), prod (K8s), isolation
 
 - [Product overview](PRODUCT.md)
 - [Product tiers](PRODUCT-TIERS.md)
+- [Ragnarok and Aether — integration](guides/security/RAGNAROK-AND-AETHER.md)
 - README — Zyvor platform section

@@ -8,6 +8,7 @@ import {
   Target,
   GitCompare,
   ShieldCheck,
+  Lock,
   Shield,
   Settings,
   HeartPulse,
@@ -98,6 +99,7 @@ const intelligenceItems: DropdownItem[] = [
   { label: 'Runtime Affinity', view: 'affinity', icon: <Target className="w-4 h-4" /> },
   { label: 'Drift Detection', view: 'drift', icon: <GitCompare className="w-4 h-4" /> },
   { label: 'Policy Check', view: 'policy', icon: <ShieldCheck className="w-4 h-4" /> },
+  { label: 'Confidential Computing', view: 'confidential', icon: <Lock className="w-4 h-4" /> },
 ];
 
 const operationsItems: DropdownItem[] = [

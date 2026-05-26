@@ -11,6 +11,9 @@ export interface EditorWorkloadInput {
   healthCheck: boolean;
   owner?: string;
   project?: string;
+  confidentialEnabled?: boolean;
+  confidentialTee?: 'sev-snp' | 'tdx';
+  attestationRequired?: boolean;
 }
 
 export const DEFAULT_DEPLOY_WORKLOAD_YAML = `apiVersion: aether/v1
@@ -164,8 +167,33 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
     );
   }
 
-  if (input.intent) {
-    lines.push('intent:', `  goal: ${intentGoal(input.intent)}`);
+  if (input.intent || (input.confidentialEnabled && preferred === 'kubevirt')) {
+    lines.push('intent:');
+    if (input.intent) {
+      lines.push(`  goal: ${intentGoal(input.intent)}`);
+    }
+    if (input.confidentialEnabled && preferred === 'kubevirt') {
+      lines.push('  trust: strict', '  compliance:', '    isolationRequired: true');
+    }
+  }
+
+  if (input.confidentialEnabled && preferred === 'kubevirt') {
+    const tee = input.confidentialTee ?? 'sev-snp';
+    lines.push(
+      'confidential:',
+      '  enabled: true',
+      `  tee: ${tee}`,
+      '  attestation:',
+      `    required: ${input.attestationRequired !== false}`,
+      '    policy: strict',
+      '  isolation:',
+      '    vtpm: true',
+      '    encryptedState: true',
+      '    debugAllowed: false',
+      '  secrets:',
+      '    releasePolicy: attest-gated',
+      '    provider: vault',
+    );
   }
 
   if (input.healthCheck) {
