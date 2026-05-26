@@ -138,6 +138,8 @@ Kubernetes confidential pods via Kata RuntimeClass (`kata-clh-snp`, `kata-clh-td
 | API | GET `/api/confidential/kata/status` |
 | Example | `examples/confidential-kata-clh-snp.yaml` |
 | Manifests | `deploy/confidential/kata-clh/runtime-classes.yaml` |
+| Cluster install (Helm) | `./scripts/install-confidential-fabric.sh` (CoCo + SPIRE; shipped in customer bundles) |
+| Zyvor RuntimeClasses | `charts/zyvor-confidential-kata/` |
 
 ### Phase 8 — Sovereign cloud (Aether)
 
@@ -160,6 +162,17 @@ Cilium auto-policy + PacketWolf hints for confidential workloads.
 | SPIFFE binding | `spiffe://ragnarok.zyvor.dev/workload/{name}/digest/{digest}` |
 | API | GET `/api/confidential/network/:workload` |
 | Trust score | Uses real policy count (NetworkPolicy + Cilium + confidential) |
+
+### Phase 11 — Trust-aware placement & GitOps compliance (Aether)
+
+| Feature | Detail |
+|---------|--------|
+| Placement advice | `aether --spec workload.yaml confidential placement` |
+| API | GET `/api/confidential/placement/:workload` |
+| Scheduler | `RequireHardwareLabel(sev-snp\|tdx)` + trust bonus in `src/scheduler.rs` |
+| Multi-cluster | `GlobalPlacementEngine` adds TEE score bonus when host matches spec |
+| GitOps | `gitops::confidential_policy_issues(spec)` — isolation, sovereign, digest catalog |
+| hyper2kvm | `hyper2kvm_available()` probes `HYPER2KVM_BIN` or PATH |
 
 ### Phase 10 — AI confidential intelligence (Aether)
 
@@ -205,7 +218,7 @@ confidential:
     debugAllowed: false
 ```
 
-See `examples/confidential-snp.yaml`.
+See `examples/confidential-snp.yaml` and `examples/confidential-migrate-kubevirt.yaml` (full migrate walkthrough).
 
 ---
 
@@ -232,6 +245,8 @@ See `examples/confidential-snp.yaml`.
 | `VAULT_SECRET_PATH` | Both | Vault path prefix (default `aether/{secret}` or `ragnarok/{secret}`) |
 | `KBS_URL` | Both | CoCo Key Broker Service base URL |
 | `AETHER_TEE_SNP` | Aether host | Advertise SEV-SNP capability when `/dev/sev` absent in dev |
+| `AETHER_MIGRATION_TARGET_SNP` | Aether | Treat migration target as SEV-SNP-capable in plan (dev/lab) |
+| `AETHER_CONFIDENTIAL_MIGRATION_ATTEST_TIMEOUT` | Aether | Seconds to poll for re-attestation before cutover (default: fail fast) |
 
 ---
 
