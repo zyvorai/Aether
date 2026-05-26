@@ -125,7 +125,7 @@ fn build_datavolume_json(namespace: &str, image: &Image, spec: &Workload) -> ser
         "spec": {
             "source": {
                 "registry": {
-                    "url": format!("docker://{}", image.full_name())
+                    "url": format!("docker://{}", spec.container_image_ref())
                 }
             },
             "storage": {
