@@ -1,6 +1,6 @@
 # Confidential workload prepared for encrypted migration (Phase 6)
 # Plan: aether --spec examples/confidential-migrate-kubevirt.yaml confidential migration plan
-# Migrate: aether migrate confidential-app --target kubevirt --strategy confidential-blue-green
+# Migrate: aether migrate confidential-migrate-demo --target kubevirt --strategy confidential-blue-green
 apiVersion: aether/v1
 kind: Workload
 

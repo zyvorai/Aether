@@ -4282,6 +4282,45 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
                 output::info(h);
             }
         }
+        ConfidentialAction::Placement => {
+            use aether::ragnarok::scheduling;
+            let workload = Workload::from_file(spec_path)?;
+            let advice = scheduling::placement_advice(&workload);
+            println!(
+                "{}  runtime={}  tee={}  host_tee_ready={}",
+                advice.workload,
+                advice.recommended_runtime,
+                advice.tee.as_deref().unwrap_or("—"),
+                advice.host_tee_ready
+            );
+            if let Some(ref rc) = advice.kata_runtime_class {
+                println!("  kata_runtime_class={rc}");
+            }
+            if !advice.schedule_constraints.is_empty() {
+                output::info("Schedule constraints:");
+                for c in &advice.schedule_constraints {
+                    println!("  - {c}");
+                }
+            }
+            if !advice.gitops_issues.is_empty() {
+                output::info("GitOps / policy issues:");
+                for issue in &advice.gitops_issues {
+                    output::error(issue);
+                }
+                anyhow::bail!("confidential placement blocked by policy");
+            }
+            if advice.blockers.is_empty() {
+                output::success(&format!(
+                    "Placement ready (score bonus {:.0}%)",
+                    advice.placement_score_bonus * 100.0
+                ));
+            } else {
+                for b in &advice.blockers {
+                    output::error(b);
+                }
+                anyhow::bail!("confidential placement blocked");
+            }
+        }
         ConfidentialAction::Migration { action } => {
             use aether::ragnarok::migration::{
                 plan_confidential_migration_tee, ConfidentialMigrationStore,

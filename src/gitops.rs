@@ -401,6 +401,11 @@ fn parse_diff_output(output: &str, commit: &str) -> Vec<GitOpsChange> {
         .collect()
 }
 
+/// Confidential policy issues for a workload spec (GitOps pre-apply audit).
+pub fn confidential_policy_issues(spec: &crate::spec::Workload) -> Vec<String> {
+    crate::ragnarok::scheduling::gitops_policy_issues(spec)
+}
+
 /// Format a `GitOpsStatus` for CLI display.
 pub fn format_status(status: &GitOpsStatus) -> String {
     let mut out = String::new();

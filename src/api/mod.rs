@@ -613,6 +613,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             get(api_confidential_isolation),
         )
         .route(
+            "/api/confidential/placement/:workload",
+            get(api_confidential_placement),
+        )
+        .route(
             "/api/confidential/images/verify",
             post(api_confidential_image_verify),
         )

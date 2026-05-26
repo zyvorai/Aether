@@ -12,6 +12,7 @@ import type {
   ConfidentialNetworkStatus,
   GuestKitResult,
   IsolationVerdict,
+  ConfidentialPlacementAdvice,
   NetworkTrustScore,
 } from '../types/api';
 
@@ -65,6 +66,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
   const [explain, setExplain] = useState<AttestationExplain | null>(null);
   const [secretStatus, setSecretStatus] = useState<AttestGatedSecretStatus[]>([]);
   const [isolation, setIsolation] = useState<IsolationVerdict | null>(null);
+  const [placement, setPlacement] = useState<ConfidentialPlacementAdvice | null>(null);
   const [showExplain, setShowExplain] = useState(false);
   const [notConfidential, setNotConfidential] = useState(false);
   const [guestkitHistory, setGuestkitHistory] = useState<GuestKitResult[]>([]);
@@ -80,12 +82,13 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
     async function load() {
       setLoading(true);
       setNotConfidential(false);
-      const [metaData, trustData, statusData, secretsData, isolationData, gkHistory, netData, intelData, migPlan, migStatus] = await Promise.all([
+      const [metaData, trustData, statusData, secretsData, isolationData, placementData, gkHistory, netData, intelData, migPlan, migStatus] = await Promise.all([
         apiFetch<ConfidentialFleetRow>(`/confidential/workload/${encodeURIComponent(workloadName)}`),
         apiFetch<NetworkTrustScore>(`/confidential/trust-score/${encodeURIComponent(workloadName)}`),
         apiFetch<AttestationStatus>(`/confidential/attestation/${encodeURIComponent(workloadName)}/status`),
         apiFetch<AttestGatedSecretStatus[]>(`/confidential/secrets/${encodeURIComponent(workloadName)}/status`),
         apiFetch<IsolationVerdict>(`/confidential/isolation/${encodeURIComponent(workloadName)}`),
+        apiFetch<ConfidentialPlacementAdvice>(`/confidential/placement/${encodeURIComponent(workloadName)}`),
         apiFetch<GuestKitResult[]>(`/confidential/guestkit/${encodeURIComponent(workloadName)}/history`),
         apiFetch<ConfidentialNetworkStatus>(`/confidential/network/${encodeURIComponent(workloadName)}`),
         apiFetch<ConfidentialAnalysis>(`/confidential/intelligence/${encodeURIComponent(workloadName)}`),
@@ -101,6 +104,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       setStatus(statusData);
       setSecretStatus(secretsData ?? []);
       setIsolation(isolationData);
+      setPlacement(placementData);
       setGuestkitHistory(gkHistory ?? []);
       setNetwork(netData);
       setAnalysis(intelData);
@@ -198,6 +202,34 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
                 <li key={r}>{r}</li>
               ))}
             </ul>
+          )}
+        </div>
+      )}
+
+      {placement && placement.confidential_enabled && (
+        <div className="border-b border-zinc-800 pb-4">
+          <h4 className="text-sm font-medium text-zinc-300 mb-2">Trust-aware placement</h4>
+          <div className="flex flex-wrap gap-2 mb-2">
+            <Badge text={`runtime: ${placement.recommended_runtime}`} variant="muted" />
+            <Badge
+              text={placement.host_tee_ready ? 'host TEE ready' : 'host TEE missing'}
+              variant={placement.host_tee_ready ? 'green' : 'red'}
+            />
+            {placement.kata_runtime_class && (
+              <Badge text={placement.kata_runtime_class} variant="muted" />
+            )}
+          </div>
+          {placement.blockers.length > 0 && (
+            <ul className="text-xs text-red-300/90 space-y-1 mb-2">
+              {placement.blockers.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+            </ul>
+          )}
+          {placement.schedule_constraints.length > 0 && (
+            <p className="text-xs text-zinc-500 font-mono">
+              {placement.schedule_constraints.join(' · ')}
+            </p>
           )}
         </div>
       )}

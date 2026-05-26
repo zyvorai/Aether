@@ -45,6 +45,8 @@ pub enum ScheduleConstraint {
     RequireNvme,
     /// Require trusted (TPM/attested) node
     RequireTrusted,
+    /// Require a hardware capability label on the runtime (e.g. `sev-snp`, `tdx`)
+    RequireHardwareLabel(String),
     /// Require minimum network bandwidth
     RequireNetworkBandwidth(String),
 }
@@ -62,6 +64,7 @@ impl std::fmt::Display for ScheduleConstraint {
             ScheduleConstraint::Zone(zone) => write!(f, "zone:{}", zone),
             ScheduleConstraint::RequireNvme => write!(f, "require:nvme"),
             ScheduleConstraint::RequireTrusted => write!(f, "require:trusted"),
+            ScheduleConstraint::RequireHardwareLabel(label) => write!(f, "require:{}", label),
             ScheduleConstraint::RequireNetworkBandwidth(bw) => write!(f, "require:bandwidth:{}", bw),
         }
     }
@@ -688,6 +691,18 @@ impl Scheduler {
                         self.capacities.get(c).is_some_and(|cap| cap.trusted)
                     });
                 }
+                ScheduleConstraint::RequireHardwareLabel(label) => {
+                    let needle = label.to_lowercase();
+                    candidates.retain(|c| {
+                        self.capacities.get(c).is_some_and(|cap| {
+                            cap.trusted
+                                || cap
+                                    .hardware_labels
+                                    .iter()
+                                    .any(|l| l.to_lowercase().contains(&needle))
+                        })
+                    });
+                }
                 ScheduleConstraint::RequireNetworkBandwidth(bw) => {
                     candidates.retain(|c| {
                         self.capacities
@@ -770,6 +785,24 @@ impl Scheduler {
         if cap.trusted && request.constraints.iter().any(|c| matches!(c, ScheduleConstraint::RequireTrusted)) {
             score += 0.15;
             reasons.push("Trusted runtime (TPM/attested) — matches requirement".to_string());
+        }
+
+        // TEE / hardware label bonus
+        for label in request
+            .constraints
+            .iter()
+            .filter_map(|c| match c {
+                ScheduleConstraint::RequireHardwareLabel(l) => Some(l.as_str()),
+                _ => None,
+            })
+        {
+            let needle = label.to_lowercase();
+            if cap.hardware_labels.iter().any(|l| l.to_lowercase().contains(&needle))
+                || (cap.trusted && (needle.contains("sev") || needle.contains("tdx")))
+            {
+                score += 0.12;
+                reasons.push(format!("Hardware label match: {label}"));
+            }
         }
 
         // Hardware label match bonus — NVMe, high-bandwidth NIC, etc.
