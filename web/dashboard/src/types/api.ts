@@ -896,3 +896,18 @@ export interface IsolationVerdict {
   node_taints: string[];
   scheduler_hints: Record<string, string>;
 }
+
+export interface ConfidentialPlacementAdvice {
+  workload: string;
+  confidential_enabled: boolean;
+  tee?: string | null;
+  recommended_runtime: string;
+  kata_runtime_class?: string | null;
+  schedule_constraints: string[];
+  scheduler_hints: Record<string, string>;
+  host_tee_ready: boolean;
+  placement_score_bonus: number;
+  blockers: string[];
+  gitops_issues: string[];
+  isolation_compliant: boolean;
+}
