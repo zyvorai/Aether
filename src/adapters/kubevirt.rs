@@ -247,7 +247,7 @@ impl Runtime for KubeVirtRuntime {
         crate::ragnarok::image::deploy_image_gate(
             spec,
             &crate::ragnarok::image::ImageCatalog::load(
-                &dirs::home_dir().unwrap_or_default().join(".aether"),
+                &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
             ),
         )?;
         crate::ragnarok::sovereign::enforce_region_lock(

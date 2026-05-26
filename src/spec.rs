@@ -478,6 +478,13 @@ impl Workload {
                     );
                 }
             }
+            if conf.enabled && conf.attestation.policy == crate::spec::AttestationPolicy::Strict {
+                if conf.image_digest.is_none() {
+                    anyhow::bail!(
+                        "strict confidential policy requires confidential.imageDigest (signed launch digest)"
+                    );
+                }
+            }
         }
 
         // Validate schedule spec
