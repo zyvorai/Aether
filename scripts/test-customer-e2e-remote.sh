@@ -84,6 +84,6 @@ fi
 
 echo ""
 echo "==> Running remote install/uninstall tests (install-everything when bundled)..."
-ssh "${SSH_OPTS[@]}" "${REMOTE}" 'chmod +x ~/test-packages-remote-only.sh && bash ~/test-packages-remote-only.sh'
+ssh "${SSH_OPTS[@]}" "${REMOTE}" "export ZYVOR_E2E_SKIP='${ZYVOR_E2E_SKIP:-}'; chmod +x ~/test-packages-remote-only.sh && bash ~/test-packages-remote-only.sh"
 echo ""
 echo "Done. Fetch log: scp ${REMOTE}:~/package-tests/results-*.log ."

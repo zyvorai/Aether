@@ -1,14 +1,45 @@
-# 📑 Aether -- Complete Documentation Index
+# Aether -- Complete Documentation Index
 
-> **Universal Runtime Control Plane** -- One spec, four runtimes, one tool.
+> **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, KubeVirt, and Metal3 without rewriting infrastructure.
 >
-> Version **0.3.0** | License: Proprietary HyperSDK
+> Version **0.3.0** | License: Proprietary HyperSDK | **[Product overview](PRODUCT.md)**
 
 [![License](https://img.shields.io/badge/license-Proprietary-red)](../LICENSE)
 
 ---
 
-## 📖 Table of Contents
+## Why Aether
+
+| Theme | Document |
+|-------|----------|
+| Product narrative | [Product overview](PRODUCT.md) |
+| Migration credibility | [Migration Internals](guides/migration/MIGRATION-INTERNALS.md), [Stateful portability](guides/migration/STATEFUL-PORTABILITY.md) |
+| Runtime decisions | [Scoring engine](guides/decision-engine/SCORING.md), `aether decide --explain` |
+| Enterprise trust | [Deployment topologies](architecture/DEPLOYMENT-TOPOLOGIES.md), [Production reference](deployment/PRODUCTION-REFERENCE.md) |
+| Ecosystem | [Zyvor platform map](ECOSYSTEM.md) |
+
+---
+
+## Trust and proof
+
+| Document | Description |
+|----------|-------------|
+| [Migration Internals](guides/migration/MIGRATION-INTERNALS.md) | State machine, rollback, limits matrix |
+| [Stateful Portability](guides/migration/STATEFUL-PORTABILITY.md) | Volumes, databases, honest boundaries |
+| [Scoring / Decision Engine](guides/decision-engine/SCORING.md) | Weights, intent, explain output |
+| [Deployment Topologies](architecture/DEPLOYMENT-TOPOLOGIES.md) | Single-node, HA, hybrid, edge |
+| [Fleet Architecture](architecture/FLEET-ARCHITECTURE.md) | Multi-cluster now vs roadmap |
+| [Networking](architecture/NETWORKING.md) | Runtime translation, DNS, ingress |
+| [Production Reference](deployment/PRODUCTION-REFERENCE.md) | Scale, recovery, upgrades |
+| [Benchmarks](../benchmarks/RESULTS.md) | Deploy/migrate/API baselines |
+| [Cloud Matrix](integrations/CLOUD-MATRIX.md) | Vendor support levels |
+| [Ecosystem](ECOSYSTEM.md) | Aether + HyperSDK suite |
+| [Product Tiers](PRODUCT-TIERS.md) | Editions and support |
+| [Roadmap](ROADMAP.md) | Ship vs planned |
+
+---
+
+## Table of Contents
 
 1. [Getting Started](#-getting-started)
 2. [Tutorials](#-tutorials)

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { apiFetch, primeServerSafety, type ServerSafety } from '../utils/api';
-import type { PlatformInfo, SystemReadyStatus } from '../types/api';
+import type { PlatformInfo, SystemReadyStatus, CiliumStatusResponse } from '../types/api';
 
 export interface ServerCapabilities {
   version: string;
@@ -46,6 +46,7 @@ function parsePlatformPayload(data: Record<string, unknown>): PlatformInfo | nul
   const opaRaw = (data.opa ?? {}) as Record<string, unknown>;
 
   const integrationsRaw = (data.integrations ?? {}) as Record<string, unknown>;
+  const kubernetesRaw = (data.kubernetes ?? {}) as Record<string, unknown>;
 
   return {
     version,
@@ -57,6 +58,12 @@ function parsePlatformPayload(data: Record<string, unknown>): PlatformInfo | nul
       audit_webhook_configured: Boolean(integrationsRaw.audit_webhook_configured),
       grafana_url: typeof integrationsRaw.grafana_url === 'string' ? integrationsRaw.grafana_url : null,
       prometheus_url: typeof integrationsRaw.prometheus_url === 'string' ? integrationsRaw.prometheus_url : null,
+      hubble_ui_url: typeof integrationsRaw.hubble_ui_url === 'string' ? integrationsRaw.hubble_ui_url : null,
+      grafana_dashboard_uid: typeof integrationsRaw.grafana_dashboard_uid === 'string' ? integrationsRaw.grafana_dashboard_uid : null,
+      packetwolf_url: typeof integrationsRaw.packetwolf_url === 'string' ? integrationsRaw.packetwolf_url : null,
+    },
+    kubernetes: {
+      cilium: (kubernetesRaw.cilium as CiliumStatusResponse | null | undefined) ?? null,
     },
     haSharedCache: Boolean(data.ha_shared_cache),
     tls: Boolean(data.tls),

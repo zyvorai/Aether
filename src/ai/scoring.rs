@@ -627,6 +627,11 @@ impl ScoringEngine {
 
 /// Display a scoring result as a formatted report
 pub fn format_scoring_report(result: &ScoringResult) -> String {
+    format_scoring_report_with_options(result, false)
+}
+
+/// Display a scoring result; when `explain` is true, print +/- for every runtime.
+pub fn format_scoring_report_with_options(result: &ScoringResult, explain: bool) -> String {
     let mut output = String::new();
 
     output.push_str(&output::property_section(&[
@@ -662,8 +667,32 @@ pub fn format_scoring_report(result: &ScoringResult) -> String {
 
     output.push('\n');
 
-    // Show reasons for recommended
-    if let Some(top) = result.scores.first() {
+    if explain {
+        output.push_str("Per-Runtime Analysis:\n");
+        for score in &result.scores {
+            let marker = if score.runtime == result.recommended {
+                " (recommended)"
+            } else {
+                ""
+            };
+            output.push_str(&format!(
+                "\n{}{} — {:.0}% total\n",
+                score.runtime,
+                marker,
+                score.total_score * 100.0
+            ));
+            for reason in &score.reasons {
+                output.push_str(&output::tree_bullet("+", reason));
+            }
+            for warning in &score.warnings {
+                output.push_str(&output::tree_bullet("-", warning));
+            }
+            if score.reasons.is_empty() && score.warnings.is_empty() {
+                output.push_str(&output::tree_bullet("·", "No specific factors recorded"));
+            }
+        }
+    } else if let Some(top) = result.scores.first() {
+        // Show reasons for recommended
         output.push_str("Decision Factors:\n");
         for reason in &top.reasons {
             output.push_str(&output::tree_bullet("✓", reason));
@@ -768,6 +797,20 @@ mod tests {
             assert!(result.scores[i - 1].total_score >= result.scores[i].total_score);
         }
         assert_eq!(result.recommended, result.scores[0].runtime);
+    }
+
+    #[test]
+    fn test_format_scoring_report_explain_includes_all_runtimes() {
+        let engine = ScoringEngine::with_defaults();
+        let spec = create_test_workload(vec![
+            RuntimeType::Container,
+            RuntimeType::Kube,
+            RuntimeType::Kubevirt,
+        ]);
+        let result = engine.score(&spec);
+        let report = format_scoring_report_with_options(&result, true);
+        assert!(report.contains("Per-Runtime Analysis"));
+        assert!(report.contains("podman") || report.contains("Podman") || report.contains("kubernetes"));
     }
 
     #[test]

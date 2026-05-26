@@ -25,4 +25,24 @@ test.describe('Cluster API (no live cluster required)', () => {
     const body = await res.json();
     expect(body.data?.allowed).toBe(true);
   });
+
+  test('observability summary returns structured payload', async ({ request }) => {
+    const res = await request.get('/api/observability/summary');
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    const data = body.data ?? body;
+    expect(typeof data.api_http_requests_total).toBe('number');
+    expect(typeof data.prometheus_configured).toBe('boolean');
+  });
+
+  test('cilium status returns expected shape or cluster error', async ({ request }) => {
+    const res = await request.get('/api/cluster/cilium/status');
+    expect([200, 500]).toContain(res.status());
+    if (res.ok()) {
+      const body = await res.json();
+      const data = body.data ?? body;
+      expect(data).toHaveProperty('cni');
+      expect(data).toHaveProperty('connectivity_check');
+    }
+  });
 });

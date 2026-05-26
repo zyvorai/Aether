@@ -359,6 +359,11 @@ source "${REMOTE_DIR}/scripts/lib-deploy-cluster.sh"
 source "${REMOTE_DIR}/scripts/lib-deploy-manifest.sh"
 aether_apply_rbac "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
 aether_apply_cilium_bootstrap "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
+_DISTRO=k8s
+if ${K} get nodes -o jsonpath='{.items[0].status.nodeInfo.kubeletVersion}' 2>/dev/null | grep -qi k3s; then _DISTRO=k3s; fi
+aether_install_metrics_server "${K}" "\${_DISTRO}"
+aether_probe_cilium_connectivity "${AETHER_NS}" "${K}" || true
+aether_apply_cilium_connectivity_cronjob "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
 printf '%s' "${AETHER_MANIFEST_SECRETS_YAML}"
 cat <<YAML | ${K} apply -f -
 ---

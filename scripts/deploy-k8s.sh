@@ -19,6 +19,8 @@
 #   AETHER_SKIP_CILIUM_EGRESS_BOOTSTRAP=1 — legacy alias for the above
 #   AETHER_CILIUM_EGRESS_STRICT=1 — Cilium: kube-apiserver + DNS only (see deploy/k8s/bootstrap/)
 #   AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1 — with strict, also allow in-cluster pod/service traffic
+#   AETHER_INSTALL_METRICS_SERVER=auto|1|0 — install metrics-server when missing (auto on k3s/kind)
+#   AETHER_SKIP_CILIUM_CONNECTIVITY=1 — skip Cilium agent probe and CronJob
 # ============================================================================
 
 set -euo pipefail
@@ -80,6 +82,8 @@ apply_manifests() {
   deploy_stamp="$(date +%s)-${RANDOM}"
   local pull_policy
   pull_policy="$(aether_deploy_image_pull_policy "${IMAGE_LATEST}")"
+  detect_k8s_distro
+  aether_install_metrics_server "${KUBECTL}" "${DISTRO}"
   aether_deploy_build_secret_env_blocks "${NAMESPACE}"
   local svc_ingress
   svc_ingress="$(aether_deploy_service_ingress_yaml "${NAMESPACE}" "${AETHER_EXPOSE:-nodeport}" "${NODE_PORT}")"
@@ -87,6 +91,8 @@ apply_manifests() {
   ${KUBECTL} create namespace "${NAMESPACE}" --dry-run=client -o yaml | ${KUBECTL} apply -f -
   aether_apply_rbac "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
   aether_apply_cilium_bootstrap "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
+  aether_probe_cilium_connectivity "${NAMESPACE}" "${KUBECTL}" || true
+  aether_apply_cilium_connectivity_cronjob "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
   {
     printf '%s' "${AETHER_MANIFEST_SECRETS_YAML}"
     cat <<EOF

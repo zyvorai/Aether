@@ -54,10 +54,14 @@ if ! $SKIP_DEPS; then
     ssh "${REMOTE}" bash -s <<REMOTE_DEPS
 set -euo pipefail
 SUDO=""; [ "\$(id -u)" -ne 0 ] && SUDO=sudo
-if command -v dnf &>/dev/null; then \$SUDO dnf install -y gcc git openssl-devel pkg-config nodejs npm 2>&1 | tail -6; fi
 if ! command -v cargo &>/dev/null; then curl -fsSL https://sh.rustup.rs | sh -s -- -y; fi
 source "\$HOME/.cargo/env"
-cargo --version && npm --version
+if command -v node &>/dev/null && node --version >/dev/null 2>&1; then
+  echo "nodejs already installed: \$(node --version)"
+else
+  if command -v dnf &>/dev/null; then \$SUDO dnf install -y gcc git openssl-devel pkg-config nodejs npm --allowerasing 2>&1 | tail -6; fi
+fi
+cargo --version && (node --version || true)
 REMOTE_DEPS
 fi
 
@@ -71,6 +75,7 @@ if $BUILD_NEEDED; then
 set -euo pipefail
 cd '${BUILD_DIR}'
 source "\$HOME/.cargo/env"
+export CARGO_BUILD_JOBS=1
 cd web/dashboard && (npm ci --prefer-offline 2>/dev/null || npm install) && npm run build
 cd '${BUILD_DIR}' && cargo build --release
 strip target/release/aether 2>/dev/null || true
