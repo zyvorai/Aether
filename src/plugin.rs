@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Plugin/extension system for custom runtimes
 //!
 //! Allows third-party runtimes to be registered and invoked via a JSON-RPC

@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Ragnarok confidential computing API handlers.
 
 use super::handlers::{err_bad_request, err_internal, err_not_found, ok_json};
@@ -138,6 +142,12 @@ pub(crate) async fn api_attestation_verify(
         }
         Err(e) => err_bad_request::<serde_json::Value>(e).into_response(),
     }
+}
+
+/// GET /api/confidential/security-profiles — local catalog or Ragnarok remote fetch.
+pub(crate) async fn api_confidential_security_profiles() -> impl IntoResponse {
+    let profiles = crate::ragnarok::security_profiles::list_profiles().await;
+    ok_json(serde_json::json!({ "profiles": profiles })).into_response()
 }
 
 pub(crate) async fn api_attestation_status(

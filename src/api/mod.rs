@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! REST API Server for Aether
 //!
 //! Provides HTTP endpoints for workload management.
@@ -536,6 +540,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/copilot/sessions/:id", get(api_copilot_session))
         .route("/api/copilot/confirm/:action_id", post(api_copilot_confirm))
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
+        .route(
+            "/api/confidential/security-profiles",
+            get(api_confidential_security_profiles),
+        )
         .route("/api/confidential/attestation/verify", post(api_attestation_verify))
         .route(
             "/api/confidential/attestation/:vm_id/status",

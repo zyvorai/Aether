@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Optional HTTP upload of backup files after creation (S3 presigned URL, MinIO, or custom receiver).
 //!
 //! - `AETHER_BACKUP_REMOTE_URL` — POST target (e.g. presigned S3 PUT or internal backup API)

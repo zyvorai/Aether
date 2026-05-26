@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState, useEffect, useRef } from 'react';
 import { Link2 } from 'lucide-react';
 import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
@@ -248,8 +252,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
         if (action === 'stop') await apiPost(`/workloads/${workload.name}/stop`);
         else if (action === 'start') await apiPost(`/workloads/${workload.name}/start`);
         else if (action === 'restart') {
-          await apiPost(`/workloads/${workload.name}/stop`);
-          await apiPost(`/workloads/${workload.name}/start`);
+          await apiPost(`/workloads/${workload.name}/restart`);
         } else if (action === 'delete') {
           await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
           onClose();

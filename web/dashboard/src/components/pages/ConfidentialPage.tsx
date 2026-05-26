@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink, Lock, ShieldCheck, Terminal } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -20,6 +24,7 @@ import type {
   TeeCapabilities,
 } from '../../types/api';
 import { useAuth } from '../../contexts/AuthContext';
+import ConfidentialMigrationWizard from '../ConfidentialMigrationWizard';
 
 function TrustBar({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100);
@@ -50,12 +55,6 @@ const CLI_IMAGE_COMMANDS = [
   'aether confidential image sign my-vm ./disk.qcow2 --key cosign://aether',
   'aether confidential image verify my-vm ./disk.qcow2',
   'aether confidential image verify-digest <launch-digest>',
-];
-
-const CLI_MIGRATION_COMMANDS = [
-  'aether --spec workload.yaml confidential migration plan --target kubevirt',
-  'aether migrate my-vm --target kubevirt --strategy confidential-blue-green',
-  'aether confidential migration status --name my-vm',
 ];
 
 export default function ConfidentialPage() {
@@ -349,19 +348,11 @@ export default function ConfidentialPage() {
           <Terminal className="w-5 h-5" />
           Encrypted migration (Phase 6)
         </h2>
-        <p className="text-sm text-zinc-500 mb-3">
-          Use <code className="text-zinc-400">confidential-blue-green</code> strategy from Workloads → Migrate, or plan first:
+        <p className="text-sm text-zinc-500 mb-4">
+          Plan and start confidential-blue-green migration from the dashboard. Example spec:{' '}
+          <code className="text-zinc-400">examples/confidential-migrate-kubevirt.yaml</code>
         </p>
-        <ul className="space-y-1 mb-3">
-          {CLI_MIGRATION_COMMANDS.map((cmd) => (
-            <li key={cmd}>
-              <code className="text-xs text-zinc-400 break-all">{cmd}</code>
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-zinc-600">
-          Example spec: <code className="text-zinc-400">examples/confidential-migrate-kubevirt.yaml</code>
-        </p>
+        <ConfidentialMigrationWizard workloads={filteredFleet} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">

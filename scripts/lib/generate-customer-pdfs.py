@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+# Proprietary software — see LICENSE in the repository root.
+# https://zyvor.dev · info@zyvor.dev
+
 """Branded customer documentation: premium PDFs + offline welcome page."""
 from __future__ import annotations
 

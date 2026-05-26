@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Pretty terminal output module - vision-optimized color scheme
 //!
 //! Matches HyperSDK's UX patterns: orange-themed colors, animated spinners,

@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 /** Build and parse aether/v1 workload YAML for deploy and validate modals. */
 
 export interface EditorWorkloadInput {
@@ -8,15 +12,22 @@ export interface EditorWorkloadInput {
   cpu: string;
   memory: string;
   intent: string;
+  env?: string;
   healthCheck: boolean;
   owner?: string;
   project?: string;
   confidentialEnabled?: boolean;
   confidentialTee?: 'sev-snp' | 'tdx';
   /** Tenant-facing profile; when set, backend resolves kataRuntimeClass. */
-  confidentialSecurityProfile?: '' | 'sandbox' | 'standard-confidential' | 'sovereign-high';
+  confidentialSecurityProfile?: string;
   confidentialKataRuntime?: 'kata-clh-snp' | 'kata-clh-tdx' | 'kata-qemu-snp' | 'kata-qemu-tdx';
   attestationRequired?: boolean;
+  attestationPolicy?: 'strict' | 'standard';
+  confidentialRegionLock?: string;
+  confidentialSecretNames?: string;
+  confidentialVtpm?: boolean;
+  confidentialEncryptedState?: boolean;
+  confidentialDebugAllowed?: boolean;
   imageDigest?: string;
 }
 
@@ -128,6 +139,33 @@ function parseImageRef(image: string): { registry: string; tag: string; repo: st
   return { registry: parts.slice(0, -1).join('/'), tag, repo };
 }
 
+function parseEnvLines(envText: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of envText.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    out[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim();
+  }
+  return out;
+}
+
+function appendEnvConfig(lines: string[], envText: string | undefined, mapName: string) {
+  const envMap = parseEnvLines(envText ?? '');
+  if (Object.keys(envMap).length === 0) return;
+  lines.push('config:');
+  lines.push('  configMaps:');
+  lines.push(`    - name: ${mapName}`);
+  lines.push('      data:');
+  for (const [key, value] of Object.entries(envMap)) {
+    lines.push(`        ${key}: ${value}`);
+  }
+  lines.push('  envFrom:');
+  lines.push('    - sourceType: ConfigMap');
+  lines.push(`      name: ${mapName}`);
+}
+
 function buildConfidentialYamlLines(
   input: EditorWorkloadInput,
   preferred: string,
@@ -135,21 +173,38 @@ function buildConfidentialYamlLines(
 ): string[] {
   if (!input.confidentialEnabled) return [];
   const tee = input.confidentialTee ?? 'sev-snp';
+  const policy = input.attestationPolicy ?? 'strict';
+  const vtpm = input.confidentialVtpm !== false;
+  const encryptedState = input.confidentialEncryptedState !== false;
+  const debugAllowed = input.confidentialDebugAllowed === true;
   const lines = [
     'confidential:',
     '  enabled: true',
     `  tee: ${tee}`,
     '  attestation:',
     `    required: ${input.attestationRequired !== false}`,
-    '    policy: strict',
+    `    policy: ${policy}`,
     '  isolation:',
-    '    vtpm: true',
-    '    encryptedState: true',
-    '    debugAllowed: false',
+    `    vtpm: ${vtpm}`,
+    `    encryptedState: ${encryptedState}`,
+    `    debugAllowed: ${debugAllowed}`,
     '  secrets:',
     '    releasePolicy: attest-gated',
     '    provider: vault',
   ];
+  const secretNames = (input.confidentialSecretNames ?? '')
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (secretNames.length > 0) {
+    lines.push('    names:');
+    for (const name of secretNames) {
+      lines.push(`      - ${name}`);
+    }
+  }
+  if (input.confidentialRegionLock?.trim()) {
+    lines.push(`  regionLock: ${input.confidentialRegionLock.trim()}`);
+  }
   if (input.imageDigest?.trim()) {
     lines.push(`  imageDigest: ${input.imageDigest.trim()}`);
   }
@@ -253,6 +308,8 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
   }
 
   appendConfidentialBlock(lines, input, preferred, kataPath);
+
+  appendEnvConfig(lines, input.env, `${metadataName}-env`);
 
   if (input.healthCheck) {
     lines.push(

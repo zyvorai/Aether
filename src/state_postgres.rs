@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! PostgreSQL backing store for API workload state (`StateStore`).
 //!
 //! Set `AETHER_STATE_DATABASE_URL` (libpq-style URI, e.g. `postgres://user:pass@host:5432/db`) when

@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import type { AppView } from '../types/api';
 
 export type NavGroup = 'primary' | 'intelligence' | 'operations' | 'resources';
@@ -20,9 +24,11 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'cost', path: '/cost', label: 'Cost Estimation', breadcrumb: 'Cost Estimation', subtitle: 'Resource cost projections across runtimes', group: 'intelligence' },
   { view: 'affinity', path: '/affinity', label: 'Runtime Affinity', breadcrumb: 'Runtime Affinity', subtitle: 'Workload class affinity and runtime fit', group: 'intelligence' },
   { view: 'drift', path: '/drift', label: 'Drift Detection', breadcrumb: 'Drift Detection', subtitle: 'Configuration drift & desired-state reconciliation', group: 'intelligence' },
+  { view: 'intelligence', path: '/intelligence', label: 'Intelligence Layer', breadcrumb: 'Intelligence Layer', subtitle: 'Failure predictions, threats, cost optimization, and global placement', group: 'intelligence', paletteLabel: 'Intelligence' },
   { view: 'policy', path: '/policy', label: 'Policy Check', breadcrumb: 'Policy Check', subtitle: 'Validate workloads against policy rules', group: 'intelligence' },
   { view: 'confidential', path: '/confidential', label: 'Confidential Computing', breadcrumb: 'Confidential Computing', subtitle: 'TEE capabilities, attestation trust scores, and Ragnarok integration', group: 'intelligence', paletteLabel: 'Confidential' },
   { view: 'clusters', path: '/clusters', label: 'Cluster Browser', breadcrumb: 'Cluster Browser', subtitle: 'Browse and manage Kubernetes resources', group: 'operations' },
+  { view: 'fleet', path: '/fleet', label: 'Fleet Overview', breadcrumb: 'Fleet Overview', subtitle: 'Multi-cluster inventory, Hubble, and PacketWolf links', group: 'operations', paletteLabel: 'Fleet' },
   { view: 'compose', path: '/compose', label: 'Compose Import', breadcrumb: 'Compose Import', subtitle: 'Import Docker Compose into Aether workloads', group: 'operations' },
   { view: 'editor', path: '/editor', label: 'Visual Editor', breadcrumb: 'Visual Editor', subtitle: 'Form-based workload designer (no YAML required)', group: 'operations' },
   { view: 'scheduler', path: '/scheduler', label: 'Scheduler', breadcrumb: 'Scheduler', subtitle: 'Scheduling recommendations and placement', group: 'operations' },

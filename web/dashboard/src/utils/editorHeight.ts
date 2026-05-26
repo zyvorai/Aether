@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 /** Pixel height for YAML editor from line count; capped unless expanded. */
 export function yamlEditorHeightPx(lineCount: number, expanded: boolean): number {
   const LINE_PX = 24;
