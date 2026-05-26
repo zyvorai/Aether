@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/api';
 import Badge from './Badge';
-import type { AttestationExplain, AttestationStatus, AttestGatedSecretStatus, NetworkTrustScore } from '../types/api';
+import type {
+  AttestationExplain,
+  AttestationStatus,
+  AttestGatedSecretStatus,
+  IsolationVerdict,
+  NetworkTrustScore,
+} from '../types/api';
 
 function TrustBar({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100);
@@ -44,6 +50,7 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
   const [status, setStatus] = useState<AttestationStatus | null>(null);
   const [explain, setExplain] = useState<AttestationExplain | null>(null);
   const [secretStatus, setSecretStatus] = useState<AttestGatedSecretStatus[]>([]);
+  const [isolation, setIsolation] = useState<IsolationVerdict | null>(null);
   const [showExplain, setShowExplain] = useState(false);
   const [notConfidential, setNotConfidential] = useState(false);
 
@@ -52,10 +59,11 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
     async function load() {
       setLoading(true);
       setNotConfidential(false);
-      const [trustData, statusData, secretsData] = await Promise.all([
+      const [trustData, statusData, secretsData, isolationData] = await Promise.all([
         apiFetch<NetworkTrustScore>(`/confidential/trust-score/${encodeURIComponent(workloadName)}`),
         apiFetch<AttestationStatus>(`/confidential/attestation/${encodeURIComponent(workloadName)}/status`),
         apiFetch<AttestGatedSecretStatus[]>(`/confidential/secrets/${encodeURIComponent(workloadName)}/status`),
+        apiFetch<IsolationVerdict>(`/confidential/isolation/${encodeURIComponent(workloadName)}`),
       ]);
       if (cancelled) return;
       if (!trustData) {
@@ -64,6 +72,7 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
       setTrust(trustData);
       setStatus(statusData);
       setSecretStatus(secretsData ?? []);
+      setIsolation(isolationData);
       setExplain(null);
       setShowExplain(false);
       setLoading(false);
@@ -176,6 +185,25 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
           No attestation record yet. Submit a guest report via Ragnarok or POST{' '}
           <code className="text-zinc-400">/api/confidential/attestation/verify</code>.
         </p>
+      )}
+
+      {isolation && (
+        <div className="border-t border-zinc-700 pt-4">
+          <h4 className="text-sm font-medium text-zinc-300 mb-3">Tenant isolation</h4>
+          <Badge text={isolation.compliant ? 'compliant' : 'violations'} variant={isolation.compliant ? 'green' : 'red'} />
+          {isolation.violations.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs text-red-300/90">
+              {isolation.violations.map((v) => (
+                <li key={v}>{v}</li>
+              ))}
+            </ul>
+          )}
+          {Object.keys(isolation.scheduler_hints).length > 0 && (
+            <p className="mt-2 text-xs text-zinc-500 font-mono">
+              {Object.entries(isolation.scheduler_hints).map(([k, v]) => `${k}=${v}`).join(', ')}
+            </p>
+          )}
+        </div>
       )}
 
       {secretStatus.length > 0 && (

@@ -97,6 +97,18 @@ Both binaries use the same **`confidential:`** block in Aether workload YAML (`s
 | List catalog | `aether confidential image list` or GET `/api/confidential/images` |
 | Deploy gate | Strict confidential specs require `imageDigest` present in catalog |
 
+### Phase 4 — tenant isolation (Aether)
+
+Fleet policy via `RAGNAROK_ISOLATION_POLICY` JSON (defaults: vTPM, encrypted PVC, NUMA exclusivity, anti-coresharing).
+
+| Check | Command / API |
+|-------|----------------|
+| Evaluate spec | `aether --spec workload.yaml confidential isolation check` |
+| Per-workload | GET `/api/confidential/isolation/:workload` |
+| Encrypted disk class | `RAGNAROK_ENCRYPTED_STORAGE_CLASS` env → DataVolume annotation |
+
+KubeVirt manifests receive pod anti-affinity, scheduler hints, and encrypted-PVC annotations automatically when `confidential.enabled`.
+
 Example:
 
 ```yaml

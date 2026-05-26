@@ -4119,9 +4119,10 @@ pub(crate) async fn helm_export_command(
     Ok(())
 }
 
-pub(crate) async fn confidential_command(action: ConfidentialAction) -> Result<()> {
+pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: &PathBuf) -> Result<()> {
     use aether::ragnarok::client::RagnarokClient;
     use aether::ragnarok::image::ImageCatalog;
+    use aether::ragnarok::isolation::{self, IsolationPolicy};
 
     match action {
         ConfidentialAction::Image { action } => {
@@ -4165,6 +4166,25 @@ pub(crate) async fn confidential_command(action: ConfidentialAction) -> Result<(
                     } else {
                         anyhow::bail!("Digest '{digest}' not in verified catalog");
                     }
+                }
+            }
+        }
+        ConfidentialAction::IsolationCheck => {
+            let workload = Workload::from_file(spec_path)?;
+            let policy = IsolationPolicy::from_env();
+            let verdict = isolation::evaluate(&workload, &policy);
+            if verdict.compliant {
+                output::success("Isolation policy: compliant");
+            } else {
+                for v in &verdict.violations {
+                    output::error(v);
+                }
+                anyhow::bail!("isolation policy violated");
+            }
+            if !verdict.scheduler_hints.is_empty() {
+                output::info("Scheduler hints:");
+                for (k, v) in &verdict.scheduler_hints {
+                    println!("  {k}={v}");
                 }
             }
         }

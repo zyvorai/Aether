@@ -250,7 +250,7 @@ async fn main() -> Result<()> {
             commands::helm_export_command(&cli.spec, &output_dir, chart_version.as_deref()).await
         }
         Commands::Confidential { action } => {
-            commands::confidential_command(action).await
+            commands::confidential_command(action, &cli.spec).await
         }
     };
 

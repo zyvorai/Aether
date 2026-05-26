@@ -11,6 +11,7 @@ use crate::ragnarok::{
     sovereign::SovereignConfig,
     tee::{probe_host_tee, TeeCapabilities},
     trust::fleet_trust_scores,
+    isolation::{self, IsolationPolicy, IsolationVerdict},
 };
 use crate::spec::Workload;
 use axum::{
@@ -394,6 +395,18 @@ pub(crate) async fn api_confidential_image_verify(
         .into_response();
     }
     err_bad_request::<serde_json::Value>("provide path or digest").into_response()
+}
+
+pub(crate) async fn api_confidential_isolation(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let Some(spec) = try_workload_spec(&app_state, &workload).await else {
+        return err_not_found::<IsolationVerdict>(format!("workload {workload} not found"))
+            .into_response();
+    };
+    let policy = IsolationPolicy::from_env();
+    ok_json(isolation::evaluate(&spec, &policy)).into_response()
 }
 
 /// Record attestation failure event for audit consumers.
