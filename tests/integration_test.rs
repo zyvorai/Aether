@@ -1803,3 +1803,56 @@ intent:
     // Isolation required → KubeVirt (it's in the allow list)
     assert_eq!(runtime, RuntimeKind::KubeVirt);
 }
+
+#[test]
+fn test_confidential_migration_plan_encrypted_channel() {
+    let temp_dir = TempDir::new().unwrap();
+    let spec_content = r#"
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: mig-test
+  owner: t
+  project: t
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+requirements:
+  cpu: "2"
+  memory: 4Gi
+  storage: 10Gi
+runtime:
+  preferred: kubevirt
+  allow:
+    - kubevirt
+confidential:
+  enabled: true
+  tee: sev-snp
+  attestation:
+    required: true
+    policy: standard
+  isolation:
+    vtpm: true
+    encryptedState: true
+    debugAllowed: false
+  secrets:
+    releasePolicy: attest-gated
+    provider: vault
+"#;
+    let spec_path = temp_dir.path().join("mig.yaml");
+    fs::write(&spec_path, spec_content).unwrap();
+    let workload = Workload::from_file(&spec_path).unwrap();
+
+    let plan = aether::ragnarok::migration::plan_confidential_migration_tee(
+        &workload, true, true, false, false,
+    );
+    assert!(plan.encrypted_channel_required);
+    assert!(plan.encrypted_migration_uri.starts_with("tls+sev://"));
+    assert_eq!(
+        plan.recommended_strategy,
+        aether::migration::MigrationStrategy::ConfidentialBlueGreen
+    );
+    assert!(plan.ready_for_cutover);
+    aether::ragnarok::migration::pre_migrate_gate(&workload, &plan).unwrap();
+}
