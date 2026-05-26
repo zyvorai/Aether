@@ -41,9 +41,20 @@ pub(crate) async fn api_confidential_capabilities(
     AxumState(_app_state): AxumState<AppState>,
 ) -> impl IntoResponse {
     let host = probe_host_tee();
+    let integration = match std::env::var("RAGNAROK_URL") {
+        Ok(url) if !url.trim().is_empty() => crate::ragnarok::tee::RagnarokIntegration {
+            mode: "composite".into(),
+            remote_url: Some(url.trim().to_string()),
+        },
+        _ => crate::ragnarok::tee::RagnarokIntegration {
+            mode: "embedded".into(),
+            remote_url: None,
+        },
+    };
     let caps = TeeCapabilities {
         host,
         clusters: vec![],
+        integration,
     };
     ok_json(caps)
 }

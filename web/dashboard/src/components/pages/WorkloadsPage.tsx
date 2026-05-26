@@ -196,7 +196,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     if (!workloadParam || workloads.length === 0) return;
     const match = workloads.find((w) => w.name === workloadParam);
     if (!match) return;
-    const tab = (['overview', 'logs', 'manifest', 'drift', 'scoring', 'events'] as const).includes(
+    const tab = (['overview', 'logs', 'manifest', 'drift', 'scoring', 'events', 'trust'] as const).includes(
       tabParam as DetailTab,
     )
       ? (tabParam as DetailTab)

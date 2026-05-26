@@ -20,6 +20,9 @@ interface EditorForm {
   intent: string;
   env: string;
   healthCheck: boolean;
+  confidentialEnabled: boolean;
+  confidentialTee: 'sev-snp' | 'tdx';
+  attestationRequired: boolean;
 }
 
 const defaultForm: EditorForm = {
@@ -32,6 +35,9 @@ const defaultForm: EditorForm = {
   intent: 'balanced',
   env: 'ENV=production\nLOG_LEVEL=info',
   healthCheck: true,
+  confidentialEnabled: false,
+  confidentialTee: 'sev-snp',
+  attestationRequired: true,
 };
 
 export default function EditorPage() {
@@ -185,6 +191,45 @@ export default function EditorPage() {
               />
             </div>
           </div>
+
+          {form.runtime === 'kubevirt' && (
+            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
+              <h3 className="text-sm font-medium text-purple-300">Confidential computing (Ragnarok)</h3>
+              <label className="flex items-center gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={form.confidentialEnabled}
+                  onChange={(e) => handleChange('confidentialEnabled', e.target.checked)}
+                  className="rounded border-slate-600"
+                />
+                Enable confidential VM (SEV-SNP / TDX)
+              </label>
+              {form.confidentialEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">TEE</label>
+                    <select
+                      value={form.confidentialTee}
+                      onChange={(e) => handleChange('confidentialTee', e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                    >
+                      <option value="sev-snp">AMD SEV-SNP</option>
+                      <option value="tdx">Intel TDX</option>
+                    </select>
+                  </div>
+                  <label className="flex items-end gap-2 text-sm text-slate-300 pb-2">
+                    <input
+                      type="checkbox"
+                      checked={form.attestationRequired}
+                      onChange={(e) => handleChange('attestationRequired', e.target.checked)}
+                      className="rounded border-slate-600"
+                    />
+                    Require attestation before deploy
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <h3 className="text-sm font-medium text-slate-400 mb-3">Resources</h3>

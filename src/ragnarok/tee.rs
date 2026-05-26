@@ -12,10 +12,21 @@ pub enum TeeKind {
     Tdx,
 }
 
+/// How Aether connects to Ragnarok confidential services.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RagnarokIntegration {
+    /// `embedded` — in-process `src/ragnarok/` inside `aether serve`.
+    /// `composite` — remote Ragnarok via `RAGNAROK_URL`.
+    pub mode: String,
+    pub remote_url: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TeeCapabilities {
     pub host: HostTeeStatus,
     pub clusters: Vec<ClusterTeeStatus>,
+    #[serde(default)]
+    pub integration: RagnarokIntegration,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

@@ -697,4 +697,75 @@ export type AppView =
   | 'audit'
   | 'metrics'
   | 'gitops'
-  | 'editor';
+  | 'editor'
+  | 'confidential';
+
+// ─── Confidential / Ragnarok ───────────────────────────────────────
+export type AttestationVerdict = 'pass' | 'fail' | 'pending';
+
+export interface RagnarokIntegration {
+  mode: 'embedded' | 'composite' | string;
+  remote_url?: string | null;
+}
+
+export interface HostTeeStatus {
+  sev_device: boolean;
+  sev_snp: boolean;
+  tdx: boolean;
+  dev_sev_path?: string | null;
+  notes: string[];
+}
+
+export interface TeeCapabilities {
+  host: HostTeeStatus;
+  clusters: Array<{
+    cluster: string;
+    nodes_with_snp: number;
+    nodes_with_tdx: number;
+    total_nodes: number;
+    labels: string[];
+  }>;
+  integration?: RagnarokIntegration;
+}
+
+export interface NetworkTrustScore {
+  workload: string;
+  attestation_score: number;
+  network_policy_score: number;
+  firmware_exposure_score: number;
+  composite: number;
+  spiffe_id?: string | null;
+}
+
+export interface AttestationStatus {
+  vm_id: string;
+  last_verdict: AttestationVerdict;
+  baseline_digest?: string | null;
+  drift: boolean;
+  updated_at: string;
+}
+
+export interface AttestationExplain {
+  vm_id: string;
+  verdict: AttestationVerdict;
+  summary: string;
+  failure_reasons: Array<{ code: string; message: string; severity: string }>;
+  measurement_diff: Record<string, { expected?: string | null; observed?: string | null; matched: boolean }>;
+}
+
+export interface SovereignConfig {
+  byok_signing_key?: string | null;
+  offline_attestation: boolean;
+  embedded_cert_bundle?: string | null;
+  region_lock?: string | null;
+}
+
+export interface MeasuredImageManifest {
+  name: string;
+  image_hash: string;
+  kernel_hash?: string | null;
+  initrd_hash?: string | null;
+  launch_digest?: string | null;
+  signing_key_id: string;
+  signed_at: string;
+}
