@@ -226,6 +226,13 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               ))}
             </ul>
           )}
+          {placement.gitops_issues.length > 0 && (
+            <ul className="text-xs text-amber-300/90 space-y-1 mb-2">
+              {placement.gitops_issues.map((issue) => (
+                <li key={issue}>GitOps: {issue}</li>
+              ))}
+            </ul>
+          )}
           {placement.schedule_constraints.length > 0 && (
             <p className="text-xs text-zinc-500 font-mono">
               {placement.schedule_constraints.join(' · ')}
