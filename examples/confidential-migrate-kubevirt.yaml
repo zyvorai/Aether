@@ -43,4 +43,5 @@ confidential:
     provider: vault
 
 intent:
+  goal: balanced
   trust: strict

@@ -7,8 +7,8 @@ Sample YAML specs for validation, demos, and feature walkthroughs.
 | File | Runtime | Use case |
 |------|---------|----------|
 | [confidential-snp.yaml](confidential-snp.yaml) | KubeVirt | SEV-SNP VM with strict attestation and measured image |
-| [confidential-kata-clh-snp.yaml](confidential-kata-clh-snp.yaml) | Kata (CoCo) | Confidential containers via `kata-clh-snp` runtime class |
-| [confidential-kata-clh-gpu-snp.yaml](confidential-kata-clh-gpu-snp.yaml) | Kata | GPU + SNP confidential container workload |
+| [confidential-kata-clh-snp.yaml](confidential-kata-clh-snp.yaml) | Kata (CoCo) | Reference **Pod** manifest for `kata-clh-snp` (apply with kubectl) |
+| [confidential-kata-clh-gpu-snp.yaml](confidential-kata-clh-gpu-snp.yaml) | Kata | Reference **Pod** for `kata-clh-gpu-snp` GPU confidential containers |
 | [confidential-migrate-kubevirt.yaml](confidential-migrate-kubevirt.yaml) | KubeVirt | Encrypted live migration plan + `confidential-blue-green` migrate |
 
 Quick start:

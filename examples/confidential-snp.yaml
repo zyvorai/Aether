@@ -30,7 +30,8 @@ confidential:
   # imageDigest: "<launch-digest-from-catalog>"  # required when attestation.policy is strict
   attestation:
     required: true
-    policy: strict
+    # Production: policy: strict + imageDigest from measured image catalog
+    policy: standard
   isolation:
     vtpm: true
     encryptedState: true
@@ -43,6 +44,7 @@ confidential:
       - api-key
 
 intent:
+  goal: balanced
   trust: strict
   compliance:
     isolationRequired: true
