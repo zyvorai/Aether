@@ -16,6 +16,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'overview', path: '/', label: 'Dashboard', breadcrumb: 'Dashboard', subtitle: 'Real-time view across all runtimes', group: 'primary' },
   { view: 'workloads', path: '/workloads', label: 'Workloads', breadcrumb: 'Workloads', subtitle: 'Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3', group: 'primary' },
   { view: 'ai', path: '/ai', label: 'AI Engine', breadcrumb: 'AI Engine', subtitle: 'Intent scoring, runtime recommendations & migration planning', group: 'intelligence' },
+  { view: 'copilot', path: '/copilot', label: 'Ops Copilot', breadcrumb: 'Ops Copilot', subtitle: 'Natural language operations — health, drift, cost, and cluster queries', group: 'intelligence', paletteLabel: 'Copilot' },
   { view: 'cost', path: '/cost', label: 'Cost Estimation', breadcrumb: 'Cost Estimation', subtitle: 'Resource cost projections across runtimes', group: 'intelligence' },
   { view: 'affinity', path: '/affinity', label: 'Runtime Affinity', breadcrumb: 'Runtime Affinity', subtitle: 'Workload class affinity and runtime fit', group: 'intelligence' },
   { view: 'drift', path: '/drift', label: 'Drift Detection', breadcrumb: 'Drift Detection', subtitle: 'Configuration drift & desired-state reconciliation', group: 'intelligence' },

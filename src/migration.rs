@@ -18,6 +18,8 @@ pub enum MigrationStrategy {
     Rolling,
     /// Canary deployment (gradual traffic shift with health-gated steps)
     Canary,
+    /// Confidential blue-green: deploy target, re-attest, then cutover
+    ConfidentialBlueGreen,
 }
 
 /// Configuration for canary deployment steps
@@ -40,6 +42,7 @@ impl std::fmt::Display for MigrationStrategy {
             MigrationStrategy::BlueGreen => write!(f, "blue-green"),
             MigrationStrategy::Rolling => write!(f, "rolling"),
             MigrationStrategy::Canary => write!(f, "canary"),
+            MigrationStrategy::ConfidentialBlueGreen => write!(f, "confidential-blue-green"),
         }
     }
 }
@@ -53,7 +56,13 @@ impl std::str::FromStr for MigrationStrategy {
             "blue-green" | "bluegreen" => Ok(MigrationStrategy::BlueGreen),
             "rolling" => Ok(MigrationStrategy::Rolling),
             "canary" => Ok(MigrationStrategy::Canary),
-            _ => Err(anyhow::anyhow!("Unknown migration strategy: '{}'. Valid: immediate, blue-green, rolling, canary", s)),
+            "confidential-blue-green" | "confidentialbluegreen" => {
+                Ok(MigrationStrategy::ConfidentialBlueGreen)
+            }
+            _ => Err(anyhow::anyhow!(
+                "Unknown migration strategy: '{}'. Valid: immediate, blue-green, rolling, canary, confidential-blue-green",
+                s
+            )),
         }
     }
 }
@@ -181,7 +190,82 @@ impl MigrationEngine {
             MigrationStrategy::BlueGreen => self.migrate_blue_green(plan).await,
             MigrationStrategy::Rolling => self.migrate_rolling(plan).await,
             MigrationStrategy::Canary => self.migrate_canary(plan).await,
+            MigrationStrategy::ConfidentialBlueGreen => {
+                self.migrate_confidential_blue_green(plan).await
+            }
         }
+    }
+
+    /// Confidential blue-green: target deploy + re-attestation gate before cutover.
+    async fn migrate_confidential_blue_green(&self, plan: MigrationPlan) -> Result<MigrationResult> {
+        tracing::info!("Using confidential blue-green migration strategy");
+        migration_trace(&plan, "strategy", "confidential-blue-green");
+
+        let attestation_dir = std::env::var("AETHER_STATE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                dirs::home_dir()
+                    .unwrap_or_else(|| PathBuf::from("."))
+                    .join(".aether")
+            });
+        let attestation = crate::ragnarok::AttestationService::new(attestation_dir);
+
+        let mut state = StateStore::load(&self.state_path)?;
+        let workload_state = state
+            .get(&plan.workload_name)
+            .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", plan.workload_name))?
+            .clone();
+        let workload = Workload::from_file(&workload_state.spec_path)?;
+
+        let source_runtime = self.get_runtime(&plan.source_runtime).await?;
+        let target_runtime = self.get_runtime(&plan.target_runtime).await?;
+
+        let image = target_runtime.build(&workload).await?;
+        let target_instance = target_runtime.run(&image, &workload).await?;
+
+        tokio::time::sleep(plan.validation_delay).await;
+
+        if workload
+            .confidential
+            .as_ref()
+            .is_some_and(|c| c.enabled && c.attestation.required)
+            && !attestation.passed(&plan.workload_name)
+        {
+            tracing::warn!(
+                "Confidential migration waiting for re-attestation on target for {}",
+                plan.workload_name
+            );
+            if plan.rollback_on_failure {
+                let _ = target_runtime.delete(&target_instance).await;
+                return Ok(MigrationResult {
+                    success: false,
+                    source_instance: Some(workload_state.instance.clone()),
+                    target_instance: None,
+                    error: Some(
+                        "Target re-attestation not passed — cutover blocked".into(),
+                    ),
+                    rollback_performed: true,
+                });
+            }
+        }
+
+        source_runtime.stop(&workload_state.instance).await?;
+        tokio::time::sleep(plan.shutdown_delay).await;
+        source_runtime.delete(&workload_state.instance).await?;
+
+        state.upsert(
+            plan.workload_name.clone(),
+            workload_state.migrated(plan.target_runtime, target_instance.clone()),
+        );
+        state.save(&self.state_path)?;
+
+        Ok(MigrationResult {
+            success: true,
+            source_instance: None,
+            target_instance: Some(target_instance),
+            error: None,
+            rollback_performed: false,
+        })
     }
 
     /// Immediate migration strategy

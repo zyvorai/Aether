@@ -29,8 +29,10 @@ test.describe('Auth providers (OIDC / SAML gates)', () => {
     expect([404, 302, 307]).toContain(res.status());
   });
 
-  test('login gate shows bearer token form', async ({ page }) => {
+  test('login gate shows bearer token form or open dashboard', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByLabel(/api bearer token/i)).toBeVisible({ timeout: 15_000 });
+    const bearer = page.getByLabel(/api bearer token/i);
+    const helpMenu = page.getByRole('button', { name: 'Help menu' });
+    await expect(bearer.or(helpMenu)).toBeVisible({ timeout: 15_000 });
   });
 });

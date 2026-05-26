@@ -3,7 +3,6 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { yaml } from '@codemirror/lang-yaml';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface YamlCodeEditorProps {
   value: string;
@@ -14,7 +13,7 @@ interface YamlCodeEditorProps {
   'aria-label'?: string;
 }
 
-function editorTheme(light: boolean) {
+function editorTheme() {
   return EditorView.theme(
     {
       '&': {
@@ -23,14 +22,14 @@ function editorTheme(light: boolean) {
       },
       '.cm-content': {
         padding: '16px 0',
-        caretColor: light ? '#d35400' : '#f97316',
+        caretColor: '#f97316',
       },
       '.cm-line': {
         padding: '0 16px',
         lineHeight: '24px',
       },
       '.cm-gutters': {
-        borderRight: light ? '1px solid #e2e8f0' : '1px solid #3f3f46',
+        borderRight: '1px solid #3f3f46',
         paddingRight: '4px',
       },
       '.cm-gutterElement': {
@@ -38,23 +37,23 @@ function editorTheme(light: boolean) {
         minWidth: '2.5rem',
       },
       '&.cm-focused .cm-cursor': {
-        borderLeftColor: light ? '#d35400' : '#f97316',
+        borderLeftColor: '#f97316',
       },
       '&.cm-focused .cm-selectionBackground, ::selection': {
-        backgroundColor: light ? '#fed7aa80' : '#ea580c40',
+        backgroundColor: '#ea580c40',
       },
     },
-    { dark: !light },
+    { dark: true },
   );
 }
 
-function surfaceTheme(light: boolean) {
+function surfaceTheme() {
   return EditorView.theme({
     '&': {
       height: '100%',
-      backgroundColor: light ? '#ffffff' : '#09090b',
-      color: light ? '#1e293b' : '#d4d4d8',
-      border: light ? '1px solid #cbd5e1' : '1px solid #3f3f46',
+      backgroundColor: '#09090b',
+      color: '#d4d4d8',
+      border: '1px solid #3f3f46',
       borderRadius: '12px',
       overflow: 'hidden',
     },
@@ -63,14 +62,14 @@ function surfaceTheme(light: boolean) {
       fontFamily: 'inherit',
     },
     '.cm-gutters': {
-      backgroundColor: light ? '#f8fafc' : '#18181b',
-      color: light ? '#94a3b8' : '#71717a',
+      backgroundColor: '#18181b',
+      color: '#71717a',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: light ? '#f1f5f9' : '#27272a',
+      backgroundColor: '#27272a',
     },
     '.cm-activeLine': {
-      backgroundColor: light ? '#fff7ed40' : '#ea580c12',
+      backgroundColor: '#ea580c12',
     },
   });
 }
@@ -83,8 +82,6 @@ export default function YamlCodeEditor({
   readOnly,
   'aria-label': ariaLabel,
 }: YamlCodeEditorProps) {
-  const { theme } = useTheme();
-  const light = theme === 'light';
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -108,8 +105,8 @@ export default function YamlCodeEditor({
         history(),
         yaml(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
-        editorTheme(light),
-        surfaceTheme(light),
+        editorTheme(),
+        surfaceTheme(),
         updateListener,
         EditorView.lineWrapping,
         EditorState.readOnly.of(!!readOnly),
@@ -124,7 +121,7 @@ export default function YamlCodeEditor({
       view.destroy();
       viewRef.current = null;
     };
-  }, [light, readOnly, ariaLabel]);
+  }, [readOnly, ariaLabel]);
 
   useEffect(() => {
     const view = viewRef.current;

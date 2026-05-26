@@ -92,8 +92,8 @@ test.describe('Dashboard UX polish', () => {
     await expect(page.getByRole('heading', { name: 'Workload policy check' })).toBeVisible();
   });
 
-  test('light theme deploy modal opens with readable dialog', async ({ page }) => {
-    await page.getByLabel('Theme').selectOption('light');
+  test('aurora theme deploy modal opens with readable dialog', async ({ page }) => {
+    await page.getByLabel('Theme').selectOption('aurora');
     await page.goto('/workloads?deploy=1');
     await expect(page.getByRole('heading', { name: 'Deploy New Workload' })).toBeVisible({
       timeout: 15_000,

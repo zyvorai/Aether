@@ -495,6 +495,11 @@ impl ScoringEngine {
             filtered.retain(|rt| matches!(rt, RuntimeKind::KubeVirt | RuntimeKind::Metal3));
         }
 
+        // Confidential + attestation required → KubeVirt only
+        if crate::ragnarok::trust::requires_attestation_for_strict_trust(spec) {
+            filtered.retain(|rt| *rt == RuntimeKind::KubeVirt);
+        }
+
         // Resilience: High → remove single-host runtimes (no HA)
         if let Some(crate::spec::ResilienceLevel::High) = intent.resilience {
             filtered.retain(|rt| !matches!(rt, RuntimeKind::Podman | RuntimeKind::Docker));
@@ -750,6 +755,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
         kubernetes: None,
         }

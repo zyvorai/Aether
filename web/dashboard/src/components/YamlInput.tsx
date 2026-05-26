@@ -9,7 +9,6 @@ import {
   Minimize2,
   ClipboardCheck,
 } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
 import { countYamlLines, yamlEditorHeightPx } from '../utils/editorHeight';
 import YamlCodeEditor from './YamlCodeEditor';
 
@@ -44,8 +43,6 @@ export default function YamlInput({
   showValidateButton,
   footer,
 }: YamlInputProps) {
-  const { theme } = useTheme();
-  const light = theme === 'light';
   const [value, setValue] = useState(initialValue ?? '');
   const [expanded, setExpanded] = useState(false);
   const [copyHint, setCopyHint] = useState<string | null>(null);
@@ -101,17 +98,11 @@ export default function YamlInput({
     e.target.value = '';
   }
 
-  const toolbarBtn = `inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 disabled:opacity-40 disabled:cursor-not-allowed ${
-    light
-      ? 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-      : 'border-zinc-700 bg-zinc-900/60 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-  }`;
+  const toolbarBtn =
+    'inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900/60 px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 disabled:cursor-not-allowed disabled:opacity-40';
 
-  const textareaClass = `w-full rounded-xl p-4 text-sm font-mono resize-y focus:outline-none focus:border-aether focus:ring-1 focus:ring-aether/30 transition-colors leading-relaxed ${
-    light
-      ? 'bg-white border border-slate-300 text-slate-800 placeholder-slate-400'
-      : 'bg-zinc-950 border border-zinc-700 text-zinc-300 placeholder-zinc-600'
-  }`;
+  const textareaClass =
+    'w-full rounded-xl border border-zinc-700 bg-zinc-950 p-4 text-sm font-mono leading-relaxed text-zinc-300 placeholder-zinc-600 resize-y transition-colors focus:border-aether focus:outline-none focus:ring-1 focus:ring-aether/30';
 
   return (
     <div className={isEditor ? 'flex min-h-0 flex-1 flex-col gap-3 overflow-hidden' : 'space-y-3'}>
@@ -127,7 +118,6 @@ export default function YamlInput({
             expanded={expanded}
             onToggleExpand={() => setExpanded((v) => !v)}
             lineCount={lineCount}
-            light={light}
             hasValue={!!value}
           />
           <input
@@ -140,15 +130,9 @@ export default function YamlInput({
 
           <div className="relative min-h-0 flex-1">
             {editorLoading ? (
-              <div
-                className={`absolute inset-0 z-10 flex items-center justify-center rounded-xl border ${
-                  light ? 'border-slate-200 bg-white/90' : 'border-zinc-700 bg-zinc-950/90'
-                }`}
-              >
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-950/90">
                 <Loader2 className="w-6 h-6 animate-spin text-aether" />
-                <span className={`ml-2 text-sm ${light ? 'text-slate-600' : 'text-zinc-400'}`}>
-                  Loading template…
-                </span>
+                <span className="ml-2 text-sm text-zinc-400">Loading template…</span>
               </div>
             ) : null}
             <YamlCodeEditor
@@ -181,11 +165,7 @@ export default function YamlInput({
             type="button"
             onClick={handleValidateClick}
             disabled={!value.trim() || validateLoading || editorLoading}
-            className={`flex items-center gap-2 px-4 py-2.5 border text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-aether/50 disabled:opacity-40 disabled:cursor-not-allowed ${
-              light
-                ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                : 'border-zinc-600 bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-            }`}
+            className="flex items-center gap-2 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-aether/50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {validateLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -219,7 +199,6 @@ function EditorToolbar({
   expanded,
   onToggleExpand,
   lineCount,
-  light,
   hasValue,
 }: {
   toolbarBtn: string;
@@ -231,7 +210,6 @@ function EditorToolbar({
   expanded: boolean;
   onToggleExpand: () => void;
   lineCount: number;
-  light: boolean;
   hasValue: boolean;
 }) {
   return (
@@ -258,7 +236,7 @@ function EditorToolbar({
         {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         {expanded ? 'Collapse' : 'Expand'}
       </button>
-      <span className={`ml-auto text-xs ${light ? 'text-slate-500' : 'text-zinc-500'}`}>
+      <span className="ml-auto text-xs text-zinc-500">
         {lineCount} lines
         {expanded ? ' · expanded' : ' · fit to content'}
       </span>

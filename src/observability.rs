@@ -69,6 +69,9 @@ fn gauge_values_by_label(text: &str, metric_name: &str, label: &str) -> HashMap<
 }
 
 pub fn query_allowed(promql: &str) -> bool {
+    if crate::intelligence::metrics::query_allowed_extended(promql) {
+        return true;
+    }
     let trimmed = promql.trim();
     if trimmed.is_empty() {
         return false;
@@ -116,7 +119,8 @@ mod tests {
     fn test_query_allowed() {
         assert!(query_allowed("aether_workload_running"));
         assert!(query_allowed("rate(aether_api_http_requests_total[5m])"));
+        assert!(query_allowed("node_cpu_seconds_total"));
+        assert!(query_allowed("container_memory_working_set_bytes"));
         assert!(!query_allowed("up"));
-        assert!(!query_allowed("node_cpu_seconds_total"));
     }
 }

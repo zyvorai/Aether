@@ -59,7 +59,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
-  const [sourceFilter, setSourceFilter] = useQueryParam('source', 'aether');
+  const [sourceFilter, setSourceFilter] = useQueryParam('source', 'all');
   const [kindFilter, setKindFilter] = useQueryParam('kind', 'all');
   const [clusterFilter, setClusterFilter] = useQueryParam('cluster', 'all');
   const [namespaceFilter, setNamespaceFilter] = useQueryParam('namespace', 'all');
@@ -108,6 +108,15 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   }
 
   useEffect(() => { load(); }, []);
+
+  // K8s-only clusters: avoid hiding discovered workloads when URL still has ?source=aether
+  useEffect(() => {
+    if (loading || loadFailed || workloads.length === 0) return;
+    const aether = countAetherManaged(workloads);
+    if (sourceFilter === 'aether' && aether === 0 && workloads.length > 0) {
+      setSourceFilter('all');
+    }
+  }, [loading, loadFailed, workloads, sourceFilter, setSourceFilter]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -465,6 +474,11 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   const aetherManagedCount = countAetherManaged(workloads);
   const clusterDiscoveredCount = workloads.length - aetherManagedCount;
+  const runningCount = workloads.filter((w) => {
+    const s = w.status.toLowerCase();
+    return s === 'running' || s.includes('deployed');
+  }).length;
+  const stoppedCount = workloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length;
 
   const filterSelectClass = 'rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100';
 
@@ -518,46 +532,40 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         }
       />
 
-      {sourceFilterVal === 'aether' && clusterDiscoveredCount > 0 ? (
+      {sourceFilterVal !== 'all' ? (
         <div className="mb-4 rounded-xl border border-slate-700/80 bg-slate-950/50 px-4 py-3 text-sm text-slate-400">
-          Showing <span className="text-slate-200">{aetherManagedCount}</span> Aether-managed workload
-          {aetherManagedCount === 1 ? '' : 's'}.
-          {' '}
-          <button type="button" onClick={() => setSourceFilter('all')} className="text-aether hover:underline">
-            {clusterDiscoveredCount} Kubernetes-discovered hidden
-          </button>
+          Showing <span className="text-slate-200">{filteredWorkloads.length}</span> of{' '}
+          <span className="text-slate-200">{workloads.length}</span> workloads
+          {sourceFilterVal === 'aether' ? ' (Aether managed only)' : ' (Kubernetes discovered only)'}.
+          {sourceFilterVal === 'aether' && clusterDiscoveredCount > 0 ? (
+            <>
+              {' '}
+              <button type="button" onClick={() => setSourceFilter('cluster')} className="text-aether hover:underline">
+                View {clusterDiscoveredCount} discovered
+              </button>
+            </>
+          ) : null}
+          {sourceFilterVal === 'cluster' && aetherManagedCount > 0 ? (
+            <>
+              {' '}
+              <button type="button" onClick={() => setSourceFilter('aether')} className="text-aether hover:underline">
+                View {aetherManagedCount} Aether-managed
+              </button>
+            </>
+          ) : null}
           {' · '}
-          <button type="button" onClick={() => setSourceFilter('cluster')} className="text-aether hover:underline">
-            show discovered
+          <button type="button" onClick={() => setSourceFilter('all')} className="text-aether hover:underline">
+            show all
           </button>
         </div>
       ) : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <StatCard title="Total" value={filteredWorkloads.length} color="orange" />
-        <StatCard
-          title="Running"
-          value={filteredWorkloads.filter((w) => {
-            const s = w.status.toLowerCase();
-            return s === 'running' || s.includes('deployed');
-          }).length}
-          color="green"
-        />
-        <StatCard
-          title="Stopped"
-          value={filteredWorkloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length}
-          color="red"
-        />
-        <StatCard
-          title="Aether"
-          value={filteredWorkloads.filter((w) => (w.source ?? 'aether') === 'aether').length}
-          color="purple"
-        />
-        <StatCard
-          title="Discovered"
-          value={filteredWorkloads.filter((w) => (w.source ?? 'aether') === 'cluster').length}
-          color="blue"
-        />
+        <StatCard title="Total" value={workloads.length} color="orange" />
+        <StatCard title="Running" value={runningCount} color="green" />
+        <StatCard title="Stopped" value={stoppedCount} color="red" />
+        <StatCard title="Aether" value={aetherManagedCount} color="purple" />
+        <StatCard title="Discovered" value={clusterDiscoveredCount} color="blue" />
         <StatCard
           title="Namespaces"
           value={namespaces.filter((namespace) => namespace !== 'all').length}
