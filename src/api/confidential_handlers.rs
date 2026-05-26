@@ -37,6 +37,19 @@ fn attestation_service(app_state: &AppState) -> AttestationService {
     AttestationService::new(state_dir(app_state))
 }
 
+fn secret_broker(app_state: &AppState) -> SecretBroker {
+    SecretBroker::new(
+        Arc::new(attestation_service(app_state)),
+        &state_dir(app_state),
+    )
+}
+
+async fn try_workload_spec(app_state: &AppState, name: &str) -> Option<Workload> {
+    let store = app_state.state.read().await;
+    let ws = store.get(name)?;
+    Workload::from_file(&ws.spec_path).ok()
+}
+
 pub(crate) async fn api_confidential_capabilities(
     AxumState(_app_state): AxumState<AppState>,
 ) -> impl IntoResponse {
@@ -65,7 +78,47 @@ pub(crate) async fn api_attestation_verify(
 ) -> impl IntoResponse {
     let svc = attestation_service(&app_state);
     match svc.verify(&report) {
-        Ok(resp) => ok_json(resp).into_response(),
+        Ok(resp) => {
+            let broker = secret_broker(&app_state);
+            match resp.verdict {
+                AttestationVerdict::Pass => {
+                    if let Some(spec) = try_workload_spec(&app_state, &report.vm_id).await {
+                        let provider = spec
+                            .confidential
+                            .as_ref()
+                            .map(|c| SecretBrokerProvider::from(c.secrets.provider.clone()))
+                            .unwrap_or(SecretBrokerProvider::Vault);
+                        match broker.release_all_pending(&report.vm_id, provider).await {
+                            Ok(tokens) if !tokens.is_empty() => {
+                                tracing::info!(
+                                    vm_id = %report.vm_id,
+                                    count = tokens.len(),
+                                    "attestation-gated secrets released"
+                                );
+                                let payload = serde_json::json!({
+                                    "type": "secrets.released",
+                                    "vm_id": report.vm_id,
+                                    "count": tokens.len(),
+                                });
+                                let _ = app_state.event_tx.send(payload.to_string());
+                            }
+                            Ok(_) => {}
+                            Err(e) => tracing::warn!(
+                                vm_id = %report.vm_id,
+                                error = %e,
+                                "secret release after attestation failed"
+                            ),
+                        }
+                    }
+                }
+                AttestationVerdict::Fail => {
+                    broker.on_attestation_failure(&report.vm_id, AttestationVerdict::Fail);
+                    emit_attestation_event(&app_state, &report.vm_id, AttestationVerdict::Fail);
+                }
+                AttestationVerdict::Pending => {}
+            }
+            ok_json(resp).into_response()
+        }
         Err(e) => err_bad_request::<serde_json::Value>(e).into_response(),
     }
 }
@@ -166,22 +219,32 @@ pub(crate) async fn api_confidential_secret_release(
     AxumState(app_state): AxumState<AppState>,
     Json(req): Json<SecretReleaseRequest>,
 ) -> impl IntoResponse {
-    let att = Arc::new(attestation_service(&app_state));
-    let broker = SecretBroker::new(att);
+    let broker = secret_broker(&app_state);
     let provider = match req.provider.as_str() {
         "kbs" => SecretBrokerProvider::Kbs,
         "aws-kms" => SecretBrokerProvider::AwsKms,
         "azure-kv" => SecretBrokerProvider::AzureKv,
         _ => SecretBrokerProvider::Vault,
     };
-    match broker.request_release(&BrokerRequest {
-        vm_id: req.vm_id,
-        secret_name: req.secret_name,
-        provider,
-    }) {
+    match broker
+        .request_release(&BrokerRequest {
+            vm_id: req.vm_id,
+            secret_name: req.secret_name,
+            provider,
+        })
+        .await
+    {
         Ok(token) => ok_json(token).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(e).into_response(),
     }
+}
+
+pub(crate) async fn api_confidential_secret_status(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let broker = secret_broker(&app_state);
+    ok_json(broker.status_for_vm(&workload)).into_response()
 }
 
 pub(crate) async fn api_confidential_migration_plan(

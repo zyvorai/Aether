@@ -1,6 +1,7 @@
 //! KubeVirt confidential VM manifest extensions.
 
 use crate::spec::{ConfidentialSpec, Workload};
+use crate::ragnarok::inject::{annotate_vm_for_attest_secrets, attest_gated_secret_names};
 use serde_json::{json, Value};
 
 /// Apply launchSecurity, firmware, TPM, and node selectors for confidential VMs.
@@ -56,6 +57,11 @@ pub fn apply_confidential_to_vm(vm_spec: &mut Value, spec: &Workload) {
             json!(digest),
         );
         vm_spec["metadata"]["annotations"] = json!(ann);
+    }
+
+    if conf.secrets.release_policy == crate::spec::SecretReleasePolicy::AttestGated {
+        let names = attest_gated_secret_names(spec);
+        annotate_vm_for_attest_secrets(vm_spec, &names);
     }
 }
 
@@ -143,6 +149,7 @@ mod tests {
             secrets: ConfidentialSecretsSpec {
                 release_policy: SecretReleasePolicy::AttestGated,
                 provider: SecretProvider::Vault,
+                names: vec!["db-password".into()],
             },
             image_digest: None,
             region_lock: None,

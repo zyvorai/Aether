@@ -1610,6 +1610,9 @@ pub struct ConfidentialSecretsSpec {
     pub release_policy: SecretReleasePolicy,
     #[serde(default = "default_secret_provider")]
     pub provider: SecretProvider,
+    /// Secret names to release after attestation (defaults to config.secrets names).
+    #[serde(default)]
+    pub names: Vec<String>,
 }
 
 impl Default for ConfidentialSecretsSpec {
@@ -1617,6 +1620,7 @@ impl Default for ConfidentialSecretsSpec {
         Self {
             release_policy: default_secret_release_policy(),
             provider: default_secret_provider(),
+            names: vec![],
         }
     }
 }

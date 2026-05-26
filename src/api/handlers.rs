@@ -898,6 +898,15 @@ async fn deploy_workload_spec(
         {
             return Err(err_bad_request(e));
         }
+        let broker = crate::ragnarok::secrets::SecretBroker::new(
+            std::sync::Arc::new(crate::ragnarok::attestation::AttestationService::new(
+                crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
+            )),
+            &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
+        );
+        if let Err(e) = broker.register_workload(&request.spec) {
+            tracing::warn!(workload = %name, error = %e, "failed to register attest-gated secrets");
+        }
         tracing::info!(
             workload = %name,
             "Confidential workload deployed; attestation gate evaluated"
