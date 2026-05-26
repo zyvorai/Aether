@@ -4,7 +4,11 @@ import { Save, FileText, Eye, CheckCircle } from 'lucide-react';
 import { apiPost } from '../../utils/api';
 import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
-import { buildEditorWorkloadYaml } from '../../utils/workloadYaml';
+import { buildEditorWorkloadYaml, mergeConfidentialIntoYaml } from '../../utils/workloadYaml';
+import ConfidentialFormFields, {
+  defaultConfidentialFormState,
+  type ConfidentialFormState,
+} from '../ConfidentialFormFields';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import ValidateResultPanel from '../ValidateResultPanel';
@@ -62,6 +66,13 @@ export default function EditorPage() {
 
   const handleChange = (field: keyof EditorForm, value: string | number | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleConfidentialChange = <K extends keyof ConfidentialFormState>(
+    field: K,
+    value: ConfidentialFormState[K],
+  ) => {
+    handleChange(field as keyof EditorForm, value as EditorForm[keyof EditorForm]);
   };
 
   const generateYaml = (): string => buildEditorWorkloadYaml(form);
@@ -198,102 +209,14 @@ export default function EditorPage() {
             </div>
           </div>
 
-          {(form.runtime === 'kubevirt' || form.runtime === 'kata' || form.runtime === 'kubernetes') && (
-            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
-              <h3 className="text-sm font-medium text-purple-300">Confidential computing (Ragnarok / Aether)</h3>
-              <label className="flex items-center gap-2 text-sm text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={form.confidentialEnabled}
-                  onChange={(e) => handleChange('confidentialEnabled', e.target.checked)}
-                  className="rounded border-slate-600"
-                />
-                Enable confidential workload (SEV-SNP / TDX)
-              </label>
-              {form.confidentialEnabled && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">TEE</label>
-                    <select
-                      value={form.confidentialTee}
-                      onChange={(e) => {
-                        const tee = e.target.value as EditorForm['confidentialTee'];
-                        handleChange('confidentialTee', tee);
-                        handleChange(
-                          'confidentialKataRuntime',
-                          tee === 'tdx' ? 'kata-clh-tdx' : 'kata-clh-snp',
-                        );
-                      }}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
-                    >
-                      <option value="sev-snp">AMD SEV-SNP</option>
-                      <option value="tdx">Intel TDX</option>
-                    </select>
-                  </div>
-                  {(form.runtime === 'kata' || form.runtime === 'kubernetes') && (
-                    <div>
-                      <label className="block text-xs text-slate-500 mb-1">Security profile</label>
-                      <select
-                        value={form.confidentialSecurityProfile}
-                        onChange={(e) =>
-                          handleChange(
-                            'confidentialSecurityProfile',
-                            e.target.value as EditorForm['confidentialSecurityProfile'],
-                          )
-                        }
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
-                      >
-                        <option value="">Custom (manual runtime class)</option>
-                        <option value="sandbox">sandbox — no Kata TEE pool</option>
-                        <option value="standard-confidential">standard-confidential</option>
-                        <option value="sovereign-high">sovereign-high</option>
-                      </select>
-                    </div>
-                  )}
-                  {(form.runtime === 'kata' || form.runtime === 'kubernetes') &&
-                    !form.confidentialSecurityProfile && (
-                    <div>
-                      <label className="block text-xs text-slate-500 mb-1">Kata runtime class</label>
-                      <select
-                        value={form.confidentialKataRuntime}
-                        onChange={(e) =>
-                          handleChange(
-                            'confidentialKataRuntime',
-                            e.target.value as EditorForm['confidentialKataRuntime'],
-                          )
-                        }
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
-                      >
-                        <option value="kata-clh-snp">kata-clh-snp (Cloud Hypervisor)</option>
-                        <option value="kata-clh-tdx">kata-clh-tdx (Cloud Hypervisor)</option>
-                        <option value="kata-qemu-snp">kata-qemu-snp (legacy QEMU)</option>
-                        <option value="kata-qemu-tdx">kata-qemu-tdx (legacy QEMU)</option>
-                      </select>
-                    </div>
-                  )}
-                  <label className="flex items-end gap-2 text-sm text-slate-300 pb-2">
-                    <input
-                      type="checkbox"
-                      checked={form.attestationRequired}
-                      onChange={(e) => handleChange('attestationRequired', e.target.checked)}
-                      className="rounded border-slate-600"
-                    />
-                    Require attestation before deploy
-                  </label>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs text-slate-500 mb-1">Launch digest (from signed catalog)</label>
-                    <input
-                      type="text"
-                      value={form.imageDigest}
-                      onChange={(e) => handleChange('imageDigest', e.target.value)}
-                      placeholder="sha256 launch digest — aether confidential image verify-digest"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono text-slate-100"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
+            <h3 className="text-sm font-medium text-purple-300">Confidential computing (Ragnarok / Aether)</h3>
+            <ConfidentialFormFields
+              runtime={form.runtime}
+              state={form}
+              onChange={handleConfidentialChange}
+            />
+          </div>
 
           <div>
             <h3 className="text-sm font-medium text-slate-400 mb-3">Resources</h3>

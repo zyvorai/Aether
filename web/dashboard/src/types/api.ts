@@ -880,6 +880,14 @@ export interface AttestGatedSecretStatus {
   k8s_secret_name?: string | null;
 }
 
+export interface SecretReleaseToken {
+  vm_id: string;
+  secret_name: string;
+  token: string;
+  expires_at: string;
+  provider: string;
+}
+
 export interface MeasuredImageManifest {
   name: string;
   image_hash: string;
@@ -888,6 +896,15 @@ export interface MeasuredImageManifest {
   launch_digest?: string | null;
   signing_key_id: string;
   signed_at: string;
+}
+
+export interface GitOpsConfidentialAudit {
+  file_path: string;
+  workload?: string | null;
+  confidential_enabled: boolean;
+  gitops_issues: string[];
+  sovereign_compliant?: boolean | null;
+  sovereign_violations: string[];
 }
 
 export interface IsolationVerdict {
