@@ -555,6 +555,8 @@ pub(crate) enum ConfidentialAction {
         #[command(subcommand)]
         action: ConfidentialImageAction,
     },
+    /// Tenant isolation policy check for workload spec (--spec)
+    IsolationCheck,
 }
 
 #[derive(Subcommand)]
