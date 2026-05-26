@@ -158,63 +158,95 @@ function Dropdown({
   theme: AppTheme;
 }) {
   const [open, setOpen] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleEnter = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setOpen(true), 150);
+  const clearHoverTimer = useCallback(() => {
+    if (hoverRef.current) {
+      clearTimeout(hoverRef.current);
+      hoverRef.current = null;
+    }
   }, []);
 
-  const handleLeave = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setOpen(false), 100);
-  }, []);
+  const scheduleClose = useCallback(() => {
+    clearHoverTimer();
+    hoverRef.current = setTimeout(() => setOpen(false), 120);
+  }, [clearHoverTimer]);
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
-  }, []);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => () => clearHoverTimer(), [clearHoverTimer]);
 
   return (
     <div
       ref={containerRef}
       className="relative shrink-0"
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
+      onMouseEnter={() => {
+        clearHoverTimer();
+        hoverRef.current = setTimeout(() => setOpen(true), 80);
+      }}
+      onMouseLeave={scheduleClose}
     >
       <button
         type="button"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => {
+          clearHoverTimer();
+          setOpen((v) => !v);
+        }}
         className={`flex shrink-0 items-center gap-1 rounded-xl border px-2.5 py-1.5 text-sm font-medium transition-colors lg:px-3 lg:py-2 ${
-          isActive
-            ? 'nav-pill-active'
-            : 'nav-pill'
+          isActive || open ? 'nav-pill-active' : 'nav-pill'
         }`}
       >
         {group.label}
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <div
-          className={`absolute top-full left-0 z-50 mt-1 w-56 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
+          className="absolute left-0 top-full z-[60] pt-1"
+          onMouseEnter={clearHoverTimer}
+          onMouseLeave={scheduleClose}
         >
-          {group.items.map((item) => (
-            <button
-              key={item.view}
-              onClick={() => {
-                onNavigate(item.view);
-                setOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${dropdownItemClass(currentView === item.view, theme)}`}
-            >
-              <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
-                {item.icon}
-              </span>
-              {item.label}
-            </button>
-          ))}
+          <div
+            role="menu"
+            className={`w-56 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
+          >
+            {group.items.map((item) => (
+              <button
+                key={item.view}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onNavigate(item.view);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${dropdownItemClass(currentView === item.view, theme)}`}
+              >
+                <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -466,7 +498,7 @@ export default function Navbar({
   );
 
   return (
-    <nav className={`sticky top-0 z-40 border-b ${navbarShellClass(theme)}`}>
+    <nav className={`sticky top-0 z-40 overflow-visible border-b ${navbarShellClass(theme)}`}>
       <div className="dash-content min-w-0">
         {/* Row 1: brand + utilities (always fits viewport) */}
         <div className="flex min-w-0 items-center justify-between gap-2 py-2 sm:py-2.5">
@@ -633,8 +665,8 @@ export default function Navbar({
         </div>
 
         {/* Row 2: primary nav (wide screens only, scrolls horizontally if needed) */}
-        <div className="hidden min-w-0 pb-2 lg:block">
-          <div className="flex min-w-0 items-center gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="hidden min-w-0 overflow-visible pb-2 lg:block">
+          <div className="relative flex min-w-0 flex-wrap items-center gap-1">
             {desktopNav}
           </div>
         </div>
