@@ -32,6 +32,7 @@ import {
   Server,
   Command,
   LogOut,
+  UserCircle,
   CircleHelp,
   Keyboard,
   Info,
@@ -179,12 +180,13 @@ function Dropdown({
   return (
     <div
       ref={containerRef}
-      className="relative"
+      className="relative shrink-0"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
       <button
-        className={`flex items-center gap-1 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
+        type="button"
+        className={`flex shrink-0 items-center gap-1 rounded-xl border px-2.5 py-1.5 text-sm font-medium transition-colors lg:px-3 lg:py-2 ${
           isActive
             ? 'nav-pill-active'
             : 'nav-pill'
@@ -216,6 +218,122 @@ function Dropdown({
         </div>
       )}
     </div>
+  );
+}
+
+function AccountMenu({
+  theme,
+  username,
+  role,
+  authModeLabel,
+  bearerPreview,
+  clusterCtx,
+  onLogout,
+}: {
+  theme: AppTheme;
+  username: string;
+  role: string;
+  authModeLabel: string;
+  bearerPreview: string;
+  clusterCtx: string | null;
+  onLogout: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={`flex items-center gap-1.5 rounded-xl border px-2 py-1.5 text-sm transition-colors sm:px-2.5 ${
+          open ? 'nav-pill-active' : 'nav-pill'
+        }`}
+        title="Session and account"
+      >
+        <UserCircle className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="hidden sm:inline max-w-[5rem] truncate text-xs font-medium">{username}</span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div
+          className={`absolute right-0 top-full z-50 mt-1.5 w-64 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
+          role="menu"
+        >
+          <div className="px-3 py-2 border-b border-slate-700/50">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{authModeLabel}</div>
+            <div className="mt-0.5 truncate font-mono text-sm text-slate-200" title={bearerPreview}>
+              {bearerPreview}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-sm text-slate-300">{username}</span>
+              <span className="rounded-full border border-aether/30 bg-aether/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-aether">
+                {role}
+              </span>
+            </div>
+            {clusterCtx ? (
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
+                <Container className="h-3 w-3 shrink-0 text-aether/80" />
+                <span className="truncate" title={clusterCtx}>
+                  {clusterCtx}
+                </span>
+              </div>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+            className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NavPill({
+  active,
+  onClick,
+  icon,
+  label,
+  compact,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+  label: string;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      className={`flex shrink-0 items-center gap-1.5 rounded-xl border text-sm font-medium transition-colors ${
+        compact ? 'px-2 py-1.5' : 'px-3 py-2'
+      } ${active ? 'nav-pill-active' : 'nav-pill'}`}
+    >
+      <span className="shrink-0">{icon}</span>
+      <span className={compact ? 'hidden xl:inline' : 'whitespace-nowrap'}>{label}</span>
+    </button>
   );
 }
 
@@ -305,78 +423,82 @@ export default function Navbar({
     [onNavigate],
   );
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
+  const desktopNav = (
+    <>
+      <NavPill
+        active={currentView === 'overview'}
+        onClick={() => onNavigate('overview')}
+        icon={<LayoutDashboard className="w-4 h-4" />}
+        label="Dashboard"
+        compact
+      />
+      <NavPill
+        active={currentView === 'workloads'}
+        onClick={() => onNavigate('workloads')}
+        icon={<Container className="w-4 h-4" />}
+        label="Workloads"
+        compact
+      />
+      {filteredDropdownGroups.map((group) => {
+        if (group.items.length === 0) return null;
+        const isActive = group.items.some((item) => item.view === currentView);
+        return (
+          <Dropdown
+            key={group.label}
+            group={group}
+            isActive={isActive}
+            currentView={currentView}
+            onNavigate={onNavigate}
+            theme={theme}
+          />
+        );
+      })}
+    </>
+  );
+
   return (
     <nav className={`sticky top-0 z-40 border-b ${navbarShellClass(theme)}`}>
-      <div className="dash-content">
-        <div className="flex items-center justify-between h-[72px]">
-          {/* Left: Logo */}
-          <div className="flex items-center gap-2 shrink-0">
+      <div className="dash-content min-w-0">
+        {/* Row 1: brand + utilities (always fits viewport) */}
+        <div className="flex min-w-0 items-center justify-between gap-2 py-2 sm:py-2.5">
+          <div className="flex min-w-0 items-center gap-2">
             <button
+              type="button"
               onClick={() => onNavigate('overview')}
-              className="group flex items-center gap-2 transition-opacity hover:opacity-90"
+              className="group flex min-w-0 items-center gap-2 transition-opacity hover:opacity-90"
             >
-              <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-aether/25 bg-aether/10 shadow-[0_0_0_1px_rgba(99,164,255,0.08),0_0_30px_rgba(99,164,255,0.08)] transition group-hover:border-aether/40">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-aether/25 bg-aether/10 shadow-[0_0_0_1px_rgba(99,164,255,0.08)] transition group-hover:border-aether/40 sm:h-10 sm:w-10">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-aether/10" />
-                <Hexagon className="w-5 h-5 text-aether" />
+                <Hexagon className="h-5 w-5 text-aether" />
               </div>
-              <div className="flex flex-col items-start">
-                <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-lg font-semibold tracking-tight text-transparent">Aether</span>
-                <span className="hidden lg:block text-[11px] uppercase tracking-[0.22em] text-slate-500">Universal Runtime Control Plane</span>
+              <div className="min-w-0 text-left">
+                <span className="block truncate bg-gradient-to-r from-white to-slate-400 bg-clip-text text-base font-semibold tracking-tight text-transparent sm:text-lg">
+                  Aether
+                </span>
+                <span className="hidden 2xl:block text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                  Universal Runtime Control Plane
+                </span>
               </div>
             </button>
           </div>
 
-          {/* Center: Navigation (desktop) */}
-          <div className="hidden md:flex items-center gap-1">
-            <button
-              onClick={() => onNavigate('overview')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
-                currentView === 'overview'
-                  ? 'nav-pill-active'
-                  : 'nav-pill'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </button>
-
-            <button
-              onClick={() => onNavigate('workloads')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
-                currentView === 'workloads'
-                  ? 'nav-pill-active'
-                  : 'nav-pill'
-              }`}
-            >
-              <Container className="w-4 h-4" />
-              Workloads
-            </button>
-
-            {filteredDropdownGroups.map((group) => {
-              if (group.items.length === 0) return null;
-              const isActive = group.items.some((item) => item.view === currentView);
-              return (
-                <Dropdown
-                  key={group.label}
-                  group={group}
-                  isActive={isActive}
-                  currentView={currentView}
-                  onNavigate={onNavigate}
-                  theme={theme}
-                />
-              );
-            })}
-          </div>
-
-          {/* Right: Actions */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            <label className="hidden md:flex items-center gap-1 shrink-0 min-w-0" title="Theme">
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <label className="hidden lg:flex items-center gap-1 shrink-0" title="Theme">
               <Palette className="w-3.5 h-3.5 shrink-0 text-slate-500" aria-hidden />
               <select
                 aria-label="Theme"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value as AppTheme)}
-                className={`max-w-[6.5rem] min-w-0 cursor-pointer rounded-xl border px-1.5 py-1.5 text-xs outline-none transition sm:max-w-[7.5rem] sm:px-2 ${themeSelectClass(theme)}`}
+                className={`max-w-[6.5rem] cursor-pointer rounded-xl border px-1.5 py-1.5 text-xs outline-none transition ${themeSelectClass(theme)}`}
               >
                 {THEME_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -386,15 +508,6 @@ export default function Navbar({
               </select>
             </label>
             <PlatformHealthChip sseConnected={sseConnected ?? false} />
-            {clusterCtx ? (
-              <span
-                className="hidden lg:inline-flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[11px] text-slate-400 max-w-[10rem] truncate"
-                title={`K8s context: ${clusterCtx}`}
-              >
-                <Container className="w-3 h-3 shrink-0 text-aether/80" />
-                {clusterCtx}
-              </span>
-            ) : null}
             {onOpenHelp ? (
               <div className="relative hidden sm:block shrink-0" ref={helpRef}>
                 <button
@@ -402,26 +515,24 @@ export default function Navbar({
                   onClick={() => setHelpMenuOpen((v) => !v)}
                   aria-expanded={helpMenuOpen}
                   aria-haspopup="menu"
-                  className={`flex items-center gap-1 px-2 py-2 rounded-xl text-sm transition-colors ${
+                  className={`flex items-center gap-1 rounded-xl p-2 text-sm transition-colors ${
                     helpMenuOpen
-                        ? 'text-slate-100 bg-slate-800/80'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      ? 'bg-slate-800/80 text-slate-100'
+                      : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-100'
                   }`}
                   title="Help (?)"
                   aria-label="Help menu"
                 >
-                  <CircleHelp className="w-4 h-4 shrink-0" aria-hidden />
-                  <span className="hidden md:inline text-xs font-medium">Help</span>
+                  <CircleHelp className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="hidden xl:inline text-xs font-medium">Help</span>
                   <ChevronDown
-                    className={`w-3 h-3 hidden md:block transition-transform ${helpMenuOpen ? 'rotate-180' : ''}`}
+                    className={`hidden xl:block h-3 w-3 transition-transform ${helpMenuOpen ? 'rotate-180' : ''}`}
                     aria-hidden
                   />
                 </button>
                 {helpMenuOpen && (
                   <div
-                    className={`absolute top-full right-0 mt-1.5 z-50 min-w-[12.5rem] rounded-xl py-1.5 shadow-xl animate-scale-in border ${
-                      'bg-zinc-900 border-zinc-700'
-                    }`}
+                    className="absolute right-0 top-full z-50 mt-1.5 min-w-[12.5rem] animate-scale-in rounded-xl border border-zinc-700 bg-zinc-900 py-1.5 shadow-xl"
                     role="menu"
                   >
                     <button
@@ -431,13 +542,11 @@ export default function Navbar({
                         setHelpMenuOpen(false);
                         onOpenHelp('shortcuts');
                       }}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        'text-slate-300 hover:bg-slate-800/80'
-                      }`}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
                     >
-                      <Keyboard className="w-4 h-4 shrink-0" aria-hidden />
+                      <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
                       Keyboard shortcuts
-                      <kbd className="ml-auto text-[10px] px-1 py-0.5 rounded bg-slate-800/80 text-slate-500 font-mono">?</kbd>
+                      <kbd className="ml-auto rounded bg-slate-800/80 px-1 py-0.5 font-mono text-[10px] text-slate-500">?</kbd>
                     </button>
                     <button
                       type="button"
@@ -446,11 +555,9 @@ export default function Navbar({
                         setHelpMenuOpen(false);
                         onOpenHelp('about');
                       }}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        'text-slate-300 hover:bg-slate-800/80'
-                      }`}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
                     >
-                      <Info className="w-4 h-4 shrink-0" aria-hidden />
+                      <Info className="h-4 w-4 shrink-0" aria-hidden />
                       About
                     </button>
                     <a
@@ -459,13 +566,11 @@ export default function Navbar({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        'text-slate-300 hover:bg-slate-800/80'
-                      }`}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
                     >
-                      <BookOpen className="w-4 h-4 shrink-0" aria-hidden />
+                      <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
                       Help &amp; documentation
-                      <ExternalLink className="w-3 h-3 ml-auto opacity-60" aria-hidden />
+                      <ExternalLink className="ml-auto h-3 w-3 opacity-60" aria-hidden />
                     </a>
                     <a
                       role="menuitem"
@@ -473,16 +578,12 @@ export default function Navbar({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        'text-slate-300 hover:bg-slate-800/80'
-                      }`}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
                     >
-                      <ExternalLink className="w-4 h-4 shrink-0" aria-hidden />
+                      <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
                       Contact support
                     </a>
-                    <div className={`px-3 py-2 border-t text-[11px] ${
-                      'border-slate-700/50'
-                    }`}>
+                    <div className="border-t border-slate-700/50 px-3 py-2 text-[11px]">
                       <a
                         href={ZYVOR_HELP.platform}
                         target="_blank"
@@ -498,70 +599,75 @@ export default function Navbar({
               </div>
             ) : null}
             <span
-              className={`sm:hidden inline-block w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 platform-pulse' : 'bg-red-400'}`}
+              className={`inline-block h-2 w-2 rounded-full sm:hidden ${sseConnected ? 'bg-emerald-400 platform-pulse' : 'bg-red-400'}`}
               title={sseConnected ? 'SSE Connected' : 'SSE Disconnected'}
             />
-            <span className={`hidden sm:inline text-xs ${'text-slate-500'}`}>{relativeTime}</span>
-            <button
-              onClick={handleRefreshClick}
-              className={`p-2 rounded-xl transition-colors ${
-                'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
-              }`}
-              title="Refresh"
-            >
-              <RefreshCw className={`w-4 h-4${spinning ? ' animate-spin' : ''}`} />
-            </button>
-
-            <div className="hidden lg:flex shrink-0 items-center gap-2 px-3 py-2 rounded-xl surface-panel-soft metric-glow">
-              <Shield className="w-4 h-4 shrink-0 text-aether" />
-              <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
-                <span className={`text-[10px] uppercase tracking-[0.14em] ${'text-slate-500'}`}>{authModeLabel}</span>
-                <span
-                  className={`whitespace-nowrap text-sm font-medium font-mono tracking-tight ${'text-slate-200'}`}
-                  title={bearerPreview}
-                >
-                  {bearerPreview}
-                </span>
-              </div>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl surface-panel-soft">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className={`text-sm ${'text-slate-300'}`}>{username}</span>
-              <span className="rounded-full border border-aether/30 bg-aether/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-aether">
-                {role}
-              </span>
-            </div>
+            <span className="hidden text-xs text-slate-500 md:inline">{relativeTime}</span>
             <button
               type="button"
-              onClick={onLogout}
-              className={`hidden sm:inline-flex px-3 py-2 rounded-xl text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 ${
-                'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
-              }`}
+              onClick={handleRefreshClick}
+              className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-slate-100"
+              title="Refresh"
             >
-              Sign out
-            </button>{/* Mobile hamburger */}
-            <button
-              onClick={() => setMobileOpen((v) => !v)}
-              className={`md:hidden p-2 rounded-xl transition-colors ${
-                'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
-              }`}
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <RefreshCw className={`h-4 w-4${spinning ? ' animate-spin' : ''}`} />
             </button>
+            <AccountMenu
+              theme={theme}
+              username={username}
+              role={role}
+              authModeLabel={authModeLabel}
+              bearerPreview={bearerPreview}
+              clusterCtx={clusterCtx}
+              onLogout={onLogout}
+            />
+            <button
+              type="button"
+              onClick={() => setMobileOpen((v) => !v)}
+              className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-slate-100 lg:hidden"
+              aria-expanded={mobileOpen}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: primary nav (wide screens only, scrolls horizontally if needed) */}
+        <div className="hidden min-w-0 pb-2 lg:block">
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {desktopNav}
           </div>
         </div>
       </div>
 
-      {/* Mobile menu overlay */}
+      {/* Mobile / tablet drawer */}
       {mobileOpen && (
-        <div
-          className={`md:hidden border-t animate-fade-in backdrop-blur-lg max-h-[min(70vh,32rem)] overflow-y-auto ${
-            'border-slate-800/60 bg-slate-950/95'
-          }`}
-        >
-          <div className="dash-content py-3 space-y-4">
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+            aria-label="Close menu"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside
+            className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l shadow-2xl animate-fade-in lg:hidden ${
+              'border-slate-800/60 bg-slate-950/98'
+            }`}
+            aria-label="Navigation menu"
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-800/60 px-4 py-3">
+              <span className="text-sm font-semibold text-slate-200">Menu</span>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-xl p-2 text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <div className="space-y-4 px-4 py-3">
             {onOpenCommandPalette ? (
               <button
                 type="button"
@@ -581,16 +687,29 @@ export default function Navbar({
 
             <div className="rounded-2xl surface-panel-soft px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{authModeLabel}</div>
-              <div className={`mt-1 text-sm font-medium font-mono tracking-tight ${'text-slate-200'}`}>
+              <div className="mt-1 text-sm font-medium font-mono tracking-tight text-slate-200">
                 {bearerPreview}
               </div>
-              <div className={`mt-2 text-sm ${'text-slate-400'}`}>{username}</div>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-sm text-slate-300">{username}</span>
+                <span className="rounded-full border border-aether/30 bg-aether/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-aether">
+                  {role}
+                </span>
+              </div>
+              {clusterCtx ? (
+                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <Container className="h-3 w-3 shrink-0 text-aether/80" />
+                  <span className="truncate" title={clusterCtx}>
+                    {clusterCtx}
+                  </span>
+                </div>
+              ) : null}
             </div>
 
             {filteredMobileNavGroups.map((group) => (
               group.items.length === 0 ? null : (
               <div key={group.label}>
-                <div className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
                   {group.label}
                 </div>
                 <div className="space-y-0.5">
@@ -617,8 +736,8 @@ export default function Navbar({
             )}
 
             {onOpenHelp ? (
-              <div className="px-2">
-                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Help</div>
+              <div>
+                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Help</div>
                 <div className="space-y-0.5">
                   <button
                     type="button"
@@ -689,7 +808,7 @@ export default function Navbar({
               </div>
             ) : null}
 
-            <div className="flex flex-wrap items-center gap-2 px-2 pt-2 border-t border-slate-800/60">
+            <div className="flex flex-wrap items-center gap-2 border-t border-slate-800/60 pt-2">
               <label className="flex items-center gap-2 flex-1 min-w-[8rem]">
                 <Palette className="w-4 h-4 text-slate-500 shrink-0" aria-hidden />
                 <select
@@ -719,8 +838,10 @@ export default function Navbar({
                 Sign out
               </button>
             </div>
-          </div>
-        </div>
+              </div>
+            </div>
+          </aside>
+        </>
       )}
     </nav>
   );
