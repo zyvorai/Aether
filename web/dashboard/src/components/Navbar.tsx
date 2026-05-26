@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import {
   Hexagon,
@@ -38,6 +42,8 @@ import {
   Info,
   BookOpen,
   ExternalLink,
+  Sparkles,
+  Globe,
 } from 'lucide-react';
 import { ZYVOR_HELP } from '../config/zyvorHelp';
 import type { HelpTab } from './HelpDialog';
@@ -96,6 +102,7 @@ interface DropdownGroup {
 
 const intelligenceItems: DropdownItem[] = [
   { label: 'AI Engine', view: 'ai', icon: <Brain className="w-4 h-4" /> },
+  { label: 'Intelligence Layer', view: 'intelligence', icon: <Sparkles className="w-4 h-4" /> },
   { label: 'Cost Estimation', view: 'cost', icon: <DollarSign className="w-4 h-4" /> },
   { label: 'Runtime Affinity', view: 'affinity', icon: <Target className="w-4 h-4" /> },
   { label: 'Drift Detection', view: 'drift', icon: <GitCompare className="w-4 h-4" /> },
@@ -105,6 +112,7 @@ const intelligenceItems: DropdownItem[] = [
 
 const operationsItems: DropdownItem[] = [
   { label: 'Cluster Browser', view: 'clusters', icon: <Container className="w-4 h-4" /> },
+  { label: 'Fleet Overview', view: 'fleet', icon: <Globe className="w-4 h-4" /> },
   { label: 'Compose Import', view: 'compose', icon: <Layers className="w-4 h-4" /> },
   { label: 'Visual Editor', view: 'editor', icon: <FileText className="w-4 h-4" /> },
   { label: 'Scheduler', view: 'scheduler', icon: <Settings className="w-4 h-4" /> },

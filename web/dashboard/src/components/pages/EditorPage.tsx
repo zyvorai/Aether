@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Save, FileText, Eye, CheckCircle } from 'lucide-react';
@@ -14,7 +18,7 @@ import { pathWithQuery } from '../../utils/urlState';
 import ValidateResultPanel from '../ValidateResultPanel';
 import type { ValidateResponse, PolicyResult } from '../../types/api';
 
-interface EditorForm {
+interface EditorForm extends ConfidentialFormState {
   name: string;
   image: string;
   runtime: string;
@@ -24,12 +28,6 @@ interface EditorForm {
   intent: string;
   env: string;
   healthCheck: boolean;
-  confidentialEnabled: boolean;
-  confidentialTee: 'sev-snp' | 'tdx';
-  confidentialSecurityProfile: '' | 'sandbox' | 'standard-confidential' | 'sovereign-high';
-  confidentialKataRuntime: 'kata-clh-snp' | 'kata-clh-tdx' | 'kata-qemu-snp' | 'kata-qemu-tdx';
-  attestationRequired: boolean;
-  imageDigest: string;
 }
 
 const defaultForm: EditorForm = {
@@ -42,12 +40,7 @@ const defaultForm: EditorForm = {
   intent: 'balanced',
   env: 'ENV=production\nLOG_LEVEL=info',
   healthCheck: true,
-  confidentialEnabled: false,
-  confidentialTee: 'sev-snp',
-  confidentialSecurityProfile: 'standard-confidential',
-  confidentialKataRuntime: 'kata-clh-snp',
-  attestationRequired: true,
-  imageDigest: '',
+  ...defaultConfidentialFormState,
 };
 
 export default function EditorPage() {
@@ -64,7 +57,8 @@ export default function EditorPage() {
   const runtimes = ['podman', 'docker', 'kubernetes', 'kata', 'kubevirt', 'metal3'];
   const intents = ['low-latency', 'high-throughput', 'cost-optimized', 'balanced'];
 
-  const handleChange = (field: keyof EditorForm, value: string | number | boolean) => {
+  const handleChange = (field: keyof EditorForm, value: string | number | boolean | undefined) => {
+    if (value === undefined) return;
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 

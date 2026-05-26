@@ -1,6 +1,10 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState, useEffect, useCallback } from 'react';
-import { Inbox, Plus, ArrowRight } from 'lucide-react';
-import { apiFetchSettled, apiPost } from '../../utils/api';
+import { Inbox, Plus, ArrowRight, Trash2 } from 'lucide-react';
+import { apiFetchSettled, apiPost, apiDeleteJson } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge from '../Badge';
@@ -14,7 +18,15 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-function GraphVisual({ graph }: { graph: DependencyGraph }) {
+function GraphVisual({
+  graph,
+  onRemove,
+  removeBusy,
+}: {
+  graph: DependencyGraph;
+  onRemove?: (from: string, to: string) => void;
+  removeBusy?: string | null;
+}) {
   const nodes = graph.nodes ?? graph.startup_order;
   const edges: DependencyEdge[] =
     graph.edges ??
@@ -43,6 +55,17 @@ function GraphVisual({ graph }: { graph: DependencyGraph }) {
               <ArrowRight size={14} className="text-aether shrink-0" />
               <span className="text-slate-400">depends on</span>
               <span className="font-medium text-aether">{edge.to}</span>
+              {onRemove && (
+                <button
+                  type="button"
+                  disabled={removeBusy === `${edge.from}->${edge.to}`}
+                  onClick={() => onRemove(edge.from, edge.to)}
+                  className="ml-auto p-1 text-slate-500 hover:text-red-400"
+                  title="Remove dependency"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -78,6 +101,7 @@ export default function DepsPage() {
   const [addWorkload, setAddWorkload] = useState('');
   const [addDependency, setAddDependency] = useState('');
   const [addLoading, setAddLoading] = useState(false);
+  const [removeBusy, setRemoveBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,6 +135,18 @@ export default function DepsPage() {
       void load();
     } else {
       toast(`Failed to add dependency: ${res.error ?? 'unknown error'}`, 'error');
+    }
+  }
+
+  async function handleRemoveDependency(workload: string, dependency: string) {
+    setRemoveBusy(`${workload}->${dependency}`);
+    const res = await apiDeleteJson('/dependencies', { workload, dependency });
+    setRemoveBusy(null);
+    if (res.success) {
+      toast(`Removed dependency ${workload} → ${dependency}`, 'success');
+      void load();
+    } else {
+      toast(res.error ?? 'Failed to remove dependency', 'error');
     }
   }
 
@@ -190,7 +226,11 @@ export default function DepsPage() {
                   edges={graph.edges ?? []}
                 />
               ) : (
-                <GraphVisual graph={graph} />
+                <GraphVisual
+                  graph={graph}
+                  onRemove={(from, to) => void handleRemoveDependency(from, to)}
+                  removeBusy={removeBusy}
+                />
               )}
             </div>
 

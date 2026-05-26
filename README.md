@@ -1113,3 +1113,6 @@ Built with:
   <a href="MIGRATION.md">Migration Guide</a> •
   <a href="FINAL-SUMMARY.md">Project Summary</a>
 </p>
+## License
+
+**Proprietary — ZyvorAI Labs Private Limited** ([zyvor.dev](https://zyvor.dev)). All rights reserved. See [LICENSE](LICENSE). No redistribution without written permission.

@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 // ─── API Response Wrapper ────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean;
@@ -698,9 +702,101 @@ export type AppView =
   | 'metrics'
   | 'gitops'
   | 'editor'
-  | 'confidential';
+  | 'confidential'
+  | 'intelligence'
+  | 'fleet';
 
-// ─── Confidential / Ragnarok ───────────────────────────────────────
+// ─── Intelligence layer ────────────────────────────────────────────
+export interface FailureSignal {
+  kind: string;
+  probability: number;
+  horizon: string;
+  reason: string;
+}
+
+export interface WorkloadPrediction {
+  workload: string;
+  risk_score: number;
+  risk_level: string;
+  predictions: FailureSignal[];
+}
+
+export interface PredictionReport {
+  generated_at: string;
+  fleet_risk_score: number;
+  predictions: WorkloadPrediction[];
+}
+
+export interface ThreatEntry {
+  workload: string;
+  severity: string;
+  category: string;
+  score: number;
+  reason: string;
+  detected_at: string;
+}
+
+export interface ThreatReport {
+  generated_at: string;
+  threats: ThreatEntry[];
+}
+
+export interface CostOptimizeRecommendation {
+  workload: string;
+  current_runtime: string;
+  suggested_runtime: string;
+  savings_pct: number;
+  savings_monthly_usd: number;
+  risk: string;
+  reason: string;
+}
+
+export interface CostOptimizeReport {
+  generated_at: string;
+  total_potential_savings_pct: number;
+  recommendations: CostOptimizeRecommendation[];
+}
+
+export interface EvolutionEntry {
+  workload: string;
+  current_runtime: string;
+  recommended_runtime: string;
+  improvement_pct: number;
+  confidence: number;
+  auto_eligible: boolean;
+  trajectory: string[];
+  reasons: string[];
+}
+
+export interface EvolutionStatus {
+  generated_at: string;
+  workloads: EvolutionEntry[];
+}
+
+export interface PlacementRecommendation {
+  cluster: string | null;
+  runtime: string;
+  score: number;
+  latency_score: number;
+  cost_score: number;
+  gpu_available: boolean;
+  reasons: string[];
+}
+
+export interface SecurityProfileEntry {
+  id: string;
+  label: string;
+  description: string;
+  kata_runtime_class?: string | null;
+}
+
+export interface AttestationVerifyResponse {
+  vm_id: string;
+  verdict: AttestationVerdict;
+  measurements: Record<string, string>;
+  reason_codes: string[];
+  verified_at: string;
+}
 export type AttestationVerdict = 'pass' | 'fail' | 'pending';
 
 export interface RagnarokIntegration {

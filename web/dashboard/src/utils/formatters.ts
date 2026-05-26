@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 export function formatTimestamp(ts: string): string {
   return (ts || '').substring(0, 19).replace('T', ' ');
 }

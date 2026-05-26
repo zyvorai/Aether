@@ -1,4 +1,11 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
+import { useEffect, useState } from 'react';
+import { apiFetchSettled } from '../utils/api';
 import type { EditorWorkloadInput } from '../utils/workloadYaml';
+import type { SecurityProfileEntry } from '../types/api';
 
 export type ConfidentialFormState = Pick<
   EditorWorkloadInput,
@@ -7,6 +14,12 @@ export type ConfidentialFormState = Pick<
   | 'confidentialSecurityProfile'
   | 'confidentialKataRuntime'
   | 'attestationRequired'
+  | 'attestationPolicy'
+  | 'confidentialRegionLock'
+  | 'confidentialSecretNames'
+  | 'confidentialVtpm'
+  | 'confidentialEncryptedState'
+  | 'confidentialDebugAllowed'
   | 'imageDigest'
 >;
 
@@ -16,7 +29,24 @@ interface ConfidentialFormFieldsProps {
   onChange: <K extends keyof ConfidentialFormState>(field: K, value: ConfidentialFormState[K]) => void;
 }
 
+const FALLBACK_PROFILES: SecurityProfileEntry[] = [
+  { id: 'sandbox', label: 'sandbox', description: 'Non-confidential sandbox pool' },
+  { id: 'standard-confidential', label: 'standard-confidential', description: 'Standard confidential Kata pool' },
+  { id: 'sovereign-high', label: 'sovereign-high', description: 'High-assurance sovereign pool' },
+];
+
 export default function ConfidentialFormFields({ runtime, state, onChange }: ConfidentialFormFieldsProps) {
+  const [profiles, setProfiles] = useState<SecurityProfileEntry[]>(FALLBACK_PROFILES);
+
+  useEffect(() => {
+    void (async () => {
+      const res = await apiFetchSettled<{ profiles?: SecurityProfileEntry[] }>('/confidential/security-profiles');
+      if (res.ok && res.data.profiles && res.data.profiles.length > 0) {
+        setProfiles(res.data.profiles);
+      }
+    })();
+  }, []);
+
   const showKata = runtime === 'kata' || runtime === 'kubernetes';
   const showBlock = runtime === 'kubevirt' || showKata;
 
@@ -64,18 +94,15 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               <label className="mb-1 block text-xs text-slate-500">Security profile</label>
               <select
                 value={state.confidentialSecurityProfile ?? ''}
-                onChange={(e) =>
-                  onChange(
-                    'confidentialSecurityProfile',
-                    e.target.value as NonNullable<ConfidentialFormState['confidentialSecurityProfile']>,
-                  )
-                }
+                onChange={(e) => onChange('confidentialSecurityProfile', e.target.value)}
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
               >
                 <option value="">Custom (manual runtime class)</option>
-                <option value="sandbox">sandbox — no Kata TEE pool</option>
-                <option value="standard-confidential">standard-confidential</option>
-                <option value="sovereign-high">sovereign-high</option>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id} title={p.description}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -99,6 +126,29 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               </select>
             </div>
           )}
+          <div>
+            <label className="mb-1 block text-xs text-slate-500">Attestation policy</label>
+            <select
+              value={state.attestationPolicy ?? 'strict'}
+              onChange={(e) =>
+                onChange('attestationPolicy', e.target.value as NonNullable<ConfidentialFormState['attestationPolicy']>)
+              }
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            >
+              <option value="strict">strict — digest required</option>
+              <option value="standard">standard — baseline measurements</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-slate-500">Region lock</label>
+            <input
+              type="text"
+              value={state.confidentialRegionLock ?? ''}
+              onChange={(e) => onChange('confidentialRegionLock', e.target.value)}
+              placeholder="e.g. us-east-1 or sovereign-zone-a"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
           <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
             <input
               type="checkbox"
@@ -108,6 +158,43 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             />
             Require attestation before deploy
           </label>
+          <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={state.confidentialVtpm !== false}
+              onChange={(e) => onChange('confidentialVtpm', e.target.checked)}
+              className="rounded border-slate-600"
+            />
+            vTPM
+          </label>
+          <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={state.confidentialEncryptedState !== false}
+              onChange={(e) => onChange('confidentialEncryptedState', e.target.checked)}
+              className="rounded border-slate-600"
+            />
+            Encrypted state
+          </label>
+          <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={state.confidentialDebugAllowed === true}
+              onChange={(e) => onChange('confidentialDebugAllowed', e.target.checked)}
+              className="rounded border-slate-600"
+            />
+            Allow debug
+          </label>
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-xs text-slate-500">Attest-gated secret names (comma or newline)</label>
+            <textarea
+              value={state.confidentialSecretNames ?? ''}
+              onChange={(e) => onChange('confidentialSecretNames', e.target.value)}
+              rows={2}
+              placeholder="db-credentials, api-key"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
           <div className="md:col-span-2">
             <label className="mb-1 block text-xs text-slate-500">Launch digest (from signed catalog)</label>
             <input
@@ -130,5 +217,11 @@ export const defaultConfidentialFormState: ConfidentialFormState = {
   confidentialSecurityProfile: 'standard-confidential',
   confidentialKataRuntime: 'kata-clh-snp',
   attestationRequired: true,
+  attestationPolicy: 'strict',
+  confidentialRegionLock: '',
+  confidentialSecretNames: '',
+  confidentialVtpm: true,
+  confidentialEncryptedState: true,
+  confidentialDebugAllowed: false,
   imageDigest: '',
 };

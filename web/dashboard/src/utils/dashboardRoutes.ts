@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import type { AppView } from '../types/api';
 import { VIEW_TO_PATH as NAV_VIEW_TO_PATH } from './dashboardNav';
 
