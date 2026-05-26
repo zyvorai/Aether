@@ -33,8 +33,8 @@ impl KataHypervisor {
         }
     }
 
-    pub fn runtime_class(&self, tee: crate::spec::ConfidentialTee) -> &'static str {
-        match (self, tee) {
+    pub fn runtime_class(&self, tee: &crate::spec::ConfidentialTee) -> &'static str {
+        match (self, *tee) {
             (Self::CloudHypervisor, crate::spec::ConfidentialTee::Tdx) => RUNTIME_CLASS_CLH_TDX,
             (Self::CloudHypervisor, _) => RUNTIME_CLASS_CLH_SNP,
             (Self::Qemu, crate::spec::ConfidentialTee::Tdx) => RUNTIME_CLASS_QEMU_TDX,
@@ -58,7 +58,7 @@ pub fn confidential_pod_patch(spec: &Workload) -> Option<Value> {
         return None;
     }
     let hypervisor = KataHypervisor::from_env();
-    let runtime_class = hypervisor.runtime_class(conf.tee);
+    let runtime_class = hypervisor.runtime_class(&conf.tee);
     Some(json!({
         "runtimeClassName": runtime_class,
         "metadata": {

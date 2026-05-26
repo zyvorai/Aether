@@ -1549,7 +1549,7 @@ fn default_confidential_tee() -> ConfidentialTee {
     ConfidentialTee::SevSnp
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum ConfidentialTee {
     Sev,

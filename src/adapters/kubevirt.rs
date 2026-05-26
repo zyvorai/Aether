@@ -98,7 +98,14 @@ impl KubeVirtRuntime {
 
 /// Build DataVolume JSON (standalone, testable without kube::Client)
 fn build_datavolume_json(namespace: &str, image: &Image, spec: &Workload) -> serde_json::Value {
+    use crate::ragnarok::isolation::datavolume_encryption_annotations;
+
     let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);
+    let enc_ann = datavolume_encryption_annotations(spec);
+    let storage_class = enc_ann
+        .get("ragnarok.zyvor.dev/storage-class")
+        .cloned()
+        .or_else(|| spec.persistence.storage_class.clone());
 
     let access_mode = match spec.persistence.access_mode {
         AccessMode::ReadWriteOnce => "ReadWriteOnce",
@@ -113,6 +120,7 @@ fn build_datavolume_json(namespace: &str, image: &Image, spec: &Workload) -> ser
             "name": format!("{}-disk", spec.metadata.name),
             "namespace": namespace,
             "labels": labels,
+            "annotations": enc_ann,
         },
         "spec": {
             "source": {
@@ -127,7 +135,7 @@ fn build_datavolume_json(namespace: &str, image: &Image, spec: &Workload) -> ser
                         "storage": spec.requirements.storage
                     }
                 },
-                "storageClassName": spec.persistence.storage_class
+                "storageClassName": storage_class
             }
         }
     })

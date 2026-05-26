@@ -777,3 +777,10 @@ export interface MeasuredImageManifest {
   signing_key_id: string;
   signed_at: string;
 }
+
+export interface IsolationVerdict {
+  compliant: boolean;
+  violations: string[];
+  node_taints: string[];
+  scheduler_hints: Record<string, string>;
+}

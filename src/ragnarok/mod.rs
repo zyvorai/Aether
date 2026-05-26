@@ -23,4 +23,5 @@ pub mod vault;
 pub use attestation::{AttestationService, AttestationVerdict, ExplainReport};
 pub use client::{attestation_gate_for_workload, RagnarokClient};
 pub use image::{ImageCatalog, ImageManifest};
+pub use isolation::{IsolationPolicy, IsolationVerdict};
 pub use tee::{probe_host_tee, TeeCapabilities, TeeKind};

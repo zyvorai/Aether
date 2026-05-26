@@ -2,6 +2,7 @@
 
 use crate::spec::{ConfidentialSpec, Workload};
 use crate::ragnarok::inject::{annotate_vm_for_attest_secrets, attest_gated_secret_names};
+use crate::ragnarok::isolation::{apply_to_kubevirt_annotations, kubevirt_anti_affinity};
 use serde_json::{json, Value};
 
 /// Apply launchSecurity, firmware, TPM, and node selectors for confidential VMs.
@@ -62,6 +63,21 @@ pub fn apply_confidential_to_vm(vm_spec: &mut Value, spec: &Workload) {
     if conf.secrets.release_policy == crate::spec::SecretReleasePolicy::AttestGated {
         let names = attest_gated_secret_names(spec);
         annotate_vm_for_attest_secrets(vm_spec, &names);
+    }
+
+    for (k, v) in apply_to_kubevirt_annotations(spec) {
+        let obj = vm_spec
+            .pointer_mut("/metadata/annotations")
+            .and_then(|a| a.as_object_mut());
+        if let Some(ann) = obj {
+            ann.insert(k, json!(v));
+        } else {
+            vm_spec["metadata"]["annotations"] = json!({ k: v });
+        }
+    }
+
+    if let Some(affinity) = kubevirt_anti_affinity(spec) {
+        vm_spec["spec"]["template"]["spec"]["affinity"] = affinity;
     }
 }
 

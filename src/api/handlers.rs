@@ -897,6 +897,8 @@ async fn deploy_workload_spec(
             ),
         )
         .map_err(err_bad_request)?;
+        crate::ragnarok::isolation::deploy_isolation_gate(&request.spec)
+            .map_err(err_bad_request)?;
     }
 
     let runtime = make_runtime::<String>(&runtime_kind).await?;
@@ -3688,6 +3690,9 @@ pub(crate) async fn validate_workload(
                                 &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
                             ),
                         ) {
+                            errors.push(e.to_string());
+                        }
+                        if let Err(e) = crate::ragnarok::isolation::deploy_isolation_gate(&workload) {
                             errors.push(e.to_string());
                         }
                     }
