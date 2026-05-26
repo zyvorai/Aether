@@ -22,6 +22,8 @@ aether migrate confidential-migrate-demo --target kubevirt --strategy confidenti
 
 See [RAGNAROK-AND-AETHER.md](../docs/guides/security/RAGNAROK-AND-AETHER.md) for CLI ↔ dashboard mapping and phase reference.
 
+Cluster validation: [CONFIDENTIAL-CLUSTER-E2E.md](../docs/guides/security/CONFIDENTIAL-CLUSTER-E2E.md) (`scripts/confidential-cluster-e2e.sh`).
+
 ## General
 
 | File | Notes |

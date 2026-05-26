@@ -132,10 +132,13 @@ Packaged by Zyvor — zyvor.dev · HyperSDK · © 2026
 Q
 
 mkdir -p "\${STAGE}/scripts" "\${STAGE}/charts" "\${STAGE}/deploy"
-for _cf in install-confidential-kata.sh install-confidential-spire.sh install-confidential-fabric.sh enable-confidential-production.sh confidential-fabric-e2e.sh; do
+for _cf in install-confidential-kata.sh install-confidential-spire.sh install-confidential-fabric.sh enable-confidential-production.sh confidential-fabric-e2e.sh confidential-cluster-e2e.sh; do
   cp "\${BUILD_DIR}/scripts/\${_cf}" "\${STAGE}/scripts/" 2>/dev/null || true
   chmod +x "\${STAGE}/scripts/\${_cf}" 2>/dev/null || true
 done
+mkdir -p "\${STAGE}/scripts/lib"
+cp "\${BUILD_DIR}/scripts/lib/aether-confidential-smoke.sh" "\${STAGE}/scripts/lib/" 2>/dev/null || true
+chmod +x "\${STAGE}/scripts/lib/aether-confidential-smoke.sh" 2>/dev/null || true
 cp -a "\${BUILD_DIR}/charts/zyvor-confidential-kata" "\${STAGE}/charts/" 2>/dev/null || true
 cp -a "\${BUILD_DIR}/deploy/confidential" "\${STAGE}/deploy/" 2>/dev/null || true
 cp '${BUILD_DIR}/scripts/zyvor-branding/ZYVOR_INSTALL.txt' "\${STAGE}/ZYVOR_INSTALL.txt" 2>/dev/null || true

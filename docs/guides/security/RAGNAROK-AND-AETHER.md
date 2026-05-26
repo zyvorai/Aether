@@ -250,6 +250,18 @@ See `examples/confidential-snp.yaml` and `examples/confidential-migrate-kubevirt
 
 ---
 
+## Cluster E2E
+
+Composite fabric smoke and live SNP cluster validation:
+
+- [`CONFIDENTIAL-CLUSTER-E2E.md`](CONFIDENTIAL-CLUSTER-E2E.md)
+- `scripts/confidential-fabric-e2e.sh`
+- `scripts/confidential-cluster-e2e.sh`
+
+Ragnarok hub UI (`/confidential`), composite banner, and trust-aware placement live in the **Ragnarok** repo — see `docs/RAGNAROK-AETHER-FABRIC.md`.
+
+---
+
 ## Related docs
 
 - [Ecosystem overview](../../ECOSYSTEM.md)
