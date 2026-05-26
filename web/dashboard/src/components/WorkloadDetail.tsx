@@ -611,7 +611,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
         )}
 
         {activeTab === 'trust' && (
-          <ConfidentialWorkloadPanel workloadName={workload.name} />
+          <ConfidentialWorkloadPanel workloadName={workload.name} runtime={workload.runtime} />
         )}
 
         {activeTab === 'events' && (

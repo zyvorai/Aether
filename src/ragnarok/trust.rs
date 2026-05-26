@@ -1,8 +1,61 @@
 //! Composite trust scoring for confidential workloads.
 
 use crate::ragnarok::attestation::AttestationService;
-use crate::ragnarok::network::{compute_trust_score, NetworkTrustScore};
+use crate::ragnarok::image::ImageCatalog;
+use crate::ragnarok::network::{compute_trust_score, policy_count, NetworkTrustScore};
 use crate::spec::Workload;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfidentialFleetRow {
+    pub workload: String,
+    pub runtime: String,
+    pub tee: String,
+    pub image_digest: Option<String>,
+    pub image_in_catalog: bool,
+    pub attestation_passed: bool,
+    pub trust: NetworkTrustScore,
+}
+
+pub fn confidential_fleet_rows(
+    workloads: &[(&str, &Workload, &str)],
+    attestation: &AttestationService,
+    catalog: &ImageCatalog,
+) -> Vec<ConfidentialFleetRow> {
+    workloads
+        .iter()
+        .map(|(name, spec, runtime)| {
+            let conf = spec.confidential.as_ref().filter(|c| c.enabled);
+            let debug = conf.map(|c| c.isolation.debug_allowed).unwrap_or(false);
+            let digest = conf.and_then(|c| c.image_digest.clone());
+            let image_in_catalog = digest
+                .as_deref()
+                .map(|d| catalog.verify_digest(d))
+                .unwrap_or(false);
+            let tee = conf
+                .map(|c| serde_json::to_value(&c.tee).ok())
+                .flatten()
+                .and_then(|v| v.as_str().map(String::from))
+                .unwrap_or_else(|| "—".into());
+            let trust = compute_trust_score(
+                name,
+                attestation.passed(name),
+                policy_count(spec),
+                debug,
+                digest.as_deref(),
+            );
+            ConfidentialFleetRow {
+                workload: name.to_string(),
+                runtime: runtime.to_string(),
+                tee,
+                image_digest: digest,
+                image_in_catalog,
+                attestation_passed: attestation.passed(name),
+                trust,
+            }
+        })
+        .collect()
+}
 
 pub fn fleet_trust_scores(
     workloads: &[(&str, &Workload)],
@@ -23,11 +76,7 @@ pub fn fleet_trust_scores(
             compute_trust_score(
                 name,
                 attestation.passed(name),
-                if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-                    1
-                } else {
-                    0
-                },
+                policy_count(spec),
                 debug,
                 digest,
             )

@@ -4,13 +4,16 @@ use super::handlers::{err_bad_request, err_internal, err_not_found, ok_json};
 use super::types::AppState;
 use crate::ragnarok::{
     attestation::{AttestationReport, AttestationService, AttestationVerdict},
-    guestkit::{inspect, GuestKitRequest, InspectionMode},
+    guestkit::{GuestKitRequest, GuestKitService, InspectionMode},
     image::{attestation_digest_gate, ImageCatalog, ImageManifest, ImageVerifyResult},
+    intelligence::{self, ConfidentialAnalysis},
+    kata,
     migration::plan_confidential_migration,
+    network::{self, ConfidentialNetworkStatus},
     secrets::{BrokerRequest, SecretBroker, SecretBrokerProvider},
-    sovereign::SovereignConfig,
+    sovereign::{self, SovereignConfig, SovereignVerdict},
     tee::{probe_host_tee, TeeCapabilities},
-    trust::fleet_trust_scores,
+    trust::{confidential_fleet_rows, fleet_trust_scores, ConfidentialFleetRow},
     isolation::{self, IsolationPolicy, IsolationVerdict},
 };
 use crate::spec::Workload;
@@ -145,12 +148,17 @@ pub(crate) async fn api_attestation_status(
     }
 }
 
+fn guestkit_service(app_state: &AppState) -> GuestKitService {
+    GuestKitService::new(state_dir(app_state))
+}
+
 pub(crate) async fn api_attestation_explain(
     AxumState(app_state): AxumState<AppState>,
     Path(vm_id): Path<String>,
 ) -> impl IntoResponse {
     let svc = attestation_service(&app_state);
-    match svc.explain(&vm_id) {
+    let gk = guestkit_service(&app_state).summary(&vm_id);
+    match svc.explain_with_guestkit(&vm_id, gk) {
         Ok(explain) => ok_json(explain).into_response(),
         Err(e) => err_not_found::<serde_json::Value>(e.to_string()).into_response(),
     }
@@ -185,31 +193,81 @@ pub(crate) async fn api_confidential_trust_score(
     let score = crate::ragnarok::network::compute_trust_score(
         &workload,
         svc.passed(&workload),
-        if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-            1
-        } else {
-            0
-        },
+        crate::ragnarok::network::policy_count(&spec),
         debug,
         digest,
     );
     ok_json(score).into_response()
 }
 
-pub(crate) async fn api_confidential_trust_fleet(
-    AxumState(app_state): AxumState<AppState>,
-) -> impl IntoResponse {
-    let svc = attestation_service(&app_state);
+async fn load_confidential_workloads(app_state: &AppState) -> Vec<(String, Workload, String)> {
     let store = app_state.state.read().await;
     let mut pairs = Vec::new();
     for w in store.list() {
         if let Ok(spec) = Workload::from_file(&w.spec_path) {
             if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-                pairs.push((w.name.clone(), spec));
+                pairs.push((w.name.clone(), spec, w.runtime.to_string()));
             }
         }
     }
-    let refs: Vec<(&str, &Workload)> = pairs.iter().map(|(n, s)| (n.as_str(), s)).collect();
+    pairs
+}
+
+pub(crate) async fn api_confidential_fleet(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let svc = attestation_service(&app_state);
+    let catalog = image_catalog(&app_state);
+    let pairs = load_confidential_workloads(&app_state).await;
+    let refs: Vec<(&str, &Workload, &str)> = pairs
+        .iter()
+        .map(|(n, s, r)| (n.as_str(), s, r.as_str()))
+        .collect();
+    ok_json(confidential_fleet_rows(&refs, &svc, &catalog))
+}
+
+pub(crate) async fn api_confidential_workload_row(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let svc = attestation_service(&app_state);
+    let catalog = image_catalog(&app_state);
+    let store = app_state.state.read().await;
+    let ws = match store.get(&workload) {
+        Some(w) => w,
+        None => {
+            return err_not_found::<ConfidentialFleetRow>(format!("workload {workload} not found"))
+                .into_response();
+        }
+    };
+    let spec = match Workload::from_file(&ws.spec_path) {
+        Ok(s) => s,
+        Err(e) => return err_internal::<ConfidentialFleetRow>(e).into_response(),
+    };
+    if !spec.confidential.as_ref().is_some_and(|c| c.enabled) {
+        return err_not_found::<ConfidentialFleetRow>(format!(
+            "workload {workload} is not confidential-enabled"
+        ))
+        .into_response();
+    }
+    let runtime = ws.runtime.to_string();
+    let rows = confidential_fleet_rows(
+        &[(&workload, &spec, runtime.as_str())],
+        &svc,
+        &catalog,
+    );
+    match rows.into_iter().next() {
+        Some(row) => ok_json(row).into_response(),
+        None => err_internal::<ConfidentialFleetRow>("fleet row missing").into_response(),
+    }
+}
+
+pub(crate) async fn api_confidential_trust_fleet(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let svc = attestation_service(&app_state);
+    let pairs = load_confidential_workloads(&app_state).await;
+    let refs: Vec<(&str, &Workload)> = pairs.iter().map(|(n, s, _)| (n.as_str(), s)).collect();
     ok_json(fleet_trust_scores(&refs, &svc))
 }
 
@@ -283,6 +341,8 @@ pub(crate) struct GuestKitInspectRequest {
     pub image_path: Option<String>,
     #[serde(default = "default_guestkit_mode")]
     pub mode: String,
+    #[serde(default)]
+    pub policy_manifest: Option<String>,
 }
 
 fn default_guestkit_mode() -> String {
@@ -290,24 +350,108 @@ fn default_guestkit_mode() -> String {
 }
 
 pub(crate) async fn api_guestkit_inspect(
+    AxumState(app_state): AxumState<AppState>,
     Json(req): Json<GuestKitInspectRequest>,
 ) -> impl IntoResponse {
-    let mode = match req.mode.as_str() {
-        "offline-policy" => InspectionMode::OfflinePolicy,
-        "post-shutdown" => InspectionMode::PostShutdown,
-        "attested-repair" => InspectionMode::AttestedRepair,
-        _ => InspectionMode::PreLaunch,
-    };
-    ok_json(inspect(&GuestKitRequest {
-        vm_id: req.vm_id,
-        image_path: req.image_path,
-        mode,
-        policy_manifest: None,
-    }))
+    let catalog = image_catalog(&app_state);
+    let gk = guestkit_service(&app_state);
+    let expected_digest = try_workload_spec(&app_state, &req.vm_id)
+        .await
+        .and_then(|spec| {
+            spec.confidential
+                .as_ref()
+                .and_then(|c| c.image_digest.clone())
+        });
+    let mode = InspectionMode::parse(&req.mode);
+    match gk.inspect(
+        &GuestKitRequest {
+            vm_id: req.vm_id,
+            image_path: req.image_path,
+            mode,
+            policy_manifest: req.policy_manifest,
+            expected_digest,
+        },
+        &catalog,
+    ) {
+        Ok(result) => ok_json(result).into_response(),
+        Err(e) => err_bad_request::<serde_json::Value>(e).into_response(),
+    }
+}
+
+pub(crate) async fn api_guestkit_history(
+    AxumState(app_state): AxumState<AppState>,
+    Path(vm_id): Path<String>,
+) -> impl IntoResponse {
+    ok_json(guestkit_service(&app_state).history(&vm_id)).into_response()
 }
 
 pub(crate) async fn api_confidential_sovereign_status() -> impl IntoResponse {
     ok_json(SovereignConfig::from_env())
+}
+
+pub(crate) async fn api_confidential_sovereign_evaluate(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let Some(spec) = try_workload_spec(&app_state, &workload).await else {
+        return err_not_found::<SovereignVerdict>(format!("workload {workload} not found"))
+            .into_response();
+    };
+    ok_json(sovereign::evaluate(&spec, &SovereignConfig::from_env())).into_response()
+}
+
+pub(crate) async fn api_confidential_kata_status() -> impl IntoResponse {
+    ok_json(kata::kata_status())
+}
+
+pub(crate) async fn api_confidential_network_status(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let Some(spec) = try_workload_spec(&app_state, &workload).await else {
+        return err_not_found::<ConfidentialNetworkStatus>(format!("workload {workload} not found"))
+            .into_response();
+    };
+    ok_json(network::network_status(&spec)).into_response()
+}
+
+pub(crate) async fn api_confidential_intelligence_workload(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let store = app_state.state.read().await;
+    let ws = match store.get(&workload) {
+        Some(w) => w,
+        None => {
+            return err_not_found::<ConfidentialAnalysis>(format!("workload {workload} not found"))
+                .into_response();
+        }
+    };
+    let spec = match Workload::from_file(&ws.spec_path) {
+        Ok(s) => s,
+        Err(e) => return err_internal::<ConfidentialAnalysis>(e).into_response(),
+    };
+    ok_json(intelligence::analyze_workload(
+        &spec,
+        &ws.runtime.to_string(),
+        &state_dir(&app_state),
+    ))
+    .into_response()
+}
+
+pub(crate) async fn api_confidential_intelligence_fleet(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let pairs = load_confidential_workloads(&app_state).await;
+    let refs: Vec<(&str, &Workload, &str)> = pairs
+        .iter()
+        .map(|(n, s, r)| (n.as_str(), s, r.as_str()))
+        .collect();
+    ok_json(intelligence::analyze_fleet(
+        &refs,
+        &state_dir(&app_state),
+    ))
+    .into_response()
 }
 
 pub(crate) async fn api_confidential_image_catalog(

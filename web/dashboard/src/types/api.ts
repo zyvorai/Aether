@@ -728,6 +728,71 @@ export interface TeeCapabilities {
   integration?: RagnarokIntegration;
 }
 
+export interface KataStatus {
+  supported_runtime_classes: string[];
+  operator_requirements: string[];
+  hypervisor: string;
+  host_tee: TeeCapabilities['host'];
+  placement_ready: boolean;
+  notes: string[];
+}
+
+export interface SovereignVerdict {
+  compliant: boolean;
+  violations: string[];
+  hints: string[];
+  config: SovereignConfig;
+}
+
+export interface ConfidentialNetworkStatus {
+  workload: string;
+  policy_count: number;
+  cilium_auto_policy: boolean;
+  packetwolf_hints: Record<string, string>;
+  spiffe_id?: string | null;
+  recommendations: string[];
+}
+
+export interface ConfidentialAnalysis {
+  workload: string;
+  runtime: string;
+  trust_composite: number;
+  risk_level: string;
+  summary: string;
+  findings: string[];
+  recommendations: string[];
+  attestation_passed: boolean;
+  image_in_catalog: boolean;
+  sovereign_compliant: boolean;
+  kata_placement_score: number;
+  migration_strategy?: string | null;
+}
+
+export interface ConfidentialFleetAnalysis {
+  generated_at: string;
+  workloads: ConfidentialAnalysis[];
+  fleet_trust_avg: number;
+  critical_count: number;
+}
+
+export interface ConfidentialFleetRow {
+  workload: string;
+  runtime: string;
+  tee: string;
+  image_digest?: string | null;
+  image_in_catalog: boolean;
+  attestation_passed: boolean;
+  trust: NetworkTrustScore;
+}
+
+export interface ImageVerifyResult {
+  name: string;
+  verified: boolean;
+  image_hash?: string | null;
+  launch_digest?: string | null;
+  message: string;
+}
+
 export interface NetworkTrustScore {
   workload: string;
   attestation_score: number;
@@ -751,6 +816,25 @@ export interface AttestationExplain {
   summary: string;
   failure_reasons: Array<{ code: string; message: string; severity: string }>;
   measurement_diff: Record<string, { expected?: string | null; observed?: string | null; matched: boolean }>;
+  guestkit?: GuestKitSummary | null;
+}
+
+export interface GuestKitSummary {
+  last_mode: string;
+  passed: boolean;
+  findings: string[];
+  repair_steps: string[];
+  inspected_at: string;
+}
+
+export interface GuestKitResult {
+  vm_id: string;
+  mode: string;
+  passed: boolean;
+  findings: string[];
+  chain_valid: boolean;
+  repair_steps: string[];
+  inspected_at: string;
 }
 
 export interface SovereignConfig {

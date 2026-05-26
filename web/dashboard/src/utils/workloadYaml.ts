@@ -13,6 +13,7 @@ export interface EditorWorkloadInput {
   project?: string;
   confidentialEnabled?: boolean;
   confidentialTee?: 'sev-snp' | 'tdx';
+  confidentialKataRuntime?: 'kata-clh-snp' | 'kata-clh-tdx' | 'kata-qemu-snp' | 'kata-qemu-tdx';
   attestationRequired?: boolean;
   imageDigest?: string;
 }
@@ -77,6 +78,8 @@ function runtimeBlock(runtime: string): { preferred: string; allow: string[] } {
     case 'kubernetes':
     case 'kube':
       return { preferred: 'kube', allow: ['kube'] };
+    case 'kata':
+      return { preferred: 'kube', allow: ['kube'] };
     case 'kubevirt':
       return { preferred: 'kubevirt', allow: ['kubevirt'] };
     case 'metal3':
@@ -123,6 +126,40 @@ function parseImageRef(image: string): { registry: string; tag: string; repo: st
   return { registry: parts.slice(0, -1).join('/'), tag, repo };
 }
 
+function appendConfidentialBlock(
+  lines: string[],
+  input: EditorWorkloadInput,
+  preferred: string,
+  kataPath: boolean,
+) {
+  if (!input.confidentialEnabled) return;
+  const tee = input.confidentialTee ?? 'sev-snp';
+  lines.push(
+    'confidential:',
+    '  enabled: true',
+    `  tee: ${tee}`,
+    '  attestation:',
+    `    required: ${input.attestationRequired !== false}`,
+    '    policy: strict',
+    '  isolation:',
+    '    vtpm: true',
+    '    encryptedState: true',
+    '    debugAllowed: false',
+    '  secrets:',
+    '    releasePolicy: attest-gated',
+    '    provider: vault',
+  );
+  if (input.imageDigest?.trim()) {
+    lines.push(`  imageDigest: ${input.imageDigest.trim()}`);
+  }
+  if (kataPath && input.confidentialKataRuntime) {
+    lines.push(`  kataRuntimeClass: ${input.confidentialKataRuntime}`);
+  }
+  if (preferred === 'kubevirt') {
+    // kubevirt path — no extra kata field
+  }
+}
+
 /** Generate aether/v1 workload YAML from the visual editor form. */
 export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
   const { preferred, allow } = runtimeBlock(input.runtime);
@@ -130,6 +167,7 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
   const metadataName = input.name.trim() || repo;
   const owner = input.owner?.trim() || 'dashboard';
   const project = input.project?.trim() || 'default';
+  const kataPath = preferred === 'kube' && (input.runtime === 'kata' || input.runtime === 'kubernetes');
 
   const lines: string[] = [
     'apiVersion: aether/v1',
@@ -168,37 +206,18 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
     );
   }
 
-  if (input.intent || (input.confidentialEnabled && preferred === 'kubevirt')) {
+  const confidentialStrict = input.confidentialEnabled && (preferred === 'kubevirt' || kataPath);
+  if (input.intent || confidentialStrict) {
     lines.push('intent:');
     if (input.intent) {
       lines.push(`  goal: ${intentGoal(input.intent)}`);
     }
-    if (input.confidentialEnabled && preferred === 'kubevirt') {
+    if (confidentialStrict) {
       lines.push('  trust: strict', '  compliance:', '    isolationRequired: true');
     }
   }
 
-  if (input.confidentialEnabled && preferred === 'kubevirt') {
-    const tee = input.confidentialTee ?? 'sev-snp';
-    lines.push(
-      'confidential:',
-      '  enabled: true',
-      `  tee: ${tee}`,
-      '  attestation:',
-      `    required: ${input.attestationRequired !== false}`,
-      '    policy: strict',
-      '  isolation:',
-      '    vtpm: true',
-      '    encryptedState: true',
-      '    debugAllowed: false',
-      '  secrets:',
-      '    releasePolicy: attest-gated',
-      '    provider: vault',
-    );
-    if (input.imageDigest?.trim()) {
-      lines.push(`  imageDigest: ${input.imageDigest.trim()}`);
-    }
-  }
+  appendConfidentialBlock(lines, input, preferred, kataPath);
 
   if (input.healthCheck) {
     lines.push(

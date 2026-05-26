@@ -4121,12 +4121,16 @@ pub(crate) async fn helm_export_command(
 
 pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: &PathBuf) -> Result<()> {
     use aether::ragnarok::client::RagnarokClient;
+    use aether::ragnarok::guestkit::{GuestKitRequest, GuestKitService, InspectionMode};
     use aether::ragnarok::image::ImageCatalog;
     use aether::ragnarok::isolation::{self, IsolationPolicy};
+    use crate::cli::GuestKitAction;
+
+    let data_dir = RagnarokClient::attestation_data_dir();
 
     match action {
         ConfidentialAction::Image { action } => {
-            let catalog = ImageCatalog::load(&RagnarokClient::attestation_data_dir());
+            let catalog = ImageCatalog::load(&data_dir);
             match action {
                 ConfidentialImageAction::List => {
                     let items = catalog.list();
@@ -4169,6 +4173,80 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
                 }
             }
         }
+        ConfidentialAction::Guestkit { action } => {
+            let catalog = ImageCatalog::load(&data_dir);
+            let svc = GuestKitService::new(data_dir);
+            match action {
+                GuestKitAction::Inspect {
+                    vm_id,
+                    image,
+                    mode,
+                    policy,
+                } => {
+                    let policy_manifest = match policy {
+                        Some(p) if std::path::Path::new(&p).exists() => {
+                            Some(std::fs::read_to_string(&p)?)
+                        }
+                        Some(p) => Some(p),
+                        None => None,
+                    };
+                    let expected_digest = Workload::from_file(spec_path)
+                        .ok()
+                        .and_then(|w| {
+                            w.confidential
+                                .as_ref()
+                                .and_then(|c| c.image_digest.clone())
+                        });
+                    let result = svc.inspect(
+                        &GuestKitRequest {
+                            vm_id: vm_id.clone(),
+                            image_path: image.map(|p| p.display().to_string()),
+                            mode: InspectionMode::parse(&mode),
+                            policy_manifest,
+                            expected_digest,
+                        },
+                        &catalog,
+                    )?;
+                    if result.passed {
+                        output::success(&format!(
+                            "GuestKit {} inspection passed for '{}'",
+                            result.mode.as_str(),
+                            vm_id
+                        ));
+                    } else {
+                        for f in &result.findings {
+                            output::error(f);
+                        }
+                        anyhow::bail!("GuestKit inspection failed for '{vm_id}'");
+                    }
+                    for f in &result.findings {
+                        output::info(f);
+                    }
+                    if !result.repair_steps.is_empty() {
+                        output::info("Repair playbook:");
+                        for step in &result.repair_steps {
+                            println!("  - {step}");
+                        }
+                    }
+                }
+                GuestKitAction::History { vm_id } => {
+                    let history = svc.history(&vm_id);
+                    if history.is_empty() {
+                        output::info(&format!("No GuestKit inspections for '{vm_id}'"));
+                    } else {
+                        for entry in history {
+                            println!(
+                                "{}  mode={}  passed={}  findings={}",
+                                entry.inspected_at,
+                                entry.mode.as_str(),
+                                entry.passed,
+                                entry.findings.join("; ")
+                            );
+                        }
+                    }
+                }
+            }
+        }
         ConfidentialAction::IsolationCheck => {
             let workload = Workload::from_file(spec_path)?;
             let policy = IsolationPolicy::from_env();
@@ -4186,6 +4264,22 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
                 for (k, v) in &verdict.scheduler_hints {
                     println!("  {k}={v}");
                 }
+            }
+        }
+        ConfidentialAction::SovereignCheck => {
+            let workload = Workload::from_file(spec_path)?;
+            let config = aether::ragnarok::sovereign::SovereignConfig::from_env();
+            let verdict = aether::ragnarok::sovereign::evaluate(&workload, &config);
+            if verdict.compliant {
+                output::success("Sovereign policy: compliant");
+            } else {
+                for v in &verdict.violations {
+                    output::error(v);
+                }
+                anyhow::bail!("sovereign policy violated");
+            }
+            for h in &verdict.hints {
+                output::info(h);
             }
         }
     }

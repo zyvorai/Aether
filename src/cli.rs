@@ -557,6 +557,36 @@ pub(crate) enum ConfidentialAction {
     },
     /// Tenant isolation policy check for workload spec (--spec)
     IsolationCheck,
+    /// Sovereign cloud compliance check for workload spec (--spec)
+    SovereignCheck,
+    /// GuestKit offline VM inspection (pre-launch, policy, repair)
+    Guestkit {
+        #[command(subcommand)]
+        action: GuestKitAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum GuestKitAction {
+    /// Run offline inspection for a VM workload
+    Inspect {
+        /// Workload / VM id
+        vm_id: String,
+        /// Path to qcow2/raw image or encrypted snapshot on this host
+        #[arg(long)]
+        image: Option<PathBuf>,
+        /// Inspection mode: pre-launch, offline-policy, post-shutdown, attested-repair
+        #[arg(long, default_value = "pre-launch")]
+        mode: String,
+        /// Inline JSON policy manifest or path to policy file
+        #[arg(long)]
+        policy: Option<String>,
+    },
+    /// List prior GuestKit inspections for a workload
+    History {
+        /// Workload / VM id
+        vm_id: String,
+    },
 }
 
 #[derive(Subcommand)]

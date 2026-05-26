@@ -232,6 +232,7 @@ mod tests {
                 secrets: ConfidentialSecretsSpec::default(),
                 image_digest: None,
                 region_lock: None,
+                kata_runtime_class: None,
             }),
             schedule: None,
             kubernetes: None,

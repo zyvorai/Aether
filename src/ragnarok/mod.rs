@@ -8,6 +8,7 @@ pub mod envelope;
 pub mod guestkit;
 pub mod image;
 pub mod inject;
+pub mod intelligence;
 pub mod isolation;
 pub mod kata;
 pub mod kubevirt;

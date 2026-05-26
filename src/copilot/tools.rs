@@ -27,7 +27,8 @@ pub fn tools_openai_schema() -> serde_json::Value {
         {"type":"function","function":{"name":"query_metrics","description":"Prometheus instant query","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}},
         {"type":"function","function":{"name":"explain_attestation_failure","description":"Explain Ragnarok attestation failure for a VM/workload","parameters":{"type":"object","properties":{"vm_id":{"type":"string"}},"required":["vm_id"]}}},
         {"type":"function","function":{"name":"confidential_migrate_plan","description":"Plan confidential migration with TEE compatibility checks","parameters":{"type":"object","properties":{"workload":{"type":"string"}},"required":["workload"]}}},
-        {"type":"function","function":{"name":"trust_score_fleet","description":"Composite trust scores for confidential fleet","parameters":{"type":"object","properties":{}}}}
+        {"type":"function","function":{"name":"trust_score_fleet","description":"AI confidential fleet analysis with trust scores and risk findings","parameters":{"type":"object","properties":{}}}},
+        {"type":"function","function":{"name":"confidential_analyze","description":"AI attestation analyst for a confidential workload","parameters":{"type":"object","properties":{"workload":{"type":"string"}},"required":["workload"]}}}
     ])
 }
 
@@ -149,12 +150,10 @@ pub async fn execute_tool(
                 .get("vm_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
-            let dir = crate::intelligence::store::IntelligenceStore::default_path()
-                .parent()
-                .map(|p| p.to_path_buf())
-                .unwrap_or_else(|| ctx.state_path.parent().unwrap_or(&ctx.state_path).to_path_buf());
-            let svc = crate::ragnarok::AttestationService::new(dir);
-            let explain = svc.explain(vm_id)?;
+            let dir = ctx.state_path.parent().unwrap_or(&ctx.state_path).to_path_buf();
+            let svc = crate::ragnarok::AttestationService::new(dir.clone());
+            let gk = crate::ragnarok::guestkit::GuestKitService::new(dir).summary(vm_id);
+            let explain = svc.explain_with_guestkit(vm_id, gk)?;
             Ok(serde_json::to_value(explain)?)
         }
         "confidential_migrate_plan" => {
@@ -177,15 +176,35 @@ pub async fn execute_tool(
         }
         "trust_score_fleet" => {
             let dir = ctx.state_path.parent().unwrap_or(&ctx.state_path).to_path_buf();
-            let svc = crate::ragnarok::AttestationService::new(dir);
             let pairs = workload_pairs(&ctx.state).await;
             let confidential: Vec<_> = pairs
                 .iter()
                 .filter(|(s, _)| s.confidential.as_ref().is_some_and(|c| c.enabled))
-                .map(|(s, ws)| (ws.name.as_str(), s))
+                .map(|(s, ws)| (ws.name.as_str(), s, ws.runtime.to_string()))
                 .collect();
-            Ok(serde_json::to_value(crate::ragnarok::trust::fleet_trust_scores(
-                &confidential, &svc,
+            let refs: Vec<(&str, &Workload, &str)> = confidential
+                .iter()
+                .map(|(n, s, r)| (*n, *s, r.as_str()))
+                .collect();
+            Ok(serde_json::to_value(crate::ragnarok::intelligence::analyze_fleet(
+                &refs, &dir,
+            ))?)
+        }
+        "confidential_analyze" => {
+            let name = args
+                .get("workload")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let store = ctx.state.read().await;
+            let ws = store
+                .get(name)
+                .ok_or_else(|| anyhow::anyhow!("workload not found"))?;
+            let spec = Workload::from_file(&ws.spec_path)?;
+            let dir = ctx.state_path.parent().unwrap_or(&ctx.state_path).to_path_buf();
+            Ok(serde_json::to_value(crate::ragnarok::intelligence::analyze_workload(
+                &spec,
+                &ws.runtime.to_string(),
+                &dir,
             ))?)
         }
         other => anyhow::bail!("unknown tool: {other}"),

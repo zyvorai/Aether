@@ -42,6 +42,7 @@ impl ImageCatalog {
     }
 
     pub fn sign(&self, name: &str, image_path: &Path, key_id: &str) -> Result<ImageManifest> {
+        let key = crate::ragnarok::sovereign::SovereignConfig::from_env().signing_key_id(key_id);
         let bytes = std::fs::read(image_path)
             .with_context(|| format!("read image {}", image_path.display()))?;
         let image_hash = format!("{:x}", Sha256::digest(&bytes));
@@ -51,7 +52,7 @@ impl ImageCatalog {
             kernel_hash: None,
             initrd_hash: None,
             launch_digest: Some(image_hash.clone()),
-            signing_key_id: key_id.to_string(),
+            signing_key_id: key,
             signed_at: chrono::Utc::now().to_rfc3339(),
         };
         self.manifests
@@ -218,6 +219,7 @@ mod tests {
                 secrets: ConfidentialSecretsSpec::default(),
                 image_digest: Some("unknown-digest".into()),
                 region_lock: None,
+                kata_runtime_class: None,
             }),
             schedule: None,
             kubernetes: None,

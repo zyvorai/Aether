@@ -1,5 +1,6 @@
 //! Remote attestation verification (AMD SNP / Intel TDX reports).
 
+use crate::ragnarok::guestkit::GuestKitSummary;
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -50,6 +51,8 @@ pub struct ExplainReport {
     pub summary: String,
     pub failure_reasons: Vec<FailureReason>,
     pub measurement_diff: HashMap<String, MeasurementDiff>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub guestkit: Option<GuestKitSummary>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -134,7 +137,7 @@ impl AttestationService {
         let report_hash = format!("{:x}", Sha256::digest(report.report_b64.as_bytes()));
         measurements.insert("report_hash".into(), report_hash.clone());
 
-        if report.report_b64.len() < 16 {
+        if report.report_b64.len() < 16 && !crate::ragnarok::sovereign::offline_mode_active() {
             reason_codes.push("REPORT_TOO_SHORT".into());
         }
 
@@ -195,6 +198,14 @@ impl AttestationService {
     }
 
     pub fn explain(&self, vm_id: &str) -> Result<ExplainReport> {
+        self.explain_with_guestkit(vm_id, None)
+    }
+
+    pub fn explain_with_guestkit(
+        &self,
+        vm_id: &str,
+        guestkit: Option<GuestKitSummary>,
+    ) -> Result<ExplainReport> {
         let store = self.store.lock().unwrap();
         let record = store
             .records
@@ -223,7 +234,7 @@ impl AttestationService {
             );
         }
 
-        let summary = match record.verdict {
+        let mut summary = match record.verdict {
             AttestationVerdict::Pass => format!("VM {vm_id} attestation passed"),
             AttestationVerdict::Fail => format!(
                 "VM {vm_id} attestation failed: {}",
@@ -231,6 +242,11 @@ impl AttestationService {
             ),
             AttestationVerdict::Pending => format!("VM {vm_id} attestation pending"),
         };
+        if let Some(ref gk) = guestkit {
+            if let Some(extra) = crate::ragnarok::guestkit::enrich_explain(Some(gk)) {
+                summary = format!("{summary}. {extra}");
+            }
+        }
 
         Ok(ExplainReport {
             vm_id: vm_id.to_string(),
@@ -238,6 +254,7 @@ impl AttestationService {
             summary,
             failure_reasons,
             measurement_diff,
+            guestkit,
         })
     }
 
