@@ -21,7 +21,7 @@ import YamlInput from '../YamlInput';
 import ValidateResultPanel from '../ValidateResultPanel';
 import DeploySuccessPanel from '../DeploySuccessPanel';
 import EmptyState from '../EmptyState';
-import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice, PolicyResult } from '../../types/api';
+import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice, PolicyResult, ConfidentialMigrationPlan } from '../../types/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -70,6 +70,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [updateLoading, setUpdateLoading] = useState(false);
   const [migrateModal, setMigrateModal] = useState<string | null>(null);
   const [migrateAdvice, setMigrateAdvice] = useState<MigrationAdvice | null>(null);
+  const [confidentialMigrationPlan, setConfidentialMigrationPlan] = useState<ConfidentialMigrationPlan | null>(null);
   const [migrateTarget, setMigrateTarget] = useState<string | null>(null);
   const [migrateStrategy, setMigrateStrategy] = useState('blue-green');
   const [adviceLoading, setAdviceLoading] = useState(false);
@@ -256,15 +257,22 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   async function loadMigrationAdvice(name: string, target: string) {
     setAdviceLoading(true);
     setMigrateTarget(target);
-    const data = await apiFetch<MigrationAdvice>(`/ai/migration-advice/${encodeURIComponent(name)}/${encodeURIComponent(target)}`);
+    const [data, confPlan] = await Promise.all([
+      apiFetch<MigrationAdvice>(`/ai/migration-advice/${encodeURIComponent(name)}/${encodeURIComponent(target)}`),
+      apiFetch<ConfidentialMigrationPlan>(`/confidential/migration-plan/${encodeURIComponent(name)}/${encodeURIComponent(target)}`),
+    ]);
     setMigrateAdvice(data);
-    if (data?.recommended_strategy) {
+    if (confPlan?.recommended_strategy?.includes('Confidential')) {
+      setMigrateStrategy('confidential-blue-green');
+    } else if (data?.recommended_strategy) {
       const s = data.recommended_strategy.toLowerCase().replace(/_/g, '-');
       if (s.includes('immediate')) setMigrateStrategy('immediate');
       else if (s.includes('rolling')) setMigrateStrategy('rolling');
       else if (s.includes('canary')) setMigrateStrategy('canary');
+      else if (s.includes('confidential')) setMigrateStrategy('confidential-blue-green');
       else setMigrateStrategy('blue-green');
     }
+    setConfidentialMigrationPlan(confPlan);
     setAdviceLoading(false);
   }
 
@@ -273,6 +281,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     const res = await apiPost(`/workloads/${name}/migrate`, { target_runtime: target, strategy });
     setMigrateModal(null);
     setMigrateAdvice(null);
+    setConfidentialMigrationPlan(null);
     setMigrateTarget(null);
     setMigrateStrategy('blue-green');
     setActionLoading(null);
@@ -853,7 +862,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             <div>
               <span className="text-xs uppercase tracking-wider text-zinc-500 mb-2 block">Migration strategy</span>
               <div className="flex flex-wrap gap-2">
-                {(['immediate', 'blue-green', 'rolling'] as const).map((s) => (
+                {(['immediate', 'blue-green', 'rolling', 'confidential-blue-green'] as const).map((s) => (
                   <label key={s} className="inline-flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
                     <input
                       type="radio"
@@ -867,10 +876,26 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                   </label>
                 ))}
               </div>
-              {migrateStrategy === 'blue-green' && (
+              {migrateStrategy === 'confidential-blue-green' && (
                 <p className="text-xs text-amber-400/90 mt-2">
-                  Blue-green may drain connections for up to 30 seconds during traffic switch.
+                  Encrypted migration: deploy target, re-attest launch digest, then cutover. Requires TEE-capable nodes.
                 </p>
+              )}
+              {confidentialMigrationPlan && (
+                <div className="mt-3 p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs space-y-2">
+                  <p className="text-zinc-400 font-mono break-all">
+                    Channel: {confidentialMigrationPlan.encrypted_migration_uri}
+                  </p>
+                  {confidentialMigrationPlan.blockers.length > 0 ? (
+                    <ul className="text-red-300/90">
+                      {confidentialMigrationPlan.blockers.map((b) => (
+                        <li key={b}>{b}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-emerald-400/90">Ready for confidential cutover</p>
+                  )}
+                </div>
               )}
             </div>
             {migrateAdvice.reasons.length > 0 && (

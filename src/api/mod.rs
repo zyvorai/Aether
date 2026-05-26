@@ -570,6 +570,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/confidential/migration-plan/:name/:target",
             get(api_confidential_migration_plan),
         )
+        .route(
+            "/api/confidential/migration/:workload/status",
+            get(api_confidential_migration_status),
+        )
         .route("/api/confidential/guestkit/inspect", post(api_guestkit_inspect))
         .route(
             "/api/confidential/guestkit/:vm_id/history",

@@ -564,6 +564,27 @@ pub(crate) enum ConfidentialAction {
         #[command(subcommand)]
         action: GuestKitAction,
     },
+    /// Confidential encrypted migration plan and status
+    Migration {
+        #[command(subcommand)]
+        action: ConfidentialMigrationAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ConfidentialMigrationAction {
+    /// Plan confidential migration (requires --spec)
+    Plan {
+        /// Target runtime label for plan hints (e.g. kubevirt)
+        #[arg(long, default_value = "kubevirt")]
+        target: String,
+    },
+    /// Show in-progress confidential migration status for workload (--spec name)
+    Status {
+        /// Workload name (defaults to spec metadata.name)
+        #[arg(long)]
+        name: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]

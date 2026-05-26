@@ -172,6 +172,20 @@ Cilium auto-policy + PacketWolf hints for confidential workloads.
 
 API: GET `/api/confidential/intelligence` (fleet), GET `/api/confidential/intelligence/:workload`
 
+### Phase 6 — Encrypted live migration (Aether)
+
+Differentiator: TLS+SEV migration channel, re-attestation before cutover, hyper2kvm hints.
+
+| Step | Detail |
+|------|--------|
+| Plan | `aether --spec workload.yaml confidential migration plan` |
+| Strategy | `confidential-blue-green` (deploy target → re-attest → cutover) |
+| Channel URI | `tls+sev://qemu+tcp://migrate/...` |
+| API | GET `/api/confidential/migration-plan/:name/:target` |
+| Status | GET `/api/confidential/migration/:workload/status` |
+| Env | `AETHER_CONFIDENTIAL_MIGRATION_ATTEST_TIMEOUT=120` to poll for re-attestation |
+| Env | `AETHER_MIGRATION_TARGET_SNP=1` to simulate target TEE in plan |
+
 Example:
 
 ```yaml
