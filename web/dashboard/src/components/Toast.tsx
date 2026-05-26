@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 import { CheckCircle2, XCircle, Info, X } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -53,39 +52,31 @@ export function useToast() {
 }
 
 function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: number) => void }) {
-  const { theme } = useTheme();
-  const light = theme === 'light';
   const Icon = iconMap[item.type];
 
   const borderBg =
     item.type === 'success'
-      ? light
-        ? 'border-emerald-300 bg-white'
-        : 'border-emerald-500/30 bg-slate-900/95'
+      ? 'border-emerald-500/30 bg-slate-900/95'
       : item.type === 'error'
-        ? light
-          ? 'border-red-300 bg-white'
-          : 'border-red-500/30 bg-slate-900/95'
-        : light
-          ? 'border-orange-300 bg-white'
-          : 'border-aether/30 bg-slate-900/95';
+        ? 'border-red-500/30 bg-slate-900/95'
+        : 'border-aether/30 bg-slate-900/95';
 
   const iconColor =
     item.type === 'success' ? 'text-emerald-500' : item.type === 'error' ? 'text-red-500' : 'text-aether';
 
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-3 min-w-[280px] max-w-sm border rounded-2xl px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.45)] ${borderBg} ${
+      className={`pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.45)] ${borderBg} ${
         item.exiting ? 'toast-exit' : 'toast-enter'
       }`}
     >
-      <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${iconColor}`} />
-      <p className={`text-sm flex-1 ${light ? 'text-slate-800' : 'text-slate-100'}`}>{item.message}</p>
+      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} />
+      <p className="flex-1 text-sm text-slate-100">{item.message}</p>
       <button
         onClick={() => onDismiss(item.id)}
-        className={`shrink-0 p-0.5 rounded transition-colors ${light ? 'text-slate-500 hover:text-slate-800' : 'text-slate-500 hover:text-slate-300'}`}
+        className="shrink-0 rounded p-0.5 text-slate-500 transition-colors hover:text-slate-300"
       >
-        <X className="w-4 h-4" />
+        <X className="h-4 w-4" />
       </button>
     </div>
   );

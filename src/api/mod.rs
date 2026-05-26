@@ -7,11 +7,17 @@
 mod types;
 mod handlers;
 mod platform_recommendations;
+mod intelligence_handlers;
+mod copilot_handlers;
+mod confidential_handlers;
 
 pub use types::ApiConfig;
 
 use types::AppState;
 use handlers::*;
+use intelligence_handlers::*;
+use copilot_handlers::*;
+use confidential_handlers::*;
 use crate::state::StateStore;
 use axum::{
     body::Body,
@@ -321,6 +327,28 @@ async fn run_background_health_check(state: &Arc<RwLock<StateStore>>) -> anyhow:
     let actions = orch.run_health_checks_from_statuses(&statuses);
     orch.save(&orch_path)?;
 
+    let config = crate::config::Config::load();
+    let policy = crate::intelligence::policy::AutonomyPolicy::from_config_and_workload(
+        config.reconciliation.auto_reconcile,
+        None,
+    );
+    if !actions.is_empty() {
+        let healer_result = crate::intelligence::healer::execute_orchestrator_actions(
+            &actions,
+            &policy,
+            state,
+            &crate::state::StateStore::default_path(),
+            "api-health-loop",
+        )
+        .await;
+        if !healer_result.executed.is_empty() {
+            tracing::info!(
+                "Autonomous healing: {:?}",
+                healer_result.executed
+            );
+        }
+    }
+
     if !actions.is_empty() {
         tracing::info!("Background health check: {} action(s)", actions.len());
     }
@@ -495,6 +523,53 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/intent-optimize", post(ai_intent_optimize))
         .route("/api/ai/right-size", post(ai_right_size))
         .route("/api/ai/tradeoff", post(ai_tradeoff))
+        .route("/api/ai/migration-plan/:name/:target", get(api_ai_migration_plan))
+        .route("/api/context/snapshot", get(api_context_snapshot))
+        .route("/api/intelligence/predictions", get(api_intelligence_predictions))
+        .route("/api/intelligence/predictions/:name", get(api_intelligence_prediction_workload))
+        .route("/api/intelligence/cost-optimize", get(api_intelligence_cost_optimize))
+        .route("/api/intelligence/threats", get(api_intelligence_threats))
+        .route("/api/intelligence/evolution/status", get(api_intelligence_evolution_status))
+        .route("/api/intelligence/runtime-evolution/:name", get(api_intelligence_runtime_evolution))
+        .route("/api/intelligence/place", post(api_intelligence_place))
+        .route("/api/copilot/chat", post(api_copilot_chat))
+        .route("/api/copilot/sessions/:id", get(api_copilot_session))
+        .route("/api/copilot/confirm/:action_id", post(api_copilot_confirm))
+        .route("/api/confidential/capabilities", get(api_confidential_capabilities))
+        .route("/api/confidential/attestation/verify", post(api_attestation_verify))
+        .route(
+            "/api/confidential/attestation/:vm_id/status",
+            get(api_attestation_status),
+        )
+        .route(
+            "/api/confidential/attestation/:vm_id/explain",
+            get(api_attestation_explain),
+        )
+        .route(
+            "/api/confidential/trust-score/:workload",
+            get(api_confidential_trust_score),
+        )
+        .route(
+            "/api/confidential/trust-score",
+            get(api_confidential_trust_fleet),
+        )
+        .route(
+            "/api/confidential/secrets/release",
+            post(api_confidential_secret_release),
+        )
+        .route(
+            "/api/confidential/migration-plan/:name/:target",
+            get(api_confidential_migration_plan),
+        )
+        .route("/api/confidential/guestkit/inspect", post(api_guestkit_inspect))
+        .route(
+            "/api/confidential/sovereign/status",
+            get(api_confidential_sovereign_status),
+        )
+        .route(
+            "/api/confidential/images",
+            get(api_confidential_image_catalog),
+        )
         .route("/api/drift/:name", get(api_drift_check))
         .route("/api/drift/:name/reconcile", post(api_drift_reconcile))
         .route("/api/alerts/status", get(api_alerts_status))

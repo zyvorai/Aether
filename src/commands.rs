@@ -305,6 +305,13 @@ async fn deploy_workload_inner(
         emit_event(sev, cat, "cli", Some(&workload.metadata.name), "Workload deployed", &msg);
     }
 
+    let _ = aether::intelligence::record::record_deployment_outcome(
+        workload,
+        runtime_kind,
+        true,
+        None,
+    );
+
     Ok(())
 }
 
@@ -2217,6 +2224,21 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     let actions = orch.run_health_checks_from_statuses(&statuses);
                     orch.save(&path)?;
 
+                    let recon = aether::config::Config::load().reconciliation;
+                    let policy = aether::intelligence::policy::AutonomyPolicy::from_config_and_workload(
+                        recon.auto_reconcile,
+                        None,
+                    );
+                    let state_arc = std::sync::Arc::new(tokio::sync::RwLock::new(state_store.clone()));
+                    let healer = aether::intelligence::healer::execute_orchestrator_actions(
+                        &actions,
+                        &policy,
+                        &state_arc,
+                        &StateStore::default_path(),
+                        "reconciliation-loop",
+                    )
+                    .await;
+
                     if actions.is_empty() {
                         output::success(&format!(
                             "[{}] Health OK ({} workloads)",
@@ -2227,6 +2249,9 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                         for action in &actions {
                             output::detail(&format!("  - {:?}", action));
                         }
+                        for executed in &healer.executed {
+                            output::success(&format!("  ✓ {executed}"));
+                        }
                     }
                 }
 
@@ -2235,6 +2260,10 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     drift_elapsed = 0;
                     let detector = aether::drift::DriftDetector::new();
                     let mut drift_count = 0usize;
+                    let policy = aether::intelligence::policy::AutonomyPolicy::from_config_and_workload(
+                        recon_config.auto_reconcile,
+                        None,
+                    );
                     for ws in state_store.list() {
                         if let Ok(spec) = Workload::from_file(&ws.spec_path) {
                             let report = detector.detect(&spec, ws);
@@ -2252,6 +2281,20 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                                     "Drift detected",
                                     &format!("{} drift(s)", report.drifts.len()),
                                 );
+                                if policy.allows_drift_reconcile() {
+                                    let mut store = StateStore::load(&StateStore::default_path())?;
+                                    if let Ok(results) =
+                                        aether::drift::execute_reconciliation(&report, &mut store).await
+                                    {
+                                        store.save(&StateStore::default_path())?;
+                                        output::success(&format!(
+                                            "[{}] Auto-reconciled '{}': {} action(s)",
+                                            now_str,
+                                            ws.name,
+                                            results.len()
+                                        ));
+                                    }
+                                }
                             }
                         }
                     }
@@ -4156,6 +4199,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
         kubernetes: None,
         }

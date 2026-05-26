@@ -54,6 +54,32 @@ impl std::fmt::Display for EncryptionMethod {
     }
 }
 
+/// Attestation-gated secret reference (released only after Ragnarok verify).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttestGatedSecret {
+    pub name: String,
+    pub vm_id: String,
+    pub provider: String,
+    pub release_token: Option<String>,
+    pub attestation_required: bool,
+}
+
+impl AttestGatedSecret {
+    pub fn from_workload_spec(spec: &crate::spec::Workload, secret_name: &str) -> Option<Self> {
+        let conf = spec.confidential.as_ref()?;
+        if !conf.enabled || conf.secrets.release_policy != crate::spec::SecretReleasePolicy::AttestGated {
+            return None;
+        }
+        Some(Self {
+            name: secret_name.to_string(),
+            vm_id: spec.metadata.name.clone(),
+            provider: format!("{:?}", conf.secrets.provider).to_lowercase(),
+            release_token: None,
+            attestation_required: conf.attestation.required,
+        })
+    }
+}
+
 /// Rotation policy for secrets
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RotationPolicy {

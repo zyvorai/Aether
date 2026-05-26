@@ -135,8 +135,10 @@ SKIP_EXT_HEALTH="${AETHER_SKIP_EXTERNAL_HEALTH:-0}"
 
 info() { aether_ok "$*"; }
 warn() { aether_warn "$*"; }
-step() { aether_step "$*"; }
+step() { aether_step_remote "$@"; }
 error() { aether_die "$*"; }
+
+DEPLOY_START=$(date +%s)
 
 if [ -n "${PASS}" ] && ! command -v sshpass >/dev/null 2>&1; then
   error "sshpass is required when DEPLOY_PASS is set"
@@ -226,20 +228,25 @@ detect_remote_env() {
 
 detect_remote_env
 
-aether_banner_orchestrator
-aether_kv "Host" "${USER}@${HOST}"
-aether_kv "Cluster" "${REMOTE_K8S_FLAVOR}"
-aether_kv "Kubectl" "${K}"
-aether_kv "Builder" "${BUILD_TOOL}"
-aether_kv "Import" "${IMPORT_CMD}"
-aether_kv "Namespace" "${AETHER_NS}"
-aether_kv "Image" "${AETHER_IMAGE}"
-aether_kv "Expose" "${AETHER_EXPOSE}"
-aether_kv "NodePort" "${NODE_PORT}"
-aether_kv "Ingress host" "${AETHER_INGRESS_HOST:-—}"
-aether_kv "Replicas" "${DEPLOY_REPLICAS}"
-aether_kv "Pull policy" "${IMAGE_PULL_POLICY}"
-aether_kv "Fast path" "rsync=${SKIP_RSYNC} cargo=${SKIP_CARGO} image=${SKIP_IMAGE} local_build=${LOCAL_BUILD}"
+aether_banner_remote
+aether_kv_icon "🖥️" "Host" "${USER}@${HOST}"
+aether_kv_icon "☸️" "Cluster" "${REMOTE_K8S_FLAVOR}"
+aether_kv_icon "🔧" "Kubectl" "${K}"
+aether_kv_icon "🐳" "Builder" "${BUILD_TOOL}"
+aether_kv_icon "📦" "Import" "${IMPORT_CMD}"
+aether_kv_icon "📁" "Namespace" "${AETHER_NS}"
+aether_kv_icon "🏷️" "Image" "${AETHER_IMAGE}"
+aether_kv_icon "🌐" "Expose" "${AETHER_EXPOSE}"
+aether_kv_icon "🔌" "NodePort" "${NODE_PORT}"
+aether_kv_icon "🌍" "Ingress" "${AETHER_INGRESS_HOST:-—}"
+aether_kv_icon "📊" "Replicas" "${DEPLOY_REPLICAS}"
+aether_kv_icon "⬇️" "Pull policy" "${IMAGE_PULL_POLICY}"
+FAST_FLAGS=""
+[ "${SKIP_RSYNC}" = "1" ] && FAST_FLAGS="${FAST_FLAGS} skip-sync"
+[ "${SKIP_CARGO}" = "1" ] && FAST_FLAGS="${FAST_FLAGS} skip-cargo"
+[ "${SKIP_IMAGE}" = "1" ] && FAST_FLAGS="${FAST_FLAGS} skip-image"
+[ "${LOCAL_BUILD}" = "1" ] && FAST_FLAGS="${FAST_FLAGS} local-build"
+aether_kv_icon "⚡" "Fast path" "${FAST_FLAGS:-full deploy}"
 echo ""
 
 if [ "${DEPLOY_REPLICAS}" -ge 2 ] && [ -z "${AETHER_STATE_DATABASE_URL:-}" ]; then
@@ -250,7 +257,7 @@ if { [ "${AETHER_EXPOSE}" = "ingress" ] || [ "${AETHER_EXPOSE}" = "both" ]; } &&
 fi
 
 if [ "${UNINSTALL}" = "1" ]; then
-  step "Removing Aether from remote cluster"
+  step 1 1 "🗑️" "Removing Aether from remote cluster"
   remote_bash <<UNINSTALL
 set -euo pipefail
 source "${REMOTE_DIR}/scripts/lib-deploy-pretty.sh"
@@ -268,16 +275,16 @@ fi
 
 TOTAL_STEPS=5
 
-step "Step 1/${TOTAL_STEPS}: Syncing source"
+step 1 "${TOTAL_STEPS}" "📡" "Syncing source"
 if [ "${SKIP_RSYNC}" = "1" ]; then
-  info "Skipped rsync"
+  info "Skipped rsync — using existing tree on remote"
 else
   ssh_cmd "mkdir -p ${REMOTE_DIR}"
   rsync_cmd "${REPO_ROOT}/" "${USER}@${HOST}:${REMOTE_DIR}/"
   info "Source synced to ${REMOTE_DIR}"
 fi
 
-step "Step 2/${TOTAL_STEPS}: Building dashboard + release binary"
+step 2 "${TOTAL_STEPS}" "🦀" "Building dashboard + release binary"
 if [ "${SKIP_RSYNC}" != "1" ] || [ -d "${REPO_ROOT}/web/dashboard/node_modules" ]; then
   if [ -f "${REPO_ROOT}/web/dashboard/package.json" ]; then
     info "Building embedded dashboard (web/dashboard/dist)..."
@@ -295,6 +302,7 @@ if [ "${LOCAL_BUILD}" = "1" ]; then
   ssh_cmd "mkdir -p ${REMOTE_DIR}/target/release"
   rsync_cmd "${REPO_ROOT}/target/release/aether" "${USER}@${HOST}:${REMOTE_DIR}/target/release/aether"
   info "Binary built locally and uploaded"
+  aether_hint "Local build uploads a macOS binary — use remote cargo on Linux nodes unless cross-compiling."
 elif [ "${SKIP_CARGO}" = "1" ]; then
   ssh_cmd "test -x ${REMOTE_DIR}/target/release/aether" || error "No remote release binary at ${REMOTE_DIR}/target/release/aether"
   info "Skipped cargo build"
@@ -315,7 +323,7 @@ else
   info "Binary built on remote"
 fi
 
-step "Step 3/${TOTAL_STEPS}: Building and importing image"
+step 3 "${TOTAL_STEPS}" "🐳" "Building and importing image"
 if [ "${SKIP_IMAGE}" = "1" ]; then
   info "Skipped image build/import"
 else
@@ -346,7 +354,7 @@ EOF
   info "Image built and imported"
 fi
 
-step "Step 4/${TOTAL_STEPS}: Applying Kubernetes manifests"
+step 4 "${TOTAL_STEPS}" "☸️" "Applying Kubernetes manifests"
 DEPLOY_STAMP="$(date +%s)-${RANDOM}"
 aether_deploy_build_secret_env_blocks "${AETHER_NS}"
 SVC_INGRESS_YAML="$(aether_deploy_service_ingress_yaml "${AETHER_NS}" "${AETHER_EXPOSE}" "${NODE_PORT}")"
@@ -427,7 +435,7 @@ REMOTE_APPLY
 aether_deploy_try_open_firewall ssh_cmd "${AETHER_EXPOSE}" "${NODE_PORT}"
 info "Kubernetes deployment applied"
 
-step "Step 5/${TOTAL_STEPS}: Verifying"
+step 5 "${TOTAL_STEPS}" "🔍" "Verifying rollout & health"
 ssh_cmd "
   ${K} -n ${AETHER_NS} get pods -o wide
   ${K} -n ${AETHER_NS} get svc aether
@@ -471,20 +479,18 @@ if [ -n "${AETHER_INGRESS_HOST}" ] && { [ "${AETHER_EXPOSE}" = "ingress" ] || [ 
   fi
 fi
 
-echo ""
 PUBLIC_URL="http://${HOST}:${NODE_PORT}"
+HEALTH_URL="http://${HOST}:${NODE_PORT}/health"
 if [ -n "${AETHER_INGRESS_HOST}" ] && { [ "${AETHER_EXPOSE}" = "ingress" ] || [ "${AETHER_EXPOSE}" = "both" ]; }; then
   if [ -n "${AETHER_INGRESS_TLS_SECRET:-}" ] || [ "${AETHER_INGRESS_TLS_ACME:-}" = "1" ]; then
     PUBLIC_URL="https://${AETHER_INGRESS_HOST}"
   else
     PUBLIC_URL="http://${AETHER_INGRESS_HOST}"
   fi
+  HEALTH_URL="${PUBLIC_URL}/health"
 fi
-info "Aether is available at ${PUBLIC_URL}"
-if [ "${AETHER_EXPOSE}" = "nodeport" ] || [ "${AETHER_EXPOSE}" = "both" ]; then
-  info "NodePort health: http://${HOST}:${NODE_PORT}/health"
-fi
+DEPLOY_ELAPSED=$(( $(date +%s) - DEPLOY_START ))
+aether_finale_remote_deploy "${PUBLIC_URL}" "${HEALTH_URL}" "${DEPLOY_ELAPSED}"
 if [ -n "${AETHER_API_KEY}" ]; then
-  info "API authentication is enabled on the remote deployment"
+  info "🔐 API authentication is enabled on the remote deployment"
 fi
-aether_subtle "  🚀 Remote path complete. Run ./scripts/health-check-all.sh from the bundle for a full seal."

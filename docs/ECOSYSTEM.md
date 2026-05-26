@@ -38,6 +38,7 @@
 | Product | Role |
 |---------|------|
 | **Aether** | Universal runtime portability — deploy, migrate, intent placement |
+| **Ragnarok** | Confidential execution layer — attestation, measured images, attest-gated secrets |
 | **PacketWolf** | Network/workload observability |
 | **GuestKit** | Guest VM inspection and tooling |
 | **HyperSDK** | Shared runtime SDK foundation |

@@ -156,6 +156,8 @@ fn parse_legacy_workload_yaml(yaml: &str) -> Result<Workload> {
         }),
         mesh: None,
         intent: legacy.intent.as_deref().map(intent_from_legacy),
+        autonomy: None,
+        confidential: None,
         schedule: None,
         kubernetes: None,
     };

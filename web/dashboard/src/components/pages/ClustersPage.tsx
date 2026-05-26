@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router';
 import { Container, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
-import { useTheme } from '../../contexts/ThemeContext';
 import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
 import Modal from '../Modal';
 import LogViewer from '../LogViewer';
@@ -72,11 +71,7 @@ function manifestContainerNames(manifest: Record<string, unknown>): string[] {
 }
 
 export default function ClustersPage() {
-  const { theme } = useTheme();
-  const light = theme === 'light';
-  const panelClass = light
-    ? 'rounded-xl border border-slate-200 bg-white text-slate-800'
-    : 'rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100';
+  const panelClass = 'rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100';
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
   const [metricsSummary, setMetricsSummary] = useState<ClusterMetricsSummary | null>(null);

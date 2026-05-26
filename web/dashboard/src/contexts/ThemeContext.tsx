@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { cycleTheme } from '../utils/themeSurface';
 
-export type AppTheme = 'dark' | 'light' | 'steel';
+export type AppTheme = 'dark' | 'steel' | 'aurora';
 
 interface ThemeContextType {
   theme: AppTheme;
@@ -15,7 +16,8 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 function parseStoredTheme(raw: string | null): AppTheme {
-  if (raw === 'light' || raw === 'steel' || raw === 'dark') return raw;
+  if (raw === 'light') return 'aurora';
+  if (raw === 'steel' || raw === 'aurora' || raw === 'dark') return raw;
   return 'dark';
 }
 
@@ -31,17 +33,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('aether-theme', theme);
     const root = document.documentElement;
-    root.classList.remove('light-theme', 'steel-theme');
-    if (theme === 'light') root.classList.add('light-theme');
-    else if (theme === 'steel') root.classList.add('steel-theme');
+    root.classList.remove('steel-theme', 'aurora-theme');
+    if (theme === 'steel') root.classList.add('steel-theme');
+    else if (theme === 'aurora') root.classList.add('aurora-theme');
   }, [theme]);
 
   const toggleDarkLight = useCallback(() => {
-    setThemeState((t) => {
-      if (t === 'light') return 'dark';
-      if (t === 'steel') return 'dark';
-      return 'light';
-    });
+    setThemeState((t) => cycleTheme(t));
   }, []);
 
   return <ThemeContext.Provider value={{ theme, setTheme, toggleDarkLight }}>{children}</ThemeContext.Provider>;

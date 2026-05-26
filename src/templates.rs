@@ -214,6 +214,8 @@ fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<Ru
         scaling: None,
         mesh: None,
         intent: None,
+        autonomy: None,
+        confidential: None,
         schedule: None,
     kubernetes: None,
     }

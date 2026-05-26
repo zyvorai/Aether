@@ -1,12 +1,13 @@
 //! Cilium CNI detection and Aether-managed bootstrap policy inventory.
 
-use anyhow::{Context, Result};
+use anyhow::Result;
+use k8s_openapi::api::apps::v1::DaemonSet;
+use k8s_openapi::api::core::v1::ConfigMap;
+use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use kube::api::{Api, ListParams};
-use kube::config::{KubeConfigOptions, Kubeconfig};
 use kube::core::DynamicObject;
-use kube::{Client, Config, Resource, ResourceExt};
+use kube::{Client, Resource, ResourceExt};
 use serde::Serialize;
-use tokio::process::Command;
 
 use crate::adapters::kube_policy_extras::cilium_network_policy_api_resource;
 
@@ -69,21 +70,18 @@ pub fn is_aether_managed_policy(name: &str) -> bool {
 }
 
 pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Result<CiliumStatusResponse> {
-    let cluster = resolve_cluster(cluster).await?;
+    let cluster = super::resolve_reachable_cluster(cluster).await?;
+    let client = super::client_for_cluster(&cluster).await?;
     let namespace = namespace
         .filter(|n| !n.is_empty() && *n != "all")
         .unwrap_or(DEFAULT_AETHER_NAMESPACE)
         .to_string();
 
-    let crd_cnp = kubectl_crd_exists(&cluster, "ciliumnetworkpolicies.cilium.io").await?;
-    let crd_ccnp = kubectl_crd_exists(&cluster, "ciliumclusterwidenetworkpolicies.cilium.io").await?;
+    let crd_cnp = crd_exists(&client, "ciliumnetworkpolicies.cilium.io").await?;
+    let crd_ccnp = crd_exists(&client, "ciliumclusterwidenetworkpolicies.cilium.io").await?;
 
     let cni = if crd_cnp || crd_ccnp {
-        if cilium_daemonset_ready(&cluster).await? {
-            "cilium".to_string()
-        } else {
-            "cilium".to_string()
-        }
+        "cilium".to_string()
     } else {
         "other".to_string()
     };
@@ -91,13 +89,13 @@ pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Re
     let mut managed_policies = Vec::new();
     for name in MANAGED_CNP_NAMES {
         let exists = if crd_cnp {
-            kubectl_namespaced_resource_exists(&cluster, "cnp", &namespace, name).await?
+            namespaced_policy_exists(&client, &namespace, name).await?
         } else {
             false
         };
         managed_policies.push(ManagedPolicyStatus {
             name: (*name).to_string(),
-            scope: "namespace".to_string(),
+            scope: "namespace".into(),
             namespace: Some(namespace.clone()),
             exists,
             aether_managed: true,
@@ -105,13 +103,13 @@ pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Re
     }
     for name in MANAGED_CCNP_NAMES {
         let exists = if crd_ccnp {
-            kubectl_cluster_resource_exists(&cluster, "ccnp", name).await?
+            clusterwide_policy_exists(&client, name).await?
         } else {
             false
         };
         managed_policies.push(ManagedPolicyStatus {
             name: (*name).to_string(),
-            scope: "cluster".to_string(),
+            scope: "cluster".into(),
             namespace: None,
             exists,
             aether_managed: true,
@@ -120,13 +118,17 @@ pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Re
 
     let egress_mode = infer_egress_mode(&managed_policies);
     let metrics_server = metrics_server_available(&cluster).await?;
-    let cilium_daemonset_ready = cilium_daemonset_ready(&cluster).await.unwrap_or(false);
-    let connectivity_check = read_connectivity_check(&cluster, &namespace).await;
+    let cilium_daemonset_ready = cilium_daemonset_ready(&client).await.unwrap_or(false);
+    let connectivity_check = read_connectivity_check(&client, &namespace).await;
 
     Ok(CiliumStatusResponse {
         cluster,
         namespace,
-        cni: if crd_cnp || crd_ccnp { cni } else { "unknown".to_string() },
+        cni: if crd_cnp || crd_ccnp {
+            cni
+        } else {
+            "unknown".to_string()
+        },
         crds: CiliumCrdsStatus {
             ciliumnetworkpolicies: crd_cnp,
             ciliumclusterwidenetworkpolicies: crd_ccnp,
@@ -150,148 +152,79 @@ fn infer_egress_mode(policies: &[ManagedPolicyStatus]) -> String {
     }
 }
 
-async fn resolve_cluster(cluster: Option<&str>) -> Result<String> {
-    if let Some(c) = cluster.filter(|s| !s.is_empty()) {
-        return Ok(c.to_string());
+async fn crd_exists(client: &Client, crd_name: &str) -> Result<bool> {
+    let api: Api<CustomResourceDefinition> = Api::all(client.clone());
+    match api.get(crd_name).await {
+        Ok(_) => Ok(true),
+        Err(kube::Error::Api(e)) if e.code == 404 => Ok(false),
+        Err(e) => Err(e.into()),
     }
-    let clusters = super::list_clusters().await?;
-    clusters
-        .into_iter()
-        .find(|c| c.reachable)
-        .map(|c| c.name)
-        .or_else(|| {
-            Kubeconfig::read()
-                .ok()
-                .and_then(|kc| kc.current_context)
-        })
-        .context("no Kubernetes cluster context available")
 }
 
-async fn kubectl_crd_exists(cluster: &str, crd_name: &str) -> Result<bool> {
-    if which::which("kubectl").is_err() {
-        return Ok(false);
+async fn namespaced_policy_exists(client: &Client, namespace: &str, name: &str) -> Result<bool> {
+    let api_resource = cilium_network_policy_api_resource();
+    let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
+    match api.get(name).await {
+        Ok(_) => Ok(true),
+        Err(kube::Error::Api(e)) if e.code == 404 || e.code == 403 => Ok(false),
+        Err(e) => Err(e.into()),
     }
-    let output = Command::new("kubectl")
-        .args(["--context", cluster, "get", "crd", crd_name, "-o", "name"])
-        .output()
-        .await
-        .context("kubectl get crd")?;
-    Ok(output.status.success())
 }
 
-async fn kubectl_namespaced_resource_exists(
-    cluster: &str,
-    resource: &str,
-    namespace: &str,
-    name: &str,
-) -> Result<bool> {
-    if which::which("kubectl").is_err() {
-        return Ok(false);
+async fn clusterwide_policy_exists(client: &Client, name: &str) -> Result<bool> {
+    let api_resource = cilium_clusterwide_network_policy_api_resource();
+    let api: Api<DynamicObject> = Api::all_with(client.clone(), &api_resource);
+    match api.get(name).await {
+        Ok(_) => Ok(true),
+        Err(kube::Error::Api(e)) if e.code == 404 || e.code == 403 => Ok(false),
+        Err(e) => Err(e.into()),
     }
-    let output = Command::new("kubectl")
-        .args([
-            "--context",
-            cluster,
-            "-n",
-            namespace,
-            "get",
-            resource,
-            name,
-            "-o",
-            "name",
-        ])
-        .output()
-        .await
-        .context("kubectl get namespaced resource")?;
-    Ok(output.status.success())
 }
 
-async fn kubectl_cluster_resource_exists(cluster: &str, resource: &str, name: &str) -> Result<bool> {
-    if which::which("kubectl").is_err() {
-        return Ok(false);
-    }
-    let output = Command::new("kubectl")
-        .args(["--context", cluster, "get", resource, name, "-o", "name"])
-        .output()
-        .await
-        .context("kubectl get cluster resource")?;
-    Ok(output.status.success())
-}
-
-async fn cilium_daemonset_ready(cluster: &str) -> Result<bool> {
-    if which::which("kubectl").is_err() {
-        return Ok(false);
-    }
-    let output = Command::new("kubectl")
-        .args([
-            "--context",
-            cluster,
-            "-n",
-            "kube-system",
-            "get",
-            "ds",
-            "cilium",
-            "-o",
-            "jsonpath={.status.numberReady}",
-        ])
-        .output()
-        .await
-        .context("kubectl get cilium ds")?;
-    if !output.status.success() {
-        return Ok(false);
-    }
-    let ready = String::from_utf8_lossy(&output.stdout).trim().parse::<u32>().unwrap_or(0);
-    Ok(ready > 0)
-}
-
-async fn read_connectivity_check(cluster: &str, namespace: &str) -> String {
-    if which::which("kubectl").is_err() {
-        return "unknown".to_string();
-    }
-    let output = Command::new("kubectl")
-        .args([
-            "--context",
-            cluster,
-            "-n",
-            namespace,
-            "get",
-            "configmap",
-            "aether-cilium-connectivity",
-            "-o",
-            "jsonpath={.data.status}",
-        ])
-        .output()
-        .await;
-    match output {
-        Ok(o) if o.status.success() => {
-            let status = String::from_utf8_lossy(&o.stdout).trim().to_string();
-            if status.is_empty() {
-                "unknown".to_string()
-            } else {
-                status
-            }
+async fn cilium_daemonset_ready(client: &Client) -> Result<bool> {
+    let api: Api<DaemonSet> = Api::namespaced(client.clone(), "kube-system");
+    match api.get("cilium").await {
+        Ok(ds) => {
+            let ready = ds.status.map(|s| s.number_ready).unwrap_or(0);
+            Ok(ready > 0)
         }
-        _ => "unknown".to_string(),
+        Err(kube::Error::Api(e)) if e.code == 404 => Ok(false),
+        Err(e) => Err(e.into()),
+    }
+}
+
+async fn read_connectivity_check(client: &Client, namespace: &str) -> String {
+    let api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace);
+    match api.get("aether-cilium-connectivity").await {
+        Ok(cm) => cm
+            .data
+            .and_then(|d| d.get("status").cloned())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "unknown".to_string()),
+        Err(kube::Error::Api(e)) if e.code == 404 => "unknown".to_string(),
+        Err(_) => "unknown".to_string(),
     }
 }
 
 pub async fn metrics_server_available(cluster: &str) -> Result<bool> {
-    if which::which("kubectl").is_err() {
-        return Ok(false);
-    }
-    let output = Command::new("kubectl")
-        .args(["--context", cluster, "top", "nodes", "--no-headers"])
-        .output()
-        .await
-        .context("kubectl top nodes")?;
-    Ok(output.status.success())
+    let client = super::client_for_cluster(cluster).await?;
+    metrics_server_available_client(&client).await
+}
+
+async fn metrics_server_available_client(client: &Client) -> Result<bool> {
+    let discovery = kube::discovery::Discovery::new(client.clone());
+    let resources = discovery.run().await?;
+    let has_metrics = resources
+        .groups()
+        .any(|group| group.name() == "metrics.k8s.io");
+    Ok(has_metrics)
 }
 
 pub async fn list_cilium_network_policies(
     cluster: &str,
     namespace: Option<&str>,
 ) -> Result<Vec<super::ClusterResourceSummary>> {
-    let client = client_for_context(cluster).await?;
+    let client = super::client_for_cluster(cluster).await?;
     let api_resource = cilium_network_policy_api_resource();
     let list = if let Some(ns) = namespace.filter(|n| *n != "all" && *n != "_cluster") {
         let api: Api<DynamicObject> = Api::namespaced_with(client, ns, &api_resource);
@@ -330,7 +263,7 @@ pub async fn list_cilium_network_policies(
 pub async fn list_cilium_clusterwide_network_policies(
     cluster: &str,
 ) -> Result<Vec<super::ClusterResourceSummary>> {
-    let client = client_for_context(cluster).await?;
+    let client = super::client_for_cluster(cluster).await?;
     let api_resource = cilium_clusterwide_network_policy_api_resource();
     let api: Api<DynamicObject> = Api::all_with(client, &api_resource);
     let list = api.list(&ListParams::default()).await?.items;
@@ -359,20 +292,6 @@ pub async fn list_cilium_clusterwide_network_policies(
             }
         })
         .collect())
-}
-
-async fn client_for_context(context: &str) -> Result<Client> {
-    let kubeconfig = Kubeconfig::read().context("failed to read kubeconfig")?;
-    let config = Config::from_custom_kubeconfig(
-        kubeconfig,
-        &KubeConfigOptions {
-            context: Some(context.to_string()),
-            ..Default::default()
-        },
-    )
-    .await
-    .with_context(|| format!("failed to create kube client for context {}", context))?;
-    Client::try_from(config).context("failed to create kube client")
 }
 
 #[cfg(test)]
@@ -408,5 +327,13 @@ mod tests {
         assert!(is_aether_managed_policy("allow-aether-egress"));
         assert!(is_aether_managed_policy("aether-control-plane-egress"));
         assert!(!is_aether_managed_policy("custom-policy"));
+    }
+
+    #[test]
+    fn test_in_cluster_label_matches_default() {
+        assert!(super::super::is_in_cluster_label("active-client"));
+        assert!(super::super::is_in_cluster_label(
+            &super::super::default_in_cluster_label()
+        ));
     }
 }

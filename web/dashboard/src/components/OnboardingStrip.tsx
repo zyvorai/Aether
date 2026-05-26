@@ -1,6 +1,5 @@
 import { CheckCircle2, Circle, ClipboardCheck, Rocket, HeartPulse } from 'lucide-react';
 import type { AppView } from '../types/api';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface OnboardingStep {
   id: string;
@@ -27,8 +26,6 @@ export default function OnboardingStrip({
   onDeploy,
   onValidate,
 }: OnboardingStripProps) {
-  const { theme } = useTheme();
-  const light = theme === 'light';
 
   const steps: OnboardingStep[] = [
     {
@@ -58,14 +55,12 @@ export default function OnboardingStrip({
 
   return (
     <section
-      className={`mb-6 rounded-2xl border p-5 ${
-        light ? 'border-aether/30 bg-aether/5' : 'border-aether/25 bg-aether/5'
-      }`}
+      className="mb-6 rounded-2xl border border-aether/25 bg-aether/5 p-5"
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className={`text-sm font-semibold ${light ? 'text-slate-900' : 'text-white'}`}>Getting started</h3>
-          <p className={`text-xs mt-0.5 ${light ? 'text-slate-600' : 'text-slate-400'}`}>
+          <h3 className={`text-sm font-semibold ${'text-white'}`}>Getting started</h3>
+          <p className={`text-xs mt-0.5 ${'text-slate-400'}`}>
             {completed}/{steps.length} steps complete — follow the checklist to stand up your first workload.
           </p>
         </div>
@@ -82,35 +77,33 @@ export default function OnboardingStrip({
               className={`w-full text-left rounded-xl border p-4 transition-colors flex items-start gap-3 ${
                 step.done
                   ? 'border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10'
-                  : light
-                    ? 'border-slate-200 bg-white/80 hover:border-aether/35 hover:bg-slate-50'
-                    : 'border-slate-700/80 bg-slate-950/40 hover:border-aether/35 hover:bg-slate-900/60'
+                  : 'border-slate-700/80 bg-slate-950/40 hover:border-aether/35 hover:bg-slate-900/60'
               }`}
             >
-              <span className={`mt-0.5 shrink-0 text-xs font-mono ${light ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className={`mt-0.5 shrink-0 text-xs font-mono ${'text-slate-500'}`}>
                 {index + 1}
               </span>
               {step.done ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" aria-hidden />
               ) : (
-                <Circle className={`h-4 w-4 shrink-0 mt-0.5 ${light ? 'text-slate-400' : 'text-slate-500'}`} aria-hidden />
+                <Circle className={`h-4 w-4 shrink-0 mt-0.5 ${'text-slate-500'}`} aria-hidden />
               )}
               <span className="min-w-0 flex-1">
-                <span className={`block text-sm font-medium ${light ? 'text-slate-800' : 'text-slate-200'}`}>
+                <span className={`block text-sm font-medium ${'text-slate-200'}`}>
                   {step.label}
                 </span>
-                <span className={`block text-xs mt-1 ${light ? 'text-slate-500' : 'text-slate-500'}`}>
+                <span className={`block text-xs mt-1 ${'text-slate-500'}`}>
                   {step.description}
                 </span>
               </span>
               {step.id === 'validate' ? (
-                <ClipboardCheck className={`hidden sm:block h-4 w-4 shrink-0 ${light ? 'text-slate-400' : 'text-slate-600'}`} aria-hidden />
+                <ClipboardCheck className={`hidden sm:block h-4 w-4 shrink-0 ${'text-slate-600'}`} aria-hidden />
               ) : null}
               {step.id === 'deploy' ? (
-                <Rocket className={`hidden sm:block h-4 w-4 shrink-0 ${light ? 'text-slate-400' : 'text-slate-600'}`} aria-hidden />
+                <Rocket className={`hidden sm:block h-4 w-4 shrink-0 ${'text-slate-600'}`} aria-hidden />
               ) : null}
               {step.id === 'health' ? (
-                <HeartPulse className={`hidden sm:block h-4 w-4 shrink-0 ${light ? 'text-slate-400' : 'text-slate-600'}`} aria-hidden />
+                <HeartPulse className={`hidden sm:block h-4 w-4 shrink-0 ${'text-slate-600'}`} aria-hidden />
               ) : null}
             </button>
           </li>

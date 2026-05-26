@@ -251,12 +251,6 @@
   background-clip: text;
   color: transparent;
 }
-.login-page-light .login-text-gradient {
-  background: none;
-  color: #0f172a;
-  -webkit-background-clip: unset;
-  background-clip: unset;
-}
 .login-stat-pill {
   display: inline-flex;
   align-items: center;
@@ -365,31 +359,35 @@
 .login-btn-secondary:hover {
   background: rgba(30, 41, 59, 0.9);
 }
-.login-page-light .login-panel {
-  background-color: #f8fafc;
-  background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.08), transparent);
+.login-page-aurora .login-text-gradient {
+  background: linear-gradient(135deg, #67e8f9 0%, #c4b5fd 45%, #6ee7b7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.login-page-light .login-glass {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: #e2e8f0;
+.login-page-aurora .login-panel {
+  background-color: #040812;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34, 211, 238, 0.18), transparent),
+    radial-gradient(ellipse 70% 45% at 85% 0%, rgba(192, 132, 252, 0.20), transparent),
+    linear-gradient(180deg, #040812 0%, #0a1020 100%);
 }
-.login-page-light .login-input {
-  background: #fff;
-  border-color: #cbd5e1;
-  color: #0f172a;
+.login-page-aurora .login-glass {
+  background: rgba(10, 16, 32, 0.82);
+  border-color: rgba(167, 139, 250, 0.22);
 }
-.login-page-light .login-hero {
-  background: linear-gradient(145deg, #f1f5f9 0%, #e0f2fe 40%, #f8fafc 100%);
+.login-page-aurora .login-input {
+  background: rgba(8, 12, 24, 0.88);
+  border-color: rgba(167, 139, 250, 0.22);
+  color: #e2e8f0;
 }
-.login-page-light .login-fade-in h2,
-.login-page-light .login-fade-in .text-white,
-.login-page-light .text-white {
-  color: #0f172a;
+.login-page-aurora .login-hero {
+  background: linear-gradient(145deg, #0b1020 0%, #1e1b4b 35%, #042f2e 70%, #0a1020 100%);
 }
-.login-page-light .login-stat-pill {
-  background: rgba(15, 23, 42, 0.05);
-  border-color: #cbd5e1;
-  color: #475569;
+.login-page-aurora .login-stat-pill {
+  background: rgba(167, 139, 250, 0.08);
+  border-color: rgba(34, 211, 238, 0.18);
+  color: #cbd5e1;
 }
 .login-page-steel .login-hero {
   background: linear-gradient(145deg, #121820 0%, #1a2230 40%, #243044 70%, #1a2230 100%);
