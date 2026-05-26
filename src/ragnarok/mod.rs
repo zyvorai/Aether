@@ -15,6 +15,7 @@ pub mod kubevirt;
 pub mod kbs;
 pub mod migration;
 pub mod network;
+pub mod scheduling;
 pub mod secrets;
 pub mod sovereign;
 pub mod tee;

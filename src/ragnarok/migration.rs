@@ -223,12 +223,33 @@ pub fn plan_confidential_migration_tee(
     }
 }
 
+/// Whether the hyper2kvm operator tool is on PATH or `HYPER2KVM_BIN`.
+pub fn hyper2kvm_available() -> bool {
+    if let Ok(bin) = std::env::var("HYPER2KVM_BIN") {
+        if !bin.trim().is_empty() && std::path::Path::new(&bin).exists() {
+            return true;
+        }
+    }
+    std::process::Command::new("hyper2kvm")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
 pub fn hyper2kvm_command_hints(spec: &Workload, encrypted_uri: &str) -> Vec<String> {
     let mut hints = vec![
         "hyper2kvm migrate --source <vm> --dest <target> --bandwidth-limit 1G".into(),
         format!("Use encrypted channel URI: {encrypted_uri}"),
         "Preserve launch digest in guest firmware config during stream".into(),
     ];
+    if hyper2kvm_available() {
+        hints.push("hyper2kvm detected on host — run migrate with encrypted URI above".into());
+    } else {
+        hints.push(
+            "Install hyper2kvm or set HYPER2KVM_BIN for live encrypted memory migration".into(),
+        );
+    }
     if let Some(ref d) = spec.confidential.as_ref().and_then(|c| c.image_digest.as_ref()) {
         hints.push(format!("Verify target attestation reports digest {d} before cutover"));
     }

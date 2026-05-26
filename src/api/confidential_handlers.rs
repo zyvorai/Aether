@@ -18,6 +18,7 @@ use crate::ragnarok::{
     tee::{probe_host_tee, TeeCapabilities},
     trust::{confidential_fleet_rows, fleet_trust_scores, ConfidentialFleetRow},
     isolation::{self, IsolationPolicy, IsolationVerdict},
+    scheduling::{self, ConfidentialPlacementAdvice},
 };
 use crate::spec::Workload;
 use axum::{
@@ -584,6 +585,17 @@ pub(crate) async fn api_confidential_isolation(
     };
     let policy = IsolationPolicy::from_env();
     ok_json(isolation::evaluate(&spec, &policy)).into_response()
+}
+
+pub(crate) async fn api_confidential_placement(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let Some(spec) = try_workload_spec(&app_state, &workload).await else {
+        return err_not_found::<ConfidentialPlacementAdvice>(format!("workload {workload} not found"))
+            .into_response();
+    };
+    ok_json(scheduling::placement_advice(&spec)).into_response()
 }
 
 /// Record attestation failure event for audit consumers.

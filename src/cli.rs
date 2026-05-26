@@ -557,6 +557,8 @@ pub(crate) enum ConfidentialAction {
     },
     /// Tenant isolation policy check for workload spec (--spec)
     IsolationCheck,
+    /// Trust-aware placement advice for workload spec (--spec)
+    Placement,
     /// Sovereign cloud compliance check for workload spec (--spec)
     SovereignCheck,
     /// GuestKit offline VM inspection (pre-launch, policy, repair)

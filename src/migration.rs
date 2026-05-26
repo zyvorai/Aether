@@ -1884,6 +1884,14 @@ mod tests {
         assert_eq!("bluegreen".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::BlueGreen);
         assert_eq!("rolling".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Rolling);
         assert_eq!("canary".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Canary);
+        assert_eq!(
+            "confidential-blue-green".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::ConfidentialBlueGreen
+        );
+        assert_eq!(
+            "confidentialbluegreen".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::ConfidentialBlueGreen
+        );
         assert_eq!("IMMEDIATE".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Immediate);
         assert!("unknown".parse::<MigrationStrategy>().is_err());
     }
@@ -1894,6 +1902,10 @@ mod tests {
         assert_eq!(MigrationStrategy::BlueGreen.to_string(), "blue-green");
         assert_eq!(MigrationStrategy::Rolling.to_string(), "rolling");
         assert_eq!(MigrationStrategy::Canary.to_string(), "canary");
+        assert_eq!(
+            MigrationStrategy::ConfidentialBlueGreen.to_string(),
+            "confidential-blue-green"
+        );
     }
 
     // ---------------------------------------------------------------
