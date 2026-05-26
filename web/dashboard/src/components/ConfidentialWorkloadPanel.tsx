@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/api';
 import Badge from './Badge';
-import type { AttestationExplain, AttestationStatus, NetworkTrustScore } from '../types/api';
+import type { AttestationExplain, AttestationStatus, AttestGatedSecretStatus, NetworkTrustScore } from '../types/api';
 
 function TrustBar({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100);
@@ -43,6 +43,7 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
   const [trust, setTrust] = useState<NetworkTrustScore | null>(null);
   const [status, setStatus] = useState<AttestationStatus | null>(null);
   const [explain, setExplain] = useState<AttestationExplain | null>(null);
+  const [secretStatus, setSecretStatus] = useState<AttestGatedSecretStatus[]>([]);
   const [showExplain, setShowExplain] = useState(false);
   const [notConfidential, setNotConfidential] = useState(false);
 
@@ -51,9 +52,10 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
     async function load() {
       setLoading(true);
       setNotConfidential(false);
-      const [trustData, statusData] = await Promise.all([
+      const [trustData, statusData, secretsData] = await Promise.all([
         apiFetch<NetworkTrustScore>(`/confidential/trust-score/${encodeURIComponent(workloadName)}`),
         apiFetch<AttestationStatus>(`/confidential/attestation/${encodeURIComponent(workloadName)}/status`),
+        apiFetch<AttestGatedSecretStatus[]>(`/confidential/secrets/${encodeURIComponent(workloadName)}/status`),
       ]);
       if (cancelled) return;
       if (!trustData) {
@@ -61,6 +63,7 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
       }
       setTrust(trustData);
       setStatus(statusData);
+      setSecretStatus(secretsData ?? []);
       setExplain(null);
       setShowExplain(false);
       setLoading(false);
@@ -173,6 +176,23 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
           No attestation record yet. Submit a guest report via Ragnarok or POST{' '}
           <code className="text-zinc-400">/api/confidential/attestation/verify</code>.
         </p>
+      )}
+
+      {secretStatus.length > 0 && (
+        <div className="border-t border-zinc-700 pt-4">
+          <h4 className="text-sm font-medium text-zinc-300 mb-3">Attest-gated secrets</h4>
+          <div className="space-y-2">
+            {secretStatus.map((s) => (
+              <div
+                key={s.secret_name}
+                className="flex items-center justify-between text-sm py-1.5 px-2 rounded bg-zinc-950/60 border border-zinc-800"
+              >
+                <span className="text-zinc-300">{s.secret_name}</span>
+                <Badge text={s.state} variant={s.state === 'released' || s.state === 'injected' ? 'green' : s.state === 'revoked' ? 'red' : 'yellow'} />
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
