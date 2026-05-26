@@ -13,6 +13,8 @@ export interface EditorWorkloadInput {
   project?: string;
   confidentialEnabled?: boolean;
   confidentialTee?: 'sev-snp' | 'tdx';
+  /** Tenant-facing profile; when set, backend resolves kataRuntimeClass. */
+  confidentialSecurityProfile?: '' | 'sandbox' | 'standard-confidential' | 'sovereign-high';
   confidentialKataRuntime?: 'kata-clh-snp' | 'kata-clh-tdx' | 'kata-qemu-snp' | 'kata-qemu-tdx';
   attestationRequired?: boolean;
   imageDigest?: string;
@@ -152,7 +154,10 @@ function appendConfidentialBlock(
   if (input.imageDigest?.trim()) {
     lines.push(`  imageDigest: ${input.imageDigest.trim()}`);
   }
-  if (kataPath && input.confidentialKataRuntime) {
+  const profile = input.confidentialSecurityProfile?.trim();
+  if (profile) {
+    lines.push(`  securityProfile: ${profile}`);
+  } else if (kataPath && input.confidentialKataRuntime) {
     lines.push(`  kataRuntimeClass: ${input.confidentialKataRuntime}`);
   }
   if (preferred === 'kubevirt') {

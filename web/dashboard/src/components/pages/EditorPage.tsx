@@ -22,6 +22,7 @@ interface EditorForm {
   healthCheck: boolean;
   confidentialEnabled: boolean;
   confidentialTee: 'sev-snp' | 'tdx';
+  confidentialSecurityProfile: '' | 'sandbox' | 'standard-confidential' | 'sovereign-high';
   confidentialKataRuntime: 'kata-clh-snp' | 'kata-clh-tdx' | 'kata-qemu-snp' | 'kata-qemu-tdx';
   attestationRequired: boolean;
   imageDigest: string;
@@ -39,6 +40,7 @@ const defaultForm: EditorForm = {
   healthCheck: true,
   confidentialEnabled: false,
   confidentialTee: 'sev-snp',
+  confidentialSecurityProfile: 'standard-confidential',
   confidentialKataRuntime: 'kata-clh-snp',
   attestationRequired: true,
   imageDigest: '',
@@ -229,6 +231,27 @@ export default function EditorPage() {
                     </select>
                   </div>
                   {(form.runtime === 'kata' || form.runtime === 'kubernetes') && (
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Security profile</label>
+                      <select
+                        value={form.confidentialSecurityProfile}
+                        onChange={(e) =>
+                          handleChange(
+                            'confidentialSecurityProfile',
+                            e.target.value as EditorForm['confidentialSecurityProfile'],
+                          )
+                        }
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                      >
+                        <option value="">Custom (manual runtime class)</option>
+                        <option value="sandbox">sandbox — no Kata TEE pool</option>
+                        <option value="standard-confidential">standard-confidential</option>
+                        <option value="sovereign-high">sovereign-high</option>
+                      </select>
+                    </div>
+                  )}
+                  {(form.runtime === 'kata' || form.runtime === 'kubernetes') &&
+                    !form.confidentialSecurityProfile && (
                     <div>
                       <label className="block text-xs text-slate-500 mb-1">Kata runtime class</label>
                       <select
