@@ -888,6 +888,17 @@ async fn deploy_workload_spec(
     };
 
     let name = request.spec.metadata.name.clone();
+
+    if request.spec.confidential.as_ref().is_some_and(|c| c.enabled) {
+        crate::ragnarok::image::deploy_image_gate(
+            &request.spec,
+            &crate::ragnarok::image::ImageCatalog::load(
+                &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
+            ),
+        )
+        .map_err(err_bad_request)?;
+    }
+
     let runtime = make_runtime::<String>(&runtime_kind).await?;
     let image = runtime.build(&request.spec).await.map_err(err_internal)?;
     let instance = runtime.run(&image, &request.spec).await.map_err(err_internal)?;
@@ -3669,10 +3680,21 @@ pub(crate) async fn validate_workload(
             // YAML parsed successfully, now run validation
             match workload.validate() {
                 Ok(()) => {
+                    let mut errors = Vec::new();
+                    if workload.confidential.as_ref().is_some_and(|c| c.enabled) {
+                        if let Err(e) = crate::ragnarok::image::deploy_image_gate(
+                            &workload,
+                            &crate::ragnarok::image::ImageCatalog::load(
+                                &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
+                            ),
+                        ) {
+                            errors.push(e.to_string());
+                        }
+                    }
                     let response = ValidateResponse {
-                        valid: true,
+                        valid: errors.is_empty(),
                         workload_name: Some(workload.metadata.name),
-                        errors: vec![],
+                        errors,
                     };
                     ok_json(response)
                 }

@@ -105,15 +105,44 @@ pub fn deploy_image_gate(spec: &crate::spec::Workload, catalog: &ImageCatalog) -
     if !conf.enabled {
         return Ok(());
     }
+
+    use crate::spec::AttestationPolicy;
+    if conf.attestation.policy == AttestationPolicy::Strict && conf.image_digest.is_none() {
+        bail!(
+            "strict confidential policy requires confidential.imageDigest (measured launch digest)"
+        );
+    }
+
     if let Some(ref digest) = conf.image_digest {
         if !catalog.verify_digest(digest) {
             bail!(
-                "confidential image digest '{}' not in Ragnarok verified catalog",
-                digest
+                "confidential image digest '{digest}' not in verified catalog — run: aether confidential image sign"
             );
         }
     }
     Ok(())
+}
+
+/// Validate attestation report launch digest against the measured-image catalog.
+pub fn attestation_digest_gate(report: &crate::ragnarok::attestation::AttestationReport, catalog: &ImageCatalog) -> Result<()> {
+    let Some(ref digest) = report.launch_digest else {
+        return Ok(());
+    };
+    if !catalog.verify_digest(digest) {
+        bail!(
+            "attestation launch digest '{digest}' does not match any signed image in catalog"
+        );
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImageVerifyResult {
+    pub name: String,
+    pub verified: bool,
+    pub image_hash: Option<String>,
+    pub launch_digest: Option<String>,
+    pub message: String,
 }
 
 #[cfg(test)]
@@ -129,5 +158,70 @@ mod tests {
         let cat = ImageCatalog::load(dir.path());
         cat.sign("ubuntu", &img, "cosign://test").unwrap();
         assert!(cat.verify("ubuntu", &img).unwrap());
+    }
+
+    #[test]
+    fn deploy_blocks_unknown_digest() {
+        use crate::spec::*;
+        use std::collections::HashMap;
+        use std::path::PathBuf;
+
+        let dir = tempdir().unwrap();
+        let cat = ImageCatalog::load(dir.path());
+        let w = Workload {
+            api_version: "aether/v1".into(),
+            kind: "Workload".into(),
+            metadata: Metadata {
+                name: "cvm".into(),
+                owner: "t".into(),
+                project: "t".into(),
+                labels: HashMap::new(),
+                annotations: HashMap::new(),
+            },
+            build: BuildSpec {
+                context: PathBuf::from("."),
+                dockerfile: PathBuf::from("Dockerfile"),
+                registry: "reg".into(),
+                build_args: HashMap::new(),
+                tag: None,
+                push: false,
+            },
+            requirements: ResourceRequirements {
+                cpu: "1".into(),
+                memory: "1Gi".into(),
+                storage: "1Gi".into(),
+                gpu: None,
+                cpu_request: None,
+                memory_request: None,
+            },
+            runtime: RuntimeSpec {
+                preferred: RuntimePreference::Kubevirt,
+                allow: vec![RuntimeType::Kubevirt],
+            },
+            network: NetworkSpec::default(),
+            persistence: PersistenceSpec::default(),
+            health: None,
+            config: None,
+            ingress: None,
+            scaling: None,
+            mesh: None,
+            intent: None,
+            autonomy: None,
+            confidential: Some(ConfidentialSpec {
+                enabled: true,
+                tee: ConfidentialTee::SevSnp,
+                attestation: ConfidentialAttestationSpec {
+                    required: true,
+                    policy: AttestationPolicy::Strict,
+                },
+                isolation: ConfidentialIsolationSpec::default(),
+                secrets: ConfidentialSecretsSpec::default(),
+                image_digest: Some("unknown-digest".into()),
+                region_lock: None,
+            }),
+            schedule: None,
+            kubernetes: None,
+        };
+        assert!(deploy_image_gate(&w, &cat).is_err());
     }
 }

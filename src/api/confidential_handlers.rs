@@ -5,7 +5,7 @@ use super::types::AppState;
 use crate::ragnarok::{
     attestation::{AttestationReport, AttestationService, AttestationVerdict},
     guestkit::{inspect, GuestKitRequest, InspectionMode},
-    image::ImageCatalog,
+    image::{attestation_digest_gate, ImageCatalog, ImageManifest, ImageVerifyResult},
     migration::plan_confidential_migration,
     secrets::{BrokerRequest, SecretBroker, SecretBrokerProvider},
     sovereign::SovereignConfig,
@@ -44,6 +44,10 @@ fn secret_broker(app_state: &AppState) -> SecretBroker {
     )
 }
 
+fn image_catalog(app_state: &AppState) -> ImageCatalog {
+    ImageCatalog::load(&state_dir(app_state))
+}
+
 async fn try_workload_spec(app_state: &AppState, name: &str) -> Option<Workload> {
     let store = app_state.state.read().await;
     let ws = store.get(name)?;
@@ -76,6 +80,11 @@ pub(crate) async fn api_attestation_verify(
     AxumState(app_state): AxumState<AppState>,
     Json(report): Json<AttestationReport>,
 ) -> impl IntoResponse {
+    let catalog = image_catalog(&app_state);
+    if let Err(e) = attestation_digest_gate(&report, &catalog) {
+        return err_bad_request::<serde_json::Value>(e).into_response();
+    }
+
     let svc = attestation_service(&app_state);
     match svc.verify(&report) {
         Ok(resp) => {
@@ -303,8 +312,88 @@ pub(crate) async fn api_confidential_sovereign_status() -> impl IntoResponse {
 pub(crate) async fn api_confidential_image_catalog(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl IntoResponse {
-    let catalog = ImageCatalog::load(&state_dir(&app_state));
-    ok_json(catalog.list())
+    ok_json(image_catalog(&app_state).list())
+}
+
+#[derive(serde::Deserialize)]
+pub(crate) struct ImageSignRequest {
+    pub name: String,
+    pub path: String,
+    #[serde(default = "default_signing_key")]
+    pub signing_key_id: String,
+}
+
+fn default_signing_key() -> String {
+    "cosign://aether".into()
+}
+
+pub(crate) async fn api_confidential_image_sign(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<ImageSignRequest>,
+) -> impl IntoResponse {
+    let catalog = image_catalog(&app_state);
+    match catalog.sign(&req.name, std::path::Path::new(&req.path), &req.signing_key_id) {
+        Ok(m) => ok_json(m).into_response(),
+        Err(e) => err_bad_request::<serde_json::Value>(e).into_response(),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub(crate) struct ImageVerifyRequest {
+    pub name: String,
+    #[serde(default)]
+    pub path: Option<String>,
+    #[serde(default)]
+    pub digest: Option<String>,
+}
+
+pub(crate) async fn api_confidential_image_verify(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<ImageVerifyRequest>,
+) -> impl IntoResponse {
+    let catalog = image_catalog(&app_state);
+    if let Some(ref path) = req.path {
+        match catalog.verify(&req.name, std::path::Path::new(path)) {
+            Ok(true) => {
+                let m: Option<ImageManifest> = catalog.get(&req.name);
+                return ok_json(ImageVerifyResult {
+                    name: req.name,
+                    verified: true,
+                    image_hash: m.as_ref().map(|x| x.image_hash.clone()),
+                    launch_digest: m.and_then(|x| x.launch_digest),
+                    message: "image file matches catalog".into(),
+                })
+                .into_response();
+            }
+            Ok(false) => {
+                return ok_json(ImageVerifyResult {
+                    name: req.name,
+                    verified: false,
+                    image_hash: None,
+                    launch_digest: None,
+                    message: "image hash mismatch".into(),
+                })
+                .into_response();
+            }
+            Err(e) => return err_bad_request::<serde_json::Value>(e).into_response(),
+        }
+    }
+    if let Some(ref digest) = req.digest {
+        let verified = catalog.verify_digest(digest);
+        return ok_json(ImageVerifyResult {
+            name: req.name,
+            verified,
+            image_hash: None,
+            launch_digest: Some(digest.clone()),
+            message: if verified {
+                "digest found in catalog".into()
+            } else {
+                "digest not in catalog".into()
+            },
+        })
+        .into_response();
+    }
+    err_bad_request::<serde_json::Value>("provide path or digest").into_response()
 }
 
 /// Record attestation failure event for audit consumers.

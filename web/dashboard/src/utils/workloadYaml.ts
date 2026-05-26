@@ -14,6 +14,7 @@ export interface EditorWorkloadInput {
   confidentialEnabled?: boolean;
   confidentialTee?: 'sev-snp' | 'tdx';
   attestationRequired?: boolean;
+  imageDigest?: string;
 }
 
 export const DEFAULT_DEPLOY_WORKLOAD_YAML = `apiVersion: aether/v1
@@ -194,6 +195,9 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
       '    releasePolicy: attest-gated',
       '    provider: vault',
     );
+    if (input.imageDigest?.trim()) {
+      lines.push(`  imageDigest: ${input.imageDigest.trim()}`);
+    }
   }
 
   if (input.healthCheck) {

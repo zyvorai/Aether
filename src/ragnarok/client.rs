@@ -4,6 +4,57 @@ use crate::ragnarok::attestation::{AttestationReport, AttestationService, Verify
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 
+#[derive(Debug, Clone, serde::Deserialize, Default)]
+struct TrustPolicy {
+    #[serde(default)]
+    require: Vec<String>,
+}
+
+impl TrustPolicy {
+    fn from_env() -> Self {
+        let raw = std::env::var("RAGNAROK_TRUST_POLICY").unwrap_or_default();
+        if raw.trim().is_empty() {
+            return Self::default();
+        }
+        serde_json::from_str(&raw).unwrap_or_default()
+    }
+
+    fn evaluate_workload(&self, spec: &crate::spec::Workload) -> Result<()> {
+        let Some(conf) = spec.confidential.as_ref() else {
+            return Ok(());
+        };
+        if self.require.is_empty() || !conf.enabled {
+            return Ok(());
+        }
+        let mut violations = Vec::new();
+        for req in &self.require {
+            match req.as_str() {
+                "attestation_required" if !conf.attestation.required => {
+                    violations.push("attestation.required must be true");
+                }
+                "signed_image" if conf.image_digest.is_none() => {
+                    violations.push("signed/measured image digest required");
+                }
+                "no_debug" | "secure_boot" if conf.isolation.debug_allowed => {
+                    violations.push("debug not allowed by policy");
+                }
+                "confidential_compute" if !conf.enabled => {
+                    violations.push("confidential_compute not enabled");
+                }
+                _ => {}
+            }
+        }
+        if violations.is_empty() {
+            Ok(())
+        } else {
+            anyhow::bail!(
+                "Trust policy violation: {}",
+                violations.join("; ")
+            )
+        }
+    }
+}
+
 #[derive(Clone, Default)]
 pub struct RagnarokClient {
     remote_base: Option<String>,
@@ -73,7 +124,13 @@ pub async fn attestation_gate_for_workload(
     let Some(conf) = spec.confidential.as_ref() else {
         return Ok(());
     };
-    if !conf.enabled || !conf.attestation.required {
+    if !conf.enabled {
+        return Ok(());
+    }
+
+    TrustPolicy::from_env().evaluate_workload(spec)?;
+
+    if !conf.attestation.required {
         return Ok(());
     }
 

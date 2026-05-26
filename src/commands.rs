@@ -4119,6 +4119,59 @@ pub(crate) async fn helm_export_command(
     Ok(())
 }
 
+pub(crate) async fn confidential_command(action: ConfidentialAction) -> Result<()> {
+    use aether::ragnarok::client::RagnarokClient;
+    use aether::ragnarok::image::ImageCatalog;
+
+    match action {
+        ConfidentialAction::Image { action } => {
+            let catalog = ImageCatalog::load(&RagnarokClient::attestation_data_dir());
+            match action {
+                ConfidentialImageAction::List => {
+                    let items = catalog.list();
+                    if items.is_empty() {
+                        output::info("No measured images in catalog.");
+                    } else {
+                        for m in items {
+                            println!(
+                                "{}  digest={}  signed={}  key={}",
+                                m.name,
+                                m.launch_digest.as_deref().unwrap_or(&m.image_hash),
+                                m.signed_at,
+                                m.signing_key_id
+                            );
+                        }
+                    }
+                }
+                ConfidentialImageAction::Sign { name, path, key } => {
+                    let manifest = catalog.sign(&name, &path, &key)?;
+                    output::success(&format!(
+                        "Signed '{}' launch_digest={}",
+                        manifest.name,
+                        manifest.launch_digest.as_deref().unwrap_or(&manifest.image_hash)
+                    ));
+                }
+                ConfidentialImageAction::Verify { name, path } => {
+                    let ok = catalog.verify(&name, &path)?;
+                    if ok {
+                        output::success(&format!("Image '{name}' matches catalog"));
+                    } else {
+                        anyhow::bail!("Image '{name}' hash mismatch");
+                    }
+                }
+                ConfidentialImageAction::VerifyDigest { digest } => {
+                    if catalog.verify_digest(&digest) {
+                        output::success(&format!("Digest '{digest}' found in catalog"));
+                    } else {
+                        anyhow::bail!("Digest '{digest}' not in verified catalog");
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Wrap an error with a contextual suggestion for the user.
 pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
     let msg = err.to_string();

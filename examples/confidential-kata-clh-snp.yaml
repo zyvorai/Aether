@@ -1,0 +1,18 @@
+# Confidential Kata workload — Cloud Hypervisor + AMD SEV-SNP
+apiVersion: v1
+kind: Pod
+metadata:
+  name: confidential-kata-clh-snp
+  labels:
+    ragnarok.zyvor.dev/confidential: "true"
+    ragnarok.zyvor.dev/tee: sev-snp
+spec:
+  runtimeClassName: kata-clh-snp
+  containers:
+    - name: app
+      image: quay.io/confidential-containers/busybox:latest
+      command: ["sleep", "3600"]
+      resources:
+        limits:
+          memory: "512Mi"
+          cpu: "500m"

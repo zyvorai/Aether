@@ -22,7 +22,9 @@ interface EditorForm {
   healthCheck: boolean;
   confidentialEnabled: boolean;
   confidentialTee: 'sev-snp' | 'tdx';
+  confidentialKataRuntime: 'kata-clh-snp' | 'kata-clh-tdx' | 'kata-qemu-snp' | 'kata-qemu-tdx';
   attestationRequired: boolean;
+  imageDigest: string;
 }
 
 const defaultForm: EditorForm = {
@@ -37,7 +39,9 @@ const defaultForm: EditorForm = {
   healthCheck: true,
   confidentialEnabled: false,
   confidentialTee: 'sev-snp',
+  confidentialKataRuntime: 'kata-clh-snp',
   attestationRequired: true,
+  imageDigest: '',
 };
 
 export default function EditorPage() {
@@ -51,7 +55,7 @@ export default function EditorPage() {
   const [policyResult, setPolicyResult] = useState<PolicyResult | null>(null);
   const [showPreview, setShowPreview] = useState(true);
 
-  const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
+  const runtimes = ['podman', 'docker', 'kubernetes', 'kata', 'kubevirt', 'metal3'];
   const intents = ['low-latency', 'high-throughput', 'cost-optimized', 'balanced'];
 
   const handleChange = (field: keyof EditorForm, value: string | number | boolean) => {
@@ -192,9 +196,9 @@ export default function EditorPage() {
             </div>
           </div>
 
-          {form.runtime === 'kubevirt' && (
+          {(form.runtime === 'kubevirt' || form.runtime === 'kata' || form.runtime === 'kubernetes') && (
             <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
-              <h3 className="text-sm font-medium text-purple-300">Confidential computing (Ragnarok)</h3>
+              <h3 className="text-sm font-medium text-purple-300">Confidential computing (Ragnarok / Aether)</h3>
               <label className="flex items-center gap-2 text-sm text-slate-300">
                 <input
                   type="checkbox"
@@ -202,7 +206,7 @@ export default function EditorPage() {
                   onChange={(e) => handleChange('confidentialEnabled', e.target.checked)}
                   className="rounded border-slate-600"
                 />
-                Enable confidential VM (SEV-SNP / TDX)
+                Enable confidential workload (SEV-SNP / TDX)
               </label>
               {form.confidentialEnabled && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
@@ -210,13 +214,40 @@ export default function EditorPage() {
                     <label className="block text-xs text-slate-500 mb-1">TEE</label>
                     <select
                       value={form.confidentialTee}
-                      onChange={(e) => handleChange('confidentialTee', e.target.value)}
+                      onChange={(e) => {
+                        const tee = e.target.value as EditorForm['confidentialTee'];
+                        handleChange('confidentialTee', tee);
+                        handleChange(
+                          'confidentialKataRuntime',
+                          tee === 'tdx' ? 'kata-clh-tdx' : 'kata-clh-snp',
+                        );
+                      }}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                     >
                       <option value="sev-snp">AMD SEV-SNP</option>
                       <option value="tdx">Intel TDX</option>
                     </select>
                   </div>
+                  {(form.runtime === 'kata' || form.runtime === 'kubernetes') && (
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Kata runtime class</label>
+                      <select
+                        value={form.confidentialKataRuntime}
+                        onChange={(e) =>
+                          handleChange(
+                            'confidentialKataRuntime',
+                            e.target.value as EditorForm['confidentialKataRuntime'],
+                          )
+                        }
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                      >
+                        <option value="kata-clh-snp">kata-clh-snp (Cloud Hypervisor)</option>
+                        <option value="kata-clh-tdx">kata-clh-tdx (Cloud Hypervisor)</option>
+                        <option value="kata-qemu-snp">kata-qemu-snp (legacy QEMU)</option>
+                        <option value="kata-qemu-tdx">kata-qemu-tdx (legacy QEMU)</option>
+                      </select>
+                    </div>
+                  )}
                   <label className="flex items-end gap-2 text-sm text-slate-300 pb-2">
                     <input
                       type="checkbox"
@@ -226,6 +257,16 @@ export default function EditorPage() {
                     />
                     Require attestation before deploy
                   </label>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs text-slate-500 mb-1">Launch digest (from signed catalog)</label>
+                    <input
+                      type="text"
+                      value={form.imageDigest}
+                      onChange={(e) => handleChange('imageDigest', e.target.value)}
+                      placeholder="sha256 launch digest — aether confidential image verify-digest"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono text-slate-100"
+                    />
+                  </div>
                 </div>
               )}
             </div>
