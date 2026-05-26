@@ -406,6 +406,64 @@ pub fn confidential_policy_issues(spec: &crate::spec::Workload) -> Vec<String> {
     crate::ragnarok::scheduling::gitops_policy_issues(spec)
 }
 
+/// Per-file confidential compliance from GitOps sync (YAML in repo).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GitOpsConfidentialAudit {
+    pub file_path: String,
+    pub workload: Option<String>,
+    pub confidential_enabled: bool,
+    pub gitops_issues: Vec<String>,
+    pub sovereign_compliant: Option<bool>,
+    pub sovereign_violations: Vec<String>,
+}
+
+/// Scan changed workload YAML files for confidential / sovereign policy issues.
+pub fn audit_confidential_changes(
+    repo_dir: &std::path::Path,
+    changes: &[GitOpsChange],
+) -> Vec<GitOpsConfidentialAudit> {
+    use crate::ragnarok::sovereign::{evaluate, SovereignConfig};
+    use crate::spec::Workload;
+
+    let config = SovereignConfig::from_env();
+    changes
+        .iter()
+        .filter(|c| c.change_type != ChangeType::Deleted)
+        .filter(|c| {
+            c.file_path.ends_with(".yaml") || c.file_path.ends_with(".yml")
+        })
+        .filter_map(|c| {
+            let path = repo_dir.join(&c.file_path);
+            let content = std::fs::read_to_string(&path).ok()?;
+            let spec: Workload = serde_yaml::from_str(&content).ok()?;
+            let enabled = spec
+                .confidential
+                .as_ref()
+                .is_some_and(|conf| conf.enabled);
+            if !enabled {
+                return Some(GitOpsConfidentialAudit {
+                    file_path: c.file_path.clone(),
+                    workload: Some(spec.metadata.name.clone()),
+                    confidential_enabled: false,
+                    gitops_issues: vec![],
+                    sovereign_compliant: None,
+                    sovereign_violations: vec![],
+                });
+            }
+            let gitops_issues = confidential_policy_issues(&spec);
+            let verdict = evaluate(&spec, &config);
+            Some(GitOpsConfidentialAudit {
+                file_path: c.file_path.clone(),
+                workload: Some(spec.metadata.name.clone()),
+                confidential_enabled: true,
+                gitops_issues,
+                sovereign_compliant: Some(verdict.compliant),
+                sovereign_violations: verdict.violations,
+            })
+        })
+        .collect()
+}
+
 /// Format a `GitOpsStatus` for CLI display.
 pub fn format_status(status: &GitOpsStatus) -> String {
     let mut out = String::new();
@@ -578,6 +636,25 @@ mod tests {
         let output = "R100\told.yaml\tnew.yaml\n";
         let changes = parse_diff_output(output, "abc123");
         assert!(changes.is_empty());
+    }
+
+    #[test]
+    fn test_audit_confidential_changes_parses_enabled_workload() {
+        let dir = tempfile::tempdir().unwrap();
+        let yaml = include_str!("../examples/confidential-snp.yaml");
+        let path = dir.path().join("workloads/conf.yaml");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, yaml).unwrap();
+
+        let changes = vec![GitOpsChange {
+            file_path: "workloads/conf.yaml".into(),
+            change_type: ChangeType::Added,
+            commit: "abc".into(),
+        }];
+        let audits = audit_confidential_changes(dir.path(), &changes);
+        assert_eq!(audits.len(), 1);
+        assert!(audits[0].confidential_enabled);
+        assert_eq!(audits[0].workload.as_deref(), Some("confidential-app"));
     }
 
     // ----- extract_repo_name ---------------------------------------------

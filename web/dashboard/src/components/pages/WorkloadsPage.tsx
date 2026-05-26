@@ -6,7 +6,11 @@ import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
-import { DEFAULT_DEPLOY_WORKLOAD_YAML, freshDeployWorkloadYaml, workloadJsonToYaml, workloadNameFromYaml } from '../../utils/workloadYaml';
+import { DEFAULT_DEPLOY_WORKLOAD_YAML, freshDeployWorkloadYaml, mergeConfidentialIntoYaml, workloadJsonToYaml, workloadNameFromYaml } from '../../utils/workloadYaml';
+import ConfidentialFormFields, {
+  defaultConfidentialFormState,
+  type ConfidentialFormState,
+} from '../ConfidentialFormFields';
 import {
   countAetherManaged,
   isAetherManaged,
@@ -45,10 +49,12 @@ function toast(message: string, type: 'success' | 'error') {
 }
 
 function openDeployModal(
-  setDeployInitialYaml: (yaml: string) => void,
+  setDeployYaml: (yaml: string) => void,
+  setDeployConfidential: (state: ConfidentialFormState) => void,
   setDeployModal: (open: boolean) => void,
 ) {
-  setDeployInitialYaml(freshDeployWorkloadYaml());
+  setDeployYaml(freshDeployWorkloadYaml());
+  setDeployConfidential(defaultConfidentialFormState);
   setDeployModal(true);
 }
 
@@ -81,7 +87,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'stop'; name: string } | null>(null);
   const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
   const [deployModal, setDeployModal] = useState(false);
-  const [deployInitialYaml, setDeployInitialYaml] = useState<string | undefined>();
+  const [deployYaml, setDeployYaml] = useState(DEFAULT_DEPLOY_WORKLOAD_YAML);
+  const [deployConfidential, setDeployConfidential] = useState<ConfidentialFormState>(defaultConfidentialFormState);
   const [deployLoading, setDeployLoading] = useState(false);
   const [deployTemplateLoading, setDeployTemplateLoading] = useState(false);
   const [deployValidateResult, setDeployValidateResult] = useState<ValidateResponse | null>(null);
@@ -122,7 +129,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('deploy') === '1') {
-      setDeployInitialYaml(freshDeployWorkloadYaml());
+      setDeployYaml(freshDeployWorkloadYaml());
+      setDeployConfidential(defaultConfidentialFormState);
       setDeployModal(true);
       params.delete('deploy');
       const qs = params.toString();
@@ -138,14 +146,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     if (template) {
       setDeployModal(true);
       setDeployTemplateLoading(true);
-      setDeployInitialYaml(undefined);
+      setDeployYaml(DEFAULT_DEPLOY_WORKLOAD_YAML);
       params.delete('template');
       const qs = params.toString();
       window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
       void apiPost<Record<string, unknown>>(`/templates/${encodeURIComponent(template)}`, {})
         .then((res) => {
           if (res.success && res.data) {
-            setDeployInitialYaml(workloadJsonToYaml(res.data));
+            setDeployYaml(workloadJsonToYaml(res.data));
           }
         })
         .finally(() => setDeployTemplateLoading(false));
@@ -305,7 +313,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   function closeDeployModal() {
     setDeployModal(false);
-    setDeployInitialYaml(undefined);
+    setDeployYaml(DEFAULT_DEPLOY_WORKLOAD_YAML);
+    setDeployConfidential(defaultConfidentialFormState);
     setDeployValidateResult(null);
     setDeployPolicyResult(null);
     setDeploySuccess(null);
@@ -522,7 +531,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <>
             <button
               type="button"
-              onClick={() => openDeployModal(setDeployInitialYaml, setDeployModal)}
+              onClick={() => openDeployModal(setDeployYaml, setDeployConfidential, setDeployModal)}
               className="inline-flex items-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white transition hover:bg-aether-light"
             >
               <Plus size={16} />
@@ -603,7 +612,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               <div className="flex flex-wrap justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => openDeployModal(setDeployInitialYaml, setDeployModal)}
+                  onClick={() => openDeployModal(setDeployYaml, setDeployConfidential, setDeployModal)}
                   className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 transition-colors"
                 >
                   <Plus className="h-4 w-4" />
@@ -944,8 +953,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           />
         ) : (
           <YamlInput
-            key={deployInitialYaml ?? 'default'}
-            initialValue={deployInitialYaml ?? DEFAULT_DEPLOY_WORKLOAD_YAML}
+            value={deployYaml}
+            onChange={setDeployYaml}
             resetValue={DEFAULT_DEPLOY_WORKLOAD_YAML}
             layout="editor"
             buttonText="Deploy"
@@ -956,6 +965,27 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             onValidate={handleDeployValidate}
             validateLoading={deployInlineValidateLoading}
             placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
+            header={
+              <div className="shrink-0 rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-medium text-purple-300">Confidential assist</h3>
+                  <button
+                    type="button"
+                    onClick={() => setDeployYaml(mergeConfidentialIntoYaml(deployYaml, deployConfidential))}
+                    className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-200 hover:bg-purple-500/20"
+                  >
+                    Apply to YAML
+                  </button>
+                </div>
+                <ConfidentialFormFields
+                  runtime="kubernetes"
+                  state={deployConfidential}
+                  onChange={(field, value) =>
+                    setDeployConfidential((prev) => ({ ...prev, [field]: value }))
+                  }
+                />
+              </div>
+            }
             footer={
               <ValidateResultPanel validate={deployValidateResult} policy={deployPolicyResult} />
             }

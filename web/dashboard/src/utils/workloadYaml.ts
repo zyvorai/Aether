@@ -128,15 +128,14 @@ function parseImageRef(image: string): { registry: string; tag: string; repo: st
   return { registry: parts.slice(0, -1).join('/'), tag, repo };
 }
 
-function appendConfidentialBlock(
-  lines: string[],
+function buildConfidentialYamlLines(
   input: EditorWorkloadInput,
   preferred: string,
   kataPath: boolean,
-) {
-  if (!input.confidentialEnabled) return;
+): string[] {
+  if (!input.confidentialEnabled) return [];
   const tee = input.confidentialTee ?? 'sev-snp';
-  lines.push(
+  const lines = [
     'confidential:',
     '  enabled: true',
     `  tee: ${tee}`,
@@ -150,7 +149,7 @@ function appendConfidentialBlock(
     '  secrets:',
     '    releasePolicy: attest-gated',
     '    provider: vault',
-  );
+  ];
   if (input.imageDigest?.trim()) {
     lines.push(`  imageDigest: ${input.imageDigest.trim()}`);
   }
@@ -163,6 +162,37 @@ function appendConfidentialBlock(
   if (preferred === 'kubevirt') {
     // kubevirt path — no extra kata field
   }
+  return lines;
+}
+
+function appendConfidentialBlock(
+  lines: string[],
+  input: EditorWorkloadInput,
+  preferred: string,
+  kataPath: boolean,
+) {
+  lines.push(...buildConfidentialYamlLines(input, preferred, kataPath));
+}
+
+function inferRuntimeFromYaml(yaml: string): string | null {
+  if (/preferred:\s*kubevirt/i.test(yaml) || /-\s*kubevirt/i.test(yaml)) return 'kubevirt';
+  if (/preferred:\s*kata/i.test(yaml)) return 'kata';
+  if (/preferred:\s*kube/i.test(yaml)) return 'kubernetes';
+  return null;
+}
+
+/** Merge or replace the confidential block in existing workload YAML. */
+export function mergeConfidentialIntoYaml(yaml: string, input: Partial<EditorWorkloadInput>): string {
+  const runtime = inferRuntimeFromYaml(yaml) ?? 'kubernetes';
+  const body = yaml.replace(/^confidential:\n(?:^  .+\n?)+/m, '').trimEnd();
+  if (!input.confidentialEnabled) {
+    return body;
+  }
+  const { preferred } = runtimeBlock(runtime);
+  const kataPath = preferred === 'kube' && (runtime === 'kata' || runtime === 'kubernetes');
+  const block = buildConfidentialYamlLines(input as EditorWorkloadInput, preferred, kataPath);
+  if (block.length === 0) return body;
+  return `${body}\n\n${block.join('\n')}\n`;
 }
 
 /** Generate aether/v1 workload YAML from the visual editor form. */

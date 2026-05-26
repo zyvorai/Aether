@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, apiPost } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 import Badge from './Badge';
 import type {
   AttestationExplain,
@@ -14,6 +15,8 @@ import type {
   IsolationVerdict,
   ConfidentialPlacementAdvice,
   NetworkTrustScore,
+  SecretReleaseToken,
+  SovereignVerdict,
 } from '../types/api';
 
 function TrustBar({ label, value }: { label: string; value: number }) {
@@ -59,6 +62,7 @@ function runtimeLabel(runtime: string): string {
 }
 
 export default function ConfidentialWorkloadPanel({ workloadName, runtime }: ConfidentialWorkloadPanelProps) {
+  const { canMutate } = useAuth();
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<ConfidentialFleetRow | null>(null);
   const [trust, setTrust] = useState<NetworkTrustScore | null>(null);
@@ -76,6 +80,10 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
   const [migrationStatus, setMigrationStatus] = useState<ConfidentialMigrationRecord | null>(null);
   const [guestkitBusy, setGuestkitBusy] = useState(false);
   const [guestkitMessage, setGuestkitMessage] = useState<string | null>(null);
+  const [sovereignVerdict, setSovereignVerdict] = useState<SovereignVerdict | null>(null);
+  const [sovereignBusy, setSovereignBusy] = useState(false);
+  const [secretActionMsg, setSecretActionMsg] = useState<string | null>(null);
+  const [secretReleaseBusy, setSecretReleaseBusy] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +127,39 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       cancelled = true;
     };
   }, [workloadName]);
+
+  async function runSovereignCheck() {
+    setSovereignBusy(true);
+    const data = await apiFetch<SovereignVerdict>(
+      `/confidential/sovereign/evaluate/${encodeURIComponent(workloadName)}`,
+    );
+    setSovereignVerdict(data);
+    setSovereignBusy(false);
+  }
+
+  async function releaseSecret(secretName: string, provider: string) {
+    if (!canMutate) {
+      setSecretActionMsg('Read-only session — secret release is disabled');
+      return;
+    }
+    setSecretReleaseBusy(secretName);
+    setSecretActionMsg(null);
+    const res = await apiPost<SecretReleaseToken>('/confidential/secrets/release', {
+      vm_id: workloadName,
+      secret_name: secretName,
+      provider: provider || 'vault',
+    });
+    setSecretReleaseBusy(null);
+    if (res.success && res.data) {
+      setSecretActionMsg(`Released ${secretName} (expires ${res.data.expires_at})`);
+      const refreshed = await apiFetch<AttestGatedSecretStatus[]>(
+        `/confidential/secrets/${encodeURIComponent(workloadName)}/status`,
+      );
+      if (refreshed) setSecretStatus(refreshed);
+    } else {
+      setSecretActionMsg(res.error ?? 'Secret release failed');
+    }
+  }
 
   async function runGuestkit(mode: string) {
     setGuestkitBusy(true);
@@ -240,6 +281,44 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           )}
         </div>
       )}
+
+      <div className="border-b border-zinc-800 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <h4 className="text-sm font-medium text-zinc-300">Sovereign compliance</h4>
+          <button
+            type="button"
+            disabled={sovereignBusy}
+            onClick={() => void runSovereignCheck()}
+            className="rounded border border-zinc-600 px-2.5 py-1 text-xs text-zinc-300 hover:border-aether/50 disabled:opacity-50"
+          >
+            {sovereignBusy ? 'Evaluating…' : 'Run sovereign check'}
+          </button>
+        </div>
+        {sovereignVerdict ? (
+          <div className="space-y-2 text-sm">
+            <Badge
+              text={sovereignVerdict.compliant ? 'compliant' : 'violations'}
+              variant={sovereignVerdict.compliant ? 'green' : 'red'}
+            />
+            {sovereignVerdict.violations.length > 0 && (
+              <ul className="space-y-1 text-xs text-red-300/90">
+                {sovereignVerdict.violations.map((v) => (
+                  <li key={v}>{v}</li>
+                ))}
+              </ul>
+            )}
+            {sovereignVerdict.hints.length > 0 && (
+              <ul className="space-y-1 text-xs text-zinc-500">
+                {sovereignVerdict.hints.map((h) => (
+                  <li key={h}>{h}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-zinc-500">Evaluate region lock, BYOK, and offline attestation policy for this spec.</p>
+        )}
+      </div>
 
       {migrationPlan && (
         <div className="border-b border-zinc-800 pb-4">
@@ -441,20 +520,39 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         </div>
       )}
 
-      {secretStatus.length > 0 && (
+      {(secretStatus.length > 0 || secretActionMsg) && (
         <div className="border-t border-zinc-700 pt-4">
           <h4 className="text-sm font-medium text-zinc-300 mb-3">Attest-gated secrets</h4>
-          <div className="space-y-2">
-            {secretStatus.map((s) => (
-              <div
-                key={s.secret_name}
-                className="flex items-center justify-between text-sm py-1.5 px-2 rounded bg-zinc-950/60 border border-zinc-800"
-              >
-                <span className="text-zinc-300">{s.secret_name}</span>
-                <Badge text={s.state} variant={s.state === 'released' || s.state === 'injected' ? 'green' : s.state === 'revoked' ? 'red' : 'yellow'} />
-              </div>
-            ))}
-          </div>
+          {secretActionMsg && (
+            <p className="mb-2 text-xs text-zinc-400">{secretActionMsg}</p>
+          )}
+          {secretStatus.length > 0 ? (
+            <div className="space-y-2">
+              {secretStatus.map((s) => (
+                <div
+                  key={s.secret_name}
+                  className="flex flex-wrap items-center justify-between gap-2 text-sm py-1.5 px-2 rounded bg-zinc-950/60 border border-zinc-800"
+                >
+                  <span className="text-zinc-300">{s.secret_name}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge text={s.state} variant={s.state === 'released' || s.state === 'injected' ? 'green' : s.state === 'revoked' ? 'red' : 'yellow'} />
+                    {(s.state === 'pending' || s.state === 'revoked') && (
+                      <button
+                        type="button"
+                        disabled={!canMutate || secretReleaseBusy === s.secret_name}
+                        onClick={() => void releaseSecret(s.secret_name, s.provider)}
+                        className="rounded border border-zinc-600 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-300 hover:border-aether/50 disabled:opacity-40"
+                      >
+                        {secretReleaseBusy === s.secret_name ? 'Releasing…' : 'Release'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-500">No attest-gated secrets configured on this workload.</p>
+          )}
         </div>
       )}
     </div>

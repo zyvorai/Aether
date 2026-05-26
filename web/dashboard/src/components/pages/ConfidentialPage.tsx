@@ -15,9 +15,11 @@ import type {
   ImageVerifyResult,
   KataStatus,
   MeasuredImageManifest,
+  NetworkTrustScore,
   SovereignConfig,
   TeeCapabilities,
 } from '../../types/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 function TrustBar({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100);
@@ -58,10 +60,12 @@ const CLI_MIGRATION_COMMANDS = [
 
 export default function ConfidentialPage() {
   const navigate = useNavigate();
+  const { canMutate } = useAuth();
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [caps, setCaps] = useState<TeeCapabilities | null>(null);
   const [fleet, setFleet] = useState<ConfidentialFleetRow[]>([]);
+  const [fleetTrust, setFleetTrust] = useState<NetworkTrustScore[]>([]);
   const [sovereign, setSovereign] = useState<SovereignConfig | null>(null);
   const [images, setImages] = useState<MeasuredImageManifest[]>([]);
   const [kata, setKata] = useState<KataStatus | null>(null);
@@ -70,13 +74,19 @@ export default function ConfidentialPage() {
   const [verifyDigest, setVerifyDigest] = useState('');
   const [verifyResult, setVerifyResult] = useState<ImageVerifyResult | null>(null);
   const [verifyBusy, setVerifyBusy] = useState(false);
+  const [signName, setSignName] = useState('');
+  const [signPath, setSignPath] = useState('');
+  const [signKey, setSignKey] = useState('cosign://aether');
+  const [signBusy, setSignBusy] = useState(false);
+  const [signMessage, setSignMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const [capsRes, fleetRes, sovereignRes, imagesRes, kataRes, intelRes] = await Promise.all([
+    const [capsRes, fleetRes, trustRes, sovereignRes, imagesRes, kataRes, intelRes] = await Promise.all([
       apiFetchSettled<TeeCapabilities>('/confidential/capabilities'),
       apiFetchSettled<ConfidentialFleetRow[]>('/confidential/fleet'),
+      apiFetchSettled<NetworkTrustScore[]>('/confidential/trust-score'),
       apiFetchSettled<SovereignConfig>('/confidential/sovereign/status'),
       apiFetchSettled<MeasuredImageManifest[]>('/confidential/images'),
       apiFetchSettled<KataStatus>('/confidential/kata/status'),
@@ -86,9 +96,11 @@ export default function ConfidentialPage() {
       setLoadFailed(true);
       setCaps(null);
       setFleet([]);
+      setFleetTrust([]);
     } else {
       setCaps(capsRes.data);
       setFleet(fleetRes.ok ? fleetRes.data : []);
+      setFleetTrust(trustRes.ok ? trustRes.data : []);
       setSovereign(sovereignRes.ok ? sovereignRes.data : null);
       setImages(imagesRes.ok ? imagesRes.data : []);
       setKata(kataRes.ok ? kataRes.data : null);
@@ -100,6 +112,34 @@ export default function ConfidentialPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function handleSignImage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canMutate) {
+      setSignMessage('Read-only session — image sign is disabled');
+      return;
+    }
+    const name = signName.trim();
+    const path = signPath.trim();
+    if (!name || !path) return;
+    setSignBusy(true);
+    setSignMessage(null);
+    const res = await apiPost<MeasuredImageManifest>('/confidential/images/sign', {
+      name,
+      path,
+      signing_key_id: signKey.trim() || 'cosign://aether',
+    });
+    setSignBusy(false);
+    if (res.success && res.data) {
+      setSignMessage(`Signed ${name} — digest ${res.data.launch_digest ?? res.data.image_hash}`);
+      setImages((prev) => {
+        const rest = prev.filter((img) => img.name !== name);
+        return [...rest, res.data!];
+      });
+    } else {
+      setSignMessage(res.error ?? 'Image sign failed');
+    }
+  }
 
   async function handleVerifyDigest(e: React.FormEvent) {
     e.preventDefault();
@@ -245,6 +285,42 @@ export default function ConfidentialPage() {
         </div>
       )}
 
+      {fleetTrust.length > 0 && (
+        <div className="dash-card mb-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-2">Fleet trust scores</h2>
+          <p className="text-sm text-zinc-500 mb-4">
+            Composite trust from attestation, network policy, and firmware exposure across confidential workloads.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {fleetTrust.map((row) => (
+              <button
+                key={row.workload}
+                type="button"
+                onClick={() =>
+                  navigate(
+                    pathWithQuery(viewToPath('workloads'), {
+                      workload: row.workload,
+                      tab: 'trust',
+                    }),
+                  )
+                }
+                className="text-left rounded-lg border border-zinc-700 bg-zinc-900/50 p-3 hover:border-aether/40 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="font-medium text-zinc-100">{row.workload}</span>
+                  <Badge
+                    text={`${Math.round(row.composite * 100)}%`}
+                    variant={row.composite >= 0.8 ? 'green' : row.composite >= 0.5 ? 'yellow' : 'red'}
+                  />
+                </div>
+                <TrustBar label="Attestation" value={row.attestation_score} />
+                <TrustBar label="Network" value={row.network_policy_score} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {intel && intel.workloads.length > 0 && (
         <div className="dash-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2">AI confidential intelligence</h2>
@@ -384,6 +460,46 @@ export default function ConfidentialPage() {
           </div>
 
           <div className="border-t border-zinc-700 pt-4">
+            <h3 className="text-sm font-medium text-zinc-300 mb-2">Sign measured image</h3>
+            <p className="text-xs text-zinc-500 mb-3">
+              Registers a qcow2 on the Aether host path into the measured image catalog.
+            </p>
+            <form onSubmit={(e) => void handleSignImage(e)} className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={signName}
+                  onChange={(e) => setSignName(e.target.value)}
+                  placeholder="Catalog name"
+                  className="rounded bg-zinc-950 border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200"
+                />
+                <input
+                  type="text"
+                  value={signPath}
+                  onChange={(e) => setSignPath(e.target.value)}
+                  placeholder="/path/on/host/disk.qcow2"
+                  className="rounded bg-zinc-950 border border-zinc-700 px-3 py-1.5 text-sm font-mono text-zinc-200"
+                />
+              </div>
+              <input
+                type="text"
+                value={signKey}
+                onChange={(e) => setSignKey(e.target.value)}
+                placeholder="Signing key id"
+                className="w-full rounded bg-zinc-950 border border-zinc-700 px-3 py-1.5 text-sm font-mono text-zinc-200"
+              />
+              <button
+                type="submit"
+                disabled={signBusy || !canMutate || !signName.trim() || !signPath.trim()}
+                className="rounded bg-aether/20 text-aether border border-aether/40 px-3 py-1.5 text-sm hover:bg-aether/30 disabled:opacity-50"
+              >
+                {signBusy ? 'Signing…' : 'Sign image'}
+              </button>
+            </form>
+            {signMessage && <p className="mt-2 text-xs text-zinc-400">{signMessage}</p>}
+          </div>
+
+          <div className="border-t border-zinc-700 pt-4">
             <h3 className="text-sm font-medium text-zinc-300 mb-2">Verify launch digest</h3>
             <p className="text-xs text-zinc-500 mb-3">
               Dashboard equivalent of{' '}
@@ -419,8 +535,8 @@ export default function ConfidentialPage() {
               Image CLI (host paths)
             </h3>
             <p className="text-xs text-zinc-500 mb-2">
-              Sign and file-verify require qcow2 paths on the Aether host — use CLI or POST{' '}
-              <code className="text-zinc-400">/api/confidential/images/sign</code>.
+              File verify still requires host paths — use CLI or POST{' '}
+              <code className="text-zinc-400">/api/confidential/images/verify</code> with a path.
             </p>
             <ul className="space-y-1">
               {CLI_IMAGE_COMMANDS.map((cmd) => (

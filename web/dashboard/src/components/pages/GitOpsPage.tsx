@@ -7,6 +7,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import Badge from '../Badge';
+import type { GitOpsConfidentialAudit } from '../../types/api';
 
 interface GitOpsPayload {
   configured?: boolean;
@@ -27,8 +28,9 @@ function formatSyncResult(raw: string | null): {
   summary: string;
   details: Record<string, unknown> | null;
   changes: GitOpsChangeRow[];
+  confidentialCompliance: GitOpsConfidentialAudit[];
 } {
-  if (!raw) return { summary: '', details: null, changes: [] };
+  if (!raw) return { summary: '', details: null, changes: [], confidentialCompliance: [] };
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const msg =
@@ -40,9 +42,14 @@ function formatSyncResult(raw: string | null): {
     const changes = Array.isArray(parsed.changes)
       ? (parsed.changes as GitOpsChangeRow[]).filter((c) => c && typeof c.file_path === 'string')
       : [];
-    return { summary: msg, details: parsed, changes };
+    const confidentialCompliance = Array.isArray(parsed.confidential_compliance)
+      ? (parsed.confidential_compliance as GitOpsConfidentialAudit[]).filter(
+          (row) => row && typeof row.file_path === 'string',
+        )
+      : [];
+    return { summary: msg, details: parsed, changes, confidentialCompliance };
   } catch {
-    return { summary: raw, details: null, changes: [] };
+    return { summary: raw, details: null, changes: [], confidentialCompliance: [] };
   }
 }
 
@@ -166,11 +173,29 @@ export default function GitOpsPage() {
                   <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
+                    <th className="py-2 pr-4">Confidential</th>
                     <th className="py-2">Commit</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {parsedSync.changes.map((c) => (
+                  {parsedSync.changes.map((c) => {
+                    const audit = parsedSync.confidentialCompliance.find((row) => row.file_path === c.file_path);
+                    const confidentialLabel = !audit
+                      ? '—'
+                      : !audit.confidential_enabled
+                        ? 'off'
+                        : audit.gitops_issues.length > 0 || audit.sovereign_compliant === false
+                          ? 'issues'
+                          : 'ok';
+                    const confidentialVariant =
+                      confidentialLabel === 'ok'
+                        ? 'green'
+                        : confidentialLabel === 'issues'
+                          ? 'red'
+                          : confidentialLabel === 'off'
+                            ? 'muted'
+                            : 'muted';
+                    return (
                     <tr key={`${c.commit}-${c.file_path}`} className="border-b border-slate-800/50">
                       <td className="py-2 pr-4">
                         <Badge
@@ -185,11 +210,54 @@ export default function GitOpsPage() {
                         />
                       </td>
                       <td className="py-2 pr-4 font-mono text-xs text-slate-300">{c.file_path}</td>
+                      <td className="py-2 pr-4">
+                        <Badge text={confidentialLabel} variant={confidentialVariant} />
+                      </td>
                       <td className="py-2 font-mono text-xs text-slate-500 truncate max-w-[12rem]" title={c.commit}>
                         {c.commit.slice(0, 12)}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
+            <div className="mb-4 overflow-x-auto">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                Confidential compliance
+              </h4>
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
+                    <th className="py-2 pr-4">Workload</th>
+                    <th className="py-2 pr-4">File</th>
+                    <th className="py-2 pr-4">GitOps issues</th>
+                    <th className="py-2">Sovereign</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedSync.confidentialCompliance
+                    .filter((row) => row.confidential_enabled)
+                    .map((row) => (
+                      <tr key={row.file_path} className="border-b border-slate-800/50 align-top">
+                        <td className="py-2 pr-4 text-slate-200">{row.workload ?? '—'}</td>
+                        <td className="py-2 pr-4 font-mono text-xs text-slate-400">{row.file_path}</td>
+                        <td className="py-2 pr-4 text-xs text-amber-200/90">
+                          {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}
+                        </td>
+                        <td className="py-2">
+                          <Badge
+                            text={row.sovereign_compliant ? 'compliant' : 'violations'}
+                            variant={row.sovereign_compliant ? 'green' : 'red'}
+                          />
+                          {row.sovereign_violations.length > 0 && (
+                            <p className="mt-1 text-xs text-red-300/90">{row.sovereign_violations.join('; ')}</p>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -197,7 +265,7 @@ export default function GitOpsPage() {
           {parsedSync.details && (
             <dl className="space-y-2 text-sm">
               {Object.entries(parsedSync.details)
-                .filter(([key]) => key !== 'changes')
+                .filter(([key]) => key !== 'changes' && key !== 'confidential_compliance')
                 .map(([key, value]) => (
                   <div key={key} className="flex gap-2">
                     <dt className="text-slate-500 shrink-0">{key}:</dt>

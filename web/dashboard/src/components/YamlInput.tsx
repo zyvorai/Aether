@@ -18,6 +18,8 @@ interface YamlInputProps {
   onSubmit: (yaml: string) => void;
   loading?: boolean;
   initialValue?: string;
+  value?: string;
+  onChange?: (yaml: string) => void;
   resetValue?: string;
   layout?: 'compact' | 'editor';
   submitDisabled?: boolean;
@@ -25,6 +27,7 @@ interface YamlInputProps {
   onValidate?: (yaml: string) => void;
   validateLoading?: boolean;
   showValidateButton?: boolean;
+  header?: ReactNode;
   footer?: ReactNode;
 }
 
@@ -34,6 +37,8 @@ export default function YamlInput({
   onSubmit,
   loading,
   initialValue,
+  value: controlledValue,
+  onChange,
   resetValue,
   layout = 'compact',
   submitDisabled,
@@ -41,9 +46,16 @@ export default function YamlInput({
   onValidate,
   validateLoading,
   showValidateButton,
+  header,
   footer,
 }: YamlInputProps) {
-  const [value, setValue] = useState(initialValue ?? '');
+  const [internalValue, setInternalValue] = useState(initialValue ?? '');
+  const isControlled = controlledValue !== undefined;
+  const value = isControlled ? controlledValue : internalValue;
+  const setValue = (next: string) => {
+    if (!isControlled) setInternalValue(next);
+    onChange?.(next);
+  };
   const [expanded, setExpanded] = useState(false);
   const [copyHint, setCopyHint] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,8 +65,10 @@ export default function YamlInput({
   const resetTarget = resetValue ?? initialValue ?? '';
 
   useEffect(() => {
-    setValue(initialValue ?? '');
-  }, [initialValue]);
+    if (!isControlled) {
+      setInternalValue(initialValue ?? '');
+    }
+  }, [initialValue, isControlled]);
 
   function handleSubmit() {
     const trimmed = value.trim();
@@ -106,6 +120,7 @@ export default function YamlInput({
 
   return (
     <div className={isEditor ? 'flex min-h-0 flex-1 flex-col gap-3 overflow-hidden' : 'space-y-3'}>
+      {header}
       {isEditor ? (
         <>
           <EditorToolbar
