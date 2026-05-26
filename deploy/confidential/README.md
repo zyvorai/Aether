@@ -35,10 +35,12 @@ See [spire/README.md](./spire/README.md).
 ## 3. Composite Ragnarok + Aether
 
 ```bash
-# Deploy Aether, then link hub:
-../aether/scripts/deploy-remote.sh <host> <user>
-./scripts/link-aether-composite.sh   # or full driver:
+# Full composite driver (from Aether repo — requires sibling ragnarok/):
 ./scripts/deploy-composite-fabric-remote.sh <host> <user>
+
+# Or deploy Aether only, then link from Ragnarok:
+./scripts/deploy-remote.sh <host> <user>
+# on Ragnarok host: ./scripts/link-aether-composite.sh
 ```
 
 ## Customer bundles

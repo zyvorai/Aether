@@ -1,4 +1,5 @@
-.PHONY: help build test lint clean install release docker run-dev
+.PHONY: help build test lint clean install release docker run-dev \
+	confidential-validate confidential-fabric-e2e confidential-cluster-e2e
 
 help:
 	@echo "Aether - Universal Runtime Control Plane"
@@ -13,6 +14,9 @@ help:
 	@echo "  docker     - Build Docker image"
 	@echo "  run-dev    - Run in development mode with verbose logging"
 	@echo "  ci         - Run CI checks (test + lint)"
+	@echo "  confidential-validate      - Validate examples/confidential-*.yaml"
+	@echo "  confidential-fabric-e2e    - API smoke (AETHER_API, server running)"
+	@echo "  confidential-cluster-e2e   - CLI placement/migrate checks (no live deploy)"
 
 build:
 	@echo "Building debug binary..."
@@ -53,8 +57,20 @@ run-dev:
 	@echo "Running aether in development mode..."
 	cargo run -- -v --help
 
-ci: test lint
+ci: test lint confidential-validate
 	@echo "CI checks passed!"
+
+confidential-validate:
+	@chmod +x scripts/validate-confidential-examples.sh 2>/dev/null || true
+	@./scripts/validate-confidential-examples.sh
+
+confidential-fabric-e2e:
+	@chmod +x scripts/confidential-fabric-e2e.sh scripts/lib/aether-confidential-smoke.sh 2>/dev/null || true
+	@./scripts/confidential-fabric-e2e.sh
+
+confidential-cluster-e2e: release
+	@chmod +x scripts/confidential-cluster-e2e.sh 2>/dev/null || true
+	@./scripts/confidential-cluster-e2e.sh
 
 # Development workflow
 watch:

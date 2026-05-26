@@ -17,6 +17,10 @@ End-to-end validation for **composite** (Ragnarok + Aether) confidential fabric 
 |--------|---------|
 | [`scripts/confidential-fabric-e2e.sh`](../../../scripts/confidential-fabric-e2e.sh) | API smoke: capabilities, fleet, composite banner |
 | [`scripts/confidential-cluster-e2e.sh`](../../../scripts/confidential-cluster-e2e.sh) | CLI placement + migration plan + optional live deploy/migrate |
+| [`scripts/deploy-composite-fabric-remote.sh`](../../../scripts/deploy-composite-fabric-remote.sh) | Deploy Kata + SPIRE + Aether + link Ragnarok hub (needs sibling `ragnarok/` repo) |
+| [`scripts/validate-confidential-examples.sh`](../../../scripts/validate-confidential-examples.sh) | Validate all `examples/confidential-*.yaml` |
+
+Makefile targets: `make confidential-validate`, `make confidential-fabric-e2e`, `make confidential-cluster-e2e`.
 
 ### API-only smoke
 
@@ -58,8 +62,11 @@ export AETHER_CONFIDENTIAL_MIGRATE=1
 On the lab host:
 
 ```bash
-cd ragnarok
+# From Aether (delegates to sibling ragnarok/):
 ./scripts/deploy-composite-fabric-remote.sh <host> <user>
+
+# Or from Ragnarok directly:
+cd ../ragnarok && ./scripts/deploy-composite-fabric-remote.sh <host> <user>
 ./scripts/confidential-fabric-e2e.sh
 ```
 
