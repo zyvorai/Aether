@@ -42,7 +42,7 @@ export default function PlatformHealthChip({ sseConnected }: PlatformHealthChipP
 
   return (
     <span
-      className={`hidden lg:inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+      className={`hidden lg:inline-flex items-center gap-1.5 rounded-xl border px-2 py-1.5 text-xs font-medium transition-colors xl:gap-2 xl:px-3 xl:py-2 ${
         allOk
           ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
           : 'border-amber-500/25 bg-amber-500/10 text-amber-200'
@@ -50,8 +50,8 @@ export default function PlatformHealthChip({ sseConnected }: PlatformHealthChipP
       title={title}
     >
       <Activity className={`h-3.5 w-3.5 shrink-0 ${allOk ? 'text-emerald-400' : 'text-amber-400'}`} />
-      <span className="whitespace-nowrap">{label}</span>
-      <span className={`h-2 w-2 rounded-full ${allOk ? 'bg-emerald-400 platform-pulse' : 'bg-amber-400'}`} />
+      <span className="hidden whitespace-nowrap xl:inline">{label}</span>
+      <span className={`h-2 w-2 shrink-0 rounded-full ${allOk ? 'bg-emerald-400 platform-pulse' : 'bg-amber-400'}`} />
     </span>
   );
 }
