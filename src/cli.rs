@@ -161,6 +161,10 @@ pub(crate) enum Commands {
         /// Disable rollback on failure
         #[arg(long)]
         no_rollback: bool,
+
+        /// Log migration phases to stderr (or set AETHER_MIGRATION_TRACE=1)
+        #[arg(long)]
+        verbose_trace: bool,
     },
 
     /// Launch interactive TUI dashboard (k9s-style real-time monitoring)
@@ -499,6 +503,13 @@ pub(crate) enum Commands {
     /// Evaluate intent-based runtime recommendation
     Intent,
 
+    /// Explain runtime placement decision for a workload spec
+    Decide {
+        /// Show per-runtime reasons and warnings for all runtimes
+        #[arg(long)]
+        explain: bool,
+    },
+
     /// First-time setup wizard
     Init,
 
@@ -601,6 +612,7 @@ impl Commands {
             Self::Cp { .. } => "cp",
             Self::Watch { .. } => "watch",
             Self::Compare => "compare",
+            Self::Decide { .. } => "decide",
             Self::Intent => "intent",
             Self::Init => "init",
             Self::Compose { .. } => "compose",

@@ -1,6 +1,8 @@
 # Performance Benchmarking Guide
 
-Comprehensive guide for benchmarking Aether deployments, load testing, and performance optimization.
+Aether-specific metrics (deploy, migrate, API) live in [RESULTS.md](RESULTS.md). Run `./benchmarks/aether-bench.sh` for CLI/API baselines.
+
+This guide also covers general load testing with k6 and optimization methodology.
 
 ## Overview
 

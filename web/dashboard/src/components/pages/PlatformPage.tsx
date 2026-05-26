@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Server, Shield, Database, ExternalLink } from 'lucide-react';
+import { Server, Shield, Database, ExternalLink, Network } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import PageToolbar from '../PageToolbar';
@@ -7,13 +7,16 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 import PlatformRecommendations from '../PlatformRecommendations';
-import type { PlatformRecommendation } from '../../types/api';
+import type { CiliumStatusResponse, PlatformRecommendation } from '../../types/api';
 
 interface Integrations {
   backup_remote_configured?: boolean;
   audit_webhook_configured?: boolean;
   grafana_url?: string | null;
   prometheus_url?: string | null;
+  hubble_ui_url?: string | null;
+  grafana_dashboard_uid?: string | null;
+  packetwolf_url?: string | null;
 }
 
 interface ServerPayload {
@@ -21,6 +24,7 @@ interface ServerPayload {
   ha_mode?: string;
   embedded_ui_build?: string;
   integrations?: Integrations;
+  kubernetes?: { cilium?: CiliumStatusResponse | null };
   opa?: { configured?: boolean; enforce?: boolean };
 }
 
@@ -57,9 +61,14 @@ export default function PlatformPage() {
     void load();
   }, [load]);
 
-  const integrations = server?.integrations ?? {};
   const platform = capabilities?.platform;
+  const integrations = server?.integrations ?? {};
+  const cilium = server?.kubernetes?.cilium ?? platform?.kubernetes?.cilium ?? null;
   const systemReady = ready?.ready ?? true;
+  const grafanaDashboardUrl =
+    integrations.grafana_url && integrations.grafana_dashboard_uid
+      ? `${integrations.grafana_url.replace(/\/$/, '')}/d/${integrations.grafana_dashboard_uid}`
+      : null;
 
   if (loading && !server && !loadFailed) {
     return <PageLoading rows={5} />;
@@ -143,19 +152,85 @@ export default function PlatformPage() {
 
       <div className="dash-card mt-6">
         <div className="flex items-center gap-3 mb-4">
+          <Network className="text-purple-400" size={20} />
+          <h2 className="text-lg font-semibold text-slate-100">Kubernetes / Cilium</h2>
+          {cilium && (
+            <Badge
+              text={cilium.cni === 'cilium' ? 'Cilium' : cilium.cni}
+              variant={cilium.cni === 'cilium' ? 'green' : cilium.cni === 'unknown' ? 'muted' : 'yellow'}
+            />
+          )}
+        </div>
+        {cilium ? (
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Cluster</dt>
+              <dd className="text-slate-200 font-mono text-xs">{cilium.cluster}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Egress mode</dt>
+              <dd><Badge text={cilium.egress_mode} variant={cilium.egress_mode === 'strict' ? 'yellow' : 'blue'} /></dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Cilium agent</dt>
+              <dd><Badge text={cilium.cilium_daemonset_ready ? 'ready' : 'not ready'} variant={cilium.cilium_daemonset_ready ? 'green' : 'red'} /></dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">metrics-server</dt>
+              <dd><Badge text={cilium.metrics_server ? 'available' : 'missing'} variant={cilium.metrics_server ? 'green' : 'muted'} /></dd>
+            </div>
+            <div>
+              <dt className="text-slate-500 mb-2">Bootstrap policies</dt>
+              <dd className="space-y-1">
+                {cilium.managed_policies.map((policy) => (
+                  <div key={policy.name} className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2">
+                    <span className="font-mono text-xs text-slate-300">{policy.name}</span>
+                    <Badge text={policy.exists ? 'applied' : 'missing'} variant={policy.exists ? 'green' : 'red'} />
+                  </div>
+                ))}
+              </dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="text-sm text-slate-500">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>
+        )}
+        <p className="mt-4 text-xs text-slate-500">
+          Browse Cilium policies on the Cluster Browser <strong>Network</strong> tab. Hubble UI integration is Roadmap (
+          <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code>).
+        </p>
+      </div>
+
+      <div className="dash-card mt-6">
+        <div className="flex items-center gap-3 mb-4">
           <Database className="text-blue-400" size={20} />
           <h2 className="text-lg font-semibold text-slate-100">Observability links</h2>
         </div>
         <div className="flex flex-wrap gap-3">
           {integrations.grafana_url ? (
-            <a
-              href={integrations.grafana_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              Grafana <ExternalLink size={14} />
-            </a>
+            <>
+              <a
+                href={integrations.grafana_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Grafana <ExternalLink size={14} />
+              </a>
+              {grafanaDashboardUrl ? (
+                <a
+                  href={grafanaDashboardUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm text-aether hover:bg-aether/20"
+                >
+                  Open Aether dashboard <ExternalLink size={14} />
+                </a>
+              ) : integrations.prometheus_url ? (
+                <span className="text-sm text-slate-500 self-center">
+                  Set <code>AETHER_GRAFANA_DASHBOARD_UID</code> and run <code>scripts/import-grafana-dashboard.sh</code>
+                </span>
+              ) : null}
+            </>
           ) : (
             <span className="text-sm text-slate-500">Set <code>AETHER_GRAFANA_URL</code> for Grafana link</span>
           )}
@@ -174,6 +249,17 @@ export default function PlatformPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
             >
               In-app metrics <ExternalLink size={14} />
+            </a>
+          )}
+          {integrations.hubble_ui_url && (
+            <a
+              href={integrations.hubble_ui_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-400 hover:bg-slate-800"
+              title="Hubble UI (Roadmap integration)"
+            >
+              Hubble UI (Roadmap) <ExternalLink size={14} />
             </a>
           )}
         </div>

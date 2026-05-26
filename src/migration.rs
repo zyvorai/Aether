@@ -79,6 +79,8 @@ pub struct MigrationPlan {
     pub health_retry_base_interval: Duration,
     /// Canary deployment configuration (required for Canary strategy)
     pub canary_config: Option<CanaryConfig>,
+    /// Emit phase-by-phase trace to stderr (also enabled via AETHER_MIGRATION_TRACE=1)
+    pub verbose_trace: bool,
 }
 
 /// Migration result
@@ -113,7 +115,21 @@ impl MigrationPlan {
             max_health_retries: 3,
             health_retry_base_interval: Duration::from_secs(2),
             canary_config: None,
+            verbose_trace: false,
         }
+    }
+}
+
+fn migration_trace_enabled(plan: &MigrationPlan) -> bool {
+    plan.verbose_trace
+        || std::env::var("AETHER_MIGRATION_TRACE")
+            .ok()
+            .is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+}
+
+fn migration_trace(plan: &MigrationPlan, phase: &str, detail: &str) {
+    if migration_trace_enabled(plan) {
+        eprintln!("[migration-trace] {phase}: {detail}");
     }
 }
 
@@ -151,6 +167,14 @@ impl MigrationEngine {
             plan.source_runtime,
             plan.target_runtime
         );
+        migration_trace(
+            &plan,
+            "start",
+            &format!(
+                "{} {} -> {} ({:?})",
+                plan.workload_name, plan.source_runtime, plan.target_runtime, plan.strategy
+            ),
+        );
 
         match plan.strategy {
             MigrationStrategy::Immediate => self.migrate_immediate(plan).await,
@@ -163,6 +187,7 @@ impl MigrationEngine {
     /// Immediate migration strategy
     async fn migrate_immediate(&self, plan: MigrationPlan) -> Result<MigrationResult> {
         tracing::info!("Using immediate migration strategy");
+        migration_trace(&plan, "strategy", "immediate");
 
         // Load current state
         let mut state = StateStore::load(&self.state_path)?;
@@ -188,6 +213,7 @@ impl MigrationEngine {
 
         // Stop source instance
         tracing::info!("Stopping source instance on {}", plan.source_runtime);
+        migration_trace(&plan, "stop-source", &plan.source_runtime.to_string());
         source_runtime.stop(&workload_state.instance).await?;
 
         // Wait for graceful shutdown (configurable)
@@ -198,10 +224,12 @@ impl MigrationEngine {
 
         // Build image for target runtime
         tracing::info!("Building image for {}", plan.target_runtime);
+        migration_trace(&plan, "build-target", &plan.target_runtime.to_string());
         let image = target_runtime.build(&workload).await?;
 
         // Deploy to target runtime
         tracing::info!("Deploying to {}", plan.target_runtime);
+        migration_trace(&plan, "start-target", &plan.target_runtime.to_string());
         let target_instance = match target_runtime.run(&image, &workload).await {
             Ok(instance) => instance,
             Err(e) => {
@@ -276,6 +304,7 @@ impl MigrationEngine {
     /// Blue-Green migration strategy
     async fn migrate_blue_green(&self, plan: MigrationPlan) -> Result<MigrationResult> {
         tracing::info!("Using blue-green migration strategy");
+        migration_trace(&plan, "strategy", "blue-green");
 
         // Load current state
         let mut state = StateStore::load(&self.state_path)?;
@@ -293,6 +322,7 @@ impl MigrationEngine {
 
         // Deploy to target runtime (green) while source (blue) still running
         tracing::info!("Deploying to target runtime (green deployment)");
+        migration_trace(&plan, "start-target", "green deployment while blue runs");
         let image = target_runtime.build(&workload).await?;
         let target_instance = match target_runtime.run(&image, &workload).await {
             Ok(instance) => instance,
@@ -309,6 +339,7 @@ impl MigrationEngine {
 
         // Wait for target to be ready
         tracing::info!("Waiting for green deployment to be ready...");
+        migration_trace(&plan, "health-gate", "waiting for green readiness");
         tokio::time::sleep(plan.validation_delay).await;
 
         let status = target_runtime.status(&target_instance).await?;
@@ -336,10 +367,12 @@ impl MigrationEngine {
         tracing::info!("Traffic switch: green deployment validated, proceeding to remove blue");
         let drain_delay = plan.validation_delay.min(std::time::Duration::from_secs(30));
         tracing::info!("Connection draining ({:?})", drain_delay);
+        migration_trace(&plan, "drain", &format!("{drain_delay:?} (capped at 30s)"));
         tokio::time::sleep(drain_delay).await;
 
         // Stop and delete blue (source) deployment
         tracing::info!("Stopping blue deployment (source)");
+        migration_trace(&plan, "stop-source", "remove blue after green validated");
         source_runtime.stop(&workload_state.instance).await?;
         tokio::time::sleep(plan.cleanup_delay).await;
         source_runtime.delete(&workload_state.instance).await?;
@@ -350,6 +383,7 @@ impl MigrationEngine {
             workload_state.migrated(plan.target_runtime, target_instance.clone()),
         );
         state.save(&self.state_path)?;
+        migration_trace(&plan, "update-state", "migration complete");
 
         tracing::info!("Blue-green migration completed successfully");
 

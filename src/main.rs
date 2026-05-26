@@ -93,6 +93,7 @@ async fn main() -> Result<()> {
             strategy,
             no_validation,
             no_rollback,
+            verbose_trace,
         } => {
             if cli.dry_run {
                 aether::output::info(&format!(
@@ -101,7 +102,15 @@ async fn main() -> Result<()> {
                 ));
                 return Ok(());
             }
-            commands::migrate_command(&name, &target, &strategy, no_validation, no_rollback).await
+            commands::migrate_command(
+                &name,
+                &target,
+                &strategy,
+                no_validation,
+                no_rollback,
+                verbose_trace,
+            )
+            .await
         }
         Commands::Tui => commands::tui_command().await,
         Commands::Completions { shell } => {
@@ -213,6 +222,9 @@ async fn main() -> Result<()> {
         }
         Commands::Compare => {
             commands::compare_command(&cli.spec).await
+        }
+        Commands::Decide { explain } => {
+            commands::decide_command(&cli.spec, explain).await
         }
         Commands::Intent => {
             commands::intent_command(&cli.spec).await

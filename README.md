@@ -1,26 +1,34 @@
-# 🔷 Aether
+# Aether
 
-**Universal Runtime Control Plane**
+**Universal runtime portability**
 
-> One spec. Four runtimes. One tool. Seamless migration.
+> Deploy once. Move workloads across containers, Kubernetes, VMs, and bare metal **without rewriting infrastructure**.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ssahani/aether)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/ssahani/aether)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-Proprietary-red)](LICENSE)
 
-Aether is a **production-ready universal runtime control plane** that deploys the same workload to multiple runtimes:
+One YAML spec. Four runtimes. Production migration between them.
 
-- 🐳 **Podman** - Local containers
-- ☸️ **Kubernetes** - Orchestrated pods
-- 🖥️ **KubeVirt** - Virtual machines
-- 🖧 **Metal3** - Bare metal servers
+| Runtime | Use case |
+|---------|----------|
+| Podman | Local containers and dev |
+| Kubernetes | Orchestrated clusters |
+| KubeVirt | VMs and GPU isolation |
+| Metal3 | Bare metal |
 
-Deploy once. Run anywhere. Migrate seamlessly.
+**[Product overview](docs/PRODUCT.md)** · [Migration internals](docs/guides/migration/MIGRATION-INTERNALS.md) · [Decision engine](docs/guides/decision-engine/SCORING.md) · [Demos](examples/demos/)
+
+## Zyvor platform
+
+Aether is the portability control plane in the [HyperSDK / Zyvor ecosystem](docs/ECOSYSTEM.md) alongside PacketWolf (observe), GuestKit (VM inspect), and Zeus (orchestration).
 
 ---
 
-## ✨ Features
+## Capabilities
+
+Everything below supports the portability story — not separate products.
 
 **Unified Workload Specification**
 - Single YAML defines your workload

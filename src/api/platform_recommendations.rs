@@ -116,5 +116,70 @@ pub async fn collect(app_state: &AppState) -> Vec<PlatformRecommendation> {
         });
     }
 
+    if let Ok(cilium) = crate::kubecluster::cilium::cilium_status(None, None).await {
+        if !cilium.crds.ciliumnetworkpolicies && !cilium.crds.ciliumclusterwidenetworkpolicies {
+            items.push(PlatformRecommendation {
+                id: "cilium-not-detected".into(),
+                category: "kubernetes".into(),
+                severity: "info".into(),
+                title: "Cilium CNI not detected".into(),
+                detail: "No Cilium CRDs found on the active cluster. Aether can deploy workloads with standard NetworkPolicy, but Cilium-specific policies require Cilium.".into(),
+                action: "Install Cilium on your cluster or run cluster/install-cluster.sh from the customer bundle with Cilium bootstrap enabled. See docs/guides/kubernetes/CILIUM.md.".into(),
+            });
+        } else {
+            let bootstrap_ok = cilium
+                .managed_policies
+                .iter()
+                .any(|p| p.name == "allow-aether-egress" && p.exists)
+                || cilium
+                    .managed_policies
+                    .iter()
+                    .any(|p| p.name == "allow-aether-egress-strict" && p.exists);
+            if !bootstrap_ok {
+                items.push(PlatformRecommendation {
+                    id: "cilium-bootstrap-missing".into(),
+                    category: "kubernetes".into(),
+                    severity: "warn".into(),
+                    title: "Aether Cilium bootstrap policies missing".into(),
+                    detail: "Cilium CRDs are present but expected Aether egress policies (allow-aether-egress or strict variants) were not found.".into(),
+                    action: "Re-run cluster deploy with Cilium bootstrap, or apply deploy/k8s/bootstrap/ manifests. Set AETHER_CILIUM_EGRESS_STRICT=1 for strict mode.".into(),
+                });
+            }
+        }
+
+        if !cilium.metrics_server {
+            items.push(PlatformRecommendation {
+                id: "metrics-server-missing".into(),
+                category: "kubernetes".into(),
+                severity: "info".into(),
+                title: "metrics-server not available".into(),
+                detail: "kubectl top nodes failed — cluster CPU/memory metrics in the Clusters page require metrics-server.".into(),
+                action: "Install metrics-server (set AETHER_INSTALL_METRICS_SERVER=1 on deploy or cluster/install-cluster-prereqs.sh).".into(),
+            });
+        }
+
+        if cilium.connectivity_check == "failed" {
+            items.push(PlatformRecommendation {
+                id: "cilium-connectivity-failed".into(),
+                category: "kubernetes".into(),
+                severity: "warn".into(),
+                title: "Cilium connectivity check failed".into(),
+                detail: "The Cilium agent daemonset has no ready replicas or the post-deploy probe recorded failure.".into(),
+                action: "Check kube-system/cilium daemonset, re-run deploy with Cilium bootstrap, or inspect ConfigMap aether-cilium-connectivity.".into(),
+            });
+        }
+    }
+
+    if std::env::var("AETHER_PROMETHEUS_URL").ok().filter(|s| !s.is_empty()).is_none() {
+        items.push(PlatformRecommendation {
+            id: "prometheus-not-linked".into(),
+            category: "observability".into(),
+            severity: "info".into(),
+            title: "Prometheus not linked".into(),
+            detail: "AETHER_PROMETHEUS_URL is unset — the dashboard cannot proxy whitelisted PromQL or show external scrape targets.".into(),
+            action: "Set AETHER_PROMETHEUS_URL to your Prometheus server and import grafana/dashboard.json (see scripts/import-grafana-dashboard.sh).".into(),
+        });
+    }
+
     items
 }

@@ -13,16 +13,17 @@ interface ScoreEntry {
   reliability_score?: number;
   availability?: number;
   availability_score?: number;
+  reasons?: string[];
+  warnings?: string[];
 }
 
 interface AnalysisResult {
   recommended?: string;
   recommended_runtime?: string;
   scores?: ScoreEntry[];
-  reasons?: string[];
-  warnings?: string[];
   confidence?: number;
   workload_class?: string;
+  explain?: boolean;
 }
 
 export default function IntentDebugger() {
@@ -34,7 +35,7 @@ export default function IntentDebugger() {
     setLoading(true);
     setError('');
     try {
-      const resp = await apiPost<AnalysisResult>('/ai/recommend', {});
+      const resp = await apiPost<AnalysisResult>('/ai/recommend', { explain: true });
       if (resp.success && resp.data) {
         setResult(resp.data);
       } else {
@@ -52,7 +53,7 @@ export default function IntentDebugger() {
       <div className="dash-card text-center">
         <h3 className="text-lg font-bold text-white mb-2">Intent Debugger</h3>
         <p className="text-zinc-400 text-sm mb-4">
-          Understand why the AI engine selected a specific runtime. See scoring across all dimensions.
+          Per-runtime placement analysis with reasons and warnings for every candidate runtime.
         </p>
         <button
           onClick={analyze}
@@ -68,12 +69,9 @@ export default function IntentDebugger() {
 
   const recommended = result.recommended || result.recommended_runtime;
   const scores = result.scores || [];
-  const reasons = result.reasons || [];
-  const warnings = result.warnings || [];
   const confidence = result.confidence || 0;
   const workloadClass = result.workload_class || 'Unknown';
 
-  // Find the recommended runtime's scores for the radar chart
   const recScore = scores.find((s) => s.runtime === recommended);
   const radarDims = recScore
     ? [
@@ -92,7 +90,6 @@ export default function IntentDebugger() {
       </div>
 
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Left: Decision Summary */}
         <div>
           <div className="mb-3">
             <span className="text-zinc-500 text-xs">RECOMMENDED RUNTIME</span>
@@ -111,39 +108,11 @@ export default function IntentDebugger() {
               <span className="text-white text-sm">{(confidence * 100).toFixed(0)}%</span>
             </div>
           </div>
-
-          {/* Reasons */}
-          {reasons.length > 0 && (
-            <div className="mb-3">
-              <span className="text-zinc-500 text-xs">REASONS</span>
-              {reasons.map((r: string, i: number) => (
-                <div key={i} className="flex items-start gap-2 mt-1">
-                  <span className="text-emerald-400">+</span>
-                  <span className="text-zinc-300 text-sm">{r}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Warnings */}
-          {warnings.length > 0 && (
-            <div>
-              <span className="text-zinc-500 text-xs">WARNINGS</span>
-              {warnings.map((w: string, i: number) => (
-                <div key={i} className="flex items-start gap-2 mt-1">
-                  <span className="text-orange-400">!</span>
-                  <span className="text-zinc-300 text-sm">{w}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Right: Radar Chart */}
         <div className="flex flex-col items-center">
           {radarDims.length >= 3 && <RadarChart dimensions={radarDims} />}
 
-          {/* Scores Table */}
           <div className="w-full mt-3">
             <table className="w-full text-sm">
               <thead>
@@ -158,15 +127,42 @@ export default function IntentDebugger() {
                 {scores.map((s) => (
                   <tr key={s.runtime} className={s.runtime === recommended ? 'text-aether' : 'text-zinc-400'}>
                     <td className="py-0.5">{s.runtime === recommended ? '> ' : '  '}{s.runtime}</td>
-                    <td className="text-right">{(s.total_score || 0).toFixed(2)}</td>
-                    <td className="text-right">{(s.cost ?? s.cost_score ?? 0).toFixed(2)}</td>
-                    <td className="text-right">{(s.performance ?? s.performance_score ?? 0).toFixed(2)}</td>
+                    <td className="text-right">{((s.total_score ?? 0) * 100).toFixed(0)}%</td>
+                    <td className="text-right">{((s.cost ?? s.cost_score ?? 0) * 100).toFixed(0)}%</td>
+                    <td className="text-right">{((s.performance ?? s.performance_score ?? 0) * 100).toFixed(0)}%</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+      </div>
+
+      <div className="px-4 pb-4 space-y-3 border-t border-zinc-700 pt-4">
+        <span className="text-zinc-500 text-xs">PER-RUNTIME REASONS</span>
+        {scores.map((s) => (
+          <div
+            key={s.runtime}
+            className={`rounded-lg border p-3 ${s.runtime === recommended ? 'border-aether/40 bg-aether/5' : 'border-zinc-700 bg-zinc-900/50'}`}
+          >
+            <p className="text-sm font-medium text-white mb-2">{s.runtime}</p>
+            {(s.reasons ?? []).map((r, i) => (
+              <div key={`r-${i}`} className="flex items-start gap-2 mt-1">
+                <span className="text-emerald-400">+</span>
+                <span className="text-zinc-300 text-sm">{r}</span>
+              </div>
+            ))}
+            {(s.warnings ?? []).map((w, i) => (
+              <div key={`w-${i}`} className="flex items-start gap-2 mt-1">
+                <span className="text-orange-400">−</span>
+                <span className="text-zinc-300 text-sm">{w}</span>
+              </div>
+            ))}
+            {!(s.reasons?.length || s.warnings?.length) && (
+              <p className="text-zinc-500 text-sm">No specific factors recorded.</p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

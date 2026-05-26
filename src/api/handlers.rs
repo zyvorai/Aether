@@ -1336,11 +1336,18 @@ pub(crate) async fn create_backup(
 }
 
 /// POST /api/ai/recommend - AI-powered runtime recommendation
-pub(crate) async fn ai_recommend(Json(payload): Json<serde_json::Value>) -> impl IntoResponse {
-    use crate::ai::scoring::{ScoringEngine, ScoringResult};
+pub(crate) async fn ai_recommend(
+    Json(payload): Json<serde_json::Value>,
+) -> (StatusCode, Json<ApiResponse<serde_json::Value>>) {
+    use crate::ai::scoring::ScoringEngine;
     use crate::config::Config;
 
-    let spec = match parse_workload_payload::<ScoringResult>(payload) {
+    let explain = payload
+        .get("explain")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let spec = match parse_workload_payload::<serde_json::Value>(payload) {
         Ok(spec) => spec,
         Err(error) => return error,
     };
@@ -1349,7 +1356,30 @@ pub(crate) async fn ai_recommend(Json(payload): Json<serde_json::Value>) -> impl
     let engine = ScoringEngine::new(config.engine);
     let result = engine.score(&spec);
 
-    ok_json(result)
+    if explain {
+        let value = serde_json::json!({
+            "recommended": format!("{}", result.recommended),
+            "confidence": result.confidence,
+            "workload_class": format!("{:?}", result.workload_class),
+            "explain": true,
+            "scores": result.scores.iter().map(|s| serde_json::json!({
+                "runtime": format!("{}", s.runtime),
+                "total_score": s.total_score,
+                "cost_score": s.cost_score,
+                "performance_score": s.performance_score,
+                "reliability_score": s.reliability_score,
+                "availability_score": s.availability_score,
+                "reasons": s.reasons,
+                "warnings": s.warnings,
+            })).collect::<Vec<_>>(),
+        });
+        return ok_json(value);
+    }
+
+    match serde_json::to_value(result) {
+        Ok(value) => ok_json(value),
+        Err(e) => err_internal(format!("Failed to serialize scoring result: {}", e)),
+    }
 }
 
 /// GET /api/ai/profile/:name - Profile a deployed workload
@@ -2909,6 +2939,43 @@ pub(crate) async fn api_cluster_metrics_summary(
     }
 }
 
+/// GET /api/cluster/cilium/status - CNI detection and Aether bootstrap policy inventory.
+pub(crate) async fn api_cluster_cilium_status(
+    Query(query): Query<ClusterCiliumStatusQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::cilium::cilium_status(query.cluster.as_deref(), query.namespace.as_deref()).await {
+        Ok(status) => ok_json(status),
+        Err(error) => err_internal::<crate::kubecluster::cilium::CiliumStatusResponse>(error),
+    }
+}
+
+/// GET /api/observability/summary - Aether metrics + optional cluster/Cilium context.
+pub(crate) async fn api_observability_summary(
+    Query(query): Query<ObservabilitySummaryQuery>,
+) -> impl IntoResponse {
+    let cluster_ref = query.cluster.as_deref();
+    let namespace_ref = query.namespace.as_deref();
+    let cluster_metrics = if let Some(cluster) = cluster_ref.filter(|c| !c.is_empty()) {
+        crate::kubecluster::metrics_summary(cluster, namespace_ref).await.ok()
+    } else {
+        None
+    };
+    let cilium = crate::kubecluster::cilium::cilium_status(cluster_ref, namespace_ref)
+        .await
+        .ok();
+    ok_json(crate::observability::build_summary(cluster_metrics, cilium))
+}
+
+/// GET /api/observability/prometheus/query - Whitelisted instant query proxy.
+pub(crate) async fn api_observability_prometheus_query(
+    Query(query): Query<PrometheusQueryParams>,
+) -> impl IntoResponse {
+    match crate::observability::prometheus_instant_query(&query.query).await {
+        Ok(value) => ok_json(value),
+        Err(error) => err_internal::<serde_json::Value>(error),
+    }
+}
+
 /// POST /api/cluster/diff - Server-side diff preview for an edited manifest.
 pub(crate) async fn api_cluster_diff(
     Json(request): Json<ClusterDiffRequestBody>,
@@ -4005,6 +4072,11 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
     let mutation_confirm = std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
         .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
+    let cilium_status = crate::kubecluster::cilium::cilium_status(None, None)
+        .await
+        .ok()
+        .map(|s| serde_json::to_value(s).unwrap_or(serde_json::Value::Null))
+        .unwrap_or(serde_json::Value::Null);
     ok_json(serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
         "persistence": workload_backend,
@@ -4071,6 +4143,12 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
             "audit_webhook_configured": std::env::var("AETHER_AUDIT_WEBHOOK_URL").ok().filter(|s| !s.is_empty()).is_some(),
             "grafana_url": std::env::var("AETHER_GRAFANA_URL").ok().filter(|s| !s.is_empty()),
             "prometheus_url": std::env::var("AETHER_PROMETHEUS_URL").ok().filter(|s| !s.is_empty()),
+            "hubble_ui_url": std::env::var("AETHER_HUBBLE_UI_URL").ok().filter(|s| !s.is_empty()),
+            "grafana_dashboard_uid": std::env::var("AETHER_GRAFANA_DASHBOARD_UID").ok().filter(|s| !s.is_empty()),
+            "packetwolf_url": std::env::var("AETHER_PACKETWOLF_URL").ok().filter(|s| !s.is_empty()),
+        },
+        "kubernetes": {
+            "cilium": cilium_status,
         },
     }))
 }

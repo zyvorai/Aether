@@ -18,7 +18,9 @@
 
 ## 🌐 Overview
 
-Aether supports migrating workloads between any pair of its four runtimes:
+Aether supports migrating workloads between any pair of its four runtimes.
+
+> **Internals:** For state machine, limits matrix, and trace mode see [Migration Internals](MIGRATION-INTERNALS.md) and [Stateful Portability](STATEFUL-PORTABILITY.md).
 
 | From \ To | Podman | Kubernetes | KubeVirt | Metal3 |
 |-----------|--------|------------|----------|--------|

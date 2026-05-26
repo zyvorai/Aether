@@ -628,6 +628,7 @@ pub(crate) async fn migrate_command(
     strategy_str: &str,
     no_validation: bool,
     no_rollback: bool,
+    verbose_trace: bool,
 ) -> Result<()> {
     use aether::migration::{MigrationEngine, MigrationPlan, MigrationStrategy};
     use std::time::Duration;
@@ -677,6 +678,10 @@ pub(crate) async fn migrate_command(
     } else {
         plan.validation_delay = Duration::from_secs(30);
     }
+    plan.verbose_trace = verbose_trace
+        || std::env::var("AETHER_MIGRATION_TRACE")
+            .ok()
+            .is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true"));
 
     // Execute migration with progress indicators
     let total_steps = match strategy_str {
@@ -3486,6 +3491,23 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
     );
 
     output::muted("\n★ = AI-recommended runtime for this workload");
+    Ok(())
+}
+
+// ─── decide: explain runtime placement ───────────────────────────────
+pub(crate) async fn decide_command(spec_path: &PathBuf, explain: bool) -> Result<()> {
+    use aether::ai::scoring::{format_scoring_report_with_options, ScoringEngine};
+    use aether::config::Config;
+
+    output::header("🎯", "Runtime Placement Decision");
+
+    let config = Config::load();
+    let workload = Workload::from_file(spec_path)?;
+    let engine = ScoringEngine::new(config.engine);
+    let result = engine.score(&workload);
+
+    print!("{}", format_scoring_report_with_options(&result, explain));
+
     Ok(())
 }
 
