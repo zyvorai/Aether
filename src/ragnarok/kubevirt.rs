@@ -16,7 +16,8 @@ pub fn apply_confidential_to_vm(vm_spec: &mut Value, spec: &Workload) {
 
     let domain = &mut vm_spec["spec"]["template"]["spec"]["domain"];
 
-    if let Some(launch) = build_launch_security(conf) {
+    let launch_security = build_launch_security(conf);
+    if let Some(launch) = launch_security.clone() {
         domain["launchSecurity"] = launch;
     }
 
@@ -24,11 +25,17 @@ pub fn apply_confidential_to_vm(vm_spec: &mut Value, spec: &Workload) {
         domain["devices"]["tpm"] = json!({});
     }
 
-    if conf.attestation.policy == crate::spec::AttestationPolicy::Strict
+    // TEE launch (SEV/TDX) requires UEFI/OVMF; strict policy also mandates EFI.
+    if launch_security.is_some()
+        || conf.attestation.policy == crate::spec::AttestationPolicy::Strict
         || !conf.isolation.debug_allowed
     {
         domain["firmware"] = json!({
-            "bootloader": { "efi": {} },
+            "bootloader": {
+                "efi": {
+                    "secureBoot": false
+                }
+            },
             "uuid": spec.metadata.name
         });
     }
