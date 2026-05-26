@@ -1,0 +1,255 @@
+import { useCallback, useEffect, useState } from 'react';
+import { ExternalLink, Lock, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { apiFetchSettled } from '../../utils/api';
+import { pathWithQuery } from '../../utils/urlState';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import EmptyState from '../EmptyState';
+import Badge from '../Badge';
+import type {
+  MeasuredImageManifest,
+  NetworkTrustScore,
+  SovereignConfig,
+  TeeCapabilities,
+} from '../../types/api';
+
+function TrustBar({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(value * 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs text-zinc-400">
+        <span>{label}</span>
+        <span>{pct}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+        <div
+          className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function ConfidentialPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [caps, setCaps] = useState<TeeCapabilities | null>(null);
+  const [fleet, setFleet] = useState<NetworkTrustScore[]>([]);
+  const [sovereign, setSovereign] = useState<SovereignConfig | null>(null);
+  const [images, setImages] = useState<MeasuredImageManifest[]>([]);
+  const [search, setSearch] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    const [capsRes, fleetRes, sovereignRes, imagesRes] = await Promise.all([
+      apiFetchSettled<TeeCapabilities>('/confidential/capabilities'),
+      apiFetchSettled<NetworkTrustScore[]>('/confidential/trust-score'),
+      apiFetchSettled<SovereignConfig>('/confidential/sovereign/status'),
+      apiFetchSettled<MeasuredImageManifest[]>('/confidential/images'),
+    ]);
+    if (!capsRes.ok) {
+      setLoadFailed(true);
+      setCaps(null);
+      setFleet([]);
+    } else {
+      setCaps(capsRes.data);
+      setFleet(fleetRes.ok ? fleetRes.data : []);
+      setSovereign(sovereignRes.ok ? sovereignRes.data : null);
+      setImages(imagesRes.ok ? imagesRes.data : []);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const integration = caps?.integration;
+  const ragnarokUiUrl = integration?.mode === 'composite' && integration.remote_url
+    ? integration.remote_url.replace(/\/api\/?$/, '')
+    : null;
+
+  const filteredFleet = fleet.filter((row) =>
+    row.workload.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  if (loading && !caps && !loadFailed) {
+    return <PageLoading rows={5} />;
+  }
+
+  if (loadFailed) {
+    return (
+      <PageLoadError
+        title="Confidential APIs unavailable"
+        description="Ensure aether serve is running with Ragnarok modules enabled."
+        onRetry={() => void load()}
+      />
+    );
+  }
+
+  const host = caps?.host;
+
+  return (
+    <div>
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Filter confidential workloads…"
+        onRefresh={() => void load()}
+        refreshing={loading}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="dash-card lg:col-span-2">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <Lock className="w-5 h-5 text-aether" />
+                Integration
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">
+                {integration?.mode === 'composite'
+                  ? 'Composite deployment — Aether delegates attestation to standalone Ragnarok.'
+                  : 'Embedded mode — confidential logic runs inside aether serve.'}
+              </p>
+            </div>
+            <Badge
+              text={integration?.mode === 'composite' ? 'Composite' : 'Embedded'}
+              variant={integration?.mode === 'composite' ? 'yellow' : 'green'}
+            />
+          </div>
+          {ragnarokUiUrl && (
+            <a
+              href={ragnarokUiUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-aether hover:underline"
+            >
+              Open Ragnarok VM console
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </div>
+
+        <div className="dash-card">
+          <h2 className="text-sm font-medium uppercase tracking-wider text-slate-400 mb-3">Host TEE</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-zinc-400">SEV device</span>
+              <Badge text={host?.sev_device ? 'yes' : 'no'} variant={host?.sev_device ? 'green' : 'muted'} />
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">SEV-SNP</span>
+              <Badge text={host?.sev_snp ? 'yes' : 'no'} variant={host?.sev_snp ? 'green' : 'muted'} />
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Intel TDX</span>
+              <Badge text={host?.tdx ? 'yes' : 'no'} variant={host?.tdx ? 'green' : 'muted'} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {sovereign && (sovereign.offline_attestation || sovereign.region_lock) && (
+        <div className="dash-card mb-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-2">Sovereign mode</h2>
+          <div className="flex flex-wrap gap-3 text-sm text-zinc-400">
+            {sovereign.offline_attestation && (
+              <span className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700">Offline attestation</span>
+            )}
+            {sovereign.region_lock && (
+              <span className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700">
+                Region lock: {sovereign.region_lock}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+        <div className="dash-card">
+          <h2 className="text-lg font-semibold text-slate-100 mb-1 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            Fleet trust scores
+          </h2>
+          <p className="text-sm text-slate-500 mb-4">Confidential workloads with confidential.enabled in spec</p>
+          {filteredFleet.length === 0 ? (
+            <EmptyState
+              icon={<Lock size={40} />}
+              title="No confidential workloads"
+              description="Deploy a KubeVirt workload with a confidential block, or use the Visual Editor."
+            />
+          ) : (
+            <div className="space-y-3 max-h-[28rem] overflow-auto">
+              {filteredFleet.map((row) => (
+                <button
+                  key={row.workload}
+                  type="button"
+                  onClick={() =>
+                    navigate(
+                      pathWithQuery(viewToPath('workloads'), {
+                        workload: row.workload,
+                        tab: 'trust',
+                      }),
+                    )
+                  }
+                  className="w-full text-left p-3 rounded-lg border border-zinc-700 hover:border-aether/40 bg-zinc-900/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-zinc-100">{row.workload}</span>
+                    <Badge
+                      text={`${Math.round(row.composite * 100)}% trust`}
+                      variant={row.composite >= 0.8 ? 'green' : row.composite >= 0.5 ? 'yellow' : 'red'}
+                    />
+                  </div>
+                  <TrustBar label="Attestation" value={row.attestation_score} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="dash-card">
+          <h2 className="text-lg font-semibold text-slate-100 mb-1">Measured images</h2>
+          <p className="text-sm text-slate-500 mb-4">Signed launch digests in the Ragnarok image catalog</p>
+          {images.length === 0 ? (
+            <p className="text-sm text-zinc-500">No measured images registered yet.</p>
+          ) : (
+            <div className="overflow-auto max-h-[28rem]">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-zinc-500 border-b border-zinc-700">
+                    <th className="pb-2 pr-3">Name</th>
+                    <th className="pb-2 pr-3">Launch digest</th>
+                    <th className="pb-2">Signed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {images.map((img) => (
+                    <tr key={img.name} className="border-b border-zinc-800">
+                      <td className="py-2 pr-3 text-zinc-200">{img.name}</td>
+                      <td className="py-2 pr-3 font-mono text-xs text-zinc-400 truncate max-w-[12rem]">
+                        {img.launch_digest ?? img.image_hash}
+                      </td>
+                      <td className="py-2 text-zinc-500 text-xs">{img.signed_at}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className="text-xs text-zinc-600">
+        See docs/guides/security/RAGNAROK-AND-AETHER.md for composite bundle setup (RAGNAROK_URL).
+      </p>
+    </div>
+  );
+}

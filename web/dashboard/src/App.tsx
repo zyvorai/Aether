@@ -48,6 +48,7 @@ import AuditPage from './components/pages/AuditPage';
 import MetricsPage from './components/pages/MetricsPage';
 import GitOpsPage from './components/pages/GitOpsPage';
 import EditorPage from './components/pages/EditorPage';
+import ConfidentialPage from './components/pages/ConfidentialPage';
 
 function AetherDashboard() {
   const { theme } = useTheme();
@@ -370,6 +371,8 @@ function AetherDashboard() {
         return <GitOpsPage key={refreshKey} />;
       case 'editor':
         return <EditorPage key={refreshKey} />;
+      case 'confidential':
+        return <ConfidentialPage key={refreshKey} />;
       default:
         return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
     }

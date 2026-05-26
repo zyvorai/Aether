@@ -887,11 +887,23 @@ async fn deploy_workload_spec(
         }
     };
 
+    let name = request.spec.metadata.name.clone();
     let runtime = make_runtime::<String>(&runtime_kind).await?;
     let image = runtime.build(&request.spec).await.map_err(err_internal)?;
     let instance = runtime.run(&image, &request.spec).await.map_err(err_internal)?;
 
-    let name = request.spec.metadata.name.clone();
+    if request.spec.confidential.as_ref().is_some_and(|c| c.enabled) {
+        if let Err(e) =
+            crate::ragnarok::attestation_gate_for_workload(&request.spec, &name).await
+        {
+            return Err(err_bad_request(e));
+        }
+        tracing::info!(
+            workload = %name,
+            "Confidential workload deployed; attestation gate evaluated"
+        );
+    }
+
     let mut state = app_state.state.write().await;
     state.upsert(
         name.clone(),
