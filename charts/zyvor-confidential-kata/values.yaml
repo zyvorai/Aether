@@ -1,0 +1,23 @@
+# Zyvor confidential RuntimeClass names used by Ragnarok hub and Aether workloads.
+# Handlers must match shims installed by the Confidential Containers (coco) Helm release.
+# Defaults alias kata-clh-* names to kata-qemu-* handlers from the official CoCo chart.
+
+runtimeClasses:
+  clhSnp:
+    enabled: true
+    name: kata-clh-snp
+    handler: kata-qemu-snp
+    nodeSelector:
+      node.kubernetes.io/sev-snp: "true"
+  clhTdx:
+    enabled: true
+    name: kata-clh-tdx
+    handler: kata-qemu-tdx
+    nodeSelector:
+      feature.node.kubernetes.io/tdx: "true"
+  clhGpuSnp:
+    enabled: false
+    name: kata-clh-gpu-snp
+    handler: kata-qemu-nvidia-gpu-snp
+    nodeSelector:
+      node.kubernetes.io/sev-snp: "true"
