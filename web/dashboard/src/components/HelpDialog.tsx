@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { X, Keyboard, Info } from 'lucide-react';
 import { helpShortcuts } from './helpShortcuts';
 import ZyvorAbout from './ZyvorAbout';

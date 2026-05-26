@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Rocket, Wand2, Inbox, Settings2, FileCode2 } from 'lucide-react';

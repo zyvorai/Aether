@@ -54,7 +54,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Validate example specs
         run: |
-          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/labs/metal3/workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
+          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/confidential-kata-workload.yaml examples/labs/metal3/workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
             cargo run --quiet -- --spec "$f" validate
           done
           chmod +x scripts/validate-confidential-examples.sh
@@ -182,6 +182,10 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           AETHER_API=http://127.0.0.1:5090 AETHER_BIN=../../target/release/aether ../../scripts/confidential-cluster-e2e.sh
           kill $SERVER_PID || true
+      - name: Reference cluster E2E (offline)
+        run: |
+          chmod +x scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh scripts/confidential-cluster-e2e.sh
+          AETHER_BIN=./target/release/aether scripts/reference-cluster-e2e.sh
       - name: Run Playwright smoke
         working-directory: web/dashboard
         env:

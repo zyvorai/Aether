@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Runtime trait and common types
 //!
 //! All runtime adapters (Podman, Docker, Kubernetes, KubeVirt, Metal3)

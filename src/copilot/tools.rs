@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Copilot tool registry — maps tool names to intelligence/API operations.
 
 use crate::copilot::policy::{role_allows_tool, tool_risk};

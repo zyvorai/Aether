@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useCallback, useEffect, useState } from 'react';
 import { Server, Shield, Database, ExternalLink, Network } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
@@ -195,8 +199,8 @@ export default function PlatformPage() {
           <p className="text-sm text-slate-500">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>
         )}
         <p className="mt-4 text-xs text-slate-500">
-          Browse Cilium policies on the Cluster Browser <strong>Network</strong> tab. Hubble UI integration is Roadmap (
-          <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code>).
+          Browse Cilium policies on the Cluster Browser <strong>Network</strong> tab. Configure{' '}
+          <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code> for Hubble flow UI.
         </p>
       </div>
 
@@ -256,13 +260,34 @@ export default function PlatformPage() {
               href={integrations.hubble_ui_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-400 hover:bg-slate-800"
-              title="Hubble UI (Roadmap integration)"
+              className="inline-flex items-center gap-2 rounded-xl border border-purple-700/50 bg-purple-950/30 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/50"
             >
-              Hubble UI (Roadmap) <ExternalLink size={14} />
+              Hubble UI <ExternalLink size={14} />
             </a>
           )}
+          {integrations.packetwolf_url && (
+            <a
+              href={integrations.packetwolf_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-cyan-700/50 bg-cyan-950/30 px-4 py-2 text-sm text-cyan-200 hover:bg-cyan-950/50"
+            >
+              PacketWolf <ExternalLink size={14} />
+            </a>
+          )}
+          {!integrations.hubble_ui_url && (
+            <span className="text-sm text-slate-500 self-center">
+              Set <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code> for Hubble
+            </span>
+          )}
         </div>
+        <p className="mt-4 text-xs text-slate-500">
+          Multi-cluster inventory: open{' '}
+          <a href="/fleet" className="text-aether hover:underline">
+            Fleet Overview
+          </a>
+          . Set <code className="text-slate-400">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.
+        </p>
       </div>
     </div>
   );

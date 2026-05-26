@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import type { ApiResponse, AuthStatus } from '../types/api';
 
 const BASE = '/api';
@@ -237,6 +241,23 @@ export async function apiDelete(
       headers['X-Aether-Confirm'] = '1';
     }
     const res = await fetch(BASE + path, withCreds({ method: 'DELETE', headers }));
+    return await res.json();
+  } catch (e) {
+    return { success: false, data: null, error: String(e) };
+  }
+}
+
+/** DELETE with JSON body (e.g. dependency edge removal). */
+export async function apiDeleteJson<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
+  try {
+    const res = await fetch(
+      BASE + path,
+      withCreds({
+        method: 'DELETE',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body),
+      }),
+    );
     return await res.json();
   } catch (e) {
     return { success: false, data: null, error: String(e) };

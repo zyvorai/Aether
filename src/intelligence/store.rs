@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Persistent intelligence store for outcomes, runtime history, and behavior profiles.
 
 use crate::ai::affinity::{AffinityEngine, DeploymentOutcome, WorkloadClass};

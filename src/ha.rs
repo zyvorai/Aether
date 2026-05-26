@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Optional Redis-backed cache for multi-node API deployments.
 //!
 //! Used for OIDC login state (PKCE verifier + nonce). When `AETHER_REDIS_URL` is unset,

@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Attestation-gated secret release broker (Vault / KBS).
 
 use crate::ragnarok::attestation::{AttestationService, AttestationVerdict};

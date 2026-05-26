@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useMemo } from 'react';
 import type { ClusterRelatedEvent } from '../types/api';
 import { formatTimestamp } from '../utils/formatters';

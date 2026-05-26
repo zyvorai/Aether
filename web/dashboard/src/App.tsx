@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import type { AppView } from './types/api';
@@ -49,6 +53,8 @@ import MetricsPage from './components/pages/MetricsPage';
 import GitOpsPage from './components/pages/GitOpsPage';
 import EditorPage from './components/pages/EditorPage';
 import ConfidentialPage from './components/pages/ConfidentialPage';
+import IntelligencePage from './components/pages/IntelligencePage';
+import FleetPage from './components/pages/FleetPage';
 
 function AetherDashboard() {
   const { theme } = useTheme();
@@ -323,6 +329,8 @@ function AetherDashboard() {
         );
       case 'clusters':
         return <ClustersPage key={refreshKey} />;
+      case 'fleet':
+        return <FleetPage key={refreshKey} />;
       case 'compose':
         return <ComposePage key={refreshKey} />;
       case 'ai':
@@ -335,6 +343,8 @@ function AetherDashboard() {
         return <AffinityPage key={refreshKey} />;
       case 'drift':
         return <DriftPage key={refreshKey} />;
+      case 'intelligence':
+        return <IntelligencePage key={refreshKey} />;
       case 'policy':
         return <PolicyPage key={refreshKey} />;
       case 'scheduler':

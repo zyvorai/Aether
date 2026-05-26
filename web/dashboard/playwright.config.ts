@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { defineConfig } from '@playwright/test';
 
 const baseURL = process.env.AETHER_E2E_BASE_URL ?? 'http://127.0.0.1:5090';

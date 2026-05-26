@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useEffect, useState } from 'react';
 import { apiFetch, apiPost } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -5,6 +9,7 @@ import Badge from './Badge';
 import type {
   AttestationExplain,
   AttestationStatus,
+  AttestationVerifyResponse,
   AttestGatedSecretStatus,
   ConfidentialAnalysis,
   ConfidentialFleetRow,
@@ -84,6 +89,11 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
   const [sovereignBusy, setSovereignBusy] = useState(false);
   const [secretActionMsg, setSecretActionMsg] = useState<string | null>(null);
   const [secretReleaseBusy, setSecretReleaseBusy] = useState<string | null>(null);
+  const [attestReportB64, setAttestReportB64] = useState('');
+  const [attestLaunchDigest, setAttestLaunchDigest] = useState('');
+  const [attestTee, setAttestTee] = useState('sev-snp');
+  const [attestVerifyBusy, setAttestVerifyBusy] = useState(false);
+  const [attestVerifyMsg, setAttestVerifyMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -158,6 +168,35 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       if (refreshed) setSecretStatus(refreshed);
     } else {
       setSecretActionMsg(res.error ?? 'Secret release failed');
+    }
+  }
+
+  async function submitAttestation() {
+    if (!canMutate) {
+      setAttestVerifyMsg('Read-only session — attestation verify is disabled');
+      return;
+    }
+    if (!attestReportB64.trim()) {
+      setAttestVerifyMsg('Guest report (base64) is required');
+      return;
+    }
+    setAttestVerifyBusy(true);
+    setAttestVerifyMsg(null);
+    const res = await apiPost<AttestationVerifyResponse>('/confidential/attestation/verify', {
+      vm_id: workloadName,
+      tee: attestTee,
+      report_b64: attestReportB64.trim(),
+      launch_digest: attestLaunchDigest.trim() || null,
+    });
+    setAttestVerifyBusy(false);
+    if (res.success && res.data) {
+      setAttestVerifyMsg(`Verdict: ${res.data.verdict} at ${res.data.verified_at}`);
+      const refreshed = await apiFetch<AttestationStatus>(
+        `/confidential/attestation/${encodeURIComponent(workloadName)}/status`,
+      ).catch(() => null);
+      if (refreshed) setStatus(refreshed);
+    } else {
+      setAttestVerifyMsg(res.error ?? 'Attestation verify failed');
     }
   }
 
@@ -452,10 +491,54 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         </div>
       ) : (
         <p className="text-sm text-zinc-500 border-t border-zinc-700 pt-4">
-          No attestation record yet. Submit a guest report via Ragnarok or POST{' '}
-          <code className="text-zinc-400">/api/confidential/attestation/verify</code>.
+          No attestation record yet. Submit a guest report below.
         </p>
       )}
+
+      <div className="border-t border-zinc-700 pt-4 space-y-3">
+        <h4 className="text-sm font-medium text-zinc-300">Submit attestation report</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">TEE</label>
+            <select
+              value={attestTee}
+              onChange={(e) => setAttestTee(e.target.value)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+            >
+              <option value="sev-snp">sev-snp</option>
+              <option value="tdx">tdx</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-zinc-500">Launch digest (optional)</label>
+            <input
+              type="text"
+              value={attestLaunchDigest}
+              onChange={(e) => setAttestLaunchDigest(e.target.value)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 font-mono text-xs text-zinc-100"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-zinc-500">Guest report (base64)</label>
+          <textarea
+            value={attestReportB64}
+            onChange={(e) => setAttestReportB64(e.target.value)}
+            rows={4}
+            placeholder="Paste attestation report from guest or Ragnarok"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 font-mono text-xs text-zinc-100"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={!canMutate || attestVerifyBusy}
+          onClick={() => void submitAttestation()}
+          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
+        >
+          {attestVerifyBusy ? 'Verifying…' : 'Verify attestation'}
+        </button>
+        {attestVerifyMsg && <p className="text-xs text-zinc-400">{attestVerifyMsg}</p>}
+      </div>
 
       <div className="border-t border-zinc-700 pt-4">
         <h4 className="text-sm font-medium text-zinc-300 mb-2">GuestKit offline inspection</h4>

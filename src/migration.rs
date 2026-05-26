@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Migration engine for moving workloads between runtimes
 
 use crate::runtime::{Instance, Runtime, RuntimeKind};

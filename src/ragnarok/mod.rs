@@ -1,3 +1,7 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 //! Ragnarok — confidential computing platform (attestation, measured images, sovereign runtime).
 //!
 //! Integrates with Aether for KubeVirt/Kata confidential workloads.
@@ -16,6 +20,7 @@ pub mod kbs;
 pub mod migration;
 pub mod network;
 pub mod scheduling;
+pub mod security_profiles;
 pub mod secrets;
 pub mod sovereign;
 pub mod tee;

@@ -1,5 +1,9 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Inbox } from 'lucide-react';
+import { Plus, Inbox, RotateCcw } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
@@ -8,6 +12,10 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import type { BackupInfo } from '../../types/api';
+
+function toast(message: string, type: 'success' | 'error') {
+  window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+}
 
 export default function BackupsPage() {
   const [backups, setBackups] = useState<BackupInfo[]>([]);
@@ -18,6 +26,9 @@ export default function BackupsPage() {
   const [search, setSearch] = useState('');
   const [backupName, setBackupName] = useState('');
   const [backupDescription, setBackupDescription] = useState('');
+  const [restoreOpen, setRestoreOpen] = useState<string | null>(null);
+  const [restoreMerge, setRestoreMerge] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,6 +56,22 @@ export default function BackupsPage() {
         (b.description?.toLowerCase().includes(q) ?? false)
     );
   }, [backups, search]);
+
+  async function handleRestore() {
+    if (!restoreOpen) return;
+    setRestoring(true);
+    const stem = restoreOpen.replace(/\.json$/i, '');
+    const res = await apiPost('/backups/restore', { name: stem, merge: restoreMerge });
+    setRestoring(false);
+    setRestoreOpen(null);
+    setRestoreMerge(false);
+    if (res.success) {
+      toast(`Restored from backup "${stem}"`, 'success');
+      void load();
+    } else {
+      toast(res.error ?? 'Restore failed', 'error');
+    }
+  }
 
   async function handleCreate() {
     setCreating(true);
@@ -99,6 +126,7 @@ export default function BackupsPage() {
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workloads</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Created</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Version</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,6 +139,16 @@ export default function BackupsPage() {
                     <td className="py-3 px-4 text-sm text-slate-300">{b.workload_count}</td>
                     <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(b.created_at)}</td>
                     <td className="py-3 px-4 text-sm text-slate-400">{b.aether_version}</td>
+                    <td className="py-3 px-4">
+                      <button
+                        type="button"
+                        onClick={() => setRestoreOpen(b.filename)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:border-emerald-600/50 hover:text-emerald-300"
+                      >
+                        <RotateCcw size={12} />
+                        Restore
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -150,6 +188,34 @@ export default function BackupsPage() {
               {creating ? 'Creating…' : 'Create backup'}
             </button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={restoreOpen !== null} onClose={() => setRestoreOpen(null)} title="Restore backup">
+        <p className="text-sm text-slate-300 mb-4">
+          Restore state from <code className="text-slate-400">{restoreOpen}</code>. This replaces current workloads unless merge is enabled.
+        </p>
+        <label className="flex items-center gap-2 text-sm text-slate-300 mb-6">
+          <input
+            type="checkbox"
+            checked={restoreMerge}
+            onChange={(e) => setRestoreMerge(e.target.checked)}
+            className="rounded border-slate-600"
+          />
+          Merge workloads not already present
+        </label>
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={() => setRestoreOpen(null)} className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleRestore()}
+            disabled={restoring}
+            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-sm font-medium text-white"
+          >
+            {restoring ? 'Restoring…' : 'Restore'}
+          </button>
         </div>
       </Modal>
     </div>

@@ -1,5 +1,5 @@
 .PHONY: help build test lint clean install release docker run-dev \
-	confidential-validate confidential-fabric-e2e confidential-cluster-e2e
+	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e
 
 help:
 	@echo "Aether - Universal Runtime Control Plane"
@@ -17,6 +17,7 @@ help:
 	@echo "  confidential-validate      - Validate examples/confidential-*.yaml"
 	@echo "  confidential-fabric-e2e    - API smoke (AETHER_API, server running)"
 	@echo "  confidential-cluster-e2e   - CLI placement/migrate checks (no live deploy)"
+	@echo "  reference-cluster-e2e    - Metal3/KubeVirt + confidential kata validate (AETHER_LABS_LIVE=1 for live)"
 
 build:
 	@echo "Building debug binary..."
@@ -71,6 +72,10 @@ confidential-fabric-e2e:
 confidential-cluster-e2e: release
 	@chmod +x scripts/confidential-cluster-e2e.sh 2>/dev/null || true
 	@./scripts/confidential-cluster-e2e.sh
+
+reference-cluster-e2e: release
+	@chmod +x scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh scripts/confidential-cluster-e2e.sh 2>/dev/null || true
+	@./scripts/reference-cluster-e2e.sh
 
 # Development workflow
 watch:

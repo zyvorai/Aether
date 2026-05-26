@@ -1,6 +1,10 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
-import { Inbox, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
-import { apiFetch, apiDelete, apiFetchSettled } from '../../utils/api';
+import { Inbox, ChevronDown, ChevronRight, Trash2, Plus } from 'lucide-react';
+import { apiFetch, apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -23,6 +27,11 @@ export default function SecretsPage() {
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState('');
+  const [createNamespace, setCreateNamespace] = useState('default');
+  const [createKeys, setCreateKeys] = useState('API_KEY=\nDATABASE_URL=');
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,6 +71,37 @@ export default function SecretsPage() {
     setDetailLoading(null);
   }
 
+  async function handleCreate() {
+    const keys: Record<string, string> = {};
+    for (const line of createKeys.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq <= 0) continue;
+      keys[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1);
+    }
+    if (!createName.trim() || Object.keys(keys).length === 0) {
+      toast('Name and at least one KEY=value pair are required', 'error');
+      return;
+    }
+    setCreating(true);
+    const res = await apiPost('/secrets', {
+      name: createName.trim(),
+      namespace: createNamespace.trim() || undefined,
+      keys,
+    });
+    setCreating(false);
+    if (res.success) {
+      toast(`Secret "${createName.trim()}" created`, 'success');
+      setCreateOpen(false);
+      setCreateName('');
+      setCreateKeys('API_KEY=\nDATABASE_URL=');
+      void load();
+    } else {
+      toast(res.error ?? 'Failed to create secret', 'error');
+    }
+  }
+
   async function handleDelete(name: string) {
     const res = await apiDelete(`/secrets/${name}`, { label: `Delete secret "${name}"` });
     setConfirmDelete(null);
@@ -96,6 +136,16 @@ export default function SecretsPage() {
         searchPlaceholder="Search secrets…"
         onRefresh={() => void load()}
         refreshing={loading}
+        actions={
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          >
+            <Plus size={16} />
+            Create secret
+          </button>
+        }
       />
 
       {secrets.length === 0 ? (
@@ -189,6 +239,51 @@ export default function SecretsPage() {
           </div>
         </div>
       )}
+
+      <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create secret">
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs text-slate-500">Name</label>
+            <input
+              type="text"
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-slate-500">Namespace</label>
+            <input
+              type="text"
+              value={createNamespace}
+              onChange={(e) => setCreateNamespace(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-slate-500">Keys (KEY=value per line)</label>
+            <textarea
+              value={createKeys}
+              onChange={(e) => setCreateKeys(e.target.value)}
+              rows={5}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm">
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={creating}
+            onClick={() => void handleCreate()}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+          >
+            {creating ? 'Creating…' : 'Create'}
+          </button>
+        </div>
+      </Modal>
 
       <Modal isOpen={confirmDelete !== null} onClose={() => setConfirmDelete(null)} title="Confirm delete">
         <p className="text-sm text-slate-300 mb-6">
