@@ -97,7 +97,7 @@ impl KubeVirtRuntime {
 }
 
 /// Build DataVolume JSON (standalone, testable without kube::Client)
-fn build_datavolume_json(namespace: &str, image: &Image, spec: &Workload) -> serde_json::Value {
+fn build_datavolume_json(namespace: &str, _image: &Image, spec: &Workload) -> serde_json::Value {
     use crate::ragnarok::isolation::datavolume_encryption_annotations;
 
     let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);

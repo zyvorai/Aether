@@ -114,24 +114,22 @@ impl GuestKitService {
         let policy = parse_policy(req.policy_manifest.as_deref())?;
         let mut findings = Vec::new();
         let mut repair_steps = Vec::new();
-        let mut chain_valid = false;
-
-        match req.mode {
+        let chain_valid = match req.mode {
             InspectionMode::PreLaunch => {
-                chain_valid = validate_pre_launch(req, catalog, &policy, &mut findings)?;
+                validate_pre_launch(req, catalog, &policy, &mut findings)?
             }
             InspectionMode::OfflinePolicy => {
-                chain_valid = validate_offline_policy(&policy, req, &mut findings)?;
+                validate_offline_policy(&policy, req, &mut findings)?
             }
             InspectionMode::PostShutdown => {
-                chain_valid = validate_post_shutdown(req, catalog, &mut findings)?;
+                validate_post_shutdown(req, catalog, &mut findings)?
             }
             InspectionMode::AttestedRepair => {
-                chain_valid = false;
                 findings.push("Attestation or chain validation previously failed".into());
                 repair_steps = repair_playbook(req, catalog, self.history(&req.vm_id));
+                false
             }
-        }
+        };
 
         if offline_mode_active() && req.mode == InspectionMode::OfflinePolicy && policy.is_empty() {
             findings.push("Offline sovereign mode: embed policy manifest for air-gapped verify".into());

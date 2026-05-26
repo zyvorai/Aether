@@ -18,6 +18,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // Single bundle for Rust embed (inlineDynamicImports); size warning is expected.
+    chunkSizeWarningLimit: 1024,
     // Stable filenames for embedding in the Rust binary (include_str!).
     cssCodeSplit: false,
     rollupOptions: {
