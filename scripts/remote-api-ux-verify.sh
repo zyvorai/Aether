@@ -90,6 +90,18 @@ for p in \
   expect_code "${p}" 200
 done
 
+section "Confidential fabric"
+for p in \
+  /api/confidential/capabilities \
+  /api/confidential/fleet \
+  /api/confidential/trust-score \
+  /api/confidential/intelligence \
+  /api/confidential/kata/status \
+  /api/confidential/sovereign/status \
+  /api/confidential/images; do
+  expect_code "${p}" 200
+done
+
 section "Cross-check UX data consistency"
 python3 - "${TMP}" "${API}" <<'PY'
 import json, sys, glob, os
