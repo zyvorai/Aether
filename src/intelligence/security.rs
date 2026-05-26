@@ -84,9 +84,7 @@ impl SecurityEngine {
         }
 
         if spec.confidential.as_ref().is_some_and(|c| c.enabled && c.attestation.required) {
-            let dir = dirs::home_dir()
-                .unwrap_or_else(|| std::path::PathBuf::from("."))
-                .join(".aether");
+            let dir = crate::ragnarok::client::RagnarokClient::attestation_data_dir();
             let att = crate::ragnarok::AttestationService::new(dir);
             if !att.passed(&spec.metadata.name) {
                 return Some(ThreatEntry {
@@ -95,6 +93,39 @@ impl SecurityEngine {
                     category: "attestation".into(),
                     score: 0.9,
                     reason: "Confidential workload has not passed Ragnarok attestation".into(),
+                    detected_at: crate::resources::now_rfc3339(),
+                });
+            }
+        }
+
+        if spec.confidential.as_ref().is_some_and(|c| c.enabled)
+            && crate::ragnarok::network::policy_count(spec) < 2
+        {
+            return Some(ThreatEntry {
+                workload: spec.metadata.name.clone(),
+                severity: "medium".into(),
+                category: "network_exposure".into(),
+                score: 0.6,
+                reason: "Confidential workload lacks zero-trust network policies (Cilium/NetworkPolicy)".into(),
+                detected_at: crate::resources::now_rfc3339(),
+            });
+        }
+
+        if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
+            let sovereign = crate::ragnarok::sovereign::evaluate(
+                spec,
+                &crate::ragnarok::sovereign::SovereignConfig::from_env(),
+            );
+            if !sovereign.compliant {
+                return Some(ThreatEntry {
+                    workload: spec.metadata.name.clone(),
+                    severity: "high".into(),
+                    category: "sovereign".into(),
+                    score: 0.85,
+                    reason: format!(
+                        "Sovereign policy violation: {}",
+                        sovereign.violations.join("; ")
+                    ),
                     detected_at: crate::resources::now_rfc3339(),
                 });
             }

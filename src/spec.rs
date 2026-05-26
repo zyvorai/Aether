@@ -470,11 +470,20 @@ impl Workload {
 
         if let Some(ref conf) = self.confidential {
             if conf.enabled && conf.attestation.required {
-                if !self.runtime.allow.contains(&RuntimeType::Kubevirt)
-                    && !matches!(self.runtime.preferred, RuntimePreference::Kubevirt)
-                {
+                let kubevirt_ok = self.runtime.allow.contains(&RuntimeType::Kubevirt)
+                    || matches!(self.runtime.preferred, RuntimePreference::Kubevirt);
+                let kube_ok = self.runtime.allow.contains(&RuntimeType::Kube)
+                    || matches!(self.runtime.preferred, RuntimePreference::Kube);
+                if !kubevirt_ok && !kube_ok {
                     anyhow::bail!(
-                        "confidential workloads require kubevirt in runtime.allow or preferred runtime kubevirt"
+                        "confidential workloads require kubevirt or kubernetes in runtime.allow/preferred"
+                    );
+                }
+            }
+            if let Some(ref rc) = conf.kata_runtime_class {
+                if !crate::ragnarok::kata::supported_runtime_classes().contains(&rc.as_str()) {
+                    anyhow::bail!(
+                        "unsupported confidential.kataRuntimeClass '{rc}' — use kata-clh-snp, kata-clh-tdx, kata-qemu-snp, or kata-qemu-tdx"
                     );
                 }
             }
@@ -1543,6 +1552,9 @@ pub struct ConfidentialSpec {
     pub image_digest: Option<String>,
     #[serde(default)]
     pub region_lock: Option<String>,
+    /// Kata / CoCo RuntimeClass (e.g. kata-clh-snp). Used when runtime is kubernetes.
+    #[serde(default)]
+    pub kata_runtime_class: Option<String>,
 }
 
 fn default_confidential_tee() -> ConfidentialTee {

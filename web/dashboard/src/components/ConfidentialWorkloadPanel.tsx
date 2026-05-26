@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../utils/api';
+import { apiFetch, apiPost } from '../utils/api';
 import Badge from './Badge';
 import type {
   AttestationExplain,
   AttestationStatus,
   AttestGatedSecretStatus,
+  ConfidentialAnalysis,
+  ConfidentialFleetRow,
+  ConfidentialNetworkStatus,
+  GuestKitResult,
   IsolationVerdict,
   NetworkTrustScore,
 } from '../types/api';
@@ -42,10 +46,18 @@ function verdictVariant(v: string): 'green' | 'red' | 'yellow' | 'muted' {
 
 interface ConfidentialWorkloadPanelProps {
   workloadName: string;
+  runtime?: string;
 }
 
-export default function ConfidentialWorkloadPanel({ workloadName }: ConfidentialWorkloadPanelProps) {
+function runtimeLabel(runtime: string): string {
+  if (runtime === 'kubevirt') return 'KubeVirt VM';
+  if (runtime === 'kubernetes') return 'Kubernetes (Kata/CoCo)';
+  return runtime;
+}
+
+export default function ConfidentialWorkloadPanel({ workloadName, runtime }: ConfidentialWorkloadPanelProps) {
   const [loading, setLoading] = useState(true);
+  const [meta, setMeta] = useState<ConfidentialFleetRow | null>(null);
   const [trust, setTrust] = useState<NetworkTrustScore | null>(null);
   const [status, setStatus] = useState<AttestationStatus | null>(null);
   const [explain, setExplain] = useState<AttestationExplain | null>(null);
@@ -53,26 +65,39 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
   const [isolation, setIsolation] = useState<IsolationVerdict | null>(null);
   const [showExplain, setShowExplain] = useState(false);
   const [notConfidential, setNotConfidential] = useState(false);
+  const [guestkitHistory, setGuestkitHistory] = useState<GuestKitResult[]>([]);
+  const [network, setNetwork] = useState<ConfidentialNetworkStatus | null>(null);
+  const [analysis, setAnalysis] = useState<ConfidentialAnalysis | null>(null);
+  const [guestkitBusy, setGuestkitBusy] = useState(false);
+  const [guestkitMessage, setGuestkitMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       setNotConfidential(false);
-      const [trustData, statusData, secretsData, isolationData] = await Promise.all([
+      const [metaData, trustData, statusData, secretsData, isolationData, gkHistory, netData, intelData] = await Promise.all([
+        apiFetch<ConfidentialFleetRow>(`/confidential/workload/${encodeURIComponent(workloadName)}`),
         apiFetch<NetworkTrustScore>(`/confidential/trust-score/${encodeURIComponent(workloadName)}`),
         apiFetch<AttestationStatus>(`/confidential/attestation/${encodeURIComponent(workloadName)}/status`),
         apiFetch<AttestGatedSecretStatus[]>(`/confidential/secrets/${encodeURIComponent(workloadName)}/status`),
         apiFetch<IsolationVerdict>(`/confidential/isolation/${encodeURIComponent(workloadName)}`),
+        apiFetch<GuestKitResult[]>(`/confidential/guestkit/${encodeURIComponent(workloadName)}/history`),
+        apiFetch<ConfidentialNetworkStatus>(`/confidential/network/${encodeURIComponent(workloadName)}`),
+        apiFetch<ConfidentialAnalysis>(`/confidential/intelligence/${encodeURIComponent(workloadName)}`),
       ]);
       if (cancelled) return;
-      if (!trustData) {
+      if (!metaData && !trustData) {
         setNotConfidential(true);
       }
-      setTrust(trustData);
+      setMeta(metaData);
+      setTrust(metaData?.trust ?? trustData);
       setStatus(statusData);
       setSecretStatus(secretsData ?? []);
       setIsolation(isolationData);
+      setGuestkitHistory(gkHistory ?? []);
+      setNetwork(netData);
+      setAnalysis(intelData);
       setExplain(null);
       setShowExplain(false);
       setLoading(false);
@@ -82,6 +107,26 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
       cancelled = true;
     };
   }, [workloadName]);
+
+  async function runGuestkit(mode: string) {
+    setGuestkitBusy(true);
+    setGuestkitMessage(null);
+    const res = await apiPost<GuestKitResult>('/confidential/guestkit/inspect', {
+      vm_id: workloadName,
+      mode,
+    });
+    setGuestkitBusy(false);
+    if (res.success && res.data) {
+      setGuestkitHistory((prev) => [...prev, res.data!]);
+      setGuestkitMessage(
+        res.data.passed
+          ? `GuestKit ${mode} passed`
+          : `GuestKit ${mode} failed: ${res.data.findings.join('; ')}`,
+      );
+    } else {
+      setGuestkitMessage(res.error ?? 'GuestKit inspection failed');
+    }
+  }
 
   async function loadExplain() {
     if (explain) {
@@ -118,6 +163,64 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
 
   return (
     <div className="space-y-6 py-2">
+      {(meta || runtime) && (
+        <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-zinc-800">
+          <Badge text={runtimeLabel(meta?.runtime ?? runtime ?? 'unknown')} variant="muted" />
+          {meta?.tee && <Badge text={meta.tee} variant="muted" />}
+          {meta?.attestation_passed !== undefined && (
+            <Badge
+              text={meta.attestation_passed ? 'attestation pass' : 'attestation pending'}
+              variant={meta.attestation_passed ? 'green' : 'yellow'}
+            />
+          )}
+        </div>
+      )}
+
+      {analysis && (
+        <div className="border-b border-zinc-800 pb-4">
+          <h4 className="text-sm font-medium text-zinc-300 mb-2">AI confidential analysis</h4>
+          <Badge
+            text={`${analysis.risk_level} risk · ${Math.round(analysis.trust_composite * 100)}% trust`}
+            variant={analysis.risk_level === 'low' ? 'green' : analysis.risk_level === 'medium' ? 'yellow' : 'red'}
+          />
+          <p className="text-xs text-zinc-500 mt-2">{analysis.summary}</p>
+          {analysis.recommendations.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs text-amber-200/90">
+              {analysis.recommendations.slice(0, 3).map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {network && (
+        <div className="border-b border-zinc-800 pb-4">
+          <h4 className="text-sm font-medium text-zinc-300 mb-2">Zero-trust network</h4>
+          <div className="flex flex-wrap gap-2 mb-2">
+            <Badge text={`${network.policy_count} policies`} variant="muted" />
+            {network.cilium_auto_policy && <Badge text="auto Cilium" variant="green" />}
+          </div>
+          {network.spiffe_id && (
+            <p className="text-xs font-mono text-zinc-500 break-all mb-2">{network.spiffe_id}</p>
+          )}
+          {network.recommendations.map((r) => (
+            <p key={r} className="text-xs text-zinc-600">{r}</p>
+          ))}
+        </div>
+      )}
+
+      {meta?.image_digest && (
+        <div>
+          <h4 className="text-sm font-medium text-zinc-300 mb-2">Measured launch digest</h4>
+          <code className="text-xs text-zinc-400 break-all block mb-2">{meta.image_digest}</code>
+          <Badge
+            text={meta.image_in_catalog ? 'in verified catalog' : 'not in catalog — deploy blocked'}
+            variant={meta.image_in_catalog ? 'green' : 'red'}
+          />
+        </div>
+      )}
+
       {trust && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -177,6 +280,19 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
                   ))}
                 </ul>
               )}
+              {explain.guestkit && (
+                <div className="mt-3 pt-3 border-t border-zinc-800">
+                  <p className="text-xs text-zinc-500 mb-1">GuestKit ({explain.guestkit.last_mode})</p>
+                  <Badge text={explain.guestkit.passed ? 'passed' : 'failed'} variant={explain.guestkit.passed ? 'green' : 'red'} />
+                  {explain.guestkit.repair_steps.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-xs text-amber-200/90">
+                      {explain.guestkit.repair_steps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -186,6 +302,50 @@ export default function ConfidentialWorkloadPanel({ workloadName }: Confidential
           <code className="text-zinc-400">/api/confidential/attestation/verify</code>.
         </p>
       )}
+
+      <div className="border-t border-zinc-700 pt-4">
+        <h4 className="text-sm font-medium text-zinc-300 mb-2">GuestKit offline inspection</h4>
+        <p className="text-xs text-zinc-500 mb-3">
+          Pre-launch digest check (uses spec launch digest). File paths require CLI on the Aether host.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button
+            type="button"
+            disabled={guestkitBusy}
+            onClick={() => void runGuestkit('pre-launch')}
+            className="px-2.5 py-1 text-xs rounded border border-zinc-600 text-zinc-300 hover:border-aether/50 disabled:opacity-50"
+          >
+            Pre-launch check
+          </button>
+          <button
+            type="button"
+            disabled={guestkitBusy}
+            onClick={() => void runGuestkit('attested-repair')}
+            className="px-2.5 py-1 text-xs rounded border border-zinc-600 text-zinc-300 hover:border-aether/50 disabled:opacity-50"
+          >
+            Repair playbook
+          </button>
+        </div>
+        {guestkitMessage && (
+          <p className="text-xs text-zinc-400 mb-2">{guestkitMessage}</p>
+        )}
+        {guestkitHistory.length > 0 && (
+          <div className="space-y-2 max-h-40 overflow-auto">
+            {guestkitHistory.slice().reverse().map((entry) => (
+              <div key={entry.inspected_at} className="text-xs p-2 rounded bg-zinc-950 border border-zinc-800">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-zinc-400">{entry.mode}</span>
+                  <Badge text={entry.passed ? 'pass' : 'fail'} variant={entry.passed ? 'green' : 'red'} />
+                </div>
+                <p className="text-zinc-500">{entry.findings.join(' · ')}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="mt-2 text-xs text-zinc-600 font-mono">
+          aether confidential guestkit inspect {workloadName} --mode pre-launch --image ./disk.qcow2
+        </p>
+      </div>
 
       {isolation && (
         <div className="border-t border-zinc-700 pt-4">
