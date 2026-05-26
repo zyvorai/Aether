@@ -760,6 +760,14 @@ export interface SovereignConfig {
   region_lock?: string | null;
 }
 
+export interface AttestGatedSecretStatus {
+  secret_name: string;
+  state: 'pending' | 'released' | 'revoked' | 'injected' | string;
+  provider: string;
+  expires_at?: string | null;
+  k8s_secret_name?: string | null;
+}
+
 export interface MeasuredImageManifest {
   name: string;
   image_hash: string;

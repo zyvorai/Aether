@@ -14,6 +14,7 @@ The dashboard now includes:
 
 - **Confidential Computing** page (`/confidential`) — fleet trust, TEE capabilities, sovereign mode, measured images
 - **Trust** tab on KubeVirt workload detail — per-workload attestation and trust score
+- **Attest-gated secrets** — pending/released/revoked status on Trust tab; auto-release on attestation pass (Phase 2)
 - **Visual Editor** — optional `confidential:` block when runtime is KubeVirt
 
 ---
@@ -70,15 +71,6 @@ flowchart TB
 ```
 
 ---
-
-## Integration modes
-
-### Embedded (default)
-
-- Run `aether serve` only.
-- Confidential logic runs inside the Aether process.
-- Dashboard **Confidential** page and workload **Trust** tab talk to `/api/confidential/*` on the same origin.
-- Suitable for single-binary installs and CI.
 
 ### Composite (enterprise)
 
@@ -138,6 +130,9 @@ See `examples/confidential-snp.yaml`.
 | `RAGNAROK_DATA_DIR` | Both | Shared attestation/image catalog state (optional) |
 | `RAGNAROK_OFFLINE_ATTESTATION` | Both | Sovereign / air-gapped attestation mode |
 | `RAGNAROK_REGION_LOCK` | Both | Sovereign region enforcement |
+| `VAULT_ADDR` / `VAULT_TOKEN` | Both | HashiCorp Vault KV v2 fetch for attest-gated secret release |
+| `VAULT_SECRET_PATH` | Both | Vault path prefix (default `aether/{secret}` or `ragnarok/{secret}`) |
+| `KBS_URL` | Both | CoCo Key Broker Service base URL |
 | `AETHER_TEE_SNP` | Aether host | Advertise SEV-SNP capability when `/dev/sev` absent in dev |
 
 ---

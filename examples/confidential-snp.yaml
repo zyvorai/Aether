@@ -36,6 +36,9 @@ confidential:
   secrets:
     releasePolicy: attest-gated
     provider: vault
+    names:
+      - db-credentials
+      - api-key
 
 intent:
   trust: strict

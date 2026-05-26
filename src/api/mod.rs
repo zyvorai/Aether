@@ -558,6 +558,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             post(api_confidential_secret_release),
         )
         .route(
+            "/api/confidential/secrets/:workload/status",
+            get(api_confidential_secret_status),
+        )
+        .route(
             "/api/confidential/migration-plan/:name/:target",
             get(api_confidential_migration_plan),
         )
