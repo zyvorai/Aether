@@ -50,6 +50,12 @@ const CLI_IMAGE_COMMANDS = [
   'aether confidential image verify-digest <launch-digest>',
 ];
 
+const CLI_MIGRATION_COMMANDS = [
+  'aether --spec workload.yaml confidential migration plan --target kubevirt',
+  'aether migrate my-vm --target kubevirt --strategy confidential-blue-green',
+  'aether confidential migration status --name my-vm',
+];
+
 export default function ConfidentialPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -261,6 +267,26 @@ export default function ConfidentialPage() {
           </div>
         </div>
       )}
+
+      <div className="dash-card mb-6">
+        <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
+          <Terminal className="w-5 h-5" />
+          Encrypted migration (Phase 6)
+        </h2>
+        <p className="text-sm text-zinc-500 mb-3">
+          Use <code className="text-zinc-400">confidential-blue-green</code> strategy from Workloads → Migrate, or plan first:
+        </p>
+        <ul className="space-y-1 mb-3">
+          {CLI_MIGRATION_COMMANDS.map((cmd) => (
+            <li key={cmd}>
+              <code className="text-xs text-zinc-400 break-all">{cmd}</code>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-zinc-600">
+          Example spec: <code className="text-zinc-400">examples/confidential-migrate-kubevirt.yaml</code>
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <div className="dash-card">
