@@ -259,9 +259,42 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
+  .dashboard-aurora {
+    background:
+      radial-gradient(ellipse 120% 80% at 10% -10%, rgba(56, 189, 248, 0.22), transparent 45%),
+      radial-gradient(ellipse 90% 60% at 90% 0%, rgba(167, 139, 250, 0.24), transparent 42%),
+      radial-gradient(ellipse 70% 50% at 50% 100%, rgba(16, 185, 129, 0.14), transparent 50%),
+      linear-gradient(180deg, #040812 0%, #070b18 35%, #0a1020 100%);
+  }
+
+  .navbar-aurora {
+    background: rgba(4, 8, 18, 0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+      0 10px 40px rgba(76, 29, 149, 0.18),
+      inset 0 1px 0 rgba(167, 139, 250, 0.08);
+  }
+
+  .nav-aurora-select {
+    background: linear-gradient(180deg, rgba(76, 29, 149, 0.35) 0%, rgba(15, 23, 42, 0.92) 100%);
+    border-color: rgba(167, 139, 250, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  @keyframes aurora-shift {
+    0%, 100% { opacity: 0.55; transform: translateX(0) scale(1); }
+    50% { opacity: 0.85; transform: translateX(2%) scale(1.02); }
+  }
+
+  .aurora-orb {
+    filter: blur(72px);
+    animation: aurora-shift 14s ease-in-out infinite;
+  }
+
 }
 
-/* ── Machina-style theme shells (class toggled on <html> via ThemeContext) ── */
+/* ── Theme shells (class toggled on <html> via ThemeContext) ── */
 
 .steel-theme {
   color-scheme: dark;
@@ -272,86 +305,83 @@
   color: #d7dde5;
 }
 
-.light-theme {
-  color-scheme: light;
+.aurora-theme {
+  color-scheme: dark;
 }
 
-.light-theme html {
-  @apply bg-slate-100;
+.aurora-theme html {
+  @apply bg-[#040812];
 }
 
-.light-theme body {
-  @apply bg-slate-100 text-slate-900;
-  background-image: none;
+.aurora-theme body {
+  color: #e2e8f0;
+  background-color: #040812;
+  background-image:
+    radial-gradient(ellipse 100% 80% at 15% -5%, rgba(34, 211, 238, 0.20), transparent 42%),
+    radial-gradient(ellipse 80% 60% at 85% 5%, rgba(192, 132, 252, 0.22), transparent 40%),
+    radial-gradient(ellipse 60% 50% at 50% 110%, rgba(52, 211, 153, 0.12), transparent 48%),
+    linear-gradient(180deg, #040812 0%, #060a14 40%, #0a1020 100%);
 }
 
-.light-theme .bg-slate-950,
-.light-theme .bg-slate-950\/95 {
-  background-color: rgba(248, 250, 252, 0.98) !important;
+.aurora-theme .app-shell,
+.aurora-theme .dashboard-aurora {
+  background:
+    radial-gradient(ellipse 120% 80% at 10% -10%, rgba(56, 189, 248, 0.16), transparent 45%),
+    radial-gradient(ellipse 90% 60% at 90% 0%, rgba(167, 139, 250, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(4, 8, 18, 0.92), rgba(10, 16, 32, 0.98));
 }
 
-.light-theme .text-white {
-  @apply text-slate-900;
+.aurora-theme .dash-card,
+.aurora-theme .dash-card-flush {
+  background:
+    linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%),
+    radial-gradient(circle at top left, rgba(167, 139, 250, 0.12), transparent 38%);
+  border-color: rgba(167, 139, 250, 0.18);
+  box-shadow: 0 18px 50px rgba(30, 10, 60, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.light-theme .text-slate-100 {
-  @apply text-slate-800;
+.aurora-theme .dash-card:hover {
+  border-color: rgba(34, 211, 238, 0.28);
+  box-shadow: 0 22px 64px rgba(30, 10, 60, 0.42), 0 0 0 1px rgba(34, 211, 238, 0.08);
 }
 
-.light-theme .text-slate-300,
-.light-theme .text-slate-200 {
-  @apply text-slate-600;
+.aurora-theme .dash-breadcrumb {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(8, 12, 24, 0.88));
+  border-color: rgba(167, 139, 250, 0.14);
 }
 
-.light-theme .text-slate-400 {
-  @apply text-slate-500;
+.aurora-theme .page-frame {
+  background:
+    linear-gradient(180deg, rgba(4, 8, 18, 0.55), rgba(4, 8, 18, 0.22)),
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.08), transparent 40%);
+  border-color: rgba(167, 139, 250, 0.14);
 }
 
-.light-theme .border-slate-800\/60,
-.light-theme .border-slate-800\/70,
-.light-theme .border-slate-700\/50 {
-  border-color: #e2e8f0 !important;
+.aurora-theme .nav-pill-active {
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.22), rgba(34, 211, 238, 0.10));
+  color: #e9d5ff;
+  border: 1px solid rgba(167, 139, 250, 0.32);
 }
 
-.light-theme .surface-panel-soft {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.92));
-  border-color: rgba(148, 163, 184, 0.35);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+.aurora-theme .nav-pill:hover {
+  border-color: rgba(34, 211, 238, 0.18);
+  background: rgba(30, 41, 59, 0.72);
 }
 
-.light-theme .page-frame {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(241, 245, 249, 0.35));
-  border-color: rgba(148, 163, 184, 0.25);
+.aurora-theme .premium-divider {
+  background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.45), rgba(34, 211, 238, 0.35), transparent);
 }
 
-.light-theme .dash-breadcrumb {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 245, 249, 0.88));
-  border-color: rgba(148, 163, 184, 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+.aurora-theme .stat-card-orange {
+  background: radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.30), transparent 35%), linear-gradient(135deg, #1e1033 0%, #172554 100%);
 }
 
-.light-theme .dash-card,
-.light-theme .dash-card-flush {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
-  border-color: rgba(148, 163, 184, 0.28);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+.aurora-theme .stat-card-blue {
+  background: radial-gradient(circle at 90% 10%, rgba(34, 211, 238, 0.32), transparent 35%), linear-gradient(135deg, #0f172a 0%, #312e81 100%);
 }
 
-.light-theme .nav-pill {
-  @apply text-slate-600;
-}
-
-.light-theme .nav-pill:hover {
-  @apply text-slate-900 bg-slate-100 border-slate-200;
-}
-
-.light-theme .nav-pill-active {
-  background: linear-gradient(180deg, rgba(99, 164, 255, 0.14), rgba(99, 164, 255, 0.06));
-  @apply text-blue-800 border-blue-200;
-}
-
-.light-theme .skeleton {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+.aurora-theme .stat-card-purple {
+  background: radial-gradient(circle at 90% 10%, rgba(192, 132, 252, 0.35), transparent 35%), linear-gradient(135deg, #2e1065 0%, #0f172a 100%);
 }
 
 .steel-theme .dash-breadcrumb {
@@ -363,36 +393,6 @@
 .steel-theme .dash-card-flush {
   background: linear-gradient(165deg, rgba(20, 26, 34, 0.94) 0%, rgba(12, 16, 22, 0.98) 100%);
   border-color: rgba(140, 160, 190, 0.14);
-}
-
-/* Log viewer / zinc surfaces — light & steel readability */
-.light-theme .bg-zinc-950,
-.light-theme .bg-zinc-900 {
-  background-color: #f8fafc !important;
-}
-
-.light-theme .bg-zinc-800 {
-  background-color: #f1f5f9 !important;
-}
-
-.light-theme .bg-zinc-700 {
-  background-color: #e2e8f0 !important;
-}
-
-.light-theme .border-zinc-700,
-.light-theme .border-zinc-800,
-.light-theme .border-zinc-600 {
-  border-color: #cbd5e1 !important;
-}
-
-.light-theme .text-zinc-300,
-.light-theme .text-zinc-100 {
-  color: #334155 !important;
-}
-
-.light-theme .text-zinc-400,
-.light-theme .text-zinc-500 {
-  color: #64748b !important;
 }
 
 .steel-theme .bg-zinc-950 {

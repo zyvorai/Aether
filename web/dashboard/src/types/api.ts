@@ -676,6 +676,7 @@ export type AppView =
   | 'clusters'
   | 'compose'
   | 'ai'
+  | 'copilot'
   | 'cost'
   | 'affinity'
   | 'drift'

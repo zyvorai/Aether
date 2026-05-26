@@ -730,104 +730,37 @@ pub async fn related_events(
 }
 
 pub async fn top_metrics(req: &ClusterLogsRequest) -> Result<Vec<ClusterTopMetric>> {
-    if which::which("kubectl").is_err() {
-        anyhow::bail!("kubectl binary not found");
-    }
-
-    let mut args = vec![
-        "--context".to_string(),
-        req.cluster.clone(),
-        "-n".to_string(),
-        req.namespace.clone(),
-        "top".to_string(),
-        "pod".to_string(),
-    ];
-
+    let client = client_for_context(&req.cluster).await?;
+    let all = list_pod_metrics(&client, Some(&req.namespace)).await?;
     if req.kind == "Pod" {
-        args.push(req.name.clone());
-    } else {
-        let client = client_for_context(&req.cluster).await?;
-        let selector = selector_for_workload(&client, req).await?;
-        args.push("-l".to_string());
-        args.push(selector);
+        return Ok(all
+            .into_iter()
+            .filter(|m| m.name == req.name)
+            .collect());
     }
-    args.push("--no-headers".to_string());
-
-    let output = Command::new("kubectl")
-        .args(args)
-        .output()
-        .await
-        .context("failed to spawn kubectl top")?;
-    if !output.status.success() {
-        anyhow::bail!(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-
-    Ok(String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .filter_map(|line| {
-            let parts = line.split_whitespace().collect::<Vec<_>>();
-            if parts.len() < 3 {
-                return None;
-            }
-            Some(ClusterTopMetric {
-                name: parts[0].to_string(),
-                cpu: parts[1].to_string(),
-                memory: parts[2].to_string(),
-            })
-        })
+    let selector = selector_for_workload(&client, req).await?;
+    let pods: Api<Pod> = Api::namespaced(client, &req.namespace);
+    let matched = pods
+        .list(&ListParams::default().labels(&selector))
+        .await?
+        .items
+        .into_iter()
+        .map(|p| p.name_any())
+        .collect::<std::collections::HashSet<_>>();
+    Ok(all
+        .into_iter()
+        .filter(|m| matched.contains(&m.name))
         .collect())
 }
 
 pub async fn metrics_summary(cluster: &str, namespace: Option<&str>) -> Result<ClusterMetricsSummary> {
-    if which::which("kubectl").is_err() {
-        anyhow::bail!("kubectl binary not found");
-    }
+    let client = client_for_context(cluster).await?;
     let namespace = namespace.filter(|value| *value != "_cluster");
-
-    let mut args = vec![
-        "--context".to_string(),
-        cluster.to_string(),
-        "top".to_string(),
-        "pod".to_string(),
-        "--no-headers".to_string(),
-    ];
-    if let Some(namespace) = namespace.filter(|value| *value != "all") {
-        args.push("-n".to_string());
-        args.push(namespace.to_string());
+    let pods = if let Some(ns) = namespace.filter(|value| *value != "all") {
+        list_pod_metrics(&client, Some(ns)).await?
     } else {
-        args.push("-A".to_string());
-    }
-
-    let output = Command::new("kubectl")
-        .args(args)
-        .output()
-        .await
-        .context("failed to spawn kubectl top")?;
-    if !output.status.success() {
-        anyhow::bail!(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-
-    let pods = String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .filter_map(|line| {
-            let parts = line.split_whitespace().collect::<Vec<_>>();
-            if parts.len() < 3 {
-                return None;
-            }
-            let (name, cpu, memory) = if namespace.filter(|value| *value != "all").is_some() {
-                (parts[0], parts[1], parts[2])
-            } else if parts.len() >= 4 {
-                (parts[1], parts[2], parts[3])
-            } else {
-                return None;
-            };
-            Some(ClusterTopMetric {
-                name: name.to_string(),
-                cpu: cpu.to_string(),
-                memory: memory.to_string(),
-            })
-        })
-        .collect::<Vec<_>>();
+        list_pod_metrics(&client, None).await?
+    };
 
     let total_cpu_millicores = pods.iter().map(|pod| cpu_to_millicores(&pod.cpu)).sum();
     let total_memory_mib = pods.iter().map(|pod| memory_to_mib(&pod.memory)).sum();
@@ -843,6 +776,49 @@ pub async fn metrics_summary(cluster: &str, namespace: Option<&str>) -> Result<C
         total_memory_mib,
         pods,
     })
+}
+
+async fn list_pod_metrics(client: &Client, namespace: Option<&str>) -> Result<Vec<ClusterTopMetric>> {
+    let api_resource = ApiResource {
+        group: "metrics.k8s.io".into(),
+        version: "v1beta1".into(),
+        api_version: "metrics.k8s.io/v1beta1".into(),
+        kind: "PodMetrics".into(),
+        plural: "pods".into(),
+    };
+    let items = if let Some(ns) = namespace {
+        let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), ns, &api_resource);
+        api.list(&ListParams::default()).await?.items
+    } else {
+        let api: Api<DynamicObject> = Api::all_with(client.clone(), &api_resource);
+        api.list(&ListParams::default()).await?.items
+    };
+
+    Ok(items
+        .into_iter()
+        .map(|item| {
+            let name = item.name_any();
+            let mut cpu_mc: i64 = 0;
+            let mut mem_mib: i64 = 0;
+            if let Some(containers) = item.data.get("containers").and_then(|c| c.as_array()) {
+                for container in containers {
+                    if let Some(usage) = container.get("usage") {
+                        if let Some(cpu) = usage.get("cpu").and_then(|v| v.as_str()) {
+                            cpu_mc += cpu_to_millicores(cpu);
+                        }
+                        if let Some(mem) = usage.get("memory").and_then(|v| v.as_str()) {
+                            mem_mib += memory_to_mib(mem);
+                        }
+                    }
+                }
+            }
+            ClusterTopMetric {
+                name,
+                cpu: format!("{cpu_mc}m"),
+                memory: format!("{mem_mib}Mi"),
+            }
+        })
+        .collect())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1113,7 +1089,44 @@ pub async fn browse_resources(req: &ClusterBrowseRequest) -> Result<Vec<ClusterR
     Ok(resources)
 }
 
+/// Label used when the API runs in-cluster with no kubeconfig contexts.
+pub fn default_in_cluster_label() -> String {
+    std::env::var("AETHER_CLUSTER_DISPLAY_NAME").unwrap_or_else(|_| "active-client".to_string())
+}
+
+pub fn is_in_cluster_label(context: &str) -> bool {
+    context == "active-client" || context == "in-cluster" || context == default_in_cluster_label()
+}
+
+/// Resolve cluster name: explicit arg, first reachable kubeconfig context, or in-cluster fallback.
+pub async fn resolve_reachable_cluster(cluster: Option<&str>) -> Result<String> {
+    if let Some(c) = cluster.filter(|s| !s.is_empty()) {
+        return Ok(c.to_string());
+    }
+    if let Ok(clusters) = list_clusters().await {
+        if let Some(c) = clusters.into_iter().find(|c| c.reachable) {
+            return Ok(c.name);
+        }
+    }
+    if Client::try_default().await.is_ok() {
+        return Ok(default_in_cluster_label());
+    }
+    Kubeconfig::read()
+        .ok()
+        .and_then(|kc| kc.current_context)
+        .context("no Kubernetes cluster context available")
+}
+
+pub async fn client_for_cluster(context: &str) -> Result<Client> {
+    client_for_context(context).await
+}
+
 async fn client_for_context(context: &str) -> Result<Client> {
+    if is_in_cluster_label(context) {
+        return Client::try_default()
+            .await
+            .context("in-cluster kubernetes client unavailable");
+    }
     let kubeconfig = Kubeconfig::read().context("failed to read kubeconfig")?;
     let config = Config::from_custom_kubeconfig(
         kubeconfig,

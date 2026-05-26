@@ -22,6 +22,17 @@ pub struct MigrationAdvice {
     pub canary_config: CanaryConfig,
 }
 
+/// Full migration plan with predictive intelligence fields.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MigrationPlanProposal {
+    pub advice: MigrationAdvice,
+    pub blast_radius_score: f64,
+    pub rollback_probability: f64,
+    pub eta_secs: u64,
+    pub cost_impact_usd: f64,
+    pub auto_eligible: bool,
+}
+
 /// Risk level for migration
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum RiskLevel {
@@ -150,6 +161,55 @@ impl MigrationAdvisor {
         }
     }
 
+    /// Build a predictive migration plan proposal.
+    pub fn plan_proposal(
+        &self,
+        spec: &Workload,
+        source: RuntimeKind,
+        target: RuntimeKind,
+    ) -> MigrationPlanProposal {
+        let advice = self.advise(spec, source, target);
+        let health = crate::health::HealthHistory::load(&crate::health::HealthHistory::default_path())
+            .unwrap_or_default();
+        let restarts = health.restart_count(&spec.metadata.name);
+        let uptime = health.uptime_percent(&spec.metadata.name);
+
+        let blast_radius = match advice.risk_level {
+            RiskLevel::Low => 0.15,
+            RiskLevel::Medium => 0.35,
+            RiskLevel::High => 0.6,
+            RiskLevel::Critical => 0.85,
+        };
+
+        let rollback_probability = (blast_radius * 0.4
+            + (restarts as f64 / 20.0).min(0.3)
+            + if uptime > 0.0 && uptime < 99.0 { 0.2 } else { 0.0 })
+            .min(0.95);
+
+        let eta_secs = advice.estimated_downtime_secs.saturating_add(
+            advice.canary_config.steps.len() as u64 * advice.canary_config.step_interval_secs,
+        );
+
+        let cost_impact = crate::cost::estimate_all_providers(spec)
+            .ok()
+            .and_then(|e| e.first().map(|x| x.total_monthly * 0.05))
+            .unwrap_or(0.0);
+
+        let auto_eligible = matches!(
+            advice.risk_level,
+            RiskLevel::Low | RiskLevel::Medium
+        ) && rollback_probability < 0.4;
+
+        MigrationPlanProposal {
+            advice,
+            blast_radius_score: blast_radius,
+            rollback_probability,
+            eta_secs,
+            cost_impact_usd: cost_impact,
+            auto_eligible,
+        }
+    }
+
     /// Assess migration risk
     fn assess_risk(
         &self,
@@ -212,6 +272,12 @@ impl MigrationAdvisor {
         let has_health = spec.health.is_some();
         let has_ingress = spec.ingress.as_ref().is_some_and(|i| i.enabled);
 
+        // Confidential workloads prefer KubeVirt with TEE-capable nodes
+        if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
+            reasons.push("Confidential workload: recommending ConfidentialBlueGreen migration".to_string());
+            return MigrationStrategy::ConfidentialBlueGreen;
+        }
+
         match risk_level {
             RiskLevel::Critical | RiskLevel::High => {
                 reasons.push("High risk: blue-green provides safest rollback path".to_string());
@@ -248,6 +314,7 @@ impl MigrationAdvisor {
             MigrationStrategy::BlueGreen => 0, // Zero downtime in theory
             MigrationStrategy::Rolling => 0,   // Zero downtime in theory
             MigrationStrategy::Canary => 0,    // Zero downtime (canary runs alongside stable)
+            MigrationStrategy::ConfidentialBlueGreen => 0,
         };
 
         if is_stateful {
@@ -476,6 +543,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
         kubernetes: None,
         }

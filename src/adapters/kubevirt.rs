@@ -217,6 +217,8 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
         vm_spec["spec"]["template"]["spec"]["domain"]["devices"]["gpus"] = json!(gpus);
     }
 
+    crate::ragnarok::kubevirt::apply_confidential_to_vm(&mut vm_spec, spec);
+
     vm_spec
 }
 
@@ -241,11 +243,17 @@ impl Runtime for KubeVirtRuntime {
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
         common::validate_kube_name(&spec.metadata.name)?;
 
-        tracing::info!(
-            "Deploying VirtualMachine to namespace '{}': {}",
-            self.namespace,
-            spec.metadata.name
-        );
+        // Deploy confidential VM extensions when spec requests TEE
+        crate::ragnarok::image::deploy_image_gate(
+            spec,
+            &crate::ragnarok::image::ImageCatalog::load(
+                &dirs::home_dir().unwrap_or_default().join(".aether"),
+            ),
+        )?;
+        crate::ragnarok::sovereign::enforce_region_lock(
+            spec,
+            &crate::ragnarok::sovereign::SovereignConfig::from_env(),
+        )?;
 
         // Create DataVolume
         let datavolume_json = self.generate_datavolume_json(image, spec);
@@ -526,6 +534,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
         kubernetes: None,
         }

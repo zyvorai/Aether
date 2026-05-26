@@ -41,6 +41,7 @@ import { ZYVOR_HELP } from '../config/zyvorHelp';
 import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
+import { THEME_OPTIONS, dropdownItemClass, dropdownSurfaceClass, navbarShellClass, themeSelectClass } from '../utils/themeSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import { filterNavViews } from '../utils/navCapabilities';
@@ -193,11 +194,7 @@ function Dropdown({
 
       {open && (
         <div
-          className={`absolute top-full left-0 mt-1 w-56 rounded-xl shadow-xl py-2 z-50 animate-scale-in border ${
-            theme === 'light'
-              ? 'bg-white border-slate-200 text-slate-800'
-              : 'bg-zinc-900 border-zinc-700'
-          }`}
+          className={`absolute top-full left-0 z-50 mt-1 w-56 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
         >
           {group.items.map((item) => (
             <button
@@ -206,15 +203,9 @@ function Dropdown({
                 onNavigate(item.view);
                 setOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                currentView === item.view
-                  ? 'text-aether bg-aether/10'
-                  : theme === 'light'
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${dropdownItemClass(currentView === item.view, theme)}`}
             >
-              <span className={currentView === item.view ? 'text-aether' : theme === 'light' ? 'text-slate-400' : 'text-slate-500'}>
+              <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
                 {item.icon}
               </span>
               {item.label}
@@ -313,15 +304,7 @@ export default function Navbar({
   );
 
   return (
-    <nav
-      className={`sticky top-0 z-40 border-b ${
-        theme === 'steel'
-          ? 'border-[rgba(140,160,190,0.18)] bg-gradient-to-b from-[#0f141a] via-[#1a222d] to-[#0c1117] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_10px_30px_rgba(0,0,0,0.45)]'
-          : theme === 'light'
-            ? 'bg-white/90 backdrop-blur-xl border-slate-200/90 shadow-sm'
-            : 'navbar-blur border-slate-800/60'
-      }`}
-    >
+    <nav className={`sticky top-0 z-40 border-b ${navbarShellClass(theme)}`}>
       <div className="dash-content">
         <div className="flex items-center justify-between h-[72px]">
           {/* Left: Logo */}
@@ -386,22 +369,18 @@ export default function Navbar({
           {/* Right: Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
             <label className="hidden md:flex items-center gap-1 shrink-0 min-w-0" title="Theme">
-              <Palette className={`w-3.5 h-3.5 shrink-0 ${theme === 'light' ? 'text-slate-500' : 'text-slate-500'}`} aria-hidden />
+              <Palette className="w-3.5 h-3.5 shrink-0 text-slate-500" aria-hidden />
               <select
                 aria-label="Theme"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value as AppTheme)}
-                className={`text-xs rounded-xl border px-1.5 sm:px-2 py-1.5 max-w-[6.5rem] sm:max-w-[7.5rem] cursor-pointer outline-none transition min-w-0 ${
-                  theme === 'light'
-                    ? 'bg-white border-slate-300 text-slate-800'
-                    : theme === 'steel'
-                      ? 'nav-steel-select text-[#d7dde5]'
-                      : 'bg-slate-900/80 border-slate-600 text-slate-200'
-                }`}
+                className={`max-w-[6.5rem] min-w-0 cursor-pointer rounded-xl border px-1.5 py-1.5 text-xs outline-none transition sm:max-w-[7.5rem] sm:px-2 ${themeSelectClass(theme)}`}
               >
-                <option value="dark">Dark</option>
-                <option value="steel">Steel</option>
-                <option value="light">Light</option>
+                {THEME_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </label>
             <PlatformHealthChip sseConnected={sseConnected ?? false} />
@@ -422,9 +401,7 @@ export default function Navbar({
                   aria-expanded={helpMenuOpen}
                   aria-haspopup="menu"
                   className={`flex items-center gap-1 px-2 py-2 rounded-xl text-sm transition-colors ${
-                    theme === 'light'
-                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                      : helpMenuOpen
+                    helpMenuOpen
                         ? 'text-slate-100 bg-slate-800/80'
                         : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                   }`}
@@ -441,9 +418,7 @@ export default function Navbar({
                 {helpMenuOpen && (
                   <div
                     className={`absolute top-full right-0 mt-1.5 z-50 min-w-[12.5rem] rounded-xl py-1.5 shadow-xl animate-scale-in border ${
-                      theme === 'light'
-                        ? 'bg-white border-slate-200'
-                        : 'bg-zinc-900 border-zinc-700'
+                      'bg-zinc-900 border-zinc-700'
                     }`}
                     role="menu"
                   >
@@ -455,9 +430,7 @@ export default function Navbar({
                         onOpenHelp('shortcuts');
                       }}
                       className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        theme === 'light'
-                          ? 'text-slate-700 hover:bg-slate-100'
-                          : 'text-slate-300 hover:bg-slate-800/80'
+                        'text-slate-300 hover:bg-slate-800/80'
                       }`}
                     >
                       <Keyboard className="w-4 h-4 shrink-0" aria-hidden />
@@ -472,9 +445,7 @@ export default function Navbar({
                         onOpenHelp('about');
                       }}
                       className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        theme === 'light'
-                          ? 'text-slate-700 hover:bg-slate-100'
-                          : 'text-slate-300 hover:bg-slate-800/80'
+                        'text-slate-300 hover:bg-slate-800/80'
                       }`}
                     >
                       <Info className="w-4 h-4 shrink-0" aria-hidden />
@@ -487,9 +458,7 @@ export default function Navbar({
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
                       className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        theme === 'light'
-                          ? 'text-slate-700 hover:bg-slate-100'
-                          : 'text-slate-300 hover:bg-slate-800/80'
+                        'text-slate-300 hover:bg-slate-800/80'
                       }`}
                     >
                       <BookOpen className="w-4 h-4 shrink-0" aria-hidden />
@@ -503,16 +472,14 @@ export default function Navbar({
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
                       className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                        theme === 'light'
-                          ? 'text-slate-700 hover:bg-slate-100'
-                          : 'text-slate-300 hover:bg-slate-800/80'
+                        'text-slate-300 hover:bg-slate-800/80'
                       }`}
                     >
                       <ExternalLink className="w-4 h-4 shrink-0" aria-hidden />
                       Contact support
                     </a>
                     <div className={`px-3 py-2 border-t text-[11px] ${
-                      theme === 'light' ? 'border-slate-200' : 'border-slate-700/50'
+                      'border-slate-700/50'
                     }`}>
                       <a
                         href={ZYVOR_HELP.platform}
@@ -532,13 +499,11 @@ export default function Navbar({
               className={`sm:hidden inline-block w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 platform-pulse' : 'bg-red-400'}`}
               title={sseConnected ? 'SSE Connected' : 'SSE Disconnected'}
             />
-            <span className={`hidden sm:inline text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-500'}`}>{relativeTime}</span>
+            <span className={`hidden sm:inline text-xs ${'text-slate-500'}`}>{relativeTime}</span>
             <button
               onClick={handleRefreshClick}
               className={`p-2 rounded-xl transition-colors ${
-                theme === 'light'
-                  ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
               }`}
               title="Refresh"
             >
@@ -548,9 +513,9 @@ export default function Navbar({
             <div className="hidden lg:flex shrink-0 items-center gap-2 px-3 py-2 rounded-xl surface-panel-soft metric-glow">
               <Shield className="w-4 h-4 shrink-0 text-aether" />
               <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
-                <span className={`text-[10px] uppercase tracking-[0.14em] ${theme === 'light' ? 'text-slate-500' : 'text-slate-500'}`}>{authModeLabel}</span>
+                <span className={`text-[10px] uppercase tracking-[0.14em] ${'text-slate-500'}`}>{authModeLabel}</span>
                 <span
-                  className={`whitespace-nowrap text-sm font-medium font-mono tracking-tight ${theme === 'light' ? 'text-slate-800' : 'text-slate-200'}`}
+                  className={`whitespace-nowrap text-sm font-medium font-mono tracking-tight ${'text-slate-200'}`}
                   title={bearerPreview}
                 >
                   {bearerPreview}
@@ -560,7 +525,7 @@ export default function Navbar({
 
             <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl surface-panel-soft">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className={`text-sm ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>{username}</span>
+              <span className={`text-sm ${'text-slate-300'}`}>{username}</span>
               <span className="rounded-full border border-aether/30 bg-aether/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-aether">
                 {role}
               </span>
@@ -569,9 +534,7 @@ export default function Navbar({
               type="button"
               onClick={onLogout}
               className={`hidden sm:inline-flex px-3 py-2 rounded-xl text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 ${
-                theme === 'light'
-                  ? 'text-slate-600 hover:bg-slate-100'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
               }`}
             >
               Sign out
@@ -579,9 +542,7 @@ export default function Navbar({
             <button
               onClick={() => setMobileOpen((v) => !v)}
               className={`md:hidden p-2 rounded-xl transition-colors ${
-                theme === 'light'
-                  ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
               }`}
               aria-label="Toggle menu"
             >
@@ -595,7 +556,7 @@ export default function Navbar({
       {mobileOpen && (
         <div
           className={`md:hidden border-t animate-fade-in backdrop-blur-lg max-h-[min(70vh,32rem)] overflow-y-auto ${
-            theme === 'light' ? 'border-slate-200 bg-white/95' : 'border-slate-800/60 bg-slate-950/95'
+            'border-slate-800/60 bg-slate-950/95'
           }`}
         >
           <div className="dash-content py-3 space-y-4">
@@ -607,9 +568,7 @@ export default function Navbar({
                   setMobileOpen(false);
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border ${
-                  theme === 'light'
-                    ? 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100'
-                    : 'border-aether/30 bg-aether/10 text-aether hover:bg-aether/15'
+                  'border-aether/30 bg-aether/10 text-aether hover:bg-aether/15'
                 }`}
               >
                 <Command className="w-4 h-4" />
@@ -620,10 +579,10 @@ export default function Navbar({
 
             <div className="rounded-2xl surface-panel-soft px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{authModeLabel}</div>
-              <div className={`mt-1 text-sm font-medium font-mono tracking-tight ${theme === 'light' ? 'text-slate-800' : 'text-slate-200'}`}>
+              <div className={`mt-1 text-sm font-medium font-mono tracking-tight ${'text-slate-200'}`}>
                 {bearerPreview}
               </div>
-              <div className={`mt-2 text-sm ${theme === 'light' ? 'text-slate-600' : 'text-slate-400'}`}>{username}</div>
+              <div className={`mt-2 text-sm ${'text-slate-400'}`}>{username}</div>
             </div>
 
             {filteredMobileNavGroups.map((group) => (
@@ -641,12 +600,10 @@ export default function Navbar({
                       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                         currentView === item.view
                           ? 'text-aether bg-aether/10'
-                          : theme === 'light'
-                            ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                            : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                          : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                       }`}
                     >
-                      <span className={currentView === item.view ? 'text-aether' : theme === 'light' ? 'text-slate-400' : 'text-slate-500'}>
+                      <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
                         {item.icon}
                       </span>
                       {item.label}
@@ -668,9 +625,7 @@ export default function Navbar({
                       setMobileOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      theme === 'light'
-                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                     }`}
                   >
                     <Keyboard className="w-4 h-4" />
@@ -683,9 +638,7 @@ export default function Navbar({
                       setMobileOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      theme === 'light'
-                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                     }`}
                   >
                     <Info className="w-4 h-4" />
@@ -697,9 +650,7 @@ export default function Navbar({
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      theme === 'light'
-                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                     }`}
                   >
                     <BookOpen className="w-4 h-4" />
@@ -711,9 +662,7 @@ export default function Navbar({
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      theme === 'light'
-                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                     }`}
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -721,7 +670,7 @@ export default function Navbar({
                   </a>
                   <div
                     className={`px-4 py-2 text-[11px] ${
-                      theme === 'light' ? 'text-slate-500' : 'text-slate-500'
+                      'text-slate-500'
                     }`}
                   >
                     <a
@@ -745,17 +694,13 @@ export default function Navbar({
                   aria-label="Theme"
                   value={theme}
                   onChange={(e) => setTheme(e.target.value as AppTheme)}
-                  className={`flex-1 text-xs rounded-xl border px-2 py-2 cursor-pointer outline-none ${
-                    theme === 'light'
-                      ? 'bg-white border-slate-300 text-slate-800'
-                      : theme === 'steel'
-                        ? 'nav-steel-select text-[#d7dde5]'
-                        : 'bg-slate-900/80 border-slate-600 text-slate-200'
-                  }`}
+                  className={`flex-1 cursor-pointer rounded-xl border px-2 py-2 text-xs outline-none ${themeSelectClass(theme)}`}
                 >
-                  <option value="dark">Dark</option>
-                  <option value="steel">Steel</option>
-                  <option value="light">Light</option>
+                  {THEME_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <button
@@ -765,9 +710,7 @@ export default function Navbar({
                   setMobileOpen(false);
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-colors ${
-                  theme === 'light'
-                    ? 'text-slate-600 hover:bg-slate-100 border border-slate-200'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 border border-slate-700/60'
+                  'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 border border-slate-700/60'
                 }`}
               >
                 <LogOut className="w-4 h-4" />

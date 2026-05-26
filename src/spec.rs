@@ -33,6 +33,12 @@ pub struct Workload {
     pub mesh: Option<MeshConfig>,
     #[serde(default)]
     pub intent: Option<IntentSpec>,
+    /// Autonomous intelligence policy (migration, healing, evolution)
+    #[serde(default)]
+    pub autonomy: Option<AutonomySpec>,
+    /// Ragnarok confidential computing policy (TEE, attestation, isolation)
+    #[serde(default)]
+    pub confidential: Option<ConfidentialSpec>,
     #[serde(default)]
     pub schedule: Option<ScheduleSpec>,
     /// Kubernetes-only options (workload kind, scheduling, security, Gateway API, etc.)
@@ -460,6 +466,18 @@ impl Workload {
         // Validate intent spec
         if let Some(ref intent) = self.intent {
             intent.validate()?;
+        }
+
+        if let Some(ref conf) = self.confidential {
+            if conf.enabled && conf.attestation.required {
+                if !self.runtime.allow.contains(&RuntimeType::Kubevirt)
+                    && !matches!(self.runtime.preferred, RuntimePreference::Kubevirt)
+                {
+                    anyhow::bail!(
+                        "confidential workloads require kubevirt in runtime.allow or preferred runtime kubevirt"
+                    );
+                }
+            }
         }
 
         // Validate schedule spec
@@ -1500,6 +1518,157 @@ impl IntentSpec {
     }
 }
 
+/// Confidential computing controls (Ragnarok integration).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfidentialSpec {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_confidential_tee")]
+    pub tee: ConfidentialTee,
+    #[serde(default)]
+    pub attestation: ConfidentialAttestationSpec,
+    #[serde(default)]
+    pub isolation: ConfidentialIsolationSpec,
+    #[serde(default)]
+    pub secrets: ConfidentialSecretsSpec,
+    #[serde(default)]
+    pub image_digest: Option<String>,
+    #[serde(default)]
+    pub region_lock: Option<String>,
+}
+
+fn default_confidential_tee() -> ConfidentialTee {
+    ConfidentialTee::SevSnp
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum ConfidentialTee {
+    Sev,
+    SevEs,
+    #[default]
+    SevSnp,
+    Tdx,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfidentialAttestationSpec {
+    #[serde(default)]
+    pub required: bool,
+    #[serde(default = "default_attestation_policy")]
+    pub policy: AttestationPolicy,
+}
+
+impl Default for ConfidentialAttestationSpec {
+    fn default() -> Self {
+        Self {
+            required: false,
+            policy: default_attestation_policy(),
+        }
+    }
+}
+
+fn default_attestation_policy() -> AttestationPolicy {
+    AttestationPolicy::Strict
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum AttestationPolicy {
+    #[default]
+    Strict,
+    Standard,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfidentialIsolationSpec {
+    #[serde(default = "default_true")]
+    pub vtpm: bool,
+    #[serde(default = "default_true")]
+    pub encrypted_state: bool,
+    #[serde(default)]
+    pub debug_allowed: bool,
+}
+
+impl Default for ConfidentialIsolationSpec {
+    fn default() -> Self {
+        Self {
+            vtpm: true,
+            encrypted_state: true,
+            debug_allowed: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfidentialSecretsSpec {
+    #[serde(default = "default_secret_release_policy")]
+    pub release_policy: SecretReleasePolicy,
+    #[serde(default = "default_secret_provider")]
+    pub provider: SecretProvider,
+}
+
+impl Default for ConfidentialSecretsSpec {
+    fn default() -> Self {
+        Self {
+            release_policy: default_secret_release_policy(),
+            provider: default_secret_provider(),
+        }
+    }
+}
+
+fn default_secret_release_policy() -> SecretReleasePolicy {
+    SecretReleasePolicy::AttestGated
+}
+
+fn default_secret_provider() -> SecretProvider {
+    SecretProvider::Vault
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum SecretReleasePolicy {
+    #[default]
+    AttestGated,
+    Immediate,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum SecretProvider {
+    #[default]
+    Vault,
+    AwsKms,
+    AzureKv,
+    Kbs,
+}
+
+/// Autonomous intelligence controls per workload.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AutonomySpec {
+    #[serde(default)]
+    pub migration: AutonomyLevel,
+    #[serde(default)]
+    pub healing: AutonomyLevel,
+    #[serde(default)]
+    pub evolution: AutonomyLevel,
+}
+
+/// Autonomy tier for intelligence actions.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum AutonomyLevel {
+    #[default]
+    Recommend,
+    AutoLowRisk,
+    Auto,
+}
+
 /// Primary optimization goal for intent-based deployment
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
@@ -1615,6 +1784,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         };
@@ -1662,6 +1833,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         };
@@ -1709,6 +1882,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         };
@@ -1758,6 +1933,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         };
@@ -1807,6 +1984,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         };
@@ -1856,6 +2035,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         };
@@ -1908,6 +2089,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         }

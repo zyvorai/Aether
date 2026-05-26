@@ -182,7 +182,7 @@ fn parse_create_workload_payload<T: serde::Serialize>(
 
 /// Look up a workload by name from state, returning a cloned WorkloadState
 /// or an HTTP 404 error response.
-async fn lookup_workload<T: serde::Serialize>(
+pub(crate) async fn lookup_workload<T: serde::Serialize>(
     app_state: &AppState,
     name: &str,
 ) -> Result<WorkloadState, (StatusCode, Json<ApiResponse<T>>)> {
@@ -209,7 +209,7 @@ fn emit_sse(app_state: &AppState, event: &ServerEvent) {
 }
 
 /// Shorthand for a successful JSON response.
-fn ok_json<T: serde::Serialize>(data: T) -> (StatusCode, Json<ApiResponse<T>>) {
+pub(crate) fn ok_json<T: serde::Serialize>(data: T) -> (StatusCode, Json<ApiResponse<T>>) {
     (StatusCode::OK, Json(ApiResponse::success(data)))
 }
 
@@ -219,7 +219,7 @@ fn created_json<T: serde::Serialize>(data: T) -> (StatusCode, Json<ApiResponse<T
 }
 
 /// Shorthand for an internal-server-error JSON response.
-fn err_internal<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
+pub(crate) fn err_internal<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
     (
         StatusCode::INTERNAL_SERVER_ERROR,
         Json(ApiResponse::error(e.to_string())),
@@ -227,7 +227,7 @@ fn err_internal<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, 
 }
 
 /// Shorthand for a bad-request JSON response.
-fn err_bad_request<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
+pub(crate) fn err_bad_request<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
     (
         StatusCode::BAD_REQUEST,
         Json(ApiResponse::error(e.to_string())),
@@ -235,7 +235,7 @@ fn err_bad_request<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCod
 }
 
 /// Shorthand for a not-found JSON response.
-fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
+pub(crate) fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
     (
         StatusCode::NOT_FOUND,
         Json(ApiResponse::error(msg.into())),
@@ -1353,7 +1353,11 @@ pub(crate) async fn ai_recommend(
     };
 
     let config = Config::load();
-    let engine = ScoringEngine::new(config.engine);
+    let intel = crate::intelligence::store::IntelligenceStore::load(
+        &crate::intelligence::store::IntelligenceStore::default_path(),
+    )
+    .unwrap_or_default();
+    let engine = ScoringEngine::new(config.engine).with_history(intel.runtime_history_map());
     let result = engine.score(&spec);
 
     if explain {
@@ -1504,27 +1508,13 @@ pub(crate) async fn ai_migration_advice(
 
 /// GET /api/ai/scaling-advice - Predictive scaling recommendations
 pub(crate) async fn ai_scaling_advice() -> impl IntoResponse {
-    use crate::ai::scaling::{ScalingEngine, TimeSeries};
+    use crate::ai::scaling::ScalingEngine;
+    use crate::intelligence::metrics::fetch_fleet_utilization_series;
 
     let config = Config::load();
     let engine = ScalingEngine::new(config.scaling);
 
-    // Generate simulated metrics (same as CLI scaling_advice_command)
-    let mut cpu_series = TimeSeries::new("cpu_utilization", "ratio");
-    let mut mem_series = TimeSeries::new("memory_utilization", "ratio");
-
-    let base_time = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs_f64()
-        - 3600.0;
-
-    // Simulate metrics from last hour
-    for i in 0..60 {
-        let t = base_time + (i as f64 * 60.0);
-        cpu_series.add(t, 0.45 + (i as f64 * 0.005) + ((i as f64 * 0.1).sin() * 0.05));
-        mem_series.add(t, 0.55 + (i as f64 * 0.002));
-    }
+    let (cpu_series, mem_series) = fetch_fleet_utilization_series().await;
 
     let rec = engine.recommend(&cpu_series, &mem_series, 3, 1, 10, 0.05);
 
@@ -3218,7 +3208,17 @@ pub(crate) async fn api_scheduler_optimize() -> impl IntoResponse {
 
     let path = Scheduler::default_path();
     match Scheduler::load(&path) {
-        Ok(scheduler) => {
+        Ok(mut scheduler) => {
+            let affinity = crate::ai::affinity::AffinityEngine::load(
+                &crate::ai::affinity::AffinityEngine::default_path(),
+            )
+            .unwrap_or_default();
+            let recs = affinity.recommend(&crate::ai::affinity::WorkloadClass::WebService);
+            let scores: std::collections::HashMap<_, _> = recs
+                .into_iter()
+                .map(|s| (s.runtime, s.composite_score))
+                .collect();
+            scheduler.set_affinity_scores(scores);
             let suggestions = scheduler.optimize();
             (
                 StatusCode::OK,
@@ -3469,13 +3469,26 @@ pub(crate) async fn migrate_workload(
         }
     };
 
-    let strategy = match request.strategy.parse::<MigrationStrategy>() {
+    let spec = match load_spec_safe::<String>(&workload_state.spec_path) {
         Ok(s) => s,
-        Err(e) => {
-            return err_bad_request::<String>(e)
+        Err(e) => return e,
+    };
+
+    let strategy = if request.auto_strategy {
+        let config = Config::load();
+        let advisor = crate::ai::migration::MigrationAdvisor::new(config.migration);
+        let plan = advisor.plan_proposal(&spec, source_runtime, target_runtime);
+        plan.advice.recommended_strategy
+    } else {
+        match request.strategy.parse::<MigrationStrategy>() {
+            Ok(s) => s,
+            Err(e) => {
+                return err_bad_request::<String>(e)
+            }
         }
     };
 
+    let strategy_str = format!("{:?}", strategy);
     let plan = MigrationPlan::new(
         name.clone(),
         source_runtime,
@@ -3497,7 +3510,7 @@ pub(crate) async fn migrate_workload(
     crate::metrics::record_migration(
         &source_runtime.to_string(),
         &target_runtime.to_string(),
-        &request.strategy,
+        &strategy_str,
         duration,
         result.success,
         result.rollback_performed,
@@ -3507,7 +3520,7 @@ pub(crate) async fn migrate_workload(
         workload = %name,
         source = %source_runtime,
         target = %target_runtime,
-        strategy = %request.strategy,
+        strategy = %strategy_str,
         success = result.success,
         rollback = result.rollback_performed,
         duration_sec = duration,
@@ -3547,11 +3560,19 @@ pub(crate) async fn migrate_workload(
             action: "migrated".to_string(),
         });
 
+        let _ = crate::intelligence::record::record_migration_outcome(
+            &name,
+            &spec,
+            source_runtime,
+            target_runtime,
+            true,
+        );
+
         (
             StatusCode::OK,
             Json(ApiResponse::success(format!(
-                "Workload {} migrated from {} to {} (strategy: {}, duration: {:.1}s)",
-                name, source_runtime, target_runtime, request.strategy, duration
+                "Workload {} migrated from {} to {} (strategy: {:?}, duration: {:.1}s)",
+                name, source_runtime, target_runtime, strategy_str, duration
             ))),
         )
     } else {

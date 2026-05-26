@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { apiTryAuth, DEFAULT_DASHBOARD_USERNAME, apiFetchAuthProviders } from '../utils/api';
 import { useTheme } from '../contexts/ThemeContext';
+import { loginPageClass } from '../utils/themeSurface';
 import { ZyvorFooter } from './ZyvorBrand';
 import {
   PremiumLoginShell,
@@ -68,7 +69,7 @@ function authErrorMessage(reason: 'network' | 'unauthorized' | 'rejected'): stri
 
 export default function LoginGate({ onAuthenticated }: LoginGateProps) {
   const { theme } = useTheme();
-  const loginThemeClass = theme === 'light' ? 'login-page-light' : theme === 'steel' ? 'login-page-steel' : '';
+  const loginThemeClass = loginPageClass(theme);
   const [username, setUsername] = useState(() => {
     try {
       return localStorage.getItem(REMEMBER_USERNAME_KEY) ?? DEFAULT_DASHBOARD_USERNAME;

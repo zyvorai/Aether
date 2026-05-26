@@ -10,6 +10,7 @@ import { useEventStream } from './hooks/useEventStream';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useSequenceShortcuts } from './hooks/useSequenceShortcut';
 import { useTheme } from './contexts/ThemeContext';
+import { appShellClass } from './utils/themeSurface';
 import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { pathToView, viewToPath } from './utils/dashboardRoutes';
@@ -25,6 +26,7 @@ import WorkloadsPage from './components/pages/WorkloadsPage';
 import ClustersPage from './components/pages/ClustersPage';
 import ComposePage from './components/pages/ComposePage';
 import AIPage from './components/pages/AIPage';
+import CopilotPage from './components/pages/CopilotPage';
 import CostPage from './components/pages/CostPage';
 import AffinityPage from './components/pages/AffinityPage';
 import DriftPage from './components/pages/DriftPage';
@@ -304,12 +306,7 @@ function AetherDashboard() {
 
   const hero = HERO_CONFIG[currentView];
 
-  const shellClass =
-    theme === 'steel'
-      ? 'dashboard-steel min-h-screen flex flex-col text-[#d7dde5] steel-grid'
-      : theme === 'light'
-        ? 'min-h-screen flex flex-col text-slate-900'
-        : 'app-shell min-h-screen flex flex-col text-slate-100 steel-grid';
+  const shellClass = appShellClass(theme);
 
   function renderPage() {
     switch (currentView) {
@@ -329,6 +326,8 @@ function AetherDashboard() {
         return <ComposePage key={refreshKey} />;
       case 'ai':
         return <AIPage key={refreshKey} />;
+      case 'copilot':
+        return <CopilotPage key={refreshKey} />;
       case 'cost':
         return <CostPage key={refreshKey} />;
       case 'affinity':

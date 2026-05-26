@@ -125,6 +125,9 @@ pub(crate) struct MigrateWorkloadRequest {
     /// Migration strategy (immediate, blue-green, rolling)
     #[serde(default = "default_strategy")]
     pub(crate) strategy: String,
+    /// When true, use MigrationAdvisor to pick strategy automatically.
+    #[serde(default)]
+    pub(crate) auto_strategy: bool,
 }
 
 pub(crate) fn default_strategy() -> String {

@@ -2,7 +2,7 @@
 # Smoke-test observability and Cilium API routes (server must be running).
 set -euo pipefail
 
-API="${AETHER_API:-http://127.0.0.1:5090}"
+API="${AETHER_API:-${AETHER_API_BASE:-http://127.0.0.1:5090}}"
 
 echo "==> GET /api/observability/summary"
 code=$(curl -sS -o /tmp/aether-obs-summary.json -w '%{http_code}' "${API}/api/observability/summary")

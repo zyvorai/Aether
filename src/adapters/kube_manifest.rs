@@ -849,8 +849,20 @@ pub(crate) fn build_pod_template_spec(
             host_network: pod_settings.and_then(|p| p.host_network),
             dns_policy: pod_settings.and_then(|p| p.dns_policy.clone()),
             topology_spread_constraints: build_topology_spread(spec),
+            runtime_class_name: confidential_runtime_class(spec),
             ..Default::default()
         }),
+    }
+}
+
+fn confidential_runtime_class(spec: &Workload) -> Option<String> {
+    if !spec.confidential.as_ref().is_some_and(|c| c.enabled) {
+        return None;
+    }
+    if spec.runtime.allow.contains(&crate::spec::RuntimeType::Kube) {
+        Some(crate::ragnarok::kata::RUNTIME_CLASS_SNP.to_string())
+    } else {
+        None
     }
 }
 
@@ -1282,6 +1294,8 @@ mod tests {
             scaling: None,
             mesh: None,
             intent: None,
+            autonomy: None,
+            confidential: None,
             schedule: None,
             kubernetes: None,
         }
