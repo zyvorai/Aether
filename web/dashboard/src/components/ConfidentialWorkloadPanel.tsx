@@ -7,6 +7,8 @@ import type {
   AttestGatedSecretStatus,
   ConfidentialAnalysis,
   ConfidentialFleetRow,
+  ConfidentialMigrationPlan,
+  ConfidentialMigrationRecord,
   ConfidentialNetworkStatus,
   GuestKitResult,
   IsolationVerdict,
@@ -68,6 +70,8 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
   const [guestkitHistory, setGuestkitHistory] = useState<GuestKitResult[]>([]);
   const [network, setNetwork] = useState<ConfidentialNetworkStatus | null>(null);
   const [analysis, setAnalysis] = useState<ConfidentialAnalysis | null>(null);
+  const [migrationPlan, setMigrationPlan] = useState<ConfidentialMigrationPlan | null>(null);
+  const [migrationStatus, setMigrationStatus] = useState<ConfidentialMigrationRecord | null>(null);
   const [guestkitBusy, setGuestkitBusy] = useState(false);
   const [guestkitMessage, setGuestkitMessage] = useState<string | null>(null);
 
@@ -76,7 +80,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
     async function load() {
       setLoading(true);
       setNotConfidential(false);
-      const [metaData, trustData, statusData, secretsData, isolationData, gkHistory, netData, intelData] = await Promise.all([
+      const [metaData, trustData, statusData, secretsData, isolationData, gkHistory, netData, intelData, migPlan, migStatus] = await Promise.all([
         apiFetch<ConfidentialFleetRow>(`/confidential/workload/${encodeURIComponent(workloadName)}`),
         apiFetch<NetworkTrustScore>(`/confidential/trust-score/${encodeURIComponent(workloadName)}`),
         apiFetch<AttestationStatus>(`/confidential/attestation/${encodeURIComponent(workloadName)}/status`),
@@ -85,6 +89,8 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         apiFetch<GuestKitResult[]>(`/confidential/guestkit/${encodeURIComponent(workloadName)}/history`),
         apiFetch<ConfidentialNetworkStatus>(`/confidential/network/${encodeURIComponent(workloadName)}`),
         apiFetch<ConfidentialAnalysis>(`/confidential/intelligence/${encodeURIComponent(workloadName)}`),
+        apiFetch<ConfidentialMigrationPlan>(`/confidential/migration-plan/${encodeURIComponent(workloadName)}/kubevirt`),
+        apiFetch<ConfidentialMigrationRecord>(`/confidential/migration/${encodeURIComponent(workloadName)}/status`),
       ]);
       if (cancelled) return;
       if (!metaData && !trustData) {
@@ -98,6 +104,8 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       setGuestkitHistory(gkHistory ?? []);
       setNetwork(netData);
       setAnalysis(intelData);
+      setMigrationPlan(migPlan);
+      setMigrationStatus(migStatus);
       setExplain(null);
       setShowExplain(false);
       setLoading(false);
@@ -191,6 +199,34 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {migrationPlan && (
+        <div className="border-b border-zinc-800 pb-4">
+          <h4 className="text-sm font-medium text-zinc-300 mb-2">Encrypted migration plan</h4>
+          <Badge
+            text={migrationPlan.recommended_strategy.replace(/([A-Z])/g, '-$1').toLowerCase()}
+            variant={migrationPlan.ready_for_cutover ? 'green' : 'yellow'}
+          />
+          <p className="text-xs font-mono text-zinc-500 break-all mt-2">
+            {migrationPlan.encrypted_migration_uri}
+          </p>
+          {migrationPlan.blockers.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs text-red-300/90">
+              {migrationPlan.blockers.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+            </ul>
+          )}
+          {migrationStatus && (
+            <p className="text-xs text-zinc-500 mt-2">
+              Last migration: {migrationStatus.phase} · cutover_ready={String(migrationStatus.cutover_ready)}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-zinc-600 font-mono">
+            aether --spec workload.yaml confidential migration plan
+          </p>
         </div>
       )}
 
