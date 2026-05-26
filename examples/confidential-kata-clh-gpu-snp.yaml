@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aether-confidential-gpu-snp
+  labels:
+    ragnarok.zyvor.dev/confidential: "true"
+spec:
+  runtimeClassName: kata-clh-gpu-snp
+  containers:
+    - name: app
+      image: nvcr.io/nvidia/cuda:12.2.0-base-ubuntu22.04
+      command: ["sleep", "3600"]
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
