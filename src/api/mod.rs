@@ -553,6 +553,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/confidential/trust-score",
             get(api_confidential_trust_fleet),
         )
+        .route("/api/confidential/fleet", get(api_confidential_fleet))
+        .route(
+            "/api/confidential/workload/:workload",
+            get(api_confidential_workload_row),
+        )
         .route(
             "/api/confidential/secrets/release",
             post(api_confidential_secret_release),
@@ -567,8 +572,29 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         )
         .route("/api/confidential/guestkit/inspect", post(api_guestkit_inspect))
         .route(
+            "/api/confidential/guestkit/:vm_id/history",
+            get(api_guestkit_history),
+        )
+        .route(
             "/api/confidential/sovereign/status",
             get(api_confidential_sovereign_status),
+        )
+        .route(
+            "/api/confidential/sovereign/evaluate/:workload",
+            get(api_confidential_sovereign_evaluate),
+        )
+        .route("/api/confidential/kata/status", get(api_confidential_kata_status))
+        .route(
+            "/api/confidential/network/:workload",
+            get(api_confidential_network_status),
+        )
+        .route(
+            "/api/confidential/intelligence/:workload",
+            get(api_confidential_intelligence_workload),
+        )
+        .route(
+            "/api/confidential/intelligence",
+            get(api_confidential_intelligence_fleet),
         )
         .route(
             "/api/confidential/images",

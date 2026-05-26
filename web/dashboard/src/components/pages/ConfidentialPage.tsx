@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ExternalLink, Lock, ShieldCheck } from 'lucide-react';
+import { ExternalLink, Lock, ShieldCheck, Terminal } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { apiFetchSettled } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import { pathWithQuery } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import PageToolbar from '../PageToolbar';
@@ -10,8 +10,11 @@ import PageLoadError from '../PageLoadError';
 import EmptyState from '../EmptyState';
 import Badge from '../Badge';
 import type {
+  ConfidentialFleetAnalysis,
+  ConfidentialFleetRow,
+  ImageVerifyResult,
+  KataStatus,
   MeasuredImageManifest,
-  NetworkTrustScore,
   SovereignConfig,
   TeeCapabilities,
 } from '../../types/api';
@@ -34,24 +37,44 @@ function TrustBar({ label, value }: { label: string; value: number }) {
   );
 }
 
+function runtimeLabel(runtime: string): string {
+  if (runtime === 'kubevirt') return 'KubeVirt VM';
+  if (runtime === 'kubernetes') return 'Kubernetes (Kata/CoCo)';
+  return runtime;
+}
+
+const CLI_IMAGE_COMMANDS = [
+  'aether confidential image list',
+  'aether confidential image sign my-vm ./disk.qcow2 --key cosign://aether',
+  'aether confidential image verify my-vm ./disk.qcow2',
+  'aether confidential image verify-digest <launch-digest>',
+];
+
 export default function ConfidentialPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [caps, setCaps] = useState<TeeCapabilities | null>(null);
-  const [fleet, setFleet] = useState<NetworkTrustScore[]>([]);
+  const [fleet, setFleet] = useState<ConfidentialFleetRow[]>([]);
   const [sovereign, setSovereign] = useState<SovereignConfig | null>(null);
   const [images, setImages] = useState<MeasuredImageManifest[]>([]);
+  const [kata, setKata] = useState<KataStatus | null>(null);
+  const [intel, setIntel] = useState<ConfidentialFleetAnalysis | null>(null);
   const [search, setSearch] = useState('');
+  const [verifyDigest, setVerifyDigest] = useState('');
+  const [verifyResult, setVerifyResult] = useState<ImageVerifyResult | null>(null);
+  const [verifyBusy, setVerifyBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const [capsRes, fleetRes, sovereignRes, imagesRes] = await Promise.all([
+    const [capsRes, fleetRes, sovereignRes, imagesRes, kataRes, intelRes] = await Promise.all([
       apiFetchSettled<TeeCapabilities>('/confidential/capabilities'),
-      apiFetchSettled<NetworkTrustScore[]>('/confidential/trust-score'),
+      apiFetchSettled<ConfidentialFleetRow[]>('/confidential/fleet'),
       apiFetchSettled<SovereignConfig>('/confidential/sovereign/status'),
       apiFetchSettled<MeasuredImageManifest[]>('/confidential/images'),
+      apiFetchSettled<KataStatus>('/confidential/kata/status'),
+      apiFetchSettled<ConfidentialFleetAnalysis>('/confidential/intelligence'),
     ]);
     if (!capsRes.ok) {
       setLoadFailed(true);
@@ -62,6 +85,8 @@ export default function ConfidentialPage() {
       setFleet(fleetRes.ok ? fleetRes.data : []);
       setSovereign(sovereignRes.ok ? sovereignRes.data : null);
       setImages(imagesRes.ok ? imagesRes.data : []);
+      setKata(kataRes.ok ? kataRes.data : null);
+      setIntel(intelRes.ok ? intelRes.data : null);
     }
     setLoading(false);
   }, []);
@@ -70,13 +95,31 @@ export default function ConfidentialPage() {
     void load();
   }, [load]);
 
+  async function handleVerifyDigest(e: React.FormEvent) {
+    e.preventDefault();
+    const digest = verifyDigest.trim();
+    if (!digest) return;
+    setVerifyBusy(true);
+    setVerifyResult(null);
+    const res = await apiPost<ImageVerifyResult>('/confidential/images/verify', {
+      name: 'digest-check',
+      digest,
+    });
+    setVerifyBusy(false);
+    if (res.success && res.data) {
+      setVerifyResult(res.data);
+    }
+  }
+
   const integration = caps?.integration;
   const ragnarokUiUrl = integration?.mode === 'composite' && integration.remote_url
     ? integration.remote_url.replace(/\/api\/?$/, '')
     : null;
 
   const filteredFleet = fleet.filter((row) =>
-    row.workload.toLowerCase().includes(search.toLowerCase()),
+    row.workload.toLowerCase().includes(search.toLowerCase())
+    || row.runtime.toLowerCase().includes(search.toLowerCase())
+    || row.tee.toLowerCase().includes(search.toLowerCase()),
   );
 
   if (loading && !caps && !loadFailed) {
@@ -168,6 +211,53 @@ export default function ConfidentialPage() {
                 Region lock: {sovereign.region_lock}
               </span>
             )}
+            {sovereign.byok_signing_key && (
+              <span className="px-2 py-1 rounded bg-zinc-800 border border-zinc-700">BYOK signing active</span>
+            )}
+          </div>
+          <p className="text-xs text-zinc-600 mt-2">
+            CLI: <code className="text-zinc-400">aether --spec workload.yaml confidential sovereign-check</code>
+          </p>
+        </div>
+      )}
+
+      {kata && (
+        <div className="dash-card mb-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-2">Kata / Confidential Containers</h2>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Badge text={kata.hypervisor} variant="muted" />
+            <Badge
+              text={kata.placement_ready ? 'TEE placement ready' : 'TEE nodes needed'}
+              variant={kata.placement_ready ? 'green' : 'yellow'}
+            />
+          </div>
+          <p className="text-xs text-zinc-500 mb-2">RuntimeClasses: {kata.supported_runtime_classes.join(', ')}</p>
+          <p className="text-xs text-zinc-500 mb-2">Requires: {kata.operator_requirements.join(' · ')}</p>
+          {kata.notes.map((n) => (
+            <p key={n} className="text-xs text-zinc-600">{n}</p>
+          ))}
+        </div>
+      )}
+
+      {intel && intel.workloads.length > 0 && (
+        <div className="dash-card mb-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-2">AI confidential intelligence</h2>
+          <p className="text-sm text-zinc-500 mb-3">
+            Fleet trust avg {Math.round(intel.fleet_trust_avg * 100)}% · {intel.critical_count} high-risk workload(s)
+          </p>
+          <div className="space-y-2 max-h-48 overflow-auto">
+            {intel.workloads.map((row) => (
+              <div key={row.workload} className="text-sm p-2 rounded border border-zinc-800 bg-zinc-950/50">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-zinc-200">{row.workload}</span>
+                  <Badge
+                    text={row.risk_level}
+                    variant={row.risk_level === 'low' ? 'green' : row.risk_level === 'medium' ? 'yellow' : 'red'}
+                  />
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">{row.summary}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -176,14 +266,16 @@ export default function ConfidentialPage() {
         <div className="dash-card">
           <h2 className="text-lg font-semibold text-slate-100 mb-1 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            Fleet trust scores
+            Confidential workloads
           </h2>
-          <p className="text-sm text-slate-500 mb-4">Confidential workloads with confidential.enabled in spec</p>
+          <p className="text-sm text-slate-500 mb-4">
+            Workloads with <code className="text-zinc-400">confidential.enabled</code> — runtime, TEE, and image catalog status
+          </p>
           {filteredFleet.length === 0 ? (
             <EmptyState
               icon={<Lock size={40} />}
               title="No confidential workloads"
-              description="Deploy a KubeVirt workload with a confidential block, or use the Visual Editor."
+              description="Deploy a KubeVirt or Kata workload with a confidential block, or use the Visual Editor."
             />
           ) : (
             <div className="space-y-3 max-h-[28rem] overflow-auto">
@@ -201,49 +293,117 @@ export default function ConfidentialPage() {
                   }
                   className="w-full text-left p-3 rounded-lg border border-zinc-700 hover:border-aether/40 bg-zinc-900/50 transition-colors"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
                     <span className="font-medium text-zinc-100">{row.workload}</span>
-                    <Badge
-                      text={`${Math.round(row.composite * 100)}% trust`}
-                      variant={row.composite >= 0.8 ? 'green' : row.composite >= 0.5 ? 'yellow' : 'red'}
-                    />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge text={runtimeLabel(row.runtime)} variant="muted" />
+                      <Badge text={row.tee} variant="muted" />
+                      <Badge
+                        text={`${Math.round(row.trust.composite * 100)}% trust`}
+                        variant={row.trust.composite >= 0.8 ? 'green' : row.trust.composite >= 0.5 ? 'yellow' : 'red'}
+                      />
+                    </div>
                   </div>
-                  <TrustBar label="Attestation" value={row.attestation_score} />
+                  {row.image_digest ? (
+                    <div className="flex items-center gap-2 mb-2 text-xs">
+                      <span className="text-zinc-500 shrink-0">Launch digest</span>
+                      <code className="text-zinc-400 truncate font-mono">{row.image_digest}</code>
+                      <Badge
+                        text={row.image_in_catalog ? 'in catalog' : 'not in catalog'}
+                        variant={row.image_in_catalog ? 'green' : 'red'}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-600 mb-2">No launch digest in spec</p>
+                  )}
+                  <TrustBar label="Attestation" value={row.trust.attestation_score} />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <div className="dash-card">
-          <h2 className="text-lg font-semibold text-slate-100 mb-1">Measured images</h2>
-          <p className="text-sm text-slate-500 mb-4">Signed launch digests in the Ragnarok image catalog</p>
-          {images.length === 0 ? (
-            <p className="text-sm text-zinc-500">No measured images registered yet.</p>
-          ) : (
-            <div className="overflow-auto max-h-[28rem]">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-zinc-500 border-b border-zinc-700">
-                    <th className="pb-2 pr-3">Name</th>
-                    <th className="pb-2 pr-3">Launch digest</th>
-                    <th className="pb-2">Signed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {images.map((img) => (
-                    <tr key={img.name} className="border-b border-zinc-800">
-                      <td className="py-2 pr-3 text-zinc-200">{img.name}</td>
-                      <td className="py-2 pr-3 font-mono text-xs text-zinc-400 truncate max-w-[12rem]">
-                        {img.launch_digest ?? img.image_hash}
-                      </td>
-                      <td className="py-2 text-zinc-500 text-xs">{img.signed_at}</td>
+        <div className="dash-card space-y-5">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-100 mb-1">Measured images</h2>
+            <p className="text-sm text-slate-500 mb-4">
+              Catalog entries from <code className="text-zinc-400">aether confidential image list</code>
+            </p>
+            {images.length === 0 ? (
+              <p className="text-sm text-zinc-500">No measured images registered yet.</p>
+            ) : (
+              <div className="overflow-auto max-h-[14rem]">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-zinc-500 border-b border-zinc-700">
+                      <th className="pb-2 pr-3">Name</th>
+                      <th className="pb-2 pr-3">Launch digest</th>
+                      <th className="pb-2">Signed</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {images.map((img) => (
+                      <tr key={img.name} className="border-b border-zinc-800">
+                        <td className="py-2 pr-3 text-zinc-200">{img.name}</td>
+                        <td className="py-2 pr-3 font-mono text-xs text-zinc-400 truncate max-w-[12rem]">
+                          {img.launch_digest ?? img.image_hash}
+                        </td>
+                        <td className="py-2 text-zinc-500 text-xs">{img.signed_at}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-zinc-700 pt-4">
+            <h3 className="text-sm font-medium text-zinc-300 mb-2">Verify launch digest</h3>
+            <p className="text-xs text-zinc-500 mb-3">
+              Dashboard equivalent of{' '}
+              <code className="text-zinc-400">aether confidential image verify-digest</code>
+            </p>
+            <form onSubmit={(e) => void handleVerifyDigest(e)} className="flex gap-2">
+              <input
+                type="text"
+                value={verifyDigest}
+                onChange={(e) => setVerifyDigest(e.target.value)}
+                placeholder="sha256:… or launch digest"
+                className="flex-1 min-w-0 px-3 py-1.5 text-sm rounded bg-zinc-950 border border-zinc-700 text-zinc-200 font-mono"
+              />
+              <button
+                type="submit"
+                disabled={verifyBusy || !verifyDigest.trim()}
+                className="px-3 py-1.5 text-sm rounded bg-aether/20 text-aether border border-aether/40 hover:bg-aether/30 disabled:opacity-50"
+              >
+                {verifyBusy ? 'Checking…' : 'Verify'}
+              </button>
+            </form>
+            {verifyResult && (
+              <div className={`mt-3 p-2 rounded text-sm border ${verifyResult.verified ? 'border-emerald-800/60 bg-emerald-950/30 text-emerald-200' : 'border-red-800/60 bg-red-950/30 text-red-200'}`}>
+                <Badge text={verifyResult.verified ? 'verified' : 'not found'} variant={verifyResult.verified ? 'green' : 'red'} />
+                <span className="ml-2 text-xs">{verifyResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-zinc-700 pt-4">
+            <h3 className="text-sm font-medium text-zinc-300 mb-2 flex items-center gap-2">
+              <Terminal className="w-4 h-4" />
+              Image CLI (host paths)
+            </h3>
+            <p className="text-xs text-zinc-500 mb-2">
+              Sign and file-verify require qcow2 paths on the Aether host — use CLI or POST{' '}
+              <code className="text-zinc-400">/api/confidential/images/sign</code>.
+            </p>
+            <ul className="space-y-1">
+              {CLI_IMAGE_COMMANDS.map((cmd) => (
+                <li key={cmd}>
+                  <code className="text-xs text-zinc-400 break-all">{cmd}</code>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 

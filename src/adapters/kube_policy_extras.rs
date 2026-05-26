@@ -99,10 +99,21 @@ pub(crate) fn build_cilium_network_policy_json(
     namespace: &str,
     spec: &Workload,
 ) -> Option<Value> {
-    let cnp = spec.network.cilium_network_policy.as_ref()?;
-    if !cnp.enabled {
+    if let Some(cnp) = spec.network.cilium_network_policy.as_ref() {
+        if cnp.enabled {
+            return build_cilium_from_spec(namespace, spec, cnp);
+        }
         return None;
     }
+    let auto = crate::ragnarok::network::default_confidential_cilium(spec)?;
+    build_cilium_from_spec(namespace, spec, &auto)
+}
+
+fn build_cilium_from_spec(
+    namespace: &str,
+    spec: &Workload,
+    cnp: &crate::spec::CiliumNetworkPolicySpec,
+) -> Option<Value> {
     let ingress: Vec<Value> = cnp.ingress.iter().map(cilium_rule).collect();
     let egress: Vec<Value> = cnp.egress.iter().map(cilium_rule).collect();
     let mut spec_body = json!({

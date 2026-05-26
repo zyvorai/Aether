@@ -141,6 +141,19 @@ fn workload_labels(spec: &Workload) -> BTreeMap<String, String> {
     for (k, v) in &spec.metadata.labels {
         labels.insert(k.clone(), v.clone());
     }
+    if let Some(conf) = spec.confidential.as_ref() {
+        if conf.enabled {
+            labels.insert("ragnarok.zyvor.dev/confidential".into(), "true".into());
+            if let Ok(v) = serde_json::to_value(&conf.tee) {
+                if let Some(tee) = v.as_str() {
+                    labels.insert("ragnarok.zyvor.dev/tee".into(), tee.into());
+                }
+            }
+            if let Some(rc) = crate::ragnarok::kata::resolve_runtime_class(spec) {
+                labels.insert("ragnarok.zyvor.dev/runtime-class".into(), rc);
+            }
+        }
+    }
     labels
 }
 
@@ -201,6 +214,9 @@ fn pod_annotations(spec: &Workload) -> BTreeMap<String, String> {
         for (k, v) in &wi.annotations {
             pod_annotations.insert(k.clone(), v.clone());
         }
+    }
+    for (k, v) in crate::ragnarok::network::confidential_pod_annotations(spec) {
+        pod_annotations.insert(k, v);
     }
     pod_annotations
 }
@@ -856,14 +872,7 @@ pub(crate) fn build_pod_template_spec(
 }
 
 fn confidential_runtime_class(spec: &Workload) -> Option<String> {
-    if !spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-        return None;
-    }
-    if spec.runtime.allow.contains(&crate::spec::RuntimeType::Kube) {
-        Some(crate::ragnarok::kata::RUNTIME_CLASS_SNP.to_string())
-    } else {
-        None
-    }
+    crate::ragnarok::kata::resolve_runtime_class(spec)
 }
 
 fn object_meta(namespace: &str, spec: &Workload) -> ObjectMeta {

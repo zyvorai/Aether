@@ -109,6 +109,69 @@ Fleet policy via `RAGNAROK_ISOLATION_POLICY` JSON (defaults: vTPM, encrypted PVC
 
 KubeVirt manifests receive pod anti-affinity, scheduler hints, and encrypted-PVC annotations automatically when `confidential.enabled`.
 
+### Phase 5 — GuestKit offline inspection (Aether)
+
+Safe inspection without live in-TEE debug. Results persist and feed attestation **Explain**.
+
+| Mode | When | CLI |
+|------|------|-----|
+| Pre-launch | Before boot | `aether confidential guestkit inspect VM --mode pre-launch --image ./disk.qcow2` |
+| Offline policy | Air-gapped | `--mode offline-policy --policy policy.json` |
+| Post-shutdown | After VM stop | `--mode post-shutdown --image ./snapshot.qcow2` |
+| Attested repair | After failed attestation | `--mode attested-repair` |
+
+| API / UX |
+|----------|
+| POST `/api/confidential/guestkit/inspect` |
+| GET `/api/confidential/guestkit/:vm_id/history` |
+| Trust tab → GuestKit section + repair playbook |
+| Attestation explain includes last GuestKit summary |
+
+### Phase 7 — Kata / Confidential Containers (Aether)
+
+Kubernetes confidential pods via Kata RuntimeClass (`kata-clh-snp`, `kata-clh-tdx`, etc.).
+
+| Item | Detail |
+|------|--------|
+| Spec field | `confidential.kataRuntimeClass` |
+| Deploy | Auto `runtimeClassName` on Kubernetes workloads |
+| API | GET `/api/confidential/kata/status` |
+| Example | `examples/confidential-kata-clh-snp.yaml` |
+| Manifests | `deploy/confidential/kata-clh/runtime-classes.yaml` |
+
+### Phase 8 — Sovereign cloud (Aether)
+
+| Feature | Env / API |
+|---------|-----------|
+| BYOK signing | `RAGNAROK_BYOK_SIGNING_KEY` → image sign key id |
+| Offline attestation | `RAGNAROK_OFFLINE_ATTESTATION` + `RAGNAROK_CERT_BUNDLE` |
+| Region lock | `RAGNAROK_REGION_LOCK` + `confidential.regionLock` |
+| Evaluate | GET `/api/confidential/sovereign/evaluate/:workload` |
+| CLI | `aether --spec workload.yaml confidential sovereign-check` |
+
+### Phase 9 — Zero-trust networking (Aether)
+
+Cilium auto-policy + PacketWolf hints for confidential workloads.
+
+| Item | Detail |
+|------|--------|
+| Auto CiliumNetworkPolicy | Applied when none configured in spec |
+| PacketWolf annotations | `packetwolf.zyvor.dev/verify-east-west` on pods |
+| SPIFFE binding | `spiffe://ragnarok.zyvor.dev/workload/{name}/digest/{digest}` |
+| API | GET `/api/confidential/network/:workload` |
+| Trust score | Uses real policy count (NetworkPolicy + Cilium + confidential) |
+
+### Phase 10 — AI confidential intelligence (Aether)
+
+| Copilot tool | Purpose |
+|--------------|---------|
+| `explain_attestation_failure` | Attestation + GuestKit explain |
+| `confidential_migrate_plan` | TEE migration blockers |
+| `trust_score_fleet` | Fleet AI analysis |
+| `confidential_analyze` | Per-workload risk + recommendations |
+
+API: GET `/api/confidential/intelligence` (fleet), GET `/api/confidential/intelligence/:workload`
+
 Example:
 
 ```yaml
