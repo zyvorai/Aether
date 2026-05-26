@@ -1,0 +1,16 @@
+# Optional: SPIFFE ID for the Ragnarok API (apply after SPIRE helm install).
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: ragnarok-backend
+spec:
+  spiffeIDTemplate: spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}
+  podSelector:
+    matchLabels:
+      app: ragnarok-backend
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: In
+        values:
+          - ragnarok
