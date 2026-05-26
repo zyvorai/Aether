@@ -574,6 +574,14 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/confidential/images",
             get(api_confidential_image_catalog),
         )
+        .route(
+            "/api/confidential/images/sign",
+            post(api_confidential_image_sign),
+        )
+        .route(
+            "/api/confidential/images/verify",
+            post(api_confidential_image_verify),
+        )
         .route("/api/drift/:name", get(api_drift_check))
         .route("/api/drift/:name/reconcile", post(api_drift_reconcile))
         .route("/api/alerts/status", get(api_alerts_status))

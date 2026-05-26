@@ -88,6 +88,15 @@ export RAGNAROK_DATA_DIR=/var/lib/ragnarok
 
 Both binaries use the same **`confidential:`** block in Aether workload YAML (`src/spec.rs`).
 
+### Phase 3 — measured images (Aether)
+
+| Step | Command / API |
+|------|----------------|
+| Sign image on pack host | `aether confidential image sign NAME ./disk.qcow2` |
+| Verify digest in catalog | `aether confidential image verify-digest DIGEST` |
+| List catalog | `aether confidential image list` or GET `/api/confidential/images` |
+| Deploy gate | Strict confidential specs require `imageDigest` present in catalog |
+
 Example:
 
 ```yaml

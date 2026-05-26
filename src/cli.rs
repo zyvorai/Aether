@@ -540,6 +540,49 @@ pub(crate) enum Commands {
         #[arg(long)]
         chart_version: Option<String>,
     },
+
+    /// Confidential computing — measured images, attestation, trust
+    Confidential {
+        #[command(subcommand)]
+        action: ConfidentialAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ConfidentialAction {
+    /// Measured VM image catalog (sign / verify / list)
+    Image {
+        #[command(subcommand)]
+        action: ConfidentialImageAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ConfidentialImageAction {
+    /// List signed images in the local catalog
+    List,
+    /// Sign a VM disk image into the verified catalog
+    Sign {
+        /// Catalog entry name
+        name: String,
+        /// Path to qcow2/raw image on this host
+        path: PathBuf,
+        /// Signing key id (default cosign://aether)
+        #[arg(long, default_value = "cosign://aether")]
+        key: String,
+    },
+    /// Verify image file hash against catalog entry
+    Verify {
+        /// Catalog entry name
+        name: String,
+        /// Path to image file on this host
+        path: PathBuf,
+    },
+    /// Check whether a launch digest exists in the catalog
+    VerifyDigest {
+        /// Launch digest or image hash
+        digest: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -619,6 +662,7 @@ impl Commands {
             Self::Plugin { .. } => "plugin",
             Self::Health { .. } => "health",
             Self::HelmExport { .. } => "helm-export",
+            Self::Confidential { .. } => "confidential",
         }
     }
 }

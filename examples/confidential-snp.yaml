@@ -26,6 +26,8 @@ runtime:
 confidential:
   enabled: true
   tee: sev-snp
+  # Sign disk first: aether confidential image sign confidential-app ./disk.qcow2
+  # imageDigest: "<launch-digest-from-catalog>"  # required when attestation.policy is strict
   attestation:
     required: true
     policy: strict
