@@ -6,7 +6,7 @@ use crate::ragnarok::{
     image::ImageCatalog,
     isolation::{self, IsolationPolicy},
     kata,
-    migration::plan_confidential_migration,
+    migration::plan_confidential_migration_tee,
     network::{self, policy_count},
     sovereign::{self, SovereignConfig},
     tee::probe_host_tee,
@@ -103,7 +103,7 @@ pub fn analyze_workload(
 
     let kata_score = kata::placement_score(spec, &host);
     let migration_strategy = conf.map(|_| {
-        let plan = plan_confidential_migration(spec, host.sev_snp, host.sev_snp);
+        let plan = plan_confidential_migration_tee(spec, host.sev_snp, host.sev_snp, host.tdx, host.tdx);
         plan.recommended_strategy.to_string()
     });
 

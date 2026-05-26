@@ -167,10 +167,12 @@ pub async fn execute_tool(
                 .ok_or_else(|| anyhow::anyhow!("workload not found"))?;
             let spec = Workload::from_file(&ws.spec_path)?;
             let host = crate::ragnarok::probe_host_tee();
-            let plan = crate::ragnarok::migration::plan_confidential_migration(
+            let plan = crate::ragnarok::migration::plan_confidential_migration_tee(
                 &spec,
                 host.sev_snp,
                 host.sev_snp,
+                host.tdx,
+                host.tdx,
             );
             Ok(serde_json::to_value(plan)?)
         }

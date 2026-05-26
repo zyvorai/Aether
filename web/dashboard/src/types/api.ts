@@ -775,6 +775,34 @@ export interface ConfidentialFleetAnalysis {
   critical_count: number;
 }
 
+export interface ConfidentialMigrationPlan {
+  workload: string;
+  source_tee_capable: boolean;
+  target_tee_capable: boolean;
+  encrypted_channel_required: boolean;
+  re_attestation_on_target: boolean;
+  launch_digest?: string | null;
+  launch_digest_preserved: boolean;
+  migration_uri: string;
+  encrypted_migration_uri: string;
+  blockers: string[];
+  phases: string[];
+  hyper2kvm_hints: string[];
+  recommended_strategy: string;
+  ready_for_cutover: boolean;
+}
+
+export interface ConfidentialMigrationRecord {
+  workload: string;
+  phase: string;
+  target_runtime: string;
+  migration_uri: string;
+  started_at: string;
+  attestation_required: boolean;
+  cutover_ready: boolean;
+  error?: string | null;
+}
+
 export interface ConfidentialFleetRow {
   workload: string;
   runtime: string;

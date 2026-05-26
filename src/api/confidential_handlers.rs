@@ -8,7 +8,10 @@ use crate::ragnarok::{
     image::{attestation_digest_gate, ImageCatalog, ImageManifest, ImageVerifyResult},
     intelligence::{self, ConfidentialAnalysis},
     kata,
-    migration::plan_confidential_migration,
+    migration::{
+        plan_confidential_migration_tee, ConfidentialMigrationPlan, ConfidentialMigrationRecord,
+        ConfidentialMigrationStore,
+    },
     network::{self, ConfidentialNetworkStatus},
     secrets::{BrokerRequest, SecretBroker, SecretBrokerProvider},
     sovereign::{self, SovereignConfig, SovereignVerdict},
@@ -317,22 +320,52 @@ pub(crate) async fn api_confidential_secret_status(
 
 pub(crate) async fn api_confidential_migration_plan(
     AxumState(app_state): AxumState<AppState>,
-    Path((name, _target)): Path<(String, String)>,
+    Path((name, target)): Path<(String, String)>,
 ) -> impl IntoResponse {
     let store = app_state.state.read().await;
     let ws = match store.get(&name) {
         Some(w) => w,
         None => {
-            return err_not_found::<serde_json::Value>(format!("workload {name} not found"))
+            return err_not_found::<ConfidentialMigrationPlan>(format!("workload {name} not found"))
                 .into_response();
         }
     };
     let spec = match Workload::from_file(&ws.spec_path) {
         Ok(s) => s,
-        Err(e) => return err_internal::<serde_json::Value>(e).into_response(),
+        Err(e) => return err_internal::<ConfidentialMigrationPlan>(e).into_response(),
     };
     let host = probe_host_tee();
-    ok_json(plan_confidential_migration(&spec, host.sev_snp, host.sev_snp)).into_response()
+    let target_snp = std::env::var("AETHER_MIGRATION_TARGET_SNP")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(host.sev_snp);
+    let target_tdx = std::env::var("AETHER_MIGRATION_TARGET_TDX")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(host.tdx);
+    let mut plan = plan_confidential_migration_tee(
+        &spec,
+        host.sev_snp,
+        target_snp,
+        host.tdx,
+        target_tdx,
+    );
+    if !target.is_empty() && target != "_" {
+        plan.phases.push(format!("target-runtime: {target}"));
+    }
+    ok_json(plan).into_response()
+}
+
+pub(crate) async fn api_confidential_migration_status(
+    AxumState(app_state): AxumState<AppState>,
+    Path(workload): Path<String>,
+) -> impl IntoResponse {
+    let store = ConfidentialMigrationStore::new(&state_dir(&app_state));
+    match store.get(&workload) {
+        Some(rec) => ok_json(rec).into_response(),
+        None => err_not_found::<ConfidentialMigrationRecord>(format!(
+            "no confidential migration record for {workload}"
+        ))
+        .into_response(),
+    }
 }
 
 #[derive(serde::Deserialize)]

@@ -4282,6 +4282,64 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
                 output::info(h);
             }
         }
+        ConfidentialAction::Migration { action } => {
+            use aether::ragnarok::migration::{
+                plan_confidential_migration_tee, ConfidentialMigrationStore,
+            };
+            use crate::cli::ConfidentialMigrationAction;
+            let workload = Workload::from_file(spec_path)?;
+            let host = aether::ragnarok::probe_host_tee();
+            match action {
+                ConfidentialMigrationAction::Plan { target } => {
+                    let plan = plan_confidential_migration_tee(
+                        &workload,
+                        host.sev_snp,
+                        host.sev_snp,
+                        host.tdx,
+                        host.tdx,
+                    );
+                    output::info(&format!(
+                        "Strategy: {} | encrypted: {}",
+                        plan.recommended_strategy, plan.encrypted_channel_required
+                    ));
+                    output::info(&format!("Migration URI: {}", plan.encrypted_migration_uri));
+                    if !plan.blockers.is_empty() {
+                        for b in &plan.blockers {
+                            output::error(b);
+                        }
+                        anyhow::bail!("migration plan has blockers");
+                    }
+                    for phase in &plan.phases {
+                        println!("  phase: {phase}");
+                    }
+                    for hint in &plan.hyper2kvm_hints {
+                        println!("  hyper2kvm: {hint}");
+                    }
+                    if !target.is_empty() {
+                        println!("  target: {target}");
+                    }
+                }
+                ConfidentialMigrationAction::Status { name } => {
+                    let vm = name
+                        .clone()
+                        .unwrap_or_else(|| workload.metadata.name.clone());
+                    let store =
+                        ConfidentialMigrationStore::new(&data_dir);
+                    match store.get(&vm) {
+                        Some(rec) => {
+                            println!(
+                                "{} phase={:?} cutover_ready={} uri={}",
+                                rec.workload, rec.phase, rec.cutover_ready, rec.migration_uri
+                            );
+                            if let Some(e) = &rec.error {
+                                output::error(e);
+                            }
+                        }
+                        None => output::info(&format!("No migration record for '{vm}'")),
+                    }
+                }
+            }
+        }
     }
     Ok(())
 }
