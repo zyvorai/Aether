@@ -220,6 +220,7 @@ mod tests {
                 image_digest: Some("unknown-digest".into()),
                 region_lock: None,
                 kata_runtime_class: None,
+                security_profile: None,
             }),
             schedule: None,
             kubernetes: None,

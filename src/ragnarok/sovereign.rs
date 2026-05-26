@@ -166,6 +166,7 @@ mod tests {
                 image_digest: None,
                 region_lock: Some("eu-west".into()),
                 kata_runtime_class: None,
+                security_profile: None,
             }),
             schedule: None,
             kubernetes: None,

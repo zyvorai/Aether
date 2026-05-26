@@ -177,6 +177,7 @@ mod tests {
             image_digest: None,
             region_lock: None,
             kata_runtime_class: None,
+            security_profile: None,
         });
         w
     }

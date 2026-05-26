@@ -189,6 +189,9 @@ pub fn placement_advice(spec: &Workload) -> ConfidentialPlacementAdvice {
             return None;
         }
         c.kata_runtime_class.clone().or_else(|| {
+            if c.security_profile.is_some() {
+                return crate::ragnarok::kata::resolve_runtime_class(spec);
+            }
             if recommended == RuntimeKind::Kubernetes {
                 Some(
                     KataHypervisor::from_env()
@@ -295,6 +298,7 @@ mod tests {
                 image_digest: None,
                 region_lock: None,
                 kata_runtime_class: None,
+                security_profile: None,
             }),
             schedule: None,
             kubernetes: None,

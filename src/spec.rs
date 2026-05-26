@@ -1555,6 +1555,9 @@ pub struct ConfidentialSpec {
     /// Kata / CoCo RuntimeClass (e.g. kata-clh-snp). Used when runtime is kubernetes.
     #[serde(default)]
     pub kata_runtime_class: Option<String>,
+    /// Tenant-facing profile — resolved to kata_runtime_class when unset.
+    #[serde(default)]
+    pub security_profile: Option<String>,
 }
 
 fn default_confidential_tee() -> ConfidentialTee {

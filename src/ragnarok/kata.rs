@@ -77,10 +77,27 @@ pub fn is_kubernetes_confidential(spec: &Workload) -> bool {
         || matches!(spec.runtime.preferred, RuntimePreference::Kube)
 }
 
+fn runtime_class_for_security_profile(profile: &str, tee: &ConfidentialTee) -> Option<String> {
+    match profile {
+        "sandbox" => None,
+        "sovereign-high" | "standard-confidential" => Some(
+            KataHypervisor::from_env()
+                .runtime_class(tee)
+                .to_string(),
+        ),
+        _ => None,
+    }
+}
+
 pub fn resolve_runtime_class(spec: &Workload) -> Option<String> {
     let conf = spec.confidential.as_ref()?;
     if !conf.enabled || !is_kubernetes_confidential(spec) {
         return None;
+    }
+    if let Some(ref profile) = conf.security_profile {
+        if let Some(rc) = runtime_class_for_security_profile(profile, &conf.tee) {
+            return Some(rc);
+        }
     }
     if let Some(ref rc) = conf.kata_runtime_class {
         return Some(rc.clone());
@@ -238,6 +255,7 @@ mod tests {
                 image_digest: None,
                 region_lock: None,
                 kata_runtime_class: class.map(String::from),
+                security_profile: None,
             }),
             schedule: None,
             kubernetes: None,
