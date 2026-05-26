@@ -1,5 +1,7 @@
 //! Native Kubernetes cluster inventory and workload discovery for Aether.
 
+pub mod cilium;
+
 use anyhow::{Context, Result};
 use chrono::Utc;
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
@@ -1093,6 +1095,8 @@ pub async fn browse_resources(req: &ClusterBrowseRequest) -> Result<Vec<ClusterR
         "LimitRange" => list_limit_range_resources(&client, &req.cluster, namespace).await?,
         "HorizontalPodAutoscaler" => list_hpa_resources(&client, &req.cluster, namespace).await?,
         "NetworkPolicy" => list_network_policy_resources(&client, &req.cluster, namespace).await?,
+        "CiliumNetworkPolicy" => cilium::list_cilium_network_policies(&req.cluster, namespace.as_deref()).await?,
+        "CiliumClusterwideNetworkPolicy" => cilium::list_cilium_clusterwide_network_policies(&req.cluster).await?,
         "EndpointSlice" => list_endpoint_slice_resources(&client, &req.cluster, namespace).await?,
         "Job" => list_named_resources::<Job>(&client, &req.cluster, namespace, "Job", workload_status_job, job_detail).await?,
         "CronJob" => list_named_resources::<CronJob>(&client, &req.cluster, namespace, "CronJob", workload_status_cronjob, cronjob_detail).await?,

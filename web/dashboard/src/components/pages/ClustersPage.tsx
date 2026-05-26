@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router';
 import { Container, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
@@ -29,9 +30,10 @@ import type {
   ClusterRolloutStatus,
   ClusterSummary,
   AuditEvent,
+  CiliumStatusResponse,
 } from '../../types/api';
 
-const kindOptions = ['Namespace', 'Node', 'PersistentVolume', 'StorageClass', 'Pod', 'ServiceAccount', 'Secret', 'PersistentVolumeClaim', 'ResourceQuota', 'LimitRange', 'Deployment', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob', 'HorizontalPodAutoscaler', 'Service', 'EndpointSlice', 'Ingress', 'NetworkPolicy', 'ConfigMap', 'Event', 'HelmRelease', 'DataVolume', 'VirtualMachine', 'VirtualMachineInstance', 'CustomResource'];
+const kindOptions = ['Namespace', 'Node', 'PersistentVolume', 'StorageClass', 'Pod', 'ServiceAccount', 'Secret', 'PersistentVolumeClaim', 'ResourceQuota', 'LimitRange', 'Deployment', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob', 'HorizontalPodAutoscaler', 'Service', 'EndpointSlice', 'Ingress', 'NetworkPolicy', 'CiliumNetworkPolicy', 'CiliumClusterwideNetworkPolicy', 'ConfigMap', 'Event', 'HelmRelease', 'DataVolume', 'VirtualMachine', 'VirtualMachineInstance', 'CustomResource'];
 
 function manifestCreationTimestamp(manifest: Record<string, unknown>): string {
   const metadata = manifest.metadata;
@@ -48,6 +50,7 @@ function defaultApiVersion(kind: string): string {
   if (kind === 'HorizontalPodAutoscaler') return 'autoscaling/v2';
   if (kind === 'Ingress') return 'networking.k8s.io/v1';
   if (kind === 'NetworkPolicy') return 'networking.k8s.io/v1';
+  if (kind === 'CiliumNetworkPolicy' || kind === 'CiliumClusterwideNetworkPolicy') return 'cilium.io/v2';
   if (kind === 'HelmRelease') return 'helm.sh/v1';
   if (['VirtualMachine', 'VirtualMachineInstance'].includes(kind)) return 'kubevirt.io/v1';
   if (kind === 'DataVolume') return 'cdi.kubevirt.io/v1beta1';
@@ -122,6 +125,9 @@ export default function ClustersPage() {
   const [serverDiff, setServerDiff] = useState<ClusterDiffLine[]>([]);
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [detailTab, setDetailTab] = useState<'overview' | 'events' | 'logs' | 'terminal' | 'manifest'>('overview');
+  const [pageTab, setPageTab] = useState<'browse' | 'network'>('browse');
+  const [ciliumStatus, setCiliumStatus] = useState<CiliumStatusResponse | null>(null);
+  const [searchParams] = useSearchParams();
   const watchSocketRef = useRef<WebSocket | null>(null);
   const execSocketRef = useRef<WebSocket | null>(null);
 
@@ -135,6 +141,20 @@ export default function ClustersPage() {
 
   function toast(message: string, type: 'success' | 'error') {
     window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+  }
+
+  async function loadNetworkPolicies(targetCluster = cluster, targetNamespace = namespace) {
+    if (!targetCluster) return;
+    setLoading(true);
+    const ns = encodeURIComponent(targetNamespace);
+    const cl = encodeURIComponent(targetCluster);
+    const [np, cnp, ccnp] = await Promise.all([
+      apiFetch<ClusterBrowseItem[]>(`/cluster/browse?cluster=${cl}&namespace=${ns}&kind=NetworkPolicy`),
+      apiFetch<ClusterBrowseItem[]>(`/cluster/browse?cluster=${cl}&namespace=${ns}&kind=CiliumNetworkPolicy`),
+      apiFetch<ClusterBrowseItem[]>(`/cluster/browse?cluster=${cl}&namespace=_cluster&kind=CiliumClusterwideNetworkPolicy`),
+    ]);
+    setResources([...(np ?? []), ...(cnp ?? []), ...(ccnp ?? [])]);
+    setLoading(false);
   }
 
   async function loadResources(targetCluster = cluster, targetNamespace = namespace, targetKind = kind) {
@@ -161,15 +181,24 @@ export default function ClustersPage() {
     if (summaryRes.ok) {
       const data = summaryRes.data;
       setSummary(data);
-      const firstCluster = data?.clusters.find((item) => item.reachable)?.name ?? data?.clusters[0]?.name ?? '';
+      const urlCluster = searchParams.get('cluster');
+      const urlNamespace = searchParams.get('namespace');
+      const urlKind = searchParams.get('kind');
+      const urlTab = searchParams.get('tab');
+      const firstCluster = urlCluster && data?.clusters.some((c) => c.name === urlCluster)
+        ? urlCluster
+        : data?.clusters.find((item) => item.reachable)?.name ?? data?.clusters[0]?.name ?? '';
       setCluster(firstCluster);
+      if (urlNamespace) setNamespace(urlNamespace);
+      if (urlKind && kindOptions.includes(urlKind)) setKind(urlKind);
+      if (urlTab === 'network') setPageTab('network');
     } else {
       setBootstrapFailed(true);
       setSummary(null);
     }
     setBootstrapLoading(false);
     setLoading(false);
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     void loadBootstrap();
@@ -187,6 +216,13 @@ export default function ClustersPage() {
     apiFetch<ClusterMetricsSummary>(`/cluster/metrics/summary?cluster=${encodeURIComponent(cluster)}&namespace=${encodeURIComponent(namespace)}`).then((data) => {
       setMetricsSummary(data);
     });
+  }, [cluster, namespace]);
+
+  useEffect(() => {
+    if (!cluster) return;
+    apiFetch<CiliumStatusResponse>(
+      `/cluster/cilium/status?cluster=${encodeURIComponent(cluster)}&namespace=${encodeURIComponent(namespace === 'all' ? 'aether-system' : namespace)}`
+    ).then((data) => setCiliumStatus(data ?? null));
   }, [cluster, namespace]);
 
   useEffect(() => {
@@ -219,6 +255,12 @@ export default function ClustersPage() {
   useEffect(() => {
     if (!cluster) return;
     setLoading(true);
+    if (pageTab === 'network') {
+      void loadNetworkPolicies();
+      watchSocketRef.current?.close();
+      setWatchConnected(false);
+      return;
+    }
     loadResources();
 
     watchSocketRef.current?.close();
@@ -270,7 +312,7 @@ export default function ClustersPage() {
       }
       setWatchConnected(false);
     };
-  }, [cluster, namespace, kind, customApiVersion, customPlural, customNamespaced]);
+  }, [cluster, namespace, kind, customApiVersion, customPlural, customNamespaced, pageTab]);
 
   const selectedLogsPath = useMemo(() => {
     if (!selected) return undefined;
@@ -672,8 +714,34 @@ export default function ClustersPage() {
         <StatCard title="Clusters" value={summary.cluster_count} color="blue" />
         <StatCard title="Reachable" value={summary.healthy_clusters} color="green" />
         <StatCard title="Namespaces" value={namespaces.length} color="orange" />
-        <StatCard title={`${kind}s`} value={resources.length} color="purple" />
+        <StatCard title={pageTab === 'network' ? 'Policies' : `${kind}s`} value={resources.length} color="purple" />
       </div>
+
+      {ciliumStatus && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm">
+          <span className="text-zinc-500">CNI</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'bg-zinc-800 text-zinc-300'}`}>
+            {ciliumStatus.cni}
+          </span>
+          <span className="text-zinc-600">·</span>
+          <span className="text-zinc-500">Egress</span>
+          <span className="text-zinc-200">{ciliumStatus.egress_mode}</span>
+          <span className="text-zinc-600">·</span>
+          <span className="text-zinc-500">metrics-server</span>
+          <span className={ciliumStatus.metrics_server ? 'text-emerald-400' : 'text-amber-400'}>
+            {ciliumStatus.metrics_server ? 'ok' : 'missing'}
+          </span>
+        </div>
+      )}
+
+      <PageTabs
+        tabs={[
+          { id: 'browse', label: 'Browse' },
+          { id: 'network', label: 'Network' },
+        ]}
+        active={pageTab}
+        onChange={(tab) => setPageTab(tab as 'browse' | 'network')}
+      />
 
       {metricsSummary && (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -723,7 +791,7 @@ export default function ClustersPage() {
             <option key={item.name} value={item.name}>{item.name}</option>
           ))}
         </select>
-        <select value={kind} onChange={(e) => setKind(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+        <select value={kind} onChange={(e) => setKind(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" disabled={pageTab === 'network'}>
           {kindOptions.map((item) => (
             <option key={item} value={item}>{item}</option>
           ))}
@@ -733,7 +801,7 @@ export default function ClustersPage() {
         </div>
       </div>
 
-      {kind === 'CustomResource' && (
+      {kind === 'CustomResource' && pageTab === 'browse' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <input
             value={customApiVersion}
@@ -754,6 +822,7 @@ export default function ClustersPage() {
         </div>
       )}
 
+      {pageTab === 'browse' && (
       <div className="flex justify-end">
         <button
           onClick={() => {
@@ -779,6 +848,7 @@ export default function ClustersPage() {
           Create Resource
         </button>
       </div>
+      )}
 
       {loading ? (
         <PageLoading rows={4} />
@@ -786,7 +856,7 @@ export default function ClustersPage() {
         <EmptyState
           icon={<Container size={48} />}
           title="No resources found"
-          description="Try a different cluster, namespace, or resource kind."
+          description={pageTab === 'network' ? 'No NetworkPolicy or Cilium policies in this scope.' : 'Try a different cluster, namespace, or resource kind.'}
         />
       ) : (
         <div className={`dash-card-flush ${panelClass}`}>
@@ -795,6 +865,9 @@ export default function ClustersPage() {
               <thead>
                 <tr className="border-b border-zinc-800">
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Name</th>
+                  {pageTab === 'network' && (
+                    <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Kind</th>
+                  )}
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Namespace</th>
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Status</th>
                   <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Detail</th>
@@ -803,12 +876,15 @@ export default function ClustersPage() {
               </thead>
               <tbody>
                 {resources.map((resource) => (
-                  <tr key={`${resource.namespace}/${resource.name}`} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                  <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
                     <td className="py-3 px-4">
                       <button onClick={() => openDetail(resource)} className="text-left font-medium text-zinc-200 hover:text-aether transition-colors">
                         {resource.name}
                       </button>
                     </td>
+                    {pageTab === 'network' && (
+                      <td className="py-3 px-4 text-sm text-zinc-400">{resource.kind}</td>
+                    )}
                     <td className="py-3 px-4 text-sm text-zinc-400">{resource.namespace}</td>
                     <td className="py-3 px-4 text-sm text-zinc-200">{resource.status}</td>
                     <td className="py-3 px-4 text-sm text-zinc-500">{resource.detail ?? '—'}</td>

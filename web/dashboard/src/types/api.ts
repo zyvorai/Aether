@@ -583,6 +583,12 @@ export interface PlatformInfo {
     audit_webhook_configured?: boolean;
     grafana_url?: string | null;
     prometheus_url?: string | null;
+    hubble_ui_url?: string | null;
+    grafana_dashboard_uid?: string | null;
+    packetwolf_url?: string | null;
+  };
+  kubernetes?: {
+    cilium?: CiliumStatusResponse | null;
   };
   haSharedCache: boolean;
   tls: boolean;
@@ -628,6 +634,39 @@ export interface PlatformRecommendation {
   title: string;
   detail: string;
   action: string;
+}
+
+export interface CiliumManagedPolicyStatus {
+  name: string;
+  scope: string;
+  namespace?: string | null;
+  exists: boolean;
+  aether_managed: boolean;
+}
+
+export interface CiliumStatusResponse {
+  cluster: string;
+  namespace: string;
+  cni: string;
+  crds: {
+    ciliumnetworkpolicies: boolean;
+    ciliumclusterwidenetworkpolicies: boolean;
+  };
+  cilium_daemonset_ready: boolean;
+  managed_policies: CiliumManagedPolicyStatus[];
+  egress_mode: string;
+  metrics_server: boolean;
+  connectivity_check?: string;
+}
+
+export interface ObservabilitySummary {
+  api_http_requests_total: number;
+  migrations_total: number;
+  migration_rollbacks_total: number;
+  workloads_running: Record<string, number>;
+  cluster_metrics?: ClusterMetricsSummary | null;
+  cilium?: CiliumStatusResponse | null;
+  prometheus_configured: boolean;
 }
 
 // ─── View types ──────────────────────────────────────────────────────

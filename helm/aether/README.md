@@ -70,6 +70,28 @@ metrics:
     interval: 30s
 ```
 
+When Prometheus Operator scrapes the ServiceMonitor, set on the Aether deployment:
+
+```yaml
+env:
+  - name: AETHER_PROMETHEUS_URL
+    value: "http://prometheus-server.monitoring.svc:9090"
+  - name: AETHER_GRAFANA_URL
+    value: "https://grafana.example.com"
+  - name: AETHER_GRAFANA_DASHBOARD_UID
+    value: "<uid-from-import>"
+```
+
+Import the bundled dashboard from the repo root:
+
+```bash
+GRAFANA_URL=https://grafana.example.com GRAFANA_API_KEY=... ./scripts/import-grafana-dashboard.sh
+```
+
+RBAC includes `cilium.io` policy rules when Cilium is your CNI — see `values.yaml` → `rbac.rules`.
+
+See [docs/guides/kubernetes/CILIUM.md](../../docs/guides/kubernetes/CILIUM.md) for Cilium bootstrap and Platform visibility.
+
 ### Enable Ingress
 
 ```yaml

@@ -312,6 +312,23 @@ pub(crate) struct ClusterMetricsSummaryQuery {
 }
 
 #[derive(Debug, Deserialize)]
+pub(crate) struct ClusterCiliumStatusQuery {
+    pub(crate) cluster: Option<String>,
+    pub(crate) namespace: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ObservabilitySummaryQuery {
+    pub(crate) cluster: Option<String>,
+    pub(crate) namespace: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct PrometheusQueryParams {
+    pub(crate) query: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub(crate) struct ClusterDiffRequestBody {
     pub(crate) cluster: String,
     pub(crate) namespace: String,

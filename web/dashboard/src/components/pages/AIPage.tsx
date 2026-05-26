@@ -288,7 +288,7 @@ export default function AIPage() {
 
   async function handleRecommend(yaml: string) {
     setRecommendLoading(true);
-    const res = await apiPost<ScoringResult>('/ai/recommend', { yaml });
+    const res = await apiPost<ScoringResult>('/ai/recommend', { yaml, explain: true });
     setRecommendation(res.data ?? null);
     if (!res.success) toast(res.error ?? 'Failed to generate recommendation', 'error');
     setRecommendLoading(false);

@@ -28,6 +28,7 @@ pub mod migration;
 pub mod mock_idp;
 pub mod orchestrator;
 pub mod oidc;
+pub mod observability;
 pub mod opa;
 pub mod output;
 pub mod plugin;

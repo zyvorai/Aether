@@ -814,6 +814,8 @@ Email channels are configured alongside other notification channels (Console, Fi
 
 | Document | Relevance |
 |---|---|
+| [Enterprise Security Guide](../guides/security/ENTERPRISE-SECURITY.md) | OIDC, isolation matrix, compliance roadmap |
+| [Deployment Topologies](../architecture/DEPLOYMENT-TOPOLOGIES.md) | HA and production layout |
 | [Compose Guide](./compose.md) | Policy gate integration with compose deployments |
 | [Health Monitoring](./health-monitoring.md) | Uptime tracking and health records |
 | [Plugin System](./plugins.md) | Custom runtime extensions |

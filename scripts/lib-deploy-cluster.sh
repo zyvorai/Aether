@@ -171,3 +171,121 @@ aether_print_cluster_mesh_report() {
 
   echo ""
 }
+
+# Install metrics-server when missing (auto for k3s/kind/minikube/microk8s).
+# Env: AETHER_INSTALL_METRICS_SERVER=auto|1|0 (default auto)
+aether_install_metrics_server() {
+  local kubectl_bin="${1:-kubectl}"
+  local distro="${2:-unknown}"
+  local flag="${AETHER_INSTALL_METRICS_SERVER:-auto}"
+
+  case "${flag}" in
+    0|false|no)
+      echo "Skipping metrics-server (AETHER_INSTALL_METRICS_SERVER=${flag})"
+      return 0
+      ;;
+    1|true|yes) ;;
+    auto|*)
+      case "${distro}" in
+        k3s|kind|minikube|microk8s) ;;
+        *)
+          echo "Skipping metrics-server on ${distro} (set AETHER_INSTALL_METRICS_SERVER=1 to force)"
+          return 0
+          ;;
+      esac
+      ;;
+  esac
+
+  if aether__kubectl_exec "${kubectl_bin}" top nodes --no-headers &>/dev/null; then
+    echo "metrics-server already available"
+    return 0
+  fi
+
+  echo "Installing metrics-server..."
+  aether__kubectl_exec "${kubectl_bin}" apply -f \
+    https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+  aether__kubectl_exec "${kubectl_bin}" patch deployment metrics-server -n kube-system --type=json \
+    -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]' \
+    2>/dev/null || true
+
+  local i
+  for i in $(seq 1 60); do
+    if aether__kubectl_exec "${kubectl_bin}" top nodes --no-headers &>/dev/null; then
+      echo "metrics-server ready"
+      return 0
+    fi
+    sleep 2
+  done
+  echo "WARN: metrics-server installed but kubectl top still failing" >&2
+  return 0
+}
+
+# Record Cilium connectivity probe result for the API (ConfigMap in aether-system).
+aether_write_cilium_connectivity_status() {
+  local ns="${1:?namespace}"
+  local kubectl_bin="${2:-kubectl}"
+  local status="${3:?status}"
+  aether__kubectl_exec "${kubectl_bin}" create configmap aether-cilium-connectivity \
+    -n "${ns}" \
+    --from-literal=status="${status}" \
+    --from-literal=checked_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+    --dry-run=client -o yaml | aether__kubectl_exec "${kubectl_bin}" apply -f -
+}
+
+# Probe Cilium agent health after bootstrap (lightweight; not full connectivity test).
+aether_probe_cilium_connectivity() {
+  local ns="${1:?namespace}"
+  local kubectl_bin="${2:-kubectl}"
+  local skip="${AETHER_SKIP_CILIUM_CONNECTIVITY:-}"
+
+  if [ "${skip}" = "1" ] || [ "${skip}" = "true" ]; then
+    echo "Skipping Cilium connectivity probe (AETHER_SKIP_CILIUM_CONNECTIVITY)"
+    aether_write_cilium_connectivity_status "${ns}" "${kubectl_bin}" "skipped"
+    return 0
+  fi
+
+  if ! aether__kubectl_exec "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
+    aether_write_cilium_connectivity_status "${ns}" "${kubectl_bin}" "skipped"
+    return 0
+  fi
+
+  if ! aether__kubectl_exec "${kubectl_bin}" get ds cilium -n kube-system &>/dev/null; then
+    echo "WARN: Cilium CRDs present but cilium daemonset not found" >&2
+    aether_write_cilium_connectivity_status "${ns}" "${kubectl_bin}" "failed"
+    return 1
+  fi
+
+  local ready
+  ready="$(aether__kubectl_exec "${kubectl_bin}" get ds cilium -n kube-system \
+    -o jsonpath='{.status.numberReady}' 2>/dev/null || echo 0)"
+  if [ "${ready:-0}" -gt 0 ] 2>/dev/null; then
+    echo "Cilium agent ready (${ready} replicas)"
+    aether_write_cilium_connectivity_status "${ns}" "${kubectl_bin}" "ok"
+    return 0
+  fi
+
+  echo "WARN: Cilium daemonset has no ready replicas" >&2
+  aether_write_cilium_connectivity_status "${ns}" "${kubectl_bin}" "failed"
+  return 1
+}
+
+# Optional periodic Cilium probe Job (manifest in deploy/k8s/bootstrap/).
+aether_apply_cilium_connectivity_cronjob() {
+  local root="${1:?repo root}"
+  local ns="${2:?namespace}"
+  local kubectl_bin="${3:-kubectl}"
+  local manifest="${root}/deploy/k8s/bootstrap/cilium-connectivity-cronjob.yaml"
+
+  if [ "${AETHER_SKIP_CILIUM_CONNECTIVITY:-}" = "1" ] || [ "${AETHER_SKIP_CILIUM_CONNECTIVITY:-}" = "true" ]; then
+    return 0
+  fi
+  if ! aether__kubectl_exec "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
+    return 0
+  fi
+  if [ ! -f "${manifest}" ]; then
+    return 0
+  fi
+  sed "s/__AETHER_NAMESPACE__/${ns}/g" "${manifest}" | aether__kubectl_exec "${kubectl_bin}" apply -f -
+  echo "Applied Cilium connectivity CronJob (namespace ${ns})"
+}

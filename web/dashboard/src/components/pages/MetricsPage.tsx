@@ -4,7 +4,9 @@ import { apiFetchSettled, apiTextSettled } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
+import type { ObservabilitySummary } from '../../types/api';
 
 interface ChargebackReport {
   totalMonthlyUsd: number;
@@ -17,33 +19,42 @@ interface ChargebackReport {
 
 export default function MetricsPage() {
   const [metrics, setMetrics] = useState('');
+  const [summary, setSummary] = useState<ObservabilitySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [grafanaUrl, setGrafanaUrl] = useState<string | null>(null);
+  const [prometheusUrl, setPrometheusUrl] = useState<string | null>(null);
   const [chargeback, setChargeback] = useState<ChargebackReport | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const [metricsRes, serverRes, chargebackRes] = await Promise.all([
+    const [metricsRes, serverRes, chargebackRes, summaryRes] = await Promise.all([
       apiTextSettled('/metrics'),
       apiFetchSettled<Record<string, unknown>>('/server'),
       apiFetchSettled<ChargebackReport>('/cost/chargeback?provider=aws'),
+      apiFetchSettled<ObservabilitySummary>('/observability/summary'),
     ]);
     if (!metricsRes.ok) {
       setLoadFailed(true);
       setMetrics('');
+      setSummary(null);
       setGrafanaUrl(null);
+      setPrometheusUrl(null);
       setChargeback(null);
     } else {
       setMetrics(metricsRes.data);
+      setSummary(summaryRes.ok ? summaryRes.data : null);
       if (serverRes.ok) {
         const integrations = serverRes.data?.integrations as Record<string, unknown> | undefined;
-        const url = integrations?.grafana_url;
-        setGrafanaUrl(typeof url === 'string' ? url : null);
+        const gUrl = integrations?.grafana_url;
+        const pUrl = integrations?.prometheus_url;
+        setGrafanaUrl(typeof gUrl === 'string' ? gUrl : null);
+        setPrometheusUrl(typeof pUrl === 'string' ? pUrl : null);
       } else {
         setGrafanaUrl(null);
+        setPrometheusUrl(null);
       }
       setChargeback(chargebackRes.ok ? chargebackRes.data : null);
     }
@@ -64,6 +75,7 @@ export default function MetricsPage() {
   }, [metrics, search]);
 
   const lineCount = filteredMetrics.split('\n').filter((l) => l && !l.startsWith('#')).length;
+  const runtimeEntries = Object.entries(summary?.workloads_running ?? {});
 
   if (loading && !metrics && !loadFailed) {
     return <PageLoading rows={6} />;
@@ -82,6 +94,83 @@ export default function MetricsPage() {
         onRefresh={() => void load()}
         refreshing={loading}
       />
+
+      {summary && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard title="API requests" value={Math.round(summary.api_http_requests_total)} color="blue" />
+          <StatCard title="Migrations" value={Math.round(summary.migrations_total)} color="orange" />
+          <StatCard title="Rollbacks" value={Math.round(summary.migration_rollbacks_total)} color="red" />
+          <StatCard
+            title="Cluster CPU"
+            value={summary.cluster_metrics ? `${summary.cluster_metrics.total_cpu_millicores}m` : '—'}
+            color="green"
+          />
+        </div>
+      )}
+
+      {summary && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="dash-card">
+            <h2 className="text-lg font-semibold text-slate-100 mb-3">Workloads by runtime</h2>
+            {runtimeEntries.length > 0 ? (
+              <dl className="space-y-2 text-sm">
+                {runtimeEntries.map(([runtime, count]) => (
+                  <div key={runtime} className="flex justify-between">
+                    <dt className="text-slate-400">{runtime}</dt>
+                    <dd className="text-slate-200 font-mono">{Math.round(count)}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="text-sm text-slate-500">No running workload gauges reported yet.</p>
+            )}
+          </div>
+          <div className="dash-card">
+            <h2 className="text-lg font-semibold text-slate-100 mb-3">Cluster & Cilium</h2>
+            {summary.cluster_metrics ? (
+              <dl className="space-y-2 text-sm mb-4">
+                <div className="flex justify-between">
+                  <dt className="text-slate-400">Scope</dt>
+                  <dd className="text-slate-200">{summary.cluster_metrics.scope}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-400">Pods measured</dt>
+                  <dd className="text-slate-200">{summary.cluster_metrics.pod_count}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-400">Memory</dt>
+                  <dd className="text-slate-200">{summary.cluster_metrics.total_memory_mib} Mi</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-sm text-slate-500 mb-4">Pass <code>cluster=</code> to <code>/api/observability/summary</code> for cluster metrics.</p>
+            )}
+            {summary.cilium ? (
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-slate-400">CNI</dt>
+                  <dd className="text-slate-200">{summary.cilium.cni}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-400">Egress mode</dt>
+                  <dd className="text-slate-200">{summary.cilium.egress_mode}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-400">metrics-server</dt>
+                  <dd className="text-slate-200">{summary.cilium.metrics_server ? 'ok' : 'missing'}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-sm text-slate-500">Cilium status unavailable from active cluster.</p>
+            )}
+            {summary.prometheus_configured && (
+              <p className="mt-3 text-xs text-slate-500">
+                Prometheus linked — whitelisted queries via <code>/api/observability/prometheus/query</code>
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {chargeback && (
         <div className="dash-card mb-6">
@@ -119,17 +208,31 @@ export default function MetricsPage() {
         </div>
       )}
 
-      {grafanaUrl && (
-        <div className="dash-card mb-6 flex items-center justify-between gap-4">
-          <p className="text-sm text-slate-400">Open Grafana for dashboards and alerting.</p>
-          <a
-            href={grafanaUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm text-aether hover:bg-aether/20"
-          >
-            Open Grafana <ExternalLink size={14} />
-          </a>
+      {(grafanaUrl || prometheusUrl) && (
+        <div className="dash-card mb-6 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-slate-400">External observability stack linked to this API.</p>
+          <div className="flex flex-wrap gap-3">
+            {grafanaUrl && (
+              <a
+                href={grafanaUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm text-aether hover:bg-aether/20"
+              >
+                Open Grafana <ExternalLink size={14} />
+              </a>
+            )}
+            {prometheusUrl && (
+              <a
+                href={prometheusUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Prometheus <ExternalLink size={14} />
+              </a>
+            )}
+          </div>
         </div>
       )}
 

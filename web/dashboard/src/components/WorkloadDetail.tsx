@@ -94,6 +94,15 @@ function ScoringResultsView({ data }: { data: ScoringResult }) {
 
 export default function WorkloadDetail({ workload, onClose, onAction, onMigrate, initialTab = 'overview', canMutate = true }: WorkloadDetailProps) {
   const isAetherManaged = (workload.source ?? 'aether') === 'aether';
+  const isKubeWorkload = workload.runtime.toLowerCase().includes('kube') || (!isAetherManaged && Boolean(workload.cluster));
+  const networkPolicyName = `${workload.name}-netpol`;
+  const ciliumPolicyName = `${workload.name}-cilium`;
+  const clusterBrowseNetworkPath = pathWithQuery(viewToPath('clusters'), {
+    cluster: workload.cluster ?? undefined,
+    namespace: workload.namespace ?? undefined,
+    kind: 'CiliumNetworkPolicy',
+    tab: 'network',
+  });
   const isScalableClusterWorkload = !isAetherManaged && ['Deployment', 'StatefulSet'].includes(workload.kind ?? '');
   const clusterResourceName = workload.name.split('/').pop() ?? workload.name;
   const clusterLogsPath = !isAetherManaged && workload.cluster && workload.namespace && workload.kind
@@ -422,6 +431,33 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
               {workload.kind && <div><span className="text-zinc-500">Kind</span><p className="text-white">{workload.kind}</p></div>}
               <div><span className="text-zinc-500">Source</span><p className="text-white capitalize">{workload.source ?? 'aether'}</p></div>
             </div>
+
+            {isKubeWorkload && (
+              <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Network policies</h4>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-zinc-500">NetworkPolicy</dt>
+                    <dd className="font-mono text-xs text-zinc-200">{networkPolicyName}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-zinc-500">Cilium CNP</dt>
+                    <dd className="font-mono text-xs text-zinc-200">{ciliumPolicyName}</dd>
+                  </div>
+                </dl>
+                <a
+                  href={clusterBrowseNetworkPath}
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-aether hover:underline"
+                >
+                  Browse cluster network policies
+                  <Link2 className="h-3.5 w-3.5" />
+                </a>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Names follow Aether deploy conventions when <code>network.networkPolicy</code> or{' '}
+                  <code>network.ciliumNetworkPolicy</code> is set in the workload spec.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
