@@ -187,7 +187,7 @@ export default function RbacPage() {
 
       <Modal isOpen={created !== null} onClose={() => setCreated(null)} title={`New API key: ${created?.name ?? ''}`}>
         {created && (
-          <div className="space-y-4">
+          <div className="space-y-4" data-testid="rbac-created-key">
             <p className="text-sm text-slate-400">This plaintext key is only returned once. Store it before closing.</p>
             <div className="rounded-xl border border-aether/20 bg-slate-950/80 px-4 py-3 font-mono text-sm text-aether break-all">
               {created.key}

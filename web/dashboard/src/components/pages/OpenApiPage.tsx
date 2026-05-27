@@ -3,8 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookOpen } from 'lucide-react';
-import { apiFetchSettled } from '../../utils/api';
+import { BookOpen, Copy } from 'lucide-react';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -21,16 +20,34 @@ export default function OpenApiPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
+  const [methodFilter, setMethodFilter] = useState('all');
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const result = await apiFetchSettled<OpenApiDoc>('/openapi.json');
-    if (!result.ok) {
+    try {
+      const res = await fetch('/api/openapi.json', { credentials: 'include' });
+      if (!res.ok) {
+        setLoadFailed(true);
+        setDoc(null);
+        setLoading(false);
+        return;
+      }
+      const json = (await res.json()) as OpenApiDoc | { success?: boolean; data?: OpenApiDoc };
+      const data =
+        json && typeof json === 'object' && 'success' in json && json.success && json.data
+          ? json.data
+          : (json as OpenApiDoc);
+      if (data?.paths) {
+        setDoc(data);
+      } else {
+        setLoadFailed(true);
+        setDoc(null);
+      }
+    } catch {
       setLoadFailed(true);
       setDoc(null);
-    } else {
-      setDoc(result.data);
     }
     setLoading(false);
   }, []);
@@ -49,6 +66,7 @@ export default function OpenApiPage() {
         summary: meta.summary ?? meta.description ?? '',
       })),
     ).filter((row) => {
+      if (methodFilter !== 'all' && row.method !== methodFilter) return false;
       if (!q) return true;
       return (
         row.path.toLowerCase().includes(q)
@@ -56,7 +74,17 @@ export default function OpenApiPage() {
         || row.summary.toLowerCase().includes(q)
       );
     });
-  }, [doc, search]);
+  }, [doc, search, methodFilter]);
+
+  async function copyPath(path: string) {
+    try {
+      await navigator.clipboard.writeText(path);
+      setCopiedPath(path);
+      setTimeout(() => setCopiedPath(null), 2000);
+    } catch {
+      /* ignore */
+    }
+  }
 
   if (loading && !doc && !loadFailed) {
     return <PageLoading rows={6} />;
@@ -74,6 +102,22 @@ export default function OpenApiPage() {
         searchPlaceholder="Filter routes…"
         onRefresh={() => void load()}
         refreshing={loading}
+        filters={
+          <select
+            value={methodFilter}
+            onChange={(e) => setMethodFilter(e.target.value)}
+            className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+            aria-label="HTTP method filter"
+            data-testid="openapi-method-filter"
+          >
+            <option value="all">All methods</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+          </select>
+        }
       />
 
       <div className="dash-card mb-6">
@@ -100,6 +144,7 @@ export default function OpenApiPage() {
                 <th className="py-2 px-4">Method</th>
                 <th className="py-2 px-4">Path</th>
                 <th className="py-2 px-4">Summary</th>
+                <th className="py-2 px-4 w-16">Copy</th>
               </tr>
             </thead>
             <tbody>
@@ -108,6 +153,20 @@ export default function OpenApiPage() {
                   <td className="py-2 px-4 font-mono text-xs text-aether">{row.method}</td>
                   <td className="py-2 px-4 font-mono text-xs text-slate-300">{row.path}</td>
                   <td className="py-2 px-4 text-slate-400">{row.summary || '—'}</td>
+                  <td className="py-2 px-4">
+                    <button
+                      type="button"
+                      data-testid={`openapi-copy-${row.method}-${row.path}`}
+                      onClick={() => void copyPath(row.path)}
+                      className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-aether"
+                      title="Copy path"
+                    >
+                      <Copy size={14} />
+                    </button>
+                    {copiedPath === row.path ? (
+                      <span className="ml-1 text-[10px] text-emerald-400">Copied</span>
+                    ) : null}
+                  </td>
                 </tr>
               ))}
             </tbody>

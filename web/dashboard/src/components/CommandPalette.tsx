@@ -13,9 +13,9 @@ import { getRecentViews } from '../utils/recentViews';
 import { getRecentActions, pushRecentAction } from '../utils/recentActions';
 import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
-import { filterNavViews } from '../utils/navCapabilities';
+import { partitionNavViews } from '../utils/navCapabilities';
 
-type CommandCategory = 'recent' | 'recent-action' | 'navigation' | 'workload' | 'workload-action' | 'action';
+type CommandCategory = 'recent' | 'recent-action' | 'navigation' | 'setup' | 'workload' | 'workload-action' | 'action';
 
 interface CommandAction {
   id: string;
@@ -113,6 +113,30 @@ export default function CommandPalette({
         workloadTab: 'logs',
         run: () => {
           navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'logs' }));
+          onSelectWorkload?.(name);
+        },
+      },
+      {
+        id: `workload-${name}-drift`,
+        label: `Check drift: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `drift ${name} workload reconcile`,
+        workloadName: name,
+        workloadTab: 'drift',
+        run: () => {
+          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'drift' }));
+          onSelectWorkload?.(name);
+        },
+      },
+      {
+        id: `workload-${name}-events`,
+        label: `View events: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `events ${name} workload`,
+        workloadName: name,
+        workloadTab: 'events',
+        run: () => {
+          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'events' }));
           onSelectWorkload?.(name);
         },
       },
@@ -227,16 +251,29 @@ export default function CommandPalette({
       );
     }
 
+    const platform = capabilities?.platform ?? null;
+    const navMeta = DASHBOARD_VIEWS.map((v) => ({
+      view: v.view,
+      label: v.paletteLabel ?? v.label,
+    }));
+    const { ready, setup } = partitionNavViews(navMeta, platform, { gitopsConfigured });
+
     const visibleNav = NAV_ITEMS.filter(
-      (item) =>
-        !item.view ||
-        filterNavViews([{ view: item.view, label: item.label }], capabilities?.platform ?? null, {
-          gitopsConfigured,
-        }).length > 0,
+      (item) => !item.view || ready.some((r) => r.view === item.view),
     );
 
-    return [...visibleNav, ...workloadItems, ...actionItems];
-  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, canMutate, capabilities, gitopsConfigured]);
+    const setupCommands: CommandAction[] = setup.map((item) => ({
+      id: `setup-${item.view}`,
+      label: `Setup: ${item.label}`,
+      category: 'setup' as const,
+      searchText: `setup configure platform ${item.label} ${item.visibility.setupHint ?? ''}`,
+      run: () => {
+        onNavigate('platform');
+      },
+    }));
+
+    return [...visibleNav, ...setupCommands, ...workloadItems, ...actionItems];
+  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, onNavigate, canMutate, capabilities, gitopsConfigured]);
 
   const recentCommands = useMemo((): CommandAction[] => {
     const items: CommandAction[] = [];
@@ -325,6 +362,7 @@ export default function CommandPalette({
     recent: 'Recent pages',
     'recent-action': 'Recent actions',
     navigation: 'Navigation',
+    setup: 'Setup required',
     workload: 'Workloads',
     'workload-action': 'Workload actions',
     action: 'Actions',

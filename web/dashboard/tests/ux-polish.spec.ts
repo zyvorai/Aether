@@ -104,11 +104,11 @@ test.describe('Dashboard UX polish', () => {
     });
     const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Deploy' })).toBeEnabled();
-    const textarea = dialog.locator('textarea');
-    await expect(textarea).toHaveValue(/apiVersion: aether\/v1/);
-    await expect(dialog.getByText(/\d+ lines — scroll inside the box to see the full spec/)).toBeVisible();
-    await expect(textarea).toHaveValue(/protocol: TCP/);
+    await expect(dialog.getByTestId('yaml-submit')).toBeEnabled();
+    const editor = dialog.getByRole('textbox', { name: /workload yaml/i });
+    await expect(editor).toContainText('apiVersion: aether/v1');
+    await expect(dialog.getByText(/\d+ lines/)).toBeVisible();
+    await expect(editor).toContainText('containerPort: 80');
   });
 
   test('editor validate marks onboarding validate step in localStorage', async ({ page }) => {

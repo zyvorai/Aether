@@ -7,6 +7,7 @@ import { ExternalLink, Globe, Network, Server, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { apiFetchSettled } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -70,7 +71,9 @@ export default function FleetPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="Clusters" value={summary?.cluster_count ?? 0} color="blue" icon={<Globe size={18} />} />
         <StatCard title="Healthy" value={summary?.healthy_clusters ?? 0} color="green" icon={<Shield size={18} />} />
-        <StatCard title="Workloads" value={summary?.workload_count ?? 0} color="purple" icon={<Server size={18} />} />
+        <button type="button" onClick={() => navigate(viewToPath('workloads'))} className="text-left">
+          <StatCard title="Workloads" value={summary?.workload_count ?? 0} color="purple" icon={<Server size={18} />} />
+        </button>
         <StatCard
           title="Backend"
           value={summary?.connected ? 'connected' : 'offline'}
@@ -101,7 +104,8 @@ export default function FleetPage() {
               <button
                 key={c.name}
                 type="button"
-                onClick={() => navigate(viewToPath('clusters'))}
+                data-testid={`fleet-cluster-${c.name}`}
+                onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
                 className="w-full text-left rounded-xl border border-slate-800 px-4 py-3 hover:border-aether/40 transition-colors"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -126,6 +130,26 @@ export default function FleetPage() {
           Deep Hubble flow queries and PacketWolf east-west verification are integrated via env URLs on the control plane.
         </p>
         <div className="flex flex-wrap gap-3">
+          {integrations.grafana_url ? (
+            <a
+              href={integrations.grafana_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm text-aether hover:bg-aether/20"
+            >
+              Grafana <ExternalLink size={14} />
+            </a>
+          ) : null}
+          {integrations.prometheus_url ? (
+            <a
+              href={integrations.prometheus_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+            >
+              Prometheus <ExternalLink size={14} />
+            </a>
+          ) : null}
           {integrations.hubble_ui_url ? (
             <a
               href={integrations.hubble_ui_url}

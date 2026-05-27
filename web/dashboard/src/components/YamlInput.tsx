@@ -147,7 +147,7 @@ export default function YamlInput({
             onChange={handleFileUpload}
           />
 
-          <div className="relative min-h-0 flex-1">
+          <div className="relative min-h-0 flex-1 overflow-hidden">
             {editorLoading ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-950/90">
                 <Loader2 className="w-6 h-6 animate-spin text-aether" />
@@ -178,7 +178,7 @@ export default function YamlInput({
 
       {footer}
 
-      <div className={`flex flex-wrap items-center justify-end gap-2 ${isEditor ? 'shrink-0 pt-1' : ''}`}>
+      <div className={`relative z-10 flex flex-wrap items-center justify-end gap-2 ${isEditor ? 'shrink-0 bg-zinc-950 pt-2' : ''}`}>
         {showValidateButton && onValidate ? (
           <button
             type="button"
@@ -196,6 +196,7 @@ export default function YamlInput({
         ) : null}
         <button
           type="button"
+          data-testid="yaml-submit"
           onClick={handleSubmit}
           disabled={!value.trim() || loading || submitDisabled || editorLoading}
           className={`flex shrink-0 items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether-light disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-aether/50 ${isEditor ? '' : 'w-full sm:w-auto justify-center'}`}

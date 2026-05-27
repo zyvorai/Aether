@@ -39,8 +39,9 @@ test.describe('Phase 5 features', () => {
       }),
     );
     await page.reload();
-    await page.getByRole('button', { name: 'Intelligence' }).hover();
-    await expect(page.getByRole('button', { name: 'Policy Check' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Intelligence' }).click();
+    await expect(page.getByText('Setup required')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('menuitem', { name: /Policy Check/i })).toBeVisible();
   });
 
   test('editor deploy validates and posts workload', async ({ page }) => {
@@ -95,5 +96,93 @@ test.describe('Phase 5 features', () => {
     await page.goto('/compose');
     await page.getByRole('button', { name: 'Validate compose' }).click();
     await expect(page.getByRole('button', { name: 'Deploy stack' })).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('compose deploy stack posts compose/up and shows result', async ({ page }) => {
+    await page.route('**/api/compose/validate', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { valid: true, workload_count: 1, deploy_order: ['web'] },
+        }),
+      }),
+    );
+    await page.route('**/api/policy/check', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { passed: true, policies_evaluated: 1, violations: [], warnings: [] },
+        }),
+      }),
+    );
+    await page.route('**/api/compose/up', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { deployed: ['web'], count: 1 },
+        }),
+      }),
+    );
+
+    await page.goto('/compose');
+    await page.getByRole('button', { name: 'Validate compose' }).click();
+    await page.getByRole('button', { name: 'Deploy stack' }).click();
+    await expect(page.getByText(/Deployed 1 workload\(s\): web/)).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('gitops sync confirm shows diff preview', async ({ page }) => {
+    await page.route('**/api/gitops/status', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            configured: true,
+            repo_url: 'https://github.com/org/workloads.git',
+            branch: 'main',
+          },
+        }),
+      }),
+    );
+    await page.route('**/api/gitops/preview', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            changes: [
+              {
+                file_path: 'workloads/httpd.yaml',
+                change_type: 'Modified',
+                commit: 'abc123def456',
+              },
+            ],
+          },
+        }),
+      }),
+    );
+
+    await page.goto('/gitops');
+    await page.getByRole('button', { name: 'Sync now' }).click();
+    const preview = page.getByTestId('gitops-diff-preview');
+    await expect(preview).toBeVisible({ timeout: 10_000 });
+    await expect(preview.getByText('workloads/httpd.yaml')).toBeVisible();
+    await expect(preview.getByText('Modified')).toBeVisible();
+  });
+
+  test('editor shows CodeMirror YAML preview', async ({ page }) => {
+    await page.goto('/editor');
+    await expect(page.getByTestId('editor-yaml-preview')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('textbox', { name: /workload yaml preview/i })).toContainText(
+      'apiVersion: aether/v1',
+    );
   });
 });

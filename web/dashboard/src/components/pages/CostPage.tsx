@@ -2,18 +2,40 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
-import { apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import EmptyState from '../EmptyState';
 import SpecWorkbench from '../SpecWorkbench';
 import type { CostEstimate } from '../../types/api';
 
+interface ChargebackReport {
+  totalMonthlyUsd: number;
+  totalSpotMonthlyUsd: number;
+  tco36MonthsUsd: number;
+  pricingSource: string;
+  region: string;
+  lines: { workload: string; owner: string; project: string; monthlyUsd: number }[];
+}
+
 export default function CostPage() {
+  const navigate = useNavigate();
   const [estimates, setEstimates] = useState<CostEstimate[]>([]);
+  const [chargeback, setChargeback] = useState<ChargebackReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const loadChargeback = useCallback(async () => {
+    const res = await apiFetchSettled<ChargebackReport>('/cost/chargeback?provider=aws');
+    setChargeback(res.ok ? res.data : null);
+  }, []);
+
+  useEffect(() => {
+    void loadChargeback();
+  }, [loadChargeback]);
 
   async function handleEstimate(yaml: string) {
     setLoading(true);
@@ -88,14 +110,35 @@ export default function CostPage() {
     );
 
   return (
-    <SpecWorkbench
-      title="Cost estimation"
-      description="Paste workload YAML to compare provider pricing."
-      buttonText="Estimate Costs"
-      onSubmit={handleEstimate}
-      loading={loading}
-      placeholder="Paste workload YAML to estimate costs..."
-      result={resultContent}
-    />
+    <div className="space-y-6">
+      {chargeback ? (
+        <div className="dash-card" data-testid="cost-fleet-chargeback">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <h2 className="text-lg font-semibold text-zinc-100">Fleet chargeback</h2>
+            <button
+              type="button"
+              onClick={() => navigate(viewToPath('metrics'))}
+              className="text-xs text-aether hover:underline"
+            >
+              Full report on Metrics →
+            </button>
+          </div>
+          <p className="text-sm text-zinc-400">
+            {chargeback.pricingSource} · {chargeback.region} · fleet {formatUSD(chargeback.totalMonthlyUsd)}/mo
+            · {chargeback.lines.length} workload line(s)
+          </p>
+        </div>
+      ) : null}
+
+      <SpecWorkbench
+        title="Cost estimation"
+        description="Paste workload YAML to compare provider pricing."
+        buttonText="Estimate Costs"
+        onSubmit={handleEstimate}
+        loading={loading}
+        placeholder="Paste workload YAML to estimate costs..."
+        result={resultContent}
+      />
+    </div>
   );
 }
