@@ -196,6 +196,13 @@ export default function CommandPalette({
         searchText: 'deploy yaml create workload',
         run: () => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1' })),
       });
+      actionItems.unshift({
+        id: 'action-validate',
+        label: 'Validate workload YAML',
+        category: 'action',
+        searchText: 'validate yaml lint check',
+        run: () => navigate(pathWithQuery(viewToPath('workloads'), { validate: '1' })),
+      });
     }
 
     actionItems.push(
@@ -247,6 +254,83 @@ export default function CommandPalette({
         category: 'action',
         searchText: 'openapi api routes swagger',
         view: 'openapi',
+      },
+      {
+        id: 'action-scheduler',
+        label: 'Open placement scheduler',
+        category: 'action',
+        searchText: 'scheduler placement affinity',
+        view: 'scheduler',
+      },
+      {
+        id: 'action-secrets',
+        label: 'Open secrets vault',
+        category: 'action',
+        searchText: 'secrets vault keys rotation',
+        view: 'secrets',
+      },
+      {
+        id: 'action-backups',
+        label: 'Open backups',
+        category: 'action',
+        searchText: 'backup restore snapshot',
+        view: 'backups',
+      },
+      {
+        id: 'action-ai',
+        label: 'Open AI engine',
+        category: 'action',
+        searchText: 'ai recommend scoring intent runtime',
+        view: 'ai',
+      },
+      {
+        id: 'action-intelligence',
+        label: 'Open intelligence reports',
+        category: 'action',
+        searchText: 'intelligence predictions threats cost placement',
+        view: 'intelligence',
+      },
+      {
+        id: 'action-copilot',
+        label: 'Open ops copilot',
+        category: 'action',
+        searchText: 'copilot chat assistant natural language',
+        view: 'copilot',
+      },
+      {
+        id: 'action-affinity',
+        label: 'Open runtime affinity',
+        category: 'action',
+        searchText: 'affinity runtime class matrix',
+        view: 'affinity',
+      },
+      {
+        id: 'action-cost',
+        label: 'Open cost estimation',
+        category: 'action',
+        searchText: 'cost estimate pricing chargeback',
+        view: 'cost',
+      },
+      {
+        id: 'action-compose',
+        label: 'Open compose import',
+        category: 'action',
+        searchText: 'compose docker import stack',
+        view: 'compose',
+      },
+      {
+        id: 'action-confidential',
+        label: 'Open confidential computing',
+        category: 'action',
+        searchText: 'confidential tee attestation kata',
+        view: 'confidential',
+      },
+      {
+        id: 'action-health',
+        label: 'Open health monitor',
+        category: 'action',
+        searchText: 'health monitor rolling update liveness',
+        view: 'health',
       },
     );
 

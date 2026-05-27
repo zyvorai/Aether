@@ -89,7 +89,7 @@ export default function SLAPage() {
       {canMutate && (
         <div className="dash-card mb-6">
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Add SLA target</h3>
-          <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3">
+          <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3" data-testid="sla-add-form">
             <input
               type="text"
               value={addWorkload}

@@ -134,6 +134,21 @@ export default function CostPage() {
             {chargeback.pricingSource} · {chargeback.region} · fleet {formatUSD(chargeback.totalMonthlyUsd)}/mo
             · {chargeback.lines.length} workload line(s)
           </p>
+          {chargeback.lines.length > 0 && (
+            <ul className="mt-3 space-y-1 text-sm">
+              {chargeback.lines.map((line) => (
+                <li key={line.workload} className="flex flex-wrap items-center justify-between gap-2">
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: line.workload })}
+                    className="text-aether hover:underline font-mono text-xs"
+                  >
+                    {line.workload}
+                  </Link>
+                  <span className="text-zinc-500">{formatUSD(line.monthlyUsd)}/mo</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ) : null}
 

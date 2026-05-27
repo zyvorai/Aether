@@ -182,7 +182,7 @@ export default function DepsPage() {
           <Plus size={20} className="text-emerald-400" />
           Add dependency
         </h2>
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap items-end gap-3" data-testid="deps-add-form">
           <div>
             <label className="block text-xs text-slate-400 mb-1">Workload</label>
             <input

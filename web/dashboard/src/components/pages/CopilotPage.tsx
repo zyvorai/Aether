@@ -110,11 +110,12 @@ export default function CopilotPage() {
               <p className="text-sm text-slate-400">
                 Ask about health, drift, costs, migrations, or cluster state.
               </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <div className="mt-4 flex flex-wrap justify-center gap-2" data-testid="copilot-suggestions">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     type="button"
+                    data-testid="copilot-suggestion"
                     onClick={() => void send(s)}
                     className="rounded-full border border-slate-700/80 bg-slate-800/60 px-3 py-1 text-xs text-slate-300 hover:border-violet-500/40 hover:text-violet-200"
                   >

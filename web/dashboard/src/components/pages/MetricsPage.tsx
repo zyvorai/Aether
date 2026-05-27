@@ -217,6 +217,16 @@ export default function MetricsPage() {
             ) : (
               <p className="text-sm text-slate-500">Cilium status unavailable from active cluster.</p>
             )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
+                className="rounded-xl border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40 hover:text-aether"
+                data-testid="metrics-cluster-browser-link"
+              >
+                Open cluster browser (network)
+              </button>
+            </div>
             {summary.prometheus_configured && (
               <p className="mt-3 text-xs text-slate-500">
                 Prometheus linked — whitelisted queries via <code>/api/observability/prometheus/query</code>

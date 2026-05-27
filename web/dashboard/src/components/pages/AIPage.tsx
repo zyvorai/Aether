@@ -3,7 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { Cpu, Search, Target, TrendingUp, Zap } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatPercent, formatUSD } from '../../utils/formatters';
 import YamlInput from '../YamlInput';
@@ -174,8 +177,9 @@ interface LogAnalysisResult {
 
 function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
   const ra = data.resource_analysis;
+  const scoringHref = pathWithQuery(viewToPath('workloads'), { workload: data.name, tab: 'scoring' });
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="ai-profile-result">
       <dl className="space-y-0">
         <DetailRow label="Workload" value={data.name} />
         <DetailRow label="Classification" value={String(data.classification).replace(/([A-Z])/g, ' $1').trim()} />
@@ -204,11 +208,14 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
           ))}
         </div>
       )}
+      <Link to={scoringHref} className="inline-flex text-xs text-aether hover:underline">
+        Open scoring for {data.name} →
+      </Link>
     </div>
   );
 }
 
-function AnalyzeResultPanel({ data }: { data: LogAnalysisResult }) {
+function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; workloadName: string }) {
   return (
     <div className="space-y-4">
       <dl className="space-y-0">
@@ -239,6 +246,12 @@ function AnalyzeResultPanel({ data }: { data: LogAnalysisResult }) {
           ))}
         </div>
       )}
+      <Link
+        to={pathWithQuery(viewToPath('workloads'), { workload: workloadName, tab: 'logs' })}
+        className="inline-flex text-xs text-aether hover:underline"
+      >
+        View logs for {workloadName} →
+      </Link>
     </div>
   );
 }
@@ -257,7 +270,13 @@ export default function AIPage() {
   const [scalingAdvice, setScalingAdvice] = useState<ScalingAdvice | null>(null);
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'recommend' | 'optimize' | 'analyze'>('recommend');
+  type AiTab = 'recommend' | 'optimize' | 'analyze';
+  const [tabParam, setTabParam] = useQueryParam('tab', 'recommend');
+  const activeTab: AiTab = (['recommend', 'optimize', 'analyze'] as const).includes(tabParam as AiTab)
+    ? (tabParam as AiTab)
+    : 'recommend';
+  const setActiveTab = (next: AiTab) => setTabParam(next);
+  const [workloadQuery, setWorkloadQuery] = useQueryParam('workload', '');
   const [selectedWorkload, setSelectedWorkload] = useState('');
 
   const [intentResult, setIntentResult] = useState<{ recommendedIntent?: string; reason?: string } | null>(null);
@@ -287,6 +306,18 @@ export default function AIPage() {
   useEffect(() => {
     void loadWorkloads();
   }, [loadWorkloads]);
+
+  useEffect(() => {
+    if (!workloadQuery) return;
+    if (workloads.some((w) => w.name === workloadQuery)) {
+      setSelectedWorkload(workloadQuery);
+    }
+  }, [workloadQuery, workloads]);
+
+  const onSelectWorkload = (name: string) => {
+    setSelectedWorkload(name);
+    setWorkloadQuery(name);
+  };
 
   const runningCount = workloads.filter((w) => w.status?.toLowerCase() === 'running').length;
 
@@ -402,7 +433,9 @@ export default function AIPage() {
         </div>
       </div>
 
-      <PageTabs tabs={AI_TABS} active={activeTab} onChange={setActiveTab} />
+      <div data-testid="ai-tabs">
+        <PageTabs tabs={AI_TABS} active={activeTab} onChange={setActiveTab} />
+      </div>
 
       {activeTab === 'recommend' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-min">
@@ -445,6 +478,7 @@ export default function AIPage() {
             </div>
             <button
               type="button"
+              data-testid="ai-scaling-advice"
               onClick={() => void handleScaling()}
               disabled={loading === 'scaling'}
               className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 rounded-xl font-medium transition text-white"
@@ -470,7 +504,7 @@ export default function AIPage() {
             <WorkloadSelect
               workloads={workloads}
               value={selectedWorkload}
-              onChange={setSelectedWorkload}
+              onChange={onSelectWorkload}
               className="w-full mb-3"
             />
             <button
@@ -497,7 +531,7 @@ export default function AIPage() {
             <WorkloadSelect
               workloads={workloads}
               value={selectedWorkload}
-              onChange={setSelectedWorkload}
+              onChange={onSelectWorkload}
               className="w-full mb-3"
             />
             <button
@@ -524,7 +558,7 @@ export default function AIPage() {
             <WorkloadSelect
               workloads={workloads}
               value={selectedWorkload}
-              onChange={setSelectedWorkload}
+              onChange={onSelectWorkload}
               className="w-full mb-3"
             />
             <button
@@ -536,10 +570,20 @@ export default function AIPage() {
               {tradeoffLoading ? 'Comparing…' : 'Compare Tradeoff'}
             </button>
             {tradeoffResult && (
-              <dl className="mt-5 pt-5 border-t border-slate-800/80 space-y-0">
-                <DetailRow label="Best runtime" value={tradeoffResult.bestRuntime} />
-                <DetailRow label="Score" value={tradeoffResult.score} />
-              </dl>
+              <div className="mt-5 pt-5 border-t border-slate-800/80">
+                <dl className="space-y-0">
+                  <DetailRow label="Best runtime" value={tradeoffResult.bestRuntime} />
+                  <DetailRow label="Score" value={tradeoffResult.score} />
+                </dl>
+                {selectedWorkload && (
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: selectedWorkload, tab: 'scoring' })}
+                    className="mt-3 inline-flex text-xs text-aether hover:underline"
+                  >
+                    Open scoring for {selectedWorkload} →
+                  </Link>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -598,7 +642,7 @@ export default function AIPage() {
               <h4 className="text-sm font-medium text-cyan-400 mb-4">
                 Log analysis: {profilerWorkload}
               </h4>
-              <AnalyzeResultPanel data={analyzeResults} />
+              <AnalyzeResultPanel data={analyzeResults} workloadName={profilerWorkload ?? ''} />
             </div>
           )}
         </div>

@@ -564,7 +564,10 @@ export default function ConfidentialPage() {
               </button>
             </form>
             {verifyResult && (
-              <div className={`mt-3 p-2 rounded text-sm border ${verifyResult.verified ? 'border-emerald-800/60 bg-emerald-950/30 text-emerald-200' : 'border-red-800/60 bg-red-950/30 text-red-200'}`}>
+              <div
+                data-testid="confidential-verify-result"
+                className={`mt-3 p-2 rounded text-sm border ${verifyResult.verified ? 'border-emerald-800/60 bg-emerald-950/30 text-emerald-200' : 'border-red-800/60 bg-red-950/30 text-red-200'}`}
+              >
                 <Badge text={verifyResult.verified ? 'verified' : 'not found'} variant={verifyResult.verified ? 'green' : 'red'} />
                 <span className="ml-2 text-xs">{verifyResult.message}</span>
               </div>

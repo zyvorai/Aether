@@ -175,7 +175,7 @@ export default function ComposePage() {
         footer={
           <>
             {result ? (
-              <div className="mt-4 space-y-4">
+              <div className="mt-4 space-y-4" data-testid="compose-validate-result">
                 <div className="flex items-center gap-3">
                   <Badge text={result.valid ? 'VALID' : 'INVALID'} variant={result.valid ? 'green' : 'red'} />
                   <span className="text-sm text-slate-400">{result.workload_count ?? 0} workloads</span>
