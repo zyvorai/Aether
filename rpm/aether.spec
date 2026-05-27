@@ -76,7 +76,7 @@ cargo test --all
 %{_datadir}/fish/vendor_completions.d/aether.fish
 
 %changelog
-* Wed Feb 06 2026 Susant Sahani <ssahani@gmail.com> - 0.1.0-1
+* Wed Feb 06 2026 ZyvorAI Labs Private Limited <ssahani@gmail.com> - 0.1.0-1
 - Initial release
 - Core functionality with four runtimes (Podman, Kubernetes, KubeVirt, Metal3)
 - Migration engine with three strategies
