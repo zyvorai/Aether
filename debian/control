@@ -1,7 +1,7 @@
 Source: aether
 Section: admin
 Priority: optional
-Maintainer: Susant Sahani <ssahani@gmail.com>
+Maintainer: ZyvorAI Labs Private Limited <ssahani@gmail.com>
 Build-Depends: debhelper (>= 11), cargo, rustc
 Standards-Version: 4.5.0
 Homepage: https://github.com/ssahani/aether
