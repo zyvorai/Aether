@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
-import { Inbox, ChevronDown, ChevronRight, Trash2, Plus } from 'lucide-react';
+import { Inbox, ChevronDown, ChevronRight, Trash2, Plus, Copy } from 'lucide-react';
 import { apiFetch, apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
@@ -117,6 +117,15 @@ export default function SecretsPage() {
     }
   }
 
+  async function copyKeyName(key: string) {
+    try {
+      await navigator.clipboard.writeText(key);
+      toast(`Copied key name "${key}"`, 'success');
+    } catch {
+      toast('Could not copy to clipboard', 'error');
+    }
+  }
+
   if (loading && secrets.length === 0 && !loadFailed) {
     return <PageLoading rows={5} />;
   }
@@ -211,7 +220,22 @@ export default function SecretsPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                               <div>
                                 <span className="text-slate-500">Keys: </span>
-                                <span className="text-slate-200">{secretDetail.keys.join(', ')}</span>
+                                <span className="text-slate-200 inline-flex flex-wrap gap-2">
+                                  {secretDetail.keys.map((key) => (
+                                    <span key={key} className="inline-flex items-center gap-1 rounded border border-slate-800 px-2 py-0.5 font-mono text-xs">
+                                      {key}
+                                      <button
+                                        type="button"
+                                        onClick={() => void copyKeyName(key)}
+                                        className="text-slate-500 hover:text-aether"
+                                        title="Copy key name"
+                                        data-testid={`secrets-copy-key-${key}`}
+                                      >
+                                        <Copy size={12} />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </span>
                               </div>
                               <div>
                                 <span className="text-slate-500">Created: </span>
@@ -286,6 +310,7 @@ export default function SecretsPage() {
       </Modal>
 
       <Modal isOpen={confirmDelete !== null} onClose={() => setConfirmDelete(null)} title="Confirm delete">
+        <div data-testid="secrets-delete-confirm">
         <p className="text-sm text-slate-300 mb-6">
           Are you sure you want to delete secret &quot;{confirmDelete}&quot;? This cannot be undone.
         </p>
@@ -304,6 +329,7 @@ export default function SecretsPage() {
           >
             Delete
           </button>
+        </div>
         </div>
       </Modal>
     </div>

@@ -3,7 +3,9 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router';
 import { BellRing, Radio, Send, Plus, Trash2 } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -164,8 +166,16 @@ export default function AlertsPage() {
               Add webhook
             </button>
           </div>
+          {channels.length === 0 && !showAddChannel && (
+            <p className="text-sm text-slate-500 mb-4">
+              No channels configured.{' '}
+              <Link to={viewToPath('platform')} className="text-aether hover:underline">
+                Configure audit webhooks on Platform →
+              </Link>
+            </p>
+          )}
           {showAddChannel && (
-            <div className="mb-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
+            <div data-testid="alerts-add-channel-form" className="mb-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}

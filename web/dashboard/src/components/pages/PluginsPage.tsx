@@ -147,7 +147,7 @@ export default function PluginsPage() {
       {canMutate && (
         <div className="dash-card mb-6">
           <h3 className="text-sm font-semibold text-slate-200 mb-2">Register plugin manifest</h3>
-          <form onSubmit={(e) => void handleRegister(e)} className="space-y-3">
+          <form onSubmit={(e) => void handleRegister(e)} className="space-y-3" data-testid="plugins-register-form">
             <textarea
               value={registerJson}
               onChange={(e) => setRegisterJson(e.target.value)}
@@ -223,7 +223,7 @@ export default function PluginsPage() {
         title={selectedPlugin ? `Plugin: ${selectedPlugin.name}` : 'Plugin'}
       >
         {selectedPlugin && (
-          <div className="space-y-4">
+          <div className="space-y-4" data-testid="plugins-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-slate-500">Runtime</div>

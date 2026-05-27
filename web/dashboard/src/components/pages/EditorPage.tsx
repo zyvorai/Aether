@@ -2,10 +2,10 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Save, FileText, Eye, CheckCircle, Pencil } from 'lucide-react';
-import { apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
 import { buildEditorWorkloadYaml } from '../../utils/workloadYaml';
@@ -15,10 +15,10 @@ import ConfidentialFormFields, {
   type ConfidentialFormState,
 } from '../ConfidentialFormFields';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import ValidateResultPanel from '../ValidateResultPanel';
 import YamlCodeEditor from '../YamlCodeEditor';
-import type { ValidateResponse, PolicyResult } from '../../types/api';
+import type { ValidateResponse, PolicyResult, WorkloadResponse } from '../../types/api';
 
 interface EditorForm extends ConfidentialFormState {
   name: string;
@@ -68,6 +68,7 @@ const defaultForm: EditorForm = {
 export default function EditorPage() {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
+  const [workloadQuery] = useQueryParam('workload', '');
   const [form, setForm] = useState<EditorForm>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -79,6 +80,21 @@ export default function EditorPage() {
   const [showPreview, setShowPreview] = useState(true);
   const [yamlEditMode, setYamlEditMode] = useState(false);
   const [yamlDraft, setYamlDraft] = useState('');
+
+  useEffect(() => {
+    if (!workloadQuery.trim()) return;
+    void apiFetchSettled<WorkloadResponse[]>('/workloads').then((res) => {
+      if (!res.ok) return;
+      const match = res.data.find((w) => w.name === workloadQuery.trim());
+      if (!match) return;
+      setForm((prev) => ({
+        ...prev,
+        name: match.name,
+        image: match.image || prev.image,
+        runtime: match.runtime || prev.runtime,
+      }));
+    });
+  }, [workloadQuery]);
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kata', 'kubevirt', 'metal3'];
   const intents = ['low-latency', 'high-throughput', 'cost-optimized', 'balanced'];
@@ -197,6 +213,11 @@ export default function EditorPage() {
           <FileText className="w-6 h-6 text-aether" />
           <div>
             <h2 className="text-lg font-semibold text-slate-100">Visual workload editor</h2>
+            {workloadQuery && form.name === workloadQuery && (
+              <p data-testid="editor-workload-context" className="text-xs text-aether mt-1">
+                Editing context: {form.name}
+              </p>
+            )}
             <p className="text-sm text-slate-500">Design workloads without writing YAML by hand</p>
           </div>
         </div>

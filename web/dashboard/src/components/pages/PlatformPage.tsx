@@ -3,7 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { Server, Shield, Database, ExternalLink, Network } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { apiFetchSettled } from '../../utils/api';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import PageToolbar from '../PageToolbar';
@@ -146,6 +149,11 @@ export default function PlatformPage() {
               <dd className="text-slate-200">{integrations.audit_webhook_configured ? 'configured' : 'not set'}</dd>
             </div>
           </dl>
+          {!platform?.opa?.configured && (
+            <Link to={viewToPath('policy')} className="mt-4 inline-flex text-xs text-aether hover:underline">
+              Configure policy engine →
+            </Link>
+          )}
           <p className="mt-4 text-xs text-slate-500">
             Env: <code className="text-slate-400">AETHER_BACKUP_REMOTE_URL</code>,{' '}
             <code className="text-slate-400">AETHER_AUDIT_WEBHOOK_URL</code>,{' '}
@@ -194,6 +202,15 @@ export default function PlatformPage() {
                 ))}
               </dd>
             </div>
+            {cilium.cluster && (
+              <Link
+                to={pathWithQuery(viewToPath('clusters'), { cluster: cilium.cluster, tab: 'network' })}
+                className="inline-flex text-xs text-aether hover:underline"
+                data-testid="platform-cilium-cluster-link"
+              >
+                Browse network policies in cluster browser →
+              </Link>
+            )}
           </dl>
         ) : (
           <p className="text-sm text-slate-500">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>

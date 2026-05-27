@@ -479,6 +479,26 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
               <div><span className="text-zinc-500">Source</span><p className="text-white capitalize">{workload.source ?? 'aether'}</p></div>
             </div>
 
+            <div className="mt-4 flex flex-wrap gap-2" data-testid="workload-quick-links">
+              {(
+                [
+                  { label: 'AI analysis', path: pathWithQuery(viewToPath('ai'), { workload: workload.name, tab: 'analyze' }) },
+                  { label: 'Scoring', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'scoring' }) },
+                  { label: 'Drift', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'drift' }) },
+                  { label: 'Events', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'events' }) },
+                  { label: 'Intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions' }) },
+                ] as const
+              ).map((link) => (
+                <a
+                  key={link.label}
+                  href={link.path}
+                  className="rounded-lg border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 hover:border-aether/40 hover:text-aether transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
             {isAetherManaged ? (
               <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-950/60 p-3" data-testid="workload-snapshots">
                 <h4 className="mb-2 text-sm font-semibold text-zinc-200">Snapshots</h4>

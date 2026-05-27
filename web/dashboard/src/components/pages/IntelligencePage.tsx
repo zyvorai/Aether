@@ -255,7 +255,12 @@ export default function IntelligencePage() {
             evolution.workloads.map((row) => (
               <div key={row.workload} className="dash-card">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="font-medium text-slate-100">{row.workload}</span>
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
+                    className="font-medium text-slate-100 hover:text-aether"
+                  >
+                    {row.workload}
+                  </Link>
                   {row.auto_eligible && <Badge text="auto-eligible" variant="green" />}
                   <Badge text={`${formatPercent(row.improvement_pct, 0)} improvement`} variant="blue" />
                 </div>
@@ -308,6 +313,14 @@ export default function IntelligencePage() {
                     <span className="font-medium text-slate-100">{rec.cluster ?? 'default cluster'}</span>
                     <Badge text={rec.runtime} variant="blue" />
                     <Badge text={`score ${rec.score.toFixed(2)}`} variant={i === 0 ? 'green' : 'muted'} />
+                    {rec.cluster && (
+                      <Link
+                        to={pathWithQuery(viewToPath('fleet'), { cluster: rec.cluster })}
+                        className="text-xs text-aether hover:underline ml-auto"
+                      >
+                        Fleet →
+                      </Link>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-slate-400 mb-2">
                     <span>Latency {rec.latency_score.toFixed(2)}</span>
