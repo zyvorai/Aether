@@ -294,7 +294,7 @@ async fn cluster_summary_from_default_client() -> Option<ClusterSummaryResponse>
     let context_label = std::env::var("AETHER_CLUSTER_DISPLAY_NAME")
         .unwrap_or_else(|_| "active-client".to_string());
     let server = Some(cfg.cluster_url.to_string());
-    let workload_count = count_default_client_workloads(&client).await;
+    let workload_count = list_workloads().await.map(|workloads| workloads.len()).unwrap_or(0);
     Some(ClusterSummaryResponse {
         enabled: true,
         connected: true,
@@ -313,27 +313,88 @@ async fn cluster_summary_from_default_client() -> Option<ClusterSummaryResponse>
     })
 }
 
-async fn count_default_client_workloads(client: &Client) -> usize {
-    let mut n = 0usize;
-    if let Ok(list) = Api::<Deployment>::all(client.clone())
-        .list(&kube::api::ListParams::default())
-        .await
-    {
-        n += list.items.len();
+fn default_cluster_display_name() -> String {
+    std::env::var("AETHER_CLUSTER_DISPLAY_NAME").unwrap_or_else(|_| "active-client".to_string())
+}
+
+async fn list_workloads_for_client(client: &Client, cluster: &str) -> Result<Vec<ClusterWorkload>> {
+    let mut workloads = Vec::new();
+    workloads.extend(
+        list_kind::<Deployment>(client, cluster, "Deployment", workload_status_deployment).await?,
+    );
+    workloads.extend(
+        list_kind::<StatefulSet>(client, cluster, "StatefulSet", workload_status_statefulset).await?,
+    );
+    workloads.extend(
+        list_kind::<DaemonSet>(client, cluster, "DaemonSet", workload_status_daemonset).await?,
+    );
+    workloads.extend(list_kubevirt_vmis(client, cluster).await.unwrap_or_default());
+    Ok(workloads)
+}
+
+async fn list_workloads_from_default_client() -> Result<Vec<ClusterWorkload>> {
+    let client = Client::try_default().await.context("no default kubernetes client")?;
+    list_workloads_for_client(&client, &default_cluster_display_name()).await
+}
+
+fn kubevirt_vmi_api_resource() -> ApiResource {
+    ApiResource {
+        group: "kubevirt.io".to_string(),
+        version: "v1".to_string(),
+        api_version: "kubevirt.io/v1".to_string(),
+        kind: "VirtualMachineInstance".to_string(),
+        plural: "virtualmachineinstances".to_string(),
     }
-    if let Ok(list) = Api::<StatefulSet>::all(client.clone())
-        .list(&kube::api::ListParams::default())
-        .await
-    {
-        n += list.items.len();
+}
+
+async fn list_kubevirt_vmis(client: &Client, cluster: &str) -> Result<Vec<ClusterWorkload>> {
+    let vms: Api<DynamicObject> = Api::all_with(client.clone(), &kubevirt_vmi_api_resource());
+    let list = vms.list(&ListParams::default()).await?;
+    let mut results = Vec::new();
+
+    for vm in list.items {
+        let name = vm.metadata.name.clone().unwrap_or_default();
+        if name.is_empty() {
+            continue;
+        }
+        let namespace = vm
+            .metadata
+            .namespace
+            .clone()
+            .unwrap_or_else(|| "default".to_string());
+        let phase = vm
+            .data
+            .get("status")
+            .and_then(|s| s.get("phase"))
+            .and_then(|p| p.as_str())
+            .unwrap_or("Unknown");
+        let status = match phase {
+            "Running" => "running",
+            "Succeeded" => "stopped",
+            "Failed" => "failed",
+            "Scheduling" | "Scheduled" | "Pending" => "pending",
+            _ => "unknown",
+        }
+        .to_string();
+        let created_at = vm
+            .metadata
+            .creation_timestamp
+            .as_ref()
+            .map(|t| t.0.to_rfc3339())
+            .unwrap_or_default();
+
+        results.push(ClusterWorkload {
+            cluster: cluster.to_string(),
+            namespace,
+            kind: "VirtualMachineInstance".to_string(),
+            name: name.clone(),
+            image: format!("vm:{name}"),
+            status,
+            created_at,
+        });
     }
-    if let Ok(list) = Api::<DaemonSet>::all(client.clone())
-        .list(&kube::api::ListParams::default())
-        .await
-    {
-        n += list.items.len();
-    }
-    n
+
+    Ok(results)
 }
 
 pub async fn list_clusters() -> Result<Vec<ClusterInfo>> {
@@ -399,7 +460,16 @@ pub async fn list_clusters() -> Result<Vec<ClusterInfo>> {
 }
 
 pub async fn list_workloads() -> Result<Vec<ClusterWorkload>> {
-    let clusters = list_clusters().await?;
+    let clusters = match list_clusters().await {
+        Ok(clusters) if !clusters.is_empty() => clusters,
+        Ok(_) => {
+            return list_workloads_from_default_client().await;
+        }
+        Err(_) => {
+            return list_workloads_from_default_client().await;
+        }
+    };
+
     let mut workloads = Vec::new();
 
     for cluster in clusters {
@@ -412,9 +482,11 @@ pub async fn list_workloads() -> Result<Vec<ClusterWorkload>> {
             Err(_) => continue,
         };
 
-        workloads.extend(list_kind::<Deployment>(&client, &cluster.name, "Deployment", workload_status_deployment).await?);
-        workloads.extend(list_kind::<StatefulSet>(&client, &cluster.name, "StatefulSet", workload_status_statefulset).await?);
-        workloads.extend(list_kind::<DaemonSet>(&client, &cluster.name, "DaemonSet", workload_status_daemonset).await?);
+        workloads.extend(list_workloads_for_client(&client, &cluster.name).await?);
+    }
+
+    if workloads.is_empty() {
+        return list_workloads_from_default_client().await;
     }
 
     workloads.sort_by(|a, b| {
