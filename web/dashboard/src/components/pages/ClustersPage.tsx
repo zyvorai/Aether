@@ -875,7 +875,7 @@ export default function ClustersPage() {
           description={pageTab === 'network' ? 'No NetworkPolicy or Cilium policies in this scope.' : 'Try a different cluster, namespace, or resource kind.'}
         />
       ) : (
-        <div className={`dash-card-flush ${panelClass}`}>
+        <div className={`dash-card-flush ${panelClass}`} data-testid="clusters-resource-table">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

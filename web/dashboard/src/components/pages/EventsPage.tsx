@@ -107,6 +107,9 @@ export default function EventsPage() {
           <button type="button" onClick={() => setSeverity('critical')} className="text-left">
             <StatCard title="Critical" value={summary.critical_unacked} color="red" />
           </button>
+          <Link to={viewToPath('alerts')} className="text-xs text-aether hover:underline self-end mb-1">
+            Alert channels →
+          </Link>
         </div>
       )}
 
@@ -123,6 +126,7 @@ export default function EventsPage() {
               onChange={(e) => setCategory(e.target.value)}
               className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
               aria-label="Category filter"
+              data-testid="events-category-filter"
             >
               <option value="all">All categories</option>
               <option value="intent-violation">Intent violations</option>
@@ -138,12 +142,14 @@ export default function EventsPage() {
               placeholder="Workload name…"
               className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200 min-w-[10rem]"
               aria-label="Workload filter"
+              data-testid="events-workload-filter"
             />
             <select
               value={severity}
               onChange={(e) => setSeverity(e.target.value)}
               className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
               aria-label="Severity filter"
+              data-testid="events-severity-filter"
             >
               {severityOptions.map((opt) => (
                 <option key={opt} value={opt}>
@@ -170,7 +176,7 @@ export default function EventsPage() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting search or severity filter" />
       ) : (
-        <div className="dash-card">
+        <div className="dash-card" data-testid="events-list">
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filtered.map((ev, i) => (
               <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">

@@ -176,6 +176,16 @@ export default function DepsPage() {
   return (
     <div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+      <div className="mb-4">
+        <button
+          type="button"
+          data-testid="deps-compose-link"
+          onClick={() => navigate(viewToPath('compose'))}
+          className="text-xs text-aether hover:underline"
+        >
+          Compose import →
+        </button>
+      </div>
 
       <div className="dash-card mb-6">
         <h2 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
@@ -219,7 +229,7 @@ export default function DepsPage() {
         <EmptyState icon={<Inbox size={48} />} title="No dependency data" description="No dependency graph available" />
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6" data-testid="deps-stats-panel">
             <StatCard title="Workloads" value={graph.stats.total_workloads} color="blue" />
             <StatCard title="Edges" value={graph.stats.total_edges} color="purple" />
             <StatCard title="Root" value={graph.stats.root_workloads} color="green" />

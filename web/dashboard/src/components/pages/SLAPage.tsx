@@ -114,7 +114,10 @@ export default function SLAPage() {
               {adding ? 'Adding…' : 'Add target'}
             </button>
           </form>
-          <Link to={viewToPath('health')} className="mt-3 inline-flex text-xs text-aether hover:underline">
+          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="mt-3 inline-flex text-xs text-aether hover:underline">
+            SLA events →
+          </Link>
+          <Link to={viewToPath('health')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline">
             Open health monitor →
           </Link>
         </div>
@@ -125,7 +128,7 @@ export default function SLAPage() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No matches" description="Try a different search term" />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="sla-workload-grid">
           {filtered.map((w) => {
             const sla = slaData[w.name];
             return (

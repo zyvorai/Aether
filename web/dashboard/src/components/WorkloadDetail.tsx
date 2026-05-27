@@ -489,6 +489,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   { label: 'Editor', path: pathWithQuery(viewToPath('editor'), { workload: workload.name }) },
                   { label: 'Health monitor', path: pathWithQuery(viewToPath('health'), { workload: workload.name }) },
                   { label: 'Confidential', path: pathWithQuery(viewToPath('confidential'), { workload: workload.name }) },
+                  { label: 'Backups', path: viewToPath('backups') },
+                  { label: 'Secrets', path: viewToPath('secrets') },
                   { label: 'Intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions' }) },
                 ] as const
               ).map((link) => (

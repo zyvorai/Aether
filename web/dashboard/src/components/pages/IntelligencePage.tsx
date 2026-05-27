@@ -196,7 +196,7 @@ export default function IntelligencePage() {
       )}
 
       {tab === 'threats' && (
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 mt-4" data-testid="intelligence-threats-panel">
           {threats && threats.threats.length > 0 ? (
             threats.threats.map((t) => (
               <div key={`${t.workload}-${t.detected_at}`} className="dash-card">

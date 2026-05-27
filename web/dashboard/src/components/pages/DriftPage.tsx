@@ -185,7 +185,7 @@ export default function DriftPage() {
           <div className="dash-card">
             <h2 className="text-lg font-semibold text-zinc-100 mb-1">Select workload</h2>
             <p className="text-sm text-zinc-500 mb-4">Click a workload to check for configuration drift</p>
-            <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto">
+            <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto" data-testid="drift-workload-select">
               {filtered.map((w) => (
                 <button
                   key={w.name}

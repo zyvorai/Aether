@@ -150,6 +150,12 @@ export default function AlertsPage() {
         refreshing={loading || queueLoading}
       />
 
+      <div className="mb-4">
+        <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="alerts-events-link">
+          View events feed →
+        </Link>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="dash-card">
           <div className="flex items-center justify-between gap-3 mb-4">

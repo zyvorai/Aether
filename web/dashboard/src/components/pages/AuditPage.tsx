@@ -150,6 +150,7 @@ export default function AuditPage() {
           ) : undefined
         }
         filters={
+          <>
           <input
             type="text"
             value={workloadFilter}
@@ -157,6 +158,17 @@ export default function AuditPage() {
             placeholder="Filter by workload…"
             className="rounded-xl border border-slate-700/80 bg-slate-950/70 px-3 py-2.5 text-sm text-slate-100 min-w-[10rem]"
           />
+          {resultFilter && (
+            <button
+              type="button"
+              data-testid="audit-clear-filters"
+              onClick={() => setResultFilter('')}
+              className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-aether"
+            >
+              Clear result filter
+            </button>
+          )}
+          </>
         }
       />
 

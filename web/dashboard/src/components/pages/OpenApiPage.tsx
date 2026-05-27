@@ -156,7 +156,7 @@ export default function OpenApiPage() {
         </button>
       </div>
 
-      <div className="dash-card overflow-hidden mb-6">
+      <div className="dash-card overflow-hidden mb-6" data-testid="openapi-routes-list">
         <h3 className="text-sm font-semibold text-slate-200 mb-4 px-1">Notable routes ({paths.length})</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

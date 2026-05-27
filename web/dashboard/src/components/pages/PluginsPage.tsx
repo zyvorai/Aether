@@ -4,7 +4,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Inbox } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -15,6 +17,7 @@ import Modal from '../Modal';
 import type { PluginInfo } from '../../types/api';
 
 export default function PluginsPage() {
+  const navigate = useNavigate();
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -119,6 +122,7 @@ export default function PluginsPage() {
             onChange={(e) => setRuntimeFilter(e.target.value)}
             className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
             aria-label="Runtime filter"
+            data-testid="plugins-runtime-filter"
           >
             {runtimeOptions.map((option) => (
               <option key={option} value={option}>
@@ -142,7 +146,16 @@ export default function PluginsPage() {
       />
 
       {discoverSummary && (
-        <div data-testid="plugins-discover-summary" className="dash-card mb-6 text-sm text-slate-300">{discoverSummary}</div>
+        <div data-testid="plugins-discover-summary" className="dash-card mb-6 text-sm text-slate-300">
+          {discoverSummary}
+          <button
+            type="button"
+            onClick={() => navigate(viewToPath('platform'))}
+            className="ml-3 text-xs text-aether hover:underline"
+          >
+            Platform integrations →
+          </button>
+        </div>
       )}
 
       {canMutate && (
@@ -167,7 +180,7 @@ export default function PluginsPage() {
       {visiblePlugins.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No plugins" description="No plugins match your filters. Try discovering plugins." />
       ) : (
-        <div className="dash-card overflow-hidden">
+        <div className="dash-card overflow-hidden" data-testid="plugins-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

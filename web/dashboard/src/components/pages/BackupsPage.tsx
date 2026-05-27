@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Inbox, RotateCcw } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
+import { useNavigate } from 'react-router';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -18,6 +20,7 @@ function toast(message: string, type: 'success' | 'error') {
 }
 
 export default function BackupsPage() {
+  const navigate = useNavigate();
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -97,6 +100,16 @@ export default function BackupsPage() {
 
   return (
     <div>
+      <div className="mb-4">
+        <button
+          type="button"
+          data-testid="backups-audit-link"
+          onClick={() => navigate(viewToPath('audit'))}
+          className="text-xs text-aether hover:underline"
+        >
+          View restore audit trail →
+        </button>
+      </div>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -106,6 +119,7 @@ export default function BackupsPage() {
         actions={
           <button
             type="button"
+            data-testid="backups-create-button"
             onClick={() => setCreateOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
           >
