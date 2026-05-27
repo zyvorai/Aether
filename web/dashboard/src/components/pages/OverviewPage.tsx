@@ -401,34 +401,34 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <button type="button" onClick={() => goFiltered('workloads', { source: 'aether' })} className="text-left">
+        <button type="button" onClick={() => goFiltered('workloads', { source: 'aether' })} className="text-left" data-testid="overview-aether-stat">
           <StatCard title="Aether workloads" value={aetherManagedCount} color="orange" icon={<LayoutDashboard size={18} />} />
         </button>
-        <button type="button" onClick={() => onNavigate('clusters')} className="text-left">
+        <button type="button" onClick={() => onNavigate('clusters')} className="text-left" data-testid="overview-clusters-stat">
           <StatCard title="Clusters" value={clusterSummary?.cluster_count ?? 0} color="blue" icon={<Activity size={18} />} />
         </button>
-        <button onClick={() => onNavigate('health')} className="text-left">
+        <button type="button" onClick={() => goFiltered('health', { status: 'healthy' })} className="text-left" data-testid="overview-healthy-stat">
           <StatCard title="Healthy" value={healthy} color="green" icon={<Activity size={18} />} />
         </button>
-        <button onClick={() => onNavigate('health')} className="text-left">
+        <button type="button" onClick={() => goFiltered('health', { status: 'degraded' })} className="text-left" data-testid="overview-degraded-stat">
           <StatCard title="Degraded" value={degraded} color="red" icon={<AlertTriangle size={18} />} />
         </button>
-        <button type="button" onClick={() => goFiltered('events')} className="text-left">
+        <button type="button" onClick={() => goFiltered('events')} className="text-left" data-testid="overview-events-stat">
           <StatCard title="Events" value={eventSummary?.total_events ?? 0} color="blue" icon={<Calendar size={18} />} />
         </button>
         <button onClick={() => onNavigate('backups')} className="text-left" data-testid="overview-backups-stat">
           <StatCard title="Backups" value={backups.length} color="purple" icon={<Shield size={18} />} />
         </button>
-        <button onClick={() => onNavigate('secrets')} className="text-left">
+        <button type="button" onClick={() => onNavigate('secrets')} className="text-left" data-testid="overview-secrets-stat">
           <StatCard title="Secrets" value={secrets.length} color="yellow" icon={<Lock size={18} />} />
         </button>
-        <button onClick={() => onNavigate('plugins')} className="text-left">
+        <button onClick={() => onNavigate('plugins')} className="text-left" data-testid="overview-plugins-stat">
           <StatCard title="Plugins" value={plugins.length} color="blue" icon={<Boxes size={18} />} />
         </button>
-        <button onClick={() => onNavigate('envs')} className="text-left">
+        <button onClick={() => onNavigate('envs')} className="text-left" data-testid="overview-envs-stat">
           <StatCard title="Environments" value={environments.length} color="green" icon={<Workflow size={18} />} />
         </button>
-        <button type="button" onClick={() => onNavigate('rbac')} className="text-left">
+        <button type="button" onClick={() => onNavigate('rbac')} className="text-left" data-testid="overview-keys-stat">
           <StatCard title="API Keys" value={apiKeys.length} color="purple" icon={<KeySquare size={18} />} />
         </button>
       </div>
@@ -475,6 +475,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             key={link.label}
             type="button"
             onClick={link.onClick}
+            data-testid={link.label === 'Drift detection' ? 'overview-drift-quick-link' : undefined}
             className="rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
           >
             {link.label}

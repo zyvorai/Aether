@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -22,7 +23,7 @@ export default function OpenApiPage() {
   const [doc, setDoc] = useState<OpenApiDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [methodFilter, setMethodFilter] = useState('all');
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
 

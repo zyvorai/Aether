@@ -143,6 +143,28 @@ export default function ClustersPage() {
     );
   }
 
+  function syncClusterFilters(params: { cluster?: string; namespace?: string; kind?: string }) {
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        if (params.cluster !== undefined) {
+          if (params.cluster) copy.set('cluster', params.cluster);
+          else copy.delete('cluster');
+        }
+        if (params.namespace !== undefined) {
+          if (params.namespace && params.namespace !== 'all') copy.set('namespace', params.namespace);
+          else copy.delete('namespace');
+        }
+        if (params.kind !== undefined) {
+          if (params.kind && params.kind !== 'Pod') copy.set('kind', params.kind);
+          else copy.delete('kind');
+        }
+        return copy;
+      },
+      { replace: true },
+    );
+  }
+
   const watchSocketRef = useRef<WebSocket | null>(null);
   const execSocketRef = useRef<WebSocket | null>(null);
 
@@ -795,7 +817,9 @@ export default function ClustersPage() {
           onChange={(e) => {
             setCluster(e.target.value);
             setClusterContext(e.target.value);
+            syncClusterFilters({ cluster: e.target.value });
           }}
+          data-testid="clusters-cluster-select"
           className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
         >
           {summary.clusters.map((item) => (
@@ -804,13 +828,30 @@ export default function ClustersPage() {
             </option>
           ))}
         </select>
-        <select value={namespace} onChange={(e) => setNamespace(e.target.value)} data-testid="clusters-namespace-select" className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+        <select
+          value={namespace}
+          onChange={(e) => {
+            setNamespace(e.target.value);
+            syncClusterFilters({ namespace: e.target.value });
+          }}
+          data-testid="clusters-namespace-select"
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+        >
           <option value="all">All namespaces</option>
           {namespaces.map((item) => (
             <option key={item.name} value={item.name}>{item.name}</option>
           ))}
         </select>
-        <select value={kind} onChange={(e) => setKind(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" disabled={pageTab === 'network'}>
+        <select
+          value={kind}
+          onChange={(e) => {
+            setKind(e.target.value);
+            syncClusterFilters({ kind: e.target.value });
+          }}
+          data-testid="clusters-kind-select"
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+          disabled={pageTab === 'network'}
+        >
           {kindOptions.map((item) => (
             <option key={item} value={item}>{item}</option>
           ))}
