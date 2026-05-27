@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Inbox } from 'lucide-react';
-import { apiFetchSettled, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
@@ -22,6 +23,9 @@ export default function PluginsPage() {
   const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
   const [search, setSearch] = useState('');
   const [runtimeFilter, setRuntimeFilter] = useState('all');
+  const [registerJson, setRegisterJson] = useState('');
+  const [registerMsg, setRegisterMsg] = useState<string | null>(null);
+  const { canMutate } = useAuth();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,6 +56,26 @@ export default function PluginsPage() {
     } else {
       setDiscoverSummary(res.error ?? 'Discovery failed');
     }
+    void load();
+  }
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canMutate || !registerJson.trim()) return;
+    try {
+      const manifest = JSON.parse(registerJson) as Record<string, unknown>;
+      const res = await apiPost('/plugins/register', manifest);
+      setRegisterMsg(res.success ? `Registered ${String(manifest.name ?? 'plugin')}` : (res.error ?? 'Failed'));
+      if (res.success) void load();
+    } catch {
+      setRegisterMsg('Invalid JSON manifest');
+    }
+  }
+
+  async function handleRemove(name: string) {
+    if (!canMutate) return;
+    const res = await apiDelete(`/plugins/${encodeURIComponent(name)}`);
+    setRegisterMsg(res.success ? `Removed ${name}` : (res.error ?? 'Remove failed'));
     void load();
   }
 
@@ -120,6 +144,25 @@ export default function PluginsPage() {
         <div className="dash-card mb-6 text-sm text-slate-300">{discoverSummary}</div>
       )}
 
+      {canMutate && (
+        <div className="dash-card mb-6">
+          <h3 className="text-sm font-semibold text-slate-200 mb-2">Register plugin manifest</h3>
+          <form onSubmit={(e) => void handleRegister(e)} className="space-y-3">
+            <textarea
+              value={registerJson}
+              onChange={(e) => setRegisterJson(e.target.value)}
+              rows={4}
+              placeholder='{"name":"my-plugin","version":"1.0","runtime_kind":"podman","command":"..."}'
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs font-mono text-slate-200"
+            />
+            <button type="submit" className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800">
+              Register
+            </button>
+          </form>
+          {registerMsg && <p className="mt-2 text-xs text-slate-400">{registerMsg}</p>}
+        </div>
+      )}
+
       {visiblePlugins.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No plugins" description="No plugins match your filters. Try discovering plugins." />
       ) : (
@@ -148,7 +191,7 @@ export default function PluginsPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right space-x-2">
                       <button
                         type="button"
                         onClick={() => setSelectedPlugin(p)}
@@ -156,6 +199,15 @@ export default function PluginsPage() {
                       >
                         Inspect
                       </button>
+                      {canMutate && (
+                        <button
+                          type="button"
+                          onClick={() => void handleRemove(p.name)}
+                          className="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

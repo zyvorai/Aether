@@ -18,23 +18,27 @@ import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 export default function SchedulerPage() {
   const [utilization, setUtilization] = useState<RuntimeUtilization[]>([]);
   const [suggestions, setSuggestions] = useState<OptimizeSuggestion[]>([]);
+  const [placements, setPlacements] = useState<Array<{ workload_name: string; runtime: string; cpu_reserved: number; memory_reserved_mb: number; placed_at: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoadFailed(false);
-    const [u, s] = await Promise.all([
+    const [u, s, p] = await Promise.all([
       apiFetchSettled<RuntimeUtilization[]>('/scheduler/utilization'),
       apiFetchSettled<OptimizeSuggestion[]>('/scheduler/optimize'),
+      apiFetchSettled<Array<{ workload_name: string; runtime: string; cpu_reserved: number; memory_reserved_mb: number; placed_at: string }>>('/scheduler/placements'),
     ]);
-    if (!u.ok && !s.ok) {
+    if (!u.ok && !s.ok && !p.ok) {
       setLoadFailed(true);
       setUtilization([]);
       setSuggestions([]);
+      setPlacements([]);
     } else {
       setUtilization(u.ok ? u.data : []);
       setSuggestions(s.ok ? s.data : []);
+      setPlacements(p.ok ? p.data : []);
     }
   }, []);
 
@@ -90,6 +94,36 @@ export default function SchedulerPage() {
               </div>
             </div>
           ))
+        )}
+      </div>
+
+      <div className="dash-card mb-6">
+        <h2 className="text-lg font-semibold text-zinc-100 mb-4">Current placements</h2>
+        {placements.length === 0 ? (
+          <EmptyState icon={<Inbox size={48} />} title="No placements" description="No scheduler placement records yet" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">
+                  <th className="py-2 px-3 text-left">Workload</th>
+                  <th className="py-2 px-3 text-left">Runtime</th>
+                  <th className="py-2 px-3 text-left">CPU</th>
+                  <th className="py-2 px-3 text-left">Memory</th>
+                </tr>
+              </thead>
+              <tbody>
+                {placements.map((p) => (
+                  <tr key={p.workload_name} className="border-b border-slate-800/50">
+                    <td className="py-2 px-3">{p.workload_name}</td>
+                    <td className="py-2 px-3">{p.runtime}</td>
+                    <td className="py-2 px-3">{p.cpu_reserved}</td>
+                    <td className="py-2 px-3">{p.memory_reserved_mb} MB</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetchSettled } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -29,6 +30,17 @@ export default function EnvsPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState('');
+  const [createTier, setCreateTier] = useState('development');
+  const [promoteWorkload, setPromoteWorkload] = useState('');
+  const [promoteFrom, setPromoteFrom] = useState('');
+  const [promoteTo, setPromoteTo] = useState('');
+  const [parityEnv1, setParityEnv1] = useState('');
+  const [parityEnv2, setParityEnv2] = useState('');
+  const [parityResult, setParityResult] = useState<string | null>(null);
+  const [mutating, setMutating] = useState(false);
+  const { canMutate } = useAuth();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +65,43 @@ export default function EnvsPage() {
     return environments.filter((env) => env.name.toLowerCase().includes(q) || env.tier.toLowerCase().includes(q));
   }, [environments, search]);
 
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canMutate || !createName.trim()) return;
+    setMutating(true);
+    const res = await apiPost('/environments', { name: createName.trim(), tier: createTier });
+    setMutating(false);
+    if (res.success) {
+      setCreateOpen(false);
+      setCreateName('');
+      void load();
+    }
+  }
+
+  async function handlePromote(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canMutate || !promoteWorkload.trim() || !promoteFrom.trim() || !promoteTo.trim()) return;
+    setMutating(true);
+    const res = await apiPost('/environments/promote', {
+      workload: promoteWorkload.trim(),
+      from: promoteFrom.trim(),
+      to: promoteTo.trim(),
+    });
+    setMutating(false);
+    if (res.success) void load();
+  }
+
+  async function handleParity(e: React.FormEvent) {
+    e.preventDefault();
+    if (!parityEnv1.trim() || !parityEnv2.trim()) return;
+    setMutating(true);
+    const result = await apiFetchSettled<{ reports?: unknown[] }>(
+      `/environments/parity?env1=${encodeURIComponent(parityEnv1)}&env2=${encodeURIComponent(parityEnv2)}`,
+    );
+    setMutating(false);
+    setParityResult(result.ok ? JSON.stringify(result.data, null, 2) : (result.error ?? 'Parity check failed'));
+  }
+
   if (loading && environments.length === 0 && !loadFailed) {
     return <PageLoading rows={5} />;
   }
@@ -68,8 +117,88 @@ export default function EnvsPage() {
         onSearchChange={setSearch}
         searchPlaceholder="Search environments…"
         onRefresh={() => void load()}
-        refreshing={loading}
+        refreshing={loading || mutating}
+        actions={
+          canMutate ? (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether hover:bg-aether/30"
+            >
+              Create environment
+            </button>
+          ) : null
+        }
       />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="dash-card">
+          <h3 className="text-sm font-semibold text-slate-200 mb-3">Promote workload</h3>
+          <form onSubmit={(e) => void handlePromote(e)} className="space-y-3">
+            <input
+              type="text"
+              value={promoteWorkload}
+              onChange={(e) => setPromoteWorkload(e.target.value)}
+              placeholder="Workload name"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={promoteFrom}
+                onChange={(e) => setPromoteFrom(e.target.value)}
+                placeholder="From env"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+              />
+              <input
+                type="text"
+                value={promoteTo}
+                onChange={(e) => setPromoteTo(e.target.value)}
+                placeholder="To env"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!canMutate || mutating}
+              className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Promote
+            </button>
+          </form>
+        </div>
+        <div className="dash-card">
+          <h3 className="text-sm font-semibold text-slate-200 mb-3">Environment parity</h3>
+          <form onSubmit={(e) => void handleParity(e)} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={parityEnv1}
+                onChange={(e) => setParityEnv1(e.target.value)}
+                placeholder="Env A"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+              />
+              <input
+                type="text"
+                value={parityEnv2}
+                onChange={(e) => setParityEnv2(e.target.value)}
+                placeholder="Env B"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={mutating}
+              className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Check parity
+            </button>
+          </form>
+          {parityResult && (
+            <pre className="mt-3 text-xs text-slate-400 overflow-x-auto max-h-48">{parityResult}</pre>
+          )}
+        </div>
+      </div>
 
       {environments.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No environments" description="No environments have been configured" />
@@ -175,6 +304,39 @@ export default function EnvsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create environment">
+        <form onSubmit={(e) => void handleCreate(e)} className="space-y-4">
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Name</label>
+            <input
+              type="text"
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Tier</label>
+            <select
+              value={createTier}
+              onChange={(e) => setCreateTier(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+            >
+              <option value="development">development</option>
+              <option value="staging">staging</option>
+              <option value="production">production</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={mutating || !createName.trim()}
+            className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether"
+          >
+            Create
+          </button>
+        </form>
       </Modal>
     </div>
   );

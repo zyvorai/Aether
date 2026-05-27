@@ -28,6 +28,16 @@ interface EditorForm extends ConfidentialFormState {
   intent: string;
   env: string;
   healthCheck: boolean;
+  k8sNamespace: string;
+  k8sServiceAccount: string;
+  k8sNodeSelector: string;
+  scalingEnabled: boolean;
+  scalingMin: number;
+  scalingMax: number;
+  ingressEnabled: boolean;
+  ingressHost: string;
+  ingressPath: string;
+  networkDenyAllIngress: boolean;
 }
 
 const defaultForm: EditorForm = {
@@ -40,6 +50,16 @@ const defaultForm: EditorForm = {
   intent: 'balanced',
   env: 'ENV=production\nLOG_LEVEL=info',
   healthCheck: true,
+  k8sNamespace: 'default',
+  k8sServiceAccount: '',
+  k8sNodeSelector: '',
+  scalingEnabled: true,
+  scalingMin: 2,
+  scalingMax: 5,
+  ingressEnabled: false,
+  ingressHost: '',
+  ingressPath: '/',
+  networkDenyAllIngress: false,
   ...defaultConfidentialFormState,
 };
 
@@ -48,6 +68,8 @@ export default function EditorPage() {
   const { canMutate } = useAuth();
   const [form, setForm] = useState<EditorForm>(defaultForm);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportPath, setExportPath] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
@@ -131,6 +153,24 @@ export default function EditorPage() {
     setSaving(false);
   };
 
+  const handleHelmExport = async () => {
+    setExporting(true);
+    setExportPath(null);
+    const yaml = generateYaml();
+    const res = await apiPost<{ output_dir?: string }>('/helm/export', { yaml });
+    setExporting(false);
+    if (res.success && res.data?.output_dir) {
+      setExportPath(res.data.output_dir);
+      window.dispatchEvent(
+        new CustomEvent('aether-toast', { detail: { message: `Helm chart exported to ${res.data.output_dir}`, type: 'success' } }),
+      );
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('aether-toast', { detail: { message: res.error ?? 'Helm export failed', type: 'error' } }),
+      );
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -201,6 +241,113 @@ export default function EditorPage() {
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
               />
             </div>
+          </div>
+
+          {(form.runtime === 'kubernetes' || form.runtime === 'kata') && (
+            <div>
+              <h3 className="text-sm font-medium text-slate-400 mb-3">Kubernetes</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Namespace</label>
+                  <input
+                    type="text"
+                    value={form.k8sNamespace}
+                    onChange={(e) => handleChange('k8sNamespace', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Service account</label>
+                  <input
+                    type="text"
+                    value={form.k8sServiceAccount}
+                    onChange={(e) => handleChange('k8sServiceAccount', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-slate-500 mb-1">Node selector (key=value)</label>
+                  <input
+                    type="text"
+                    value={form.k8sNodeSelector}
+                    onChange={(e) => handleChange('k8sNodeSelector', e.target.value)}
+                    placeholder="kubernetes.io/arch=amd64"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-slate-300 mt-3">
+                <input
+                  type="checkbox"
+                  checked={form.networkDenyAllIngress}
+                  onChange={(e) => handleChange('networkDenyAllIngress', e.target.checked)}
+                  className="accent-aether"
+                />
+                Deny all ingress (network policy)
+              </label>
+            </div>
+          )}
+
+          <div>
+            <h3 className="text-sm font-medium text-slate-400 mb-3">Scaling & ingress</h3>
+            <label className="flex items-center gap-2 text-sm text-slate-300 mb-3">
+              <input
+                type="checkbox"
+                checked={form.scalingEnabled}
+                onChange={(e) => handleChange('scalingEnabled', e.target.checked)}
+                className="accent-aether"
+              />
+              Enable HPA-style scaling block
+            </label>
+            {form.scalingEnabled && (
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Min replicas</label>
+                  <input
+                    type="number"
+                    value={form.scalingMin}
+                    onChange={(e) => handleChange('scalingMin', parseInt(e.target.value, 10) || 1)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Max replicas</label>
+                  <input
+                    type="number"
+                    value={form.scalingMax}
+                    onChange={(e) => handleChange('scalingMax', parseInt(e.target.value, 10) || 1)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+            <label className="flex items-center gap-2 text-sm text-slate-300 mb-3">
+              <input
+                type="checkbox"
+                checked={form.ingressEnabled}
+                onChange={(e) => handleChange('ingressEnabled', e.target.checked)}
+                className="accent-aether"
+              />
+              Expose via Ingress
+            </label>
+            {form.ingressEnabled && (
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  value={form.ingressHost}
+                  onChange={(e) => handleChange('ingressHost', e.target.value)}
+                  placeholder="app.example.com"
+                  className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                />
+                <input
+                  type="text"
+                  value={form.ingressPath}
+                  onChange={(e) => handleChange('ingressPath', e.target.value)}
+                  placeholder="/"
+                  className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                />
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
@@ -281,6 +428,10 @@ export default function EditorPage() {
             </p>
           )}
 
+          {exportPath && (
+            <p className="text-xs text-slate-500 mt-2">Helm output: <code className="text-aether/90">{exportPath}</code></p>
+          )}
+
           <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
@@ -302,6 +453,14 @@ export default function EditorPage() {
               {saving ? 'Deploying…' : 'Deploy workload'}
             </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() => void handleHelmExport()}
+              disabled={exporting}
+              className="flex items-center gap-2 px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-sm text-slate-300 disabled:opacity-50"
+            >
+              {exporting ? 'Exporting…' : 'Export Helm chart'}
+            </button>
             <button
               type="button"
               onClick={() => {

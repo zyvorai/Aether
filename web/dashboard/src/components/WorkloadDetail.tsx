@@ -253,6 +253,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
         else if (action === 'start') await apiPost(`/workloads/${workload.name}/start`);
         else if (action === 'restart') {
           await apiPost(`/workloads/${workload.name}/restart`);
+        } else if (action === 'rollback') {
+          await apiPost(`/workloads/${workload.name}/rollback`, {});
         } else if (action === 'delete') {
           await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
           onClose();
@@ -358,7 +360,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 >
                   Shell
                 </button>
-                {['start', 'stop', 'restart', 'delete'].map(action => (
+                {['start', 'stop', 'restart', 'rollback', 'delete'].map(action => (
                   <button
                     key={action}
                     onClick={() => handleAction(action)}
@@ -366,6 +368,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                     className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
                       action === 'delete'
                         ? 'bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30'
+                        : action === 'rollback'
+                          ? 'bg-amber-600/20 text-amber-300 hover:bg-amber-600/40 border border-amber-600/30'
                         : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border border-zinc-600'
                     } disabled:opacity-50`}
                   >
