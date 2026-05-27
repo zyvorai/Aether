@@ -8,4 +8,4 @@ aether (0.1.0-1) unstable; urgency=medium
   * Advanced Kubernetes features (ConfigMaps, Secrets, Ingress, HPA)
   * Shell completions for bash, zsh, fish, powershell, elvish
 
- -- Susant Sahani <ssahani@gmail.com>  Wed, 06 Feb 2026 00:00:00 +0000
+ -- ZyvorAI Labs Private Limited <ssahani@gmail.com>  Wed, 06 Feb 2026 00:00:00 +0000
