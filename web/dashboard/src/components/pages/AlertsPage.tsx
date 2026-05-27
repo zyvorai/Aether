@@ -154,6 +154,10 @@ export default function AlertsPage() {
         <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="alerts-events-link">
           View events feed →
         </Link>
+        {' · '}
+        <Link to={viewToPath('policy')} className="text-xs text-aether hover:underline" data-testid="alerts-policy-link">
+          Policy check →
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -264,9 +268,14 @@ export default function AlertsPage() {
         </div>
 
         <div className="dash-card" data-testid="alerts-rules-panel">
-          <div className="flex items-center gap-3 mb-4">
-            <BellRing className="text-amber-400" size={20} />
-            <h2 className="text-lg font-semibold text-slate-100">Alert rules</h2>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <BellRing className="text-amber-400" size={20} />
+              <h2 className="text-lg font-semibold text-slate-100">Alert rules</h2>
+            </div>
+            <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="alerts-rules-events-link">
+              Events feed →
+            </Link>
           </div>
           {rules.length === 0 ? (
             <p className="text-sm text-slate-500">No alert rules configured.</p>

@@ -100,7 +100,7 @@ export default function BackupsPage() {
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
           data-testid="backups-audit-link"
@@ -108,6 +108,14 @@ export default function BackupsPage() {
           className="text-xs text-aether hover:underline"
         >
           View restore audit trail →
+        </button>
+        <button
+          type="button"
+          data-testid="backups-platform-link"
+          onClick={() => navigate(viewToPath('platform'))}
+          className="text-xs text-aether hover:underline"
+        >
+          Remote backup config →
         </button>
       </div>
       <PageToolbar

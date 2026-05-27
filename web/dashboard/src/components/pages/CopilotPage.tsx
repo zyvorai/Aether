@@ -126,6 +126,13 @@ export default function CopilotPage() {
           >
             Intelligence reports →
           </Link>
+          <Link
+            to={viewToPath('health')}
+            className="text-xs text-aether hover:underline ml-3"
+            data-testid="copilot-health-link"
+          >
+            Health monitor →
+          </Link>
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">

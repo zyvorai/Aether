@@ -521,7 +521,7 @@ export default function ConfidentialPage() {
             {signMessage && <p className="mt-2 text-xs text-zinc-400">{signMessage}</p>}
           </div>
 
-          <div className="border-t border-zinc-700 pt-4">
+          <div className="border-t border-zinc-700 pt-4" data-testid="confidential-verify-form">
             <h3 className="text-sm font-medium text-zinc-300 mb-2">Verify image file (host path)</h3>
             <form onSubmit={(e) => void handleVerifyFile(e)} className="space-y-2 mb-4">
               <input

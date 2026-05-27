@@ -148,16 +148,16 @@ export default function HealthPage() {
     <div>
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-          <button type="button" onClick={() => setStatusFilter('healthy')} className="text-left">
+          <button type="button" data-testid="health-healthy-stat" onClick={() => setStatusFilter('healthy')} className="text-left">
             <StatCard title="Healthy" value={summary.healthy} color="green" />
           </button>
-          <button type="button" onClick={() => setStatusFilter('degraded')} className="text-left">
+          <button type="button" data-testid="health-degraded-stat" onClick={() => setStatusFilter('degraded')} className="text-left">
             <StatCard title="Degraded" value={summary.degraded} color="yellow" />
           </button>
-          <button type="button" onClick={() => setStatusFilter('unhealthy')} className="text-left">
+          <button type="button" data-testid="health-unhealthy-stat" onClick={() => setStatusFilter('unhealthy')} className="text-left">
             <StatCard title="Unhealthy" value={summary.unhealthy} color="red" />
           </button>
-          <button type="button" onClick={() => setStatusFilter('unknown')} className="text-left">
+          <button type="button" data-testid="health-unknown-stat" onClick={() => setStatusFilter('unknown')} className="text-left">
             <StatCard title="Unknown" value={summary.unknown} color="blue" />
           </button>
           <StatCard title="Circuits open" value={summary.circuits_open} color="orange" />
@@ -342,6 +342,13 @@ export default function HealthPage() {
                   className="text-xs text-aether hover:underline"
                 >
                   View events →
+                </Link>
+                <Link
+                  to={viewToPath('sla')}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="health-sla-link"
+                >
+                  SLA compliance →
                 </Link>
                 <span>
                   Last restart count: <span className="text-slate-200">{selected.history.last_restart_count}</span>

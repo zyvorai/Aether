@@ -31,6 +31,7 @@ interface YamlInputProps {
   onValidate?: (yaml: string) => void;
   validateLoading?: boolean;
   showValidateButton?: boolean;
+  submitTestId?: string;
   header?: ReactNode;
   footer?: ReactNode;
 }
@@ -50,6 +51,7 @@ export default function YamlInput({
   onValidate,
   validateLoading,
   showValidateButton,
+  submitTestId,
   header,
   footer,
 }: YamlInputProps) {
@@ -196,7 +198,7 @@ export default function YamlInput({
         ) : null}
         <button
           type="button"
-          data-testid="yaml-submit"
+          data-testid={submitTestId ?? 'yaml-submit'}
           onClick={handleSubmit}
           disabled={!value.trim() || loading || submitDisabled || editorLoading}
           className={`flex shrink-0 items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether-light disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-aether/50 ${isEditor ? '' : 'w-full sm:w-auto justify-center'}`}

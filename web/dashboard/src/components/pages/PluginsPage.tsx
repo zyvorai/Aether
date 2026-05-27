@@ -7,6 +7,7 @@ import { Search, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { useQueryParam } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -25,7 +26,7 @@ export default function PluginsPage() {
   const [discoverSummary, setDiscoverSummary] = useState<string | null>(null);
   const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
   const [search, setSearch] = useState('');
-  const [runtimeFilter, setRuntimeFilter] = useState('all');
+  const [runtimeFilter, setRuntimeFilter] = useQueryParam('runtime', 'all');
   const [registerJson, setRegisterJson] = useState('');
   const [registerMsg, setRegisterMsg] = useState<string | null>(null);
   const { canMutate } = useAuth();
@@ -144,6 +145,17 @@ export default function PluginsPage() {
           </button>
         }
       />
+
+      <div className="mb-4">
+        <button
+          type="button"
+          data-testid="plugins-scheduler-link"
+          onClick={() => navigate(viewToPath('scheduler'))}
+          className="text-xs text-aether hover:underline"
+        >
+          Placement scheduler →
+        </button>
+      </div>
 
       {discoverSummary && (
         <div data-testid="plugins-discover-summary" className="dash-card mb-6 text-sm text-slate-300">

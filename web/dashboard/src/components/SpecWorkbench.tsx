@@ -12,6 +12,7 @@ interface SpecWorkbenchProps {
   onSubmit: (yaml: string) => void;
   loading?: boolean;
   placeholder?: string;
+  submitTestId?: string;
   result?: ReactNode;
   sidePanel?: ReactNode;
 }
@@ -23,6 +24,7 @@ export default function SpecWorkbench({
   onSubmit,
   loading = false,
   placeholder,
+  submitTestId,
   result,
   sidePanel,
 }: SpecWorkbenchProps) {
@@ -39,6 +41,7 @@ export default function SpecWorkbench({
           onSubmit={onSubmit}
           loading={loading}
           placeholder={placeholder}
+          submitTestId={submitTestId}
         />
         {sidePanel}
       </div>

@@ -416,7 +416,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         <button type="button" onClick={() => goFiltered('events')} className="text-left">
           <StatCard title="Events" value={eventSummary?.total_events ?? 0} color="blue" icon={<Calendar size={18} />} />
         </button>
-        <button onClick={() => onNavigate('backups')} className="text-left">
+        <button onClick={() => onNavigate('backups')} className="text-left" data-testid="overview-backups-stat">
           <StatCard title="Backups" value={backups.length} color="purple" icon={<Shield size={18} />} />
         </button>
         <button onClick={() => onNavigate('secrets')} className="text-left">
@@ -468,6 +468,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             { label: 'Cluster browser', onClick: () => onNavigate('clusters') },
             { label: 'Intent violations', onClick: () => goFiltered('events', { category: 'intent-violation' }) },
             { label: 'Discovered workloads', onClick: () => goFiltered('workloads', { source: 'cluster' }) },
+            { label: 'Environment promotion', onClick: () => onNavigate('envs') },
           ] as const
         ).map((link) => (
           <button

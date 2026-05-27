@@ -145,6 +145,15 @@ export default function SecretsPage() {
         <button type="button" onClick={() => navigate(viewToPath('rbac'))} className="text-aether hover:underline">
           API access control →
         </button>
+        {' · '}
+        <button
+          type="button"
+          data-testid="secrets-confidential-link"
+          onClick={() => navigate(viewToPath('confidential'))}
+          className="text-aether hover:underline"
+        >
+          Confidential computing →
+        </button>
       </p>
       <PageToolbar
         search={search}

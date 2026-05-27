@@ -493,6 +493,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   { label: 'Secrets', path: viewToPath('secrets') },
                   { label: 'GitOps', path: viewToPath('gitops') },
                   { label: 'Policy', path: viewToPath('policy') },
+                  { label: 'Scheduler', path: pathWithQuery(viewToPath('scheduler'), { workload: workload.name }) },
+                  { label: 'Cost', path: pathWithQuery(viewToPath('cost'), { workload: workload.name }) },
                   { label: 'Intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions' }) },
                 ] as const
               ).map((link) => (
