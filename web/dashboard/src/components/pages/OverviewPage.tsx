@@ -88,6 +88,18 @@ function overviewQuickLinkTestId(label: string): string | undefined {
       return 'overview-intent-violations-quick-link';
     case 'Fleet overview':
       return 'overview-fleet-quick-link';
+    case 'Audit trail':
+      return 'overview-audit-quick-link';
+    case 'Scheduler':
+      return 'overview-scheduler-quick-link';
+    case 'Compose import':
+      return 'overview-compose-quick-link';
+    case 'Cost estimation':
+      return 'overview-cost-quick-link';
+    case 'Validate YAML':
+      return 'overview-validate-quick-link';
+    case 'Discovered workloads':
+      return 'overview-discovered-quick-link';
     default:
       return undefined;
   }
