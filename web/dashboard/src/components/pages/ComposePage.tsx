@@ -171,6 +171,7 @@ export default function ComposePage() {
         buttonText="Validate compose"
         onSubmit={handleValidate}
         loading={validateLoading}
+        submitTestId="compose-validate-submit"
         showValidateButton={false}
         placeholder="Paste aether-compose.yaml..."
         footer={

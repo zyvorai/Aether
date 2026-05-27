@@ -35,7 +35,7 @@ export default function EnvsPage() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [envParam, setEnvParam] = useQueryParam('env');
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
