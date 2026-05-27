@@ -3,7 +3,9 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { Bot, Send, Sparkles } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import { apiPost } from '../../utils/api';
 
 interface ToolResult {
@@ -115,8 +117,15 @@ export default function CopilotPage() {
             </button>
           )}
           {messages.length === 0 && (
-          <span className="ml-auto text-xs text-slate-500">Natural language control plane</span>
+            <span className="ml-auto text-xs text-slate-500">Natural language control plane</span>
           )}
+          <Link
+            to={viewToPath('intelligence')}
+            className="text-xs text-aether hover:underline ml-auto"
+            data-testid="copilot-intelligence-link"
+          >
+            Intelligence reports →
+          </Link>
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">

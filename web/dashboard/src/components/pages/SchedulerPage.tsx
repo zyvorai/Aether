@@ -70,7 +70,7 @@ export default function SchedulerPage() {
     <div>
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-testid="scheduler-utilization-panel">
         {utilization.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No utilization data" description="No runtimes are reporting utilization" />
         ) : (

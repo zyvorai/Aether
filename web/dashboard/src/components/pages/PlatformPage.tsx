@@ -94,7 +94,7 @@ export default function PlatformPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="dash-card">
+        <div className="dash-card" data-testid="platform-runtime-panel">
           <div className="flex items-center gap-3 mb-4">
             <Server className="text-aether" size={20} />
             <h2 className="text-lg font-semibold text-slate-100">Runtime</h2>

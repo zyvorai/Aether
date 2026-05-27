@@ -153,7 +153,7 @@ export default function TemplatesPage() {
       {templates.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No templates" description="No templates are available" />
       ) : (
-        <div className="dash-card overflow-hidden">
+        <div className="dash-card overflow-hidden" data-testid="templates-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

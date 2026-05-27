@@ -135,6 +135,11 @@ export default function EventsPage() {
               <option value="sla">SLA</option>
               <option value="health">Health</option>
             </select>
+            {category === 'drift' && (
+              <Link to={viewToPath('drift')} className="text-xs text-aether hover:underline self-center">
+                Open drift page →
+              </Link>
+            )}
             <input
               type="text"
               value={workloadFilter}

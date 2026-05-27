@@ -124,7 +124,7 @@ export default function AffinityPage() {
       </div>
 
       {tab === 'matrix' && (
-        <div className="dash-card overflow-x-auto mb-6">
+        <div className="dash-card overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">

@@ -491,6 +491,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   { label: 'Confidential', path: pathWithQuery(viewToPath('confidential'), { workload: workload.name }) },
                   { label: 'Backups', path: viewToPath('backups') },
                   { label: 'Secrets', path: viewToPath('secrets') },
+                  { label: 'GitOps', path: viewToPath('gitops') },
+                  { label: 'Policy', path: viewToPath('policy') },
                   { label: 'Intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions' }) },
                 ] as const
               ).map((link) => (
