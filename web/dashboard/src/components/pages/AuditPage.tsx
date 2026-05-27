@@ -172,6 +172,12 @@ export default function AuditPage() {
         }
       />
 
+      <div className="mb-4">
+        <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="audit-events-link">
+          View events feed →
+        </Link>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="text-left">
           <StatCard title="Total events" value={audit.summary.total_events} color="blue" />

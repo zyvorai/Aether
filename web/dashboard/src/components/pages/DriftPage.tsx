@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -35,6 +35,7 @@ export default function DriftPage() {
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [bulkScan, setBulkScan] = useState<BulkScanState | null>(null);
   const [search, setSearch] = useState('');
+  const [workloadParam, setWorkloadParam] = useQueryParam('workload');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,6 +53,15 @@ export default function DriftPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!workloadParam || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === workloadParam);
+    if (match) {
+      void handleCheckDrift(match.name);
+      setWorkloadParam('');
+    }
+  }, [workloadParam, workloads, setWorkloadParam]);
 
   async function handleCheckDrift(name: string) {
     setCheckLoading(name);
@@ -262,6 +272,7 @@ export default function DriftPage() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
+                      data-testid="drift-reconcile-button"
                       onClick={() => void handleReconcile(driftResult.workload_name)}
                       disabled={reconcileLoading}
                       className="px-4 py-2 bg-aether hover:bg-aether-light disabled:opacity-50 rounded-xl text-sm font-medium text-white"

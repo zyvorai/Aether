@@ -262,7 +262,7 @@ export default function DepsPage() {
               )}
             </div>
 
-            <div className="dash-card">
+            <div className="dash-card" data-testid="deps-issues-panel">
               <h2 className="text-lg font-semibold text-slate-100 mb-4">Issues</h2>
               {graph.issues.length === 0 ? (
                 <div className="flex items-center gap-2">

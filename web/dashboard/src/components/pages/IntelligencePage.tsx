@@ -122,6 +122,7 @@ export default function IntelligencePage() {
     <div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
+      <div data-testid="intelligence-tabs">
       <PageTabs
         tabs={[
           { id: 'predictions', label: 'Predictions', icon: <TrendingUp size={14} /> },
@@ -133,9 +134,10 @@ export default function IntelligencePage() {
         active={tab}
         onChange={(id) => setTab(id as IntelTab)}
       />
+      </div>
 
       {tab === 'predictions' && (
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 mt-4" data-testid="intelligence-predictions-panel">
           {predictions ? (
             <>
               <div className="dash-card flex flex-wrap items-center gap-4">
@@ -261,7 +263,7 @@ export default function IntelligencePage() {
       )}
 
       {tab === 'evolution' && (
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 mt-4" data-testid="intelligence-evolution-panel">
           {evolution && evolution.workloads.length > 0 ? (
             evolution.workloads.map((row) => (
               <div key={row.workload} className="dash-card">
@@ -295,7 +297,7 @@ export default function IntelligencePage() {
       )}
 
       {tab === 'place' && (
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 mt-4" data-testid="intelligence-place-panel">
           <div className="dash-card space-y-3">
             <p className="text-sm text-slate-400">
               POST workload YAML to rank clusters and runtimes for global placement.
@@ -308,6 +310,7 @@ export default function IntelligencePage() {
             />
             <button
               type="button"
+              data-testid="intelligence-place-submit"
               disabled={placeBusy}
               onClick={() => void runPlacement()}
               className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"

@@ -495,7 +495,7 @@ export default function AIPage() {
       )}
 
       {activeTab === 'optimize' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="ai-optimize-panel">
           <div className="dash-card">
             <div className="flex items-center gap-3 mb-4">
               <Target className="text-purple-400" size={20} />

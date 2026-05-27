@@ -403,6 +403,13 @@ export default function CommandPalette({
         view: 'metrics',
       },
       {
+        id: 'action-platform',
+        label: 'Open platform & HA',
+        category: 'action',
+        searchText: 'platform ha opa cilium integrations',
+        view: 'platform',
+      },
+      {
         id: 'action-clusters',
         label: 'Open cluster browser',
         category: 'action',
