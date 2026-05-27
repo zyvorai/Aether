@@ -233,7 +233,7 @@ export default function DepsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="dash-card lg:col-span-2">
+            <div className="dash-card lg:col-span-2" data-testid="deps-graph-panel">
               <h2 className="text-lg font-semibold text-slate-100 mb-4">Dependency graph</h2>
               {(graph.edges?.length ?? 0) > 0 && (graph.nodes?.length ?? 0) > 0 ? (
                 <DependencyGraphVisual

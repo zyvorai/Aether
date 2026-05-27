@@ -161,6 +161,12 @@ export default function IntelligencePage() {
                         >
                           {row.workload}
                         </Link>
+                        <Link
+                          to={pathWithQuery(viewToPath('events'), { workload: row.workload })}
+                          className="text-xs text-slate-500 hover:text-aether"
+                        >
+                          Events →
+                        </Link>
                         <Badge text={row.risk_level} variant={riskVariant(row.risk_level)} />
                       </div>
                       <p className="text-xs text-slate-500 mb-3">Risk score {formatPercent(row.risk_score * 100, 1)}</p>

@@ -130,6 +130,7 @@ export default function PluginsPage() {
         actions={
           <button
             type="button"
+            data-testid="plugins-discover-button"
             onClick={() => void handleDiscover()}
             disabled={discovering}
             className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50"

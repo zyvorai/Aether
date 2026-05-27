@@ -456,6 +456,11 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             { label: 'API explorer', onClick: () => onNavigate('openapi') },
             { label: 'Dependencies', onClick: () => onNavigate('deps') },
             { label: 'Metrics & Grafana', onClick: () => onNavigate('metrics') },
+            { label: 'Health monitor', onClick: () => onNavigate('health') },
+            { label: 'Policy check', onClick: () => onNavigate('policy') },
+            { label: 'Plugins', onClick: () => onNavigate('plugins') },
+            { label: 'Backups', onClick: () => onNavigate('backups') },
+            { label: 'Visual editor', onClick: () => onNavigate('editor') },
             { label: 'Intent violations', onClick: () => goFiltered('events', { category: 'intent-violation' }) },
             { label: 'Discovered workloads', onClick: () => goFiltered('workloads', { source: 'cluster' }) },
           ] as const

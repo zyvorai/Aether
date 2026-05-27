@@ -127,6 +127,7 @@ export default function AuditPage() {
             <div className="flex gap-2">
               <button
                 type="button"
+                data-testid="audit-export-json"
                 onClick={() => downloadExport('json')}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
               >
@@ -135,6 +136,7 @@ export default function AuditPage() {
               </button>
               <button
                 type="button"
+                data-testid="audit-export-csv"
                 onClick={() => downloadExport('csv')}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
               >

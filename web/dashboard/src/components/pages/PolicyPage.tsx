@@ -74,7 +74,7 @@ export default function PolicyPage() {
   }
 
   const policyResultPanel = result ? (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="policy-check-result">
       <div className="flex items-center gap-3">
         <Badge text={result.passed ? 'PASSED' : 'FAILED'} variant={result.passed ? 'green' : 'red'} />
         <span className="text-sm text-slate-400">{result.policies_evaluated} policies evaluated</span>
@@ -190,7 +190,7 @@ export default function PolicyPage() {
           </button>
           {opaError && <p className="mt-2 text-sm text-red-400">{opaError}</p>}
           {opaResult && (
-            <div className="mt-4">
+            <div className="mt-4" data-testid="policy-opa-result">
               <Badge text={opaResult.allowed ? 'ALLOWED' : 'DENIED'} variant={opaResult.allowed ? 'green' : 'red'} />
               {opaResult.denials.length > 0 && (
                 <ul className="mt-3 space-y-2 text-sm text-slate-300">

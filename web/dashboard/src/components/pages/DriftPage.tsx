@@ -207,7 +207,7 @@ export default function DriftPage() {
             {!driftResult ? (
               <p className="text-sm text-zinc-500">Select a workload or run a bulk scan to see drift analysis.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4" data-testid="drift-result-panel">
                 <div className="flex items-center gap-3 flex-wrap">
                   <Badge
                     text={driftResult.has_drift ? 'DRIFT DETECTED' : 'NO DRIFT'}

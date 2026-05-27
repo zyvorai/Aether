@@ -332,6 +332,55 @@ export default function CommandPalette({
         searchText: 'health monitor rolling update liveness',
         view: 'health',
       },
+      {
+        id: 'action-policy',
+        label: 'Open policy check',
+        category: 'action',
+        searchText: 'policy opa admission validate',
+        view: 'policy',
+      },
+      {
+        id: 'action-templates',
+        label: 'Open workload templates',
+        category: 'action',
+        searchText: 'templates library scaffold',
+        view: 'templates',
+      },
+      {
+        id: 'action-gitops',
+        label: 'Open GitOps sync',
+        category: 'action',
+        searchText: 'gitops sync repository reconcile',
+        view: 'gitops',
+      },
+      {
+        id: 'action-envs',
+        label: 'Open environments',
+        category: 'action',
+        searchText: 'environments tiers promote parity',
+        view: 'envs',
+      },
+      {
+        id: 'action-rbac',
+        label: 'Open access control',
+        category: 'action',
+        searchText: 'rbac api keys roles admin',
+        view: 'rbac',
+      },
+      {
+        id: 'action-plugins',
+        label: 'Open plugins',
+        category: 'action',
+        searchText: 'plugins runtime extensions discover',
+        view: 'plugins',
+      },
+      {
+        id: 'action-deps',
+        label: 'Open dependencies graph',
+        category: 'action',
+        searchText: 'dependencies graph startup order',
+        view: 'deps',
+      },
     );
 
     if (onLogout) {
