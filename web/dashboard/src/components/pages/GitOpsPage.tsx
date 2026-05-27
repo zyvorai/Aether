@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, ExternalLink } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { pathWithQuery } from '../../utils/urlState';
@@ -239,7 +239,22 @@ export default function GitOpsPage() {
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <dt className="text-xs uppercase tracking-wider text-slate-500 mb-1">Repository</dt>
-              <dd className="text-slate-200 break-all">{data?.repo_url ?? '—'}</dd>
+              <dd className="text-slate-200 break-all">
+                {data?.repo_url && /^https?:\/\//i.test(data.repo_url) ? (
+                  <a
+                    href={data.repo_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-aether hover:underline"
+                    data-testid="gitops-repo-external-link"
+                  >
+                    {data.repo_url}
+                    <ExternalLink size={14} />
+                  </a>
+                ) : (
+                  data?.repo_url ?? '—'
+                )}
+              </dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wider text-slate-500 mb-1">Branch</dt>

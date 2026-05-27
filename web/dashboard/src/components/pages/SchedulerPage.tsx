@@ -100,7 +100,7 @@ export default function SchedulerPage() {
         )}
       </div>
 
-      <div className="dash-card mb-6">
+      <div className="dash-card mb-6" data-testid="scheduler-placements">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">Current placements</h2>
         {placements.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No placements" description="No scheduler placement records yet" />
@@ -137,10 +137,14 @@ export default function SchedulerPage() {
         )}
       </div>
 
-      <div className="dash-card">
+      <div className="dash-card" data-testid="scheduler-suggestions">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-zinc-100">Optimization Suggestions</h2>
-          <button
+          <div className="flex items-center gap-2">
+            <Link to={viewToPath('affinity')} className="text-xs text-aether hover:underline">
+              Runtime affinity →
+            </Link>
+            <button
             type="button"
             data-testid="scheduler-refresh-optimize"
             onClick={() => void handleRefresh()}
@@ -149,6 +153,7 @@ export default function SchedulerPage() {
           >
             {refreshing ? 'Refreshing…' : 'Refresh suggestions'}
           </button>
+          </div>
         </div>
         {suggestions.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No suggestions" description="No optimization suggestions at this time" />

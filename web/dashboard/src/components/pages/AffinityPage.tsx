@@ -3,7 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { apiFetchSettled } from '../../utils/api';
 import BarChart from '../BarChart';
 import EmptyState from '../EmptyState';
@@ -28,7 +31,12 @@ export default function AffinityPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<'recommend' | 'matrix' | 'stats'>('recommend');
+  type AffinityTab = 'recommend' | 'matrix' | 'stats';
+  const [tabParam, setTabParam] = useQueryParam('tab', 'recommend');
+  const tab: AffinityTab = (['recommend', 'matrix', 'stats'] as const).includes(tabParam as AffinityTab)
+    ? (tabParam as AffinityTab)
+    : 'recommend';
+  const setTab = (next: AffinityTab) => setTabParam(next);
   const [matrix, setMatrix] = useState<Array<{ class: string; runtime: string; compatible: boolean; score: number; deployments: number }>>([]);
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
 
@@ -130,7 +138,14 @@ export default function AffinityPage() {
               {matrix.map((row) => (
                 <tr key={`${row.class}-${row.runtime}`} className="border-b border-slate-800/50">
                   <td className="py-2 px-3">{row.class}</td>
-                  <td className="py-2 px-3">{row.runtime}</td>
+                  <td className="py-2 px-3">
+                    <Link
+                      to={pathWithQuery(viewToPath('ai'), { tab: 'optimize' })}
+                      className="text-aether hover:underline"
+                    >
+                      {row.runtime}
+                    </Link>
+                  </td>
                   <td className="py-2 px-3">{row.compatible ? '✓' : '✗'}</td>
                   <td className="py-2 px-3">{(row.score * 100).toFixed(0)}%</td>
                 </tr>
@@ -151,11 +166,23 @@ export default function AffinityPage() {
           <EmptyState icon={<Inbox size={48} />} title="No affinity data" description="Affinity scores are not available" />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {classes.map(([cls, scores]) => (
+            {classes.map(([cls, scores]) => {
+              const top = [...scores].sort((a, b) => b.composite_score - a.composite_score)[0];
+              return (
               <div key={cls} className="dash-card">
-                <h2 className="text-lg font-semibold text-zinc-100 mb-4 capitalize">
-                  {cls.replace(/-/g, ' ')}
-                </h2>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                  <h2 className="text-lg font-semibold text-zinc-100 capitalize">
+                    {cls.replace(/-/g, ' ')}
+                  </h2>
+                  {top && (
+                    <Link
+                      to={pathWithQuery(viewToPath('scheduler'), {})}
+                      className="text-xs text-aether hover:underline"
+                    >
+                      Scheduler placement →
+                    </Link>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {scores.map((s) => (
                     <div key={s.runtime} className="space-y-1">
@@ -171,8 +198,17 @@ export default function AffinityPage() {
                     </div>
                   ))}
                 </div>
+                {top && (
+                  <Link
+                    to={pathWithQuery(viewToPath('ai'), { tab: 'optimize' })}
+                    className="mt-4 inline-flex text-xs text-aether hover:underline"
+                  >
+                    Compare {top.runtime} in AI engine →
+                  </Link>
+                )}
               </div>
-            ))}
+            );
+            })}
           </div>
         )
       )}

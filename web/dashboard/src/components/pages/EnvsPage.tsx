@@ -3,7 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatTimestamp } from '../../utils/formatters';
@@ -217,7 +220,7 @@ export default function EnvsPage() {
             </button>
           </form>
           {parityResult && (
-            <pre className="mt-3 text-xs text-slate-400 overflow-x-auto max-h-48">{parityResult}</pre>
+            <pre data-testid="envs-parity-result" className="mt-3 text-xs text-slate-400 overflow-x-auto max-h-48">{parityResult}</pre>
           )}
         </div>
       </div>
@@ -301,7 +304,12 @@ export default function EnvsPage() {
                   <ul className="space-y-1 text-sm">
                     {Object.entries(selectedEnvironment.workloads).map(([name, value]) => (
                       <li key={name} className="flex justify-between gap-2 rounded-lg bg-slate-950/60 px-3 py-2 border border-slate-800">
-                        <span className="text-slate-200">{name}</span>
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: name })}
+                          className="text-slate-200 hover:text-aether"
+                        >
+                          {name}
+                        </Link>
                         <span className="text-slate-500 truncate">{String(value)}</span>
                       </li>
                     ))}
@@ -329,7 +337,7 @@ export default function EnvsPage() {
       </Modal>
 
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create environment">
-        <form onSubmit={(e) => void handleCreate(e)} className="space-y-4">
+        <form data-testid="envs-create-modal" onSubmit={(e) => void handleCreate(e)} className="space-y-4">
           <div>
             <label className="block text-xs text-slate-500 mb-1">Name</label>
             <input

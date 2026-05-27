@@ -162,7 +162,7 @@ export default function BackupsPage() {
       )}
 
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create backup">
-        <div className="space-y-4">
+        <div data-testid="backup-create-modal" className="space-y-4">
           <input
             value={backupName}
             onChange={(e) => setBackupName(e.target.value)}

@@ -3,19 +3,18 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { useQueryParam } from '../../utils/urlState';
 import type { Event, EventSummary } from '../../types/api';
 
 export default function EventsPage() {
@@ -27,6 +26,21 @@ export default function EventsPage() {
   const [severity, setSeverity] = useQueryParam('severity', 'all');
   const [category, setCategory] = useQueryParam('category', 'all');
   const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
+  const [, setSearchParams] = useSearchParams();
+
+  const clearFilters = () => {
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        copy.delete('q');
+        copy.delete('severity');
+        copy.delete('category');
+        copy.delete('workload');
+        return copy;
+      },
+      { replace: true },
+    );
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -131,6 +145,16 @@ export default function EventsPage() {
                 </option>
               ))}
             </select>
+            {(search || severity !== 'all' || category !== 'all' || workloadFilter.trim()) && (
+              <button
+                type="button"
+                data-testid="events-clear-filters"
+                onClick={clearFilters}
+                className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-aether hover:border-aether/40"
+              >
+                Clear filters
+              </button>
+            )}
           </>
         }
       />
