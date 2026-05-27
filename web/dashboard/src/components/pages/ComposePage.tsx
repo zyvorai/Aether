@@ -187,7 +187,12 @@ export default function ComposePage() {
                       {result.deploy_order.map((item, index) => (
                         <li key={`${item}-${index}`} className="flex items-center gap-2">
                           <span className="text-aether font-mono text-xs">{index + 1}.</span>
-                          {item}
+                          <Link
+                            to={pathWithQuery(viewToPath('workloads'), { workload: item })}
+                            className="text-aether hover:underline"
+                          >
+                            {item}
+                          </Link>
                         </li>
                       ))}
                     </ol>

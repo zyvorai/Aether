@@ -83,6 +83,7 @@ export default function BackupsPage() {
     setCreateOpen(false);
     setBackupName('');
     setBackupDescription('');
+    toast('Backup created', 'success');
     void load();
   }
 

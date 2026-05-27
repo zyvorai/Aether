@@ -346,7 +346,15 @@ export default function ConfidentialPage() {
             {intel.workloads.map((row) => (
               <div key={row.workload} className="text-sm p-2 rounded border border-zinc-800 bg-zinc-950/50">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-zinc-200">{row.workload}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'trust' }))
+                    }
+                    className="text-zinc-200 hover:text-aether text-left"
+                  >
+                    {row.workload}
+                  </button>
                   <Badge
                     text={row.risk_level}
                     variant={row.risk_level === 'low' ? 'green' : row.risk_level === 'medium' ? 'yellow' : 'red'}

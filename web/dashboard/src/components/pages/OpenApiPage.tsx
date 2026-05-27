@@ -86,6 +86,17 @@ export default function OpenApiPage() {
     }
   }
 
+  function downloadOpenApiJson() {
+    if (!doc) return;
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'aether-openapi.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (loading && !doc && !loadFailed) {
     return <PageLoading rows={6} />;
   }
@@ -133,6 +144,15 @@ export default function OpenApiPage() {
         <p className="text-xs text-slate-500">
           Raw document: <code className="text-aether/90">GET /api/openapi.json</code>
         </p>
+        <button
+          type="button"
+          data-testid="openapi-download-json"
+          onClick={downloadOpenApiJson}
+          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
+        >
+          <Copy size={14} />
+          Download JSON
+        </button>
       </div>
 
       <div className="dash-card overflow-hidden mb-6">

@@ -43,6 +43,7 @@ export default function EnvsPage() {
   const [parityEnv1, setParityEnv1] = useState('');
   const [parityEnv2, setParityEnv2] = useState('');
   const [parityResult, setParityResult] = useState<string | null>(null);
+  const [promoteResult, setPromoteResult] = useState<string | null>(null);
   const [mutating, setMutating] = useState(false);
   const { canMutate } = useAuth();
 
@@ -93,9 +94,11 @@ export default function EnvsPage() {
     });
     setMutating(false);
     if (res.success) {
+      setPromoteResult(`Promoted ${promoteWorkload.trim()} from ${promoteFrom.trim()} → ${promoteTo.trim()}`);
       toast(`Promoted ${promoteWorkload.trim()} from ${promoteFrom.trim()} → ${promoteTo.trim()}`, 'success');
       void load();
     } else {
+      setPromoteResult(res.error ?? 'Promote failed');
       toast(res.error ?? 'Promote failed', 'error');
     }
   }
@@ -176,11 +179,15 @@ export default function EnvsPage() {
             <button
               type="submit"
               disabled={!canMutate || mutating}
+              data-testid="envs-promote-submit"
               className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
             >
               Promote
             </button>
           </form>
+          {promoteResult ? (
+            <p data-testid="envs-promote-result" className="mt-3 text-sm text-slate-400">{promoteResult}</p>
+          ) : null}
         </div>
         <div className="dash-card">
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Environment parity</h3>
@@ -238,8 +245,8 @@ export default function EnvsPage() {
                     <td className="py-3 px-4">
                       <Badge text={env.tier} variant={getTierVariant(env.tier)} />
                     </td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{Object.keys(env.workloads).length}</td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{Object.keys(env.variables).length}</td>
+                    <td className="py-3 px-4 text-sm text-slate-300">{Object.keys(env.workloads ?? {}).length}</td>
+                    <td className="py-3 px-4 text-sm text-slate-300">{Object.keys(env.variables ?? {}).length}</td>
                     <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(env.updated_at)}</td>
                     <td className="py-3 px-4 text-right">
                       <button
