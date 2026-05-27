@@ -168,6 +168,13 @@ export default function DriftPage() {
           {bulkScan.drifted.length > 0 ? (
             <span className="ml-2 text-zinc-500">({bulkScan.drifted.join(', ')})</span>
           ) : null}
+          <button
+            type="button"
+            onClick={() => navigate(viewToPath('gitops'))}
+            className="ml-3 text-xs text-aether hover:underline"
+          >
+            GitOps sync →
+          </button>
         </div>
       ) : null}
 

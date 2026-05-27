@@ -282,7 +282,7 @@ export default function GitOpsPage() {
       </div>
 
       {syncResult && (
-        <div className="dash-card">
+        <div className="dash-card" data-testid="gitops-sync-result">
           <h3 className="text-sm font-semibold text-slate-100 mb-3">Last sync result</h3>
           <p className="text-sm text-slate-300 mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (

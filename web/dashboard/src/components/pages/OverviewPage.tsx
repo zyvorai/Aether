@@ -461,6 +461,9 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             { label: 'Plugins', onClick: () => onNavigate('plugins') },
             { label: 'Backups', onClick: () => onNavigate('backups') },
             { label: 'Visual editor', onClick: () => onNavigate('editor') },
+            { label: 'Workload templates', onClick: () => onNavigate('templates') },
+            { label: 'Access control', onClick: () => onNavigate('rbac') },
+            { label: 'Cluster browser', onClick: () => onNavigate('clusters') },
             { label: 'Intent violations', onClick: () => goFiltered('events', { category: 'intent-violation' }) },
             { label: 'Discovered workloads', onClick: () => goFiltered('workloads', { source: 'cluster' }) },
           ] as const

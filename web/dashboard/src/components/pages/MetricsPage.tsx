@@ -243,6 +243,14 @@ export default function MetricsPage() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
+                data-testid="metrics-fleet-link"
+                onClick={() => navigate(viewToPath('fleet'))}
+                className="text-xs text-aether hover:underline"
+              >
+                Fleet overview →
+              </button>
+              <button
+                type="button"
                 data-testid="metrics-cost-estimator-link"
                 onClick={() => navigate(viewToPath('cost'))}
                 className="text-xs text-aether hover:underline"

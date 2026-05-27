@@ -67,6 +67,16 @@ export default function FleetPage() {
   return (
     <div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+      <div className="mb-4">
+        <button
+          type="button"
+          data-testid="fleet-metrics-link"
+          onClick={() => navigate(viewToPath('metrics'))}
+          className="text-xs text-aether hover:underline"
+        >
+          Metrics &amp; chargeback →
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="Clusters" value={summary?.cluster_count ?? 0} color="blue" icon={<Globe size={18} />} />
