@@ -7,7 +7,6 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ssahani/aether)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/ssahani/aether)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-Proprietary-red)](LICENSE)
 
 One YAML spec. Four runtimes. Production migration between them.
 
