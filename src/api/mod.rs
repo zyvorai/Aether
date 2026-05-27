@@ -14,6 +14,7 @@ mod platform_recommendations;
 mod intelligence_handlers;
 mod copilot_handlers;
 mod confidential_handlers;
+mod ops_handlers;
 
 pub use types::ApiConfig;
 
@@ -22,6 +23,7 @@ use handlers::*;
 use intelligence_handlers::*;
 use copilot_handlers::*;
 use confidential_handlers::*;
+use ops_handlers::*;
 use crate::state::StateStore;
 use axum::{
     body::Body,
@@ -500,6 +502,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/workloads/:name/start", post(start_workload))
         .route("/api/workloads/:name/stop", post(stop_workload))
         .route("/api/workloads/:name/restart", post(restart_workload))
+        .route("/api/workloads/:name/snapshots", get(api_workload_snapshots))
+        .route("/api/workloads/:name/rollback", post(api_workload_rollback))
         .route("/api/workloads/:name/migrate", post(migrate_workload))
         .route("/api/workloads/:name/build", post(build_workload))
         .route("/api/validate", post(validate_workload))
@@ -641,6 +645,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/audit/events", post(api_audit_append))
         .route("/api/templates", get(api_template_list))
         .route("/api/templates/:name", post(api_template_generate))
+        .route("/api/sla", get(api_sla_list).post(api_sla_add))
         .route("/api/sla/:workload", get(api_sla_check))
         .route("/api/events", get(api_events_list))
         .route("/api/events/summary", get(api_events_summary))
@@ -666,21 +671,37 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/cluster/rollout/action", post(api_cluster_rollout_action))
         .route("/api/cluster/helm/history", get(api_cluster_helm_history))
         .route("/api/cluster/helm/action", post(api_cluster_helm_action))
-        .route("/api/environments", get(api_env_list))
+        .route("/api/environments", get(api_env_list).post(api_env_create))
+        .route("/api/environments/promote", post(api_env_promote))
+        .route("/api/environments/parity", get(api_env_parity))
         .route("/api/scheduler/utilization", get(api_scheduler_utilization))
         .route("/api/scheduler/optimize", get(api_scheduler_optimize))
+        .route("/api/scheduler/placements", get(api_scheduler_placements))
         .route("/api/orchestrator/status", get(api_orchestrator_status))
         .route("/api/orchestrator/summary", get(api_orchestrator_summary))
+        .route("/api/orchestrator/register", post(api_orchestrator_register))
+        .route("/api/orchestrator/health-check", post(api_orchestrator_health_check))
+        .route("/api/orchestrator/reset-circuit", post(api_orchestrator_reset_circuit))
+        .route("/api/orchestrator/rolling-update", post(api_orchestrator_rolling_update))
+        .route("/api/affinity/matrix", get(api_affinity_matrix))
+        .route("/api/affinity/stats", get(api_affinity_stats))
         .route("/api/affinity/:class", get(api_affinity_recommend))
         .route("/api/plugins", get(api_plugins_list))
+        .route("/api/plugins/register", post(api_plugins_register))
         .route("/api/plugins/discover", post(api_plugins_discover))
+        .route("/api/plugins/:name", delete(api_plugins_remove))
         .route("/api/health/:workload", get(api_health_summary))
         .route("/api/compose/validate", post(api_compose_validate))
         .route("/api/compose/up", post(api_compose_up))
+        .route("/api/compose/down", post(api_compose_down))
+        .route("/api/helm/export", post(api_helm_export))
         .route("/api/audit/verify", get(api_audit_verify))
         .route("/api/gitops/status", get(api_gitops_status))
+        .route("/api/gitops/init", post(api_gitops_init))
         .route("/api/gitops/sync", post(api_gitops_sync))
         .route("/api/webhooks/test", post(api_webhook_test))
+        .route("/api/webhooks/queue", get(api_webhooks_queue))
+        .route("/api/webhooks/flush", post(api_webhooks_flush))
         .route("/api/webhooks/channels", post(api_webhook_channel_create))
         .route("/api/webhooks/channels/:name", delete(api_webhook_channel_delete))
         .route("/api/dashboard/version", get(api_dashboard_version))

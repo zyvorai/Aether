@@ -29,6 +29,16 @@ export interface EditorWorkloadInput {
   confidentialEncryptedState?: boolean;
   confidentialDebugAllowed?: boolean;
   imageDigest?: string;
+  k8sNamespace?: string;
+  k8sServiceAccount?: string;
+  k8sNodeSelector?: string;
+  scalingEnabled?: boolean;
+  scalingMin?: number;
+  scalingMax?: number;
+  ingressEnabled?: boolean;
+  ingressHost?: string;
+  ingressPath?: string;
+  networkDenyAllIngress?: boolean;
 }
 
 export const DEFAULT_DEPLOY_WORKLOAD_YAML = `apiVersion: aether/v1
@@ -267,6 +277,9 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
     `  owner: ${owner}`,
     `  project: ${project}`,
   ];
+  if (input.k8sNamespace?.trim() && preferred === 'kube') {
+    lines.push(`  namespace: ${input.k8sNamespace.trim()}`);
+  }
   if (input.image.trim() && metadataName !== input.name.trim()) {
     lines.push(`  labels:`);
     lines.push(`    aether.io/display-name: ${input.name.trim()}`);
@@ -287,12 +300,16 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
     ...allow.map((r) => `    - ${r}`),
   );
 
-  if (input.replicas > 1) {
+  if (input.scalingEnabled || input.replicas > 1) {
+    const minR = input.scalingEnabled ? (input.scalingMin ?? 1) : input.replicas;
+    const maxR = input.scalingEnabled
+      ? (input.scalingMax ?? Math.max(minR, input.replicas))
+      : input.replicas;
     lines.push(
       'scaling:',
       '  enabled: true',
-      `  minReplicas: ${input.replicas}`,
-      `  maxReplicas: ${input.replicas}`,
+      `  minReplicas: ${minR}`,
+      `  maxReplicas: ${maxR}`,
     );
   }
 
@@ -308,6 +325,20 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
   }
 
   appendConfidentialBlock(lines, input, preferred, kataPath);
+
+  if (preferred === 'kube' && (input.k8sNamespace?.trim() || input.k8sServiceAccount?.trim() || input.k8sNodeSelector?.trim())) {
+    lines.push('kubernetes:');
+    if (input.k8sServiceAccount?.trim()) {
+      lines.push(`  serviceAccountName: ${input.k8sServiceAccount.trim()}`);
+    }
+    if (input.k8sNodeSelector?.trim()) {
+      const parts = input.k8sNodeSelector.split('=');
+      if (parts.length >= 2) {
+        lines.push('  nodeSelector:');
+        lines.push(`    ${parts[0].trim()}: ${parts.slice(1).join('=').trim()}`);
+      }
+    }
+  }
 
   appendEnvConfig(lines, input.env, `${metadataName}-env`);
 
@@ -331,6 +362,22 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
       '    - containerPort: 80',
       '      servicePort: 80',
       '      protocol: TCP',
+    );
+    if (input.networkDenyAllIngress) {
+      lines.push('  networkPolicy:');
+      lines.push('    denyAllIngress: true');
+    }
+  }
+
+  if (input.ingressEnabled && input.ingressHost?.trim()) {
+    lines.push(
+      'ingress:',
+      '  enabled: true',
+      `  host: ${input.ingressHost.trim()}`,
+      '  paths:',
+      `    - path: ${input.ingressPath?.trim() || '/'}`,
+      '      pathType: Prefix',
+      '      port: 80',
     );
   }
 

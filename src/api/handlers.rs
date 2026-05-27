@@ -46,7 +46,7 @@ fn clamp_page(limit: Option<usize>, offset: Option<usize>, default_limit: usize,
 }
 
 /// Persist workload state to Postgres (if enabled) and the configured JSON file.
-async fn persist_workload_api(app: &AppState, store: &StateStore) -> anyhow::Result<()> {
+pub(crate) async fn persist_workload_api(app: &AppState, store: &StateStore) -> anyhow::Result<()> {
     crate::state_postgres::persist_workload_state(
         app.workload_state_pg.as_ref(),
         &app.state_path,
@@ -1116,6 +1116,33 @@ pub(crate) async fn start_workload(
         StatusCode::OK,
         Json(ApiResponse::success(format!("Workload {} started", name))),
     )
+}
+
+/// Best-effort stop for compose-down and batch operations (returns error message on failure).
+pub(crate) async fn stop_workload_if_exists(
+    app_state: &AppState,
+    name: &str,
+) -> Result<(), String> {
+    let workload = match lookup_workload::<String>(app_state, name).await {
+        Ok(w) => w,
+        Err((_, json)) => {
+            let msg = json.0.error.unwrap_or_else(|| "workload not found".into());
+            if msg.to_lowercase().contains("not found") {
+                return Ok(());
+            }
+            return Err(msg);
+        }
+    };
+
+    let rt = match make_runtime::<String>(&workload.runtime).await {
+        Ok(r) => r,
+        Err((_, json)) => return Err(json.0.error.unwrap_or_else(|| "runtime error".into())),
+    };
+
+    rt.stop(&workload.instance)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 /// POST /api/workloads/:name/stop - Stop a workload

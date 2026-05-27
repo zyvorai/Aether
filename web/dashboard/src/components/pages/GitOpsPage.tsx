@@ -64,6 +64,10 @@ export default function GitOpsPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncConfirmOpen, setSyncConfirmOpen] = useState(false);
+  const [initRepo, setInitRepo] = useState('');
+  const [initBranch, setInitBranch] = useState('main');
+  const [initializing, setInitializing] = useState(false);
+  const [initMessage, setInitMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,6 +85,24 @@ export default function GitOpsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const initGitOps = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initRepo.trim()) return;
+    setInitializing(true);
+    setInitMessage(null);
+    const res = await apiPost<{ repo_url?: string; repo_dir?: string }>('/gitops/init', {
+      repo: initRepo.trim(),
+      branch: initBranch.trim() || 'main',
+    });
+    setInitializing(false);
+    if (res.success) {
+      setInitMessage(`Initialized ${res.data?.repo_url ?? initRepo}`);
+      void load();
+    } else {
+      setInitMessage(res.error ?? 'Init failed');
+    }
+  };
 
   const sync = async () => {
     setSyncing(true);
@@ -132,10 +154,42 @@ export default function GitOpsPage() {
         {loading ? (
           <p className="text-sm text-slate-500">Loading gitops status…</p>
         ) : data?.configured === false ? (
-          <p className="text-sm text-slate-400 leading-relaxed">
-            {data.hint ?? 'Not configured.'} On the server run:{' '}
-            <code className="text-aether/90">aether git-ops init --repo &lt;URL&gt;</code>
-          </p>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-400 leading-relaxed">
+              {data.hint ?? 'GitOps is not configured on this server.'}
+            </p>
+            <form onSubmit={(e) => void initGitOps(e)} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-slate-500 mb-1">Repository URL</label>
+                <input
+                  type="url"
+                  value={initRepo}
+                  onChange={(e) => setInitRepo(e.target.value)}
+                  placeholder="https://github.com/org/aether-workloads.git"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Branch</label>
+                <input
+                  type="text"
+                  value={initBranch}
+                  onChange={(e) => setInitBranch(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  disabled={initializing || !initRepo.trim()}
+                  className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether hover:bg-aether/30 disabled:opacity-50"
+                >
+                  {initializing ? 'Initializing…' : 'Initialize GitOps'}
+                </button>
+              </div>
+            </form>
+            {initMessage && <p className="text-sm text-slate-400">{initMessage}</p>}
+          </div>
         ) : (
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>

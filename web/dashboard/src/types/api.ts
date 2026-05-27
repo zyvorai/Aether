@@ -704,7 +704,8 @@ export type AppView =
   | 'editor'
   | 'confidential'
   | 'intelligence'
-  | 'fleet';
+  | 'fleet'
+  | 'openapi';
 
 // ─── Intelligence layer ────────────────────────────────────────────
 export interface FailureSignal {
