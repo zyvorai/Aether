@@ -1032,6 +1032,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             showValidateButton
             onValidate={handleDeployValidate}
             validateLoading={deployInlineValidateLoading}
+            submitTestId="workloads-deploy-submit"
             placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
             header={
               <div className="shrink-0 rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">

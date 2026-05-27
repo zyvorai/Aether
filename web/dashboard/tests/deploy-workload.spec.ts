@@ -19,7 +19,7 @@ async function yamlText(dialog: Locator) {
 }
 
 async function clickDeploySubmit(dialog: Locator) {
-  const submit = dialog.getByTestId('yaml-submit');
+  const submit = dialog.getByTestId('workloads-deploy-submit');
   await submit.scrollIntoViewIfNeeded();
   await submit.click({ force: true });
 }

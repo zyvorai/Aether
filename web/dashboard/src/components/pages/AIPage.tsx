@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Cpu, Search, Target, TrendingUp, Zap } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -263,6 +263,7 @@ const AI_TABS = [
 ];
 
 export default function AIPage() {
+  const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [workloadsLoading, setWorkloadsLoading] = useState(true);
   const [workloadsLoadFailed, setWorkloadsLoadFailed] = useState(false);
@@ -412,6 +413,22 @@ export default function AIPage() {
 
   return (
     <div>
+      {workloadQuery.trim() ? (
+        <div
+          data-testid="ai-workload-context"
+          className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          AI context for workload <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="dash-card py-4">
           <div className="text-xs text-slate-500 uppercase tracking-wider">Workloads</div>
