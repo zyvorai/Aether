@@ -86,10 +86,13 @@ pkg_remote_phase "Assemble customer bundle"
 pkg_remote_kv "Output" "${OUT_DIR}/${ARTIFACT}"
 ssh "${REMOTE}" bash -s <<REMOTE_PACK
 set -euo pipefail
-STAGE='${OUT_DIR}/${ARTIFACT}'
+OUT_DIR='${OUT_DIR}'
+BUILD_DIR='${BUILD_DIR}'
+ARTIFACT='${ARTIFACT}'
+STAGE="\${OUT_DIR}/\${ARTIFACT}"
 rm -rf "\${STAGE}" && mkdir -p "\${STAGE}"
-cp '${BUILD_DIR}/target/release/aether' "\${STAGE}/" && chmod +x "\${STAGE}/aether"
-LIB='${BUILD_DIR}/scripts/lib'
+cp "\${BUILD_DIR}/target/release/aether" "\${STAGE}/" && chmod +x "\${STAGE}/aether"
+LIB="\${BUILD_DIR}/scripts/lib"
 cp "\${LIB}/package-install.sh" "\${STAGE}/install.sh"
 cp "\${LIB}/package-client-install.sh" "\${STAGE}/install-client-deps.sh"
 cp "\${LIB}/package-client-test.sh" "\${STAGE}/test-package.sh"
@@ -141,7 +144,7 @@ cp "\${BUILD_DIR}/scripts/lib/aether-confidential-smoke.sh" "\${STAGE}/scripts/l
 chmod +x "\${STAGE}/scripts/lib/aether-confidential-smoke.sh" 2>/dev/null || true
 cp -a "\${BUILD_DIR}/charts/zyvor-confidential-kata" "\${STAGE}/charts/" 2>/dev/null || true
 cp -a "\${BUILD_DIR}/deploy/confidential" "\${STAGE}/deploy/" 2>/dev/null || true
-cp '${BUILD_DIR}/scripts/zyvor-branding/ZYVOR_INSTALL.txt' "\${STAGE}/ZYVOR_INSTALL.txt" 2>/dev/null || true
+cp "\${BUILD_DIR}/scripts/zyvor-branding/ZYVOR_INSTALL.txt" "\${STAGE}/ZYVOR_INSTALL.txt" 2>/dev/null || true
 
 cat > "\${STAGE}/README.txt" <<README
 Aether ${VERSION} — client bundle
@@ -150,11 +153,11 @@ install.sh, uninstall.sh | aether binary includes embedded dashboard
 README
 
 chmod +x "\${LIB}/finalize-customer-bundle.sh"
-"\${LIB}/finalize-customer-bundle.sh" "\${STAGE}" '${BUILD_DIR}' "Aether" "${VERSION}"
+"\${LIB}/finalize-customer-bundle.sh" "\${STAGE}" "\${BUILD_DIR}" "Aether" "${VERSION}"
 for req in LICENSE LEGAL-INDEX.txt HELP.txt START_HERE.txt OPEN_FIRST.txt docs/welcome.html docs/pdf/WELCOME.pdf install.sh uninstall.sh README.txt QUICKSTART.txt aether; do
   test -e "\${STAGE}/\${req}" || { echo "ERROR: missing \${STAGE}/\${req}" >&2; exit 1; }
 done
-cd '${OUT_DIR}' && tar czf '${ARTIFACT}.tar.gz' '${ARTIFACT}' && sha256sum '${ARTIFACT}.tar.gz' | tee '${ARTIFACT}.tar.gz.sha256'
+cd "\${OUT_DIR}" && tar czf "\${ARTIFACT}.tar.gz" "\${ARTIFACT}" && sha256sum "\${ARTIFACT}.tar.gz" | tee "\${ARTIFACT}.tar.gz.sha256"
 REMOTE_PACK
 
 TARBALL="${ARTIFACT}.tar.gz"
