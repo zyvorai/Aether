@@ -173,7 +173,7 @@ export default function AffinityPage() {
         classes.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No affinity data" description="Affinity scores are not available" />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-min" data-testid="affinity-recommend-panel">
             {classes.map(([cls, scores]) => {
               const top = [...scores].sort((a, b) => b.composite_score - a.composite_score)[0];
               return (

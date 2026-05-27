@@ -314,7 +314,7 @@ export default function MetricsPage() {
       )}
 
       {(grafanaUrl || prometheusUrl) && (
-        <div className="dash-card mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="dash-card mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
           <p className="text-sm text-slate-400">External observability stack linked to this API.</p>
           <div className="flex flex-wrap gap-3">
             {grafanaUrl && (

@@ -190,7 +190,7 @@ export default function GitOpsPage() {
         }
       />
 
-      <div className="dash-card">
+      <div className="dash-card" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
           <GitBranch className="w-5 h-5 text-aether" />
           <h2 className="text-lg font-semibold text-slate-100">GitOps reconciliation</h2>

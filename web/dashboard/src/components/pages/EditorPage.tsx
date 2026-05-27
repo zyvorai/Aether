@@ -507,6 +507,7 @@ export default function EditorPage() {
             ) : null}
             <button
               type="button"
+              data-testid="editor-export-helm"
               onClick={() => void handleHelmExport()}
               disabled={exporting}
               className="flex items-center gap-2 px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-sm text-slate-300 disabled:opacity-50"
@@ -515,6 +516,7 @@ export default function EditorPage() {
             </button>
             <button
               type="button"
+              data-testid="editor-reset-button"
               onClick={() => {
                 setForm(defaultForm);
                 setResult(null);

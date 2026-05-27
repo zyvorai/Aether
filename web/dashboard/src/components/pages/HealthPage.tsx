@@ -43,6 +43,7 @@ export default function HealthPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useQueryParam('status', 'all');
+  const [workloadParam, setWorkloadParam] = useQueryParam('workload');
   const [selected, setSelected] = useState<{ workload: ManagedWorkload; history: HealthHistorySummary } | null>(null);
   const [historyLoading, setHistoryLoading] = useState<string | null>(null);
   const [orchBusy, setOrchBusy] = useState<string | null>(null);
@@ -74,6 +75,15 @@ export default function HealthPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!workloadParam || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === workloadParam);
+    if (match) {
+      void handleRowClick(match);
+      setWorkloadParam('');
+    }
+  }, [workloadParam, workloads, setWorkloadParam]);
 
   async function handleRowClick(w: ManagedWorkload) {
     if (selected?.workload.name === w.name) {
