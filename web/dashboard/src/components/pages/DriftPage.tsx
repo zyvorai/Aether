@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
@@ -35,7 +35,9 @@ export default function DriftPage() {
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [bulkScan, setBulkScan] = useState<BulkScanState | null>(null);
   const [search, setSearch] = useQueryParam('q');
-  const [workloadParam, setWorkloadParam] = useQueryParam('workload');
+  const [workloadParam] = useQueryParam('workload');
+  const scannedWorkloadRef = useRef<string | null>(null);
+  const workloadFocus = workloadParam.trim() || undefined;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,13 +57,13 @@ export default function DriftPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!workloadParam || workloads.length === 0) return;
-    const match = workloads.find((w) => w.name === workloadParam);
-    if (match) {
+    if (!workloadFocus || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === workloadFocus);
+    if (match && scannedWorkloadRef.current !== workloadFocus) {
+      scannedWorkloadRef.current = workloadFocus;
       void handleCheckDrift(match.name);
-      setWorkloadParam('');
     }
-  }, [workloadParam, workloads, setWorkloadParam]);
+  }, [workloadFocus, workloads]);
 
   async function handleCheckDrift(name: string) {
     setCheckLoading(name);
@@ -173,6 +175,34 @@ export default function DriftPage() {
         }
       />
 
+      <div className="mb-4">
+        <button
+          type="button"
+          data-testid="drift-events-link"
+          onClick={() => navigate(pathWithQuery(viewToPath('events'), { category: 'drift' }))}
+          className="text-xs text-aether hover:underline"
+        >
+          Drift events →
+        </button>
+      </div>
+
+      {workloadFocus ? (
+        <div
+          data-testid="drift-workload-context"
+          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Drift context for workload <span className="font-mono text-aether">{workloadFocus}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
+
       {bulkScan && !bulkScan.scanning ? (
         <div data-testid="drift-bulk-summary" className="dash-card mb-6 text-sm text-zinc-300">
           Scanned {bulkScan.total} workload(s) — {bulkScan.drifted.length} with drift
@@ -203,12 +233,15 @@ export default function DriftPage() {
                   type="button"
                   onClick={() => void handleCheckDrift(w.name)}
                   disabled={checkLoading === w.name}
+                  data-testid={workloadFocus === w.name ? 'drift-workload-highlight' : undefined}
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 ${
                     driftResult?.workload_name === w.name
                       ? 'border-aether/50 bg-aether/10 text-aether'
-                      : bulkScan?.drifted.includes(w.name)
-                        ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                        : 'border-zinc-700 bg-zinc-950/60 text-zinc-200 hover:bg-zinc-800/80'
+                      : workloadFocus === w.name
+                        ? 'border-aether/60 ring-1 ring-aether/30 bg-aether/5 text-aether'
+                        : bulkScan?.drifted.includes(w.name)
+                          ? 'border-red-500/40 bg-red-500/10 text-red-300'
+                          : 'border-zinc-700 bg-zinc-950/60 text-zinc-200 hover:bg-zinc-800/80'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}

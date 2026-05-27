@@ -452,6 +452,27 @@ export default function CommandPalette({
         view: 'compose',
       },
       {
+        id: 'action-audit-failures',
+        label: 'Open audit failures',
+        category: 'action',
+        searchText: 'audit failures errors trail',
+        run: () => navigate(pathWithQuery(viewToPath('audit'), { result: 'failure' })),
+      },
+      {
+        id: 'action-clusters-network',
+        label: 'Browse cluster network policies',
+        category: 'action',
+        searchText: 'clusters network policies cilium browse',
+        run: () => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' })),
+      },
+      {
+        id: 'action-events-health',
+        label: 'Open health events',
+        category: 'action',
+        searchText: 'events health monitor alerts',
+        run: () => navigate(pathWithQuery(viewToPath('events'), { category: 'health' })),
+      },
+      {
         id: 'action-deps',
         label: 'Open dependencies graph',
         category: 'action',

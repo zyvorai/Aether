@@ -8,7 +8,7 @@ import { apiFetch, apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { useNavigate, Link } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import Modal from '../Modal';
@@ -155,6 +155,22 @@ export default function SecretsPage() {
           Confidential computing →
         </button>
       </p>
+      {search.trim() ? (
+        <div
+          data-testid="secrets-workload-context"
+          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Secrets filter <span className="font-mono text-aether">{search.trim()}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: search.trim() }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
