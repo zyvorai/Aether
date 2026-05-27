@@ -151,7 +151,7 @@ README
 
 chmod +x "\${LIB}/finalize-customer-bundle.sh"
 "\${LIB}/finalize-customer-bundle.sh" "\${STAGE}" '${BUILD_DIR}' "Aether" "${VERSION}"
-for req in HELP.txt START_HERE.txt OPEN_FIRST.txt docs/welcome.html docs/pdf/WELCOME.pdf install.sh uninstall.sh README.txt QUICKSTART.txt aether; do
+for req in LICENSE LEGAL-INDEX.txt HELP.txt START_HERE.txt OPEN_FIRST.txt docs/welcome.html docs/pdf/WELCOME.pdf install.sh uninstall.sh README.txt QUICKSTART.txt aether; do
   test -e "\${STAGE}/\${req}" || { echo "ERROR: missing \${STAGE}/\${req}" >&2; exit 1; }
 done
 cd '${OUT_DIR}' && tar czf '${ARTIFACT}.tar.gz' '${ARTIFACT}' && sha256sum '${ARTIFACT}.tar.gz' | tee '${ARTIFACT}.tar.gz.sha256'
