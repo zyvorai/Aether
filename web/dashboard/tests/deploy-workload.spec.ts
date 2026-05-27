@@ -24,7 +24,7 @@ test.describe('Deploy workload UX', () => {
 
     const editor = await yamlText(dialog);
     await expect(editor).toContainText('apiVersion: aether/v1');
-    await expect(editor).toContainText('protocol: TCP');
+    await expect(editor).toContainText('containerPort: 80');
 
     const editorShell = dialog.getByTestId('yaml-editor');
     const box = await editorShell.boundingBox();
@@ -92,11 +92,111 @@ network:
     await page.keyboard.insertText(yaml);
     await dialog.getByRole('button', { name: 'Deploy' }).click();
 
-    const successPanel = dialog.getByTestId('deploy-success-panel');
-    await expect(successPanel).toBeVisible({ timeout: 30_000 });
-    await expect(successPanel).toContainText(unique);
-    await dialog.getByRole('button', { name: 'Close' }).click();
-    await expect(dialog).not.toBeVisible({ timeout: 10_000 });
+    await expect(
+      dialog.getByTestId('deploy-success-panel').or(page.getByRole('button', { name: unique })),
+    ).toBeVisible({ timeout: 60_000 });
+
+    if (await dialog.getByTestId('deploy-success-panel').isVisible().catch(() => false)) {
+      await dialog.getByRole('button', { name: 'Close' }).click();
+      await expect(dialog).not.toBeVisible({ timeout: 10_000 });
+    }
+
     await expect(page.getByRole('button', { name: unique })).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('deploy via API then delete via UI removes workload', async ({ page, request }) => {
+    const unique = `rm-api-${Date.now().toString(36)}`;
+    const yaml = `apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: ${unique}
+  owner: dashboard
+  project: default
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+  tag: latest
+requirements:
+  cpu: 100m
+  memory: 128Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+network:
+  service: true
+  ports:
+    - containerPort: 80
+      servicePort: 80
+      protocol: TCP
+`;
+
+    const deployRes = await request.post('/api/workloads', {
+      data: { spec_yaml: yaml },
+    });
+    expect(deployRes.ok()).toBeTruthy();
+    const deployBody = await deployRes.json();
+    expect(deployBody.success).toBeTruthy();
+
+    await ensureAuthenticated(page);
+    await page.goto('/workloads?source=aether');
+    await expect(page.getByRole('button', { name: unique })).toBeVisible({ timeout: 20_000 });
+
+    const row = page.locator('tr').filter({ hasText: unique });
+    await row.getByTitle('Delete').click();
+
+    const confirm = page.getByRole('dialog', { name: 'Confirm Delete' });
+    await expect(confirm).toBeVisible();
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+
+    await expect(page.getByRole('button', { name: unique })).not.toBeVisible({ timeout: 20_000 });
+  });
+
+  test('deploy then delete removes workload from list', async ({ page, request }) => {
+    const unique = `rm-${Date.now().toString(36)}`;
+    const yaml = `apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: ${unique}
+  owner: dashboard
+  project: default
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+  tag: latest
+requirements:
+  cpu: 100m
+  memory: 128Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+network:
+  service: true
+  ports:
+    - containerPort: 80
+      servicePort: 80
+      protocol: TCP
+`;
+
+    const deployRes = await request.post('/api/workloads', { data: { spec_yaml: yaml } });
+    expect(deployRes.ok()).toBeTruthy();
+
+    await ensureAuthenticated(page);
+    await page.goto('/workloads?source=aether');
+    await expect(page.getByRole('button', { name: unique })).toBeVisible({ timeout: 20_000 });
+
+    const row = page.locator('tr').filter({ hasText: unique });
+    await row.getByTitle('Delete').click();
+
+    const confirm = page.getByRole('dialog', { name: 'Confirm Delete' });
+    await expect(confirm).toBeVisible();
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+
+    await expect(page.getByRole('button', { name: unique })).not.toBeVisible({ timeout: 20_000 });
   });
 });

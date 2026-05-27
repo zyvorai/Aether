@@ -73,6 +73,10 @@ confidential-cluster-e2e: release
 	@chmod +x scripts/confidential-cluster-e2e.sh 2>/dev/null || true
 	@./scripts/confidential-cluster-e2e.sh
 
+deploy-remove-e2e:
+	@chmod +x scripts/deploy-remove-e2e.sh 2>/dev/null || true
+	@./scripts/deploy-remove-e2e.sh
+
 reference-cluster-e2e: release
 	@chmod +x scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh scripts/confidential-cluster-e2e.sh 2>/dev/null || true
 	@./scripts/reference-cluster-e2e.sh
