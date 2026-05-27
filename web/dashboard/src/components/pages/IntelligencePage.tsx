@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { AlertTriangle, Brain, DollarSign, Inbox, MapPin, Sparkles, TrendingUp } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatPercent, formatUSD } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
@@ -55,7 +55,13 @@ function riskVariant(level: string): 'green' | 'yellow' | 'red' | 'muted' {
 }
 
 export default function IntelligencePage() {
-  const [tab, setTab] = useState<IntelTab>('predictions');
+  const [tabParam, setTabParam] = useQueryParam('tab', 'predictions');
+  const tab: IntelTab = (
+    ['predictions', 'threats', 'cost', 'evolution', 'place'] as const
+  ).includes(tabParam as IntelTab)
+    ? (tabParam as IntelTab)
+    : 'predictions';
+  const setTab = (next: IntelTab) => setTabParam(next);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [predictions, setPredictions] = useState<PredictionReport | null>(null);

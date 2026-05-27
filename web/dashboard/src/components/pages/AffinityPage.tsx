@@ -102,7 +102,7 @@ export default function AffinityPage() {
     <div>
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6" data-testid="affinity-tabs">
         {(['recommend', 'matrix', 'stats'] as const).map((t) => (
           <button
             key={t}

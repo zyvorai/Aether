@@ -3,11 +3,12 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import EmptyState from '../EmptyState';
 import SpecWorkbench from '../SpecWorkbench';
 import type { CostEstimate } from '../../types/api';
@@ -122,6 +123,12 @@ export default function CostPage() {
             >
               Full report on Metrics →
             </button>
+            <Link
+              to={pathWithQuery(viewToPath('intelligence'), { tab: 'cost' })}
+              className="text-xs text-aether hover:underline"
+            >
+              Cost optimize →
+            </Link>
           </div>
           <p className="text-sm text-zinc-400">
             {chargeback.pricingSource} · {chargeback.region} · fleet {formatUSD(chargeback.totalMonthlyUsd)}/mo

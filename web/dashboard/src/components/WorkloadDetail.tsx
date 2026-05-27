@@ -134,6 +134,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   const [linkCopied, setLinkCopied] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ version: number; path: string }>>([]);
   const [snapshotsLoading, setSnapshotsLoading] = useState(false);
+  const [buildResult, setBuildResult] = useState<string | null>(null);
 
   async function copyShareLink() {
     const params: Record<string, string> = { workload: workload.name };
@@ -276,8 +277,15 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
         else if (action === 'start') await apiPost(`/workloads/${workload.name}/start`);
         else if (action === 'restart') {
           await apiPost(`/workloads/${workload.name}/restart`);
-        } else if (action === 'rollback') {
+        }         else if (action === 'rollback') {
           await apiPost(`/workloads/${workload.name}/rollback`, {});
+        } else if (action === 'build') {
+          const res = await apiPost<{ full_name?: string; message?: string }>(`/workloads/${workload.name}/build`);
+          if (res.success) {
+            setBuildResult(res.data?.full_name ?? res.data?.message ?? 'Build completed');
+          } else {
+            setBuildResult(res.error ?? 'Build failed');
+          }
         } else if (action === 'delete') {
           await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
           onClose();
@@ -383,7 +391,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 >
                   Shell
                 </button>
-                {['start', 'stop', 'restart', 'rollback', 'delete'].map(action => (
+                {['start', 'stop', 'restart', 'build', 'rollback', 'delete'].map(action => (
                   <button
                     key={action}
                     onClick={() => handleAction(action)}
@@ -407,6 +415,11 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   >
                     Migrate
                   </button>
+                ) : null}
+                {buildResult ? (
+                  <p data-testid="workload-build-result" className="w-full text-xs text-zinc-400 mt-1">
+                    Build: {buildResult}
+                  </p>
                 ) : null}
               </div>
             ) : (
