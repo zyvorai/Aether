@@ -407,7 +407,7 @@ export default function CommandPalette({
         label: 'Open AI intent debugger',
         category: 'action',
         searchText: 'intent debugger violations scoring ai',
-        run: () => navigate(pathWithQuery(viewToPath('ai'), { tab: 'recommend' })),
+        run: () => navigate(pathWithQuery(viewToPath('ai'), { tab: 'analyze' })),
       },
       {
         id: 'action-sla',
@@ -436,6 +436,20 @@ export default function CommandPalette({
         category: 'action',
         searchText: 'clusters kubernetes browse namespaces network',
         view: 'clusters',
+      },
+      {
+        id: 'action-clusters-pods',
+        label: 'Browse cluster pods',
+        category: 'action',
+        searchText: 'clusters pods browse kubernetes',
+        run: () => navigate(pathWithQuery(viewToPath('clusters'), { kind: 'Pod' })),
+      },
+      {
+        id: 'action-compose-validate',
+        label: 'Validate compose stack',
+        category: 'action',
+        searchText: 'compose validate import stack yaml',
+        view: 'compose',
       },
       {
         id: 'action-deps',

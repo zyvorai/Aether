@@ -11,13 +11,14 @@ interface Props {
   nodes: string[];
   edges: Edge[];
   onNodeClick?: (name: string) => void;
+  highlightWorkload?: string;
 }
 
 const W = 520;
 const H = 280;
 const R = 22;
 
-export default function DependencyGraphVisual({ nodes, edges, onNodeClick }: Props) {
+export default function DependencyGraphVisual({ nodes, edges, onNodeClick, highlightWorkload }: Props) {
   if (nodes.length === 0) {
     return <p className="text-sm text-slate-500">No dependency nodes.</p>;
   }
@@ -59,9 +60,11 @@ export default function DependencyGraphVisual({ nodes, edges, onNodeClick }: Pro
       })}
       {nodes.map((name) => {
         const p = positions.get(name)!;
+        const highlighted = highlightWorkload === name;
         return (
           <g
             key={name}
+            data-testid={highlighted ? 'deps-workload-highlight' : undefined}
             onClick={() => onNodeClick?.(name)}
             className={onNodeClick ? 'cursor-pointer' : undefined}
             role={onNodeClick ? 'button' : undefined}
@@ -74,7 +77,14 @@ export default function DependencyGraphVisual({ nodes, edges, onNodeClick }: Pro
                 : undefined
             }
           >
-            <circle cx={p.x} cy={p.y} r={R} fill="rgb(15 23 42)" stroke="rgb(211 84 0 / 0.6)" strokeWidth={2} />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={R}
+              fill="rgb(15 23 42)"
+              stroke={highlighted ? 'rgb(211 84 0)' : 'rgb(211 84 0 / 0.6)'}
+              strokeWidth={highlighted ? 3 : 2}
+            />
             <text
               x={p.x}
               y={p.y + 36}

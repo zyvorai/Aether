@@ -70,6 +70,7 @@ export default function ConfidentialPage() {
   const [kata, setKata] = useState<KataStatus | null>(null);
   const [intel, setIntel] = useState<ConfidentialFleetAnalysis | null>(null);
   const [search, setSearch] = useQueryParam('q');
+  const [workloadQuery] = useQueryParam('workload', '');
   const [verifyDigest, setVerifyDigest] = useState('');
   const [verifyName, setVerifyName] = useState('');
   const [verifyPath, setVerifyPath] = useState('');
@@ -177,11 +178,17 @@ export default function ConfidentialPage() {
     ? integration.remote_url.replace(/\/api\/?$/, '')
     : null;
 
-  const filteredFleet = fleet.filter((row) =>
-    row.workload.toLowerCase().includes(search.toLowerCase())
-    || row.runtime.toLowerCase().includes(search.toLowerCase())
-    || row.tee.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredFleet = fleet.filter((row) => {
+    const q = search.toLowerCase();
+    const workloadFocus = workloadQuery.trim().toLowerCase();
+    if (workloadFocus && row.workload.toLowerCase() !== workloadFocus) return false;
+    if (!q) return true;
+    return (
+      row.workload.toLowerCase().includes(q)
+      || row.runtime.toLowerCase().includes(q)
+      || row.tee.toLowerCase().includes(q)
+    );
+  });
 
   if (loading && !caps && !loadFailed) {
     return <PageLoading rows={5} />;
@@ -208,6 +215,24 @@ export default function ConfidentialPage() {
         onRefresh={() => void load()}
         refreshing={loading}
       />
+
+      {workloadQuery.trim() ? (
+        <div
+          data-testid="confidential-workload-context"
+          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Confidential context for workload{' '}
+          <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="dash-card lg:col-span-2">
@@ -431,7 +456,12 @@ export default function ConfidentialPage() {
                       }),
                     )
                   }
-                  className="w-full text-left p-3 rounded-lg border border-zinc-700 hover:border-aether/40 bg-zinc-900/50 transition-colors"
+                  className={`w-full text-left p-3 rounded-lg border bg-zinc-900/50 transition-colors ${
+                    workloadQuery.trim() === row.workload
+                      ? 'border-aether/60 ring-1 ring-aether/30'
+                      : 'border-zinc-700 hover:border-aether/40'
+                  }`}
+                  data-testid={workloadQuery.trim() === row.workload ? 'confidential-workload-highlight' : undefined}
                 >
                   <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
                     <span className="font-medium text-zinc-100">{row.workload}</span>

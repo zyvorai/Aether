@@ -482,30 +482,34 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
             <div className="mt-4 flex flex-wrap gap-2" data-testid="workload-quick-links">
               {(
                 [
-                  { label: 'AI analysis', path: pathWithQuery(viewToPath('ai'), { workload: workload.name, tab: 'analyze' }) },
-                  { label: 'Scoring', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'scoring' }) },
-                  { label: 'Drift', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'drift' }) },
-                  { label: 'Events', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'events' }) },
-                  { label: 'Editor', path: pathWithQuery(viewToPath('editor'), { workload: workload.name }) },
-                  { label: 'Health monitor', path: pathWithQuery(viewToPath('health'), { workload: workload.name }) },
-                  { label: 'Confidential', path: pathWithQuery(viewToPath('confidential'), { workload: workload.name }) },
-                  { label: 'Backups', path: viewToPath('backups') },
-                  { label: 'Secrets', path: viewToPath('secrets') },
-                  { label: 'GitOps', path: viewToPath('gitops') },
-                  { label: 'Policy', path: viewToPath('policy') },
-                  { label: 'Metrics', path: pathWithQuery(viewToPath('metrics'), { q: workload.name }) },
-                  { label: 'SLA', path: pathWithQuery(viewToPath('sla'), { q: workload.name }) },
-                  { label: 'Deps', path: viewToPath('deps') },
-                  { label: 'Templates', path: viewToPath('templates') },
-                  { label: 'Alerts', path: viewToPath('alerts') },
-                  { label: 'Scheduler', path: pathWithQuery(viewToPath('scheduler'), { workload: workload.name }) },
-                  { label: 'Cost', path: pathWithQuery(viewToPath('cost'), { workload: workload.name }) },
-                  { label: 'Intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions' }) },
+                  { label: 'AI analysis', slug: 'ai', path: pathWithQuery(viewToPath('ai'), { workload: workload.name, tab: 'analyze' }) },
+                  { label: 'Scoring', slug: 'scoring', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'scoring' }) },
+                  { label: 'Drift', slug: 'drift', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'drift' }) },
+                  { label: 'Events', slug: 'events', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'events' }) },
+                  { label: 'Editor', slug: 'editor', path: pathWithQuery(viewToPath('editor'), { workload: workload.name }) },
+                  { label: 'Health monitor', slug: 'health', path: pathWithQuery(viewToPath('health'), { workload: workload.name }) },
+                  { label: 'Confidential', slug: 'confidential', path: pathWithQuery(viewToPath('confidential'), { workload: workload.name }) },
+                  { label: 'Backups', slug: 'backups', path: viewToPath('backups') },
+                  { label: 'Secrets', slug: 'secrets', path: viewToPath('secrets') },
+                  { label: 'GitOps', slug: 'gitops', path: viewToPath('gitops') },
+                  { label: 'Policy', slug: 'policy', path: viewToPath('policy') },
+                  { label: 'Metrics', slug: 'metrics', path: pathWithQuery(viewToPath('metrics'), { q: workload.name }) },
+                  { label: 'SLA', slug: 'sla', path: pathWithQuery(viewToPath('sla'), { q: workload.name }) },
+                  { label: 'Deps', slug: 'deps', path: pathWithQuery(viewToPath('deps'), { workload: workload.name }) },
+                  { label: 'Templates', slug: 'templates', path: viewToPath('templates') },
+                  { label: 'Alerts', slug: 'alerts', path: viewToPath('alerts') },
+                  { label: 'Scheduler', slug: 'scheduler', path: pathWithQuery(viewToPath('scheduler'), { workload: workload.name }) },
+                  { label: 'Cost', slug: 'cost', path: pathWithQuery(viewToPath('cost'), { workload: workload.name }) },
+                  { label: 'Fleet', slug: 'fleet', path: viewToPath('fleet') },
+                  { label: 'Affinity', slug: 'affinity', path: viewToPath('affinity') },
+                  { label: 'Envs', slug: 'envs', path: viewToPath('envs') },
+                  { label: 'Intelligence', slug: 'intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions' }) },
                 ] as const
               ).map((link) => (
                 <a
                   key={link.label}
                   href={link.path}
+                  data-testid={`workload-link-${link.slug}`}
                   className="rounded-lg border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 hover:border-aether/40 hover:text-aether transition-colors"
                 >
                   {link.label}

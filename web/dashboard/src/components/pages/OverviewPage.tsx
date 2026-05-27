@@ -76,6 +76,23 @@ const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   apiKeys: 'API keys',
 };
 
+function overviewQuickLinkTestId(label: string): string | undefined {
+  switch (label) {
+    case 'Drift detection':
+      return 'overview-drift-quick-link';
+    case 'SLA compliance':
+      return 'overview-sla-quick-link';
+    case 'GitOps sync':
+      return 'overview-gitops-quick-link';
+    case 'Intent violations':
+      return 'overview-intent-violations-quick-link';
+    case 'Fleet overview':
+      return 'overview-fleet-quick-link';
+    default:
+      return undefined;
+  }
+}
+
 export default function OverviewPage({ onNavigate, sseConnected = false }: OverviewPageProps) {
   const navigate = useNavigate();
   const { capabilities, ready, loading: platformLoading } = useServerCapabilities();
@@ -475,7 +492,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             key={link.label}
             type="button"
             onClick={link.onClick}
-            data-testid={link.label === 'Drift detection' ? 'overview-drift-quick-link' : undefined}
+            data-testid={overviewQuickLinkTestId(link.label)}
             className="rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
           >
             {link.label}
@@ -610,6 +627,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
                 type="button"
                 onClick={() => goFiltered('health', { status: 'unhealthy' })}
                 className="text-left"
+                data-testid="overview-unhealthy-stat"
               >
                 <StatCard title="Unhealthy" value={healthSummary.unhealthy} color="red" />
               </button>

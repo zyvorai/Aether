@@ -25,7 +25,7 @@ export default function PluginsPage() {
   const [discovering, setDiscovering] = useState(false);
   const [discoverSummary, setDiscoverSummary] = useState<string | null>(null);
   const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [runtimeFilter, setRuntimeFilter] = useQueryParam('runtime', 'all');
   const [registerJson, setRegisterJson] = useState('');
   const [registerMsg, setRegisterMsg] = useState<string | null>(null);
