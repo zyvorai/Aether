@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatTimestamp } from '../../utils/formatters';
@@ -36,6 +36,7 @@ export default function EnvsPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
+  const [envParam, setEnvParam] = useQueryParam('env');
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState('');
@@ -66,6 +67,15 @@ export default function EnvsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!envParam || environments.length === 0) return;
+    const match = environments.find((env) => env.name === envParam);
+    if (match) {
+      setSelectedEnvironment(match);
+      setEnvParam('');
+    }
+  }, [envParam, environments, setEnvParam]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -221,7 +231,14 @@ export default function EnvsPage() {
             </button>
           </form>
           {parityResult && (
-            <pre data-testid="envs-parity-result" className="mt-3 text-xs text-slate-400 overflow-x-auto max-h-48">{parityResult}</pre>
+            <>
+              <pre data-testid="envs-parity-result" className="mt-3 text-xs text-slate-400 overflow-x-auto max-h-48">{parityResult}</pre>
+              {parityResult.toLowerCase().includes('drift') || parityResult.toLowerCase().includes('mismatch') ? (
+                <Link to={viewToPath('drift')} className="mt-2 inline-flex text-xs text-aether hover:underline" data-testid="envs-drift-link">
+                  Open drift detection →
+                </Link>
+              ) : null}
+            </>
           )}
         </div>
       </div>

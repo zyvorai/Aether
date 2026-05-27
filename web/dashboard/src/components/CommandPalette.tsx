@@ -242,6 +242,13 @@ export default function CommandPalette({
         view: 'drift',
       },
       {
+        id: 'action-drift-scan',
+        label: 'Open drift bulk scan',
+        category: 'action',
+        searchText: 'drift scan bulk reconcile all workloads',
+        run: () => navigate(viewToPath('drift')),
+      },
+      {
         id: 'action-alerts',
         label: 'Open alerts & webhooks',
         category: 'action',

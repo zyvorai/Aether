@@ -176,6 +176,10 @@ export default function AuditPage() {
         <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="audit-events-link">
           View events feed →
         </Link>
+        {' · '}
+        <Link to={viewToPath('rbac')} className="text-xs text-aether hover:underline" data-testid="audit-rbac-link">
+          API access control →
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">

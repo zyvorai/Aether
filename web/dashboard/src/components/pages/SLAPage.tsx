@@ -13,6 +13,7 @@ import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import StatCard from '../StatCard';
 import type { WorkloadResponse, SlaTarget } from '../../types/api';
 
 export default function SLAPage() {
@@ -55,6 +56,8 @@ export default function SLAPage() {
   }, [load]);
 
   const filtered = workloads.filter((w) => w.name.toLowerCase().includes(search.toLowerCase()));
+  const slaConfiguredCount = workloads.filter((w) => slaData[w.name]).length;
+  const complianceGapCount = workloads.length - slaConfiguredCount;
 
   async function handleAddSla(e: React.FormEvent) {
     e.preventDefault();
@@ -119,6 +122,18 @@ export default function SLAPage() {
           </Link>
           <Link to={viewToPath('health')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline">
             Open health monitor →
+          </Link>
+          <Link to={viewToPath('scheduler')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="sla-scheduler-link">
+            Placement scheduler →
+          </Link>
+        </div>
+      )}
+
+      {workloads.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <StatCard title="With SLA" value={slaConfiguredCount} color="green" />
+          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="text-left" data-testid="sla-breach-stat">
+            <StatCard title="Compliance gaps" value={complianceGapCount} color={complianceGapCount > 0 ? 'red' : 'blue'} />
           </Link>
         </div>
       )}

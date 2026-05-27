@@ -157,6 +157,9 @@ export default function PlatformPage() {
           <Link to={viewToPath('audit')} className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="platform-audit-link">
             Audit trail →
           </Link>
+          <Link to={viewToPath('backups')} className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="platform-backups-link">
+            Backups →
+          </Link>
           <p className="mt-4 text-xs text-slate-500">
             Env: <code className="text-slate-400">AETHER_BACKUP_REMOTE_URL</code>,{' '}
             <code className="text-slate-400">AETHER_AUDIT_WEBHOOK_URL</code>,{' '}

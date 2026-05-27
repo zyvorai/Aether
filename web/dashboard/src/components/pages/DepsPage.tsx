@@ -263,7 +263,17 @@ export default function DepsPage() {
             </div>
 
             <div className="dash-card" data-testid="deps-issues-panel">
-              <h2 className="text-lg font-semibold text-slate-100 mb-4">Issues</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 className="text-lg font-semibold text-slate-100">Issues</h2>
+                <button
+                  type="button"
+                  data-testid="deps-scheduler-link"
+                  onClick={() => navigate(viewToPath('scheduler'))}
+                  className="text-xs text-aether hover:underline"
+                >
+                  Placement scheduler →
+                </button>
+              </div>
               {graph.issues.length === 0 ? (
                 <div className="flex items-center gap-2">
                   <Badge text="No issues" variant="green" />

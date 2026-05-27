@@ -447,6 +447,13 @@ export default function AIPage() {
               <div>
                 <h3 className="font-semibold text-lg text-slate-100">AI Recommendation</h3>
                 <p className="text-xs text-slate-500">Get intelligent runtime suggestions</p>
+                <Link
+                  to={viewToPath('intelligence')}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="ai-intelligence-link"
+                >
+                  Intelligence reports →
+                </Link>
               </div>
             </div>
             <YamlInput

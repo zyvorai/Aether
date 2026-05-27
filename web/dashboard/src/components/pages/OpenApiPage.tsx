@@ -4,6 +4,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, Copy } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -16,6 +18,7 @@ interface OpenApiDoc {
 }
 
 export default function OpenApiPage() {
+  const navigate = useNavigate();
   const [doc, setDoc] = useState<OpenApiDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -172,7 +175,20 @@ export default function OpenApiPage() {
               {paths.map((row) => (
                 <tr key={`${row.method}-${row.path}`} className="border-b border-slate-800/50 hover:bg-slate-800/20">
                   <td className="py-2 px-4 font-mono text-xs text-aether">{row.method}</td>
-                  <td className="py-2 px-4 font-mono text-xs text-slate-300">{row.path}</td>
+                  <td className="py-2 px-4 font-mono text-xs text-slate-300">
+                    {row.path.includes('/rbac/keys') ? (
+                      <button
+                        type="button"
+                        data-testid="openapi-rbac-link"
+                        onClick={() => navigate(viewToPath('rbac'))}
+                        className="text-aether hover:underline"
+                      >
+                        {row.path}
+                      </button>
+                    ) : (
+                      row.path
+                    )}
+                  </td>
                   <td className="py-2 px-4 text-slate-400">{row.summary || '—'}</td>
                   <td className="py-2 px-4">
                     <button

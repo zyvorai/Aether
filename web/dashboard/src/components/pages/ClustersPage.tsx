@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Container, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
@@ -77,6 +77,7 @@ function manifestContainerNames(manifest: Record<string, unknown>): string[] {
 }
 
 export default function ClustersPage() {
+  const navigate = useNavigate();
   const panelClass = 'rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100';
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
@@ -726,7 +727,9 @@ export default function ClustersPage() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Clusters" value={summary.cluster_count} color="blue" />
-        <StatCard title="Reachable" value={summary.healthy_clusters} color="green" />
+        <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left" data-testid="clusters-health-link">
+          <StatCard title="Reachable" value={summary.healthy_clusters} color="green" />
+        </button>
         <StatCard title="Namespaces" value={namespaces.length} color="orange" />
         <StatCard title={pageTab === 'network' ? 'Policies' : `${kind}s`} value={resources.length} color="purple" />
       </div>
@@ -801,7 +804,7 @@ export default function ClustersPage() {
             </option>
           ))}
         </select>
-        <select value={namespace} onChange={(e) => setNamespace(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+        <select value={namespace} onChange={(e) => setNamespace(e.target.value)} data-testid="clusters-namespace-select" className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
           <option value="all">All namespaces</option>
           {namespaces.map((item) => (
             <option key={item.name} value={item.name}>{item.name}</option>

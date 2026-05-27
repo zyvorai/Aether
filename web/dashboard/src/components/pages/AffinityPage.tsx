@@ -125,6 +125,12 @@ export default function AffinityPage() {
 
       {tab === 'matrix' && (
         <div className="dash-card overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="text-lg font-semibold text-slate-100">Runtime compatibility matrix</h2>
+            <Link to={viewToPath('scheduler')} className="text-xs text-aether hover:underline" data-testid="affinity-scheduler-link">
+              Placement scheduler →
+            </Link>
+          </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">

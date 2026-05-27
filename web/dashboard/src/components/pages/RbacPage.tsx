@@ -139,6 +139,9 @@ export default function RbacPage() {
         <Link to={viewToPath('audit')} className="mt-3 inline-flex text-xs text-aether hover:underline">
           View audit trail →
         </Link>
+        <Link to={viewToPath('secrets')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="rbac-secrets-link">
+          Secrets vault →
+        </Link>
       </div>
 
       {keys.length === 0 && !listLoading ? (

@@ -201,6 +201,13 @@ export default function ComposePage() {
                 ) : null}
                 {canMutate && result.valid ? (
                   <div className="flex flex-wrap gap-3">
+                    <Link
+                      to={viewToPath('deps')}
+                      className="inline-flex items-center self-center text-xs text-aether hover:underline"
+                      data-testid="compose-deps-link"
+                    >
+                      Dependency graph →
+                    </Link>
                     <button
                       type="button"
                       data-testid="compose-deploy-stack"
