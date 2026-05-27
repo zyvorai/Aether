@@ -202,6 +202,7 @@ export default function ComposePage() {
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
+                      data-testid="compose-deploy-stack"
                       onClick={() => void handleDeployStack()}
                       disabled={deployLoading}
                       className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2.5 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"

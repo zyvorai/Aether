@@ -537,7 +537,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         refreshing={loading}
         filters={
           <>
-            <select value={sourceFilterVal} onChange={(e) => setSourceFilter(e.target.value)} className={filterSelectClass}>
+            <select value={sourceFilterVal} onChange={(e) => setSourceFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-source-filter">
               <option value="all">All sources</option>
               <option value="aether">Aether managed</option>
               <option value="cluster">Kubernetes discovered</option>
@@ -558,6 +558,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <>
             <button
               type="button"
+              data-testid="workloads-deploy-button"
               onClick={() => openDeployModal(setDeployYaml, setDeployConfidential, setDeployModal)}
               className="inline-flex items-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white transition hover:bg-aether-light"
             >
@@ -566,6 +567,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             </button>
             <button
               type="button"
+              data-testid="workloads-validate-button"
               onClick={() => setValidateModal(true)}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
             >
@@ -852,6 +854,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         title={`Migrate: ${migrateModal}`}
         size="wide"
       >
+        <div data-testid="workloads-migrate-modal">
         <p className="text-sm text-zinc-400 mb-4">Select target runtime to load migration advice:</p>
         <div className="grid grid-cols-2 gap-3 mb-6">
           {runtimes.map((rt) => (
@@ -971,6 +974,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             ) : null}
           </div>
         )}
+        </div>
       </Modal>
 
       <Modal isOpen={updateModal !== null} onClose={() => setUpdateModal(null)} title={`Update: ${updateModal}`} size="yaml">

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router';
 import { Rocket, Wand2, Inbox, Settings2, FileCode2 } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { markFirstDeploy } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
 import Modal from '../Modal';
@@ -38,6 +38,7 @@ export default function TemplatesPage() {
   const [generateLoading, setGenerateLoading] = useState<string | null>(null);
   const [deployLoading, setDeployLoading] = useState(false);
   const [configureTemplate, setConfigureTemplate] = useState<string | null>(null);
+  const [configureParam, setConfigureParam] = useQueryParam('configure');
   const [search, setSearch] = useState('');
   const [params, setParams] = useState({
     workload_name: '',
@@ -74,6 +75,12 @@ export default function TemplatesPage() {
       void handleGenerate(template);
     }
   }, [load]);
+
+  useEffect(() => {
+    if (!configureParam) return;
+    setConfigureTemplate(configureParam);
+    setConfigureParam('');
+  }, [configureParam, setConfigureParam]);
 
   async function handleGenerate(name: string, overrides?: Record<string, unknown>) {
     setGenerateLoading(name);

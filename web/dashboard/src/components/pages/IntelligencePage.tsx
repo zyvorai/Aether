@@ -236,7 +236,12 @@ export default function IntelligencePage() {
                 cost.recommendations.map((rec) => (
                   <div key={rec.workload} className="dash-card">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="font-medium text-slate-100">{rec.workload}</span>
+                      <Link
+                        to={pathWithQuery(viewToPath('workloads'), { workload: rec.workload })}
+                        className="font-medium text-slate-100 hover:text-aether"
+                      >
+                        {rec.workload}
+                      </Link>
                       <Badge text={`${formatPercent(rec.savings_pct, 0)} savings`} variant="green" />
                       <Badge text={rec.risk} variant={riskVariant(rec.risk)} />
                     </div>

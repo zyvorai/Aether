@@ -87,8 +87,15 @@ export default function SchedulerPage() {
                 </div>
               </div>
 
-              <div className="mb-4">
+              <div className="mb-4 flex items-center justify-between gap-2">
                 <StatCard title="Workloads" value={`${rt.workload_count}/${rt.max_workloads}`} color="blue" />
+                <Link
+                  to={pathWithQuery(viewToPath('fleet'), {})}
+                  className="text-xs text-aether hover:underline shrink-0"
+                  data-testid="scheduler-fleet-link"
+                >
+                  Fleet →
+                </Link>
               </div>
 
               <div className="space-y-3">

@@ -1543,7 +1543,7 @@ export default function ClustersPage() {
         onClose={() => setCreateModalOpen(false)}
         title={`Create ${kind}`}
       >
-        <div className="space-y-4">
+        <div data-testid="clusters-create-modal" className="space-y-4">
           {kind === 'HelmRelease' ? (
             <>
               <p className="text-sm text-zinc-400">

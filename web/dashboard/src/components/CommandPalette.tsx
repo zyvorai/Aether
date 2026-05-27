@@ -375,6 +375,13 @@ export default function CommandPalette({
         view: 'plugins',
       },
       {
+        id: 'action-clusters',
+        label: 'Open cluster browser',
+        category: 'action',
+        searchText: 'clusters kubernetes browse namespaces network',
+        view: 'clusters',
+      },
+      {
         id: 'action-deps',
         label: 'Open dependencies graph',
         category: 'action',

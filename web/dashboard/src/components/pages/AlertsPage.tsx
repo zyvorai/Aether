@@ -257,7 +257,7 @@ export default function AlertsPage() {
           )}
         </div>
 
-        <div className="dash-card">
+        <div className="dash-card" data-testid="alerts-rules-panel">
           <div className="flex items-center gap-3 mb-4">
             <BellRing className="text-amber-400" size={20} />
             <h2 className="text-lg font-semibold text-slate-100">Alert rules</h2>

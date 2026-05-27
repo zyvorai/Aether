@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -138,10 +138,18 @@ export default function HealthPage() {
     <div>
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-          <StatCard title="Healthy" value={summary.healthy} color="green" />
-          <StatCard title="Degraded" value={summary.degraded} color="yellow" />
-          <StatCard title="Unhealthy" value={summary.unhealthy} color="red" />
-          <StatCard title="Unknown" value={summary.unknown} color="blue" />
+          <button type="button" onClick={() => setStatusFilter('healthy')} className="text-left">
+            <StatCard title="Healthy" value={summary.healthy} color="green" />
+          </button>
+          <button type="button" onClick={() => setStatusFilter('degraded')} className="text-left">
+            <StatCard title="Degraded" value={summary.degraded} color="yellow" />
+          </button>
+          <button type="button" onClick={() => setStatusFilter('unhealthy')} className="text-left">
+            <StatCard title="Unhealthy" value={summary.unhealthy} color="red" />
+          </button>
+          <button type="button" onClick={() => setStatusFilter('unknown')} className="text-left">
+            <StatCard title="Unknown" value={summary.unknown} color="blue" />
+          </button>
           <StatCard title="Circuits open" value={summary.circuits_open} color="orange" />
         </div>
       )}
@@ -156,6 +164,7 @@ export default function HealthPage() {
           canMutate ? (
             <button
               type="button"
+              data-testid="health-run-checks"
               onClick={() => void runOrchestratorAction('health-check')}
               disabled={orchBusy !== null}
               className="rounded-xl bg-emerald-600/20 border border-emerald-500/40 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-600/30 disabled:opacity-50"
@@ -165,11 +174,13 @@ export default function HealthPage() {
           ) : null
         }
         filters={
+          <>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100"
             aria-label="Health status filter"
+            data-testid="health-status-filter"
           >
             <option value="all">All statuses</option>
             <option value="healthy">Healthy</option>
@@ -177,6 +188,17 @@ export default function HealthPage() {
             <option value="unhealthy">Unhealthy</option>
             <option value="unknown">Unknown</option>
           </select>
+          {statusFilter !== 'all' && (
+            <button
+              type="button"
+              data-testid="health-clear-filter"
+              onClick={() => setStatusFilter('all')}
+              className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-aether"
+            >
+              Clear filter
+            </button>
+          )}
+          </>
         }
       />
 
@@ -184,7 +206,7 @@ export default function HealthPage() {
         <EmptyState icon={<Inbox size={48} />} title="No managed workloads" description="No workloads are being monitored" />
       ) : (
         <>
-          <div className="dash-card overflow-hidden mb-6">
+          <div className="dash-card overflow-hidden mb-6" data-testid="health-workload-table">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -295,6 +317,7 @@ export default function HealthPage() {
                     />
                     <button
                       type="button"
+                      data-testid="health-rolling-update-submit"
                       onClick={() => void runRollingUpdate(selected.workload.name)}
                       disabled={orchBusy !== null}
                       className="text-xs rounded-lg border border-emerald-500/40 px-2 py-1 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50"
@@ -304,6 +327,12 @@ export default function HealthPage() {
                   </div>
                 )}
                 {rollingMsg ? <span className="text-xs text-slate-400">{rollingMsg}</span> : null}
+                <Link
+                  to={pathWithQuery(viewToPath('events'), { workload: selected.workload.name })}
+                  className="text-xs text-aether hover:underline"
+                >
+                  View events →
+                </Link>
                 <span>
                   Last restart count: <span className="text-slate-200">{selected.history.last_restart_count}</span>
                 </span>
