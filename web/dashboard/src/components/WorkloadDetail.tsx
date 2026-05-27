@@ -132,6 +132,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [snapshots, setSnapshots] = useState<Array<{ version: number; path: string }>>([]);
+  const [snapshotsLoading, setSnapshotsLoading] = useState(false);
 
   async function copyShareLink() {
     const params: Record<string, string> = { workload: workload.name };
@@ -150,6 +152,27 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab, workload.name]);
+
+  useEffect(() => {
+    if (activeTab !== 'overview' || !isAetherManaged) return;
+    setSnapshotsLoading(true);
+    void apiFetch<Array<{ version: number; path: string }>>(`/workloads/${workload.name}/snapshots`).then((rows) => {
+      setSnapshots(rows ?? []);
+      setSnapshotsLoading(false);
+    });
+  }, [activeTab, isAetherManaged, workload.name]);
+
+  async function rollbackSnapshot(version: number) {
+    setActionLoading(`rollback-v${version}`);
+    try {
+      await apiPost(`/workloads/${workload.name}/rollback`, { version });
+      onAction();
+      const rows = await apiFetch<Array<{ version: number; path: string }>>(`/workloads/${workload.name}/snapshots`);
+      setSnapshots(rows ?? []);
+    } finally {
+      setActionLoading('');
+    }
+  }
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -442,6 +465,37 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
               {workload.kind && <div><span className="text-zinc-500">Kind</span><p className="text-white">{workload.kind}</p></div>}
               <div><span className="text-zinc-500">Source</span><p className="text-white capitalize">{workload.source ?? 'aether'}</p></div>
             </div>
+
+            {isAetherManaged ? (
+              <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-950/60 p-3" data-testid="workload-snapshots">
+                <h4 className="mb-2 text-sm font-semibold text-zinc-200">Snapshots</h4>
+                {snapshotsLoading ? (
+                  <p className="text-xs text-zinc-500">Loading snapshots…</p>
+                ) : snapshots.length === 0 ? (
+                  <p className="text-xs text-zinc-500">No snapshots yet — snapshots are created before migrations and updates.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {snapshots.map((snap) => (
+                      <li key={snap.version} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span className="font-mono text-xs text-zinc-400 truncate" title={snap.path}>
+                          v{snap.version}
+                        </span>
+                        {canMutate ? (
+                          <button
+                            type="button"
+                            onClick={() => void rollbackSnapshot(snap.version)}
+                            disabled={!!actionLoading}
+                            className="rounded border border-amber-600/40 px-2 py-1 text-xs text-amber-300 hover:bg-amber-600/10 disabled:opacity-50"
+                          >
+                            {actionLoading === `rollback-v${snap.version}` ? 'Rolling back…' : 'Rollback'}
+                          </button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : null}
 
             {isKubeWorkload && (
               <div className="mt-4 rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">

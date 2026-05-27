@@ -10,13 +10,14 @@ interface Edge {
 interface Props {
   nodes: string[];
   edges: Edge[];
+  onNodeClick?: (name: string) => void;
 }
 
 const W = 520;
 const H = 280;
 const R = 22;
 
-export default function DependencyGraphVisual({ nodes, edges }: Props) {
+export default function DependencyGraphVisual({ nodes, edges, onNodeClick }: Props) {
   if (nodes.length === 0) {
     return <p className="text-sm text-slate-500">No dependency nodes.</p>;
   }
@@ -59,7 +60,20 @@ export default function DependencyGraphVisual({ nodes, edges }: Props) {
       {nodes.map((name) => {
         const p = positions.get(name)!;
         return (
-          <g key={name}>
+          <g
+            key={name}
+            onClick={() => onNodeClick?.(name)}
+            className={onNodeClick ? 'cursor-pointer' : undefined}
+            role={onNodeClick ? 'button' : undefined}
+            tabIndex={onNodeClick ? 0 : undefined}
+            onKeyDown={
+              onNodeClick
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') onNodeClick(name);
+                  }
+                : undefined
+            }
+          >
             <circle cx={p.x} cy={p.y} r={R} fill="rgb(15 23 42)" stroke="rgb(211 84 0 / 0.6)" strokeWidth={2} />
             <text
               x={p.x}

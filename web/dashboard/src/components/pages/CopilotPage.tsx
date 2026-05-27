@@ -139,7 +139,7 @@ export default function CopilotPage() {
           ))}
 
           {pending.length > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3" data-testid="copilot-pending-actions">
               <p className="mb-2 text-xs font-medium text-amber-200">Actions awaiting confirmation</p>
               {pending.map((a) => (
                 <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs text-slate-300">

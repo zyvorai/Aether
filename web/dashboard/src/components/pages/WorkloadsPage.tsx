@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam } from '../../utils/urlState';
@@ -75,6 +75,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [namespaceFilter, setNamespaceFilter] = useQueryParam('namespace', 'all');
   const [workloadParam, setWorkloadParam] = useQueryParam('workload');
   const [tabParam, setTabParam] = useQueryParam('tab');
+  const [, setSearchParams] = useSearchParams();
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
   const [updateModal, setUpdateModal] = useState<string | null>(null);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -83,6 +84,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [confidentialMigrationPlan, setConfidentialMigrationPlan] = useState<ConfidentialMigrationPlan | null>(null);
   const [migrateTarget, setMigrateTarget] = useState<string | null>(null);
   const [migrateStrategy, setMigrateStrategy] = useState('blue-green');
+  const [migrateResult, setMigrateResult] = useState<string | null>(null);
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [validateModal, setValidateModal] = useState(false);
   const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
@@ -218,23 +220,6 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setSelectedWorkload(match);
   }, [workloadParam, tabParam, workloads]);
 
-  function openWorkloadDetail(workload: WorkloadResponse, tab: DetailTab) {
-    setDetailInitialTab(tab);
-    setSelectedWorkload(workload);
-    setWorkloadParam(workload.name);
-    if (tab !== 'overview') {
-      setTabParam(tab);
-    } else {
-      setTabParam('');
-    }
-  }
-
-  function closeWorkloadDetail() {
-    setSelectedWorkload(null);
-    setWorkloadParam('');
-    setTabParam('');
-  }
-
   async function handleAction(name: string, action: string) {
     setActionLoading(`${name}-${action}`);
     let res;
@@ -290,19 +275,17 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   async function handleMigrate(name: string, target: string, strategy: string) {
     setActionLoading(`${name}-migrate`);
-    const res = await apiPost(`/workloads/${name}/migrate`, { target_runtime: target, strategy });
-    setMigrateModal(null);
-    setMigrateAdvice(null);
-    setConfidentialMigrationPlan(null);
-    setMigrateTarget(null);
-    setMigrateStrategy('blue-green');
+    setMigrateResult(null);
+    const res = await apiPost<string>(`/workloads/${name}/migrate`, { target_runtime: target, strategy });
     setActionLoading(null);
     if (res.success) {
-      toast(`Migration of "${name}" to ${target} started`, 'success');
+      setMigrateResult(typeof res.data === 'string' ? res.data : 'Migration completed');
+      toast(`Migration of "${name}" to ${target} completed`, 'success');
+      void load();
     } else {
+      setMigrateResult(res.error ?? 'Migration failed');
       toast(`Migration of "${name}" failed: ${res.error ?? 'unknown error'}`, 'error');
     }
-    load();
   }
 
   async function handleValidate(yaml: string) {
@@ -323,12 +306,52 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setDeployPolicyResult(null);
     setDeploySuccess(null);
     setDeployTemplateLoading(false);
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        copy.delete('deploy');
+        return copy;
+      },
+      { replace: true },
+    );
   }
 
   function finishDeploySuccess(tab: DetailTab) {
     if (!deploySuccess) return;
     setPendingSelect({ name: deploySuccess.name, tab });
     closeDeployModal();
+  }
+
+  function openWorkloadDetail(workload: WorkloadResponse, tab: DetailTab) {
+    setDetailInitialTab(tab);
+    setSelectedWorkload(workload);
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        copy.set('workload', workload.name);
+        copy.delete('deploy');
+        if (tab !== 'overview') {
+          copy.set('tab', tab);
+        } else {
+          copy.delete('tab');
+        }
+        return copy;
+      },
+      { replace: true },
+    );
+  }
+
+  function closeWorkloadDetail() {
+    setSelectedWorkload(null);
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        copy.delete('workload');
+        copy.delete('tab');
+        return copy;
+      },
+      { replace: true },
+    );
   }
 
   async function handleDeployValidate(yaml: string) {
@@ -824,6 +847,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           setMigrateAdvice(null);
           setMigrateTarget(null);
           setMigrateStrategy('blue-green');
+          setMigrateResult(null);
         }}
         title={`Migrate: ${migrateModal}`}
         size="wide"
@@ -933,6 +957,18 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             >
               {actionLoading ? 'Starting migration…' : `Start migration to ${migrateTarget}`}
             </button>
+            {migrateResult ? (
+              <p
+                data-testid="migrate-result"
+                className={`text-sm rounded-lg border px-3 py-2 ${
+                  migrateResult.toLowerCase().includes('failed')
+                    ? 'border-red-500/30 bg-red-500/5 text-red-300'
+                    : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
+                }`}
+              >
+                {migrateResult}
+              </p>
+            ) : null}
           </div>
         )}
       </Modal>

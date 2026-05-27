@@ -32,7 +32,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'compose', path: '/compose', label: 'Compose Import', breadcrumb: 'Compose Import', subtitle: 'Import Docker Compose into Aether workloads', group: 'operations' },
   { view: 'editor', path: '/editor', label: 'Visual Editor', breadcrumb: 'Visual Editor', subtitle: 'Form-based workload designer (no YAML required)', group: 'operations' },
   { view: 'scheduler', path: '/scheduler', label: 'Scheduler', breadcrumb: 'Scheduler', subtitle: 'Scheduling recommendations and placement', group: 'operations' },
-  { view: 'health', path: '/health', label: 'Health Monitor', breadcrumb: 'Health Monitor', subtitle: 'Workload health checks and status', group: 'operations' },
+  { view: 'health', path: '/health-monitor', label: 'Health Monitor', breadcrumb: 'Health Monitor', subtitle: 'Workload health checks and status', group: 'operations' },
   { view: 'events', path: '/events', label: 'Events', breadcrumb: 'Events', subtitle: 'Platform and workload events', group: 'operations' },
   { view: 'alerts', path: '/alerts', label: 'Alerts', breadcrumb: 'Alerts & Webhooks', subtitle: 'Notification channels, alert rules, and webhook tests', group: 'operations' },
   { view: 'platform', path: '/platform', label: 'Platform', breadcrumb: 'Platform & HA', subtitle: 'HA mode, setup recommendations, OPA, and observability', group: 'operations' },

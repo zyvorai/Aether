@@ -3,8 +3,11 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router';
 import { Download, Inbox, ShieldCheck } from 'lucide-react';
 import { apiFetch, apiFetchSettled } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { useQueryParam } from '../../utils/urlState';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
@@ -18,6 +21,7 @@ import type { AuditResponse, AuditVerifyResponse } from '../../types/api';
 export default function AuditPage() {
   const [audit, setAudit] = useState<AuditResponse | null>(null);
   const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
@@ -44,6 +48,13 @@ export default function AuditPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function reVerify() {
+    setVerifying(true);
+    const result = await apiFetchSettled<AuditVerifyResponse>('/audit/verify');
+    if (result.ok) setVerify(result.data);
+    setVerifying(false);
+  }
 
   const filteredEvents = useMemo(() => {
     if (!audit) return [];
@@ -156,13 +167,22 @@ export default function AuditPage() {
       </div>
 
       {verify && (
-        <div className="dash-card mb-6">
+        <div className="dash-card mb-6" data-testid="audit-verify-panel">
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">Integrity verification</div>
           <div className="flex items-center gap-3 flex-wrap">
             <Badge text={verify.integrity} variant={verify.integrity === 'VERIFIED' ? 'green' : 'red'} />
             <span className="text-sm text-slate-400">
               {verify.verified} of {verify.total} events verified successfully
             </span>
+            <button
+              type="button"
+              data-testid="audit-reverify"
+              onClick={() => void reVerify()}
+              disabled={verifying}
+              className="ml-auto rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-aether/40 disabled:opacity-50"
+            >
+              {verifying ? 'Verifying…' : 'Re-verify integrity'}
+            </button>
           </div>
           {verify.tampered_events.length > 0 && (
             <div className="mt-4 space-y-2">
@@ -194,7 +214,12 @@ export default function AuditPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-slate-200">{ev.action}</span>
                     <span className="text-xs text-slate-500">on</span>
-                    <span className="text-sm text-aether">{ev.workload}</span>
+                    <Link
+                      to={pathWithQuery(viewToPath('workloads'), { workload: ev.workload })}
+                      className="text-sm text-aether hover:underline"
+                    >
+                      {ev.workload}
+                    </Link>
                   </div>
                   <div className="text-xs text-slate-400 mt-1">{ev.message}</div>
                   <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">

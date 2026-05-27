@@ -3,8 +3,11 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQueryParam } from '../../utils/urlState';
 import { markHealthReviewed } from '../../utils/onboardingState';
@@ -33,6 +36,7 @@ function getCircuitVariant(circuit: string): 'green' | 'red' | 'yellow' | 'muted
 }
 
 export default function HealthPage() {
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<HealthSummary | null>(null);
   const [workloads, setWorkloads] = useState<ManagedWorkload[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +46,8 @@ export default function HealthPage() {
   const [selected, setSelected] = useState<{ workload: ManagedWorkload; history: HealthHistorySummary } | null>(null);
   const [historyLoading, setHistoryLoading] = useState<string | null>(null);
   const [orchBusy, setOrchBusy] = useState<string | null>(null);
+  const [rollingReplicas, setRollingReplicas] = useState('2');
+  const [rollingMsg, setRollingMsg] = useState<string | null>(null);
   const { canMutate } = useAuth();
 
   const load = useCallback(async () => {
@@ -92,6 +98,25 @@ export default function HealthPage() {
     }
     setOrchBusy(null);
     void load();
+  }
+
+  async function runRollingUpdate(name: string) {
+    if (!canMutate) return;
+    const replicas = parseInt(rollingReplicas, 10);
+    if (!Number.isFinite(replicas) || replicas < 1) {
+      setRollingMsg('Replicas must be a positive integer');
+      return;
+    }
+    setOrchBusy('rolling-update');
+    setRollingMsg(null);
+    const res = await apiPost<{ message?: string }>('/orchestrator/rolling-update', { name, replicas });
+    setOrchBusy(null);
+    if (res.success) {
+      setRollingMsg(`Rolling update started for ${name} (${replicas} replicas)`);
+      void load();
+    } else {
+      setRollingMsg(res.error ?? 'Rolling update failed');
+    }
   }
 
   const filtered = workloads.filter((w) => {
@@ -208,9 +233,18 @@ export default function HealthPage() {
           </div>
 
           {selected && (
-            <div className="dash-card">
+            <div className="dash-card" data-testid="health-detail-panel">
               <h3 className="text-lg font-semibold text-slate-100 mb-4">
-                Health detail: {selected.workload.name}
+                Health detail:{' '}
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(pathWithQuery(viewToPath('workloads'), { workload: selected.workload.name }))
+                  }
+                  className="text-aether hover:underline"
+                >
+                  {selected.workload.name}
+                </button>
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
@@ -246,6 +280,30 @@ export default function HealthPage() {
                     Reset circuit
                   </button>
                 )}
+                {canMutate && (
+                  <div className="flex flex-wrap items-center gap-2" data-testid="health-rolling-update">
+                    <label className="text-xs text-slate-500" htmlFor="rolling-replicas">
+                      Rolling update replicas
+                    </label>
+                    <input
+                      id="rolling-replicas"
+                      type="number"
+                      min={1}
+                      value={rollingReplicas}
+                      onChange={(e) => setRollingReplicas(e.target.value)}
+                      className="w-16 rounded-lg border border-slate-700 bg-slate-950/80 px-2 py-1 text-xs text-slate-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void runRollingUpdate(selected.workload.name)}
+                      disabled={orchBusy !== null}
+                      className="text-xs rounded-lg border border-emerald-500/40 px-2 py-1 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50"
+                    >
+                      {orchBusy === 'rolling-update' ? 'Updating…' : 'Rolling update'}
+                    </button>
+                  </div>
+                )}
+                {rollingMsg ? <span className="text-xs text-slate-400">{rollingMsg}</span> : null}
                 <span>
                   Last restart count: <span className="text-slate-200">{selected.history.last_restart_count}</span>
                 </span>

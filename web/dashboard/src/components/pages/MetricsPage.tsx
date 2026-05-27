@@ -3,7 +3,9 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Download, ExternalLink } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import { apiFetchSettled, apiTextSettled, apiFetch } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
@@ -22,6 +24,7 @@ interface ChargebackReport {
 }
 
 export default function MetricsPage() {
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState('');
   const [summary, setSummary] = useState<ObservabilitySummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +87,22 @@ export default function MetricsPage() {
   const lineCount = filteredMetrics.split('\n').filter((l) => l && !l.startsWith('#')).length;
   const runtimeEntries = Object.entries(summary?.workloads_running ?? {});
 
+  function downloadChargebackCsv() {
+    if (!chargeback?.lines.length) return;
+    const header = 'workload,owner,project,monthly_usd';
+    const rows = chargeback.lines.map(
+      (l) =>
+        `"${l.workload}","${l.owner.replace(/"/g, '""')}","${l.project.replace(/"/g, '""')}",${l.monthlyUsd.toFixed(2)}`,
+    );
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'aether-chargeback.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function runPromQuery(e: React.FormEvent) {
     e.preventDefault();
     const q = promQuery.trim();
@@ -112,6 +131,22 @@ export default function MetricsPage() {
         onRefresh={() => void load()}
         refreshing={loading}
       />
+
+      {!prometheusUrl && !summary?.prometheus_configured ? (
+        <div
+          data-testid="metrics-prom-setup-banner"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-700/80 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-300"
+        >
+          <span>Prometheus is not linked — set Prometheus URL on Platform &amp; HA for live query explorer and external links.</span>
+          <button
+            type="button"
+            onClick={() => navigate(viewToPath('platform'))}
+            className="rounded-lg border border-aether/40 bg-aether/10 px-3 py-1 text-xs font-medium text-aether hover:bg-aether/20"
+          >
+            Open Platform
+          </button>
+        </div>
+      ) : null}
 
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -191,8 +226,21 @@ export default function MetricsPage() {
       )}
 
       {chargeback && (
-        <div className="dash-card mb-6">
-          <h2 className="text-lg font-semibold text-slate-100 mb-3">Chargeback (showback)</h2>
+        <div className="dash-card mb-6" data-testid="metrics-chargeback-panel">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h2 className="text-lg font-semibold text-slate-100">Chargeback (showback)</h2>
+            {chargeback.lines.length > 0 ? (
+              <button
+                type="button"
+                data-testid="metrics-chargeback-export"
+                onClick={downloadChargebackCsv}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-aether/40"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export CSV
+              </button>
+            ) : null}
+          </div>
           <p className="text-sm text-slate-400 mb-4">
             {chargeback.pricingSource} pricing · {chargeback.region} · fleet ${chargeback.totalMonthlyUsd.toFixed(2)}/mo
             · spot ${chargeback.totalSpotMonthlyUsd.toFixed(2)}/mo · 36-mo TCO ${chargeback.tco36MonthsUsd.toFixed(0)}

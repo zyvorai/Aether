@@ -3,8 +3,11 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
@@ -124,7 +127,14 @@ export default function SLAPage() {
             const sla = slaData[w.name];
             return (
               <div key={w.name} className="dash-card">
-                <h2 className="text-lg font-semibold text-slate-100 mb-4">{w.name}</h2>
+                <h2 className="text-lg font-semibold text-slate-100 mb-4">
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: w.name })}
+                    className="hover:text-aether"
+                  >
+                    {w.name}
+                  </Link>
+                </h2>
                 {sla ? (
                   <dl className="space-y-3 text-sm">
                     <div className="flex justify-between">

@@ -3,13 +3,16 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { AlertTriangle, AlertCircle, ShieldCheck, RefreshCw, WifiOff } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import SpecWorkbench from '../SpecWorkbench';
 import Badge, { SeverityBadge } from '../Badge';
 import type { OpaEvaluation, PolicyResult } from '../../types/api';
 
 export default function PolicyPage() {
+  const navigate = useNavigate();
   const [result, setResult] = useState<PolicyResult | null>(null);
   const [opaResult, setOpaResult] = useState<OpaEvaluation | null>(null);
   const [opaManifest, setOpaManifest] = useState('{\n  "apiVersion": "v1",\n  "kind": "ConfigMap",\n  "metadata": { "name": "example", "labels": { "owner": "team-a" } }\n}');
@@ -123,6 +126,22 @@ export default function PolicyPage() {
 
   return (
     <div>
+      {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
+        <div
+          data-testid="policy-opa-setup-banner"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-700/80 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-300"
+        >
+          <span>OPA is not configured — built-in policy check works below; enable OPA admission on Platform &amp; HA.</span>
+          <button
+            type="button"
+            onClick={() => navigate(viewToPath('platform'))}
+            className="rounded-lg border border-aether/40 bg-aether/10 px-3 py-1 text-xs font-medium text-aether hover:bg-aether/20"
+          >
+            Open Platform
+          </button>
+        </div>
+      ) : null}
+
       {opaProbeFailed ? (
         <div
           role="status"

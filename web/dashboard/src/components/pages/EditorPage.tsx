@@ -2,13 +2,14 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Save, FileText, Eye, CheckCircle } from 'lucide-react';
+import { Save, FileText, Eye, CheckCircle, Pencil } from 'lucide-react';
 import { apiPost } from '../../utils/api';
 import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
-import { buildEditorWorkloadYaml, mergeConfidentialIntoYaml } from '../../utils/workloadYaml';
+import { buildEditorWorkloadYaml } from '../../utils/workloadYaml';
+import { countYamlLines, yamlEditorHeightPx } from '../../utils/editorHeight';
 import ConfidentialFormFields, {
   defaultConfidentialFormState,
   type ConfidentialFormState,
@@ -16,6 +17,7 @@ import ConfidentialFormFields, {
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import ValidateResultPanel from '../ValidateResultPanel';
+import YamlCodeEditor from '../YamlCodeEditor';
 import type { ValidateResponse, PolicyResult } from '../../types/api';
 
 interface EditorForm extends ConfidentialFormState {
@@ -75,6 +77,8 @@ export default function EditorPage() {
   const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
   const [policyResult, setPolicyResult] = useState<PolicyResult | null>(null);
   const [showPreview, setShowPreview] = useState(true);
+  const [yamlEditMode, setYamlEditMode] = useState(false);
+  const [yamlDraft, setYamlDraft] = useState('');
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kata', 'kubevirt', 'metal3'];
   const intents = ['low-latency', 'high-throughput', 'cost-optimized', 'balanced'];
@@ -92,12 +96,27 @@ export default function EditorPage() {
   };
 
   const generateYaml = (): string => buildEditorWorkloadYaml(form);
+  const yamlPreview = useMemo(() => buildEditorWorkloadYaml(form), [form]);
+  const activeYaml = yamlEditMode && yamlDraft.trim() ? yamlDraft : yamlPreview;
+  const previewLineCount = countYamlLines(activeYaml);
+  const previewHeightPx = yamlEditorHeightPx(previewLineCount, false);
+
+  function enableYamlEdit() {
+    setYamlDraft(yamlPreview);
+    setYamlEditMode(true);
+  }
+
+  function disableYamlEdit() {
+    setYamlEditMode(false);
+    setYamlDraft('');
+  }
 
   const handleValidate = async () => {
     setValidating(true);
     setValidateResult(null);
     setPolicyResult(null);
-    const yaml = generateYaml();
+    const yaml = activeYaml.trim();
+
     const [validateRes, policyRes] = await Promise.all([
       apiPost<ValidateResponse>('/validate', { yaml }),
       apiPost<PolicyResult>('/policy/check', { yaml }),
@@ -123,7 +142,7 @@ export default function EditorPage() {
     }
     setSaving(true);
     setResult(null);
-    const yaml = generateYaml();
+    const yaml = activeYaml.trim();
 
     const validateRes = await apiPost<ValidateResponse>('/validate', { yaml });
     setValidateResult(validateRes.data ?? null);
@@ -184,11 +203,21 @@ export default function EditorPage() {
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-700 rounded-xl hover:bg-slate-800/80 text-slate-300"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-zinc-700 rounded-xl hover:bg-zinc-800/80 text-zinc-300"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? 'Hide' : 'Show'} YAML
         </button>
+        {showPreview ? (
+          <button
+            type="button"
+            onClick={() => (yamlEditMode ? disableYamlEdit() : enableYamlEdit())}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-zinc-700 rounded-xl hover:bg-zinc-800/80 text-zinc-300"
+          >
+            <Pencil className="w-4 h-4" />
+            {yamlEditMode ? 'Sync from form' : 'Edit YAML directly'}
+          </button>
+        ) : null}
       </div>
 
       <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
@@ -476,13 +505,22 @@ export default function EditorPage() {
         </div>
 
         {showPreview && (
-          <div className="dash-card">
-            <div className="flex items-center gap-2 mb-4 text-sm text-slate-400">
-              <Eye className="w-4 h-4" /> Live YAML preview
+          <div className="dash-card flex min-h-0 flex-col">
+            <div className="mb-3 flex items-center gap-2 text-sm text-zinc-400">
+              <Eye className="h-4 w-4" /> Live YAML preview
             </div>
-            <pre className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-xs text-emerald-300 font-mono overflow-auto max-h-[32rem] whitespace-pre-wrap">
-              {generateYaml()}
-            </pre>
+            <div className="min-h-0 flex-1" data-testid="editor-yaml-preview">
+              <YamlCodeEditor
+                value={activeYaml}
+                onChange={(next) => {
+                  setYamlDraft(next);
+                  if (!yamlEditMode) setYamlEditMode(true);
+                }}
+                heightPx={previewHeightPx}
+                readOnly={!yamlEditMode}
+                aria-label="Workload YAML preview"
+              />
+            </div>
           </div>
         )}
       </div>

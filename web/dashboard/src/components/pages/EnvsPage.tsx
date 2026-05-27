@@ -15,6 +15,10 @@ import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import type { Environment } from '../../types/api';
 
+function toast(message: string, type: 'success' | 'error') {
+  window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+}
+
 function getTierVariant(tier: string): 'green' | 'yellow' | 'red' | 'blue' | 'muted' {
   const t = tier.toLowerCase();
   if (t === 'production' || t === 'prod') return 'red';
@@ -88,7 +92,12 @@ export default function EnvsPage() {
       to: promoteTo.trim(),
     });
     setMutating(false);
-    if (res.success) void load();
+    if (res.success) {
+      toast(`Promoted ${promoteWorkload.trim()} from ${promoteFrom.trim()} → ${promoteTo.trim()}`, 'success');
+      void load();
+    } else {
+      toast(res.error ?? 'Promote failed', 'error');
+    }
   }
 
   async function handleParity(e: React.FormEvent) {
@@ -99,7 +108,13 @@ export default function EnvsPage() {
       `/environments/parity?env1=${encodeURIComponent(parityEnv1)}&env2=${encodeURIComponent(parityEnv2)}`,
     );
     setMutating(false);
-    setParityResult(result.ok ? JSON.stringify(result.data, null, 2) : (result.error ?? 'Parity check failed'));
+    if (result.ok) {
+      setParityResult(JSON.stringify(result.data, null, 2));
+      toast(`Parity check: ${parityEnv1} vs ${parityEnv2}`, 'success');
+    } else {
+      setParityResult(result.error ?? 'Parity check failed');
+      toast(result.error ?? 'Parity check failed', 'error');
+    }
   }
 
   if (loading && environments.length === 0 && !loadFailed) {

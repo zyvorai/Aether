@@ -3,8 +3,11 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { Rocket } from 'lucide-react';
 import { apiPost, apiPostRaw } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import YamlInput from '../YamlInput';
 import ValidateResultPanel from '../ValidateResultPanel';
@@ -213,8 +216,22 @@ export default function ComposePage() {
                 ) : null}
                 <ValidateResultPanel policy={policyResult} />
                 {deployResult ? (
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-300">
-                    Deployed {deployResult.count} workload(s): {deployResult.deployed.join(', ')}
+                  <div
+                    data-testid="compose-deploy-result"
+                    className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-300"
+                  >
+                    Deployed {deployResult.count} workload(s):{' '}
+                    {deployResult.deployed.map((name, i) => (
+                      <span key={name}>
+                        {i > 0 ? ', ' : ''}
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: name })}
+                          className="text-emerald-200 hover:underline"
+                        >
+                          {name}
+                        </Link>
+                      </span>
+                    ))}
                   </div>
                 ) : null}
                 {error ? <p className="text-sm text-red-400">{error}</p> : null}

@@ -3,7 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { AlertTriangle, Brain, DollarSign, Inbox, MapPin, Sparkles, TrendingUp } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatPercent, formatUSD } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
@@ -146,7 +149,12 @@ export default function IntelligencePage() {
                   {predictions.predictions.map((row) => (
                     <div key={row.workload} className="dash-card">
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="font-medium text-slate-100">{row.workload}</span>
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
+                          className="font-medium text-slate-100 hover:text-aether"
+                        >
+                          {row.workload}
+                        </Link>
                         <Badge text={row.risk_level} variant={riskVariant(row.risk_level)} />
                       </div>
                       <p className="text-xs text-slate-500 mb-3">Risk score {formatPercent(row.risk_score * 100, 1)}</p>
@@ -181,7 +189,12 @@ export default function IntelligencePage() {
             threats.threats.map((t) => (
               <div key={`${t.workload}-${t.detected_at}`} className="dash-card">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="font-medium text-slate-100">{t.workload}</span>
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: t.workload })}
+                    className="font-medium text-slate-100 hover:text-aether"
+                  >
+                    {t.workload}
+                  </Link>
                   <Badge text={t.severity} variant={riskVariant(t.severity)} />
                   <Badge text={t.category} variant="muted" />
                 </div>
