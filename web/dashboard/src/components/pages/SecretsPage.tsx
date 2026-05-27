@@ -241,7 +241,7 @@ export default function SecretsPage() {
       )}
 
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create secret">
-        <div className="space-y-4">
+        <div data-testid="secrets-create-modal" className="space-y-4">
           <div>
             <label className="mb-1 block text-xs text-slate-500">Name</label>
             <input

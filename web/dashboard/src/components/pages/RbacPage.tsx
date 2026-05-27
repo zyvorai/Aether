@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { KeyRound, Shield, Trash2 } from 'lucide-react';
+import { KeyRound, Shield, Trash2, Copy } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
@@ -28,6 +28,7 @@ export default function RbacPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
+  const [keyCopied, setKeyCopied] = useState(false);
   const [revokeName, setRevokeName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -192,6 +193,19 @@ export default function RbacPage() {
             <div className="rounded-xl border border-aether/20 bg-slate-950/80 px-4 py-3 font-mono text-sm text-aether break-all">
               {created.key}
             </div>
+            <button
+              type="button"
+              data-testid="rbac-copy-key"
+              onClick={() => {
+                void navigator.clipboard.writeText(created.key);
+                setKeyCopied(true);
+                setTimeout(() => setKeyCopied(false), 2000);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
+            >
+              <Copy size={14} />
+              {keyCopied ? 'Copied' : 'Copy key'}
+            </button>
             <Badge text={created.role} variant={created.role === 'admin' ? 'red' : created.role === 'operator' ? 'yellow' : 'blue'} />
           </div>
         )}

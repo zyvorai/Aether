@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Download, ExternalLink } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { apiFetchSettled, apiTextSettled, apiFetch } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
@@ -259,7 +260,17 @@ export default function MetricsPage() {
                 <tbody>
                   {chargeback.lines.slice(0, 12).map((line) => (
                     <tr key={line.workload} className="border-b border-zinc-800/80">
-                      <td className="py-2 pr-4 font-mono text-xs">{line.workload}</td>
+                      <td className="py-2 pr-4 font-mono text-xs">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(pathWithQuery(viewToPath('workloads'), { workload: line.workload }))
+                          }
+                          className="text-aether hover:underline"
+                        >
+                          {line.workload}
+                        </button>
+                      </td>
                       <td className="py-2 pr-4">{line.owner}</td>
                       <td className="py-2 pr-4">{line.project}</td>
                       <td className="py-2">${line.monthlyUsd.toFixed(2)}</td>

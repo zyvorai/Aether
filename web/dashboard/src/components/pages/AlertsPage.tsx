@@ -301,6 +301,7 @@ export default function AlertsPage() {
             type="button"
             onClick={() => void handleTestWebhook()}
             disabled={testLoading || !testChannel}
+            data-testid="alerts-test-webhook"
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl text-sm font-medium text-white"
           >
             {testLoading ? 'Sending…' : 'Send test'}
@@ -308,11 +309,12 @@ export default function AlertsPage() {
         </div>
       </div>
 
-      <div className="dash-card mt-6">
+      <div className="dash-card mt-6" data-testid="alerts-webhook-queue">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-slate-100">Webhook retry queue</h2>
           <button
             type="button"
+            data-testid="alerts-flush-queue"
             onClick={() => void handleFlushQueue()}
             disabled={flushLoading || queue.length === 0}
             className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"

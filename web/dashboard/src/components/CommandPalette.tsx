@@ -220,6 +220,34 @@ export default function CommandPalette({
         searchText: 'compose docker import',
         view: 'compose',
       },
+      {
+        id: 'action-fleet',
+        label: 'Open fleet overview',
+        category: 'action',
+        searchText: 'fleet multi-cluster inventory',
+        view: 'fleet',
+      },
+      {
+        id: 'action-drift',
+        label: 'Open drift detection',
+        category: 'action',
+        searchText: 'drift reconcile configuration',
+        view: 'drift',
+      },
+      {
+        id: 'action-alerts',
+        label: 'Open alerts & webhooks',
+        category: 'action',
+        searchText: 'alerts webhooks notifications',
+        view: 'alerts',
+      },
+      {
+        id: 'action-openapi',
+        label: 'Open API explorer',
+        category: 'action',
+        searchText: 'openapi api routes swagger',
+        view: 'openapi',
+      },
     );
 
     if (onLogout) {

@@ -15,6 +15,7 @@ import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { workloadJsonToYaml } from '../../utils/workloadYaml';
+import { workloadNameFromSpec } from '../../utils/workloadNameFromSpec';
 import type { Template } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -95,7 +96,11 @@ export default function TemplatesPage() {
     setDeployLoading(false);
     if (res.success) {
       markFirstDeploy();
+      const wlName = workloadNameFromSpec(generatedSpec);
       toast(`Template "${generateName}" deployed successfully`, 'success');
+      if (wlName) {
+        navigate(pathWithQuery(viewToPath('workloads'), { workload: wlName }));
+      }
     } else {
       toast(`Failed to deploy template "${generateName}": ${res.error ?? 'unknown error'}`, 'error');
     }
@@ -220,11 +225,26 @@ export default function TemplatesPage() {
               type="button"
               onClick={() => void handleDeployGenerated()}
               disabled={deployLoading || !generatedSpec}
+              data-testid="template-deploy-generated"
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 shrink-0"
             >
               <Rocket size={14} />
               {deployLoading ? 'Deploying…' : 'Deploy'}
             </button>
+            {generatedSpec ? (
+              <button
+                type="button"
+                data-testid="template-open-editor"
+                onClick={() => {
+                  const name = workloadNameFromSpec(generatedSpec);
+                  navigate(pathWithQuery(viewToPath('editor'), name ? { workload: name } : {}));
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 shrink-0"
+              >
+                <FileCode2 size={14} />
+                Open in editor
+              </button>
+            ) : null}
           </div>
           <div className="dash-card bg-slate-950/80 p-4">
             <h4 className="text-xs uppercase tracking-wider text-slate-500 mb-2">Preview</h4>
@@ -244,7 +264,7 @@ export default function TemplatesPage() {
         onClose={() => setConfigureTemplate(null)}
         title={`Configure template: ${configureTemplate ?? ''}`}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div data-testid="template-configure-modal" className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(
             [
               ['workload_name', 'Workload name'],
