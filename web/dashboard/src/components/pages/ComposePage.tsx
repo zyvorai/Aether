@@ -211,6 +211,7 @@ export default function ComposePage() {
                     </button>
                     <button
                       type="button"
+                      data-testid="compose-stack-down"
                       onClick={() => void handleComposeDown()}
                       disabled={downLoading}
                       className="inline-flex items-center gap-2 rounded-xl border border-red-500/40 px-4 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"

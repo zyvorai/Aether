@@ -73,7 +73,12 @@ export default function FleetPage() {
         <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left">
           <StatCard title="Healthy" value={summary?.healthy_clusters ?? 0} color="green" icon={<Shield size={18} />} />
         </button>
-        <button type="button" onClick={() => navigate(viewToPath('workloads'))} className="text-left">
+        <button
+          type="button"
+          data-testid="fleet-workloads-stat"
+          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { source: 'cluster' }))}
+          className="text-left"
+        >
           <StatCard title="Workloads" value={summary?.workload_count ?? 0} color="purple" icon={<Server size={18} />} />
         </button>
         <StatCard

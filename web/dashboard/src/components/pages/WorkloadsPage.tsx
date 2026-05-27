@@ -974,6 +974,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       </Modal>
 
       <Modal isOpen={updateModal !== null} onClose={() => setUpdateModal(null)} title={`Update: ${updateModal}`} size="yaml">
+        <div data-testid="workloads-update-modal">
         <YamlInput
           layout="editor"
           buttonText="Apply update"
@@ -981,6 +982,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           loading={updateLoading}
           placeholder="Paste updated workload YAML (metadata.name must match)..."
         />
+        </div>
       </Modal>
 
       <Modal isOpen={deployModal} onClose={closeDeployModal} title="Deploy New Workload" size="yaml">
@@ -992,6 +994,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             onClose={() => finishDeploySuccess('overview')}
           />
         ) : (
+          <div data-testid="workloads-deploy-modal">
           <YamlInput
             value={deployYaml}
             onChange={setDeployYaml}
@@ -1030,10 +1033,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               <ValidateResultPanel validate={deployValidateResult} policy={deployPolicyResult} />
             }
           />
+          </div>
         )}
       </Modal>
 
       <Modal isOpen={validateModal} onClose={() => { setValidateModal(false); setValidateResult(null); }} title="Validate Workload YAML" size="yaml">
+        <div data-testid="workloads-validate-modal">
         <YamlInput
           key="validate-default"
           initialValue={DEFAULT_DEPLOY_WORKLOAD_YAML}
@@ -1045,6 +1050,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
           footer={<ValidateResultPanel validate={validateResult} />}
         />
+        </div>
       </Modal>
     </div>
   );

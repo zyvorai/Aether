@@ -106,7 +106,7 @@ export default function RbacPage() {
           <h2 className="text-lg font-semibold text-slate-100">Create RBAC API key</h2>
         </div>
         {canAdmin ? (
-        <div className="grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr_auto] gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr_auto] gap-3" data-testid="rbac-create-form">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -212,7 +212,7 @@ export default function RbacPage() {
       </Modal>
 
       <Modal isOpen={revokeName !== null} onClose={() => setRevokeName(null)} title="Revoke API key">
-        <div className="space-y-4">
+        <div data-testid="rbac-revoke-modal" className="space-y-4">
           <p className="text-sm text-slate-400">
             Revoke access for <span className="text-slate-200 font-medium">{revokeName}</span>?
           </p>

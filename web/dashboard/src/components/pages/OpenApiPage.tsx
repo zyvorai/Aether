@@ -111,6 +111,7 @@ export default function OpenApiPage() {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Filter routes…"
+        searchTestId="openapi-route-search"
         onRefresh={() => void load()}
         refreshing={loading}
         filters={
