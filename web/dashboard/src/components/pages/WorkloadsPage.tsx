@@ -73,6 +73,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [kindFilter, setKindFilter] = useQueryParam('kind', 'all');
   const [clusterFilter, setClusterFilter] = useQueryParam('cluster', 'all');
   const [namespaceFilter, setNamespaceFilter] = useQueryParam('namespace', 'all');
+  const [statusFilter, setStatusFilter] = useQueryParam('status', 'all');
   const [workloadParam, setWorkloadParam] = useQueryParam('workload');
   const [tabParam, setTabParam] = useQueryParam('tab');
   const [, setSearchParams] = useSearchParams();
@@ -513,7 +514,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     const matchesKind = kindFilter === 'all' || workload.kind === kindFilter;
     const matchesCluster = clusterFilter === 'all' || workload.cluster === clusterFilter;
     const matchesNamespace = namespaceFilter === 'all' || workload.namespace === namespaceFilter;
-    return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace;
+    const status = workload.status.toLowerCase();
+    const isRunning = status === 'running' || status.includes('deployed');
+    const isStopped = ['stopped', 'exited'].includes(status);
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'running' && isRunning) ||
+      (statusFilter === 'stopped' && isStopped);
+    return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace && matchesStatus;
     }),
   );
 
@@ -545,11 +553,16 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-kind-filter">
               {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
             </select>
-            <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass}>
+            <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-cluster-filter">
               {clusters.map((cluster) => <option key={cluster} value={cluster}>{cluster === 'all' ? 'All clusters' : cluster}</option>)}
             </select>
-            <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className={filterSelectClass}>
+            <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-namespace-filter">
               {namespaces.map((namespace) => <option key={namespace} value={namespace}>{namespace === 'all' ? 'All namespaces' : namespace}</option>)}
+            </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-status-filter">
+              <option value="all">All statuses</option>
+              <option value="running">Running</option>
+              <option value="stopped">Stopped</option>
             </select>
           </>
         }
@@ -609,14 +622,16 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <StatCard title="Total" value={workloads.length} color="orange" />
-        <button type="button" onClick={() => setSourceFilter('all')} className="text-left">
+        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="text-left">
           <StatCard title="Running" value={runningCount} color="green" />
         </button>
-        <StatCard title="Stopped" value={stoppedCount} color="red" />
+        <button type="button" onClick={() => setStatusFilter('stopped')} className="text-left">
+          <StatCard title="Stopped" value={stoppedCount} color="red" />
+        </button>
         <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="text-left">
           <StatCard title="Aether" value={aetherManagedCount} color="purple" />
         </button>
-        <button type="button" onClick={() => setSourceFilter('cluster')} className="text-left">
+        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="text-left">
           <StatCard title="Discovered" value={clusterDiscoveredCount} color="blue" />
         </button>
         <StatCard

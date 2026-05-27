@@ -283,9 +283,17 @@ export default function GitOpsPage() {
           type="button"
           data-testid="gitops-drift-link"
           onClick={() => navigate(viewToPath('drift'))}
-          className="mt-4 text-xs text-aether hover:underline"
+          className="mt-4 mr-4 text-xs text-aether hover:underline"
         >
           Drift detection →
+        </button>
+        <button
+          type="button"
+          data-testid="gitops-policy-link"
+          onClick={() => navigate(viewToPath('policy'))}
+          className="mt-4 text-xs text-aether hover:underline"
+        >
+          Policy check →
         </button>
       </div>
 
@@ -476,6 +484,7 @@ export default function GitOpsPage() {
               setSyncConfirmOpen(false);
               void sync();
             }}
+            data-testid="gitops-sync-confirm-button"
             className="px-4 py-2 rounded-lg text-sm font-medium bg-aether text-white hover:bg-aether/90"
           >
             Sync now

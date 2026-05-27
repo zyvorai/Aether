@@ -130,6 +130,13 @@ export default function CostPage() {
             >
               Cost optimize →
             </Link>
+            <Link
+              to={viewToPath('scheduler')}
+              className="text-xs text-aether hover:underline"
+              data-testid="cost-scheduler-link"
+            >
+              Placement scheduler →
+            </Link>
           </div>
           <p className="text-sm text-zinc-400">
             {chargeback.pricingSource} · {chargeback.region} · fleet {formatUSD(chargeback.totalMonthlyUsd)}/mo
@@ -161,6 +168,7 @@ export default function CostPage() {
         onSubmit={handleEstimate}
         loading={loading}
         placeholder="Paste workload YAML to estimate costs..."
+        submitTestId="cost-estimate-submit"
         result={resultContent}
       />
       </div>

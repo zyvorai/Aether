@@ -34,7 +34,7 @@ export default function DriftPage() {
   const [driftResult, setDriftResult] = useState<DriftReport | null>(null);
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [bulkScan, setBulkScan] = useState<BulkScanState | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [workloadParam, setWorkloadParam] = useQueryParam('workload');
 
   const load = useCallback(async () => {
@@ -109,6 +109,7 @@ export default function DriftPage() {
 
   async function handleReconcileAll() {
     if (!bulkScan?.drifted.length) return;
+    if (!window.confirm(`Reconcile drift for ${bulkScan.drifted.length} workload(s)?`)) return;
     setReconcileLoading(true);
     let reconciled = 0;
     for (const name of bulkScan.drifted) {
@@ -159,7 +160,7 @@ export default function DriftPage() {
               {bulkScan && !bulkScan.scanning && bulkScan.drifted.length > 0 ? (
                 <button
                   type="button"
-                  data-testid="drift-reconcile-all"
+                  data-testid="drift-reconcile-all-confirm"
                   onClick={() => void handleReconcileAll()}
                   disabled={reconcileLoading}
                   className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether-light disabled:opacity-50"

@@ -88,7 +88,7 @@ export default function FleetPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="Clusters" value={summary?.cluster_count ?? 0} color="blue" icon={<Globe size={18} />} />
-        <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left">
+        <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left" data-testid="fleet-healthy-stat">
           <StatCard title="Healthy" value={summary?.healthy_clusters ?? 0} color="green" icon={<Shield size={18} />} />
         </button>
         <button

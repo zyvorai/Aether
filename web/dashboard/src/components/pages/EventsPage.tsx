@@ -140,6 +140,11 @@ export default function EventsPage() {
                 Open drift page →
               </Link>
             )}
+            {category === 'policy' && (
+              <Link to={viewToPath('policy')} className="text-xs text-aether hover:underline self-center" data-testid="events-policy-link">
+                Open policy check →
+              </Link>
+            )}
             <input
               type="text"
               value={workloadFilter}

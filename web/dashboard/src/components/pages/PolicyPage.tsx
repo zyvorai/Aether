@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { AlertTriangle, AlertCircle, ShieldCheck, RefreshCw, WifiOff } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import SpecWorkbench from '../SpecWorkbench';
 import Badge, { SeverityBadge } from '../Badge';
@@ -136,6 +137,14 @@ export default function PolicyPage() {
         </button>
         <button
           type="button"
+          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { validate: '1' }))}
+          className="text-xs text-aether hover:underline"
+          data-testid="policy-validate-link"
+        >
+          Validate workloads →
+        </button>
+        <button
+          type="button"
           onClick={() => navigate(viewToPath('platform'))}
           className="text-xs text-aether hover:underline"
         >
@@ -231,6 +240,7 @@ export default function PolicyPage() {
         onSubmit={handleCheck}
         loading={loading}
         placeholder="Paste workload YAML to check policies..."
+        submitTestId="policy-check-submit"
         result={policyResultPanel}
       />
       </div>

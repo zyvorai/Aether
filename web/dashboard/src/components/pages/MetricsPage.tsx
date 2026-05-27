@@ -257,7 +257,15 @@ export default function MetricsPage() {
               >
                 Cost estimator →
               </button>
-            {chargeback.lines.length > 0 ? (
+              <button
+                type="button"
+                data-testid="metrics-workloads-link"
+                onClick={() => navigate(viewToPath('workloads'))}
+                className="text-xs text-aether hover:underline"
+              >
+                All workloads →
+              </button>
+              {chargeback.lines.length > 0 ? (
               <button
                 type="button"
                 data-testid="metrics-chargeback-export"

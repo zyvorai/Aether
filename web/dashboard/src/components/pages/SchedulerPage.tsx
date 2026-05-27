@@ -151,6 +151,9 @@ export default function SchedulerPage() {
             <Link to={viewToPath('affinity')} className="text-xs text-aether hover:underline">
               Runtime affinity →
             </Link>
+            <Link to={viewToPath('cost')} className="text-xs text-aether hover:underline" data-testid="scheduler-cost-link">
+              Cost estimation →
+            </Link>
             <button
             type="button"
             data-testid="scheduler-refresh-optimize"

@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useMemo, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router';
 import { Save, FileText, Eye, CheckCircle, Pencil } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState';
@@ -219,6 +219,9 @@ export default function EditorPage() {
               </p>
             )}
             <p className="text-sm text-slate-500">Design workloads without writing YAML by hand</p>
+            <Link to={viewToPath('templates')} className="text-xs text-aether hover:underline" data-testid="editor-templates-link">
+              Browse templates →
+            </Link>
           </div>
         </div>
         <button

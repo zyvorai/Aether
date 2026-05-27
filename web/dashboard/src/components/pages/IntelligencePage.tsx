@@ -211,6 +211,9 @@ export default function IntelligencePage() {
                   </Link>
                   <Badge text={t.severity} variant={riskVariant(t.severity)} />
                   <Badge text={t.category} variant="muted" />
+                  <Link to={viewToPath('alerts')} className="text-xs text-aether hover:underline ml-auto" data-testid="intelligence-alerts-link">
+                    Alerts →
+                  </Link>
                 </div>
                 <p className="text-sm text-slate-300">{t.reason}</p>
                 <p className="text-xs text-slate-500 mt-2">Score {t.score.toFixed(2)} · {t.detected_at}</p>
@@ -264,6 +267,11 @@ export default function IntelligencePage() {
 
       {tab === 'evolution' && (
         <div className="space-y-4 mt-4" data-testid="intelligence-evolution-panel">
+          <div className="flex justify-end">
+            <Link to={viewToPath('ai')} className="text-xs text-aether hover:underline" data-testid="intelligence-ai-link">
+              AI engine →
+            </Link>
+          </div>
           {evolution && evolution.workloads.length > 0 ? (
             evolution.workloads.map((row) => (
               <div key={row.workload} className="dash-card">
@@ -298,6 +306,11 @@ export default function IntelligencePage() {
 
       {tab === 'place' && (
         <div className="space-y-4 mt-4" data-testid="intelligence-place-panel">
+          <div className="flex justify-end mb-2">
+            <Link to={viewToPath('scheduler')} className="text-xs text-aether hover:underline" data-testid="intelligence-scheduler-link">
+              Placement scheduler →
+            </Link>
+          </div>
           <div className="dash-card space-y-3">
             <p className="text-sm text-slate-400">
               POST workload YAML to rank clusters and runtimes for global placement.
