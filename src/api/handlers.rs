@@ -4037,6 +4037,27 @@ pub(crate) async fn api_gitops_status() -> impl IntoResponse {
     }
 }
 
+/// POST /api/gitops/preview — Pull repo and list pending YAML changes without updating sync status.
+pub(crate) async fn api_gitops_preview() -> impl IntoResponse {
+    match load_gitops_controller_for_api() {
+        Ok((mut ctrl, _state_path)) => match ctrl.detect_changes() {
+            Ok(changes) => {
+                let confidential_compliance =
+                    crate::gitops::audit_confidential_changes(&ctrl.repo_dir, &changes);
+                ok_json(serde_json::json!({
+                    "changes": changes,
+                    "confidential_compliance": confidential_compliance,
+                }))
+            }
+            Err(e) => err_internal::<serde_json::Value>(e),
+        },
+        Err(msg) => (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::<serde_json::Value>::error(msg)),
+        ),
+    }
+}
+
 /// POST /api/gitops/sync — Pull repo and detect YAML changes (same as CLI sync).
 pub(crate) async fn api_gitops_sync() -> impl IntoResponse {
     match load_gitops_controller_for_api() {

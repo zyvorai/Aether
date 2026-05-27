@@ -698,6 +698,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/audit/verify", get(api_audit_verify))
         .route("/api/gitops/status", get(api_gitops_status))
         .route("/api/gitops/init", post(api_gitops_init))
+        .route("/api/gitops/preview", post(api_gitops_preview))
         .route("/api/gitops/sync", post(api_gitops_sync))
         .route("/api/webhooks/test", post(api_webhook_test))
         .route("/api/webhooks/queue", get(api_webhooks_queue))

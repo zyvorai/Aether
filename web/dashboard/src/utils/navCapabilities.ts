@@ -66,6 +66,28 @@ export function filterNavViews<T extends { view: AppView }>(
   return items.filter((item) => navVisibilityForView(item.view, platform, extras).visible);
 }
 
+export type AnnotatedNavItem<T extends { view: AppView }> = T & { visibility: NavVisibility };
+
+/** Split nav items into ready-to-use vs setup-required (shown dimmed with platform CTA). */
+export function partitionNavViews<T extends { view: AppView }>(
+  items: T[],
+  platform: PlatformInfo | null | undefined,
+  extras?: NavCapabilityExtras,
+): { ready: AnnotatedNavItem<T>[]; setup: AnnotatedNavItem<T>[] } {
+  const ready: AnnotatedNavItem<T>[] = [];
+  const setup: AnnotatedNavItem<T>[] = [];
+  for (const item of items) {
+    const visibility = navVisibilityForView(item.view, platform, extras);
+    const annotated = { ...item, visibility };
+    if (visibility.visible && !visibility.dimmed) {
+      ready.push(annotated);
+    } else {
+      setup.push(annotated);
+    }
+  }
+  return { ready, setup };
+}
+
 export function platformSetupNeeded(platform: PlatformInfo | null | undefined): string[] {
   if (!platform) return [];
   const hints: string[] = [];

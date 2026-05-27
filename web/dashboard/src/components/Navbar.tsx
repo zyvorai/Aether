@@ -52,7 +52,7 @@ import { useTheme, type AppTheme } from '../contexts/ThemeContext';
 import { THEME_OPTIONS, dropdownItemClass, dropdownSurfaceClass, navbarShellClass, themeSelectClass } from '../utils/themeSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
-import { filterNavViews } from '../utils/navCapabilities';
+import { filterNavViews, partitionNavViews, type AnnotatedNavItem } from '../utils/navCapabilities';
 import { getClusterContext } from '../utils/clusterContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
 import PlatformHealthChip from './PlatformHealthChip';
@@ -154,12 +154,16 @@ const mobileNavGroups: DropdownGroup[] = [
 
 function Dropdown({
   group,
+  ready,
+  setup,
   isActive,
   currentView,
   onNavigate,
   theme,
 }: {
   group: DropdownGroup;
+  ready: AnnotatedNavItem<DropdownItem>[];
+  setup: AnnotatedNavItem<DropdownItem>[];
   isActive: boolean;
   currentView: AppView;
   onNavigate: (view: AppView) => void;
@@ -237,7 +241,7 @@ function Dropdown({
             role="menu"
             className={`w-56 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
           >
-            {group.items.map((item) => (
+            {ready.map((item) => (
               <button
                 key={item.view}
                 type="button"
@@ -254,6 +258,33 @@ function Dropdown({
                 {item.label}
               </button>
             ))}
+            {setup.length > 0 ? (
+              <>
+                <div className="mx-3 my-1 border-t border-zinc-700/80" />
+                <p className="px-4 py-1 text-[10px] uppercase tracking-wider text-zinc-500">Setup required</p>
+                {setup.map((item) => (
+                  <button
+                    key={`setup-${item.view}`}
+                    type="button"
+                    role="menuitem"
+                    title={item.visibility.setupHint ?? 'Configure on Platform & HA'}
+                    onClick={() => {
+                      onNavigate('platform');
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm opacity-50 transition-colors hover:opacity-80 ${dropdownItemClass(false, theme)}`}
+                  >
+                    <span className="text-zinc-500">{item.icon}</span>
+                    <span className="flex flex-col items-start gap-0.5 text-left">
+                      <span>{item.label}</span>
+                      {item.visibility.setupHint ? (
+                        <span className="text-[10px] leading-tight text-zinc-500">{item.visibility.setupHint}</span>
+                      ) : null}
+                    </span>
+                  </button>
+                ))}
+              </>
+            ) : null}
           </div>
         </div>
       )}
@@ -420,12 +451,12 @@ export default function Navbar({
   const navExtras = useMemo(() => ({ gitopsConfigured }), [gitopsConfigured]);
   const platform = capabilities?.platform ?? null;
 
-  const filteredDropdownGroups = useMemo(
+  const partitionedDropdownGroups = useMemo(
     () =>
-      dropdownGroups.map((group) => ({
-        ...group,
-        items: filterNavViews(group.items, platform, navExtras),
-      })),
+      dropdownGroups.map((group) => {
+        const { ready, setup } = partitionNavViews(group.items, platform, navExtras);
+        return { ...group, ready, setup };
+      }),
     [platform, navExtras],
   );
 
@@ -488,13 +519,17 @@ export default function Navbar({
         label="Workloads"
         compact
       />
-      {filteredDropdownGroups.map((group) => {
-        if (group.items.length === 0) return null;
-        const isActive = group.items.some((item) => item.view === currentView);
+      {partitionedDropdownGroups.map((group) => {
+        if (group.ready.length === 0 && group.setup.length === 0) return null;
+        const isActive =
+          group.ready.some((item) => item.view === currentView) ||
+          group.setup.some((item) => item.view === currentView);
         return (
           <Dropdown
             key={group.label}
             group={group}
+            ready={group.ready}
+            setup={group.setup}
             isActive={isActive}
             currentView={currentView}
             onNavigate={onNavigate}

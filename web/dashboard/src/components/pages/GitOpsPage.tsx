@@ -3,9 +3,13 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { GitBranch } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
+import { pathWithQuery } from '../../utils/urlState';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { workloadNameFromGitOpsPath } from '../../utils/gitopsLinks';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -58,12 +62,16 @@ function formatSyncResult(raw: string | null): {
 }
 
 export default function GitOpsPage() {
+  const navigate = useNavigate();
   const [data, setData] = useState<GitOpsPayload | null>(null);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncConfirmOpen, setSyncConfirmOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewChanges, setPreviewChanges] = useState<GitOpsChangeRow[]>([]);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [initRepo, setInitRepo] = useState('');
   const [initBranch, setInitBranch] = useState('main');
   const [initializing, setInitializing] = useState(false);
@@ -117,7 +125,44 @@ export default function GitOpsPage() {
     }
   };
 
+  const openSyncConfirm = async () => {
+    setSyncConfirmOpen(true);
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setPreviewChanges([]);
+    const res = await apiPost<{ changes?: GitOpsChangeRow[] }>('/gitops/preview', {});
+    setPreviewLoading(false);
+    if (res.success && res.data?.changes) {
+      setPreviewChanges(res.data.changes);
+    } else if (!res.success) {
+      setPreviewError(res.error ?? 'Could not load diff preview');
+    }
+  };
+
   const parsedSync = formatSyncResult(syncResult);
+
+  function openWorkloadFromPath(filePath: string) {
+    const name = workloadNameFromGitOpsPath(filePath);
+    if (!name) return;
+    navigate(pathWithQuery(viewToPath('workloads'), { workload: name }));
+  }
+
+  function GitOpsFileCell({ filePath }: { filePath: string }) {
+    const workloadName = workloadNameFromGitOpsPath(filePath);
+    if (!workloadName) {
+      return <span className="font-mono text-xs text-zinc-300">{filePath}</span>;
+    }
+    return (
+      <button
+        type="button"
+        onClick={() => openWorkloadFromPath(filePath)}
+        className="font-mono text-xs text-aether hover:underline text-left"
+        title={`Open workload ${workloadName}`}
+      >
+        {filePath}
+      </button>
+    );
+  }
 
   if (loading && !data && !loadFailed) {
     return <PageLoading rows={4} />;
@@ -135,7 +180,7 @@ export default function GitOpsPage() {
         actions={
           <button
             type="button"
-            onClick={() => setSyncConfirmOpen(true)}
+            onClick={() => void openSyncConfirm()}
             disabled={syncing || data?.configured === false}
             className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm font-medium text-aether hover:bg-aether/20 disabled:opacity-40"
           >
@@ -267,7 +312,9 @@ export default function GitOpsPage() {
                           }
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-slate-300">{c.file_path}</td>
+                      <td className="py-2 pr-4 font-mono text-xs text-zinc-300">
+                        <GitOpsFileCell filePath={c.file_path} />
+                      </td>
                       <td className="py-2 pr-4">
                         <Badge text={confidentialLabel} variant={confidentialVariant} />
                       </td>
@@ -340,8 +387,56 @@ export default function GitOpsPage() {
       <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
         <p className="text-sm text-slate-300 mb-4">
           Pull from <span className="font-mono text-aether">{data?.repo_url ?? 'repository'}</span> and apply
-          detected YAML changes. Review the diff preview after sync completes.
+          detected YAML changes. Review the diff preview below before syncing.
         </p>
+        <div
+          className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3"
+          data-testid="gitops-diff-preview"
+        >
+          {previewLoading ? (
+            <p className="text-sm text-zinc-500">Loading pending changes…</p>
+          ) : previewError ? (
+            <p className="text-sm text-red-400">{previewError}</p>
+          ) : previewChanges.length === 0 ? (
+            <p className="text-sm text-zinc-500">No YAML changes detected in the latest commit.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-left text-xs uppercase tracking-wider text-zinc-500">
+                    <th className="py-2 pr-4">Change</th>
+                    <th className="py-2 pr-4">File</th>
+                    <th className="py-2">Commit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewChanges.map((c) => (
+                    <tr key={`${c.commit}-${c.file_path}`} className="border-b border-zinc-800/50">
+                      <td className="py-2 pr-4">
+                        <Badge
+                          text={c.change_type}
+                          variant={
+                            c.change_type === 'Added'
+                              ? 'green'
+                              : c.change_type === 'Deleted'
+                                ? 'red'
+                                : 'yellow'
+                          }
+                        />
+                      </td>
+                      <td className="py-2 pr-4 font-mono text-xs text-zinc-300">
+                        <GitOpsFileCell filePath={c.file_path} />
+                      </td>
+                      <td className="py-2 font-mono text-xs text-zinc-500 truncate max-w-[12rem]" title={c.commit}>
+                        {c.commit.slice(0, 12)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
         <div className="flex justify-end gap-3">
           <button
             type="button"

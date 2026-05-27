@@ -192,6 +192,7 @@ export default function BackupsPage() {
       </Modal>
 
       <Modal isOpen={restoreOpen !== null} onClose={() => setRestoreOpen(null)} title="Restore backup">
+        <div data-testid="backup-restore-modal">
         <p className="text-sm text-slate-300 mb-4">
           Restore state from <code className="text-slate-400">{restoreOpen}</code>. This replaces current workloads unless merge is enabled.
         </p>
@@ -216,6 +217,7 @@ export default function BackupsPage() {
           >
             {restoring ? 'Restoring…' : 'Restore'}
           </button>
+        </div>
         </div>
       </Modal>
     </div>

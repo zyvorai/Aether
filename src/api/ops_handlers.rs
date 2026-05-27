@@ -428,7 +428,7 @@ pub(crate) async fn api_orchestrator_rolling_update(
     Json(req): Json<OrchestratorRollingUpdateRequest>,
 ) -> impl IntoResponse {
     let path = Orchestrator::default_path();
-    let mut orch = match Orchestrator::load(&path) {
+    let orch = match Orchestrator::load(&path) {
         Ok(o) => o,
         Err(e) => return err_internal::<serde_json::Value>(e).into_response(),
     };

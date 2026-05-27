@@ -141,7 +141,7 @@ export default function PluginsPage() {
       />
 
       {discoverSummary && (
-        <div className="dash-card mb-6 text-sm text-slate-300">{discoverSummary}</div>
+        <div data-testid="plugins-discover-summary" className="dash-card mb-6 text-sm text-slate-300">{discoverSummary}</div>
       )}
 
       {canMutate && (

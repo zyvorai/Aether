@@ -3,9 +3,12 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import StatCard from '../StatCard';
 import BarChart from '../BarChart';
 import Badge from '../Badge';
@@ -115,7 +118,14 @@ export default function SchedulerPage() {
               <tbody>
                 {placements.map((p) => (
                   <tr key={p.workload_name} className="border-b border-slate-800/50">
-                    <td className="py-2 px-3">{p.workload_name}</td>
+                    <td className="py-2 px-3">
+                      <Link
+                        to={pathWithQuery(viewToPath('workloads'), { workload: p.workload_name })}
+                        className="text-aether hover:underline"
+                      >
+                        {p.workload_name}
+                      </Link>
+                    </td>
                     <td className="py-2 px-3">{p.runtime}</td>
                     <td className="py-2 px-3">{p.cpu_reserved}</td>
                     <td className="py-2 px-3">{p.memory_reserved_mb} MB</td>
@@ -128,7 +138,18 @@ export default function SchedulerPage() {
       </div>
 
       <div className="dash-card">
-        <h2 className="text-lg font-semibold text-zinc-100 mb-4">Optimization Suggestions</h2>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold text-zinc-100">Optimization Suggestions</h2>
+          <button
+            type="button"
+            data-testid="scheduler-refresh-optimize"
+            onClick={() => void handleRefresh()}
+            disabled={refreshing}
+            className="text-xs rounded-lg border border-zinc-700 px-3 py-1.5 text-zinc-300 hover:border-aether/40 disabled:opacity-50"
+          >
+            {refreshing ? 'Refreshing…' : 'Refresh suggestions'}
+          </button>
+        </div>
         {suggestions.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No suggestions" description="No optimization suggestions at this time" />
         ) : (

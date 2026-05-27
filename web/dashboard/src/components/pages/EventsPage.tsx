@@ -3,9 +3,12 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
@@ -150,7 +153,22 @@ export default function EventsPage() {
                   <div className="text-xs text-slate-400 mt-1">{ev.message}</div>
                   <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">
                     <span>{formatTimestamp(ev.timestamp)}</span>
-                    {ev.workload && <span>Workload: {ev.workload}</span>}
+                    {ev.workload ? (
+                      <span>
+                        Workload:{' '}
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: ev.workload })}
+                          className="text-aether hover:underline"
+                        >
+                          {ev.workload}
+                        </Link>
+                      </span>
+                    ) : null}
+                    {ev.workload && ev.category === 'drift' ? (
+                      <Link to={viewToPath('drift')} className="text-aether hover:underline">
+                        Open drift page
+                      </Link>
+                    ) : null}
                     <span>Source: {ev.source}</span>
                     {ev.acknowledged && <Badge text="ACK" variant="green" />}
                   </div>

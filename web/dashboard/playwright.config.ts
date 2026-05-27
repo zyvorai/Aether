@@ -13,6 +13,7 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+    permissions: ['clipboard-read', 'clipboard-write'],
   },
   webServer: process.env.AETHER_E2E_SKIP_SERVER
     ? undefined

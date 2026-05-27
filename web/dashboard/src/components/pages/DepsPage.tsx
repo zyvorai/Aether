@@ -3,8 +3,11 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { Inbox, Plus, ArrowRight, Trash2 } from 'lucide-react';
 import { apiFetchSettled, apiPost, apiDeleteJson } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge from '../Badge';
@@ -16,6 +19,17 @@ import type { DependencyGraph, DependencyEdge } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+}
+
+function WorkloadNodeLink({ name }: { name: string }) {
+  return (
+    <Link
+      to={pathWithQuery(viewToPath('workloads'), { workload: name })}
+      className="text-aether hover:underline"
+    >
+      {name}
+    </Link>
+  );
 }
 
 function GraphVisual({
@@ -41,7 +55,7 @@ function GraphVisual({
               key={node}
               className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5 text-sm text-slate-200"
             >
-              {node}
+              <WorkloadNodeLink name={node} />
             </span>
           ))}
         </div>
@@ -51,10 +65,10 @@ function GraphVisual({
               key={`${edge.from}-${edge.to}-${i}`}
               className="flex items-center gap-2 text-sm rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2"
             >
-              <span className="font-medium text-slate-200">{edge.from}</span>
+              <span className="font-medium text-slate-200"><WorkloadNodeLink name={edge.from} /></span>
               <ArrowRight size={14} className="text-aether shrink-0" />
               <span className="text-slate-400">depends on</span>
-              <span className="font-medium text-aether">{edge.to}</span>
+              <span className="font-medium text-aether"><WorkloadNodeLink name={edge.to} /></span>
               {onRemove && (
                 <button
                   type="button"
@@ -83,7 +97,7 @@ function GraphVisual({
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-aether/10 text-xs font-semibold text-aether">
                 {i + 1}
               </span>
-              <span className="text-sm text-slate-200">{name}</span>
+              <span className="text-sm text-slate-200"><WorkloadNodeLink name={name} /></span>
             </div>
           </div>
         ))}
@@ -95,6 +109,7 @@ function GraphVisual({
 }
 
 export default function DepsPage() {
+  const navigate = useNavigate();
   const [graph, setGraph] = useState<DependencyGraph | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -224,6 +239,9 @@ export default function DepsPage() {
                 <DependencyGraphVisual
                   nodes={graph.nodes ?? []}
                   edges={graph.edges ?? []}
+                  onNodeClick={(name) =>
+                    navigate(pathWithQuery(viewToPath('workloads'), { workload: name }))
+                  }
                 />
               ) : (
                 <GraphVisual
