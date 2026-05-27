@@ -136,6 +136,7 @@ server = data(server_body)
 
 errors = []
 warnings = []
+cluster_count = 0
 
 if not isinstance(workloads, list):
     errors.append(f"workloads payload not a list: {type(workloads)}")
@@ -154,10 +155,10 @@ if summary:
     print(f"  cluster/summary: connected={connected} clusters={cc} healthy={hc} workload_count={wc}")
     if connected and hc < 1:
         errors.append("cluster summary connected but no healthy clusters")
-    if isinstance(workloads, list) and wc and len(workloads) > 0:
-        # discovery counts deployments; summary may differ slightly — warn if far apart
-        if abs(wc - len(workloads)) > 5:
-            warnings.append(f"workload_count ({wc}) differs from /api/workloads ({len(workloads)}) by >5")
+    if isinstance(workloads, list) and wc and abs(wc - cluster_count) > 0:
+        errors.append(
+            f"workload_count ({wc}) differs from cluster-discovered /api/workloads ({cluster_count})"
+        )
 
 if cilium:
     cni = cilium.get("cni")
