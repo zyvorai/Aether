@@ -665,115 +665,8 @@ pub(crate) async fn api_system_ready(AxumState(app_state): AxumState<AppState>) 
         .into_response()
 }
 
-/// Discover workloads live from Kubernetes Deployments and KubeVirt VMs
-/// across all namespaces. Returns instances regardless of managed-by labels.
-async fn discover_live_workloads() -> Vec<WorkloadResponse> {
-    let mut results = Vec::new();
-
-    // Discover K8s Deployments across all namespaces
-    if let Ok(client) = kube::Client::try_default().await {
-        let deployments: kube::Api<k8s_openapi::api::apps::v1::Deployment> = kube::Api::all(client.clone());
-        if let Ok(deploy_list) = deployments.list(&kube::api::ListParams::default()).await {
-            for deploy in &deploy_list.items {
-                let name = deploy.metadata.name.clone().unwrap_or_default();
-                let ns = deploy.metadata.namespace.clone().unwrap_or_else(|| "default".to_string());
-                let labels = deploy.metadata.labels.as_ref();
-                let managed = labels.is_some_and(|l| l.get("managed-by").is_some_and(|v| v == "aether"));
-
-                let image = deploy.spec.as_ref()
-                    .and_then(|s| s.template.spec.as_ref())
-                    .and_then(|ps| ps.containers.first())
-                    .and_then(|c| c.image.clone())
-                    .unwrap_or_else(|| "unknown".to_string());
-
-                let ready_replicas = deploy.status.as_ref()
-                    .and_then(|s| s.ready_replicas)
-                    .unwrap_or(0);
-                let replicas = deploy.spec.as_ref()
-                    .and_then(|s| s.replicas)
-                    .unwrap_or(1);
-
-                let status = if ready_replicas >= replicas {
-                    "running".to_string()
-                } else if ready_replicas > 0 {
-                    "degraded".to_string()
-                } else {
-                    "pending".to_string()
-                };
-
-                let created_at = deploy.metadata.creation_timestamp.as_ref()
-                    .map(|t| t.0.to_rfc3339())
-                    .unwrap_or_default();
-
-                let runtime_label = if managed { "Kubernetes (aether)" } else { "Kubernetes" };
-
-                results.push(WorkloadResponse {
-                    name: format!("{}/{}", ns, name),
-                    runtime: runtime_label.to_string(),
-                    image,
-                    status,
-                    created_at,
-                    source: Some("cluster".to_string()),
-                    cluster: None,
-                    namespace: Some(ns),
-                    kind: Some("Deployment".to_string()),
-                });
-            }
-        }
-
-        // Discover KubeVirt VMs across all namespaces
-        let vms: kube::Api<kube::core::DynamicObject> = kube::Api::all_with(
-            client.clone(),
-            &kube::discovery::ApiResource {
-                group: "kubevirt.io".to_string(),
-                version: "v1".to_string(),
-                api_version: "kubevirt.io/v1".to_string(),
-                kind: "VirtualMachineInstance".to_string(),
-                plural: "virtualmachineinstances".to_string(),
-            },
-        );
-        if let Ok(vm_list) = vms.list(&kube::api::ListParams::default()).await {
-            for vm in &vm_list.items {
-                let name = vm.metadata.name.clone().unwrap_or_default();
-                let ns = vm.metadata.namespace.clone().unwrap_or_else(|| "default".to_string());
-                let labels = vm.metadata.labels.as_ref();
-                let managed = labels.is_some_and(|l| l.get("managed-by").is_some_and(|v| v == "aether"));
-
-                let phase = vm.data.get("status")
-                    .and_then(|s| s.get("phase"))
-                    .and_then(|p| p.as_str())
-                    .unwrap_or("Unknown");
-
-                let status = match phase {
-                    "Running" => "running",
-                    "Succeeded" => "stopped",
-                    "Failed" => "failed",
-                    "Scheduling" | "Scheduled" | "Pending" => "pending",
-                    _ => "unknown",
-                };
-
-                let created_at = vm.metadata.creation_timestamp.as_ref()
-                    .map(|t| t.0.to_rfc3339())
-                    .unwrap_or_default();
-
-                let runtime_label = if managed { "KubeVirt (aether)" } else { "KubeVirt" };
-
-                results.push(WorkloadResponse {
-                    name: format!("{}/{}", ns, name),
-                    runtime: runtime_label.to_string(),
-                    image: format!("vm:{}", name),
-                    status: status.to_string(),
-                    created_at,
-                    source: Some("cluster".to_string()),
-                    cluster: None,
-                    namespace: Some(ns),
-                    kind: Some("VirtualMachineInstance".to_string()),
-                });
-            }
-        }
-    }
-
-    results
+fn cluster_workload_dedup_key(workload: &crate::kubecluster::ClusterWorkload) -> String {
+    format!("{}/{}/{}", workload.namespace, workload.kind, workload.name)
 }
 
 /// GET /api/workloads - List all workloads (state store + live discovery)
@@ -804,33 +697,32 @@ pub(crate) async fn list_workloads(
         .collect();
     drop(state);
 
-    // Merge live-discovered workloads (skip duplicates already in state store)
-    let live = discover_live_workloads().await;
-    for w in live {
-        // Match by bare name (state store uses bare name, discovery uses ns/name)
-        let bare_name = w.name.rsplit('/').next().unwrap_or(&w.name);
-        if !seen.contains(bare_name) && !seen.contains(&w.name) {
-            seen.insert(w.name.clone());
-            workloads.push(w);
-        }
-    }
-
     if let Ok(cluster_workloads) = crate::kubecluster::list_workloads().await {
         for workload in cluster_workloads {
-            let full_name = format!("{}/{}/{}", workload.cluster, workload.namespace, workload.name);
-            if seen.insert(full_name.clone()) {
-                workloads.push(WorkloadResponse {
-                    name: full_name,
-                    runtime: "Kubernetes".to_string(),
-                    image: workload.image,
-                    status: workload.status,
-                    created_at: workload.created_at,
-                    source: Some("cluster".to_string()),
-                    cluster: Some(workload.cluster),
-                    namespace: Some(workload.namespace),
-                    kind: Some(workload.kind),
-                });
+            if seen.contains(&workload.name) {
+                continue;
             }
+            let dedup = cluster_workload_dedup_key(&workload);
+            if !seen.insert(dedup) {
+                continue;
+            }
+            let full_name = format!("{}/{}/{}", workload.cluster, workload.namespace, workload.name);
+            let runtime = if workload.kind == "VirtualMachineInstance" {
+                "KubeVirt".to_string()
+            } else {
+                "Kubernetes".to_string()
+            };
+            workloads.push(WorkloadResponse {
+                name: full_name,
+                runtime,
+                image: workload.image,
+                status: workload.status,
+                created_at: workload.created_at,
+                source: Some("cluster".to_string()),
+                cluster: Some(workload.cluster),
+                namespace: Some(workload.namespace),
+                kind: Some(workload.kind),
+            });
         }
     }
 
@@ -4494,6 +4386,20 @@ mod tests {
     // ---------------------------------------------------------------
     // RBAC API types tests
     // ---------------------------------------------------------------
+
+    #[test]
+    fn test_cluster_workload_dedup_key_uses_namespace_kind_name() {
+        let key = cluster_workload_dedup_key(&crate::kubecluster::ClusterWorkload {
+            cluster: "active-client".to_string(),
+            namespace: "kube-system".to_string(),
+            kind: "DaemonSet".to_string(),
+            name: "cilium".to_string(),
+            image: "cilium/cilium".to_string(),
+            status: "running".to_string(),
+            created_at: String::new(),
+        });
+        assert_eq!(key, "kube-system/DaemonSet/cilium");
+    }
 
     #[test]
     fn test_create_api_key_request_deserialization() {
