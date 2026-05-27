@@ -1072,6 +1072,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           buttonText="Validate"
           onSubmit={handleValidate}
           loading={validateLoading}
+          submitTestId="workloads-validate-submit"
           placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
           footer={<ValidateResultPanel validate={validateResult} />}
         />

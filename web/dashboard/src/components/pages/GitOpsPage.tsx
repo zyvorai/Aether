@@ -61,6 +61,8 @@ function formatSyncResult(raw: string | null): {
   }
 }
 
+const GITOPS_SYNC_STORAGE_KEY = 'aether-gitops-last-sync';
+
 export default function GitOpsPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<GitOpsPayload | null>(null);
@@ -94,6 +96,24 @@ export default function GitOpsPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(GITOPS_SYNC_STORAGE_KEY);
+      if (stored) setSyncResult(stored);
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
+
+  const persistSyncResult = (raw: string) => {
+    setSyncResult(raw);
+    try {
+      sessionStorage.setItem(GITOPS_SYNC_STORAGE_KEY, raw);
+    } catch {
+      /* ignore storage errors */
+    }
+  };
+
   const initGitOps = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!initRepo.trim()) return;
@@ -118,7 +138,7 @@ export default function GitOpsPage() {
     const res = await apiPost<{ changes?: GitOpsChangeRow[]; status?: unknown }>('/gitops/sync', {});
     setSyncing(false);
     if (res.success) {
-      setSyncResult(JSON.stringify(res.data, null, 2));
+      persistSyncResult(JSON.stringify(res.data, null, 2));
       void load();
     } else {
       setSyncResult(res.error ?? 'Sync failed');
@@ -389,7 +409,24 @@ export default function GitOpsPage() {
                     .filter((row) => row.confidential_enabled)
                     .map((row) => (
                       <tr key={row.file_path} className="border-b border-slate-800/50 align-top">
-                        <td className="py-2 pr-4 text-slate-200">{row.workload ?? '—'}</td>
+                        <td className="py-2 pr-4 text-slate-200">
+                          {row.workload ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate(
+                                  pathWithQuery(viewToPath('confidential'), { workload: row.workload! }),
+                                )
+                              }
+                              className="text-aether hover:underline"
+                              data-testid={`gitops-confidential-row-${row.workload}`}
+                            >
+                              {row.workload}
+                            </button>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                         <td className="py-2 pr-4 font-mono text-xs text-slate-400">{row.file_path}</td>
                         <td className="py-2 pr-4 text-xs text-amber-200/90">
                           {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}

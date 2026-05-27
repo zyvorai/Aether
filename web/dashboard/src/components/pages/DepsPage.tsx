@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router';
 import { Inbox, Plus, ArrowRight, Trash2 } from 'lucide-react';
 import { apiFetchSettled, apiPost, apiDeleteJson } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge from '../Badge';
@@ -36,10 +36,12 @@ function GraphVisual({
   graph,
   onRemove,
   removeBusy,
+  highlightWorkload,
 }: {
   graph: DependencyGraph;
   onRemove?: (from: string, to: string) => void;
   removeBusy?: string | null;
+  highlightWorkload?: string;
 }) {
   const nodes = graph.nodes ?? graph.startup_order;
   const edges: DependencyEdge[] =
@@ -53,7 +55,10 @@ function GraphVisual({
           {nodes.map((node) => (
             <span
               key={node}
-              className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5 text-sm text-slate-200"
+              className={`rounded-full border bg-slate-950/80 px-3 py-1.5 text-sm text-slate-200 ${
+                highlightWorkload === node ? 'border-aether/60 ring-1 ring-aether/30' : 'border-slate-700'
+              }`}
+              data-testid={highlightWorkload === node ? 'deps-workload-highlight' : undefined}
             >
               <WorkloadNodeLink name={node} />
             </span>
@@ -97,7 +102,12 @@ function GraphVisual({
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-aether/10 text-xs font-semibold text-aether">
                 {i + 1}
               </span>
-              <span className="text-sm text-slate-200"><WorkloadNodeLink name={name} /></span>
+              <span
+                className={`text-sm text-slate-200 ${highlightWorkload === name ? 'text-aether font-medium' : ''}`}
+                data-testid={highlightWorkload === name ? 'deps-workload-highlight' : undefined}
+              >
+                <WorkloadNodeLink name={name} />
+              </span>
             </div>
           </div>
         ))}
@@ -110,6 +120,8 @@ function GraphVisual({
 
 export default function DepsPage() {
   const navigate = useNavigate();
+  const [workloadQuery] = useQueryParam('workload', '');
+  const highlightWorkload = workloadQuery.trim() || undefined;
   const [graph, setGraph] = useState<DependencyGraph | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -185,7 +197,32 @@ export default function DepsPage() {
         >
           Compose import →
         </button>
+        <button
+          type="button"
+          data-testid="deps-envs-link"
+          onClick={() => navigate(viewToPath('envs'))}
+          className="text-xs text-aether hover:underline ml-3"
+        >
+          Environments →
+        </button>
       </div>
+
+      {highlightWorkload ? (
+        <div
+          data-testid="deps-workload-context"
+          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Dependency context for workload <span className="font-mono text-aether">{highlightWorkload}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: highlightWorkload }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
 
       <div className="dash-card mb-6">
         <h2 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
@@ -249,6 +286,7 @@ export default function DepsPage() {
                 <DependencyGraphVisual
                   nodes={graph.nodes ?? []}
                   edges={graph.edges ?? []}
+                  highlightWorkload={highlightWorkload}
                   onNodeClick={(name) =>
                     navigate(pathWithQuery(viewToPath('workloads'), { workload: name }))
                   }
@@ -256,6 +294,7 @@ export default function DepsPage() {
               ) : (
                 <GraphVisual
                   graph={graph}
+                  highlightWorkload={highlightWorkload}
                   onRemove={(from, to) => void handleRemoveDependency(from, to)}
                   removeBusy={removeBusy}
                 />
