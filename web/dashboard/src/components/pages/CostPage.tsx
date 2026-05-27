@@ -8,7 +8,7 @@ import { Inbox } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import EmptyState from '../EmptyState';
 import SpecWorkbench from '../SpecWorkbench';
 import type { CostEstimate } from '../../types/api';
@@ -24,6 +24,7 @@ interface ChargebackReport {
 
 export default function CostPage() {
   const navigate = useNavigate();
+  const [workloadQuery] = useQueryParam('workload');
   const [estimates, setEstimates] = useState<CostEstimate[]>([]);
   const [chargeback, setChargeback] = useState<ChargebackReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -112,6 +113,22 @@ export default function CostPage() {
 
   return (
     <div className="space-y-6">
+      {workloadQuery.trim() ? (
+        <div
+          data-testid="cost-workload-context"
+          className="rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Cost context for workload <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
       {chargeback ? (
         <div className="dash-card" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
@@ -145,7 +162,11 @@ export default function CostPage() {
           {chargeback.lines.length > 0 && (
             <ul className="mt-3 space-y-1 text-sm">
               {chargeback.lines.map((line) => (
-                <li key={line.workload} className="flex flex-wrap items-center justify-between gap-2">
+                <li
+                  key={line.workload}
+                  className={`flex flex-wrap items-center justify-between gap-2 ${workloadQuery.trim() === line.workload ? 'rounded-lg border border-aether/40 bg-aether/5 px-2 py-1' : ''}`}
+                  data-testid={workloadQuery.trim() === line.workload ? 'cost-workload-highlight' : undefined}
+                >
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: line.workload })}
                     className="text-aether hover:underline font-mono text-xs"

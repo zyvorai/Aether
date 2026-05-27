@@ -39,7 +39,7 @@ export default function TemplatesPage() {
   const [deployLoading, setDeployLoading] = useState(false);
   const [configureTemplate, setConfigureTemplate] = useState<string | null>(null);
   const [configureParam, setConfigureParam] = useQueryParam('configure');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [params, setParams] = useState({
     workload_name: '',
     owner: '',
@@ -142,6 +142,32 @@ export default function TemplatesPage() {
 
   return (
     <div>
+      <div className="mb-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { validate: '1' }))}
+          className="text-xs text-aether hover:underline"
+          data-testid="templates-policy-link"
+        >
+          Policy validate →
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(viewToPath('gitops'))}
+          className="text-xs text-aether hover:underline"
+          data-testid="templates-gitops-link"
+        >
+          GitOps sync →
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(viewToPath('compose'))}
+          className="text-xs text-aether hover:underline"
+          data-testid="templates-compose-link"
+        >
+          Compose import →
+        </button>
+      </div>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

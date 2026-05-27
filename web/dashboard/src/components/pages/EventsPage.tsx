@@ -145,6 +145,29 @@ export default function EventsPage() {
                 Open policy check →
               </Link>
             )}
+            {category === 'intent-violation' && (
+              <Link
+                to={viewToPath('ai')}
+                className="text-xs text-aether hover:underline self-center"
+                data-testid="events-intent-link"
+              >
+                AI intent debugger →
+              </Link>
+            )}
+            {category === 'sla' && (
+              <Link to={viewToPath('sla')} className="text-xs text-aether hover:underline self-center" data-testid="events-sla-link">
+                SLA compliance →
+              </Link>
+            )}
+            {category === 'health' && (
+              <Link
+                to={viewToPath('health')}
+                className="text-xs text-aether hover:underline self-center"
+                data-testid="events-health-link"
+              >
+                Health monitor →
+              </Link>
+            )}
             <input
               type="text"
               value={workloadFilter}

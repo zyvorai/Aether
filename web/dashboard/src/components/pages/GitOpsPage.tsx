@@ -362,9 +362,19 @@ export default function GitOpsPage() {
           )}
           {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
             <div className="mb-4 overflow-x-auto">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                Confidential compliance
-              </h4>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Confidential compliance
+                </h4>
+                <button
+                  type="button"
+                  data-testid="gitops-confidential-link"
+                  onClick={() => navigate(viewToPath('confidential'))}
+                  className="text-xs text-aether hover:underline"
+                >
+                  Open confidential page →
+                </button>
+              </div>
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">

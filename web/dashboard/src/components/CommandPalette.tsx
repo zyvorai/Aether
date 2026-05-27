@@ -319,13 +319,6 @@ export default function CommandPalette({
         view: 'cost',
       },
       {
-        id: 'action-compose',
-        label: 'Open compose import',
-        category: 'action',
-        searchText: 'compose docker import stack',
-        view: 'compose',
-      },
-      {
         id: 'action-confidential',
         label: 'Open confidential computing',
         category: 'action',
@@ -352,6 +345,13 @@ export default function CommandPalette({
         category: 'action',
         searchText: 'templates library scaffold',
         view: 'templates',
+      },
+      {
+        id: 'action-templates-configure',
+        label: 'Configure workload template',
+        category: 'action',
+        searchText: 'templates configure scaffold parameters',
+        run: () => navigate(pathWithQuery(viewToPath('templates'), { configure: '1' })),
       },
       {
         id: 'action-gitops',
@@ -394,6 +394,20 @@ export default function CommandPalette({
         category: 'action',
         searchText: 'events notifications feed alerts',
         view: 'events',
+      },
+      {
+        id: 'action-sla-events',
+        label: 'Open SLA events feed',
+        category: 'action',
+        searchText: 'sla events compliance breaches',
+        run: () => navigate(pathWithQuery(viewToPath('events'), { category: 'sla' })),
+      },
+      {
+        id: 'action-intent-debugger',
+        label: 'Open AI intent debugger',
+        category: 'action',
+        searchText: 'intent debugger violations scoring ai',
+        run: () => navigate(pathWithQuery(viewToPath('ai'), { tab: 'recommend' })),
       },
       {
         id: 'action-sla',
