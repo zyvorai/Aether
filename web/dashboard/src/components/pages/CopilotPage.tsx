@@ -100,7 +100,23 @@ export default function CopilotPage() {
         <div className="flex items-center gap-2 border-b border-slate-800/60 px-4 py-3">
           <Bot className="h-5 w-5 text-violet-400" aria-hidden />
           <h2 className="text-sm font-semibold text-slate-100">AI Ops Copilot</h2>
+          {messages.length > 0 && (
+            <button
+              type="button"
+              data-testid="copilot-clear-chat"
+              onClick={() => {
+                setMessages([]);
+                setSessionId(null);
+                setPending([]);
+              }}
+              className="ml-auto rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-400 hover:text-slate-200"
+            >
+              Clear chat
+            </button>
+          )}
+          {messages.length === 0 && (
           <span className="ml-auto text-xs text-slate-500">Natural language control plane</span>
+          )}
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">

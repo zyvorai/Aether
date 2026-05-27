@@ -26,6 +26,7 @@ export default function AuditPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
   const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
+  const [resultFilter, setResultFilter] = useQueryParam('result');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,6 +63,8 @@ export default function AuditPage() {
     const wl = workloadFilter.trim().toLowerCase();
     return audit.recent_events.filter((ev) => {
       if (wl && !ev.workload.toLowerCase().includes(wl)) return false;
+      if (resultFilter === 'success' && ev.result.toLowerCase() !== 'success') return false;
+      if (resultFilter === 'failure' && ev.result.toLowerCase() === 'success') return false;
       if (!q) return true;
       return (
         ev.action.toLowerCase().includes(q) ||
@@ -69,7 +72,7 @@ export default function AuditPage() {
         ev.message.toLowerCase().includes(q)
       );
     });
-  }, [audit, search, workloadFilter]);
+  }, [audit, search, workloadFilter, resultFilter]);
 
   function downloadExport(format: 'json' | 'csv') {
     const rows = filteredEvents;
@@ -158,10 +161,18 @@ export default function AuditPage() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <StatCard title="Total events" value={audit.summary.total_events} color="blue" />
-        <StatCard title="Successes" value={audit.summary.successes} color="green" />
-        <StatCard title="Failures" value={audit.summary.failures} color="red" />
-        <StatCard title="Workloads" value={audit.summary.unique_workloads} color="purple" />
+        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="text-left">
+          <StatCard title="Total events" value={audit.summary.total_events} color="blue" />
+        </button>
+        <button type="button" onClick={() => setResultFilter('success')} className="text-left">
+          <StatCard title="Successes" value={audit.summary.successes} color="green" />
+        </button>
+        <button type="button" onClick={() => setResultFilter('failure')} className="text-left">
+          <StatCard title="Failures" value={audit.summary.failures} color="red" />
+        </button>
+        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); }} className="text-left">
+          <StatCard title="Workloads" value={audit.summary.unique_workloads} color="purple" />
+        </button>
         {verify && <StatCard title="Verified" value={verify.verified} color="green" icon={<ShieldCheck size={18} />} />}
         {verify && (
           <StatCard title="Tampered" value={verify.tampered} color={verify.tampered > 0 ? 'red' : 'blue'} />

@@ -156,7 +156,15 @@ export default function AffinityPage() {
       )}
 
       {tab === 'stats' && stats && (
-        <div className="dash-card mb-6">
+        <div className="dash-card mb-6" data-testid="affinity-stats-panel">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <Link
+              to={pathWithQuery(viewToPath('intelligence'), { tab: 'place' })}
+              className="text-xs text-aether hover:underline"
+            >
+              Placement intelligence →
+            </Link>
+          </div>
           <pre className="text-xs text-slate-300 overflow-x-auto">{JSON.stringify(stats, null, 2)}</pre>
         </div>
       )}

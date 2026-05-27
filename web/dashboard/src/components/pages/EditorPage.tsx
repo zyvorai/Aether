@@ -485,6 +485,7 @@ export default function EditorPage() {
           <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
+              data-testid="editor-validate-button"
               onClick={() => void handleValidate()}
               disabled={validating}
               className="flex items-center gap-2 px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-sm font-medium text-slate-200 disabled:opacity-50"

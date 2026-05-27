@@ -126,6 +126,15 @@ export default function PolicyPage() {
 
   return (
     <div>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => navigate(viewToPath('drift'))}
+          className="text-xs text-aether hover:underline"
+        >
+          Drift detection →
+        </button>
+      </div>
       {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
         <div
           data-testid="policy-opa-setup-banner"

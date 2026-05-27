@@ -118,6 +118,7 @@ export default function CostPage() {
             <h2 className="text-lg font-semibold text-zinc-100">Fleet chargeback</h2>
             <button
               type="button"
+              data-testid="cost-metrics-link"
               onClick={() => navigate(viewToPath('metrics'))}
               className="text-xs text-aether hover:underline"
             >
