@@ -126,13 +126,20 @@ export default function PolicyPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={() => navigate(viewToPath('drift'))}
           className="text-xs text-aether hover:underline"
         >
           Drift detection →
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(viewToPath('platform'))}
+          className="text-xs text-aether hover:underline"
+        >
+          Platform &amp; HA →
         </button>
       </div>
       {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
@@ -191,6 +198,7 @@ export default function PolicyPage() {
           />
           <button
             type="button"
+            data-testid="policy-opa-check-button"
             onClick={() => void handleOpaCheck()}
             disabled={opaLoading}
             className="mt-3 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
@@ -215,6 +223,7 @@ export default function PolicyPage() {
         </div>
       )}
 
+      <div data-testid="policy-check-form">
       <SpecWorkbench
         title="Workload policy check"
         description="Paste workload YAML to evaluate built-in policies before deploy."
@@ -224,6 +233,7 @@ export default function PolicyPage() {
         placeholder="Paste workload YAML to check policies..."
         result={policyResultPanel}
       />
+      </div>
     </div>
   );
 }

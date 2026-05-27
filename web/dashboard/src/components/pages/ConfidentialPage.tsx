@@ -388,6 +388,13 @@ export default function ConfidentialPage() {
           <p className="text-sm text-slate-500 mb-4">
             Workloads with <code className="text-zinc-400">confidential.enabled</code> — runtime, TEE, and image catalog status
           </p>
+          <button
+            type="button"
+            onClick={() => navigate(viewToPath('gitops'))}
+            className="mb-4 text-xs text-aether hover:underline"
+          >
+            GitOps confidential sync →
+          </button>
           {filteredFleet.length === 0 ? (
             <EmptyState
               icon={<Lock size={40} />}

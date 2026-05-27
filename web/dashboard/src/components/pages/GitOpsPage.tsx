@@ -279,6 +279,14 @@ export default function GitOpsPage() {
             </div>
           </dl>
         )}
+        <button
+          type="button"
+          data-testid="gitops-drift-link"
+          onClick={() => navigate(viewToPath('drift'))}
+          className="mt-4 text-xs text-aether hover:underline"
+        >
+          Drift detection →
+        </button>
       </div>
 
       {syncResult && (

@@ -542,7 +542,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               <option value="aether">Aether managed</option>
               <option value="cluster">Kubernetes discovered</option>
             </select>
-            <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass}>
+            <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-kind-filter">
               {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
             </select>
             <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass}>
@@ -609,10 +609,16 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <StatCard title="Total" value={workloads.length} color="orange" />
-        <StatCard title="Running" value={runningCount} color="green" />
+        <button type="button" onClick={() => setSourceFilter('all')} className="text-left">
+          <StatCard title="Running" value={runningCount} color="green" />
+        </button>
         <StatCard title="Stopped" value={stoppedCount} color="red" />
-        <StatCard title="Aether" value={aetherManagedCount} color="purple" />
-        <StatCard title="Discovered" value={clusterDiscoveredCount} color="blue" />
+        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="text-left">
+          <StatCard title="Aether" value={aetherManagedCount} color="purple" />
+        </button>
+        <button type="button" onClick={() => setSourceFilter('cluster')} className="text-left">
+          <StatCard title="Discovered" value={clusterDiscoveredCount} color="blue" />
+        </button>
         <StatCard
           title="Namespaces"
           value={namespaces.filter((namespace) => namespace !== 'all').length}
@@ -621,7 +627,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       </div>
 
       {selectedNames.size > 0 && canMutate && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3" data-testid="workloads-bulk-bar">
           <span className="text-sm text-slate-300">{selectedNames.size} selected</span>
           <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Start all</button>
           <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">Stop all</button>
@@ -671,7 +677,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <EmptyState icon={<Inbox size={48} />} title="No matching workloads" description="Try adjusting your search or filters" />
         )
       ) : (
-        <div className="dash-card-flush">
+        <div className="dash-card-flush" data-testid="workloads-table">
           <div className="overflow-x-auto min-w-0">
             <table className="w-full table-fixed border-collapse">
               <thead>

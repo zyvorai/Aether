@@ -441,6 +441,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             { label: 'AI engine', onClick: () => onNavigate('ai') },
             { label: 'Intelligence', onClick: () => onNavigate('intelligence') },
             { label: 'Ops copilot', onClick: () => onNavigate('copilot') },
+            { label: 'Events feed', onClick: () => onNavigate('events') },
             { label: 'Alerts & webhooks', onClick: () => onNavigate('alerts') },
             { label: 'GitOps sync', onClick: () => onNavigate('gitops') },
             { label: 'Audit trail', onClick: () => goFiltered('audit') },

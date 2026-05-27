@@ -345,7 +345,7 @@ export default function MetricsPage() {
         <div className="dash-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-3">Prometheus query explorer</h2>
           <p className="text-sm text-slate-500 mb-4">Instant queries via the whitelisted API proxy.</p>
-          <form onSubmit={(e) => void runPromQuery(e)} className="flex flex-wrap gap-3 mb-4">
+          <form onSubmit={(e) => void runPromQuery(e)} className="flex flex-wrap gap-3 mb-4" data-testid="metrics-prometheus-query">
             <input
               type="text"
               value={promQuery}
