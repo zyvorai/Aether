@@ -590,7 +590,7 @@ export default function AIPage() {
       )}
 
       {activeTab === 'analyze' && (
-        <div className="dash-card">
+        <div className="dash-card" data-testid="ai-analyze-panel">
           <div className="flex items-center gap-3 mb-6">
             <Cpu className="text-cyan-400" size={22} />
             <h3 className="font-semibold text-xl text-slate-100">Workload Profiler & Analysis</h3>

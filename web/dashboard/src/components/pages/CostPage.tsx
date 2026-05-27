@@ -153,6 +153,7 @@ export default function CostPage() {
         </div>
       ) : null}
 
+      <div data-testid="cost-estimate-form">
       <SpecWorkbench
         title="Cost estimation"
         description="Paste workload YAML to compare provider pricing."
@@ -162,6 +163,7 @@ export default function CostPage() {
         placeholder="Paste workload YAML to estimate costs..."
         result={resultContent}
       />
+      </div>
     </div>
   );
 }

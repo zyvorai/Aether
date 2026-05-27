@@ -163,6 +163,7 @@ export default function ComposePage() {
         </p>
       </div>
 
+      <div data-testid="compose-validate-panel">
       <YamlInput
         initialValue={composeYaml}
         resetValue={COMPOSE_EXAMPLE}
@@ -249,6 +250,7 @@ export default function ComposePage() {
           </>
         }
       />
+      </div>
     </div>
   );
 }

@@ -70,9 +70,17 @@ export default function FleetPage() {
       <div className="mb-4">
         <button
           type="button"
+          data-testid="fleet-clusters-link"
+          onClick={() => navigate(viewToPath('clusters'))}
+          className="text-xs text-aether hover:underline"
+        >
+          Cluster browser →
+        </button>
+        <button
+          type="button"
           data-testid="fleet-metrics-link"
           onClick={() => navigate(viewToPath('metrics'))}
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-aether hover:underline ml-3"
         >
           Metrics &amp; chargeback →
         </button>

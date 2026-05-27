@@ -3,8 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Link } from 'react-router';
 import { KeyRound, Shield, Trash2, Copy } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -134,12 +136,15 @@ export default function RbacPage() {
         ) : (
           <p className="text-sm text-slate-400">Only admin users can create or revoke API keys.</p>
         )}
+        <Link to={viewToPath('audit')} className="mt-3 inline-flex text-xs text-aether hover:underline">
+          View audit trail →
+        </Link>
       </div>
 
       {keys.length === 0 && !listLoading ? (
         <EmptyState icon={<KeyRound size={48} />} title="No RBAC keys" description="Create admin, operator, or viewer API keys." />
       ) : (
-        <div className="dash-card overflow-hidden">
+        <div className="dash-card overflow-hidden" data-testid="rbac-keys-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

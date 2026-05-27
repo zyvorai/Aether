@@ -229,7 +229,7 @@ export default function EnvsPage() {
       {environments.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No environments" description="No environments have been configured" />
       ) : (
-        <div className="dash-card overflow-hidden">
+        <div className="dash-card overflow-hidden" data-testid="envs-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

@@ -154,6 +154,9 @@ export default function PlatformPage() {
               Configure policy engine →
             </Link>
           )}
+          <Link to={viewToPath('audit')} className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="platform-audit-link">
+            Audit trail →
+          </Link>
           <p className="mt-4 text-xs text-slate-500">
             Env: <code className="text-slate-400">AETHER_BACKUP_REMOTE_URL</code>,{' '}
             <code className="text-slate-400">AETHER_AUDIT_WEBHOOK_URL</code>,{' '}
@@ -221,7 +224,7 @@ export default function PlatformPage() {
         </p>
       </div>
 
-      <div className="dash-card mt-6">
+      <div className="dash-card mt-6" data-testid="platform-observability-panel">
         <div className="flex items-center gap-3 mb-4">
           <Database className="text-blue-400" size={20} />
           <h2 className="text-lg font-semibold text-slate-100">Observability links</h2>
@@ -267,6 +270,7 @@ export default function PlatformPage() {
           ) : (
             <a
               href="/metrics"
+              data-testid="platform-metrics-link"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
             >
               In-app metrics <ExternalLink size={14} />

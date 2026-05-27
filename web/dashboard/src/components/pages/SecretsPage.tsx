@@ -6,6 +6,9 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { Inbox, ChevronDown, ChevronRight, Trash2, Plus, Copy } from 'lucide-react';
 import { apiFetch, apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
+import { useNavigate, Link } from 'react-router';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import Modal from '../Modal';
@@ -19,10 +22,11 @@ function toast(message: string, type: 'success' | 'error') {
 }
 
 export default function SecretsPage() {
+  const navigate = useNavigate();
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [expandedSecret, setExpandedSecret] = useState<string | null>(null);
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
@@ -137,7 +141,10 @@ export default function SecretsPage() {
   return (
     <div>
       <p className="mb-4 text-sm text-slate-500 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3">
-        Secrets stored with <code className="text-slate-400">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.
+        Secrets stored with <code className="text-slate-400">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.{' '}
+        <button type="button" onClick={() => navigate(viewToPath('rbac'))} className="text-aether hover:underline">
+          API access control →
+        </button>
       </p>
       <PageToolbar
         search={search}
@@ -148,6 +155,7 @@ export default function SecretsPage() {
         actions={
           <button
             type="button"
+            data-testid="secrets-create-button"
             onClick={() => setCreateOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
           >
@@ -160,7 +168,7 @@ export default function SecretsPage() {
       {secrets.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No secrets" description="No secrets have been stored" />
       ) : (
-        <div className="dash-card overflow-hidden">
+        <div className="dash-card overflow-hidden" data-testid="secrets-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
