@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch, apiFetchSettled } from '../../utils/api';
+import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -17,6 +18,10 @@ export default function SLAPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
+  const [addWorkload, setAddWorkload] = useState('');
+  const [addTier, setAddTier] = useState('standard');
+  const [adding, setAdding] = useState(false);
+  const { canMutate } = useAuth();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +53,18 @@ export default function SLAPage() {
 
   const filtered = workloads.filter((w) => w.name.toLowerCase().includes(search.toLowerCase()));
 
+  async function handleAddSla(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canMutate || !addWorkload.trim()) return;
+    setAdding(true);
+    const res = await apiPost(`/sla`, { workload: addWorkload.trim(), tier: addTier });
+    setAdding(false);
+    if (res.success) {
+      setAddWorkload('');
+      void load();
+    }
+  }
+
   if (loading && workloads.length === 0 && !loadFailed) {
     return <PageLoading rows={4} />;
   }
@@ -63,8 +80,39 @@ export default function SLAPage() {
         onSearchChange={setSearch}
         searchPlaceholder="Filter workloads…"
         onRefresh={() => void load()}
-        refreshing={loading}
+        refreshing={loading || adding}
       />
+
+      {canMutate && (
+        <div className="dash-card mb-6">
+          <h3 className="text-sm font-semibold text-slate-200 mb-3">Add SLA target</h3>
+          <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3">
+            <input
+              type="text"
+              value={addWorkload}
+              onChange={(e) => setAddWorkload(e.target.value)}
+              placeholder="Workload name"
+              className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm min-w-[160px]"
+            />
+            <select
+              value={addTier}
+              onChange={(e) => setAddTier(e.target.value)}
+              className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+            >
+              <option value="standard">standard</option>
+              <option value="high-availability">high-availability</option>
+              <option value="best-effort">best-effort</option>
+            </select>
+            <button
+              type="submit"
+              disabled={adding || !addWorkload.trim()}
+              className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether disabled:opacity-50"
+            >
+              {adding ? 'Adding…' : 'Add target'}
+            </button>
+          </form>
+        </div>
+      )}
 
       {workloads.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to configure SLA targets" />

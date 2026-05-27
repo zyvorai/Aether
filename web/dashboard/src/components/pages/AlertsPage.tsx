@@ -29,6 +29,9 @@ export default function AlertsPage() {
   const [newSeverity, setNewSeverity] = useState('warning');
   const [channelSaving, setChannelSaving] = useState(false);
   const [channelDeleting, setChannelDeleting] = useState<string | null>(null);
+  const [queue, setQueue] = useState<Array<{ url: string; method: string; attempts: number; max_attempts: number; next_attempt_at: string }>>([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [flushLoading, setFlushLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +52,29 @@ export default function AlertsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function loadQueue() {
+    setQueueLoading(true);
+    const result = await apiFetchSettled<Array<{ url: string; method: string; attempts: number; max_attempts: number; next_attempt_at: string }>>('/webhooks/queue');
+    setQueueLoading(false);
+    if (result.ok) setQueue(result.data);
+  }
+
+  useEffect(() => {
+    void loadQueue();
+  }, []);
+
+  async function handleFlushQueue() {
+    setFlushLoading(true);
+    const res = await apiPost<{ before?: number; after?: number; processed?: number }>('/webhooks/flush', {});
+    setFlushLoading(false);
+    if (res.success) {
+      toast(`Processed queue (${res.data?.processed ?? 0} delivery attempt(s))`, 'success');
+      void loadQueue();
+    } else {
+      toast(res.error ?? 'Flush failed', 'error');
+    }
+  }
 
   async function handleTestWebhook() {
     if (!testChannel) return;
@@ -114,7 +140,13 @@ export default function AlertsPage() {
 
   return (
     <div>
-      <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+      <PageToolbar
+        onRefresh={() => {
+          void load();
+          void loadQueue();
+        }}
+        refreshing={loading || queueLoading}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="dash-card">
@@ -274,6 +306,46 @@ export default function AlertsPage() {
             {testLoading ? 'Sending…' : 'Send test'}
           </button>
         </div>
+      </div>
+
+      <div className="dash-card mt-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold text-slate-100">Webhook retry queue</h2>
+          <button
+            type="button"
+            onClick={() => void handleFlushQueue()}
+            disabled={flushLoading || queue.length === 0}
+            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+          >
+            {flushLoading ? 'Flushing…' : 'Flush queue'}
+          </button>
+        </div>
+        {queue.length === 0 ? (
+          <p className="text-sm text-slate-500">No pending webhook deliveries.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">
+                  <th className="py-2 px-3 text-left">URL</th>
+                  <th className="py-2 px-3 text-left">Method</th>
+                  <th className="py-2 px-3 text-left">Attempts</th>
+                  <th className="py-2 px-3 text-left">Next retry</th>
+                </tr>
+              </thead>
+              <tbody>
+                {queue.map((item, i) => (
+                  <tr key={`${item.url}-${i}`} className="border-b border-slate-800/50">
+                    <td className="py-2 px-3 font-mono text-xs text-slate-400 max-w-xs truncate">{item.url}</td>
+                    <td className="py-2 px-3">{item.method}</td>
+                    <td className="py-2 px-3">{item.attempts}/{item.max_attempts}</td>
+                    <td className="py-2 px-3 text-slate-500">{item.next_attempt_at.slice(0, 19)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

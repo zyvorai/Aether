@@ -22,4 +22,9 @@ test.describe('Confidential & intelligence UI', () => {
       timeout: 15_000,
     });
   });
+
+  test('openapi explorer page loads', async ({ page }) => {
+    await page.goto('/openapi');
+    await expect(page.getByText(/notable routes|openapi/i).first()).toBeVisible({ timeout: 15_000 });
+  });
 });

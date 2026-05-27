@@ -55,6 +55,7 @@ import EditorPage from './components/pages/EditorPage';
 import ConfidentialPage from './components/pages/ConfidentialPage';
 import IntelligencePage from './components/pages/IntelligencePage';
 import FleetPage from './components/pages/FleetPage';
+import OpenApiPage from './components/pages/OpenApiPage';
 
 function AetherDashboard() {
   const { theme } = useTheme();
@@ -383,6 +384,8 @@ function AetherDashboard() {
         return <EditorPage key={refreshKey} />;
       case 'confidential':
         return <ConfidentialPage key={refreshKey} />;
+      case 'openapi':
+        return <OpenApiPage key={refreshKey} />;
       default:
         return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
     }

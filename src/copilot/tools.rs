@@ -32,7 +32,8 @@ pub fn tools_openai_schema() -> serde_json::Value {
         {"type":"function","function":{"name":"explain_attestation_failure","description":"Explain Ragnarok attestation failure for a VM/workload","parameters":{"type":"object","properties":{"vm_id":{"type":"string"}},"required":["vm_id"]}}},
         {"type":"function","function":{"name":"confidential_migrate_plan","description":"Plan confidential migration with TEE compatibility checks","parameters":{"type":"object","properties":{"workload":{"type":"string"}},"required":["workload"]}}},
         {"type":"function","function":{"name":"trust_score_fleet","description":"AI confidential fleet analysis with trust scores and risk findings","parameters":{"type":"object","properties":{}}}},
-        {"type":"function","function":{"name":"confidential_analyze","description":"AI attestation analyst for a confidential workload","parameters":{"type":"object","properties":{"workload":{"type":"string"}},"required":["workload"]}}}
+        {"type":"function","function":{"name":"intelligence_place","description":"Global placement recommendation for a workload YAML spec","parameters":{"type":"object","properties":{"yaml":{"type":"string"}},"required":["yaml"]}}},
+        {"type":"function","function":{"name":"evolution_status","description":"Runtime evolution / learning status for the fleet","parameters":{"type":"object","properties":{}}}}
     ])
 }
 
@@ -212,6 +213,27 @@ pub async fn execute_tool(
                 &ws.runtime.to_string(),
                 &dir,
             ))?)
+        }
+        "intelligence_place" => {
+            let yaml = args
+                .get("yaml")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("yaml required"))?;
+            let spec: Workload = serde_yaml::from_str(yaml)?;
+            let clusters = crate::kubecluster::list_clusters().await.unwrap_or_default();
+            Ok(serde_json::to_value(
+                crate::intelligence::placement::GlobalPlacementEngine::recommend(&spec, &clusters),
+            )?)
+        }
+        "evolution_status" => {
+            use crate::config::Config;
+            use crate::intelligence::evolution::EvolutionEngine;
+            use crate::intelligence::policy::AutonomyPolicy;
+            let config = Config::load();
+            let policy =
+                AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+            let pairs = workload_pairs(&ctx.state).await;
+            Ok(serde_json::to_value(EvolutionEngine::status_for_fleet(&pairs, &policy))?)
         }
         other => anyhow::bail!("unknown tool: {other}"),
     }

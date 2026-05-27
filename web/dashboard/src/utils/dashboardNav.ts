@@ -47,6 +47,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'audit', path: '/audit', label: 'Audit Trail', breadcrumb: 'Audit Trail', subtitle: 'Tamper-evident audit log', group: 'resources' },
   { view: 'gitops', path: '/gitops', label: 'GitOps', breadcrumb: 'GitOps', subtitle: 'GitOps reconciliation status', group: 'resources' },
   { view: 'metrics', path: '/metrics', label: 'Metrics', breadcrumb: 'Metrics', subtitle: 'Platform and workload metrics', group: 'resources' },
+  { view: 'openapi', path: '/openapi', label: 'API Explorer', breadcrumb: 'API Explorer', subtitle: 'Browse OpenAPI routes and raw schema', group: 'resources', paletteLabel: 'OpenAPI' },
 ];
 
 const VIEW_MAP = new Map<AppView, DashboardViewMeta>(

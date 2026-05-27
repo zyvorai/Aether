@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
-import { apiFetch, apiFetchSettled } from '../../utils/api';
+import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { useQueryParam } from '../../utils/urlState';
 import { markHealthReviewed } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
@@ -40,6 +41,8 @@ export default function HealthPage() {
   const [statusFilter, setStatusFilter] = useQueryParam('status', 'all');
   const [selected, setSelected] = useState<{ workload: ManagedWorkload; history: HealthHistorySummary } | null>(null);
   const [historyLoading, setHistoryLoading] = useState<string | null>(null);
+  const [orchBusy, setOrchBusy] = useState<string | null>(null);
+  const { canMutate } = useAuth();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,6 +82,18 @@ export default function HealthPage() {
     }
   }
 
+  async function runOrchestratorAction(action: 'health-check' | 'reset-circuit', name?: string) {
+    if (!canMutate) return;
+    setOrchBusy(action);
+    if (action === 'health-check') {
+      await apiPost('/orchestrator/health-check', {});
+    } else if (name) {
+      await apiPost('/orchestrator/reset-circuit', { name });
+    }
+    setOrchBusy(null);
+    void load();
+  }
+
   const filtered = workloads.filter((w) => {
     const matchesSearch = w.name.toLowerCase().includes(search.toLowerCase());
     const status = statusFilter.toLowerCase();
@@ -111,7 +126,19 @@ export default function HealthPage() {
         onSearchChange={setSearch}
         searchPlaceholder="Filter workloads…"
         onRefresh={() => void load()}
-        refreshing={loading}
+        refreshing={loading || orchBusy !== null}
+        actions={
+          canMutate ? (
+            <button
+              type="button"
+              onClick={() => void runOrchestratorAction('health-check')}
+              disabled={orchBusy !== null}
+              className="rounded-xl bg-emerald-600/20 border border-emerald-500/40 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-600/30 disabled:opacity-50"
+            >
+              {orchBusy === 'health-check' ? 'Checking…' : 'Run health checks'}
+            </button>
+          ) : null
+        }
         filters={
           <select
             value={statusFilter}
@@ -210,6 +237,15 @@ export default function HealthPage() {
                 <span>
                   Circuit: <Badge text={selected.workload.circuit} variant={getCircuitVariant(selected.workload.circuit)} />
                 </span>
+                {canMutate && selected.workload.circuit.toLowerCase() !== 'closed' && (
+                  <button
+                    type="button"
+                    onClick={() => void runOrchestratorAction('reset-circuit', selected.workload.name)}
+                    className="text-xs rounded-lg border border-amber-500/40 px-2 py-1 text-amber-300 hover:bg-amber-500/10"
+                  >
+                    Reset circuit
+                  </button>
+                )}
                 <span>
                   Last restart count: <span className="text-slate-200">{selected.history.last_restart_count}</span>
                 </span>

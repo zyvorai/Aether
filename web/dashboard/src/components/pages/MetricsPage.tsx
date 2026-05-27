@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
-import { apiFetchSettled, apiTextSettled } from '../../utils/api';
+import { apiFetchSettled, apiTextSettled, apiFetch } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -30,6 +30,9 @@ export default function MetricsPage() {
   const [grafanaUrl, setGrafanaUrl] = useState<string | null>(null);
   const [prometheusUrl, setPrometheusUrl] = useState<string | null>(null);
   const [chargeback, setChargeback] = useState<ChargebackReport | null>(null);
+  const [promQuery, setPromQuery] = useState('up');
+  const [promResult, setPromResult] = useState<string | null>(null);
+  const [promQuerying, setPromQuerying] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +83,17 @@ export default function MetricsPage() {
 
   const lineCount = filteredMetrics.split('\n').filter((l) => l && !l.startsWith('#')).length;
   const runtimeEntries = Object.entries(summary?.workloads_running ?? {});
+
+  async function runPromQuery(e: React.FormEvent) {
+    e.preventDefault();
+    const q = promQuery.trim();
+    if (!q) return;
+    setPromQuerying(true);
+    setPromResult(null);
+    const data = await apiFetch<unknown>(`/observability/prometheus/query?query=${encodeURIComponent(q)}`);
+    setPromQuerying(false);
+    setPromResult(data ? JSON.stringify(data, null, 2) : 'Query failed or Prometheus not configured');
+  }
 
   if (loading && !metrics && !loadFailed) {
     return <PageLoading rows={6} />;
@@ -237,6 +251,32 @@ export default function MetricsPage() {
               </a>
             )}
           </div>
+        </div>
+      )}
+
+      {summary?.prometheus_configured && (
+        <div className="dash-card mb-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-3">Prometheus query explorer</h2>
+          <p className="text-sm text-slate-500 mb-4">Instant queries via the whitelisted API proxy.</p>
+          <form onSubmit={(e) => void runPromQuery(e)} className="flex flex-wrap gap-3 mb-4">
+            <input
+              type="text"
+              value={promQuery}
+              onChange={(e) => setPromQuery(e.target.value)}
+              placeholder="e.g. aether_workloads_running or up"
+              className="flex-1 min-w-[200px] rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm font-mono text-slate-100"
+            />
+            <button
+              type="submit"
+              disabled={promQuerying}
+              className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether hover:bg-aether/30 disabled:opacity-50"
+            >
+              {promQuerying ? 'Querying…' : 'Run query'}
+            </button>
+          </form>
+          {promResult && (
+            <CodeBlock title="prometheus-query">{promResult}</CodeBlock>
+          )}
         </div>
       )}
 

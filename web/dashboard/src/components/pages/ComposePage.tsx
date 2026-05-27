@@ -65,6 +65,7 @@ export default function ComposePage() {
   const [result, setResult] = useState<ComposeValidationResult | null>(null);
   const [validateLoading, setValidateLoading] = useState(false);
   const [deployLoading, setDeployLoading] = useState(false);
+  const [downLoading, setDownLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [policyResult, setPolicyResult] = useState<PolicyResult | null>(null);
   const [deployResult, setDeployResult] = useState<ComposeDeployResult | null>(null);
@@ -130,6 +131,25 @@ export default function ComposePage() {
     }
   }
 
+  async function handleComposeDown() {
+    if (!canMutate) return;
+    const yaml = composeYaml.trim();
+    if (!yaml) return;
+    setDownLoading(true);
+    setError(null);
+    const res = await apiPostRaw<{ stopped?: string[]; errors?: unknown[] }>('/compose/down', yaml, 'application/yaml');
+    setDownLoading(false);
+    if (res.success) {
+      window.dispatchEvent(
+        new CustomEvent('aether-toast', {
+          detail: { message: `Stopped ${res.data?.stopped?.length ?? 0} workload(s)`, type: 'success' },
+        }),
+      );
+    } else {
+      setError(res.error ?? 'Compose down failed');
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -171,15 +191,25 @@ export default function ComposePage() {
                   </div>
                 ) : null}
                 {canMutate && result.valid ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleDeployStack()}
-                    disabled={deployLoading}
-                    className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2.5 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
-                  >
-                    <Rocket className="w-4 h-4" />
-                    {deployLoading ? 'Deploying stack…' : 'Deploy stack'}
-                  </button>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleDeployStack()}
+                      disabled={deployLoading}
+                      className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2.5 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
+                    >
+                      <Rocket className="w-4 h-4" />
+                      {deployLoading ? 'Deploying stack…' : 'Deploy stack'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleComposeDown()}
+                      disabled={downLoading}
+                      className="inline-flex items-center gap-2 rounded-xl border border-red-500/40 px-4 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      {downLoading ? 'Stopping…' : 'Compose down'}
+                    </button>
+                  </div>
                 ) : null}
                 <ValidateResultPanel policy={policyResult} />
                 {deployResult ? (

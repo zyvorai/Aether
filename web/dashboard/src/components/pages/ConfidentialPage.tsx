@@ -71,6 +71,8 @@ export default function ConfidentialPage() {
   const [intel, setIntel] = useState<ConfidentialFleetAnalysis | null>(null);
   const [search, setSearch] = useState('');
   const [verifyDigest, setVerifyDigest] = useState('');
+  const [verifyName, setVerifyName] = useState('');
+  const [verifyPath, setVerifyPath] = useState('');
   const [verifyResult, setVerifyResult] = useState<ImageVerifyResult | null>(null);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [signName, setSignName] = useState('');
@@ -150,6 +152,20 @@ export default function ConfidentialPage() {
       name: 'digest-check',
       digest,
     });
+    setVerifyBusy(false);
+    if (res.success && res.data) {
+      setVerifyResult(res.data);
+    }
+  }
+
+  async function handleVerifyFile(e: React.FormEvent) {
+    e.preventDefault();
+    const name = verifyName.trim();
+    const path = verifyPath.trim();
+    if (!name || !path) return;
+    setVerifyBusy(true);
+    setVerifyResult(null);
+    const res = await apiPost<ImageVerifyResult>('/confidential/images/verify', { name, path });
     setVerifyBusy(false);
     if (res.success && res.data) {
       setVerifyResult(res.data);
@@ -488,6 +504,33 @@ export default function ConfidentialPage() {
               </button>
             </form>
             {signMessage && <p className="mt-2 text-xs text-zinc-400">{signMessage}</p>}
+          </div>
+
+          <div className="border-t border-zinc-700 pt-4">
+            <h3 className="text-sm font-medium text-zinc-300 mb-2">Verify image file (host path)</h3>
+            <form onSubmit={(e) => void handleVerifyFile(e)} className="space-y-2 mb-4">
+              <input
+                type="text"
+                value={verifyName}
+                onChange={(e) => setVerifyName(e.target.value)}
+                placeholder="Catalog image name"
+                className="w-full px-3 py-1.5 text-sm rounded bg-zinc-950 border border-zinc-700 text-zinc-200"
+              />
+              <input
+                type="text"
+                value={verifyPath}
+                onChange={(e) => setVerifyPath(e.target.value)}
+                placeholder="/path/on/server/disk.qcow2"
+                className="w-full px-3 py-1.5 text-sm rounded bg-zinc-950 border border-zinc-700 text-zinc-200 font-mono"
+              />
+              <button
+                type="submit"
+                disabled={verifyBusy || !verifyName.trim() || !verifyPath.trim()}
+                className="px-3 py-1.5 text-sm rounded bg-aether/20 text-aether border border-aether/40 hover:bg-aether/30 disabled:opacity-50"
+              >
+                {verifyBusy ? 'Verifying…' : 'Verify file'}
+              </button>
+            </form>
           </div>
 
           <div className="border-t border-zinc-700 pt-4">
