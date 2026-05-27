@@ -3,8 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { Container, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
 import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
 import Modal from '../Modal';
 import LogViewer from '../LogViewer';
@@ -126,7 +128,20 @@ export default function ClustersPage() {
   const [detailTab, setDetailTab] = useState<'overview' | 'events' | 'logs' | 'terminal' | 'manifest'>('overview');
   const [pageTab, setPageTab] = useState<'browse' | 'network'>('browse');
   const [ciliumStatus, setCiliumStatus] = useState<CiliumStatusResponse | null>(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  function setPageTabWithUrl(tab: 'browse' | 'network') {
+    setPageTab(tab);
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        if (tab === 'browse') copy.delete('tab');
+        else copy.set('tab', tab);
+        return copy;
+      },
+      { replace: true },
+    );
+  }
+
   const watchSocketRef = useRef<WebSocket | null>(null);
   const execSocketRef = useRef<WebSocket | null>(null);
 
@@ -733,14 +748,16 @@ export default function ClustersPage() {
         </div>
       )}
 
+      <div data-testid="clusters-page-tabs">
       <PageTabs
         tabs={[
           { id: 'browse', label: 'Browse' },
           { id: 'network', label: 'Network' },
         ]}
         active={pageTab}
-        onChange={(tab) => setPageTab(tab as 'browse' | 'network')}
+        onChange={(tab) => setPageTabWithUrl(tab as 'browse' | 'network')}
       />
+      </div>
 
       {metricsSummary && (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -877,9 +894,20 @@ export default function ClustersPage() {
                 {resources.map((resource) => (
                   <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
                     <td className="py-3 px-4">
-                      <button onClick={() => openDetail(resource)} className="text-left font-medium text-zinc-200 hover:text-aether transition-colors">
-                        {resource.name}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openDetail(resource)} className="text-left font-medium text-zinc-200 hover:text-aether transition-colors">
+                          {resource.name}
+                        </button>
+                        {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
+                          <Link
+                            to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
+                            className="text-xs text-aether hover:underline"
+                            title="Open in workloads"
+                          >
+                            →
+                          </Link>
+                        )}
+                      </div>
                     </td>
                     {pageTab === 'network' && (
                       <td className="py-3 px-4 text-sm text-zinc-400">{resource.kind}</td>

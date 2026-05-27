@@ -240,6 +240,15 @@ export default function MetricsPage() {
         <div className="dash-card mb-6" data-testid="metrics-chargeback-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="text-lg font-semibold text-slate-100">Chargeback (showback)</h2>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                data-testid="metrics-cost-estimator-link"
+                onClick={() => navigate(viewToPath('cost'))}
+                className="text-xs text-aether hover:underline"
+              >
+                Cost estimator →
+              </button>
             {chargeback.lines.length > 0 ? (
               <button
                 type="button"
@@ -251,6 +260,7 @@ export default function MetricsPage() {
                 Export CSV
               </button>
             ) : null}
+            </div>
           </div>
           <p className="text-sm text-slate-400 mb-4">
             {chargeback.pricingSource} pricing · {chargeback.region} · fleet ${chargeback.totalMonthlyUsd.toFixed(2)}/mo

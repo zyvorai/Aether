@@ -277,7 +277,7 @@ export default function EnvsPage() {
         title={selectedEnvironment ? `Environment: ${selectedEnvironment.name}` : 'Environment'}
       >
         {selectedEnvironment && (
-          <div className="space-y-4">
+          <div className="space-y-4" data-testid="envs-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-slate-500">Tier</div>

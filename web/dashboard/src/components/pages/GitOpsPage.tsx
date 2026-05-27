@@ -180,6 +180,7 @@ export default function GitOpsPage() {
         actions={
           <button
             type="button"
+            data-testid="gitops-sync-now"
             onClick={() => void openSyncConfirm()}
             disabled={syncing || data?.configured === false}
             className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm font-medium text-aether hover:bg-aether/20 disabled:opacity-40"
@@ -400,6 +401,7 @@ export default function GitOpsPage() {
       )}
 
       <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
+        <div data-testid="gitops-sync-confirm">
         <p className="text-sm text-slate-300 mb-4">
           Pull from <span className="font-mono text-aether">{data?.repo_url ?? 'repository'}</span> and apply
           detected YAML changes. Review the diff preview below before syncing.
@@ -470,6 +472,7 @@ export default function GitOpsPage() {
           >
             Sync now
           </button>
+        </div>
         </div>
       </Modal>
     </div>

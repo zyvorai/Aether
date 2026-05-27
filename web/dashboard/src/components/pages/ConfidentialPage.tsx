@@ -367,7 +367,7 @@ export default function ConfidentialPage() {
         </div>
       )}
 
-      <div className="dash-card mb-6">
+      <div className="dash-card mb-6" data-testid="confidential-migration-wizard">
         <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
           <Terminal className="w-5 h-5" />
           Encrypted migration (Phase 6)

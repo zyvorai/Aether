@@ -114,6 +114,9 @@ export default function SLAPage() {
               {adding ? 'Adding…' : 'Add target'}
             </button>
           </form>
+          <Link to={viewToPath('health')} className="mt-3 inline-flex text-xs text-aether hover:underline">
+            Open health monitor →
+          </Link>
         </div>
       )}
 

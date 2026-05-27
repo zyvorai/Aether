@@ -63,7 +63,7 @@ export default function CostPage() {
         <EmptyState icon={<Inbox size={48} />} title="No estimates" description="Submit a workload YAML to see cost estimates" />
       )
     ) : (
-      <div className="space-y-4">
+      <div className="space-y-4" data-testid="cost-estimate-results">
         {estimates.map((est) => (
           <div
             key={est.provider}

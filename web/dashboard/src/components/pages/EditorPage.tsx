@@ -495,6 +495,7 @@ export default function EditorPage() {
             {canMutate ? (
             <button
               type="button"
+              data-testid="editor-deploy-button"
               onClick={() => void handleSave()}
               disabled={saving}
               className="flex items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether/90 text-white rounded-xl text-sm font-medium disabled:opacity-50"

@@ -9,6 +9,7 @@ interface PageToolbarProps {
   search?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
+  searchTestId?: string;
   onRefresh?: () => void;
   refreshing?: boolean;
   filters?: ReactNode;
@@ -19,6 +20,7 @@ export default function PageToolbar({
   search,
   onSearchChange,
   searchPlaceholder = 'Search…',
+  searchTestId,
   onRefresh,
   refreshing = false,
   filters,
@@ -32,6 +34,7 @@ export default function PageToolbar({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-aether/70" aria-hidden />
             <input
               type="search"
+              data-testid={searchTestId}
               value={search ?? ''}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}

@@ -98,9 +98,15 @@ export default function EventsPage() {
     <div>
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-          <StatCard title="Total" value={summary.total_events} color="blue" />
-          <StatCard title="Unacknowledged" value={summary.unacknowledged} color="yellow" />
-          <StatCard title="Critical" value={summary.critical_unacked} color="red" />
+          <button type="button" onClick={() => setCategory('all')} className="text-left">
+            <StatCard title="Total" value={summary.total_events} color="blue" />
+          </button>
+          <button type="button" onClick={() => setSeverity('warning')} className="text-left">
+            <StatCard title="Unacknowledged" value={summary.unacknowledged} color="yellow" />
+          </button>
+          <button type="button" onClick={() => setSeverity('critical')} className="text-left">
+            <StatCard title="Critical" value={summary.critical_unacked} color="red" />
+          </button>
         </div>
       )}
 
