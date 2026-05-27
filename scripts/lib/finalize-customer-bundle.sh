@@ -9,6 +9,20 @@ PRODUCT="${3:?product name}"
 VERSION="${4:-${V9S_PACKAGE_VERSION:-latest}}"
 LIB="${BUILD_DIR}/scripts/lib"
 
+# License pack (LICENSE, LEGAL-INDEX.txt, docs/legal/, Zyvor terms when applicable)
+if [[ -x "${LIB}/copy-legal-to-bundle.sh" ]]; then
+  "${LIB}/copy-legal-to-bundle.sh" "${STAGE}" "${BUILD_DIR}"
+elif [[ -x "${LIB}/copy-zyvor-legal-to-bundle.sh" ]]; then
+  extra=()
+  [[ -f "${BUILD_DIR}/ZYVOR-COMPANY-TERMS.md" ]] && extra=(--with-accept)
+  "${LIB}/copy-zyvor-legal-to-bundle.sh" "${STAGE}" "${BUILD_DIR}" "${extra[@]}"
+fi
+if [[ -f "${LIB}/license-accept.sh" ]]; then
+  mkdir -p "${STAGE}/.package-lib"
+  cp "${LIB}/license-accept.sh" "${STAGE}/.package-lib/"
+  chmod +x "${STAGE}/.package-lib/license-accept.sh"
+fi
+
 for tool in generate-customer-pdfs.sh verify-bundle-script-paths.sh; do
   [[ -x "${LIB}/${tool}" ]] || { echo "ERROR: missing ${LIB}/${tool}" >&2; exit 1; }
 done
