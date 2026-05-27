@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink, Lock, ShieldCheck, Terminal } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost } from '../../utils/api';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
@@ -69,7 +69,7 @@ export default function ConfidentialPage() {
   const [images, setImages] = useState<MeasuredImageManifest[]>([]);
   const [kata, setKata] = useState<KataStatus | null>(null);
   const [intel, setIntel] = useState<ConfidentialFleetAnalysis | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [verifyDigest, setVerifyDigest] = useState('');
   const [verifyName, setVerifyName] = useState('');
   const [verifyPath, setVerifyPath] = useState('');
@@ -391,9 +391,25 @@ export default function ConfidentialPage() {
           <button
             type="button"
             onClick={() => navigate(viewToPath('gitops'))}
-            className="mb-4 text-xs text-aether hover:underline"
+            className="mb-4 mr-4 text-xs text-aether hover:underline"
           >
             GitOps confidential sync →
+          </button>
+          <button
+            type="button"
+            data-testid="confidential-secrets-link"
+            onClick={() => navigate(viewToPath('secrets'))}
+            className="mb-4 mr-4 text-xs text-aether hover:underline"
+          >
+            Secrets vault →
+          </button>
+          <button
+            type="button"
+            data-testid="confidential-policy-link"
+            onClick={() => navigate(viewToPath('policy'))}
+            className="mb-4 text-xs text-aether hover:underline"
+          >
+            Policy check →
           </button>
           {filteredFleet.length === 0 ? (
             <EmptyState

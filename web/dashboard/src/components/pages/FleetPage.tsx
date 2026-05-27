@@ -84,6 +84,22 @@ export default function FleetPage() {
         >
           Metrics &amp; chargeback →
         </button>
+        <button
+          type="button"
+          data-testid="fleet-scheduler-link"
+          onClick={() => navigate(viewToPath('scheduler'))}
+          className="text-xs text-aether hover:underline ml-3"
+        >
+          Placement scheduler →
+        </button>
+        <button
+          type="button"
+          data-testid="fleet-drift-link"
+          onClick={() => navigate(viewToPath('drift'))}
+          className="text-xs text-aether hover:underline ml-3"
+        >
+          Drift detection →
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

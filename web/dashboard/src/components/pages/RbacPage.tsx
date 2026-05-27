@@ -7,6 +7,7 @@ import { Link } from 'react-router';
 import { KeyRound, Shield, Trash2, Copy } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -28,7 +29,7 @@ export default function RbacPage() {
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
   const [keyCopied, setKeyCopied] = useState(false);
   const [revokeName, setRevokeName] = useState<string | null>(null);

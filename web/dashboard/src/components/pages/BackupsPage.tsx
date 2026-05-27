@@ -8,6 +8,7 @@ import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { useNavigate } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -26,7 +27,7 @@ export default function BackupsPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [backupName, setBackupName] = useState('');
   const [backupDescription, setBackupDescription] = useState('');
   const [restoreOpen, setRestoreOpen] = useState<string | null>(null);

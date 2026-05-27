@@ -8,7 +8,7 @@ import { Inbox } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import StatCard from '../StatCard';
 import BarChart from '../BarChart';
 import Badge from '../Badge';
@@ -19,6 +19,7 @@ import PageLoadError from '../PageLoadError';
 import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 
 export default function SchedulerPage() {
+  const [workloadQuery] = useQueryParam('workload');
   const [utilization, setUtilization] = useState<RuntimeUtilization[]>([]);
   const [suggestions, setSuggestions] = useState<OptimizeSuggestion[]>([]);
   const [placements, setPlacements] = useState<Array<{ workload_name: string; runtime: string; cpu_reserved: number; memory_reserved_mb: number; placed_at: string }>>([]);
@@ -68,6 +69,14 @@ export default function SchedulerPage() {
 
   return (
     <div>
+      {workloadQuery.trim() ? (
+        <div
+          data-testid="scheduler-workload-context"
+          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Placement context for <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+        </div>
+      ) : null}
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-testid="scheduler-utilization-panel">
@@ -124,7 +133,11 @@ export default function SchedulerPage() {
               </thead>
               <tbody>
                 {placements.map((p) => (
-                  <tr key={p.workload_name} className="border-b border-slate-800/50">
+                  <tr
+                    key={p.workload_name}
+                    className={`border-b border-slate-800/50 ${workloadQuery.trim() === p.workload_name ? 'bg-aether/10' : ''}`}
+                    data-testid={workloadQuery.trim() === p.workload_name ? 'scheduler-workload-highlight' : undefined}
+                  >
                     <td className="py-2 px-3">
                       <Link
                         to={pathWithQuery(viewToPath('workloads'), { workload: p.workload_name })}

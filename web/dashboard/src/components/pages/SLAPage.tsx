@@ -7,7 +7,7 @@ import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
@@ -21,7 +21,7 @@ export default function SLAPage() {
   const [slaData, setSlaData] = useState<Record<string, SlaTarget | null>>({});
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryParam('q');
   const [addWorkload, setAddWorkload] = useState('');
   const [addTier, setAddTier] = useState('standard');
   const [adding, setAdding] = useState(false);
@@ -184,6 +184,22 @@ export default function SLAPage() {
                 ) : (
                   <p className="text-sm text-slate-500">No SLA configured</p>
                 )}
+                <div className="mt-4 flex flex-wrap gap-3 text-xs">
+                  <Link
+                    to={pathWithQuery(viewToPath('health'), { workload: w.name })}
+                    className="text-aether hover:underline"
+                    data-testid={`sla-health-link-${w.name}`}
+                  >
+                    Health →
+                  </Link>
+                  <Link
+                    to={pathWithQuery(viewToPath('events'), { workload: w.name, category: 'sla' })}
+                    className="text-aether hover:underline"
+                    data-testid={`sla-events-link-${w.name}`}
+                  >
+                    SLA events →
+                  </Link>
+                </div>
               </div>
             );
           })}
