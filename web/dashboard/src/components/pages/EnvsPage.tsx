@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatTimestamp } from '../../utils/formatters';
@@ -16,7 +16,7 @@ import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
-import { SearchQueryContextBanner } from '../QueryContextBanner';
+import { SearchQueryContextBanner, WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { Environment } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -36,7 +36,9 @@ export default function EnvsPage() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useQueryParam('q');
+  const [workloadParam] = useQueryParam('workload');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
+  const workloadFocus = workloadParam.trim();
   const [envParam, setEnvParam] = useQueryParam('env');
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -144,7 +146,19 @@ export default function EnvsPage() {
 
   return (
     <div>
-      <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments" />
+      {workloadFocus ? (
+        <WorkloadContextBanner
+          testId="envs-workload-banner"
+          workload={workloadFocus}
+          description="Environment promotion context"
+        >
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="envs" />
+        </WorkloadContextBanner>
+      ) : (
+        <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments">
+          {search.trim() ? <WorkloadScopedCrossLinks workload={search} prefix="envs" /> : null}
+        </SearchQueryContextBanner>
+      )}
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

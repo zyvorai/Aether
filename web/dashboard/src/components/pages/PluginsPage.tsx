@@ -7,7 +7,7 @@ import { Search, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { useQueryParam } from '../../utils/urlState';
+import { useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -15,7 +15,7 @@ import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
-import { SearchQueryContextBanner } from '../QueryContextBanner';
+import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { PluginInfo } from '../../types/api';
 
 export default function PluginsPage() {
@@ -26,7 +26,7 @@ export default function PluginsPage() {
   const [discovering, setDiscovering] = useState(false);
   const [discoverSummary, setDiscoverSummary] = useState<string | null>(null);
   const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
-  const [search, setSearch] = useQueryParam('q');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [runtimeFilter, setRuntimeFilter] = useQueryParam('runtime', 'all');
   const [registerJson, setRegisterJson] = useState('');
   const [registerMsg, setRegisterMsg] = useState<string | null>(null);
@@ -112,7 +112,9 @@ export default function PluginsPage() {
 
   return (
     <div>
-      <SearchQueryContextBanner testId="plugins-workload-context" query={search} entityLabel="plugins" />
+      <SearchQueryContextBanner testId="plugins-workload-context" query={search} entityLabel="plugins">
+        <WorkloadScopedCrossLinks workload={search} prefix="plugins" />
+      </SearchQueryContextBanner>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

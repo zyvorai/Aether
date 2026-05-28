@@ -13,6 +13,7 @@ import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { AffinityScore } from '../../types/api';
 
 const WORKLOAD_CLASSES = [
@@ -134,6 +135,7 @@ export default function AffinityPage() {
           >
             Open workload →
           </button>
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="affinity" />
         </div>
       ) : null}
 
