@@ -424,6 +424,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('backups'), { workload: name })),
       },
       {
+        id: `workload-${name}-compose-deps`,
+        label: `Compose deps: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `compose dependencies stack ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('deps'), { workload: name })),
+      },
+      {
         id: `workload-${name}-scoring`,
         label: `Open scoring: ${name}`,
         category: 'workload-action' as const,

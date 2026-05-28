@@ -178,6 +178,14 @@ export default function MetricsPage() {
             >
               Scheduler →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="metrics-context-openapi-link"
+            >
+              OpenAPI →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

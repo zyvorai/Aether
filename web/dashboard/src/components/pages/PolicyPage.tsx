@@ -183,6 +183,14 @@ export default function PolicyPage() {
           >
             Audit →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('compose'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="policy-context-compose-link"
+          >
+            Compose →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4 flex flex-wrap gap-3">

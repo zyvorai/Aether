@@ -187,6 +187,14 @@ export default function TemplatesPage() {
             >
               Compose →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="templates-context-policy-link"
+            >
+              Policy →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

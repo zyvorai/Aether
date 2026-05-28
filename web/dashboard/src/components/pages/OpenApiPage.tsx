@@ -174,6 +174,22 @@ export default function OpenApiPage() {
           >
             Copilot →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="openapi-context-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="openapi-context-gitops-link"
+          >
+            GitOps →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

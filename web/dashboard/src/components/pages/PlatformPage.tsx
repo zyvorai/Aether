@@ -153,6 +153,22 @@ export default function PlatformPage() {
           >
             Intelligence →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-secrets-link"
+          >
+            Secrets →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-fleet-link"
+          >
+            Fleet →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
@@ -221,28 +237,56 @@ export default function PlatformPage() {
               Configure policy engine →
             </Link>
           )}
-          <Link to={viewToPath('audit')} className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="platform-audit-link">
+          <Link
+            to={
+              focusedWorkload
+                ? pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })
+                : viewToPath('audit')
+            }
+            className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
+            data-testid="platform-audit-link"
+          >
             Audit trail →
           </Link>
-          <Link to={viewToPath('backups')} className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="platform-backups-link">
+          <Link
+            to={
+              focusedWorkload
+                ? pathWithQuery(viewToPath('backups'), { workload: focusedWorkload })
+                : viewToPath('backups')
+            }
+            className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
+            data-testid="platform-backups-link"
+          >
             Backups →
           </Link>
           <Link
-            to={viewToPath('confidential')}
+            to={
+              focusedWorkload
+                ? pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })
+                : viewToPath('confidential')
+            }
             className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
             data-testid="platform-confidential-link"
           >
             Confidential computing →
           </Link>
           <Link
-            to={viewToPath('health')}
+            to={
+              focusedWorkload
+                ? pathWithQuery(viewToPath('health'), { workload: focusedWorkload })
+                : viewToPath('health')
+            }
             className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
             data-testid="platform-health-link"
           >
             Health monitor →
           </Link>
           <Link
-            to={viewToPath('events')}
+            to={
+              focusedWorkload
+                ? pathWithQuery(viewToPath('events'), { workload: focusedWorkload })
+                : viewToPath('events')
+            }
             className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
             data-testid="platform-events-link"
           >

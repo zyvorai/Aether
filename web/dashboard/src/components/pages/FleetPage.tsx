@@ -112,6 +112,22 @@ export default function FleetPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="fleet-context-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `Fleet guidance for ${focusedWorkload}` })}
+            className="text-aether hover:underline"
+            data-testid="fleet-context-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4">

@@ -234,6 +234,14 @@ export default function DriftPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="drift-context-editor-link"
+          >
+            Editor →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

@@ -519,7 +519,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   { label: 'Cost', slug: 'cost', path: pathWithQuery(viewToPath('cost'), { workload: workload.name }) },
                   { label: 'Fleet', slug: 'fleet', path: pathWithQuery(viewToPath('fleet'), { workload: workload.name }) },
                   { label: 'Affinity', slug: 'affinity', path: pathWithQuery(viewToPath('affinity'), { workload: workload.name }) },
-                  { label: 'Envs', slug: 'envs', path: pathWithQuery(viewToPath('envs'), { q: workload.name }) },
+                  { label: 'Envs', slug: 'envs', path: pathWithQuery(viewToPath('envs'), { workload: workload.name }) },
                   { label: 'Intelligence', slug: 'intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions', workload: workload.name }) },
                 ] as const
               ).map((link) => (
