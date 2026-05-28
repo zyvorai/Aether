@@ -172,6 +172,14 @@ export default function IntelligencePage() {
           >
             AI engine →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Risk summary for ${workloadFocus}` })}
+            className="text-aether hover:underline"
+            data-testid="intelligence-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

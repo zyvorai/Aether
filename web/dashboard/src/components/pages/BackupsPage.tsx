@@ -122,6 +122,14 @@ export default function BackupsPage() {
             >
               Drift →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="backups-secrets-link"
+            >
+              Secrets →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

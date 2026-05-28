@@ -88,6 +88,14 @@ export default function FleetPage() {
           >
             Clusters →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="fleet-openapi-link"
+          >
+            OpenAPI →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4">

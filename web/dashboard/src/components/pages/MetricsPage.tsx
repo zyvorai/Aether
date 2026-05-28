@@ -146,6 +146,14 @@ export default function MetricsPage() {
             >
               Platform →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="metrics-drift-link"
+            >
+              Drift →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>
