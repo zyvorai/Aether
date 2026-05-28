@@ -109,11 +109,21 @@ test.describe('Phases 981–1030 features', () => {
     await expect(page).toHaveURL(/\/envs\?q=web/, { timeout: 10_000 });
   });
 
-  test('phase 984: workload detail alerts link opens events filtered', async ({ page }) => {
+  test('phase 984: workload detail alerts link opens alerts filtered', async ({ page }) => {
     await mockWorkloadDetail(page);
+    await page.route('**/api/alerts/status', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { channels: [], rules: [] } }),
+      }),
+    );
+    await page.route('**/api/webhooks/queue', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
+    );
     await page.goto('/workloads?workload=web');
     await page.getByTestId('workload-link-alerts').click();
-    await expect(page).toHaveURL(/\/events\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/alerts\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 985: affinity workload context banner', async ({ page }) => {
