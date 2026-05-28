@@ -281,6 +281,22 @@ export default function GitOpsPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-context-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-context-compose-link"
+          >
+            Compose →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

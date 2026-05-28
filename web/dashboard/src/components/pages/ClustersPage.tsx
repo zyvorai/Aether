@@ -777,6 +777,22 @@ export default function ClustersPage() {
           >
             Policy →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="clusters-context-rbac-link"
+          >
+            RBAC →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="clusters-context-fleet-link"
+          >
+            Fleet →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

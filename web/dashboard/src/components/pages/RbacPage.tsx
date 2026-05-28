@@ -142,6 +142,14 @@ export default function RbacPage() {
           >
             Policy →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="rbac-context-gitops-link"
+          >
+            GitOps →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

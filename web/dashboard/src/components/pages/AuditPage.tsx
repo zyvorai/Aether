@@ -160,6 +160,14 @@ export default function AuditPage() {
             >
               Policy →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="audit-context-editor-link"
+            >
+              Editor →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>
@@ -232,7 +240,7 @@ export default function AuditPage() {
           <WorkloadScopedCrossLinks workload={workloadFilter} prefix="audit" />
         ) : null}
         {' · '}
-        <Link to={viewToPath('rbac')} className="text-aether hover:underline" data-testid="audit-rbac-link">
+        <Link to={viewToPath('rbac')} className="text-aether hover:underline" data-testid="audit-footer-rbac-link">
           API access control →
         </Link>
       </div>

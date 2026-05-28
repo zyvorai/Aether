@@ -146,6 +146,14 @@ export default function CostPage() {
           >
             Affinity →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="cost-context-platform-link"
+          >
+            Platform →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       {chargeback ? (

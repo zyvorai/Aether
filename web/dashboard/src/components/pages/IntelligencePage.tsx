@@ -188,6 +188,14 @@ export default function IntelligencePage() {
           >
             Cost →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="intelligence-context-platform-link"
+          >
+            Platform →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

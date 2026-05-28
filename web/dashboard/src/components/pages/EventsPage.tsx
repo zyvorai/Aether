@@ -137,6 +137,22 @@ export default function EventsPage() {
             >
               Copilot →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="events-context-secrets-link"
+            >
+              Secrets →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="events-context-policy-link"
+            >
+              Policy →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

@@ -148,6 +148,14 @@ export default function AffinityPage() {
           >
             Copilot →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('cost'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="affinity-context-cost-link"
+          >
+            Cost →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

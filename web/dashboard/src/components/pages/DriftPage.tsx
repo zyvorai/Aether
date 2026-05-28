@@ -226,6 +226,14 @@ export default function DriftPage() {
           >
             Compose →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="drift-context-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

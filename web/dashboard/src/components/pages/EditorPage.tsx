@@ -232,6 +232,22 @@ export default function EditorPage() {
           >
             Backups →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('templates'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="editor-banner-templates-link"
+          >
+            Templates →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="editor-banner-policy-link"
+          >
+            Policy →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="flex items-center justify-between mb-6">

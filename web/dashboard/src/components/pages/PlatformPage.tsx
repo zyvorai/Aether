@@ -137,6 +137,22 @@ export default function PlatformPage() {
           >
             Copilot →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), { workload: focusedWorkload, tab: 'predictions' })}
+            className="text-aether hover:underline"
+            data-testid="platform-intelligence-link"
+          >
+            Intelligence →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
