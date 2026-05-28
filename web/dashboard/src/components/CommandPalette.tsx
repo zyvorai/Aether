@@ -154,10 +154,22 @@ export default function CommandPalette({
         },
       },
       {
-        id: `workload-${name}-confidential`,
-        label: `Confidential trust: ${name}`,
+        id: `workload-${name}-trust`,
+        label: `Trust tab: ${name}`,
         category: 'workload-action' as const,
-        searchText: `confidential trust attestation ${name} tee`,
+        searchText: `trust attestation guestkit tee confidential ${name}`,
+        workloadName: name,
+        workloadTab: 'trust',
+        run: () => {
+          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'trust' }));
+          onSelectWorkload?.(name);
+        },
+      },
+      {
+        id: `workload-${name}-confidential`,
+        label: `Confidential fleet: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `confidential fleet tee ${name}`,
         workloadName: name,
         run: () => {
           navigate(pathWithQuery(viewToPath('confidential'), { workload: name }));
@@ -368,6 +380,13 @@ export default function CommandPalette({
         label: 'Open confidential computing',
         category: 'action',
         searchText: 'confidential tee attestation kata',
+        view: 'confidential',
+      },
+      {
+        id: 'action-trust-attestation',
+        label: 'Open trust & attestation',
+        category: 'action',
+        searchText: 'trust attestation guestkit tee confidential fleet',
         view: 'confidential',
       },
       {

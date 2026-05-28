@@ -50,10 +50,15 @@ export default function AlertsPage() {
   const [queueLoading, setQueueLoading] = useState(false);
   const [flushLoading, setFlushLoading] = useState(false);
 
+  const workloadFocus = workloadQuery.trim();
+
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const result = await apiFetchSettled<AlertsStatus>('/alerts/status');
+    const statusPath = workloadFocus
+      ? `/alerts/status?workload=${encodeURIComponent(workloadFocus)}`
+      : '/alerts/status';
+    const result = await apiFetchSettled<AlertsStatus>(statusPath);
     if (!result.ok) {
       setLoadFailed(true);
       setStatus(null);
@@ -64,7 +69,7 @@ export default function AlertsPage() {
       }
     }
     setLoading(false);
-  }, [testChannel]);
+  }, [testChannel, workloadFocus]);
 
   useEffect(() => {
     void load();
@@ -146,7 +151,6 @@ export default function AlertsPage() {
 
   const channels = status?.channels ?? [];
   const allRules = status?.rules ?? [];
-  const workloadFocus = workloadQuery.trim();
   const rules = useMemo(() => {
     if (!workloadFocus) return allRules;
     return allRules.filter((rule) => {
@@ -195,6 +199,18 @@ export default function AlertsPage() {
         <Link to={viewToPath('policy')} className="text-xs text-aether hover:underline" data-testid="alerts-policy-link">
           Policy check →
         </Link>
+        {workloadFocus ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
+              className="text-xs text-aether hover:underline"
+              data-testid="alerts-trust-link"
+            >
+              Trust & attestation →
+            </Link>
+          </>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -327,14 +343,24 @@ export default function AlertsPage() {
                   key={rule.name}
                   className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3"
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-medium text-slate-100">{rule.name}</span>
-                    <Badge text={rule.enabled ? 'on' : 'off'} variant={rule.enabled ? 'green' : 'muted'} />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {rule.workload ? (
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: rule.workload, tab: 'trust' })}
+                          className="text-xs font-mono text-aether hover:underline"
+                          data-testid={`alerts-rule-workload-${rule.workload}`}
+                        >
+                          {rule.workload}
+                        </Link>
+                      ) : null}
+                      <Badge text={rule.enabled ? 'on' : 'off'} variant={rule.enabled ? 'green' : 'muted'} />
+                    </div>
                   </div>
                   <p className="text-sm text-slate-400 mt-1">{rule.condition}</p>
                   <p className="text-xs text-slate-500 mt-1">
                     Severity {rule.severity} · cooldown {rule.cooldown_seconds}s
-                    {rule.workload ? ` · workload ${rule.workload}` : ''}
                     {rule.last_triggered ? ` · last: ${rule.last_triggered}` : ''}
                   </p>
                 </li>

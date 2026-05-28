@@ -348,6 +348,23 @@ export default function HealthPage() {
                   View events →
                 </Link>
                 <Link
+                  to={pathWithQuery(viewToPath('alerts'), { workload: selected.workload.name })}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="health-alerts-link"
+                >
+                  Alert rules →
+                </Link>
+                <Link
+                  to={pathWithQuery(viewToPath('workloads'), {
+                    workload: selected.workload.name,
+                    tab: 'trust',
+                  })}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="health-trust-link"
+                >
+                  Trust & attestation →
+                </Link>
+                <Link
                   to={viewToPath('sla')}
                   className="text-xs text-aether hover:underline"
                   data-testid="health-sla-link"

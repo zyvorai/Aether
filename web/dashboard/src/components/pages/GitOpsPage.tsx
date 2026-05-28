@@ -444,7 +444,10 @@ export default function GitOpsPage() {
                               type="button"
                               onClick={() =>
                                 navigate(
-                                  pathWithQuery(viewToPath('confidential'), { workload: row.workload! }),
+                                  pathWithQuery(viewToPath('workloads'), {
+                                    workload: row.workload!,
+                                    tab: 'trust',
+                                  }),
                                 )
                               }
                               className="text-aether hover:underline"

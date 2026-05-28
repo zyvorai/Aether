@@ -55,6 +55,25 @@ function verdictVariant(v: string): 'green' | 'red' | 'yellow' | 'muted' {
   }
 }
 
+function headerAttestationBadge(
+  status: AttestationStatus | null,
+  meta: ConfidentialFleetRow | null,
+): { text: string; variant: 'green' | 'red' | 'yellow' | 'muted' } {
+  if (status?.last_verdict) {
+    const v = status.last_verdict;
+    const text =
+      v === 'pass' ? 'attestation pass' : v === 'fail' ? 'attestation fail' : `attestation ${v}`;
+    return { text, variant: verdictVariant(v) };
+  }
+  if (meta?.attestation_passed !== undefined) {
+    return {
+      text: meta.attestation_passed ? 'attestation pass' : 'attestation pending',
+      variant: meta.attestation_passed ? 'green' : 'yellow',
+    };
+  }
+  return { text: 'attestation unknown', variant: 'muted' };
+}
+
 interface ConfidentialWorkloadPanelProps {
   workloadName: string;
   runtime?: string;
@@ -238,6 +257,8 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
     return <p className="text-sm text-zinc-500 py-4">Loading trust and attestation data…</p>;
   }
 
+  const headerAttest = headerAttestationBadge(status, meta);
+
   if (notConfidential && !status) {
     return (
       <div className="py-4 space-y-2">
@@ -259,12 +280,9 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-zinc-800">
           <Badge text={runtimeLabel(meta?.runtime ?? runtime ?? 'unknown')} variant="muted" />
           {meta?.tee && <Badge text={meta.tee} variant="muted" />}
-          {meta?.attestation_passed !== undefined && (
+          {(status?.last_verdict || meta?.attestation_passed !== undefined) && (
             <span data-testid="trust-attestation-badge">
-              <Badge
-                text={meta.attestation_passed ? 'attestation pass' : 'attestation pending'}
-                variant={meta.attestation_passed ? 'green' : 'yellow'}
-              />
+              <Badge text={headerAttest.text} variant={headerAttest.variant} />
             </span>
           )}
         </div>
@@ -278,7 +296,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             variant={analysis.risk_level === 'low' ? 'green' : analysis.risk_level === 'medium' ? 'yellow' : 'red'}
           />
           <p className="text-xs text-zinc-500 mt-2">{analysis.summary}</p>
-          {analysis.recommendations.length > 0 && (
+          {(analysis.recommendations?.length ?? 0) > 0 && (
             <ul className="mt-2 space-y-1 text-xs text-amber-200/90">
               {analysis.recommendations.slice(0, 3).map((r) => (
                 <li key={r}>{r}</li>
@@ -301,21 +319,21 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               <Badge text={placement.kata_runtime_class} variant="muted" />
             )}
           </div>
-          {placement.blockers.length > 0 && (
+          {(placement.blockers?.length ?? 0) > 0 && (
             <ul className="text-xs text-red-300/90 space-y-1 mb-2">
               {placement.blockers.map((b) => (
                 <li key={b}>{b}</li>
               ))}
             </ul>
           )}
-          {placement.gitops_issues.length > 0 && (
+          {(placement.gitops_issues?.length ?? 0) > 0 && (
             <ul className="text-xs text-amber-300/90 space-y-1 mb-2">
               {placement.gitops_issues.map((issue) => (
                 <li key={issue}>GitOps: {issue}</li>
               ))}
             </ul>
           )}
-          {placement.schedule_constraints.length > 0 && (
+          {(placement.schedule_constraints?.length ?? 0) > 0 && (
             <p className="text-xs text-zinc-500 font-mono">
               {placement.schedule_constraints.join(' · ')}
             </p>
@@ -550,6 +568,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         <div className="flex flex-wrap gap-2 mb-3">
           <button
             type="button"
+            data-testid="guestkit-prelaunch"
             disabled={guestkitBusy}
             onClick={() => void runGuestkit('pre-launch')}
             className="px-2.5 py-1 text-xs rounded border border-zinc-600 text-zinc-300 hover:border-aether/50 disabled:opacity-50"
@@ -558,6 +577,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           </button>
           <button
             type="button"
+            data-testid="guestkit-repair"
             disabled={guestkitBusy}
             onClick={() => void runGuestkit('attested-repair')}
             className="px-2.5 py-1 text-xs rounded border border-zinc-600 text-zinc-300 hover:border-aether/50 disabled:opacity-50"
@@ -609,8 +629,8 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         </div>
       )}
 
-      {(secretStatus.length > 0 || secretActionMsg) && (
-        <div className="border-t border-zinc-700 pt-4">
+      {!notConfidential && (
+        <div className="border-t border-zinc-700 pt-4" data-testid="attest-secrets-panel">
           <h4 className="text-sm font-medium text-zinc-300 mb-3">Attest-gated secrets</h4>
           {secretActionMsg && (
             <p className="mb-2 text-xs text-zinc-400">{secretActionMsg}</p>
@@ -640,7 +660,9 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               ))}
             </div>
           ) : (
-            <p className="text-xs text-zinc-500">No attest-gated secrets configured on this workload.</p>
+            <p className="text-xs text-zinc-500" data-testid="attest-secrets-empty">
+              No attest-gated secrets configured on this workload.
+            </p>
           )}
         </div>
       )}
