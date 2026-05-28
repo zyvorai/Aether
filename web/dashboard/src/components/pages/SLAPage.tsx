@@ -110,6 +110,14 @@ export default function SLAPage() {
             >
               Secrets →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('alerts'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="sla-context-alerts-link"
+            >
+              Alerts →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

@@ -140,6 +140,14 @@ export default function PluginsPage() {
             >
               Drift →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="plugins-context-platform-link"
+            >
+              Platform →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

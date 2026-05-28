@@ -218,6 +218,14 @@ export default function DriftPage() {
           >
             Policy →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="drift-context-compose-link"
+          >
+            Compose →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

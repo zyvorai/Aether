@@ -189,6 +189,14 @@ export default function ComposePage() {
           >
             Templates →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="compose-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div>

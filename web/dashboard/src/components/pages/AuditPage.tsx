@@ -152,6 +152,14 @@ export default function AuditPage() {
             >
               Secrets →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="audit-context-policy-link"
+            >
+              Policy →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

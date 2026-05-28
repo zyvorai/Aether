@@ -167,19 +167,48 @@ export default function PolicyPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="policy-context-rbac-link"
+          >
+            RBAC →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="policy-context-audit-link"
+          >
+            Audit →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={() => navigate(viewToPath('drift'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('drift'), { workload: focusedWorkload })
+                : viewToPath('drift'),
+            )
+          }
           className="text-xs text-aether hover:underline"
+          data-testid="policy-context-drift-link"
         >
           Drift detection →
         </button>
         <button
           type="button"
-          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { validate: '1' }))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('workloads'), { validate: '1', workload: focusedWorkload })
+                : pathWithQuery(viewToPath('workloads'), { validate: '1' }),
+            )
+          }
           className="text-xs text-aether hover:underline"
           data-testid="policy-validate-link"
         >
@@ -187,8 +216,15 @@ export default function PolicyPage() {
         </button>
         <button
           type="button"
-          onClick={() => navigate(viewToPath('platform'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('platform'), { workload: focusedWorkload })
+                : viewToPath('platform'),
+            )
+          }
           className="text-xs text-aether hover:underline"
+          data-testid="policy-platform-link"
         >
           Platform &amp; HA →
         </button>

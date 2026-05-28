@@ -140,6 +140,14 @@ export default function AffinityPage() {
           >
             AI engine →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Placement guidance for ${workloadFocus}` })}
+            className="text-aether hover:underline"
+            data-testid="affinity-context-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

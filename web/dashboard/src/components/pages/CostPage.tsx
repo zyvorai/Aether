@@ -138,6 +138,14 @@ export default function CostPage() {
           >
             Intelligence →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('affinity'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="cost-context-affinity-link"
+          >
+            Affinity →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       {chargeback ? (
