@@ -180,6 +180,14 @@ export default function IntelligencePage() {
           >
             Copilot →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('cost'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="intelligence-context-cost-link"
+          >
+            Cost →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

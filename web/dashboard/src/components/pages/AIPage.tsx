@@ -425,6 +425,22 @@ export default function AIPage() {
           >
             Intelligence →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: workloadQuery.trim(), q: `Analyze ${workloadQuery.trim()}` })}
+            className="text-aether hover:underline"
+            data-testid="ai-context-copilot-link"
+          >
+            Copilot →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="ai-context-editor-link"
+          >
+            Editor →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

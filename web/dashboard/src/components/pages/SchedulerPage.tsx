@@ -95,6 +95,14 @@ export default function SchedulerPage() {
           >
             Affinity →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="scheduler-banner-fleet-link"
+          >
+            Fleet →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />

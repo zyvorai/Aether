@@ -134,6 +134,14 @@ export default function RbacPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="rbac-context-policy-link"
+          >
+            Policy →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

@@ -96,13 +96,35 @@ export default function FleetPage() {
           >
             OpenAPI →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="fleet-context-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="fleet-context-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4">
         <button
           type="button"
           data-testid="fleet-clusters-link"
-          onClick={() => navigate(viewToPath('clusters'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })
+                : viewToPath('clusters'),
+            )
+          }
           className="text-xs text-aether hover:underline"
         >
           Cluster browser →
@@ -110,7 +132,13 @@ export default function FleetPage() {
         <button
           type="button"
           data-testid="fleet-metrics-link"
-          onClick={() => navigate(viewToPath('metrics'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('metrics'), { workload: focusedWorkload })
+                : viewToPath('metrics'),
+            )
+          }
           className="text-xs text-aether hover:underline ml-3"
         >
           Metrics &amp; chargeback →
@@ -118,7 +146,13 @@ export default function FleetPage() {
         <button
           type="button"
           data-testid="fleet-scheduler-link"
-          onClick={() => navigate(viewToPath('scheduler'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('scheduler'), { workload: focusedWorkload })
+                : viewToPath('scheduler'),
+            )
+          }
           className="text-xs text-aether hover:underline ml-3"
         >
           Placement scheduler →
@@ -126,7 +160,13 @@ export default function FleetPage() {
         <button
           type="button"
           data-testid="fleet-drift-link"
-          onClick={() => navigate(viewToPath('drift'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('drift'), { workload: focusedWorkload })
+                : viewToPath('drift'),
+            )
+          }
           className="text-xs text-aether hover:underline ml-3"
         >
           Drift detection →
@@ -134,7 +174,13 @@ export default function FleetPage() {
         <button
           type="button"
           data-testid="fleet-confidential-link"
-          onClick={() => navigate(viewToPath('confidential'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })
+                : viewToPath('confidential'),
+            )
+          }
           className="text-xs text-aether hover:underline ml-3"
         >
           Confidential fleet →
@@ -142,7 +188,13 @@ export default function FleetPage() {
         <button
           type="button"
           data-testid="fleet-health-link"
-          onClick={() => navigate(viewToPath('health'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('health'), { workload: focusedWorkload })
+                : viewToPath('health'),
+            )
+          }
           className="text-xs text-aether hover:underline ml-3"
         >
           Health monitor →
@@ -150,7 +202,13 @@ export default function FleetPage() {
         <button
           type="button"
           data-testid="fleet-events-link"
-          onClick={() => navigate(viewToPath('events'))}
+          onClick={() =>
+            navigate(
+              focusedWorkload
+                ? pathWithQuery(viewToPath('events'), { workload: focusedWorkload })
+                : viewToPath('events'),
+            )
+          }
           className="text-xs text-aether hover:underline ml-3"
         >
           Events feed →

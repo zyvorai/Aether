@@ -408,6 +408,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('audit'), { workload: name })),
       },
       {
+        id: `workload-${name}-policy-scoped`,
+        label: `Policy check: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `policy opa validate ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('policy'), { workload: name })),
+      },
+      {
         id: `workload-${name}-scoring`,
         label: `Open scoring: ${name}`,
         category: 'workload-action' as const,
