@@ -3958,7 +3958,10 @@ pub(crate) async fn api_gitops_sync() -> impl IntoResponse {
                 let st = ctrl.status().clone();
                 let confidential_compliance =
                     crate::gitops::audit_confidential_changes(&ctrl.repo_dir, &changes);
-                let status_json = match serde_json::to_string_pretty(&st) {
+                let mut snapshot = st;
+                snapshot.last_changes = Some(changes);
+                snapshot.last_confidential_compliance = Some(confidential_compliance);
+                let status_json = match serde_json::to_string_pretty(&snapshot) {
                     Ok(s) => s,
                     Err(e) => return err_internal::<serde_json::Value>(e.to_string()),
                 };
@@ -3966,9 +3969,9 @@ pub(crate) async fn api_gitops_sync() -> impl IntoResponse {
                     return err_internal::<serde_json::Value>(e.to_string());
                 }
                 ok_json(serde_json::json!({
-                    "changes": changes,
-                    "status": st,
-                    "confidential_compliance": confidential_compliance,
+                    "changes": snapshot.last_changes,
+                    "status": snapshot,
+                    "confidential_compliance": snapshot.last_confidential_compliance,
                 }))
             }
             Err(e) => err_internal::<serde_json::Value>(e),

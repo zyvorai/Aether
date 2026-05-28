@@ -83,6 +83,14 @@ pub struct GitOpsStatus {
 
     /// Most recent error message, if any.
     pub last_error: Option<String>,
+
+    /// Workload YAML changes from the last successful sync (API/dashboard).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_changes: Option<Vec<GitOpsChange>>,
+
+    /// Confidential compliance audit from the last successful sync.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_confidential_compliance: Option<Vec<GitOpsConfidentialAudit>>,
 }
 
 impl GitOpsStatus {
@@ -97,6 +105,8 @@ impl GitOpsStatus {
             sync_count: 0,
             error_count: 0,
             last_error: None,
+            last_changes: None,
+            last_confidential_compliance: None,
         }
     }
 }
@@ -713,6 +723,8 @@ mod tests {
             sync_count: 5,
             error_count: 1,
             last_error: Some("network timeout".to_string()),
+            last_changes: None,
+            last_confidential_compliance: None,
         };
 
         let output = format_status(&status);
