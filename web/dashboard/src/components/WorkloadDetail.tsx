@@ -364,6 +364,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
         {tabs.map(tab => (
           <button
             key={tab.id}
+            type="button"
+            data-testid={`workload-tab-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.id
@@ -487,6 +489,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   { label: 'Editor', slug: 'editor', path: pathWithQuery(viewToPath('editor'), { workload: workload.name }) },
                   { label: 'Health monitor', slug: 'health', path: pathWithQuery(viewToPath('health'), { workload: workload.name }) },
                   { label: 'Ops copilot', slug: 'copilot', path: pathWithQuery(viewToPath('copilot'), { q: `Why is ${workload.name} unhealthy?` }) },
+                  { label: 'Trust', slug: 'trust', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' }) },
                   { label: 'Confidential', slug: 'confidential', path: pathWithQuery(viewToPath('confidential'), { workload: workload.name }) },
                   { label: 'Backups', slug: 'backups', path: pathWithQuery(viewToPath('backups'), { q: workload.name }) },
                   { label: 'Secrets', slug: 'secrets', path: pathWithQuery(viewToPath('secrets'), { q: workload.name }) },

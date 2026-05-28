@@ -164,6 +164,26 @@ export default function IntelligencePage() {
           >
             Open workload →
           </button>
+          {' · '}
+          <button
+            type="button"
+            data-testid="intelligence-trust-link"
+            onClick={() =>
+              navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' }))
+            }
+            className="text-aether hover:underline"
+          >
+            Trust tab →
+          </button>
+          {' · '}
+          <button
+            type="button"
+            data-testid="intelligence-alerts-context-link"
+            onClick={() => navigate(pathWithQuery(viewToPath('alerts'), { workload: workloadFocus }))}
+            className="text-aether hover:underline"
+          >
+            Alert rules →
+          </button>
         </div>
       ) : null}
 
@@ -280,7 +300,15 @@ export default function IntelligencePage() {
                   </Link>
                   <Badge text={t.severity} variant={riskVariant(t.severity)} />
                   <Badge text={t.category} variant="muted" />
-                  <Link to={viewToPath('alerts')} className="text-xs text-aether hover:underline ml-auto" data-testid="intelligence-alerts-link">
+                  <Link
+                    to={
+                      workloadFocus
+                        ? pathWithQuery(viewToPath('alerts'), { workload: t.workload })
+                        : viewToPath('alerts')
+                    }
+                    className="text-xs text-aether hover:underline ml-auto"
+                    data-testid="intelligence-alerts-link"
+                  >
                     Alerts →
                   </Link>
                 </div>
