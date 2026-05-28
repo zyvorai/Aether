@@ -113,7 +113,15 @@ export default function EventsPage() {
           <button type="button" onClick={() => setSeverity('critical')} className="text-left">
             <StatCard title="Critical" value={summary.critical_unacked} color="red" />
           </button>
-          <Link to={viewToPath('alerts')} className="text-xs text-aether hover:underline self-end mb-1">
+          <Link
+            to={
+              workloadFilter.trim()
+                ? pathWithQuery(viewToPath('alerts'), { workload: workloadFilter.trim() })
+                : viewToPath('alerts')
+            }
+            className="text-xs text-aether hover:underline self-end mb-1"
+            data-testid="events-alerts-link"
+          >
             Alert channels →
           </Link>
         </div>

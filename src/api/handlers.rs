@@ -1835,7 +1835,10 @@ pub(crate) async fn api_drift_reconcile(
 }
 
 /// GET /api/alerts/status — Notification channels and alert rules.
-pub(crate) async fn api_alerts_status() -> impl IntoResponse {
+/// Optional `?workload=` filters rules to that workload (scoped field or legacy name/condition match).
+pub(crate) async fn api_alerts_status(
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> impl IntoResponse {
     use crate::events::{ChannelType, EventBus};
 
     let path = EventBus::default_path();
@@ -1843,6 +1846,12 @@ pub(crate) async fn api_alerts_status() -> impl IntoResponse {
         Ok(b) => b,
         Err(e) => return err_internal::<serde_json::Value>(e),
     };
+
+    let workload_filter = params
+        .get("workload")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
 
     let channels: Vec<serde_json::Value> = bus
         .channels()
@@ -1870,6 +1879,18 @@ pub(crate) async fn api_alerts_status() -> impl IntoResponse {
     let rules: Vec<serde_json::Value> = bus
         .rules()
         .iter()
+        .filter(|rule| {
+            let Some(ref focus) = workload_filter else {
+                return true;
+            };
+            if let Some(ref scoped) = rule.workload {
+                return scoped == focus;
+            }
+            let needle = focus.to_lowercase();
+            rule.name.to_lowercase().contains(&needle)
+                || format!("{}", rule.condition).to_lowercase().contains(&needle)
+                || rule.message_template.to_lowercase().contains(&needle)
+        })
         .map(|rule| {
             json!({
                 "name": rule.name,

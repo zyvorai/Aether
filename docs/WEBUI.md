@@ -110,6 +110,10 @@ The dashboard provides 19 pages organized under a top navigation bar with dropdo
 
 ## Dashboard Features
 
+### Workload-scoped deep links
+
+Many views accept `?workload=` (and Workload detail accepts `?tab=trust` for the Trust & attestation panel). Context banners on Events, Health, Alerts, Audit, and Confidential link to related pages (events ↔ alerts ↔ trust tab). Alert rules may include a `workload` field; `GET /api/alerts/status?workload=` returns only matching rules. The command palette includes per-workload **Trust tab** and fleet **Trust & attestation** actions.
+
 ### Navigation
 
 The top navbar organizes pages into dropdown groups for quick access. On mobile devices, a hamburger menu provides access to all pages.

@@ -249,6 +249,33 @@ export default function ConfidentialPage() {
           >
             Intelligence →
           </button>
+          {' · '}
+          <button
+            type="button"
+            data-testid="confidential-trust-link"
+            onClick={() =>
+              navigate(
+                pathWithQuery(viewToPath('workloads'), {
+                  workload: workloadQuery.trim(),
+                  tab: 'trust',
+                }),
+              )
+            }
+            className="text-aether hover:underline"
+          >
+            Trust tab →
+          </button>
+          {' · '}
+          <button
+            type="button"
+            data-testid="confidential-alerts-link"
+            onClick={() =>
+              navigate(pathWithQuery(viewToPath('alerts'), { workload: workloadQuery.trim() }))
+            }
+            className="text-aether hover:underline"
+          >
+            Alert rules →
+          </button>
         </div>
       ) : null}
 
@@ -511,8 +538,14 @@ export default function ConfidentialPage() {
                         />
                       </span>
                       <Badge
-                        text={`${Math.round(row.trust.composite * 100)}% trust`}
-                        variant={row.trust.composite >= 0.8 ? 'green' : row.trust.composite >= 0.5 ? 'yellow' : 'red'}
+                        text={`${Math.round((row.trust?.composite ?? 0) * 100)}% trust`}
+                        variant={
+                          (row.trust?.composite ?? 0) >= 0.8
+                            ? 'green'
+                            : (row.trust?.composite ?? 0) >= 0.5
+                              ? 'yellow'
+                              : 'red'
+                        }
                       />
                     </div>
                   </div>
