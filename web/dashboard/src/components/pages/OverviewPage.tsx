@@ -287,6 +287,7 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
   const healthy = healthSummary?.healthy ?? 0;
   const degraded = (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0);
   const aetherManagedCount = countAetherManaged(workloads);
+  const clusterDiscoveredCount = workloads.filter((w) => w.source === 'cluster').length;
   const isEmptyPlatform = aetherManagedCount === 0;
 
   const setupHints = platformSetupNeeded(capabilities?.platform ?? null);
@@ -394,8 +395,10 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
               {sseConnected ? 'live' : 'syncing'}
             </span>
           </div>
-          <div className="text-2xl font-semibold text-white">{workloads.length + (clusterSummary?.workload_count ?? 0)}</div>
-          <p className="mt-1 text-sm text-slate-500">Managed and discovered workloads across every runtime.</p>
+          <div className="text-2xl font-semibold text-white" data-testid="overview-runtime-fabric-count">{workloads.length}</div>
+          <p className="mt-1 text-sm text-slate-500">
+            {aetherManagedCount} Aether-managed · {clusterDiscoveredCount} discovered in cluster
+          </p>
         </div>
         <div className="surface-panel interactive-lift rounded-2xl p-5">
           <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Signal Quality</div>

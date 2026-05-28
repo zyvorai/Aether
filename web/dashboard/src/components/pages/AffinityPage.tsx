@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -27,12 +27,15 @@ const WORKLOAD_CLASSES = [
 ];
 
 export default function AffinityPage() {
+  const navigate = useNavigate();
   const [affinityData, setAffinityData] = useState<Record<string, AffinityScore[]>>({});
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   type AffinityTab = 'recommend' | 'matrix' | 'stats';
   const [tabParam, setTabParam] = useQueryParam('tab', 'recommend');
+  const [workloadQuery] = useQueryParam('workload', '');
+  const workloadFocus = workloadQuery.trim() || undefined;
   const tab: AffinityTab = (['recommend', 'matrix', 'stats'] as const).includes(tabParam as AffinityTab)
     ? (tabParam as AffinityTab)
     : 'recommend';
@@ -106,9 +109,33 @@ export default function AffinityPage() {
 
   const classes = Object.entries(affinityData);
 
+  function classMatchesWorkload(cls: string): boolean {
+    if (!workloadFocus) return false;
+    const normalized = workloadFocus.toLowerCase().replace(/[/]/g, '-');
+    const classToken = cls.toLowerCase();
+    return normalized.includes(classToken) || classToken.split('-').every((part) => normalized.includes(part));
+  }
+
   return (
     <div>
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
+
+      {workloadFocus ? (
+        <div
+          data-testid="affinity-workload-context"
+          className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Affinity context for workload <span className="font-mono text-aether">{workloadFocus}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
 
       <div className="flex gap-2 mb-6" data-testid="affinity-tabs">
         {(['recommend', 'matrix', 'stats'] as const).map((t) => (
@@ -183,7 +210,13 @@ export default function AffinityPage() {
             {classes.map(([cls, scores]) => {
               const top = [...scores].sort((a, b) => b.composite_score - a.composite_score)[0];
               return (
-              <div key={cls} className="dash-card">
+              <div
+                key={cls}
+                className={`dash-card ${
+                  classMatchesWorkload(cls) ? 'ring-1 ring-aether/40 border-aether/30' : ''
+                }`}
+                data-testid={classMatchesWorkload(cls) ? 'affinity-workload-highlight' : undefined}
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                   <h2 className="text-lg font-semibold text-zinc-100 capitalize">
                     {cls.replace(/-/g, ' ')}

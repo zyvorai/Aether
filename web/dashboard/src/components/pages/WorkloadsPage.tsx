@@ -1005,6 +1005,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           buttonText="Apply update"
           onSubmit={(yaml) => updateModal && handleUpdate(updateModal, yaml)}
           loading={updateLoading}
+          submitTestId="workloads-update-submit"
           placeholder="Paste updated workload YAML (metadata.name must match)..."
         />
         </div>

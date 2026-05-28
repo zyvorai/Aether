@@ -2,8 +2,8 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { AlertTriangle, Brain, DollarSign, Inbox, MapPin, Sparkles, TrendingUp } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -54,8 +54,18 @@ function riskVariant(level: string): 'green' | 'yellow' | 'red' | 'muted' {
   return 'muted';
 }
 
+function workloadMatchesFocus(rowWorkload: string, focus: string): boolean {
+  const needle = focus.trim();
+  if (!needle) return false;
+  if (rowWorkload === needle) return true;
+  return rowWorkload.endsWith(`/${needle}`) || rowWorkload.split('/').includes(needle);
+}
+
 export default function IntelligencePage() {
+  const navigate = useNavigate();
   const [tabParam, setTabParam] = useQueryParam('tab', 'predictions');
+  const [workloadQuery] = useQueryParam('workload', '');
+  const workloadFocus = workloadQuery.trim() || undefined;
   const tab: IntelTab = (
     ['predictions', 'threats', 'cost', 'evolution', 'place'] as const
   ).includes(tabParam as IntelTab)
@@ -97,6 +107,24 @@ export default function IntelligencePage() {
     void load();
   }, [load]);
 
+  const focusTab = useMemo((): IntelTab | null => {
+    if (!workloadFocus) return null;
+    if (predictions?.predictions.some((row) => workloadMatchesFocus(row.workload, workloadFocus))) {
+      return 'predictions';
+    }
+    if (threats?.threats.some((t) => workloadMatchesFocus(t.workload, workloadFocus))) return 'threats';
+    if (cost?.recommendations.some((rec) => workloadMatchesFocus(rec.workload, workloadFocus))) return 'cost';
+    if (evolution?.workloads.some((row) => workloadMatchesFocus(row.workload, workloadFocus))) {
+      return 'evolution';
+    }
+    return null;
+  }, [workloadFocus, predictions, threats, cost, evolution]);
+
+  useEffect(() => {
+    if (!workloadFocus || !focusTab) return;
+    setTab(focusTab);
+  }, [workloadFocus, focusTab, setTab]);
+
   async function runPlacement() {
     setPlaceBusy(true);
     setPlaceError(null);
@@ -121,6 +149,23 @@ export default function IntelligencePage() {
   return (
     <div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+
+      {workloadFocus ? (
+        <div
+          data-testid="intelligence-workload-context"
+          className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        >
+          Intelligence context for workload <span className="font-mono text-aether">{workloadFocus}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+        </div>
+      ) : null}
 
       <div data-testid="intelligence-tabs">
       <PageTabs
@@ -155,7 +200,19 @@ export default function IntelligencePage() {
               ) : (
                 <div className="grid gap-3">
                   {predictions.predictions.map((row) => (
-                    <div key={row.workload} className="dash-card">
+                    <div
+                      key={row.workload}
+                      className={`dash-card ${
+                        workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                          ? 'ring-1 ring-aether/40 border-aether/30'
+                          : ''
+                      }`}
+                      data-testid={
+                        workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                          ? 'intelligence-workload-highlight'
+                          : undefined
+                      }
+                    >
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
@@ -201,7 +258,19 @@ export default function IntelligencePage() {
         <div className="space-y-4 mt-4" data-testid="intelligence-threats-panel">
           {threats && threats.threats.length > 0 ? (
             threats.threats.map((t) => (
-              <div key={`${t.workload}-${t.detected_at}`} className="dash-card">
+              <div
+                key={`${t.workload}-${t.detected_at}`}
+                className={`dash-card ${
+                  workloadFocus && workloadMatchesFocus(t.workload, workloadFocus)
+                    ? 'ring-1 ring-aether/40 border-aether/30'
+                    : ''
+                }`}
+                data-testid={
+                  workloadFocus && workloadMatchesFocus(t.workload, workloadFocus)
+                    ? 'intelligence-workload-highlight'
+                    : undefined
+                }
+              >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: t.workload })}
@@ -239,7 +308,19 @@ export default function IntelligencePage() {
                 <EmptyState icon={<DollarSign size={40} />} title="No cost recommendations" description="Fleet is already well-sized for current profiles." />
               ) : (
                 cost.recommendations.map((rec) => (
-                  <div key={rec.workload} className="dash-card">
+                  <div
+                    key={rec.workload}
+                    className={`dash-card ${
+                      workloadFocus && workloadMatchesFocus(rec.workload, workloadFocus)
+                        ? 'ring-1 ring-aether/40 border-aether/30'
+                        : ''
+                    }`}
+                    data-testid={
+                      workloadFocus && workloadMatchesFocus(rec.workload, workloadFocus)
+                        ? 'intelligence-workload-highlight'
+                        : undefined
+                    }
+                  >
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Link
                         to={pathWithQuery(viewToPath('workloads'), { workload: rec.workload })}
@@ -274,7 +355,19 @@ export default function IntelligencePage() {
           </div>
           {evolution && evolution.workloads.length > 0 ? (
             evolution.workloads.map((row) => (
-              <div key={row.workload} className="dash-card">
+              <div
+                key={row.workload}
+                className={`dash-card ${
+                  workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                    ? 'ring-1 ring-aether/40 border-aether/30'
+                    : ''
+                }`}
+                data-testid={
+                  workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                    ? 'intelligence-workload-highlight'
+                    : undefined
+                }
+              >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
