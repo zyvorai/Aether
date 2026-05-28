@@ -107,6 +107,7 @@ export interface AlertRuleSummary {
   message_template: string;
   cooldown_seconds: number;
   last_triggered: string | null;
+  workload?: string | null;
 }
 
 export interface AlertsStatus {

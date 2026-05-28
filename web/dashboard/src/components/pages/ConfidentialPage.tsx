@@ -190,6 +190,8 @@ export default function ConfidentialPage() {
     );
   });
 
+  const attestedFleetCount = filteredFleet.filter((row) => row.attestation_passed).length;
+
   if (loading && !caps && !loadFailed) {
     return <PageLoading rows={5} />;
   }
@@ -283,6 +285,14 @@ export default function ConfidentialPage() {
               Open Ragnarok VM console
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
+          )}
+          {integration?.mode === 'composite' && filteredFleet.length > 0 && (
+            <p
+              data-testid="confidential-ragnarok-attestation-summary"
+              className="mt-3 text-sm text-slate-400"
+            >
+              Ragnarok attestation: {attestedFleetCount}/{filteredFleet.length} workloads attested
+            </p>
           )}
         </div>
 
@@ -494,6 +504,12 @@ export default function ConfidentialPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge text={runtimeLabel(row.runtime)} variant="muted" />
                       <Badge text={row.tee} variant="muted" />
+                      <span data-testid="confidential-attestation-badge">
+                        <Badge
+                          text={row.attestation_passed ? 'attested' : 'attestation pending'}
+                          variant={row.attestation_passed ? 'green' : 'yellow'}
+                        />
+                      </span>
                       <Badge
                         text={`${Math.round(row.trust.composite * 100)}% trust`}
                         variant={row.trust.composite >= 0.8 ? 'green' : row.trust.composite >= 0.5 ? 'yellow' : 'red'}
