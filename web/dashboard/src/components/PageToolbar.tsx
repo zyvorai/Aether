@@ -11,6 +11,7 @@ interface PageToolbarProps {
   searchPlaceholder?: string;
   searchTestId?: string;
   onRefresh?: () => void;
+  refreshTestId?: string;
   refreshing?: boolean;
   filters?: ReactNode;
   actions?: ReactNode;
@@ -22,6 +23,7 @@ export default function PageToolbar({
   searchPlaceholder = 'Search…',
   searchTestId,
   onRefresh,
+  refreshTestId = 'page-toolbar-refresh',
   refreshing = false,
   filters,
   actions,
@@ -48,6 +50,7 @@ export default function PageToolbar({
         {onRefresh && (
           <button
             type="button"
+            data-testid={refreshTestId}
             onClick={onRefresh}
             disabled={refreshing}
             className="interactive-lift inline-flex items-center gap-2 rounded-xl border border-aether/20 bg-aether/10 px-3 py-2.5 text-sm font-medium text-aether transition hover:bg-aether/15 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"

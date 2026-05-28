@@ -7,7 +7,8 @@ import { Link } from 'react-router';
 import { KeyRound, Shield, Trash2, Copy } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -29,6 +30,8 @@ export default function RbacPage() {
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
   const [search, setSearch] = useQueryParam('q');
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
   const [keyCopied, setKeyCopied] = useState(false);
@@ -99,9 +102,32 @@ export default function RbacPage() {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search keys…"
+        searchTestId="rbac-search"
         onRefresh={() => void load()}
         refreshing={listLoading}
       />
+
+      {focusedWorkload ? (
+        <WorkloadContextBanner testId="rbac-workload-context" workload={focusedWorkload} description="RBAC search context">
+          <WorkloadScopedCrossLinks workload={focusedWorkload} prefix="rbac" showAudit />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="rbac-audit-link"
+          >
+            Audit →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="rbac-openapi-link"
+          >
+            OpenAPI →
+          </Link>
+        </WorkloadContextBanner>
+      ) : null}
 
       <div className="dash-card mb-6">
         <div className="flex items-center gap-3 mb-4">

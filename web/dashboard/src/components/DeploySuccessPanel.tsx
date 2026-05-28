@@ -103,6 +103,20 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
         >
           Intelligence
         </Link>
+        <Link
+          to={pathWithQuery(viewToPath('envs'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-envs-link"
+        >
+          Environments
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('templates'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-templates-link"
+        >
+          Templates
+        </Link>
         <button
           type="button"
           onClick={onClose}

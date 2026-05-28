@@ -674,6 +674,7 @@ export default function Navbar({
               </div>
             ) : null}
             <span
+              data-testid="navbar-sse-status"
               className={`inline-block h-2 w-2 rounded-full sm:hidden ${sseConnected ? 'bg-emerald-400 platform-pulse' : 'bg-red-400'}`}
               title={sseConnected ? 'SSE Connected' : 'SSE Disconnected'}
             />
@@ -746,6 +747,7 @@ export default function Navbar({
             {onOpenCommandPalette ? (
               <button
                 type="button"
+                data-testid="navbar-command-palette"
                 onClick={() => {
                   onOpenCommandPalette();
                   setMobileOpen(false);
