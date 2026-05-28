@@ -124,6 +124,14 @@ export default function PluginsPage() {
             >
               Editor →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="plugins-secrets-link"
+            >
+              Secrets →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

@@ -352,6 +352,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('clusters'), { workload: name })),
       },
       {
+        id: `workload-${name}-compose`,
+        label: `Compose stack: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `compose docker stack import ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('compose'), { workload: name })),
+      },
+      {
         id: `workload-${name}-backups`,
         label: `Backups: ${name}`,
         category: 'workload-action' as const,

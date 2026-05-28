@@ -130,6 +130,26 @@ export default function CopilotPage() {
           showGitops
           showMetrics
         />
+        {workloadFocus ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('intelligence'), { workload: workloadFocus, tab: 'predictions' })}
+              className="text-aether hover:underline"
+              data-testid="copilot-context-intelligence-link"
+            >
+              Intelligence →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="copilot-editor-link"
+            >
+              Editor →
+            </Link>
+          </>
+        ) : null}
       </WorkloadContextBanner>
       <div className="dash-card flex flex-1 flex-col overflow-hidden p-0">
         <div className="flex items-center gap-2 border-b border-slate-800/60 px-4 py-3">

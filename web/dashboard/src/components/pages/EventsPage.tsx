@@ -111,6 +111,26 @@ export default function EventsPage() {
           showGitops
           showMetrics
         />
+        {workloadFilter.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="events-openapi-link"
+            >
+              OpenAPI →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('audit'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="events-audit-link"
+            >
+              Audit →
+            </Link>
+          </>
+        ) : null}
       </WorkloadContextBanner>
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
