@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -35,7 +35,7 @@ export default function DriftPage() {
   const [driftResult, setDriftResult] = useState<DriftReport | null>(null);
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [bulkScan, setBulkScan] = useState<BulkScanState | null>(null);
-  const [search, setSearch] = useQueryParam('q');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [workloadParam] = useQueryParam('workload');
   const scannedWorkloadRef = useRef<string | null>(null);
   const workloadFocus = workloadParam.trim() || undefined;

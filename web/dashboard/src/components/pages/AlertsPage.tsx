@@ -7,7 +7,7 @@ import { Link } from 'react-router';
 import { BellRing, Radio, Send, Plus, Trash2 } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
-import { WorkloadContextBanner } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -174,7 +174,15 @@ export default function AlertsPage() {
         testId="alerts-workload-context"
         workload={workloadFocus}
         description="Alert rules matching workload"
-      />
+      >
+        <WorkloadScopedCrossLinks
+          workload={workloadFocus}
+          prefix="alerts"
+          showDrift
+          showGitops
+          showMetrics
+        />
+      </WorkloadContextBanner>
       <PageToolbar
         onRefresh={() => {
           void load();

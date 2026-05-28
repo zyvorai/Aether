@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -219,20 +220,18 @@ export default function ConfidentialPage() {
       />
 
       {workloadQuery.trim() ? (
-        <div
-          data-testid="confidential-workload-context"
-          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        <WorkloadContextBanner
+          testId="confidential-workload-context"
+          workload={workloadQuery.trim()}
+          description="Confidential context"
         >
-          Confidential context for workload{' '}
-          <span className="font-mono text-aether">{workloadQuery.trim()}</span>
-          {' · '}
-          <button
-            type="button"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
-            className="text-aether hover:underline"
-          >
-            Open workload →
-          </button>
+          <WorkloadScopedCrossLinks
+            workload={workloadQuery.trim()}
+            prefix="confidential"
+            showDrift
+            showGitops
+            showMetrics
+          />
           {' · '}
           <button
             type="button"
@@ -249,34 +248,7 @@ export default function ConfidentialPage() {
           >
             Intelligence →
           </button>
-          {' · '}
-          <button
-            type="button"
-            data-testid="confidential-trust-link"
-            onClick={() =>
-              navigate(
-                pathWithQuery(viewToPath('workloads'), {
-                  workload: workloadQuery.trim(),
-                  tab: 'trust',
-                }),
-              )
-            }
-            className="text-aether hover:underline"
-          >
-            Trust tab →
-          </button>
-          {' · '}
-          <button
-            type="button"
-            data-testid="confidential-alerts-link"
-            onClick={() =>
-              navigate(pathWithQuery(viewToPath('alerts'), { workload: workloadQuery.trim() }))
-            }
-            className="text-aether hover:underline"
-          >
-            Alert rules →
-          </button>
-        </div>
+        </WorkloadContextBanner>
       ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">

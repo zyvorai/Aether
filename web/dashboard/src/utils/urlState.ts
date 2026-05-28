@@ -32,7 +32,10 @@ export function useQueryParam(key: string, defaultValue = ''): [string, (value: 
   return [value, setValue];
 }
 
-/** Search pages: `?workload=` deep links alias `?q=` toolbar filter. */
+/**
+ * Search pages: `?workload=` deep links alias `?q=` toolbar filter.
+ * Setting the filter updates both params so bookmarks and palette links stay in sync.
+ */
 export function useWorkloadOrSearchFilter(): [string, (value: string) => void] {
   const [q, setQ] = useQueryParam('q');
   const [workload, setWorkload] = useQueryParam('workload');
