@@ -325,15 +325,13 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
     }
   };
 
-  const isKubeVirt = workload.runtime.toLowerCase().includes('kubevirt');
-
   const tabs: { id: DetailTab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'logs', label: 'Logs' },
     { id: 'manifest', label: 'Manifest' },
     { id: 'drift', label: 'Drift' },
     { id: 'scoring', label: 'Scoring' },
-    ...(isKubeVirt ? [{ id: 'trust' as DetailTab, label: 'Trust' }] : []),
+    { id: 'trust', label: 'Trust' },
     { id: 'events', label: 'Events' },
   ];
 

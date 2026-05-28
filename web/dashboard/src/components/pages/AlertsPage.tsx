@@ -149,7 +149,11 @@ export default function AlertsPage() {
   const workloadFocus = workloadQuery.trim();
   const rules = useMemo(() => {
     if (!workloadFocus) return allRules;
-    return allRules.filter((rule) => ruleMatchesWorkload(rule, workloadFocus));
+    return allRules.filter((rule) => {
+      const scoped = rule.workload?.trim();
+      if (scoped) return scoped === workloadFocus;
+      return ruleMatchesWorkload(rule, workloadFocus);
+    });
   }, [allRules, workloadFocus]);
 
   if (loading && !status && !loadFailed) {
@@ -330,6 +334,7 @@ export default function AlertsPage() {
                   <p className="text-sm text-slate-400 mt-1">{rule.condition}</p>
                   <p className="text-xs text-slate-500 mt-1">
                     Severity {rule.severity} · cooldown {rule.cooldown_seconds}s
+                    {rule.workload ? ` · workload ${rule.workload}` : ''}
                     {rule.last_triggered ? ` · last: ${rule.last_triggered}` : ''}
                   </p>
                 </li>
