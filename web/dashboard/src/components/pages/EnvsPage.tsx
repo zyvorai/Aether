@@ -175,6 +175,22 @@ export default function EnvsPage() {
           >
             Drift →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="envs-secrets-link"
+          >
+            Secrets →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="envs-compose-link"
+          >
+            Compose →
+          </Link>
         </WorkloadContextBanner>
       ) : (
         <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments">
@@ -196,6 +212,22 @@ export default function EnvsPage() {
                 data-testid="envs-context-drift-link"
               >
                 Drift →
+              </Link>
+              {' · '}
+              <Link
+                to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
+                className="text-aether hover:underline"
+                data-testid="envs-context-secrets-link"
+              >
+                Secrets →
+              </Link>
+              {' · '}
+              <Link
+                to={pathWithQuery(viewToPath('compose'), { workload: search.trim() })}
+                className="text-aether hover:underline"
+                data-testid="envs-context-compose-link"
+              >
+                Compose →
               </Link>
             </>
           ) : null}

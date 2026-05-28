@@ -183,6 +183,14 @@ export default function HealthPage() {
             >
               Copilot →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: workloadParam.trim() })}
+              className="text-aether hover:underline"
+              data-testid="health-context-policy-link"
+            >
+              Policy →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

@@ -158,6 +158,22 @@ export default function OpenApiPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="openapi-context-rbac-link"
+          >
+            RBAC →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `API usage for ${focusedWorkload}` })}
+            className="text-aether hover:underline"
+            data-testid="openapi-context-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

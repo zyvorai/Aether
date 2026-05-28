@@ -138,6 +138,14 @@ export default function BackupsPage() {
             >
               RBAC →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="backups-context-gitops-link"
+            >
+              GitOps →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

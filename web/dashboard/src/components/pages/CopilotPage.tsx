@@ -156,6 +156,14 @@ export default function CopilotPage() {
             >
               OpenAPI →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="copilot-context-policy-link"
+            >
+              Policy →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

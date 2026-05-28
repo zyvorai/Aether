@@ -179,6 +179,14 @@ export default function TemplatesPage() {
             >
               Drift →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('compose'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="templates-context-compose-link"
+            >
+              Compose →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

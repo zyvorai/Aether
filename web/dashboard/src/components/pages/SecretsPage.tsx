@@ -195,6 +195,22 @@ export default function SecretsPage() {
             >
               RBAC →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="secrets-context-policy-link"
+            >
+              Policy →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('confidential'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="secrets-context-confidential-link"
+            >
+              Confidential →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>
