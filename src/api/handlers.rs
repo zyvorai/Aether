@@ -1879,6 +1879,7 @@ pub(crate) async fn api_alerts_status() -> impl IntoResponse {
                 "message_template": rule.message_template,
                 "cooldown_seconds": rule.cooldown_seconds,
                 "last_triggered": rule.last_triggered,
+                "workload": rule.workload,
             })
         })
         .collect();

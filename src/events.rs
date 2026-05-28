@@ -167,6 +167,9 @@ pub struct AlertRule {
     pub message_template: String,
     pub cooldown_seconds: u64,
     pub last_triggered: Option<String>,
+    /// When set, rule only evaluates metrics for this workload name.
+    #[serde(default)]
+    pub workload: Option<String>,
 }
 
 /// Conditions that trigger alerts
@@ -421,6 +424,7 @@ impl EventBus {
                 message_template: "SLA violation: uptime below threshold".to_string(),
                 cooldown_seconds: 300,
                 last_triggered: None,
+                workload: None,
             },
             AlertRule {
                 name: "high-error-rate".to_string(),
@@ -430,6 +434,7 @@ impl EventBus {
                 message_template: "Error rate exceeds 5%".to_string(),
                 cooldown_seconds: 600,
                 last_triggered: None,
+                workload: None,
             },
             AlertRule {
                 name: "drift-alert".to_string(),
@@ -439,6 +444,7 @@ impl EventBus {
                 message_template: "Configuration drift detected".to_string(),
                 cooldown_seconds: 3600,
                 last_triggered: None,
+                workload: None,
             },
         ]
     }
@@ -916,6 +922,55 @@ impl SystemMetrics {
 }
 
 impl EventBus {
+    fn rule_condition_met(condition: &AlertCondition, metrics: &SystemMetrics, workload: Option<&str>) -> bool {
+        match condition {
+            AlertCondition::SlaUptimeBelow(threshold) => match workload {
+                Some(wl) => metrics
+                    .sla_uptimes
+                    .get(wl)
+                    .map(|u| *u < *threshold && *u > 0.0)
+                    .unwrap_or(false),
+                None => metrics
+                    .sla_uptimes
+                    .values()
+                    .any(|u| *u < *threshold && *u > 0.0),
+            },
+            AlertCondition::ErrorRateAbove(threshold) => match workload {
+                Some(wl) => metrics
+                    .error_rates
+                    .get(wl)
+                    .map(|rate| *rate > *threshold)
+                    .unwrap_or(false),
+                None => metrics.error_rates.values().any(|rate| *rate > *threshold),
+            },
+            AlertCondition::CostExceeds(threshold) => match workload {
+                Some(wl) => metrics
+                    .workload_monthly_costs
+                    .get(wl)
+                    .map(|c| *c > *threshold)
+                    .unwrap_or(false),
+                None => {
+                    metrics.fleet_monthly_cost_usd > *threshold
+                        || metrics
+                            .workload_monthly_costs
+                            .values()
+                            .any(|c| *c > *threshold)
+                }
+            },
+            AlertCondition::ExcessiveRestarts(max) => match workload {
+                Some(wl) => metrics
+                    .restart_counts
+                    .get(wl)
+                    .map(|c| *c > *max)
+                    .unwrap_or(false),
+                None => metrics.restart_counts.values().any(|c| *c > *max),
+            },
+            AlertCondition::DriftDetected => metrics.drift_detected,
+            AlertCondition::PolicyViolation => metrics.policy_violations,
+            AlertCondition::SecretExpiring(days) => metrics.secrets_expiring_days.values().any(|d| *d <= *days),
+        }
+    }
+
     /// Evaluate all enabled alert rules against current system metrics.
     /// Emits events and triggers notifications for rules whose conditions are met.
     /// Returns the IDs of any events that were emitted.
@@ -941,30 +996,9 @@ impl EventBus {
                 }
             }
 
-            let triggered = match &self.rules[i].condition {
-                AlertCondition::SlaUptimeBelow(threshold) => {
-                    metrics.sla_uptimes.values().any(|u| *u < *threshold && *u > 0.0)
-                }
-                AlertCondition::ErrorRateAbove(threshold) => metrics
-                    .error_rates
-                    .values()
-                    .any(|rate| *rate > *threshold),
-                AlertCondition::CostExceeds(threshold) => {
-                    metrics.fleet_monthly_cost_usd > *threshold
-                        || metrics
-                            .workload_monthly_costs
-                            .values()
-                            .any(|c| *c > *threshold)
-                }
-                AlertCondition::ExcessiveRestarts(max) => {
-                    metrics.restart_counts.values().any(|c| *c > *max)
-                }
-                AlertCondition::DriftDetected => metrics.drift_detected,
-                AlertCondition::PolicyViolation => metrics.policy_violations,
-                AlertCondition::SecretExpiring(days) => {
-                    metrics.secrets_expiring_days.values().any(|d| *d <= *days)
-                }
-            };
+            let workload_name = self.rules[i].workload.clone();
+            let triggered =
+                Self::rule_condition_met(&self.rules[i].condition, metrics, workload_name.as_deref());
 
             if triggered {
                 let msg = self.rules[i].message_template.clone();
@@ -980,7 +1014,12 @@ impl EventBus {
                 };
 
                 let id = self.emit_simple(
-                    severity, category, "alert-evaluator", None, &msg, &msg,
+                    severity,
+                    category,
+                    "alert-evaluator",
+                    workload_name.as_deref(),
+                    &msg,
+                    &msg,
                 );
                 emitted_ids.push(id);
                 self.rules[i].last_triggered = Some(now.clone());
@@ -1345,6 +1384,7 @@ mod tests {
             message_template: "Test alert fired".to_string(),
             cooldown_seconds: cooldown,
             last_triggered: None,
+            workload: None,
         }];
         bus
     }
@@ -1437,6 +1477,48 @@ mod tests {
     }
 
     #[test]
+    fn test_evaluate_rules_workload_scoped_sla() {
+        let mut bus = EventBus::new();
+        bus.rules = vec![AlertRule {
+            name: "web-sla".to_string(),
+            enabled: true,
+            condition: AlertCondition::SlaUptimeBelow(99.0),
+            severity: EventSeverity::Critical,
+            message_template: "web SLA breach".to_string(),
+            cooldown_seconds: 0,
+            last_triggered: None,
+            workload: Some("web".to_string()),
+        }];
+        let mut metrics = SystemMetrics::default();
+        metrics.sla_uptimes.insert("web".to_string(), 98.0);
+        metrics.sla_uptimes.insert("api".to_string(), 50.0);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert_eq!(fired.len(), 1);
+        assert_eq!(bus.events()[0].workload.as_deref(), Some("web"));
+    }
+
+    #[test]
+    fn test_evaluate_rules_workload_scoped_ignores_other_workloads() {
+        let mut bus = EventBus::new();
+        bus.rules = vec![AlertRule {
+            name: "web-sla".to_string(),
+            enabled: true,
+            condition: AlertCondition::SlaUptimeBelow(99.0),
+            severity: EventSeverity::Critical,
+            message_template: "web SLA breach".to_string(),
+            cooldown_seconds: 0,
+            last_triggered: None,
+            workload: Some("web".to_string()),
+        }];
+        let mut metrics = SystemMetrics::default();
+        metrics.sla_uptimes.insert("api".to_string(), 50.0);
+
+        let fired = bus.evaluate_rules(&metrics);
+        assert!(fired.is_empty());
+    }
+
+    #[test]
     fn test_evaluate_rules_disabled_rule_does_not_fire() {
         let mut bus = EventBus::new();
         bus.rules = vec![AlertRule {
@@ -1447,6 +1529,7 @@ mod tests {
             message_template: "Should not fire".to_string(),
             cooldown_seconds: 0,
             last_triggered: None,
+            workload: None,
         }];
         let metrics = SystemMetrics {
             drift_detected: true,
@@ -1486,6 +1569,7 @@ mod tests {
                 message_template: "Drift alert".to_string(),
                 cooldown_seconds: 0,
                 last_triggered: None,
+                workload: None,
             },
             AlertRule {
                 name: "restart-alert".to_string(),
@@ -1495,6 +1579,7 @@ mod tests {
                 message_template: "Restart alert".to_string(),
                 cooldown_seconds: 0,
                 last_triggered: None,
+                workload: None,
             },
         ];
         let mut metrics = SystemMetrics {

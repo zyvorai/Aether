@@ -260,10 +260,12 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           <Badge text={runtimeLabel(meta?.runtime ?? runtime ?? 'unknown')} variant="muted" />
           {meta?.tee && <Badge text={meta.tee} variant="muted" />}
           {meta?.attestation_passed !== undefined && (
-            <Badge
-              text={meta.attestation_passed ? 'attestation pass' : 'attestation pending'}
-              variant={meta.attestation_passed ? 'green' : 'yellow'}
-            />
+            <span data-testid="trust-attestation-badge">
+              <Badge
+                text={meta.attestation_passed ? 'attestation pass' : 'attestation pending'}
+                variant={meta.attestation_passed ? 'green' : 'yellow'}
+              />
+            </span>
           )}
         </div>
       )}
@@ -566,8 +568,8 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         {guestkitMessage && (
           <p className="text-xs text-zinc-400 mb-2">{guestkitMessage}</p>
         )}
-        {guestkitHistory.length > 0 && (
-          <div className="space-y-2 max-h-40 overflow-auto">
+        {guestkitHistory.length > 0 ? (
+          <div className="space-y-2 max-h-40 overflow-auto" data-testid="guestkit-history-panel">
             {guestkitHistory.slice().reverse().map((entry) => (
               <div key={entry.inspected_at} className="text-xs p-2 rounded bg-zinc-950 border border-zinc-800">
                 <div className="flex items-center justify-between gap-2 mb-1">
@@ -578,6 +580,10 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               </div>
             ))}
           </div>
+        ) : (
+          <p className="text-xs text-zinc-600" data-testid="guestkit-history-empty">
+            No GuestKit inspections recorded yet.
+          </p>
         )}
         <p className="mt-2 text-xs text-zinc-600 font-mono">
           aether confidential guestkit inspect {workloadName} --mode pre-launch --image ./disk.qcow2
