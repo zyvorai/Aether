@@ -32,6 +32,21 @@ export function useQueryParam(key: string, defaultValue = ''): [string, (value: 
   return [value, setValue];
 }
 
+/** Search pages: `?workload=` deep links alias `?q=` toolbar filter. */
+export function useWorkloadOrSearchFilter(): [string, (value: string) => void] {
+  const [q, setQ] = useQueryParam('q');
+  const [workload, setWorkload] = useQueryParam('workload');
+  const effective = workload.trim() || q.trim();
+  const setEffective = useCallback(
+    (next: string) => {
+      setQ(next);
+      setWorkload(next);
+    },
+    [setQ, setWorkload],
+  );
+  return [effective, setEffective];
+}
+
 /** Append query string to a dashboard path (e.g. deep links from Overview). */
 export function pathWithQuery(basePath: string, params: Record<string, string | undefined>): string {
   const qs = new URLSearchParams();

@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router';
 import { Link2 } from 'lucide-react';
 import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
@@ -488,12 +489,19 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   { label: 'Events', slug: 'events', path: pathWithQuery(viewToPath('events'), { workload: workload.name }) },
                   { label: 'Editor', slug: 'editor', path: pathWithQuery(viewToPath('editor'), { workload: workload.name }) },
                   { label: 'Health monitor', slug: 'health', path: pathWithQuery(viewToPath('health'), { workload: workload.name }) },
-                  { label: 'Ops copilot', slug: 'copilot', path: pathWithQuery(viewToPath('copilot'), { q: `Why is ${workload.name} unhealthy?` }) },
+                  {
+                    label: 'Ops copilot',
+                    slug: 'copilot',
+                    path: pathWithQuery(viewToPath('copilot'), {
+                      workload: workload.name,
+                      q: `Why is ${workload.name} unhealthy?`,
+                    }),
+                  },
                   { label: 'Trust', slug: 'trust', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' }) },
                   { label: 'Confidential', slug: 'confidential', path: pathWithQuery(viewToPath('confidential'), { workload: workload.name }) },
+                  { label: 'GitOps', slug: 'gitops', path: pathWithQuery(viewToPath('gitops'), { workload: workload.name }) },
                   { label: 'Backups', slug: 'backups', path: pathWithQuery(viewToPath('backups'), { q: workload.name }) },
                   { label: 'Secrets', slug: 'secrets', path: pathWithQuery(viewToPath('secrets'), { q: workload.name }) },
-                  { label: 'GitOps', slug: 'gitops', path: viewToPath('gitops') },
                   { label: 'Policy', slug: 'policy', path: viewToPath('policy') },
                   { label: 'Metrics', slug: 'metrics', path: pathWithQuery(viewToPath('metrics'), { q: workload.name }) },
                   { label: 'SLA', slug: 'sla', path: pathWithQuery(viewToPath('sla'), { q: workload.name }) },
@@ -730,6 +738,29 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
 
         {activeTab === 'events' && (
           <div className="text-sm">
+            <div className="mb-3 flex flex-wrap gap-3 text-xs" data-testid="workload-events-cross-links">
+              <Link
+                to={pathWithQuery(viewToPath('events'), { workload: workload.name })}
+                className="text-aether hover:underline"
+                data-testid="workload-events-events-link"
+              >
+                Full events feed →
+              </Link>
+              <Link
+                to={pathWithQuery(viewToPath('alerts'), { workload: workload.name })}
+                className="text-aether hover:underline"
+                data-testid="workload-events-alerts-link"
+              >
+                Alert rules →
+              </Link>
+              <Link
+                to={pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' })}
+                className="text-aether hover:underline"
+                data-testid="workload-events-trust-link"
+              >
+                Trust &amp; attestation →
+              </Link>
+            </div>
             {eventsLoading ? (
               <p className="text-zinc-500">Loading events...</p>
             ) : events.length === 0 ? (

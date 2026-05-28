@@ -7,14 +7,14 @@ import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import StatCard from '../StatCard';
-import { SearchQueryContextBanner } from '../QueryContextBanner';
+import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { WorkloadResponse, SlaTarget } from '../../types/api';
 
 export default function SLAPage() {
@@ -22,7 +22,7 @@ export default function SLAPage() {
   const [slaData, setSlaData] = useState<Record<string, SlaTarget | null>>({});
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useQueryParam('q');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [addWorkload, setAddWorkload] = useState('');
   const [addTier, setAddTier] = useState('standard');
   const [adding, setAdding] = useState(false);
@@ -82,7 +82,9 @@ export default function SLAPage() {
 
   return (
     <div>
-      <SearchQueryContextBanner testId="sla-workload-context" query={search} entityLabel="SLA workloads" />
+      <SearchQueryContextBanner testId="sla-workload-context" query={search} entityLabel="SLA workloads">
+        <WorkloadScopedCrossLinks workload={search} prefix="sla-banner" />
+      </SearchQueryContextBanner>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

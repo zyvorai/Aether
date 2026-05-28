@@ -187,6 +187,66 @@ export default function CommandPalette({
         },
       },
       {
+        id: `workload-${name}-audit`,
+        label: `Audit trail: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `audit trail history ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('audit'), { workload: name }));
+        },
+      },
+      {
+        id: `workload-${name}-health`,
+        label: `Health monitor: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `health monitor liveness ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('health'), { workload: name }));
+        },
+      },
+      {
+        id: `workload-${name}-gitops`,
+        label: `GitOps sync: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `gitops sync reconcile ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('gitops'), { workload: name }));
+        },
+      },
+      {
+        id: `workload-${name}-metrics`,
+        label: `Metrics: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `metrics grafana prometheus ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('metrics'), { workload: name }));
+        },
+      },
+      {
+        id: `workload-${name}-deps`,
+        label: `Dependencies: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `dependencies graph startup ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('deps'), { workload: name }));
+        },
+      },
+      {
+        id: `workload-${name}-affinity`,
+        label: `Runtime affinity: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `affinity runtime class ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('affinity'), { workload: name }));
+        },
+      },
+      {
         id: `workload-${name}-scoring`,
         label: `Open scoring: ${name}`,
         category: 'workload-action' as const,

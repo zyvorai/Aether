@@ -3,6 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { viewToPath } from '../utils/dashboardRoutes';
+import { pathWithQuery } from '../utils/urlState';
+import { WorkloadScopedCrossLinks } from './QueryContextBanner';
 import { apiFetch, apiPost } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import Badge from './Badge';
@@ -276,6 +280,31 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
 
   return (
     <div className="space-y-6 py-2">
+      {!notConfidential && (
+        <div className="text-xs" data-testid="trust-panel-cross-links">
+          <WorkloadScopedCrossLinks workload={workloadName} prefix="trust-panel" />
+          {(placement?.gitops_issues?.length ?? 0) > 0 && (
+            <>
+              {' · '}
+              <Link
+                to={pathWithQuery(viewToPath('gitops'), { workload: workloadName })}
+                className="text-aether hover:underline"
+                data-testid="trust-panel-gitops-link"
+              >
+                GitOps sync →
+              </Link>
+            </>
+          )}
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { q: workloadName })}
+            className="text-aether hover:underline"
+            data-testid="trust-panel-secrets-link"
+          >
+            Secrets →
+          </Link>
+        </div>
+      )}
       {(meta || runtime) && (
         <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-zinc-800">
           <Badge text={runtimeLabel(meta?.runtime ?? runtime ?? 'unknown')} variant="muted" />

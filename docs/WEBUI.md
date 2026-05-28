@@ -112,7 +112,7 @@ The dashboard provides 19 pages organized under a top navigation bar with dropdo
 
 ### Workload-scoped deep links
 
-Many views accept `?workload=` (and Workload detail accepts `?tab=trust` for the Trust & attestation panel). Context banners on Events, Health, Alerts, Audit, Confidential, Drift, Scheduler, Cost, Copilot, and search-scoped pages (Secrets, Backups) link to related views via shared **Events / Alerts / Health / Trust** cross-links. Alert rules may include a `workload` field; `GET /api/alerts/status?workload=` returns only matching rules. Copilot accepts `?workload=` and pre-fills a health/trust summary prompt. The command palette includes per-workload **Trust tab** and fleet **Trust & attestation** actions.
+Many views accept `?workload=` (and Workload detail accepts `?tab=trust` for the Trust & attestation panel). Context banners on Events, Health, Alerts, Audit, GitOps, Confidential, Drift, Scheduler, Cost, Copilot, Affinity, Deps, AI, and search-scoped pages (Secrets, Backups, Metrics, Plugins, Templates, SLA, Envs) link to related views via shared **Events / Alerts / Health / Trust** cross-links. On Metrics, Plugins, Templates, and SLA, `?workload=` aliases the toolbar `?q=` filter. Alert rules may include a `workload` field; `GET /api/alerts/status?workload=` returns only matching rules. Copilot accepts `?workload=` plus `?q=` for the natural-language prompt. Deploy success links open Health, Events, Alerts, Drift, and Trust. The command palette includes per-workload actions (logs, drift, events, copilot, trust, confidential, alerts, audit, health, gitops, metrics, deps, affinity, scoring, start/stop) and fleet **Trust & attestation**.
 
 ### Navigation
 
