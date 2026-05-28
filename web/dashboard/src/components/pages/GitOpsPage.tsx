@@ -265,6 +265,22 @@ export default function GitOpsPage() {
           >
             OpenAPI →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-context-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

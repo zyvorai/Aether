@@ -129,6 +129,14 @@ export default function PlatformPage() {
           >
             OpenAPI →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
+            className="text-aether hover:underline"
+            data-testid="platform-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

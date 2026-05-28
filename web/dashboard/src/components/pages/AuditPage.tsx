@@ -144,6 +144,14 @@ export default function AuditPage() {
             >
               RBAC →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="audit-secrets-link"
+            >
+              Secrets →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

@@ -187,6 +187,14 @@ export default function SecretsPage() {
             >
               Backups →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('rbac'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="secrets-context-rbac-link"
+            >
+              RBAC →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

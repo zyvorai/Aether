@@ -216,6 +216,22 @@ export default function EditorPage() {
           description="Editor context for workload"
         >
           <WorkloadScopedCrossLinks workload={workloadQuery} prefix="editor" />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="editor-banner-gitops-link"
+          >
+            GitOps →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('backups'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="editor-banner-backups-link"
+          >
+            Backups →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="flex items-center justify-between mb-6">

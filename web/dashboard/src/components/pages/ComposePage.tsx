@@ -173,6 +173,22 @@ export default function ComposePage() {
           >
             Dependencies →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="compose-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('templates'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="compose-templates-link"
+          >
+            Templates →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div>
