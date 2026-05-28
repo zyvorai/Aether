@@ -231,11 +231,30 @@ export default function ConfidentialPage() {
           >
             Open workload →
           </button>
+          {' · '}
+          <button
+            type="button"
+            data-testid="confidential-intelligence-link"
+            onClick={() =>
+              navigate(
+                pathWithQuery(viewToPath('intelligence'), {
+                  workload: workloadQuery.trim(),
+                  tab: 'predictions',
+                }),
+              )
+            }
+            className="text-aether hover:underline"
+          >
+            Intelligence →
+          </button>
         </div>
       ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <div className="dash-card lg:col-span-2">
+        <div
+          className="dash-card lg:col-span-2"
+          data-testid={integration?.mode === 'composite' ? 'confidential-composite-banner' : undefined}
+        >
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
@@ -258,6 +277,7 @@ export default function ConfidentialPage() {
               href={ragnarokUiUrl}
               target="_blank"
               rel="noreferrer"
+              data-testid="confidential-ragnarok-link"
               className="inline-flex items-center gap-2 text-sm text-aether hover:underline"
             >
               Open Ragnarok VM console
@@ -332,10 +352,13 @@ export default function ConfidentialPage() {
             Composite trust from attestation, network policy, and firmware exposure across confidential workloads.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {fleetTrust.map((row) => (
+            {fleetTrust.map((row) => {
+              const focused = workloadQuery.trim() === row.workload;
+              return (
               <button
                 key={row.workload}
                 type="button"
+                data-testid={focused ? 'confidential-workload-highlight' : undefined}
                 onClick={() =>
                   navigate(
                     pathWithQuery(viewToPath('workloads'), {
@@ -344,7 +367,9 @@ export default function ConfidentialPage() {
                     }),
                   )
                 }
-                className="text-left rounded-lg border border-zinc-700 bg-zinc-900/50 p-3 hover:border-aether/40 transition-colors"
+                className={`text-left rounded-lg border bg-zinc-900/50 p-3 hover:border-aether/40 transition-colors ${
+                  focused ? 'border-aether/50 ring-1 ring-aether/30' : 'border-zinc-700'
+                }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="font-medium text-zinc-100">{row.workload}</span>
@@ -356,7 +381,8 @@ export default function ConfidentialPage() {
                 <TrustBar label="Attestation" value={row.attestation_score} />
                 <TrustBar label="Network" value={row.network_policy_score} />
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
