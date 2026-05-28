@@ -267,6 +267,22 @@ export default function ConfidentialPage() {
           >
             Copilot →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="confidential-context-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('audit'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="confidential-context-audit-link"
+          >
+            Audit →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

@@ -154,6 +154,14 @@ export default function CostPage() {
           >
             Platform →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('drift'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="cost-context-drift-link"
+          >
+            Drift →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       {chargeback ? (

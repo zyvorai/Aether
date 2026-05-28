@@ -208,6 +208,22 @@ export default function AlertsPage() {
             >
               Copilot →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="alerts-context-secrets-link"
+            >
+              Secrets →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="alerts-context-rbac-link"
+            >
+              RBAC →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

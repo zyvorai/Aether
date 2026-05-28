@@ -654,6 +654,22 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-context-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
+            className="text-aether hover:underline"
+            data-testid="workloads-context-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

@@ -150,6 +150,14 @@ export default function RbacPage() {
           >
             GitOps →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="rbac-context-editor-link"
+          >
+            Editor →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
