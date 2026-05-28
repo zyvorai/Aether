@@ -24,6 +24,25 @@ interface GitOpsPayload {
   branch?: string;
   last_sync?: string;
   status?: string | Record<string, unknown>;
+  last_changes?: GitOpsChangeRow[];
+  last_confidential_compliance?: GitOpsConfidentialAudit[];
+}
+
+function syncSnapshotFromStatus(data: GitOpsPayload | null): string | null {
+  if (!data) return null;
+  const changes = data.last_changes ?? [];
+  const confidential = data.last_confidential_compliance ?? [];
+  if (changes.length === 0 && confidential.length === 0) return null;
+  return JSON.stringify(
+    {
+      message: data.last_sync ? `Last sync ${data.last_sync}` : 'Last sync',
+      changes,
+      confidential_compliance: confidential,
+      status: data,
+    },
+    null,
+    2,
+  );
 }
 
 interface GitOpsChangeRow {
@@ -97,13 +116,23 @@ export default function GitOpsPage() {
   }, [load]);
 
   useEffect(() => {
+    const fromApi = syncSnapshotFromStatus(data);
+    if (fromApi) {
+      setSyncResult(fromApi);
+      try {
+        sessionStorage.setItem(GITOPS_SYNC_STORAGE_KEY, fromApi);
+      } catch {
+        /* ignore storage errors */
+      }
+      return;
+    }
     try {
       const stored = sessionStorage.getItem(GITOPS_SYNC_STORAGE_KEY);
       if (stored) setSyncResult(stored);
     } catch {
       /* ignore storage errors */
     }
-  }, []);
+  }, [data]);
 
   const persistSyncResult = (raw: string) => {
     setSyncResult(raw);

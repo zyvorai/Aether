@@ -2,10 +2,11 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { Bot, Send, Sparkles } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { useQueryParam } from '../../utils/urlState';
 import { apiPost } from '../../utils/api';
 
 interface ToolResult {
@@ -33,12 +34,19 @@ const SUGGESTIONS = [
 ];
 
 export default function CopilotPage() {
+  const [qParam, setQParam] = useQueryParam('q', '');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAction[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const prefill = qParam.trim();
+    if (!prefill) return;
+    setInput((current) => (current.trim() ? current : prefill));
+  }, [qParam]);
 
   const send = useCallback(
     async (text: string, confirmActionId?: string) => {
@@ -204,8 +212,12 @@ export default function CopilotPage() {
         >
           <input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setQParam(e.target.value);
+            }}
             placeholder="Ask Aether anything…"
+            data-testid="copilot-input"
             className="flex-1 rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-500/50"
             disabled={loading}
           />
