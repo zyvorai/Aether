@@ -121,6 +121,14 @@ export default function PlatformPage() {
           >
             RBAC →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-openapi-link"
+          >
+            OpenAPI →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

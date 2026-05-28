@@ -132,6 +132,14 @@ export default function AffinityPage() {
           >
             Scheduler →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })}
+            className="text-aether hover:underline"
+            data-testid="affinity-ai-link"
+          >
+            AI engine →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

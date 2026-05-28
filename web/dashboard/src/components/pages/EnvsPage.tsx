@@ -170,7 +170,19 @@ export default function EnvsPage() {
         </WorkloadContextBanner>
       ) : (
         <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments">
-          {search.trim() ? <WorkloadScopedCrossLinks workload={search} prefix="envs" /> : null}
+          {search.trim() ? (
+            <>
+              <WorkloadScopedCrossLinks workload={search} prefix="envs" />
+              {' · '}
+              <Link
+                to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
+                className="text-aether hover:underline"
+                data-testid="envs-context-editor-link"
+              >
+                Editor →
+              </Link>
+            </>
+          ) : null}
         </SearchQueryContextBanner>
       )}
       <PageToolbar

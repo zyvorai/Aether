@@ -159,6 +159,14 @@ export default function PolicyPage() {
           >
             OpenAPI →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="policy-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4 flex flex-wrap gap-3">

@@ -360,6 +360,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('compose'), { workload: name })),
       },
       {
+        id: `workload-${name}-fleet-scoped`,
+        label: `Fleet view: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `fleet multi cluster ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('fleet'), { workload: name })),
+      },
+      {
         id: `workload-${name}-backups`,
         label: `Backups: ${name}`,
         category: 'workload-action' as const,

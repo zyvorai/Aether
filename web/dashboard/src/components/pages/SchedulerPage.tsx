@@ -87,6 +87,14 @@ export default function SchedulerPage() {
           >
             Cost →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('affinity'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="scheduler-affinity-link"
+          >
+            Affinity →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />

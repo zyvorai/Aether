@@ -130,6 +130,14 @@ export default function CostPage() {
           >
             Scheduler →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'cost' })}
+            className="text-aether hover:underline"
+            data-testid="cost-intelligence-link"
+          >
+            Intelligence →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       {chargeback ? (

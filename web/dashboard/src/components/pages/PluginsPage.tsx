@@ -132,6 +132,14 @@ export default function PluginsPage() {
             >
               Secrets →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="plugins-drift-link"
+            >
+              Drift →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

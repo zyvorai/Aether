@@ -313,6 +313,22 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           >
             RBAC →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `Summarize ${focusedWorkload}` })}
+            className="text-aether hover:underline"
+            data-testid="overview-copilot-link"
+          >
+            Copilot →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-openapi-link"
+          >
+            OpenAPI →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
