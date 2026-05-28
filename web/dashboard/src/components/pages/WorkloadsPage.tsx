@@ -3,10 +3,10 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
-import { useQueryParam } from '../../utils/urlState';
+import { useQueryParam, pathWithQuery } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
@@ -606,6 +606,22 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             showGitops
             showMetrics
           />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('clusters'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-clusters-link"
+          >
+            Clusters →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

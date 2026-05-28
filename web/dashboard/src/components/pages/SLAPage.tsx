@@ -94,6 +94,14 @@ export default function SLAPage() {
             >
               Editor →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="sla-drift-link"
+            >
+              Drift →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

@@ -145,6 +145,20 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
         >
           Dependencies
         </Link>
+        <Link
+          to={pathWithQuery(viewToPath('compose'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-compose-link"
+        >
+          Compose
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('secrets'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-secrets-link"
+        >
+          Secrets
+        </Link>
         <button
           type="button"
           onClick={onClose}
