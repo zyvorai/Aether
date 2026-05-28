@@ -84,6 +84,18 @@ export default function SLAPage() {
     <div>
       <SearchQueryContextBanner testId="sla-workload-context" query={search} entityLabel="SLA workloads">
         <WorkloadScopedCrossLinks workload={search} prefix="sla-banner" />
+        {search.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="sla-editor-link"
+            >
+              Editor →
+            </Link>
+          </>
+        ) : null}
       </SearchQueryContextBanner>
       <PageToolbar
         search={search}

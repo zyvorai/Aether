@@ -124,11 +124,13 @@ export function WorkloadContextBanner({
   testId,
   workload,
   description,
+  openTestId,
   children,
 }: {
   testId: string;
   workload: string;
   description?: string;
+  openTestId?: string;
   children?: ReactNode;
 }) {
   const navigate = useNavigate();
@@ -146,7 +148,7 @@ export function WorkloadContextBanner({
         type="button"
         onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: name }))}
         className="text-aether hover:underline"
-        data-testid={`${testId}-open`}
+        data-testid={openTestId ?? `${testId}-open`}
       >
         Open workload →
       </button>
