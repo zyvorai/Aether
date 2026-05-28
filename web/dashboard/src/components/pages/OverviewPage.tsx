@@ -337,6 +337,22 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           >
             Intelligence →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

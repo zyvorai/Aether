@@ -239,6 +239,22 @@ export default function DepsPage() {
           >
             Environments →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: highlightWorkload })}
+            className="text-aether hover:underline"
+            data-testid="deps-context-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: highlightWorkload })}
+            className="text-aether hover:underline"
+            data-testid="deps-context-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

@@ -416,6 +416,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('policy'), { workload: name })),
       },
       {
+        id: `workload-${name}-backups-restore`,
+        label: `Backups: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `backup restore snapshot ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('backups'), { workload: name })),
+      },
+      {
         id: `workload-${name}-scoring`,
         label: `Open scoring: ${name}`,
         category: 'workload-action' as const,

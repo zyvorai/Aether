@@ -646,6 +646,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           >
             Policy →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-context-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

@@ -148,6 +148,14 @@ export default function PluginsPage() {
             >
               Platform →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="plugins-context-gitops-link"
+            >
+              GitOps →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

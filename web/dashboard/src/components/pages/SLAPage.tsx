@@ -118,6 +118,22 @@ export default function SLAPage() {
             >
               Alerts →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="sla-context-policy-link"
+            >
+              Policy →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('copilot'), { workload: search.trim(), q: `SLA status for ${search.trim()}` })}
+              className="text-aether hover:underline"
+              data-testid="sla-context-copilot-link"
+            >
+              Copilot →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

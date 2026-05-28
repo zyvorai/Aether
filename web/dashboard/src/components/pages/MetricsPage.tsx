@@ -170,6 +170,14 @@ export default function MetricsPage() {
             >
               Alerts →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('scheduler'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="metrics-context-scheduler-link"
+            >
+              Scheduler →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>
