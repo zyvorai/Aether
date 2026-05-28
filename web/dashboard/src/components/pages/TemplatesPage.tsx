@@ -16,6 +16,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { workloadJsonToYaml } from '../../utils/workloadYaml';
 import { workloadNameFromSpec } from '../../utils/workloadNameFromSpec';
+import { SearchQueryContextBanner } from '../QueryContextBanner';
 import type { Template } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -142,6 +143,7 @@ export default function TemplatesPage() {
 
   return (
     <div>
+      <SearchQueryContextBanner testId="templates-workload-context" query={search} entityLabel="templates" />
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"

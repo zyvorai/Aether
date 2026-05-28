@@ -14,6 +14,7 @@ import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import StatCard from '../StatCard';
+import { SearchQueryContextBanner } from '../QueryContextBanner';
 import type { WorkloadResponse, SlaTarget } from '../../types/api';
 
 export default function SLAPage() {
@@ -81,6 +82,7 @@ export default function SLAPage() {
 
   return (
     <div>
+      <SearchQueryContextBanner testId="sla-workload-context" query={search} entityLabel="SLA workloads" />
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

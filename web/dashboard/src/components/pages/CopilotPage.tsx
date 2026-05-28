@@ -156,7 +156,11 @@ export default function CopilotPage() {
                     key={s}
                     type="button"
                     data-testid="copilot-suggestion"
-                    onClick={() => void send(s)}
+                    onClick={() => {
+                      setQParam(s);
+                      setInput(s);
+                      void send(s);
+                    }}
                     className="rounded-full border border-slate-700/80 bg-slate-800/60 px-3 py-1 text-xs text-slate-300 hover:border-violet-500/40 hover:text-violet-200"
                   >
                     {s}

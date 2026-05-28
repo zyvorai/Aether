@@ -13,6 +13,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
+import { SearchQueryContextBanner } from '../QueryContextBanner';
 import type { ObservabilitySummary } from '../../types/api';
 
 interface ChargebackReport {
@@ -125,6 +126,7 @@ export default function MetricsPage() {
 
   return (
     <div>
+      <SearchQueryContextBanner testId="metrics-workload-context" query={search} entityLabel="metrics" />
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

@@ -16,6 +16,7 @@ import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadContextBanner } from '../QueryContextBanner';
 import type { HealthSummary, ManagedWorkload, HealthHistorySummary } from '../../types/api';
 
 function getHealthVariant(health: string): 'green' | 'yellow' | 'red' | 'muted' {
@@ -78,11 +79,10 @@ export default function HealthPage() {
   useEffect(() => {
     if (!workloadParam || workloads.length === 0) return;
     const match = workloads.find((w) => w.name === workloadParam);
-    if (match) {
+    if (match && selected?.workload.name !== match.name) {
       void handleRowClick(match);
-      setWorkloadParam('');
     }
-  }, [workloadParam, workloads, setWorkloadParam]);
+  }, [workloadParam, workloads, selected?.workload.name]);
 
   async function handleRowClick(w: ManagedWorkload) {
     if (selected?.workload.name === w.name) {
@@ -131,7 +131,7 @@ export default function HealthPage() {
   const filtered = workloads.filter((w) => {
     const matchesSearch = w.name.toLowerCase().includes(search.toLowerCase());
     const status = statusFilter.toLowerCase();
-    const matchesStatus = status === 'all' || w.health.toLowerCase() === status;
+    const matchesStatus = status === 'all' || (w.health ?? '').toLowerCase() === status;
     return matchesSearch && matchesStatus;
   });
 
@@ -145,6 +145,11 @@ export default function HealthPage() {
 
   return (
     <div>
+      <WorkloadContextBanner
+        testId="health-workload-context"
+        workload={workloadParam}
+        description="Health monitor for workload"
+      />
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <button type="button" data-testid="health-healthy-stat" onClick={() => setStatusFilter('healthy')} className="text-left">
@@ -250,7 +255,7 @@ export default function HealthPage() {
                         <Badge text={w.health} variant={getHealthVariant(w.health)} />
                       </td>
                       <td className="py-3 px-4">
-                        <Badge text={w.circuit} variant={getCircuitVariant(w.circuit)} />
+                        <Badge text={w.circuit ?? 'unknown'} variant={getCircuitVariant(w.circuit ?? 'unknown')} />
                       </td>
                       <td className="py-3 px-4 text-sm text-slate-300">{w.restart_count}</td>
                     </tr>

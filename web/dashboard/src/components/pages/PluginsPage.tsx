@@ -15,6 +15,7 @@ import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
+import { SearchQueryContextBanner } from '../QueryContextBanner';
 import type { PluginInfo } from '../../types/api';
 
 export default function PluginsPage() {
@@ -111,6 +112,7 @@ export default function PluginsPage() {
 
   return (
     <div>
+      <SearchQueryContextBanner testId="plugins-workload-context" query={search} entityLabel="plugins" />
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
