@@ -813,7 +813,18 @@ export default function ClustersPage() {
       ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Clusters" value={summary.cluster_count} color="blue" />
-        <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left" data-testid="clusters-health-link">
+        <button
+          type="button"
+          onClick={() =>
+            navigate(
+              workloadFocus
+                ? pathWithQuery(viewToPath('health'), { workload: workloadFocus })
+                : viewToPath('health'),
+            )
+          }
+          className="text-left"
+          data-testid="clusters-health-link"
+        >
           <StatCard title="Reachable" value={summary.healthy_clusters} color="green" />
         </button>
         <StatCard title="Namespaces" value={namespaces.length} color="orange" />

@@ -242,6 +242,22 @@ export default function DriftPage() {
           >
             Editor →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="drift-context-openapi-link"
+          >
+            OpenAPI →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` })}
+            className="text-aether hover:underline"
+            data-testid="drift-context-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

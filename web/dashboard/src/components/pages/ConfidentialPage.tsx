@@ -283,6 +283,22 @@ export default function ConfidentialPage() {
           >
             Audit →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="confidential-context-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="confidential-context-fleet-link"
+          >
+            Fleet →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

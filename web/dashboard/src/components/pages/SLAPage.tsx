@@ -134,6 +134,22 @@ export default function SLAPage() {
             >
               Copilot →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="sla-context-platform-link"
+            >
+              Platform →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="sla-context-openapi-link"
+            >
+              OpenAPI →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

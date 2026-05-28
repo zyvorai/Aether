@@ -211,6 +211,22 @@ export default function SecretsPage() {
             >
               Confidential →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="secrets-context-gitops-link"
+            >
+              GitOps →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('templates'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="secrets-context-templates-link"
+            >
+              Templates →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

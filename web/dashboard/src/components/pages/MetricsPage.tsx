@@ -308,7 +308,13 @@ export default function MetricsPage() {
               <button
                 type="button"
                 data-testid="metrics-fleet-link"
-                onClick={() => navigate(viewToPath('fleet'))}
+                onClick={() =>
+                  navigate(
+                    search.trim()
+                      ? pathWithQuery(viewToPath('fleet'), { workload: search.trim() })
+                      : viewToPath('fleet'),
+                  )
+                }
                 className="text-xs text-aether hover:underline"
               >
                 Fleet overview →
@@ -316,7 +322,13 @@ export default function MetricsPage() {
               <button
                 type="button"
                 data-testid="metrics-cost-estimator-link"
-                onClick={() => navigate(viewToPath('cost'))}
+                onClick={() =>
+                  navigate(
+                    search.trim()
+                      ? pathWithQuery(viewToPath('cost'), { workload: search.trim() })
+                      : viewToPath('cost'),
+                  )
+                }
                 className="text-xs text-aether hover:underline"
               >
                 Cost estimator →
@@ -324,7 +336,13 @@ export default function MetricsPage() {
               <button
                 type="button"
                 data-testid="metrics-workloads-link"
-                onClick={() => navigate(viewToPath('workloads'))}
+                onClick={() =>
+                  navigate(
+                    search.trim()
+                      ? pathWithQuery(viewToPath('workloads'), { workload: search.trim() })
+                      : viewToPath('workloads'),
+                  )
+                }
                 className="text-xs text-aether hover:underline"
               >
                 All workloads →

@@ -154,6 +154,14 @@ export default function BackupsPage() {
             >
               Policy →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('copilot'), { workload: search.trim(), q: `Backup guidance for ${search.trim()}` })}
+              className="text-aether hover:underline"
+              data-testid="backups-context-copilot-link"
+            >
+              Copilot →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

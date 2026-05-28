@@ -153,6 +153,14 @@ export default function EventsPage() {
             >
               Policy →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="events-context-editor-link"
+            >
+              Editor →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

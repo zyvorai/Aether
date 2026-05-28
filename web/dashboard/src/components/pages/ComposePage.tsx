@@ -205,6 +205,22 @@ export default function ComposePage() {
           >
             Policy →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="compose-context-gitops-link"
+          >
+            GitOps →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('envs'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="compose-context-envs-link"
+          >
+            Environments →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div>
