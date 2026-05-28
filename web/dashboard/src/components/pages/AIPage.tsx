@@ -15,7 +15,7 @@ import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageTabs from '../PageTabs';
 import WorkloadSelect from '../WorkloadSelect';
 import IntentDebugger from '../IntentDebugger';
@@ -415,21 +415,17 @@ export default function AIPage() {
   return (
     <div>
       {workloadQuery.trim() ? (
-        <div
-          data-testid="ai-workload-context"
-          className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
-        >
-          AI context for workload <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+        <WorkloadContextBanner testId="ai-workload-context" workload={workloadQuery} description="AI context">
+          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="ai" showMetrics showDrift />
           {' · '}
-          <button
-            type="button"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'predictions' })}
             className="text-aether hover:underline"
+            data-testid="ai-context-intelligence-link"
           >
-            Open workload →
-          </button>
-          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="ai" />
-        </div>
+            Intelligence →
+          </Link>
+        </WorkloadContextBanner>
       ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="dash-card py-4">

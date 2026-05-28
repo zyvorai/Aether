@@ -14,7 +14,7 @@ import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import DependencyGraphVisual from '../DependencyGraphVisual';
 import type { DependencyGraph, DependencyEdge } from '../../types/api';
 
@@ -193,7 +193,13 @@ export default function DepsPage() {
         <button
           type="button"
           data-testid="deps-compose-link"
-          onClick={() => navigate(viewToPath('compose'))}
+          onClick={() =>
+            navigate(
+              highlightWorkload
+                ? pathWithQuery(viewToPath('compose'), { workload: highlightWorkload })
+                : viewToPath('compose'),
+            )
+          }
           className="text-xs text-aether hover:underline"
         >
           Compose import →
@@ -201,7 +207,13 @@ export default function DepsPage() {
         <button
           type="button"
           data-testid="deps-envs-link"
-          onClick={() => navigate(viewToPath('envs'))}
+          onClick={() =>
+            navigate(
+              highlightWorkload
+                ? pathWithQuery(viewToPath('envs'), { workload: highlightWorkload })
+                : viewToPath('envs'),
+            )
+          }
           className="text-xs text-aether hover:underline ml-3"
         >
           Environments →
@@ -209,21 +221,9 @@ export default function DepsPage() {
       </div>
 
       {highlightWorkload ? (
-        <div
-          data-testid="deps-workload-context"
-          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
-        >
-          Dependency context for workload <span className="font-mono text-aether">{highlightWorkload}</span>
-          {' · '}
-          <button
-            type="button"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: highlightWorkload }))}
-            className="text-aether hover:underline"
-          >
-            Open workload →
-          </button>
-          <WorkloadScopedCrossLinks workload={highlightWorkload} prefix="deps" />
-        </div>
+        <WorkloadContextBanner testId="deps-workload-context" workload={highlightWorkload} description="Dependency context">
+          <WorkloadScopedCrossLinks workload={highlightWorkload} prefix="deps" showDrift showGitops />
+        </WorkloadContextBanner>
       ) : null}
 
       <div className="dash-card mb-6">

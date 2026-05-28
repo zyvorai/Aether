@@ -12,7 +12,7 @@ import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import Badge, { SeverityBadge } from '../Badge';
 import type { WorkloadResponse, DriftReport, DriftReconcileResult } from '../../types/api';
 
@@ -195,22 +195,14 @@ export default function DriftPage() {
       </div>
 
       {workloadFocus ? (
-        <div
-          data-testid="drift-workload-context"
-          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        <WorkloadContextBanner
+          testId="drift-workload-context"
+          workload={workloadFocus}
+          openTestId="drift-open-workload"
+          description="Drift context"
         >
-          Drift context for workload <span className="font-mono text-aether">{workloadFocus}</span>
-          {' · '}
-          <button
-            type="button"
-            data-testid="drift-open-workload"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus }))}
-            className="text-aether hover:underline"
-          >
-            Open workload →
-          </button>
-          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="drift" eventsCategory="drift" />
-        </div>
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="drift" eventsCategory="drift" showGitops showAudit />
+        </WorkloadContextBanner>
       ) : null}
 
       {bulkScan && !bulkScan.scanning ? (

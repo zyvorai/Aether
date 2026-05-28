@@ -11,7 +11,7 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import EmptyState from '../EmptyState';
 import SpecWorkbench from '../SpecWorkbench';
-import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { CostEstimate } from '../../types/api';
 
 interface ChargebackReport {
@@ -115,22 +115,22 @@ export default function CostPage() {
   return (
     <div className="space-y-6">
       {workloadQuery.trim() ? (
-        <div
-          data-testid="cost-workload-context"
-          className="rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        <WorkloadContextBanner
+          testId="cost-workload-context"
+          workload={workloadQuery}
+          openTestId="cost-open-workload"
+          description="Cost context"
         >
-          Cost context for workload <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="cost" showMetrics />
           {' · '}
-          <button
-            type="button"
-            data-testid="cost-open-workload"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
+          <Link
+            to={pathWithQuery(viewToPath('scheduler'), { workload: workloadQuery.trim() })}
             className="text-aether hover:underline"
+            data-testid="cost-scheduler-scoped-link"
           >
-            Open workload →
-          </button>
-          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="cost" />
-        </div>
+            Scheduler →
+          </Link>
+        </WorkloadContextBanner>
       ) : null}
       {chargeback ? (
         <div className="dash-card" data-testid="cost-fleet-chargeback">
@@ -138,8 +138,14 @@ export default function CostPage() {
             <h2 className="text-lg font-semibold text-zinc-100">Fleet chargeback</h2>
             <button
               type="button"
-              data-testid="cost-metrics-link"
-              onClick={() => navigate(viewToPath('metrics'))}
+              data-testid="cost-fleet-metrics-link"
+              onClick={() =>
+                navigate(
+                  workloadQuery.trim()
+                    ? pathWithQuery(viewToPath('metrics'), { workload: workloadQuery.trim() })
+                    : viewToPath('metrics'),
+                )
+              }
               className="text-xs text-aether hover:underline"
             >
               Full report on Metrics →

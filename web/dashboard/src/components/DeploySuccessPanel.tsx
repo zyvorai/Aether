@@ -117,6 +117,27 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
         >
           Templates
         </Link>
+        <Link
+          to={pathWithQuery(viewToPath('platform'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-platform-link"
+        >
+          Platform
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('openapi'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-openapi-link"
+        >
+          OpenAPI
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('rbac'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-rbac-link"
+        >
+          RBAC
+        </Link>
         <button
           type="button"
           onClick={onClose}

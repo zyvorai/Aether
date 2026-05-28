@@ -13,7 +13,7 @@ import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { AffinityScore } from '../../types/api';
 
 const WORKLOAD_CLASSES = [
@@ -122,21 +122,17 @@ export default function AffinityPage() {
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
 
       {workloadFocus ? (
-        <div
-          data-testid="affinity-workload-context"
-          className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
-        >
-          Affinity context for workload <span className="font-mono text-aether">{workloadFocus}</span>
+        <WorkloadContextBanner testId="affinity-workload-context" workload={workloadFocus} description="Affinity context">
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="affinity" showMetrics />
           {' · '}
-          <button
-            type="button"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus }))}
+          <Link
+            to={pathWithQuery(viewToPath('scheduler'), { workload: workloadFocus })}
             className="text-aether hover:underline"
+            data-testid="affinity-scheduler-scoped-link"
           >
-            Open workload →
-          </button>
-          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="affinity" />
-        </div>
+            Scheduler →
+          </Link>
+        </WorkloadContextBanner>
       ) : null}
 
       <div className="flex gap-2 mb-6" data-testid="affinity-tabs">

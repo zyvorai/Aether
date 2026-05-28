@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import {
   LayoutDashboard,
   Activity,
@@ -289,6 +289,14 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             showGitops
             showMetrics
           />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-platform-link"
+          >
+            Platform →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

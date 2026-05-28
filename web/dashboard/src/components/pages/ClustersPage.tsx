@@ -753,6 +753,22 @@ export default function ClustersPage() {
       {workloadFocus ? (
         <WorkloadContextBanner testId="clusters-workload-context" workload={workloadFocus} description="Cluster browse context">
           <WorkloadScopedCrossLinks workload={workloadFocus} prefix="clusters" showDrift showAudit />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="clusters-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="clusters-openapi-link"
+          >
+            OpenAPI →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

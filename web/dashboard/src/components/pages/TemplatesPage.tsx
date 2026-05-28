@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Rocket, Wand2, Inbox, Settings2, FileCode2 } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -145,6 +145,18 @@ export default function TemplatesPage() {
     <div>
       <SearchQueryContextBanner testId="templates-workload-context" query={search} entityLabel="templates">
         <WorkloadScopedCrossLinks workload={search} prefix="templates" />
+        {search.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="templates-editor-link"
+            >
+              Editor →
+            </Link>
+          </>
+        ) : null}
       </SearchQueryContextBanner>
       <div className="mb-4 flex flex-wrap gap-3">
         <button

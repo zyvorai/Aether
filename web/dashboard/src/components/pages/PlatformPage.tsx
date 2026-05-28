@@ -90,7 +90,11 @@ export default function PlatformPage() {
 
   return (
     <div>
-      <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+      <PageToolbar
+        onRefresh={() => void load()}
+        refreshing={loading}
+        refreshTestId="platform-toolbar-refresh"
+      />
 
       {focusedWorkload ? (
         <WorkloadContextBanner testId="platform-workload-context" workload={focusedWorkload} description="Platform context">
@@ -101,6 +105,22 @@ export default function PlatformPage() {
             showGitops
             showMetrics
           />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-clusters-link"
+          >
+            Clusters →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-rbac-link"
+          >
+            RBAC →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
