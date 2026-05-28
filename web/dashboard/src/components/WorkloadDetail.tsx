@@ -754,6 +754,20 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 Alert rules →
               </Link>
               <Link
+                to={pathWithQuery(viewToPath('health'), { workload: workload.name })}
+                className="text-aether hover:underline"
+                data-testid="workload-events-health-link"
+              >
+                Health monitor →
+              </Link>
+              <Link
+                to={pathWithQuery(viewToPath('drift'), { workload: workload.name })}
+                className="text-aether hover:underline"
+                data-testid="workload-events-drift-link"
+              >
+                Drift →
+              </Link>
+              <Link
                 to={pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' })}
                 className="text-aether hover:underline"
                 data-testid="workload-events-trust-link"

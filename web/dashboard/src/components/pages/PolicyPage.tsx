@@ -6,7 +6,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { AlertTriangle, AlertCircle, ShieldCheck, RefreshCw, WifiOff } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import SpecWorkbench from '../SpecWorkbench';
 import Badge, { SeverityBadge } from '../Badge';
@@ -14,6 +15,8 @@ import type { OpaEvaluation, PolicyResult } from '../../types/api';
 
 export default function PolicyPage() {
   const navigate = useNavigate();
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
   const [result, setResult] = useState<PolicyResult | null>(null);
   const [opaResult, setOpaResult] = useState<OpaEvaluation | null>(null);
   const [opaManifest, setOpaManifest] = useState('{\n  "apiVersion": "v1",\n  "kind": "ConfigMap",\n  "metadata": { "name": "example", "labels": { "owner": "team-a" } }\n}');
@@ -127,6 +130,21 @@ export default function PolicyPage() {
 
   return (
     <div>
+      {focusedWorkload ? (
+        <WorkloadContextBanner
+          testId="policy-workload-context"
+          workload={focusedWorkload}
+          description="Policy context"
+        >
+          <WorkloadScopedCrossLinks
+            workload={focusedWorkload}
+            prefix="policy"
+            showDrift
+            showGitops
+            showMetrics
+          />
+        </WorkloadContextBanner>
+      ) : null}
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"

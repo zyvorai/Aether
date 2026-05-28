@@ -23,7 +23,8 @@ import { apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import type { AppView } from '../../types/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { hasValidatedSpec, hasDeployedWorkload, hasReviewedHealth, syncDeployFromWorkloads, syncHealthFromSummary } from '../../utils/onboardingState';
 import { countAetherManaged } from '../../utils/workloadFilters';
 import StatCard from '../StatCard';
@@ -78,6 +79,8 @@ const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
 
 export default function OverviewPage({ onNavigate, sseConnected = false }: OverviewPageProps) {
   const navigate = useNavigate();
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
   const { capabilities, ready, loading: platformLoading } = useServerCapabilities();
 
   const goFiltered = (view: AppView, params?: Record<string, string>) => {
@@ -272,6 +275,23 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         loading={platformLoading}
       />
 
+      {focusedWorkload ? (
+        <WorkloadContextBanner
+          testId="overview-workload-context"
+          workload={focusedWorkload}
+          description="Dashboard context"
+        >
+          <WorkloadScopedCrossLinks
+            workload={focusedWorkload}
+            prefix="overview"
+            showDrift
+            showAudit
+            showGitops
+            showMetrics
+          />
+        </WorkloadContextBanner>
+      ) : null}
+
       {setupHints.length > 0 ? (
         <div className="mb-6 rounded-xl border border-blue-500/25 bg-blue-500/10 px-4 py-3">
           <p className="text-sm text-blue-200 mb-2">Platform setup recommended:</p>
@@ -456,9 +476,23 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             { label: 'Ops copilot', testId: 'overview-copilot-quick-link', onClick: () => onNavigate('copilot') },
             { label: 'Events feed', testId: 'overview-events-quick-link', onClick: () => onNavigate('events') },
             { label: 'Alerts & webhooks', testId: 'overview-alerts-quick-link', onClick: () => onNavigate('alerts') },
-            { label: 'GitOps sync', testId: 'overview-gitops-quick-link', onClick: () => onNavigate('gitops') },
-            { label: 'Audit trail', testId: 'overview-audit-quick-link', onClick: () => goFiltered('audit') },
-            { label: 'Drift detection', testId: 'overview-drift-quick-link', onClick: () => onNavigate('drift') },
+            {
+              label: 'GitOps sync',
+              testId: 'overview-gitops-quick-link',
+              onClick: () =>
+                goFiltered('gitops', focusedWorkload ? { workload: focusedWorkload } : undefined),
+            },
+            {
+              label: 'Audit trail',
+              testId: 'overview-audit-quick-link',
+              onClick: () => goFiltered('audit', focusedWorkload ? { workload: focusedWorkload } : undefined),
+            },
+            {
+              label: 'Drift detection',
+              testId: 'overview-drift-quick-link',
+              onClick: () =>
+                goFiltered('drift', focusedWorkload ? { workload: focusedWorkload } : undefined),
+            },
             { label: 'Fleet overview', testId: 'overview-fleet-quick-link', onClick: () => onNavigate('fleet') },
             { label: 'Validate YAML', testId: 'overview-validate-quick-link', onClick: () => goFiltered('workloads', { validate: '1' }) },
             { label: 'Cost estimation', testId: 'overview-cost-quick-link', onClick: () => onNavigate('cost') },
@@ -467,7 +501,8 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             {
               label: 'Trust & attestation',
               testId: 'overview-trust-quick-link',
-              onClick: () => goFiltered('workloads', { tab: 'trust' }),
+              onClick: () =>
+                goFiltered('workloads', focusedWorkload ? { workload: focusedWorkload, tab: 'trust' } : { tab: 'trust' }),
             },
             { label: 'Compose import', testId: 'overview-compose-quick-link', onClick: () => onNavigate('compose') },
             { label: 'Scheduler', testId: 'overview-scheduler-quick-link', onClick: () => onNavigate('scheduler') },
@@ -475,7 +510,12 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             { label: 'SLA compliance', testId: 'overview-sla-quick-link', onClick: () => onNavigate('sla') },
             { label: 'Dependencies', testId: 'overview-deps-quick-link', onClick: () => onNavigate('deps') },
             { label: 'Secrets vault', testId: 'overview-secrets-quick-link', onClick: () => onNavigate('secrets') },
-            { label: 'Metrics & Grafana', testId: 'overview-metrics-quick-link', onClick: () => onNavigate('metrics') },
+            {
+              label: 'Metrics & Grafana',
+              testId: 'overview-metrics-quick-link',
+              onClick: () =>
+                goFiltered('metrics', focusedWorkload ? { workload: focusedWorkload } : undefined),
+            },
             { label: 'Health monitor', testId: 'overview-health-quick-link', onClick: () => onNavigate('health') },
             { label: 'Policy check', testId: 'overview-policy-quick-link', onClick: () => onNavigate('policy') },
             { label: 'Plugins', testId: 'overview-plugins-quick-link', onClick: () => onNavigate('plugins') },
@@ -585,12 +625,27 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           ) : (
             <div className="space-y-3 max-h-96 overflow-auto">
               {events.slice(0, 20).map((ev, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-zinc-950/50 rounded-lg">
+                <div
+                  key={i}
+                  data-testid={`overview-recent-event-${i}`}
+                  className="flex items-start gap-3 p-3 bg-zinc-950/50 rounded-lg"
+                >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-zinc-200 truncate">{ev.title}</div>
                     <div className="text-xs text-zinc-500 mt-0.5">{ev.message}</div>
-                    <div className="text-xs text-zinc-600 mt-1">{formatTimestamp(ev.timestamp)}</div>
+                    <div className="text-xs text-zinc-600 mt-1 flex flex-wrap items-center gap-2">
+                      {formatTimestamp(ev.timestamp)}
+                      {ev.workload ? (
+                        <button
+                          type="button"
+                          className="text-aether hover:underline"
+                          onClick={() => goFiltered('events', { workload: ev.workload! })}
+                        >
+                          {ev.workload}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ))}

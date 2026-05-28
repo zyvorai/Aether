@@ -7,7 +7,8 @@ import { ExternalLink, Globe, Network, Server, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { apiFetchSettled } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -28,6 +29,8 @@ interface ServerPayload {
 
 export default function FleetPage() {
   const navigate = useNavigate();
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
   const [integrations, setIntegrations] = useState<Integrations>({});
   const [loading, setLoading] = useState(true);
@@ -67,6 +70,18 @@ export default function FleetPage() {
   return (
     <div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+      {focusedWorkload ? (
+        <WorkloadContextBanner testId="fleet-workload-context" workload={focusedWorkload} description="Fleet context">
+          <WorkloadScopedCrossLinks
+            workload={focusedWorkload}
+            prefix="fleet"
+            showDrift
+            showAudit
+            showGitops
+            showMetrics
+          />
+        </WorkloadContextBanner>
+      ) : null}
       <div className="mb-4">
         <button
           type="button"

@@ -247,6 +247,111 @@ export default function CommandPalette({
         },
       },
       {
+        id: `workload-${name}-sla`,
+        label: `SLA compliance: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `sla uptime compliance ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('sla'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-envs`,
+        label: `Environments: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `environments promote ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('envs'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-templates`,
+        label: `Templates: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `templates scaffold ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('templates'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-plugins`,
+        label: `Plugins: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `plugins runtime ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('plugins'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-cost`,
+        label: `Cost estimate: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `cost chargeback ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('cost'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-scheduler`,
+        label: `Scheduler: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `scheduler placement ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('scheduler'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-policy`,
+        label: `Policy check: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `policy opa validate ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('policy'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-intelligence`,
+        label: `Intelligence: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `intelligence predictions threats ${name}`,
+        workloadName: name,
+        run: () =>
+          navigate(pathWithQuery(viewToPath('intelligence'), { workload: name, tab: 'predictions' })),
+      },
+      {
+        id: `workload-${name}-editor`,
+        label: `Visual editor: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `editor visual yaml ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('editor'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-backups`,
+        label: `Backups: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `backup restore snapshot ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('backups'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-secrets`,
+        label: `Secrets: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `secrets vault keys ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('secrets'), { workload: name })),
+      },
+      {
+        id: `workload-${name}-ai`,
+        label: `AI engine: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `ai scoring intent ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('ai'), { workload: name, tab: 'analyze' })),
+      },
+      {
+        id: `workload-${name}-drift-page`,
+        label: `Drift page: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `drift reconcile page ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('drift'), { workload: name })),
+      },
+      {
         id: `workload-${name}-scoring`,
         label: `Open scoring: ${name}`,
         category: 'workload-action' as const,
@@ -756,6 +861,7 @@ export default function CommandPalette({
 
   return (
     <div
+      data-testid="command-palette"
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
       onClick={onClose}
       role="dialog"
@@ -772,6 +878,7 @@ export default function CommandPalette({
           <input
             ref={inputRef}
             type="text"
+            data-testid="command-palette-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -784,7 +891,9 @@ export default function CommandPalette({
 
         <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">
           {filtered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-slate-500 text-sm">No results found</div>
+            <div data-testid="command-palette-empty" className="px-4 py-8 text-center text-slate-500 text-sm">
+              No results found
+            </div>
           ) : (
             filtered.map((cmd, i) => {
               const showCategory = cmd.category !== lastCategory;
@@ -798,6 +907,7 @@ export default function CommandPalette({
                   ) : null}
                   <button
                     type="button"
+                    data-testid={`command-palette-item-${cmd.id}`}
                     onClick={() => void executeCommand(cmd)}
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}

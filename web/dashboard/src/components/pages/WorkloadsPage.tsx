@@ -31,6 +31,7 @@ import DeploySuccessPanel from '../DeploySuccessPanel';
 import EmptyState from '../EmptyState';
 import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice, PolicyResult, ConfidentialMigrationPlan } from '../../types/api';
 import PageToolbar from '../PageToolbar';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
@@ -591,6 +592,22 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           ) : null
         }
       />
+
+      {workloadParam.trim() && !selectedWorkload ? (
+        <WorkloadContextBanner
+          testId="workloads-context-banner"
+          workload={workloadParam.trim()}
+          description="Workload list context"
+        >
+          <WorkloadScopedCrossLinks
+            workload={workloadParam.trim()}
+            prefix="workloads"
+            showDrift
+            showGitops
+            showMetrics
+          />
+        </WorkloadContextBanner>
+      ) : null}
 
       {sourceFilterVal !== 'all' ? (
         <div className="mb-4 rounded-xl border border-slate-700/80 bg-slate-950/50 px-4 py-3 text-sm text-slate-400">
