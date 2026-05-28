@@ -136,8 +136,41 @@ export default function CommandPalette({
         workloadName: name,
         workloadTab: 'events',
         run: () => {
-          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'events' }));
-          onSelectWorkload?.(name);
+          navigate(pathWithQuery(viewToPath('events'), { workload: name }));
+        },
+      },
+      {
+        id: `workload-${name}-copilot`,
+        label: `Ask copilot about: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `copilot ask health ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(
+            pathWithQuery(viewToPath('copilot'), {
+              q: `Why is ${name} unhealthy?`,
+            }),
+          );
+        },
+      },
+      {
+        id: `workload-${name}-confidential`,
+        label: `Confidential trust: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `confidential trust attestation ${name} tee`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('confidential'), { workload: name }));
+        },
+      },
+      {
+        id: `workload-${name}-alerts`,
+        label: `Alert rules: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `alerts webhooks ${name} workload`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('alerts'), { workload: name }));
         },
       },
       {
@@ -303,6 +336,18 @@ export default function CommandPalette({
         category: 'action',
         searchText: 'copilot chat assistant natural language',
         view: 'copilot',
+      },
+      {
+        id: 'action-copilot-health',
+        label: 'Ask copilot about fleet health',
+        category: 'action',
+        searchText: 'copilot health unhealthy workloads fleet fleet health ask',
+        run: () =>
+          navigate(
+            pathWithQuery(viewToPath('copilot'), {
+              q: 'Why is my workload unhealthy?',
+            }),
+          ),
       },
       {
         id: 'action-affinity',
