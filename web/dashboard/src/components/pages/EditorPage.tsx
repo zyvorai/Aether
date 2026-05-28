@@ -16,6 +16,7 @@ import ConfidentialFormFields, {
 } from '../ConfidentialFormFields';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import ValidateResultPanel from '../ValidateResultPanel';
 import YamlCodeEditor from '../YamlCodeEditor';
 import type { ValidateResponse, PolicyResult, WorkloadResponse } from '../../types/api';
@@ -208,20 +209,36 @@ export default function EditorPage() {
 
   return (
     <div>
+      {workloadQuery.trim() && form.name === workloadQuery ? (
+        <WorkloadContextBanner
+          testId="editor-workload-context"
+          workload={workloadQuery.trim()}
+          description="Editor context for workload"
+        >
+          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="editor" />
+        </WorkloadContextBanner>
+      ) : null}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <FileText className="w-6 h-6 text-aether" />
           <div>
             <h2 className="text-lg font-semibold text-slate-100">Visual workload editor</h2>
-            {workloadQuery && form.name === workloadQuery && (
-              <p data-testid="editor-workload-context" className="text-xs text-aether mt-1">
-                Editing context: {form.name}
-              </p>
-            )}
             <p className="text-sm text-slate-500">Design workloads without writing YAML by hand</p>
             <Link to={viewToPath('templates')} className="text-xs text-aether hover:underline" data-testid="editor-templates-link">
               Browse templates →
             </Link>
+            {workloadQuery.trim() && form.name === workloadQuery ? (
+              <>
+                {' · '}
+                <Link
+                  to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="editor-validate-link"
+                >
+                  Policy check →
+                </Link>
+              </>
+            ) : null}
           </div>
         </div>
         <button

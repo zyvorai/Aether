@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { Bot, Send, Sparkles } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner } from '../QueryContextBanner';
 import { apiPost } from '../../utils/api';
 
 interface ToolResult {
@@ -34,6 +35,7 @@ const SUGGESTIONS = [
 ];
 
 export default function CopilotPage() {
+  const [workloadParam] = useQueryParam('workload', '');
   const [qParam, setQParam] = useQueryParam('q', '');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -47,6 +49,13 @@ export default function CopilotPage() {
     if (!prefill) return;
     setInput((current) => (current.trim() ? current : prefill));
   }, [qParam]);
+
+  useEffect(() => {
+    const focus = workloadParam.trim();
+    if (!focus) return;
+    const prompt = `Summarize health and trust posture for ${focus}`;
+    setInput((current) => (current.trim() ? current : prompt));
+  }, [workloadParam]);
 
   const send = useCallback(
     async (text: string, confirmActionId?: string) => {
@@ -104,8 +113,15 @@ export default function CopilotPage() {
     setPending((p) => p.filter((a) => a.id !== actionId));
   };
 
+  const workloadFocus = workloadParam.trim();
+
   return (
     <div className="flex h-[calc(100vh-12rem)] min-h-[480px] flex-col gap-4">
+      <WorkloadContextBanner
+        testId="copilot-workload-context"
+        workload={workloadFocus}
+        description="Copilot context for workload"
+      />
       <div className="dash-card flex flex-1 flex-col overflow-hidden p-0">
         <div className="flex items-center gap-2 border-b border-slate-800/60 px-4 py-3">
           <Bot className="h-5 w-5 text-violet-400" aria-hidden />
@@ -135,12 +151,41 @@ export default function CopilotPage() {
             Intelligence reports →
           </Link>
           <Link
-            to={viewToPath('health')}
+            to={
+              workloadFocus
+                ? pathWithQuery(viewToPath('health'), { workload: workloadFocus })
+                : viewToPath('health')
+            }
             className="text-xs text-aether hover:underline ml-3"
             data-testid="copilot-health-link"
           >
             Health monitor →
           </Link>
+          {workloadFocus ? (
+            <>
+              <Link
+                to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
+                className="text-xs text-aether hover:underline ml-3"
+                data-testid="copilot-trust-link"
+              >
+                Trust tab →
+              </Link>
+              <Link
+                to={pathWithQuery(viewToPath('alerts'), { workload: workloadFocus })}
+                className="text-xs text-aether hover:underline ml-3"
+                data-testid="copilot-alerts-link"
+              >
+                Alert rules →
+              </Link>
+              <Link
+                to={pathWithQuery(viewToPath('events'), { workload: workloadFocus })}
+                className="text-xs text-aether hover:underline ml-3"
+                data-testid="copilot-events-link"
+              >
+                Events →
+              </Link>
+            </>
+          ) : null}
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">

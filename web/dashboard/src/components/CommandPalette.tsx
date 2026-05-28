@@ -148,6 +148,7 @@ export default function CommandPalette({
         run: () => {
           navigate(
             pathWithQuery(viewToPath('copilot'), {
+              workload: name,
               q: `Why is ${name} unhealthy?`,
             }),
           );

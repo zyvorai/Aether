@@ -3,6 +3,9 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { FileText, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router';
+import { viewToPath } from '../utils/dashboardRoutes';
+import { pathWithQuery } from '../utils/urlState';
 
 interface DeploySuccessPanelProps {
   name: string;
@@ -30,6 +33,20 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
           <FileText className="h-3.5 w-3.5" />
           View logs
         </button>
+        <Link
+          to={pathWithQuery(viewToPath('health'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-health-link"
+        >
+          Health monitor
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'trust' })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-trust-link"
+        >
+          Trust tab
+        </Link>
         <button
           type="button"
           onClick={onClose}

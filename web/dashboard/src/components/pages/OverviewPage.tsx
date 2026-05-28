@@ -464,7 +464,11 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             { label: 'Cost estimation', testId: 'overview-cost-quick-link', onClick: () => onNavigate('cost') },
             { label: 'Runtime affinity', testId: 'overview-affinity-quick-link', onClick: () => onNavigate('affinity') },
             { label: 'Confidential computing', testId: 'overview-confidential-quick-link', onClick: () => onNavigate('confidential') },
-            { label: 'Trust & attestation', testId: 'overview-trust-quick-link', onClick: () => onNavigate('confidential') },
+            {
+              label: 'Trust & attestation',
+              testId: 'overview-trust-quick-link',
+              onClick: () => goFiltered('workloads', { tab: 'trust' }),
+            },
             { label: 'Compose import', testId: 'overview-compose-quick-link', onClick: () => onNavigate('compose') },
             { label: 'Scheduler', testId: 'overview-scheduler-quick-link', onClick: () => onNavigate('scheduler') },
             { label: 'OpenAPI explorer', testId: 'overview-openapi-quick-link', onClick: () => onNavigate('openapi') },

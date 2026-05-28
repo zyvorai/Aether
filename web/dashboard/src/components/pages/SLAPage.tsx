@@ -201,6 +201,20 @@ export default function SLAPage() {
                   >
                     SLA events →
                   </Link>
+                  <Link
+                    to={pathWithQuery(viewToPath('alerts'), { workload: w.name })}
+                    className="text-aether hover:underline"
+                    data-testid={`sla-alerts-link-${w.name}`}
+                  >
+                    Alerts →
+                  </Link>
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: w.name, tab: 'trust' })}
+                    className="text-aether hover:underline"
+                    data-testid={`sla-trust-link-${w.name}`}
+                  >
+                    Trust →
+                  </Link>
                 </div>
               </div>
             );

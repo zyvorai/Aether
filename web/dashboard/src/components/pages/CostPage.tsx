@@ -11,6 +11,7 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import EmptyState from '../EmptyState';
 import SpecWorkbench from '../SpecWorkbench';
+import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { CostEstimate } from '../../types/api';
 
 interface ChargebackReport {
@@ -122,11 +123,13 @@ export default function CostPage() {
           {' · '}
           <button
             type="button"
+            data-testid="cost-open-workload"
             onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
             className="text-aether hover:underline"
           >
             Open workload →
           </button>
+          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="cost" />
         </div>
       ) : null}
       {chargeback ? (
