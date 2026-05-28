@@ -197,6 +197,14 @@ export default function ComposePage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="compose-policy-link"
+          >
+            Policy →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div>

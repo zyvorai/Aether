@@ -255,6 +255,14 @@ export default function DepsPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: highlightWorkload })}
+            className="text-aether hover:underline"
+            data-testid="deps-context-editor-link"
+          >
+            Editor →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

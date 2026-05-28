@@ -196,6 +196,14 @@ export default function IntelligencePage() {
           >
             Platform →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="intelligence-context-gitops-link"
+          >
+            GitOps →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

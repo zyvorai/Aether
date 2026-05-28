@@ -103,6 +103,14 @@ export default function SchedulerPage() {
           >
             Fleet →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'place' })}
+            className="text-aether hover:underline"
+            data-testid="scheduler-context-intelligence-link"
+          >
+            Intelligence →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />

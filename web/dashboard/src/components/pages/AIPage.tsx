@@ -441,6 +441,22 @@ export default function AIPage() {
           >
             Editor →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="ai-context-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="ai-context-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

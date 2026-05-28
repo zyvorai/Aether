@@ -353,6 +353,22 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-deps-link"
+          >
+            Dependencies →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

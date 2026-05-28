@@ -156,6 +156,14 @@ export default function PluginsPage() {
             >
               GitOps →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('copilot'), { workload: search.trim(), q: `Plugin guidance for ${search.trim()}` })}
+              className="text-aether hover:underline"
+              data-testid="plugins-context-copilot-link"
+            >
+              Copilot →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

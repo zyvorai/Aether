@@ -191,6 +191,14 @@ export default function EnvsPage() {
           >
             Compose →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="envs-policy-link"
+          >
+            Policy →
+          </Link>
         </WorkloadContextBanner>
       ) : (
         <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments">
@@ -228,6 +236,14 @@ export default function EnvsPage() {
                 data-testid="envs-context-compose-link"
               >
                 Compose →
+              </Link>
+              {' · '}
+              <Link
+                to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
+                className="text-aether hover:underline"
+                data-testid="envs-context-policy-link"
+              >
+                Policy →
               </Link>
             </>
           ) : null}

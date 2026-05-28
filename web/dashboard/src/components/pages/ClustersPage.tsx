@@ -793,6 +793,22 @@ export default function ClustersPage() {
           >
             Fleet →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Cluster context for ${workloadFocus}` })}
+            className="text-aether hover:underline"
+            data-testid="clusters-context-copilot-link"
+          >
+            Copilot →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), { workload: workloadFocus, tab: 'predictions' })}
+            className="text-aether hover:underline"
+            data-testid="clusters-context-intelligence-link"
+          >
+            Intelligence →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

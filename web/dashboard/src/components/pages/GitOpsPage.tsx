@@ -406,7 +406,13 @@ export default function GitOpsPage() {
         <button
           type="button"
           data-testid="gitops-policy-link"
-          onClick={() => navigate(viewToPath('policy'))}
+          onClick={() =>
+            navigate(
+              workloadFocus
+                ? pathWithQuery(viewToPath('policy'), { workload: workloadFocus })
+                : viewToPath('policy'),
+            )
+          }
           className="mt-4 text-xs text-aether hover:underline"
         >
           Policy check →

@@ -146,6 +146,14 @@ export default function BackupsPage() {
             >
               GitOps →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="backups-context-policy-link"
+            >
+              Policy →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>
