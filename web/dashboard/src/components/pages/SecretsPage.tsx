@@ -15,6 +15,7 @@ import Modal from '../Modal';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { SecretSummary, SecretDetail } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -169,6 +170,7 @@ export default function SecretsPage() {
           >
             Open workload →
           </button>
+          <WorkloadScopedCrossLinks workload={search} prefix="secrets" />
         </div>
       ) : null}
       <PageToolbar

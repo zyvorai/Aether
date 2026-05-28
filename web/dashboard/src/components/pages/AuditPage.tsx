@@ -16,7 +16,7 @@ import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadContextBanner } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { AuditResponse, AuditVerifyResponse } from '../../types/api';
 
 export default function AuditPage() {
@@ -178,12 +178,23 @@ export default function AuditPage() {
         }
       />
 
-      <div className="mb-4">
-        <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="audit-events-link">
+      <div className="mb-4 text-xs">
+        <Link
+          to={
+            workloadFilter.trim()
+              ? pathWithQuery(viewToPath('events'), { workload: workloadFilter.trim() })
+              : viewToPath('events')
+          }
+          className="text-aether hover:underline"
+          data-testid="audit-events-link"
+        >
           View events feed →
         </Link>
+        {workloadFilter.trim() ? (
+          <WorkloadScopedCrossLinks workload={workloadFilter} prefix="audit" />
+        ) : null}
         {' · '}
-        <Link to={viewToPath('rbac')} className="text-xs text-aether hover:underline" data-testid="audit-rbac-link">
+        <Link to={viewToPath('rbac')} className="text-aether hover:underline" data-testid="audit-rbac-link">
           API access control →
         </Link>
       </div>
