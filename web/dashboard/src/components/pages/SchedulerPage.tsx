@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
@@ -16,9 +16,11 @@ import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 
 export default function SchedulerPage() {
+  const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload');
   const [utilization, setUtilization] = useState<RuntimeUtilization[]>([]);
   const [suggestions, setSuggestions] = useState<OptimizeSuggestion[]>([]);
@@ -75,6 +77,16 @@ export default function SchedulerPage() {
           className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
         >
           Placement context for <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+          {' · '}
+          <button
+            type="button"
+            data-testid="scheduler-open-workload"
+            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
+            className="text-aether hover:underline"
+          >
+            Open workload →
+          </button>
+          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="scheduler" />
         </div>
       ) : null}
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />

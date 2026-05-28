@@ -100,6 +100,30 @@ export default function FleetPage() {
         >
           Drift detection →
         </button>
+        <button
+          type="button"
+          data-testid="fleet-confidential-link"
+          onClick={() => navigate(viewToPath('confidential'))}
+          className="text-xs text-aether hover:underline ml-3"
+        >
+          Confidential fleet →
+        </button>
+        <button
+          type="button"
+          data-testid="fleet-health-link"
+          onClick={() => navigate(viewToPath('health'))}
+          className="text-xs text-aether hover:underline ml-3"
+        >
+          Health monitor →
+        </button>
+        <button
+          type="button"
+          data-testid="fleet-events-link"
+          onClick={() => navigate(viewToPath('events'))}
+          className="text-xs text-aether hover:underline ml-3"
+        >
+          Events feed →
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

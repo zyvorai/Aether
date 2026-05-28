@@ -12,6 +12,7 @@ import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import Badge, { SeverityBadge } from '../Badge';
 import type { WorkloadResponse, DriftReport, DriftReconcileResult } from '../../types/api';
 
@@ -179,7 +180,14 @@ export default function DriftPage() {
         <button
           type="button"
           data-testid="drift-events-link"
-          onClick={() => navigate(pathWithQuery(viewToPath('events'), { category: 'drift' }))}
+          onClick={() =>
+            navigate(
+              pathWithQuery(viewToPath('events'), {
+                category: 'drift',
+                ...(workloadFocus ? { workload: workloadFocus } : {}),
+              }),
+            )
+          }
           className="text-xs text-aether hover:underline"
         >
           Drift events →
@@ -195,11 +203,13 @@ export default function DriftPage() {
           {' · '}
           <button
             type="button"
+            data-testid="drift-open-workload"
             onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus }))}
             className="text-aether hover:underline"
           >
             Open workload →
           </button>
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="drift" eventsCategory="drift" />
         </div>
       ) : null}
 

@@ -124,6 +124,18 @@ export default function EventsPage() {
           >
             Alert channels →
           </Link>
+          {workloadFilter.trim() ? (
+            <Link
+              to={pathWithQuery(viewToPath('workloads'), {
+                workload: workloadFilter.trim(),
+                tab: 'trust',
+              })}
+              className="text-xs text-aether hover:underline self-end mb-1 ml-3"
+              data-testid="events-trust-link"
+            >
+              Trust &amp; attestation →
+            </Link>
+          ) : null}
         </div>
       )}
 
