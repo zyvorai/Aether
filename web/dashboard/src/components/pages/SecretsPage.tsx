@@ -15,7 +15,7 @@ import Modal from '../Modal';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { SecretSummary, SecretDetail } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -143,7 +143,18 @@ export default function SecretsPage() {
     <div>
       <p className="mb-4 text-sm text-slate-500 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3">
         Secrets stored with <code className="text-slate-400">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.{' '}
-        <button type="button" onClick={() => navigate(viewToPath('rbac'))} className="text-aether hover:underline">
+        <button
+          type="button"
+          data-testid="secrets-rbac-link"
+          onClick={() =>
+            navigate(
+              search.trim()
+                ? pathWithQuery(viewToPath('rbac'), { workload: search.trim() })
+                : viewToPath('rbac'),
+            )
+          }
+          className="text-aether hover:underline"
+        >
           API access control →
         </button>
         {' · '}
@@ -156,23 +167,29 @@ export default function SecretsPage() {
           Confidential computing →
         </button>
       </p>
-      {search.trim() ? (
-        <div
-          data-testid="secrets-workload-context"
-          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
-        >
-          Secrets filter <span className="font-mono text-aether">{search.trim()}</span>
-          {' · '}
-          <button
-            type="button"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: search.trim() }))}
-            className="text-aether hover:underline"
-          >
-            Open workload →
-          </button>
-          <WorkloadScopedCrossLinks workload={search} prefix="secrets" />
-        </div>
-      ) : null}
+      <SearchQueryContextBanner testId="secrets-workload-context" query={search} entityLabel="secrets">
+        <WorkloadScopedCrossLinks workload={search} prefix="secrets" showDrift showAudit />
+        {search.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="secrets-editor-link"
+            >
+              Editor →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('backups'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="secrets-backups-link"
+            >
+              Backups →
+            </Link>
+          </>
+        ) : null}
+      </SearchQueryContextBanner>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
