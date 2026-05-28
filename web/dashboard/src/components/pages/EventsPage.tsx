@@ -129,6 +129,14 @@ export default function EventsPage() {
             >
               Audit →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('copilot'), { workload: workloadFilter.trim(), q: `Explain recent events for ${workloadFilter.trim()}` })}
+              className="text-aether hover:underline"
+              data-testid="events-copilot-link"
+            >
+              Copilot →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

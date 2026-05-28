@@ -167,6 +167,14 @@ export default function EnvsPage() {
           >
             Editor →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="envs-drift-link"
+          >
+            Drift →
+          </Link>
         </WorkloadContextBanner>
       ) : (
         <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments">
@@ -180,6 +188,14 @@ export default function EnvsPage() {
                 data-testid="envs-context-editor-link"
               >
                 Editor →
+              </Link>
+              {' · '}
+              <Link
+                to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
+                className="text-aether hover:underline"
+                data-testid="envs-context-drift-link"
+              >
+                Drift →
               </Link>
             </>
           ) : null}

@@ -329,6 +329,14 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           >
             OpenAPI →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), { workload: focusedWorkload, tab: 'predictions' })}
+            className="text-aether hover:underline"
+            data-testid="overview-intelligence-link"
+          >
+            Intelligence →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

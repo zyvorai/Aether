@@ -150,6 +150,14 @@ export default function OpenApiPage() {
           >
             Policy →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="openapi-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

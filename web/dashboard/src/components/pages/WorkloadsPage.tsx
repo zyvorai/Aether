@@ -622,6 +622,22 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           >
             Clusters →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-openapi-link"
+          >
+            OpenAPI →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-rbac-link"
+          >
+            RBAC →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

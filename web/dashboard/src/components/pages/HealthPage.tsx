@@ -175,6 +175,14 @@ export default function HealthPage() {
             >
               OpenAPI →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('copilot'), { workload: workloadParam.trim(), q: `Why is ${workloadParam.trim()} unhealthy?` })}
+              className="text-aether hover:underline"
+              data-testid="health-copilot-link"
+            >
+              Copilot →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

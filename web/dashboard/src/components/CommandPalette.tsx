@@ -400,6 +400,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('drift'), { workload: name })),
       },
       {
+        id: `workload-${name}-audit-trail`,
+        label: `Audit trail: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `audit compliance trail ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('audit'), { workload: name })),
+      },
+      {
         id: `workload-${name}-scoring`,
         label: `Open scoring: ${name}`,
         category: 'workload-action' as const,

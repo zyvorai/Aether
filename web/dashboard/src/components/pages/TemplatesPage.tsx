@@ -171,13 +171,25 @@ export default function TemplatesPage() {
             >
               Secrets →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="templates-context-drift-link"
+            >
+              Drift →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { validate: '1' }))}
+          onClick={() =>
+            navigate(
+              pathWithQuery(viewToPath('workloads'), search.trim() ? { validate: '1', workload: search.trim() } : { validate: '1' }),
+            )
+          }
           className="text-xs text-aether hover:underline"
           data-testid="templates-policy-link"
         >
@@ -185,7 +197,7 @@ export default function TemplatesPage() {
         </button>
         <button
           type="button"
-          onClick={() => navigate(viewToPath('gitops'))}
+          onClick={() => navigate(pathWithQuery(viewToPath('gitops'), search.trim() ? { workload: search.trim() } : {}))}
           className="text-xs text-aether hover:underline"
           data-testid="templates-gitops-link"
         >
@@ -193,7 +205,7 @@ export default function TemplatesPage() {
         </button>
         <button
           type="button"
-          onClick={() => navigate(viewToPath('compose'))}
+          onClick={() => navigate(pathWithQuery(viewToPath('compose'), search.trim() ? { workload: search.trim() } : {}))}
           className="text-xs text-aether hover:underline"
           data-testid="templates-compose-link"
         >
