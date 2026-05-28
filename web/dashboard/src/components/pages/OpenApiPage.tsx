@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -23,7 +24,9 @@ export default function OpenApiPage() {
   const [doc, setDoc] = useState<OpenApiDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useQueryParam('q');
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [methodFilter, setMethodFilter] = useState('all');
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
 
@@ -136,6 +139,12 @@ export default function OpenApiPage() {
         }
       />
 
+      {focusedWorkload ? (
+        <WorkloadContextBanner testId="openapi-workload-context" workload={focusedWorkload} description="OpenAPI context">
+          <WorkloadScopedCrossLinks workload={focusedWorkload} prefix="openapi" showAudit />
+        </WorkloadContextBanner>
+      ) : null}
+
       <div className="dash-card mb-6">
         <div className="flex items-center gap-3 mb-2">
           <BookOpen className="w-5 h-5 text-aether" />
@@ -173,8 +182,17 @@ export default function OpenApiPage() {
               </tr>
             </thead>
             <tbody>
-              {paths.map((row) => (
-                <tr key={`${row.method}-${row.path}`} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+              {paths.map((row) => {
+                const workloadRoute =
+                  focusedWorkload &&
+                  (row.path.includes(`/workloads/${focusedWorkload}`) ||
+                    row.path.includes(`/workloads/{name}`));
+                return (
+                <tr
+                  key={`${row.method}-${row.path}`}
+                  data-testid={workloadRoute ? 'openapi-workload-route-highlight' : undefined}
+                  className={`border-b border-slate-800/50 hover:bg-slate-800/20 ${workloadRoute ? 'bg-aether/5' : ''}`}
+                >
                   <td className="py-2 px-4 font-mono text-xs text-aether">{row.method}</td>
                   <td className="py-2 px-4 font-mono text-xs text-slate-300">
                     {row.path.includes('/rbac/keys') ? (
@@ -182,6 +200,17 @@ export default function OpenApiPage() {
                         type="button"
                         data-testid="openapi-rbac-link"
                         onClick={() => navigate(viewToPath('rbac'))}
+                        className="text-aether hover:underline"
+                      >
+                        {row.path}
+                      </button>
+                    ) : row.path.includes('/workloads/') && focusedWorkload ? (
+                      <button
+                        type="button"
+                        data-testid="openapi-workloads-link"
+                        onClick={() =>
+                          navigate(pathWithQuery(viewToPath('workloads'), { workload: focusedWorkload }))
+                        }
                         className="text-aether hover:underline"
                       >
                         {row.path}
@@ -206,7 +235,8 @@ export default function OpenApiPage() {
                     ) : null}
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
           {paths.length === 0 && (

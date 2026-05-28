@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Download, ExternalLink } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useWorkloadOrSearchFilter } from '../../utils/urlState';
@@ -128,6 +128,18 @@ export default function MetricsPage() {
     <div>
       <SearchQueryContextBanner testId="metrics-workload-context" query={search} entityLabel="metrics">
         <WorkloadScopedCrossLinks workload={search} prefix="metrics" />
+        {search.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="metrics-cost-link"
+            >
+              Cost →
+            </Link>
+          </>
+        ) : null}
       </SearchQueryContextBanner>
       <PageToolbar
         search={search}

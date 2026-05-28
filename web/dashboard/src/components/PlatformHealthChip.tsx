@@ -55,7 +55,10 @@ export default function PlatformHealthChip({ sseConnected }: PlatformHealthChipP
     >
       <Activity className={`h-3.5 w-3.5 shrink-0 ${allOk ? 'text-emerald-400' : 'text-amber-400'}`} />
       <span className="hidden whitespace-nowrap xl:inline">{label}</span>
-      <span className={`h-2 w-2 shrink-0 rounded-full ${allOk ? 'bg-emerald-400 platform-pulse' : 'bg-amber-400'}`} />
+      <span
+        data-testid="navbar-sse-status-desktop"
+        className={`h-2 w-2 shrink-0 rounded-full ${allOk ? 'bg-emerald-400 platform-pulse' : 'bg-amber-400'}`}
+      />
     </span>
   );
 }

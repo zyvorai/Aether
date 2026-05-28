@@ -72,6 +72,12 @@ export default function EnvsPage() {
   }, [load]);
 
   useEffect(() => {
+    if (workloadFocus && !promoteWorkload) {
+      setPromoteWorkload(workloadFocus);
+    }
+  }, [workloadFocus, promoteWorkload]);
+
+  useEffect(() => {
     if (!envParam || environments.length === 0) return;
     const match = environments.find((env) => env.name === envParam);
     if (match) {
@@ -187,6 +193,7 @@ export default function EnvsPage() {
               value={promoteWorkload}
               onChange={(e) => setPromoteWorkload(e.target.value)}
               placeholder="Workload name"
+              data-testid="envs-promote-workload"
               className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
             />
             <div className="grid grid-cols-2 gap-3">

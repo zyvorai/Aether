@@ -3,18 +3,24 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { ChevronRight, Home } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import type { AppView } from '../types/api';
 import { VIEW_LABELS } from '../utils/dashboardNav';
+import { viewToPath } from '../utils/dashboardRoutes';
+import { pathWithQuery } from '../utils/urlState';
 
 interface BreadcrumbProps {
   currentView: AppView;
   onNavigate: (view: AppView) => void;
+  workloadName?: string;
 }
 
-export default function Breadcrumb({ currentView, onNavigate }: BreadcrumbProps) {
+export default function Breadcrumb({ currentView, onNavigate, workloadName }: BreadcrumbProps) {
+  const navigate = useNavigate();
   if (currentView === 'overview') return null;
 
   const label = VIEW_LABELS[currentView];
+  const workload = workloadName?.trim();
 
   return (
     <nav className="dash-breadcrumb mb-6" aria-label="Breadcrumb">
@@ -29,6 +35,19 @@ export default function Breadcrumb({ currentView, onNavigate }: BreadcrumbProps)
         </button>
         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-600" aria-hidden />
         <span className="truncate px-1 py-1.5 text-sm font-medium text-slate-100">{label}</span>
+        {workload ? (
+          <>
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-600" aria-hidden />
+            <button
+              type="button"
+              data-testid="breadcrumb-workload"
+              onClick={() => navigate(pathWithQuery(viewToPath(currentView), { workload }))}
+              className="truncate max-w-[12rem] rounded-lg px-2 py-1.5 text-sm font-mono text-aether hover:bg-white/[0.04] hover:underline"
+            >
+              {workload}
+            </button>
+          </>
+        ) : null}
       </div>
     </nav>
   );

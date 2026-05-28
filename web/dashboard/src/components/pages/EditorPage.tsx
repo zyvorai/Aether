@@ -233,9 +233,17 @@ export default function EditorPage() {
                 <Link
                   to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
                   className="text-xs text-aether hover:underline"
-                  data-testid="editor-validate-link"
+                  data-testid="editor-policy-link"
                 >
                   Policy check →
+                </Link>
+                {' · '}
+                <Link
+                  to={pathWithQuery(viewToPath('gitops'), { workload: workloadQuery.trim() })}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="editor-gitops-link"
+                >
+                  GitOps →
                 </Link>
               </>
             ) : null}

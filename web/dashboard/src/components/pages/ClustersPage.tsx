@@ -18,6 +18,7 @@ import PageTabs from '../PageTabs';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
 import EventCorrelationPanel from '../EventCorrelationPanel';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { setClusterContext } from '../../utils/clusterContext';
 import { formatTimestamp } from '../../utils/formatters';
 import type {
@@ -745,8 +746,15 @@ export default function ClustersPage() {
     );
   }
 
+  const workloadFocus = (searchParams.get('workload') ?? '').trim();
+
   return (
     <div className="space-y-6">
+      {workloadFocus ? (
+        <WorkloadContextBanner testId="clusters-workload-context" workload={workloadFocus} description="Cluster browse context">
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="clusters" showDrift showAudit />
+        </WorkloadContextBanner>
+      ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Clusters" value={summary.cluster_count} color="blue" />
         <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left" data-testid="clusters-health-link">
