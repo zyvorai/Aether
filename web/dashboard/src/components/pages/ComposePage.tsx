@@ -165,6 +165,14 @@ export default function ComposePage() {
           description="Compose context"
         >
           <WorkloadScopedCrossLinks workload={focusedWorkload} prefix="compose" showDrift showGitops />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="compose-deps-link"
+          >
+            Dependencies →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div>

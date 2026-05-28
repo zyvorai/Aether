@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink, Lock, ShieldCheck, Terminal } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -233,21 +233,24 @@ export default function ConfidentialPage() {
             showMetrics
           />
           {' · '}
-          <button
-            type="button"
-            data-testid="confidential-intelligence-link"
-            onClick={() =>
-              navigate(
-                pathWithQuery(viewToPath('intelligence'), {
-                  workload: workloadQuery.trim(),
-                  tab: 'predictions',
-                }),
-              )
-            }
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), {
+              workload: workloadQuery.trim(),
+              tab: 'predictions',
+            })}
             className="text-aether hover:underline"
+            data-testid="confidential-intelligence-link"
           >
             Intelligence →
-          </button>
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="confidential-rbac-link"
+          >
+            RBAC →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

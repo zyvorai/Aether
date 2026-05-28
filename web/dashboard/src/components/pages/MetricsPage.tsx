@@ -138,6 +138,14 @@ export default function MetricsPage() {
             >
               Cost →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="metrics-platform-link"
+            >
+              Platform →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

@@ -297,6 +297,22 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           >
             Platform →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-clusters-link"
+          >
+            Clusters →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-rbac-link"
+          >
+            RBAC →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

@@ -344,6 +344,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('openapi'), { workload: name })),
       },
       {
+        id: `workload-${name}-clusters`,
+        label: `Cluster browser: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `clusters kubernetes browse ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('clusters'), { workload: name })),
+      },
+      {
         id: `workload-${name}-backups`,
         label: `Backups: ${name}`,
         category: 'workload-action' as const,

@@ -164,6 +164,14 @@ export default function IntelligencePage() {
             showGitops
             showMetrics
           />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })}
+            className="text-aether hover:underline"
+            data-testid="intelligence-ai-link"
+          >
+            AI engine →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

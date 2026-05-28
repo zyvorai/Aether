@@ -6,9 +6,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Inbox, RotateCcw } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
+import { pathWithQuery, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -103,13 +103,39 @@ export default function BackupsPage() {
   return (
     <div>
       <SearchQueryContextBanner testId="backups-workload-context" query={search} entityLabel="backups">
-        <WorkloadScopedCrossLinks workload={search} prefix="backups" />
+        <WorkloadScopedCrossLinks workload={search} prefix="backups" showGitops />
+        {search.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="backups-editor-link"
+            >
+              Editor →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="backups-drift-link"
+            >
+              Drift →
+            </Link>
+          </>
+        ) : null}
       </SearchQueryContextBanner>
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
           data-testid="backups-audit-link"
-          onClick={() => navigate(viewToPath('audit'))}
+          onClick={() =>
+            navigate(
+              search.trim()
+                ? pathWithQuery(viewToPath('audit'), { workload: search.trim() })
+                : viewToPath('audit'),
+            )
+          }
           className="text-xs text-aether hover:underline"
         >
           View restore audit trail →
@@ -117,7 +143,13 @@ export default function BackupsPage() {
         <button
           type="button"
           data-testid="backups-platform-link"
-          onClick={() => navigate(viewToPath('platform'))}
+          onClick={() =>
+            navigate(
+              search.trim()
+                ? pathWithQuery(viewToPath('platform'), { workload: search.trim() })
+                : viewToPath('platform'),
+            )
+          }
           className="text-xs text-aether hover:underline"
         >
           Remote backup config →

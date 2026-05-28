@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink, Globe, Network, Server, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { apiFetchSettled } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -80,6 +80,14 @@ export default function FleetPage() {
             showGitops
             showMetrics
           />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="fleet-clusters-scoped-link"
+          >
+            Clusters →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4">
