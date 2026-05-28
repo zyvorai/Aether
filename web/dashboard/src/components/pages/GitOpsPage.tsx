@@ -297,6 +297,14 @@ export default function GitOpsPage() {
           >
             Compose →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-context-fleet-link"
+          >
+            Fleet →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

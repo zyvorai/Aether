@@ -263,6 +263,22 @@ export default function DepsPage() {
           >
             Editor →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: highlightWorkload })}
+            className="text-aether hover:underline"
+            data-testid="deps-context-openapi-link"
+          >
+            OpenAPI →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: highlightWorkload, q: `Dependency graph for ${highlightWorkload}` })}
+            className="text-aether hover:underline"
+            data-testid="deps-context-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

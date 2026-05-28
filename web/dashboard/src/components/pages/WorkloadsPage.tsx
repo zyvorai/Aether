@@ -670,6 +670,30 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           >
             Copilot →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('compose'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-context-compose-link"
+          >
+            Compose →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('deps'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-context-deps-link"
+          >
+            Dependencies →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-context-gitops-link"
+          >
+            GitOps →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

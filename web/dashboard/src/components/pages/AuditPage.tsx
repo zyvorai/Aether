@@ -168,6 +168,14 @@ export default function AuditPage() {
             >
               Editor →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('gitops'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="audit-context-gitops-link"
+            >
+              GitOps →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

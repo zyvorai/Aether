@@ -164,6 +164,14 @@ export default function CopilotPage() {
             >
               Policy →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="copilot-context-secrets-link"
+            >
+              Secrets →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

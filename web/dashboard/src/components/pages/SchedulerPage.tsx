@@ -111,6 +111,22 @@ export default function SchedulerPage() {
           >
             Intelligence →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="scheduler-context-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="scheduler-context-openapi-link"
+          >
+            OpenAPI →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />

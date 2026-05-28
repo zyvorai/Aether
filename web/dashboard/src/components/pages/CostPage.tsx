@@ -162,6 +162,14 @@ export default function CostPage() {
           >
             Drift →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="cost-context-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       {chargeback ? (

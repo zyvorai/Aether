@@ -158,6 +158,14 @@ export default function RbacPage() {
           >
             Editor →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="rbac-context-confidential-link"
+          >
+            Confidential →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
