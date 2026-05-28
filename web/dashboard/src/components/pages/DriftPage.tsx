@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -201,7 +201,23 @@ export default function DriftPage() {
           openTestId="drift-open-workload"
           description="Drift context"
         >
-          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="drift" eventsCategory="drift" showGitops showAudit />
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="drift" eventsCategory="drift" showGitops showAudit showMetrics />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="drift-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="drift-policy-link"
+          >
+            Policy →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
@@ -213,8 +229,15 @@ export default function DriftPage() {
           ) : null}
           <button
             type="button"
-            onClick={() => navigate(viewToPath('gitops'))}
+            onClick={() =>
+              navigate(
+                workloadFocus
+                  ? pathWithQuery(viewToPath('gitops'), { workload: workloadFocus })
+                  : viewToPath('gitops'),
+              )
+            }
             className="ml-3 text-xs text-aether hover:underline"
+            data-testid="drift-bulk-gitops-link"
           >
             GitOps sync →
           </button>

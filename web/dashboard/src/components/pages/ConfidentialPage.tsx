@@ -251,6 +251,14 @@ export default function ConfidentialPage() {
           >
             RBAC →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
+            className="text-aether hover:underline"
+            data-testid="confidential-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
