@@ -6,14 +6,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Download, ExternalLink } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { apiFetchSettled, apiTextSettled, apiFetch } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
-import { SearchQueryContextBanner } from '../QueryContextBanner';
+import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { ObservabilitySummary } from '../../types/api';
 
 interface ChargebackReport {
@@ -31,7 +31,7 @@ export default function MetricsPage() {
   const [summary, setSummary] = useState<ObservabilitySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useQueryParam('q');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [grafanaUrl, setGrafanaUrl] = useState<string | null>(null);
   const [prometheusUrl, setPrometheusUrl] = useState<string | null>(null);
   const [chargeback, setChargeback] = useState<ChargebackReport | null>(null);
@@ -126,7 +126,9 @@ export default function MetricsPage() {
 
   return (
     <div>
-      <SearchQueryContextBanner testId="metrics-workload-context" query={search} entityLabel="metrics" />
+      <SearchQueryContextBanner testId="metrics-workload-context" query={search} entityLabel="metrics">
+        <WorkloadScopedCrossLinks workload={search} prefix="metrics" />
+      </SearchQueryContextBanner>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

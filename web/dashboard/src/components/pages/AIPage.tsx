@@ -15,6 +15,7 @@ import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageTabs from '../PageTabs';
 import WorkloadSelect from '../WorkloadSelect';
 import IntentDebugger from '../IntentDebugger';
@@ -427,6 +428,7 @@ export default function AIPage() {
           >
             Open workload →
           </button>
+          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="ai" />
         </div>
       ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router';
 import { Rocket, Wand2, Inbox, Settings2, FileCode2 } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { markFirstDeploy } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
 import Modal from '../Modal';
@@ -16,7 +16,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { workloadJsonToYaml } from '../../utils/workloadYaml';
 import { workloadNameFromSpec } from '../../utils/workloadNameFromSpec';
-import { SearchQueryContextBanner } from '../QueryContextBanner';
+import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { Template } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -40,7 +40,7 @@ export default function TemplatesPage() {
   const [deployLoading, setDeployLoading] = useState(false);
   const [configureTemplate, setConfigureTemplate] = useState<string | null>(null);
   const [configureParam, setConfigureParam] = useQueryParam('configure');
-  const [search, setSearch] = useQueryParam('q');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [params, setParams] = useState({
     workload_name: '',
     owner: '',
@@ -143,7 +143,9 @@ export default function TemplatesPage() {
 
   return (
     <div>
-      <SearchQueryContextBanner testId="templates-workload-context" query={search} entityLabel="templates" />
+      <SearchQueryContextBanner testId="templates-workload-context" query={search} entityLabel="templates">
+        <WorkloadScopedCrossLinks workload={search} prefix="templates" />
+      </SearchQueryContextBanner>
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"

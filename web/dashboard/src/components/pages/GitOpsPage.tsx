@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router';
 import { GitBranch, ExternalLink } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { workloadNameFromGitOpsPath } from '../../utils/gitopsLinks';
 import PageToolbar from '../PageToolbar';
@@ -84,6 +85,8 @@ const GITOPS_SYNC_STORAGE_KEY = 'aether-gitops-last-sync';
 
 export default function GitOpsPage() {
   const navigate = useNavigate();
+  const [workloadQuery] = useQueryParam('workload', '');
+  const workloadFocus = workloadQuery.trim();
   const [data, setData] = useState<GitOpsPayload | null>(null);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -239,6 +242,16 @@ export default function GitOpsPage() {
         }
       />
 
+      {workloadFocus ? (
+        <WorkloadContextBanner
+          testId="gitops-workload-context"
+          workload={workloadFocus}
+          description="GitOps context for workload"
+        >
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="gitops" />
+        </WorkloadContextBanner>
+      ) : null}
+
       <div className="dash-card" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
           <GitBranch className="w-5 h-5 text-aether" />
@@ -331,7 +344,13 @@ export default function GitOpsPage() {
         <button
           type="button"
           data-testid="gitops-drift-link"
-          onClick={() => navigate(viewToPath('drift'))}
+          onClick={() =>
+            navigate(
+              workloadFocus
+                ? pathWithQuery(viewToPath('drift'), { workload: workloadFocus })
+                : viewToPath('drift'),
+            )
+          }
           className="mt-4 mr-4 text-xs text-aether hover:underline"
         >
           Drift detection →

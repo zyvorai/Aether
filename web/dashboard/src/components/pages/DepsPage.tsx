@@ -14,6 +14,7 @@ import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import DependencyGraphVisual from '../DependencyGraphVisual';
 import type { DependencyGraph, DependencyEdge } from '../../types/api';
 
@@ -221,6 +222,7 @@ export default function DepsPage() {
           >
             Open workload →
           </button>
+          <WorkloadScopedCrossLinks workload={highlightWorkload} prefix="deps" />
         </div>
       ) : null}
 
