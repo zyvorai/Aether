@@ -16,7 +16,7 @@ import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 
 export default function SchedulerPage() {
@@ -72,22 +72,22 @@ export default function SchedulerPage() {
   return (
     <div>
       {workloadQuery.trim() ? (
-        <div
-          data-testid="scheduler-workload-context"
-          className="mb-4 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        <WorkloadContextBanner
+          testId="scheduler-workload-context"
+          workload={workloadQuery}
+          openTestId="scheduler-open-workload"
+          description="Placement context"
         >
-          Placement context for <span className="font-mono text-aether">{workloadQuery.trim()}</span>
+          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="scheduler" showDrift showGitops showMetrics />
           {' · '}
-          <button
-            type="button"
-            data-testid="scheduler-open-workload"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadQuery.trim() }))}
+          <Link
+            to={pathWithQuery(viewToPath('cost'), { workload: workloadQuery.trim() })}
             className="text-aether hover:underline"
+            data-testid="scheduler-context-cost-link"
           >
-            Open workload →
-          </button>
-          <WorkloadScopedCrossLinks workload={workloadQuery} prefix="scheduler" />
-        </div>
+            Cost →
+          </Link>
+        </WorkloadContextBanner>
       ) : null}
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
 

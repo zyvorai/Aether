@@ -4,10 +4,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Inbox } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -114,6 +114,18 @@ export default function PluginsPage() {
     <div>
       <SearchQueryContextBanner testId="plugins-workload-context" query={search} entityLabel="plugins">
         <WorkloadScopedCrossLinks workload={search} prefix="plugins" />
+        {search.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="plugins-editor-link"
+            >
+              Editor →
+            </Link>
+          </>
+        ) : null}
       </SearchQueryContextBanner>
       <PageToolbar
         search={search}
