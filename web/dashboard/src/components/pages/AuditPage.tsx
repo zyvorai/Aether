@@ -16,6 +16,7 @@ import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadContextBanner } from '../QueryContextBanner';
 import type { AuditResponse, AuditVerifyResponse } from '../../types/api';
 
 export default function AuditPage() {
@@ -119,6 +120,11 @@ export default function AuditPage() {
 
   return (
     <div>
+      <WorkloadContextBanner
+        testId="audit-workload-context"
+        workload={workloadFilter}
+        description="Audit entries for workload"
+      />
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

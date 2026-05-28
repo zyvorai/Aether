@@ -2,10 +2,12 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
 import { BellRing, Radio, Send, Plus, Trash2 } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner } from '../QueryContextBanner';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -18,7 +20,20 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
+function ruleMatchesWorkload(
+  rule: { name: string; condition: string; message_template: string },
+  workload: string,
+): boolean {
+  const needle = workload.toLowerCase();
+  return (
+    rule.name.toLowerCase().includes(needle) ||
+    rule.condition.toLowerCase().includes(needle) ||
+    rule.message_template.toLowerCase().includes(needle)
+  );
+}
+
 export default function AlertsPage() {
+  const [workloadQuery] = useQueryParam('workload', '');
   const [status, setStatus] = useState<AlertsStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -129,6 +144,14 @@ export default function AlertsPage() {
     }
   }
 
+  const channels = status?.channels ?? [];
+  const allRules = status?.rules ?? [];
+  const workloadFocus = workloadQuery.trim();
+  const rules = useMemo(() => {
+    if (!workloadFocus) return allRules;
+    return allRules.filter((rule) => ruleMatchesWorkload(rule, workloadFocus));
+  }, [allRules, workloadFocus]);
+
   if (loading && !status && !loadFailed) {
     return <PageLoading rows={4} />;
   }
@@ -137,11 +160,13 @@ export default function AlertsPage() {
     return <PageLoadError title="Alerts unavailable" onRetry={() => void load()} />;
   }
 
-  const channels = status?.channels ?? [];
-  const rules = status?.rules ?? [];
-
   return (
     <div>
+      <WorkloadContextBanner
+        testId="alerts-workload-context"
+        workload={workloadFocus}
+        description="Alert rules matching workload"
+      />
       <PageToolbar
         onRefresh={() => {
           void load();
@@ -151,7 +176,15 @@ export default function AlertsPage() {
       />
 
       <div className="mb-4">
-        <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="alerts-events-link">
+        <Link
+          to={
+            workloadFocus
+              ? pathWithQuery(viewToPath('events'), { workload: workloadFocus })
+              : viewToPath('events')
+          }
+          className="text-xs text-aether hover:underline"
+          data-testid="alerts-events-link"
+        >
           View events feed →
         </Link>
         {' · '}
@@ -278,7 +311,11 @@ export default function AlertsPage() {
             </Link>
           </div>
           {rules.length === 0 ? (
-            <p className="text-sm text-slate-500">No alert rules configured.</p>
+            <p className="text-sm text-slate-500">
+              {workloadFocus
+                ? `No alert rules mention "${workloadFocus}". Check the events feed for delivery history.`
+                : 'No alert rules configured.'}
+            </p>
           ) : (
             <ul className="space-y-3 max-h-[28rem] overflow-auto">
               {rules.map((rule) => (

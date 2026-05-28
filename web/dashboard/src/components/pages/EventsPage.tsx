@@ -15,6 +15,7 @@ import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadContextBanner } from '../QueryContextBanner';
 import type { Event, EventSummary } from '../../types/api';
 
 export default function EventsPage() {
@@ -96,6 +97,11 @@ export default function EventsPage() {
 
   return (
     <div>
+      <WorkloadContextBanner
+        testId="events-workload-context"
+        workload={workloadFilter}
+        description="Events for workload"
+      />
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <button type="button" onClick={() => setCategory('all')} className="text-left">
