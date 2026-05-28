@@ -638,6 +638,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           >
             RBAC →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadParam.trim() })}
+            className="text-aether hover:underline"
+            data-testid="workloads-context-policy-link"
+          >
+            Policy →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

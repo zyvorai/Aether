@@ -259,6 +259,14 @@ export default function ConfidentialPage() {
           >
             Secrets →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('copilot'), { workload: workloadQuery.trim(), q: `Confidential posture for ${workloadQuery.trim()}` })}
+            className="text-aether hover:underline"
+            data-testid="confidential-context-copilot-link"
+          >
+            Copilot →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

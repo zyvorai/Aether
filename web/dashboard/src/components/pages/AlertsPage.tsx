@@ -200,6 +200,14 @@ export default function AlertsPage() {
             >
               OpenAPI →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Explain alerts for ${workloadFocus}` })}
+              className="text-aether hover:underline"
+              data-testid="alerts-context-copilot-link"
+            >
+              Copilot →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

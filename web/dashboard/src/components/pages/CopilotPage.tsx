@@ -148,6 +148,14 @@ export default function CopilotPage() {
             >
               Editor →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="copilot-context-openapi-link"
+            >
+              OpenAPI →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

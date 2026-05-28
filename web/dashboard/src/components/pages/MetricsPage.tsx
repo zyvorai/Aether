@@ -154,6 +154,22 @@ export default function MetricsPage() {
             >
               Drift →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('intelligence'), { workload: search.trim(), tab: 'predictions' })}
+              className="text-aether hover:underline"
+              data-testid="metrics-context-intelligence-link"
+            >
+              Intelligence →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('alerts'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="metrics-context-alerts-link"
+            >
+              Alerts →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>
