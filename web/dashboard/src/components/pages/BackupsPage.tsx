@@ -14,6 +14,7 @@ import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
+import { SearchQueryContextBanner } from '../QueryContextBanner';
 import type { BackupInfo } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -101,6 +102,7 @@ export default function BackupsPage() {
 
   return (
     <div>
+      <SearchQueryContextBanner testId="backups-workload-context" query={search} entityLabel="backups" />
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"

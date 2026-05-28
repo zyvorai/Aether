@@ -16,6 +16,7 @@ import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
+import { SearchQueryContextBanner } from '../QueryContextBanner';
 import type { Environment } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -143,6 +144,7 @@ export default function EnvsPage() {
 
   return (
     <div>
+      <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments" />
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

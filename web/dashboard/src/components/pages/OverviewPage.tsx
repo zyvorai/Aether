@@ -76,35 +76,6 @@ const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   apiKeys: 'API keys',
 };
 
-function overviewQuickLinkTestId(label: string): string | undefined {
-  switch (label) {
-    case 'Drift detection':
-      return 'overview-drift-quick-link';
-    case 'SLA compliance':
-      return 'overview-sla-quick-link';
-    case 'GitOps sync':
-      return 'overview-gitops-quick-link';
-    case 'Intent violations':
-      return 'overview-intent-violations-quick-link';
-    case 'Fleet overview':
-      return 'overview-fleet-quick-link';
-    case 'Audit trail':
-      return 'overview-audit-quick-link';
-    case 'Scheduler':
-      return 'overview-scheduler-quick-link';
-    case 'Compose import':
-      return 'overview-compose-quick-link';
-    case 'Cost estimation':
-      return 'overview-cost-quick-link';
-    case 'Validate YAML':
-      return 'overview-validate-quick-link';
-    case 'Discovered workloads':
-      return 'overview-discovered-quick-link';
-    default:
-      return undefined;
-  }
-}
-
 export default function OverviewPage({ onNavigate, sseConnected = false }: OverviewPageProps) {
   const navigate = useNavigate();
   const { capabilities, ready, loading: platformLoading } = useServerCapabilities();
@@ -445,7 +416,17 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         <button type="button" onClick={() => goFiltered('health', { status: 'degraded' })} className="text-left" data-testid="overview-degraded-stat">
           <StatCard title="Degraded" value={degraded} color="red" icon={<AlertTriangle size={18} />} />
         </button>
-        <button type="button" onClick={() => goFiltered('events')} className="text-left" data-testid="overview-events-stat">
+        <button
+          type="button"
+          onClick={() =>
+            goFiltered(
+              'events',
+              (eventSummary?.unacknowledged ?? 0) > 0 ? { severity: 'warning' } : undefined,
+            )
+          }
+          className="text-left"
+          data-testid="overview-events-stat"
+        >
           <StatCard title="Events" value={eventSummary?.total_events ?? 0} color="blue" icon={<Calendar size={18} />} />
         </button>
         <button onClick={() => onNavigate('backups')} className="text-left" data-testid="overview-backups-stat">
@@ -469,45 +450,45 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
         <span className="w-full text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-1">Quick links</span>
         {(
           [
-            { label: 'Platform & HA', onClick: () => onNavigate('platform') },
-            { label: 'AI engine', onClick: () => onNavigate('ai') },
-            { label: 'Intelligence', onClick: () => onNavigate('intelligence') },
-            { label: 'Ops copilot', onClick: () => onNavigate('copilot') },
-            { label: 'Events feed', onClick: () => onNavigate('events') },
-            { label: 'Alerts & webhooks', onClick: () => onNavigate('alerts') },
-            { label: 'GitOps sync', onClick: () => onNavigate('gitops') },
-            { label: 'Audit trail', onClick: () => goFiltered('audit') },
-            { label: 'Drift detection', onClick: () => onNavigate('drift') },
-            { label: 'Fleet overview', onClick: () => onNavigate('fleet') },
-            { label: 'Validate YAML', onClick: () => goFiltered('workloads', { validate: '1' }) },
-            { label: 'Cost estimation', onClick: () => onNavigate('cost') },
-            { label: 'Runtime affinity', onClick: () => onNavigate('affinity') },
-            { label: 'Confidential computing', onClick: () => onNavigate('confidential') },
-            { label: 'Compose import', onClick: () => onNavigate('compose') },
-            { label: 'Scheduler', onClick: () => onNavigate('scheduler') },
-            { label: 'OpenAPI explorer', onClick: () => onNavigate('openapi') },
-            { label: 'SLA compliance', onClick: () => onNavigate('sla') },
-            { label: 'Dependencies', onClick: () => onNavigate('deps') },
-            { label: 'Secrets vault', onClick: () => onNavigate('secrets') },
-            { label: 'Metrics & Grafana', onClick: () => onNavigate('metrics') },
-            { label: 'Health monitor', onClick: () => onNavigate('health') },
-            { label: 'Policy check', onClick: () => onNavigate('policy') },
-            { label: 'Plugins', onClick: () => onNavigate('plugins') },
-            { label: 'Backups', onClick: () => onNavigate('backups') },
-            { label: 'Visual editor', onClick: () => onNavigate('editor') },
-            { label: 'Workload templates', onClick: () => onNavigate('templates') },
-            { label: 'Access control', onClick: () => onNavigate('rbac') },
-            { label: 'Cluster browser', onClick: () => onNavigate('clusters') },
-            { label: 'Intent violations', onClick: () => goFiltered('events', { category: 'intent-violation' }) },
-            { label: 'Discovered workloads', onClick: () => goFiltered('workloads', { source: 'cluster' }) },
-            { label: 'Environment promotion', onClick: () => onNavigate('envs') },
+            { label: 'Platform & HA', testId: 'overview-platform-quick-link', onClick: () => onNavigate('platform') },
+            { label: 'AI engine', testId: 'overview-ai-quick-link', onClick: () => onNavigate('ai') },
+            { label: 'Intelligence', testId: 'overview-intelligence-quick-link', onClick: () => onNavigate('intelligence') },
+            { label: 'Ops copilot', testId: 'overview-copilot-quick-link', onClick: () => onNavigate('copilot') },
+            { label: 'Events feed', testId: 'overview-events-quick-link', onClick: () => onNavigate('events') },
+            { label: 'Alerts & webhooks', testId: 'overview-alerts-quick-link', onClick: () => onNavigate('alerts') },
+            { label: 'GitOps sync', testId: 'overview-gitops-quick-link', onClick: () => onNavigate('gitops') },
+            { label: 'Audit trail', testId: 'overview-audit-quick-link', onClick: () => goFiltered('audit') },
+            { label: 'Drift detection', testId: 'overview-drift-quick-link', onClick: () => onNavigate('drift') },
+            { label: 'Fleet overview', testId: 'overview-fleet-quick-link', onClick: () => onNavigate('fleet') },
+            { label: 'Validate YAML', testId: 'overview-validate-quick-link', onClick: () => goFiltered('workloads', { validate: '1' }) },
+            { label: 'Cost estimation', testId: 'overview-cost-quick-link', onClick: () => onNavigate('cost') },
+            { label: 'Runtime affinity', testId: 'overview-affinity-quick-link', onClick: () => onNavigate('affinity') },
+            { label: 'Confidential computing', testId: 'overview-confidential-quick-link', onClick: () => onNavigate('confidential') },
+            { label: 'Compose import', testId: 'overview-compose-quick-link', onClick: () => onNavigate('compose') },
+            { label: 'Scheduler', testId: 'overview-scheduler-quick-link', onClick: () => onNavigate('scheduler') },
+            { label: 'OpenAPI explorer', testId: 'overview-openapi-quick-link', onClick: () => onNavigate('openapi') },
+            { label: 'SLA compliance', testId: 'overview-sla-quick-link', onClick: () => onNavigate('sla') },
+            { label: 'Dependencies', testId: 'overview-deps-quick-link', onClick: () => onNavigate('deps') },
+            { label: 'Secrets vault', testId: 'overview-secrets-quick-link', onClick: () => onNavigate('secrets') },
+            { label: 'Metrics & Grafana', testId: 'overview-metrics-quick-link', onClick: () => onNavigate('metrics') },
+            { label: 'Health monitor', testId: 'overview-health-quick-link', onClick: () => onNavigate('health') },
+            { label: 'Policy check', testId: 'overview-policy-quick-link', onClick: () => onNavigate('policy') },
+            { label: 'Plugins', testId: 'overview-plugins-quick-link', onClick: () => onNavigate('plugins') },
+            { label: 'Backups', testId: 'overview-backups-quick-link', onClick: () => onNavigate('backups') },
+            { label: 'Visual editor', testId: 'overview-editor-quick-link', onClick: () => onNavigate('editor') },
+            { label: 'Workload templates', testId: 'overview-templates-quick-link', onClick: () => onNavigate('templates') },
+            { label: 'Access control', testId: 'overview-rbac-quick-link', onClick: () => onNavigate('rbac') },
+            { label: 'Cluster browser', testId: 'overview-clusters-quick-link', onClick: () => onNavigate('clusters') },
+            { label: 'Intent violations', testId: 'overview-intent-violations-quick-link', onClick: () => goFiltered('events', { category: 'intent-violation' }) },
+            { label: 'Discovered workloads', testId: 'overview-discovered-quick-link', onClick: () => goFiltered('workloads', { source: 'cluster' }) },
+            { label: 'Environment promotion', testId: 'overview-envs-quick-link', onClick: () => onNavigate('envs') },
           ] as const
         ).map((link) => (
           <button
             key={link.label}
             type="button"
             onClick={link.onClick}
-            data-testid={overviewQuickLinkTestId(link.label)}
+            data-testid={link.testId}
             className="rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
           >
             {link.label}

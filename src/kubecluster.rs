@@ -319,17 +319,125 @@ fn default_cluster_display_name() -> String {
 
 async fn list_workloads_for_client(client: &Client, cluster: &str) -> Result<Vec<ClusterWorkload>> {
     let mut workloads = Vec::new();
-    workloads.extend(
-        list_kind::<Deployment>(client, cluster, "Deployment", workload_status_deployment).await?,
-    );
-    workloads.extend(
-        list_kind::<StatefulSet>(client, cluster, "StatefulSet", workload_status_statefulset).await?,
-    );
-    workloads.extend(
-        list_kind::<DaemonSet>(client, cluster, "DaemonSet", workload_status_daemonset).await?,
-    );
+    workloads.extend(list_kind::<Deployment>(
+        client,
+        cluster,
+        "Deployment",
+        workload_status_deployment,
+        "/spec/template/spec/containers/0/image",
+    )
+    .await?);
+    workloads.extend(list_kind::<StatefulSet>(
+        client,
+        cluster,
+        "StatefulSet",
+        workload_status_statefulset,
+        "/spec/template/spec/containers/0/image",
+    )
+    .await?);
+    workloads.extend(list_kind::<DaemonSet>(
+        client,
+        cluster,
+        "DaemonSet",
+        workload_status_daemonset,
+        "/spec/template/spec/containers/0/image",
+    )
+    .await?);
+    workloads.extend(list_kind::<Job>(
+        client,
+        cluster,
+        "Job",
+        workload_status_job,
+        "/spec/template/spec/containers/0/image",
+    )
+    .await?);
+    workloads.extend(list_kind::<CronJob>(
+        client,
+        cluster,
+        "CronJob",
+        workload_status_cronjob,
+        "/spec/jobTemplate/spec/template/spec/containers/0/image",
+    )
+    .await?);
+    workloads.extend(list_standalone_pod_workloads(client, cluster).await?);
     workloads.extend(list_kubevirt_vmis(client, cluster).await.unwrap_or_default());
     Ok(workloads)
+}
+
+fn pod_is_inventory_workload(pod: &Pod) -> bool {
+    match pod.metadata.owner_references.as_ref() {
+        None => true,
+        Some(refs) if refs.is_empty() => true,
+        Some(refs) => !refs.iter().any(|owner| {
+            matches!(
+                owner.kind.as_str(),
+                "ReplicaSet" | "Job" | "DaemonSet" | "StatefulSet" | "Node"
+            )
+        }),
+    }
+}
+
+fn workload_status_pod(pod: &Pod) -> String {
+    pod.status
+        .as_ref()
+        .and_then(|status| status.phase.as_ref())
+        .map(|phase| match phase.as_str() {
+            "Running" => "running",
+            "Succeeded" => "stopped",
+            "Failed" => "failed",
+            "Pending" => "pending",
+            _ => "unknown",
+        })
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+async fn list_standalone_pod_workloads(
+    client: &Client,
+    cluster: &str,
+) -> Result<Vec<ClusterWorkload>> {
+    let api: Api<Pod> = Api::all(client.clone());
+    let list = api.list(&ListParams::default()).await?;
+    let mut results = Vec::new();
+
+    for pod in list.items {
+        if !pod_is_inventory_workload(&pod) {
+            continue;
+        }
+        let name = pod.metadata.name.clone().unwrap_or_default();
+        if name.is_empty() {
+            continue;
+        }
+        let namespace = pod
+            .metadata
+            .namespace
+            .clone()
+            .unwrap_or_else(|| "default".to_string());
+        let created_at = pod
+            .metadata
+            .creation_timestamp
+            .as_ref()
+            .map(|t| t.0.to_rfc3339())
+            .unwrap_or_default();
+        let value = serde_json::to_value(&pod)?;
+        let image = value
+            .pointer("/spec/containers/0/image")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+
+        results.push(ClusterWorkload {
+            cluster: cluster.to_string(),
+            namespace,
+            kind: "Pod".to_string(),
+            name,
+            image,
+            status: workload_status_pod(&pod),
+            created_at,
+        });
+    }
+
+    Ok(results)
 }
 
 async fn list_workloads_from_default_client() -> Result<Vec<ClusterWorkload>> {
@@ -1221,6 +1329,7 @@ async fn list_kind<K>(
     cluster: &str,
     kind: &str,
     status_fn: fn(&K) -> String,
+    image_pointer: &str,
 ) -> Result<Vec<ClusterWorkload>>
 where
     K: Clone
@@ -1247,7 +1356,7 @@ where
 
         let value = serde_json::to_value(&item)?;
         let image = value
-            .pointer("/spec/template/spec/containers/0/image")
+            .pointer(image_pointer)
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string();
@@ -2837,5 +2946,53 @@ fn memory_to_mib(value: &str) -> i64 {
         raw.parse::<f64>().map(|v| (v * 1024.0).round() as i64).unwrap_or(0)
     } else {
         0
+    }
+}
+
+#[cfg(test)]
+mod inventory_tests {
+    use super::*;
+    use k8s_openapi::apimachinery::pkg::apis::meta::v1::OwnerReference;
+
+    fn pod_with_owners(owners: Vec<OwnerReference>) -> Pod {
+        let mut pod: Pod = serde_json::from_value(serde_json::json!({
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": { "name": "demo", "namespace": "default" },
+            "spec": { "containers": [{ "image": "nginx:latest" }] },
+            "status": { "phase": "Running" }
+        }))
+        .expect("pod json");
+        pod.metadata.owner_references = Some(owners);
+        pod
+    }
+
+    #[test]
+    fn pod_is_inventory_workload_when_unowned() {
+        assert!(pod_is_inventory_workload(&pod_with_owners(vec![])));
+    }
+
+    #[test]
+    fn pod_is_not_inventory_when_owned_by_replicaset() {
+        let owners = vec![OwnerReference {
+            api_version: "apps/v1".into(),
+            kind: "ReplicaSet".into(),
+            name: "web-abc".into(),
+            uid: "uid".into(),
+            ..Default::default()
+        }];
+        assert!(!pod_is_inventory_workload(&pod_with_owners(owners)));
+    }
+
+    #[test]
+    fn pod_is_inventory_when_owned_by_config_map() {
+        let owners = vec![OwnerReference {
+            api_version: "v1".into(),
+            kind: "ConfigMap".into(),
+            name: "cfg".into(),
+            uid: "uid".into(),
+            ..Default::default()
+        }];
+        assert!(pod_is_inventory_workload(&pod_with_owners(owners)));
     }
 }
