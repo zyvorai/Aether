@@ -6,7 +6,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { Server, Shield, Database, ExternalLink, Network } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiFetchSettled } from '../../utils/api';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import PageToolbar from '../PageToolbar';
@@ -36,6 +37,8 @@ interface ServerPayload {
 }
 
 export default function PlatformPage() {
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
   const { capabilities, ready, refreshPlatform } = useServerCapabilities();
   const [server, setServer] = useState<ServerPayload | null>(null);
   const [recommendations, setRecommendations] = useState<PlatformRecommendation[]>([]);
@@ -88,6 +91,18 @@ export default function PlatformPage() {
   return (
     <div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+
+      {focusedWorkload ? (
+        <WorkloadContextBanner testId="platform-workload-context" workload={focusedWorkload} description="Platform context">
+          <WorkloadScopedCrossLinks
+            workload={focusedWorkload}
+            prefix="platform"
+            showDrift
+            showGitops
+            showMetrics
+          />
+        </WorkloadContextBanner>
+      ) : null}
 
       <div className="mb-6">
         <PlatformRecommendations items={recommendations} loading={recLoading} />

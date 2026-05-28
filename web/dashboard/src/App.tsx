@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
+import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router';
 import type { AppView } from './types/api';
 import DashboardShell from './components/DashboardShell';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -61,6 +61,8 @@ function AetherDashboard() {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const breadcrumbWorkload = searchParams.get('workload')?.trim() || undefined;
 
   const currentView = useMemo(() => pathToView(location.pathname), [location.pathname]);
 
@@ -437,7 +439,11 @@ function AetherDashboard() {
         toastContainer={<ToastContainer />}
       >
         <ErrorBoundary>
-          <Breadcrumb currentView={currentView} onNavigate={handleNavigate} />
+          <Breadcrumb
+            currentView={currentView}
+            onNavigate={handleNavigate}
+            workloadName={breadcrumbWorkload}
+          />
           <div className="page-frame">{renderPage()}</div>
         </ErrorBoundary>
       </DashboardShell>
