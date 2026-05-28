@@ -769,6 +769,14 @@ export default function ClustersPage() {
           >
             OpenAPI →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="clusters-policy-link"
+          >
+            Policy →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

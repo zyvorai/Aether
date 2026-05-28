@@ -102,6 +102,14 @@ export default function SLAPage() {
             >
               Drift →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="sla-secrets-link"
+            >
+              Secrets →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

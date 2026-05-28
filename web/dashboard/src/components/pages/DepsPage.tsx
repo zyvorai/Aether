@@ -222,7 +222,23 @@ export default function DepsPage() {
 
       {highlightWorkload ? (
         <WorkloadContextBanner testId="deps-workload-context" workload={highlightWorkload} description="Dependency context">
-          <WorkloadScopedCrossLinks workload={highlightWorkload} prefix="deps" showDrift showGitops />
+          <WorkloadScopedCrossLinks workload={highlightWorkload} prefix="deps" showDrift showGitops showAudit />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('compose'), { workload: highlightWorkload })}
+            className="text-aether hover:underline"
+            data-testid="deps-context-compose-link"
+          >
+            Compose →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('envs'), { workload: highlightWorkload })}
+            className="text-aether hover:underline"
+            data-testid="deps-envs-scoped-link"
+          >
+            Environments →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
