@@ -158,7 +158,15 @@ export default function EnvsPage() {
           workload={workloadFocus}
           description="Environment promotion context"
         >
-          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="envs" />
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="envs" showGitops />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="envs-editor-link"
+          >
+            Editor →
+          </Link>
         </WorkloadContextBanner>
       ) : (
         <SearchQueryContextBanner testId="envs-workload-context" query={search} entityLabel="environments">

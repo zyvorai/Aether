@@ -124,7 +124,29 @@ export default function AuditPage() {
         testId="audit-workload-context"
         workload={workloadFilter}
         description="Audit entries for workload"
-      />
+      >
+        <WorkloadScopedCrossLinks workload={workloadFilter} prefix="audit" showGitops showDrift />
+        {workloadFilter.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="audit-openapi-link"
+            >
+              OpenAPI →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('rbac'), { workload: workloadFilter.trim() })}
+              className="text-aether hover:underline"
+              data-testid="audit-rbac-link"
+            >
+              RBAC →
+            </Link>
+          </>
+        ) : null}
+      </WorkloadContextBanner>
       <PageToolbar
         search={search}
         onSearchChange={setSearch}

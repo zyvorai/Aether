@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { GitBranch, ExternalLink } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
@@ -248,7 +248,23 @@ export default function GitOpsPage() {
           workload={workloadFocus}
           description="GitOps context for workload"
         >
-          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="gitops" />
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="gitops" showDrift showAudit showMetrics />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-openapi-link"
+          >
+            OpenAPI →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
