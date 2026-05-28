@@ -182,6 +182,26 @@ export default function AlertsPage() {
           showGitops
           showMetrics
         />
+        {workloadFocus ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="alerts-context-policy-link"
+            >
+              Policy →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="alerts-openapi-link"
+            >
+              OpenAPI →
+            </Link>
+          </>
+        ) : null}
       </WorkloadContextBanner>
       <PageToolbar
         onRefresh={() => {
@@ -204,7 +224,11 @@ export default function AlertsPage() {
           View events feed →
         </Link>
         {' · '}
-        <Link to={viewToPath('policy')} className="text-xs text-aether hover:underline" data-testid="alerts-policy-link">
+        <Link
+          to={workloadFocus ? pathWithQuery(viewToPath('policy'), { workload: workloadFocus }) : viewToPath('policy')}
+          className="text-xs text-aether hover:underline"
+          data-testid="alerts-policy-link"
+        >
           Policy check →
         </Link>
         {workloadFocus ? (

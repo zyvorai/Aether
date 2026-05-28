@@ -126,6 +126,14 @@ export default function RbacPage() {
           >
             OpenAPI →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="rbac-context-secrets-link"
+          >
+            Secrets →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
@@ -166,7 +174,7 @@ export default function RbacPage() {
         <Link to={viewToPath('audit')} className="mt-3 inline-flex text-xs text-aether hover:underline">
           View audit trail →
         </Link>
-        <Link to={viewToPath('secrets')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="rbac-secrets-link">
+        <Link to={viewToPath('secrets')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="rbac-vault-link">
           Secrets vault →
         </Link>
       </div>

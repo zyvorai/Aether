@@ -155,6 +155,22 @@ export default function TemplatesPage() {
             >
               Editor →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="templates-context-gitops-link"
+            >
+              GitOps →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="templates-secrets-link"
+            >
+              Secrets →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

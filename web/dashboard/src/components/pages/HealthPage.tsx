@@ -157,6 +157,26 @@ export default function HealthPage() {
           showGitops
           showMetrics
         />
+        {workloadParam.trim() ? (
+          <>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('platform'), { workload: workloadParam.trim() })}
+              className="text-aether hover:underline"
+              data-testid="health-platform-link"
+            >
+              Platform →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: workloadParam.trim() })}
+              className="text-aether hover:underline"
+              data-testid="health-openapi-link"
+            >
+              OpenAPI →
+            </Link>
+          </>
+        ) : null}
       </WorkloadContextBanner>
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
