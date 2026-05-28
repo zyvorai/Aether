@@ -164,6 +164,14 @@ export default function PluginsPage() {
             >
               Copilot →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
+              className="text-aether hover:underline"
+              data-testid="plugins-context-openapi-link"
+            >
+              OpenAPI →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

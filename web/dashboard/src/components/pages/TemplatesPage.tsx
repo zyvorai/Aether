@@ -195,6 +195,14 @@ export default function TemplatesPage() {
             >
               Policy →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('intelligence'), { workload: search.trim(), tab: 'predictions' })}
+              className="text-aether hover:underline"
+              data-testid="templates-context-intelligence-link"
+            >
+              Intelligence →
+            </Link>
           </>
         ) : null}
       </SearchQueryContextBanner>

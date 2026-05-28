@@ -191,6 +191,22 @@ export default function HealthPage() {
             >
               Policy →
             </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('secrets'), { workload: workloadParam.trim() })}
+              className="text-aether hover:underline"
+              data-testid="health-context-secrets-link"
+            >
+              Secrets →
+            </Link>
+            {' · '}
+            <Link
+              to={pathWithQuery(viewToPath('intelligence'), { workload: workloadParam.trim(), tab: 'predictions' })}
+              className="text-aether hover:underline"
+              data-testid="health-context-intelligence-link"
+            >
+              Intelligence →
+            </Link>
           </>
         ) : null}
       </WorkloadContextBanner>

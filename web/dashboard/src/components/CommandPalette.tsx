@@ -432,6 +432,14 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('deps'), { workload: name })),
       },
       {
+        id: `workload-${name}-fleet-hub`,
+        label: `Fleet hub: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `fleet multi cluster hub ${name}`,
+        workloadName: name,
+        run: () => navigate(pathWithQuery(viewToPath('fleet'), { workload: name })),
+      },
+      {
         id: `workload-${name}-scoring`,
         label: `Open scoring: ${name}`,
         category: 'workload-action' as const,

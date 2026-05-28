@@ -369,6 +369,22 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
           >
             Dependencies →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('compose'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-compose-link"
+          >
+            Compose →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="overview-fleet-link"
+          >
+            Fleet →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

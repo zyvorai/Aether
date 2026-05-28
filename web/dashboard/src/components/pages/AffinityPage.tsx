@@ -156,6 +156,22 @@ export default function AffinityPage() {
           >
             Cost →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="affinity-context-drift-link"
+          >
+            Drift →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="affinity-context-platform-link"
+          >
+            Platform →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 

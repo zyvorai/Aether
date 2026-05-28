@@ -204,6 +204,14 @@ export default function IntelligencePage() {
           >
             GitOps →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="intelligence-context-drift-link"
+          >
+            Drift →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
@@ -397,7 +405,15 @@ export default function IntelligencePage() {
       {tab === 'evolution' && (
         <div className="space-y-4 mt-4" data-testid="intelligence-evolution-panel">
           <div className="flex justify-end">
-            <Link to={viewToPath('ai')} className="text-xs text-aether hover:underline" data-testid="intelligence-ai-link">
+            <Link
+              to={
+                workloadFocus
+                  ? pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })
+                  : viewToPath('ai')
+              }
+              className="text-xs text-aether hover:underline"
+              data-testid="intelligence-tab-ai-link"
+            >
               AI engine →
             </Link>
           </div>
@@ -448,7 +464,15 @@ export default function IntelligencePage() {
       {tab === 'place' && (
         <div className="space-y-4 mt-4" data-testid="intelligence-place-panel">
           <div className="flex justify-end mb-2">
-            <Link to={viewToPath('scheduler')} className="text-xs text-aether hover:underline" data-testid="intelligence-scheduler-link">
+            <Link
+              to={
+                workloadFocus
+                  ? pathWithQuery(viewToPath('scheduler'), { workload: workloadFocus })
+                  : viewToPath('scheduler')
+              }
+              className="text-xs text-aether hover:underline"
+              data-testid="intelligence-tab-scheduler-link"
+            >
               Placement scheduler →
             </Link>
           </div>

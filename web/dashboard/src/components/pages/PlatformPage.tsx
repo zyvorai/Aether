@@ -169,6 +169,22 @@ export default function PlatformPage() {
           >
             Fleet →
           </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
+            className="text-aether hover:underline"
+            data-testid="platform-deps-link"
+          >
+            Dependencies →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
 
