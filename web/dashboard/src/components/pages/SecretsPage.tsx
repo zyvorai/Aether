@@ -8,7 +8,7 @@ import { apiFetch, apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { useNavigate, Link } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import Modal from '../Modal';
@@ -27,7 +27,7 @@ export default function SecretsPage() {
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useQueryParam('q');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [expandedSecret, setExpandedSecret] = useState<string | null>(null);
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<string | null>(null);

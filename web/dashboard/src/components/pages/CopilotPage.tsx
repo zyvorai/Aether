@@ -7,7 +7,7 @@ import { Link } from 'react-router';
 import { Bot, Send, Sparkles } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
-import { WorkloadContextBanner } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiPost } from '../../utils/api';
 
 interface ToolResult {
@@ -121,7 +121,16 @@ export default function CopilotPage() {
         testId="copilot-workload-context"
         workload={workloadFocus}
         description="Copilot context for workload"
-      />
+      >
+        <WorkloadScopedCrossLinks
+          workload={workloadFocus}
+          prefix="copilot"
+          showDrift
+          showAudit
+          showGitops
+          showMetrics
+        />
+      </WorkloadContextBanner>
       <div className="dash-card flex flex-1 flex-col overflow-hidden p-0">
         <div className="flex items-center gap-2 border-b border-slate-800/60 px-4 py-3">
           <Bot className="h-5 w-5 text-violet-400" aria-hidden />

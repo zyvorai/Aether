@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import { markHealthReviewed } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
@@ -16,7 +16,7 @@ import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import { WorkloadContextBanner } from '../QueryContextBanner';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { HealthSummary, ManagedWorkload, HealthHistorySummary } from '../../types/api';
 
 function getHealthVariant(health: string): 'green' | 'yellow' | 'red' | 'muted' {
@@ -41,7 +41,7 @@ export default function HealthPage() {
   const [workloads, setWorkloads] = useState<ManagedWorkload[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useQueryParam('q');
+  const [search, setSearch] = useWorkloadOrSearchFilter();
   const [statusFilter, setStatusFilter] = useQueryParam('status', 'all');
   const [workloadParam, setWorkloadParam] = useQueryParam('workload');
   const [selected, setSelected] = useState<{ workload: ManagedWorkload; history: HealthHistorySummary } | null>(null);
@@ -149,7 +149,15 @@ export default function HealthPage() {
         testId="health-workload-context"
         workload={workloadParam}
         description="Health monitor for workload"
-      />
+      >
+        <WorkloadScopedCrossLinks
+          workload={workloadParam}
+          prefix="health"
+          showDrift
+          showGitops
+          showMetrics
+        />
+      </WorkloadContextBanner>
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <button type="button" data-testid="health-healthy-stat" onClick={() => setStatusFilter('healthy')} className="text-left">
@@ -346,6 +354,20 @@ export default function HealthPage() {
                   className="text-xs text-aether hover:underline"
                 >
                   View events →
+                </Link>
+                <Link
+                  to={pathWithQuery(viewToPath('gitops'), { workload: selected.workload.name })}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="health-gitops-link"
+                >
+                  GitOps →
+                </Link>
+                <Link
+                  to={pathWithQuery(viewToPath('drift'), { workload: selected.workload.name })}
+                  className="text-xs text-aether hover:underline"
+                  data-testid="health-drift-link"
+                >
+                  Drift →
                 </Link>
                 <Link
                   to={pathWithQuery(viewToPath('alerts'), { workload: selected.workload.name })}

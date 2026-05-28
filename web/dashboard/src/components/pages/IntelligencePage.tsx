@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router';
 import { AlertTriangle, Brain, DollarSign, Inbox, MapPin, Sparkles, TrendingUp } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatPercent, formatUSD } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
@@ -151,40 +152,19 @@ export default function IntelligencePage() {
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
       {workloadFocus ? (
-        <div
-          data-testid="intelligence-workload-context"
-          className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+        <WorkloadContextBanner
+          testId="intelligence-workload-context"
+          workload={workloadFocus}
+          description="Intelligence context"
         >
-          Intelligence context for workload <span className="font-mono text-aether">{workloadFocus}</span>
-          {' · '}
-          <button
-            type="button"
-            onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus }))}
-            className="text-aether hover:underline"
-          >
-            Open workload →
-          </button>
-          {' · '}
-          <button
-            type="button"
-            data-testid="intelligence-trust-link"
-            onClick={() =>
-              navigate(pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' }))
-            }
-            className="text-aether hover:underline"
-          >
-            Trust tab →
-          </button>
-          {' · '}
-          <button
-            type="button"
-            data-testid="intelligence-alerts-context-link"
-            onClick={() => navigate(pathWithQuery(viewToPath('alerts'), { workload: workloadFocus }))}
-            className="text-aether hover:underline"
-          >
-            Alert rules →
-          </button>
-        </div>
+          <WorkloadScopedCrossLinks
+            workload={workloadFocus}
+            prefix="intelligence"
+            showDrift
+            showGitops
+            showMetrics
+          />
+        </WorkloadContextBanner>
       ) : null}
 
       <div data-testid="intelligence-tabs">

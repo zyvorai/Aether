@@ -282,7 +282,13 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
     <div className="space-y-6 py-2">
       {!notConfidential && (
         <div className="text-xs" data-testid="trust-panel-cross-links">
-          <WorkloadScopedCrossLinks workload={workloadName} prefix="trust-panel" />
+          <WorkloadScopedCrossLinks
+            workload={workloadName}
+            prefix="trust-panel"
+            showDrift
+            showMetrics
+            showGitops
+          />
           {(placement?.gitops_issues?.length ?? 0) > 0 && (
             <>
               {' · '}

@@ -68,6 +68,41 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
         >
           Trust tab
         </Link>
+        <Link
+          to={pathWithQuery(viewToPath('gitops'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-gitops-link"
+        >
+          GitOps
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('metrics'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-metrics-link"
+        >
+          Metrics
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('copilot'), { workload: name, q: `Why is ${name} unhealthy?` })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-copilot-link"
+        >
+          Copilot
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('audit'), { workload: name })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-audit-link"
+        >
+          Audit
+        </Link>
+        <Link
+          to={pathWithQuery(viewToPath('intelligence'), { workload: name, tab: 'predictions' })}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          data-testid="deploy-success-intelligence-link"
+        >
+          Intelligence
+        </Link>
         <button
           type="button"
           onClick={onClose}

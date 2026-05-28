@@ -7,16 +7,26 @@ import { Link, useNavigate } from 'react-router';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 
-/** Scoped events / alerts / health / trust links for workload context banners. */
+export type WorkloadCrossLinkOptions = {
+  workload: string;
+  prefix: string;
+  eventsCategory?: string;
+  showDrift?: boolean;
+  showAudit?: boolean;
+  showGitops?: boolean;
+  showMetrics?: boolean;
+};
+
+/** Scoped cross-links for workload context banners (Events / Alerts / Health / Trust + optional ops links). */
 export function WorkloadScopedCrossLinks({
   workload,
   prefix,
   eventsCategory,
-}: {
-  workload: string;
-  prefix: string;
-  eventsCategory?: string;
-}) {
+  showDrift = false,
+  showAudit = false,
+  showGitops = false,
+  showMetrics = false,
+}: WorkloadCrossLinkOptions) {
   const name = workload.trim();
   if (!name) return null;
 
@@ -58,6 +68,54 @@ export function WorkloadScopedCrossLinks({
       >
         Trust →
       </Link>
+      {showDrift ? (
+        <>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('drift'), { workload: name })}
+            className="text-aether hover:underline"
+            data-testid={`${prefix}-drift-link`}
+          >
+            Drift →
+          </Link>
+        </>
+      ) : null}
+      {showAudit ? (
+        <>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('audit'), { workload: name })}
+            className="text-aether hover:underline"
+            data-testid={`${prefix}-audit-link`}
+          >
+            Audit →
+          </Link>
+        </>
+      ) : null}
+      {showGitops ? (
+        <>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: name })}
+            className="text-aether hover:underline"
+            data-testid={`${prefix}-gitops-link`}
+          >
+            GitOps →
+          </Link>
+        </>
+      ) : null}
+      {showMetrics ? (
+        <>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('metrics'), { workload: name })}
+            className="text-aether hover:underline"
+            data-testid={`${prefix}-metrics-link`}
+          >
+            Metrics →
+          </Link>
+        </>
+      ) : null}
     </>
   );
 }
@@ -88,6 +146,7 @@ export function WorkloadContextBanner({
         type="button"
         onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: name }))}
         className="text-aether hover:underline"
+        data-testid={`${testId}-open`}
       >
         Open workload →
       </button>
@@ -122,6 +181,7 @@ export function SearchQueryContextBanner({
         type="button"
         onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: q }))}
         className="text-aether hover:underline"
+        data-testid={`${testId}-open`}
       >
         Open workload →
       </button>

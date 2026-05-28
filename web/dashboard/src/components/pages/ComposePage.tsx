@@ -7,7 +7,8 @@ import { Link } from 'react-router';
 import { Rocket } from 'lucide-react';
 import { apiPost, apiPostRaw } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { useAuth } from '../../contexts/AuthContext';
 import YamlInput from '../YamlInput';
 import ValidateResultPanel from '../ValidateResultPanel';
@@ -64,6 +65,8 @@ interface ComposeDeployResult {
 
 export default function ComposePage() {
   const { canMutate } = useAuth();
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
   const [composeYaml, setComposeYaml] = useState(COMPOSE_EXAMPLE);
   const [result, setResult] = useState<ComposeValidationResult | null>(null);
   const [validateLoading, setValidateLoading] = useState(false);
@@ -155,6 +158,15 @@ export default function ComposePage() {
 
   return (
     <div className="space-y-6">
+      {focusedWorkload ? (
+        <WorkloadContextBanner
+          testId="compose-workload-context"
+          workload={focusedWorkload}
+          description="Compose context"
+        >
+          <WorkloadScopedCrossLinks workload={focusedWorkload} prefix="compose" showDrift showGitops />
+        </WorkloadContextBanner>
+      ) : null}
       <div>
         <h2 className="text-lg font-semibold text-slate-100">Compose import</h2>
         <p className="text-sm text-slate-500 mt-1">
