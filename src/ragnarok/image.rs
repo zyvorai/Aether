@@ -20,6 +20,10 @@ pub struct ImageManifest {
     pub launch_digest: Option<String>,
     pub signing_key_id: String,
     pub signed_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sbom_digest: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -50,6 +54,9 @@ impl ImageCatalog {
         let bytes = std::fs::read(image_path)
             .with_context(|| format!("read image {}", image_path.display()))?;
         let image_hash = format!("{:x}", Sha256::digest(&bytes));
+        let signature = format!("{:x}", Sha256::digest(format!("{image_hash}:{key_id}").as_bytes()));
+        let sbom_digest = crate::sbom::load_cached()
+            .and_then(|b| b.get("serialNumber").and_then(|v| v.as_str()).map(str::to_string));
         let manifest = ImageManifest {
             name: name.to_string(),
             image_hash: image_hash.clone(),
@@ -58,6 +65,8 @@ impl ImageCatalog {
             launch_digest: Some(image_hash.clone()),
             signing_key_id: key,
             signed_at: chrono::Utc::now().to_rfc3339(),
+            sbom_digest,
+            signature: Some(signature),
         };
         self.manifests
             .lock()

@@ -4,7 +4,7 @@
 
 //! Command handler implementations for Aether CLI
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use aether::{
     engine::Engine,
     output,
@@ -319,11 +319,22 @@ async fn deploy_workload_inner(
     Ok(())
 }
 
-pub(crate) async fn stop_command(name: &str) -> Result<()> {
+pub(crate) async fn stop_command(name: &str, cascade: bool) -> Result<()> {
     let (_state, ws, rt) = load_state_and_runtime(name).await?;
 
     let sp = output::spinner(&format!("Stopping workload '{}'...", name));
-    rt.stop(&ws.instance).await?;
+    if cascade && ws.runtime == aether::runtime::RuntimeKind::Kubernetes {
+        let ns = get_namespace()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string()));
+        let kube = aether::adapters::KubernetesRuntime::with_namespace(ns).await?;
+        kube.stop_cascade(&ws.instance).await?;
+    } else {
+        if cascade && ws.runtime != aether::runtime::RuntimeKind::Kubernetes {
+            output::warning("--cascade is only supported for Kubernetes workloads; stopping controller only");
+        }
+        rt.stop(&ws.instance).await?;
+    }
 
     output::spinner_success(&sp, &format!("Stopped '{}'", name));
     output::success(&format!("Stopped instance: {}", name));
@@ -3818,7 +3829,7 @@ pub(crate) async fn compose_command(action: ComposeAction) -> Result<()> {
 
             for name in &reversed {
                 output::info(&format!("Stopping {}", name));
-                match stop_command(name).await {
+                match stop_command(name, false).await {
                     Ok(()) => output::success(&format!("Stopped {}", name)),
                     Err(e) => output::warning(&format!("Could not stop {}: {}", name, e)),
                 }
@@ -4385,6 +4396,124 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
         }
     }
     Ok(())
+}
+
+pub(crate) async fn sbom_command(action: crate::cli::SbomAction) -> Result<()> {
+    use crate::cli::SbomAction;
+    match action {
+        SbomAction::Export { output } => {
+            let bom = aether::sbom::generate_cyclonedx(
+                std::env::current_exe().ok().as_deref(),
+            )?;
+            let text = serde_json::to_string_pretty(&bom)?;
+            if let Some(path) = output {
+                aether::sbom::export_to_path(&path, std::env::current_exe().ok().as_deref())?;
+                output::success(&format!("SBOM written to {}", path.display()));
+            } else {
+                println!("{text}");
+            }
+        }
+        SbomAction::Verify { file } => {
+            let ok = aether::sbom::verify_file(&file)?;
+            if ok {
+                output::success(&format!("Valid CycloneDX SBOM: {}", file.display()));
+            } else {
+                anyhow::bail!("invalid SBOM format: {}", file.display());
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(crate) async fn edge_agent_command(
+    control_plane: &str,
+    site: &str,
+    token: Option<&str>,
+    kube_context: Option<&str>,
+    dry_run: bool,
+    interval_secs: u64,
+) -> Result<()> {
+    use aether::fleet::edge::{EdgeHeartbeatRequest, EdgeRegisterRequest};
+    use std::time::Duration;
+
+    let base = control_plane.trim_end_matches('/');
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .context("reqwest client")?;
+
+    let token_owned = token
+        .map(str::to_string)
+        .or_else(|| std::env::var("AETHER_EDGE_TOKEN").ok())
+        .filter(|s| !s.is_empty());
+
+    let register_body = EdgeRegisterRequest {
+        site: site.to_string(),
+        kube_context: kube_context.map(str::to_string),
+        labels: std::collections::HashMap::new(),
+    };
+
+    if dry_run {
+        output::info(&format!(
+            "edge-agent dry-run: would register {site} at {base}/api/fleet/edge/register"
+        ));
+        return Ok(());
+    }
+
+    let mut req = client
+        .post(format!("{base}/api/fleet/edge/register"))
+        .json(&register_body);
+    if let Some(ref t) = token_owned {
+        req = req.header(reqwest::header::AUTHORIZATION, format!("Bearer {t}"));
+    }
+    req.send()
+        .await
+        .context("edge register")?
+        .error_for_status()
+        .context("edge register status")?;
+
+    output::success(&format!("Edge agent '{site}' registered with {base}"));
+
+    loop {
+        let mut poll = client.get(format!("{base}/api/fleet/edge/queue?site={site}"));
+        if let Some(ref t) = token_owned {
+            poll = poll.header(reqwest::header::AUTHORIZATION, format!("Bearer {t}"));
+        }
+        if let Ok(resp) = poll.send().await {
+            if let Ok(body) = resp.json::<serde_json::Value>().await {
+                if let Some(jobs) = body.pointer("/data").and_then(|d| d.as_array()) {
+                    for job in jobs {
+                        let action = job.get("action").and_then(|v| v.as_str()).unwrap_or("?");
+                        let id = job.get("id").and_then(|v| v.as_str()).unwrap_or("?");
+                        output::info(&format!("Edge job {id}: {action}"));
+                        if action == "gitops_sync" {
+                            let _ = gitops_command(crate::cli::GitOpsAction::Sync).await;
+                        } else if action == "stop" {
+                            if let Some(name) = job.pointer("/payload/workload").and_then(|v| v.as_str()) {
+                                let _ = stop_command(name, false).await;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut hb = client
+            .post(format!("{base}/api/fleet/edge/heartbeat"))
+            .json(&EdgeHeartbeatRequest {
+                site: site.to_string(),
+                queue_depth: 0,
+                last_error: None,
+            });
+        if let Some(ref t) = token_owned {
+            hb = hb.header(reqwest::header::AUTHORIZATION, format!("Bearer {t}"));
+        }
+        if let Err(e) = hb.send().await {
+            output::error(&format!("heartbeat failed: {e}"));
+        }
+
+        tokio::time::sleep(Duration::from_secs(interval_secs)).await;
+    }
 }
 
 /// Wrap an error with a contextual suggestion for the user.

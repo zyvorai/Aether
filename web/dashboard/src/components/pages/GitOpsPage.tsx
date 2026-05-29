@@ -16,6 +16,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import Badge from '../Badge';
+import GitOpsCenter from '../GitOpsCenter';
 import type { GitOpsConfidentialAudit } from '../../types/api';
 
 interface GitOpsPayload {
@@ -240,6 +241,18 @@ export default function GitOpsPage() {
             {syncing ? 'Syncing…' : 'Sync now'}
           </button>
         }
+      />
+
+      <GitOpsCenter
+        configured={Boolean(data?.configured)}
+        repoUrl={data?.repo_url}
+        branch={data?.branch}
+        lastSync={data?.last_sync}
+        status={typeof data?.status === 'string' ? data.status : undefined}
+        changes={parsedSync.changes}
+        onSync={() => void openSyncConfirm()}
+        onPreview={() => void openSyncConfirm()}
+        syncing={syncing}
       />
 
       {workloadFocus ? (

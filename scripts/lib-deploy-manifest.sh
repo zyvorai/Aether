@@ -252,6 +252,36 @@ EOF
 EOF
 )"
   fi
+
+  if [ -n "${AETHER_PACKETWOLF_URL:-}" ]; then
+    AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_PACKETWOLF_URL
+          value: \"${AETHER_PACKETWOLF_URL}\""
+    if [ -n "${AETHER_PACKETWOLF_API_KEY:-}" ]; then
+      AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aether-packetwolf
+  namespace: ${ns}
+type: Opaque
+stringData:
+  api_key: ${AETHER_PACKETWOLF_API_KEY}
+EOF
+)"
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="$(cat <<'EOF'
+
+        - name: AETHER_PACKETWOLF_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aether-packetwolf
+              key: api_key
+EOF
+)"
+    fi
+  fi
 }
 
 # Service + optional Ingress. EXPOSE: nodeport | ingress | both (default nodeport).

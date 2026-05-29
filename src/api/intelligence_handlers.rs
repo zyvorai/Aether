@@ -8,6 +8,7 @@ use super::handlers::{err_internal, lookup_workload, ok_json};
 use super::types::{ApiResponse, AppState};
 use axum::extract::{Path, State as AxumState};
 use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::Json;
 use crate::config::Config;
 use crate::intelligence::context::build_context_snapshot;
@@ -179,4 +180,27 @@ pub(crate) async fn api_ai_migration_plan(
     ok_json(plan).into_response()
 }
 
-use axum::response::IntoResponse;
+/// GET /api/intelligence/remediation/plan
+pub(crate) async fn api_intelligence_remediation_plan(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let store = app_state.state.read().await;
+    let plan = crate::intelligence::remediation::build_remediation_plan(&store).await;
+    ok_json(plan).into_response()
+}
+
+/// POST /api/intelligence/remediation/execute
+pub(crate) async fn api_intelligence_remediation_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::remediation::RemediationExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let store = app_state.state.read().await;
+    let plan = crate::intelligence::remediation::build_remediation_plan(&store).await;
+    let dry_run = body.dry_run.unwrap_or(true);
+    let max_actions = body.max_actions.unwrap_or(10);
+    match crate::intelligence::remediation::execute_remediation(&plan, dry_run, max_actions).await
+    {
+        Ok(result) => ok_json(result).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}

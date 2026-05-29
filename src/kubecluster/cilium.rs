@@ -6,12 +6,13 @@
 
 use anyhow::Result;
 use k8s_openapi::api::apps::v1::DaemonSet;
-use k8s_openapi::api::core::v1::ConfigMap;
+use k8s_openapi::api::core::v1::{ConfigMap, Service};
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
-use kube::api::{Api, ListParams};
+use kube::api::{Api, ListParams, PostParams};
 use kube::core::DynamicObject;
 use kube::{Client, Resource, ResourceExt};
 use serde::Serialize;
+use std::collections::BTreeMap;
 
 use crate::adapters::kube_policy_extras::cilium_network_policy_api_resource;
 
@@ -51,6 +52,23 @@ pub struct CiliumStatusResponse {
     pub egress_mode: String,
     pub metrics_server: bool,
     pub connectivity_check: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_checked_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub connectivity_detail: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ConnectivityProbeResult {
+    pub status: String,
+    pub detail: String,
+    pub checked_at: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HubbleDiscoveryResponse {
+    pub url: Option<String>,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -124,6 +142,7 @@ pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Re
     let metrics_server = metrics_server_available(&cluster).await?;
     let cilium_daemonset_ready = cilium_daemonset_ready(&client).await.unwrap_or(false);
     let connectivity_check = read_connectivity_check(&client, &namespace).await;
+    let (last_checked_at, connectivity_detail) = read_connectivity_metadata(&client, &namespace).await;
 
     Ok(CiliumStatusResponse {
         cluster,
@@ -142,6 +161,8 @@ pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Re
         egress_mode,
         metrics_server,
         connectivity_check,
+        last_checked_at,
+        connectivity_detail,
     })
 }
 
@@ -195,6 +216,175 @@ async fn cilium_daemonset_ready(client: &Client) -> Result<bool> {
         Err(kube::Error::Api(e)) if e.code == 404 => Ok(false),
         Err(e) => Err(e.into()),
     }
+}
+
+async fn read_connectivity_metadata(client: &Client, namespace: &str) -> (Option<String>, Option<String>) {
+    let api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace);
+    match api.get("aether-cilium-connectivity").await {
+        Ok(cm) => {
+            let data = cm.data.unwrap_or_default();
+            (
+                data.get("checked_at").cloned(),
+                data.get("detail").cloned(),
+            )
+        }
+        Err(kube::Error::Api(e)) if e.code == 404 => (None, None),
+        Err(_) => (None, None),
+    }
+}
+
+/// Run a native Cilium connectivity probe and persist the result to ConfigMap.
+pub async fn probe_cilium_connectivity(
+    cluster: Option<&str>,
+    namespace: Option<&str>,
+) -> Result<ConnectivityProbeResult> {
+    let cluster = super::resolve_reachable_cluster(cluster).await?;
+    let client = super::client_for_cluster(&cluster).await?;
+    let namespace = namespace
+        .filter(|n| !n.is_empty() && *n != "all")
+        .unwrap_or(DEFAULT_AETHER_NAMESPACE)
+        .to_string();
+
+    let crd_cnp = crd_exists(&client, "ciliumnetworkpolicies.cilium.io").await?;
+    let crd_ccnp = crd_exists(&client, "ciliumclusterwidenetworkpolicies.cilium.io").await?;
+    if !crd_cnp && !crd_ccnp {
+        let result = ConnectivityProbeResult {
+            status: "skipped".into(),
+            detail: "Cilium CRDs not installed".into(),
+            checked_at: chrono::Utc::now().to_rfc3339(),
+        };
+        write_connectivity_status(&client, &namespace, &result).await?;
+        return Ok(result);
+    }
+
+    let ready = cilium_daemonset_ready(&client).await.unwrap_or(false);
+    let (status, detail) = if ready {
+        ("ok", "cilium daemonset has ready pods".to_string())
+    } else {
+        ("failed", "cilium daemonset has no ready pods".to_string())
+    };
+
+    let result = ConnectivityProbeResult {
+        status: status.into(),
+        detail,
+        checked_at: chrono::Utc::now().to_rfc3339(),
+    };
+    write_connectivity_status(&client, &namespace, &result).await?;
+    Ok(result)
+}
+
+async fn write_connectivity_status(
+    client: &Client,
+    namespace: &str,
+    result: &ConnectivityProbeResult,
+) -> Result<()> {
+    let api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace);
+    let mut data = BTreeMap::new();
+    data.insert("status".into(), result.status.clone());
+    data.insert("checked_at".into(), result.checked_at.clone());
+    data.insert("detail".into(), result.detail.clone());
+    let cm = ConfigMap {
+        metadata: kube::api::ObjectMeta {
+            name: Some("aether-cilium-connectivity".into()),
+            namespace: Some(namespace.to_string()),
+            ..Default::default()
+        },
+        data: Some(data),
+        ..Default::default()
+    };
+    match api.get("aether-cilium-connectivity").await {
+        Ok(_) => {
+            let pp = kube::api::PatchParams::apply("aether").force();
+            api.patch(
+                "aether-cilium-connectivity",
+                &pp,
+                &kube::api::Patch::Apply(cm),
+            )
+            .await?;
+        }
+        Err(kube::Error::Api(e)) if e.code == 404 => {
+            api.create(&PostParams::default(), &cm).await?;
+        }
+        Err(e) => return Err(e.into()),
+    }
+    Ok(())
+}
+
+/// Discover Hubble UI URL from env, ConfigMap, or Service.
+pub async fn discover_hubble_ui(cluster: Option<&str>) -> Result<HubbleDiscoveryResponse> {
+    if let Ok(url) = std::env::var("AETHER_HUBBLE_UI_URL") {
+        if !url.is_empty() {
+            return Ok(HubbleDiscoveryResponse {
+                url: Some(url),
+                source: "env".into(),
+            });
+        }
+    }
+
+    let cluster = super::resolve_reachable_cluster(cluster).await?;
+    let client = super::client_for_cluster(&cluster).await?;
+
+    let cm_api: Api<ConfigMap> = Api::namespaced(client.clone(), "kube-system");
+    for name in ["cilium-config", "hubble-ui-nginx"] {
+        if let Ok(cm) = cm_api.get(name).await {
+            if let Some(data) = cm.data {
+                for key in ["hubble-ui-url", "hubble-ui", "ui-url"] {
+                    if let Some(url) = data.get(key).filter(|u| !u.is_empty()) {
+                        return Ok(HubbleDiscoveryResponse {
+                            url: Some(url.clone()),
+                            source: format!("configmap:{name}"),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    let svc_api: Api<Service> = Api::namespaced(client.clone(), "kube-system");
+    for name in ["hubble-ui", "hubble-ui-nginx"] {
+        if let Ok(svc) = svc_api.get(name).await {
+            if let Some(spec) = svc.spec {
+                if let Some(t) = spec.type_ {
+                    if t == "LoadBalancer" {
+                        if let Some(ingress) = svc.status.and_then(|s| s.load_balancer).and_then(|lb| lb.ingress) {
+                            if let Some(host) = ingress.first().and_then(|i| i.hostname.clone().or(i.ip.clone())) {
+                                let port = spec
+                                    .ports
+                                    .as_ref()
+                                    .and_then(|p| p.first())
+                                    .map(|p| p.port)
+                                    .unwrap_or(80);
+                                return Ok(HubbleDiscoveryResponse {
+                                    url: Some(format!("http://{host}:{port}")),
+                                    source: format!("service:{name}"),
+                                });
+                            }
+                        }
+                    }
+                    if t == "NodePort" {
+                        if let Some(port) = spec.ports.as_ref().and_then(|p| p.first()) {
+                            if let Some(np) = port.node_port {
+                                return Ok(HubbleDiscoveryResponse {
+                                    url: Some(format!("http://localhost:{np}")),
+                                    source: format!("service:{name}:nodeport"),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(HubbleDiscoveryResponse {
+        url: None,
+        source: "none".into(),
+    })
+}
+
+pub fn hubble_workload_url(base: &str, namespace: &str, pod: &str) -> String {
+    let trimmed = base.trim_end_matches('/');
+    format!("{trimmed}/?namespace={namespace}&pod={pod}")
 }
 
 async fn read_connectivity_check(client: &Client, namespace: &str) -> String {
@@ -301,6 +491,12 @@ pub async fn list_cilium_clusterwide_network_policies(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_hubble_workload_url() {
+        let url = super::hubble_workload_url("http://hubble.local", "prod", "api-abc");
+        assert_eq!(url, "http://hubble.local/?namespace=prod&pod=api-abc");
+    }
 
     #[test]
     fn test_infer_egress_permissive() {

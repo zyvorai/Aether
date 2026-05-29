@@ -39,6 +39,15 @@ export interface EditorWorkloadInput {
   ingressHost?: string;
   ingressPath?: string;
   networkDenyAllIngress?: boolean;
+  k8sWorkloadKind?: string;
+  k8sGatewayEnabled?: boolean;
+  k8sGatewayName?: string;
+  k8sGatewayHost?: string;
+  k8sGatewayProvision?: boolean;
+  k8sVpaEnabled?: boolean;
+  k8sKedaEnabled?: boolean;
+  k8sCertManagerEnabled?: boolean;
+  k8sPdbMinAvailable?: string;
 }
 
 export const DEFAULT_DEPLOY_WORKLOAD_YAML = `apiVersion: aether/v1
@@ -326,8 +335,11 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
 
   appendConfidentialBlock(lines, input, preferred, kataPath);
 
-  if (preferred === 'kube' && (input.k8sNamespace?.trim() || input.k8sServiceAccount?.trim() || input.k8sNodeSelector?.trim())) {
+  if (preferred === 'kube' && (input.k8sNamespace?.trim() || input.k8sServiceAccount?.trim() || input.k8sNodeSelector?.trim() || input.k8sWorkloadKind || input.k8sGatewayEnabled || input.k8sVpaEnabled || input.k8sKedaEnabled || input.k8sCertManagerEnabled || input.k8sPdbMinAvailable?.trim())) {
     lines.push('kubernetes:');
+    if (input.k8sWorkloadKind && input.k8sWorkloadKind !== 'deployment') {
+      lines.push(`  workloadKind: ${input.k8sWorkloadKind}`);
+    }
     if (input.k8sServiceAccount?.trim()) {
       lines.push(`  serviceAccountName: ${input.k8sServiceAccount.trim()}`);
     }
@@ -337,6 +349,34 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
         lines.push('  nodeSelector:');
         lines.push(`    ${parts[0].trim()}: ${parts.slice(1).join('=').trim()}`);
       }
+    }
+    if (input.k8sGatewayEnabled && input.k8sGatewayName?.trim() && input.k8sGatewayHost?.trim()) {
+      lines.push('  gateway:');
+      lines.push('    enabled: true');
+      lines.push(`    gatewayName: ${input.k8sGatewayName.trim()}`);
+      lines.push(`    host: ${input.k8sGatewayHost.trim()}`);
+      if (input.k8sGatewayProvision) {
+        lines.push('    provisionGateway: true');
+      }
+    }
+    if (input.k8sVpaEnabled) {
+      lines.push('  verticalPodAutoscaler:');
+      lines.push('    enabled: true');
+      lines.push('    updateMode: Auto');
+    }
+    if (input.k8sKedaEnabled) {
+      lines.push('  keda:');
+      lines.push('    enabled: true');
+    }
+    if (input.k8sCertManagerEnabled && input.ingressHost?.trim()) {
+      lines.push('  certManager:');
+      lines.push('    enabled: true');
+      lines.push('    issuerName: letsencrypt-prod');
+      lines.push('    issuerKind: ClusterIssuer');
+    }
+    if (input.k8sPdbMinAvailable?.trim()) {
+      lines.push('  podDisruptionBudget:');
+      lines.push(`    minAvailable: ${input.k8sPdbMinAvailable.trim()}`);
     }
   }
 

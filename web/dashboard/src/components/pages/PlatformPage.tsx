@@ -8,7 +8,7 @@ import { Server, Shield, Database, ExternalLink, Network } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
-import { apiFetchSettled } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
@@ -45,6 +45,7 @@ export default function PlatformPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [recLoading, setRecLoading] = useState(true);
+  const [probeLoading, setProbeLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,6 +67,18 @@ export default function PlatformPage() {
     setLoading(false);
     setRecLoading(false);
   }, [refreshPlatform]);
+
+  const runConnectivityProbe = useCallback(async () => {
+    setProbeLoading(true);
+    const res = await apiPost<{ status?: string; detail?: string; checked_at?: string }>(
+      '/cluster/cilium/connectivity/probe',
+      {},
+    );
+    setProbeLoading(false);
+    if (res.success) {
+      await load();
+    }
+  }, [load]);
 
   useEffect(() => {
     void load();
@@ -345,6 +358,44 @@ export default function PlatformPage() {
               <dt className="text-slate-500">metrics-server</dt>
               <dd><Badge text={cilium.metrics_server ? 'available' : 'missing'} variant={cilium.metrics_server ? 'green' : 'muted'} /></dd>
             </div>
+            <div className="flex justify-between items-center">
+              <dt className="text-slate-500">Connectivity check</dt>
+              <dd className="flex items-center gap-2">
+                <Badge
+                  text={cilium.connectivity_check ?? 'unknown'}
+                  variant={
+                    cilium.connectivity_check === 'ok'
+                      ? 'green'
+                      : cilium.connectivity_check === 'failed'
+                        ? 'red'
+                        : 'muted'
+                  }
+                />
+                {cilium.cni === 'cilium' && (
+                  <button
+                    type="button"
+                    onClick={() => void runConnectivityProbe()}
+                    disabled={probeLoading}
+                    className="text-xs text-aether hover:underline disabled:opacity-50"
+                    data-testid="platform-cilium-probe-btn"
+                  >
+                    {probeLoading ? 'Running…' : 'Run check'}
+                  </button>
+                )}
+              </dd>
+            </div>
+            {cilium.last_checked_at && (
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Last checked</dt>
+                <dd className="text-slate-400 text-xs font-mono">{cilium.last_checked_at}</dd>
+              </div>
+            )}
+            {cilium.connectivity_detail && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500 shrink-0">Detail</dt>
+                <dd className="text-slate-400 text-xs text-right">{cilium.connectivity_detail}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-slate-500 mb-2">Bootstrap policies</dt>
               <dd className="space-y-1">
@@ -370,8 +421,8 @@ export default function PlatformPage() {
           <p className="text-sm text-slate-500">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>
         )}
         <p className="mt-4 text-xs text-slate-500">
-          Browse Cilium policies on the Cluster Browser <strong>Network</strong> tab. Configure{' '}
-          <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code> for Hubble flow UI.
+          Browse Cilium policies on the Cluster Browser <strong>Network</strong> tab. Hubble UI is auto-discovered when installed, or set{' '}
+          <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code>.
         </p>
       </div>
 

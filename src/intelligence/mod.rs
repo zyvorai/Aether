@@ -10,10 +10,12 @@ pub mod finops;
 pub mod healer;
 pub mod metrics;
 pub mod placement;
+pub mod anomaly;
 pub mod policy;
 pub mod predict;
 pub mod profile;
 pub mod record;
+pub mod remediation;
 pub mod security;
 pub mod store;
 

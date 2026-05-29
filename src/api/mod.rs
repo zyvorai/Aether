@@ -15,6 +15,11 @@ mod intelligence_handlers;
 mod copilot_handlers;
 mod confidential_handlers;
 mod ops_handlers;
+mod security_handlers;
+mod ecosystem_handlers;
+mod fleet_handlers;
+mod migration_handlers;
+mod hosted_handlers;
 
 pub use types::ApiConfig;
 
@@ -24,6 +29,11 @@ use intelligence_handlers::*;
 use copilot_handlers::*;
 use confidential_handlers::*;
 use ops_handlers::*;
+use security_handlers::*;
+use ecosystem_handlers::*;
+use fleet_handlers::*;
+use migration_handlers::*;
+use hosted_handlers::*;
 use crate::state::StateStore;
 use axum::{
     body::Body,
@@ -141,6 +151,31 @@ async fn observability_middleware(req: Request<Body>, next: Next) -> Response {
     res
 }
 
+fn resolve_tenant_id(
+    headers: &axum::http::HeaderMap,
+    key_tenant: Option<String>,
+) -> Option<String> {
+    key_tenant.or_else(|| crate::hosted::tenant::tenant_from_headers(headers))
+}
+
+async fn authorized_next(
+    req: Request<Body>,
+    next: Next,
+    tenant_id: Option<String>,
+) -> Result<Response, StatusCode> {
+    if let Some(ref tid) = tenant_id {
+        if crate::hosted::metering::UsageMeter::quota_exceeded(tid) {
+            return Err(StatusCode::TOO_MANY_REQUESTS);
+        }
+    }
+    let path = req.uri().path().to_string();
+    let res = next.run(req).await;
+    if let Some(tid) = tenant_id {
+        crate::hosted::metering::UsageMeter::record(&tid, &path);
+    }
+    Ok(res)
+}
+
 /// API key authentication middleware with RBAC support.
 ///
 /// Authentication is checked in this order:
@@ -165,6 +200,7 @@ async fn auth_middleware(
         || path == "/api/auth/saml/login"
         || path == "/api/auth/saml/acs"
         || path == "/api/auth/saml/logout"
+        || path == "/api/hosted/billing/stripe/webhook"
         || path.starts_with("/api/mock-idp/")
         || (*req.method() == Method::GET && !path.starts_with("/api"));
     if public_unauthenticated {
@@ -209,7 +245,8 @@ async fn auth_middleware(
     // If no auth configured at all, allow everything (local development)
     if legacy_key.is_none() && !has_rbac_keys && !session_auth_enabled {
         ensure_mutation_confirm(req.method(), path, req.headers())?;
-        return Ok(next.run(req).await);
+        let tenant = resolve_tenant_id(req.headers(), None);
+        return authorized_next(req, next, tenant).await;
     }
 
     if let Some(ref token) = token {
@@ -218,7 +255,18 @@ async fn auth_middleware(
                 return Err(StatusCode::FORBIDDEN);
             }
             ensure_mutation_confirm(req.method(), path, req.headers())?;
-            return Ok(next.run(req).await);
+            let tenant = resolve_tenant_id(req.headers(), None);
+            return authorized_next(req, next, tenant).await;
+        }
+
+        if let Some(key_rec) = crate::hosted::keys::TenantKeyStore::load().verify(token) {
+            let role = crate::rbac::Role::Operator;
+            if !crate::rbac::check_permission(&role, &http_method, path) {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            ensure_mutation_confirm(req.method(), path, req.headers())?;
+            let tenant = resolve_tenant_id(req.headers(), Some(key_rec.tenant_id.clone()));
+            return authorized_next(req, next, tenant).await;
         }
 
         if let Some(ref expected) = legacy_key {
@@ -227,7 +275,8 @@ async fn auth_middleware(
             let expected_hash = Sha256::digest(expected.as_bytes());
             if token_hash == expected_hash {
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
-                return Ok(next.run(req).await);
+                let tenant = resolve_tenant_id(req.headers(), None);
+                return authorized_next(req, next, tenant).await;
             }
         }
         return Err(StatusCode::UNAUTHORIZED);
@@ -240,7 +289,8 @@ async fn auth_middleware(
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
-                return Ok(next.run(req).await);
+                let tenant = resolve_tenant_id(req.headers(), None);
+                return authorized_next(req, next, tenant).await;
             }
         }
         if let Some(saml) = app_state.saml.as_ref() {
@@ -249,7 +299,8 @@ async fn auth_middleware(
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
-                return Ok(next.run(req).await);
+                let tenant = resolve_tenant_id(req.headers(), None);
+                return authorized_next(req, next, tenant).await;
             }
         }
     }
@@ -540,7 +591,13 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/intelligence/evolution/status", get(api_intelligence_evolution_status))
         .route("/api/intelligence/runtime-evolution/:name", get(api_intelligence_runtime_evolution))
         .route("/api/intelligence/place", post(api_intelligence_place))
+        .route("/api/intelligence/remediation/plan", get(api_intelligence_remediation_plan))
+        .route(
+            "/api/intelligence/remediation/execute",
+            post(api_intelligence_remediation_execute),
+        )
         .route("/api/copilot/chat", post(api_copilot_chat))
+        .route("/api/copilot/troubleshoot", post(api_copilot_troubleshoot))
         .route("/api/copilot/sessions/:id", get(api_copilot_session))
         .route("/api/copilot/confirm/:action_id", post(api_copilot_confirm))
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
@@ -666,6 +723,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/cluster/top", get(api_cluster_top))
         .route("/api/cluster/metrics/summary", get(api_cluster_metrics_summary))
         .route("/api/cluster/cilium/status", get(api_cluster_cilium_status))
+        .route(
+            "/api/cluster/cilium/connectivity/probe",
+            post(api_cluster_cilium_connectivity_probe),
+        )
+        .route("/api/cluster/cilium/hubble", get(api_cluster_cilium_hubble))
         .route("/api/cluster/diff", post(api_cluster_diff))
         .route("/api/cluster/rollout", get(api_cluster_rollout))
         .route("/api/cluster/rollout/action", post(api_cluster_rollout_action))
@@ -694,6 +756,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/compose/validate", post(api_compose_validate))
         .route("/api/compose/up", post(api_compose_up))
         .route("/api/compose/down", post(api_compose_down))
+        .route("/api/helm/catalog", get(api_helm_catalog))
         .route("/api/helm/export", post(api_helm_export))
         .route("/api/audit/verify", get(api_audit_verify))
         .route("/api/gitops/status", get(api_gitops_status))
@@ -710,7 +773,44 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/openapi.json", get(serve_openapi))
         .route("/api/rbac/keys", get(rbac_list_keys))
         .route("/api/rbac/keys", post(rbac_create_key))
-        .route("/api/rbac/keys/revoke", post(rbac_revoke_key));
+        .route("/api/rbac/keys/revoke", post(rbac_revoke_key))
+        .route("/api/security/sbom", get(api_security_sbom))
+        .route("/api/security/images", get(api_security_images))
+        .route("/api/security/images/verify", post(api_security_images_verify))
+        .route("/api/ecosystem/packetwolf/status", get(api_packetwolf_status))
+        .route("/api/ecosystem/packetwolf/flows/stats", get(api_packetwolf_flow_stats))
+        .route(
+            "/api/ecosystem/packetwolf/verify-egress",
+            post(api_packetwolf_verify_egress),
+        )
+        .route("/api/ecosystem/packetwolf/anomalies", get(api_packetwolf_anomalies))
+        .route("/api/ecosystem/packetwolf/deeplink", get(api_packetwolf_deeplink))
+        .route("/api/fleet/edge/register", post(api_fleet_edge_register))
+        .route("/api/fleet/edge/heartbeat", post(api_fleet_edge_heartbeat))
+        .route("/api/fleet/edge/agents", get(api_fleet_edge_agents))
+        .route("/api/fleet/edge/enqueue", post(api_fleet_edge_enqueue))
+        .route("/api/fleet/edge/queue", get(api_fleet_edge_queue))
+        .route("/api/fleet/federation/policies", get(api_fleet_federation_policies))
+        .route("/api/fleet/federation/plan", post(api_fleet_federation_plan))
+        .route("/api/fleet/drift", get(api_fleet_drift))
+        .route("/api/gitops/resolve-target", post(api_gitops_resolve_target))
+        .route("/api/migration/volume/plan", post(api_migration_volume_plan))
+        .route("/api/migration/volume/execute", post(api_migration_volume_execute))
+        .route("/api/migration/fleet/plan", post(api_migration_fleet_plan))
+        .route("/api/hosted/tenants", get(api_hosted_tenants_list).post(api_hosted_tenants_create))
+        .route("/api/hosted/tenants/:id/deactivate", post(api_hosted_tenants_deactivate))
+        .route("/api/hosted/tenants/:id/keys", get(api_hosted_tenant_keys_list).post(api_hosted_tenant_keys_issue))
+        .route("/api/hosted/tenants/:id/keys/:name/revoke", post(api_hosted_tenant_keys_revoke))
+        .route("/api/hosted/billing/usage", get(api_hosted_billing_usage))
+        .route("/api/hosted/billing/metering", get(api_hosted_metering_usage))
+        .route(
+            "/api/hosted/billing/stripe/checkout",
+            post(api_hosted_billing_stripe_checkout),
+        )
+        .route(
+            "/api/hosted/billing/stripe/webhook",
+            post(api_hosted_billing_stripe_webhook),
+        );
 
     if crate::mock_idp::enabled() {
         app = app

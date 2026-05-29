@@ -73,12 +73,16 @@ async fn main() -> Result<()> {
                 commands::run_command(&cli.spec, runtime).await
             }
         }
-        Commands::Stop { name } => {
+        Commands::Stop { name, cascade } => {
             if cli.dry_run {
-                aether::output::info(&format!("[dry-run] Would stop workload '{}'", name));
+                aether::output::info(&format!(
+                    "[dry-run] Would stop workload '{}'{}",
+                    name,
+                    if cascade { " (cascade)" } else { "" }
+                ));
                 return Ok(());
             }
-            commands::stop_command(&name).await
+            commands::stop_command(&name, cascade).await
         }
         Commands::Status { name } => commands::status_command(&name).await,
         Commands::Logs { name, follow } => commands::logs_command(&name, follow).await,
@@ -255,6 +259,25 @@ async fn main() -> Result<()> {
         }
         Commands::Confidential { action } => {
             commands::confidential_command(action, &cli.spec).await
+        }
+        Commands::Sbom { action } => commands::sbom_command(action).await,
+        Commands::EdgeAgent {
+            control_plane,
+            site,
+            token,
+            kube_context,
+            dry_run,
+            interval_secs,
+        } => {
+            commands::edge_agent_command(
+                &control_plane,
+                &site,
+                token.as_deref(),
+                kube_context.as_deref(),
+                dry_run,
+                interval_secs,
+            )
+            .await
         }
     };
 

@@ -11,6 +11,7 @@ pub mod kube;
 pub mod kube_manifest;
 pub mod kube_extras;
 pub mod kube_policy_extras;
+pub mod kube_reconcile;
 pub mod kubevirt;
 pub mod metal;
 

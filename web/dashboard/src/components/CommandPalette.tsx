@@ -14,6 +14,7 @@ import { getRecentActions, pushRecentAction } from '../utils/recentActions';
 import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import { partitionNavViews } from '../utils/navCapabilities';
+import { inferFixRecommendations } from '../utils/k8sUx';
 
 type CommandCategory = 'recent' | 'recent-action' | 'navigation' | 'setup' | 'workload' | 'workload-action' | 'action';
 
@@ -93,6 +94,16 @@ export default function CommandPalette({
 
   const allCommands = useMemo((): CommandAction[] => {
     const workloadItems: CommandAction[] = workloads.flatMap((name) => [
+      {
+        id: `application-${name}`,
+        label: `Open application: ${name}`,
+        category: 'workload' as const,
+        searchText: `application app kubernetes ${name}`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('applications'), { workload: name }));
+        },
+      },
       {
         id: `workload-${name}`,
         label: `Open workload: ${name}`,
@@ -465,6 +476,31 @@ export default function CommandPalette({
             res.success ? 'success' : 'error',
           );
           onRefresh?.();
+        },
+      },
+      {
+        id: `workload-${name}-scale`,
+        label: `Scale application: ${name}`,
+        category: 'workload-action' as const,
+        searchText: `scale replicas application ${name}`,
+        workloadName: name,
+        run: () => {
+          navigate(pathWithQuery(viewToPath('applications'), { workload: name, tab: 'overview' }));
+        },
+      },
+      {
+        id: `workload-${name}-why-failing`,
+        label: `Why is ${name} failing?`,
+        category: 'workload-action' as const,
+        searchText: `why failing troubleshoot diagnose ${name}`,
+        workloadName: name,
+        run: () => {
+          navigate(
+            pathWithQuery(viewToPath('copilot'), {
+              workload: name,
+              q: `Why is ${name} failing?`,
+            }),
+          );
         },
       },
       {
@@ -883,8 +919,58 @@ export default function CommandPalette({
       .map((cmd) => ({ cmd, score: fuzzyScore(q, cmd.searchText || cmd.label) }))
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score);
-    return (q ? scored.map(({ cmd }) => cmd) : pool).slice(0, 40);
-  }, [allCommands, query, recentCommands]);
+    let results = (q ? scored.map(({ cmd }) => cmd) : pool).slice(0, 40);
+
+    const ql = q.toLowerCase();
+    const scaleMatch = ql.match(/^scale\s+(.+)$/);
+    const whyMatch = ql.match(/^why\s+(.+?)\s+failing\??$/);
+
+    const contextual: CommandAction[] = [];
+    const resolveName = (needle: string) =>
+      workloads.find((w) => w.toLowerCase() === needle) ??
+      workloads.find((w) => w.toLowerCase().includes(needle));
+
+    if (scaleMatch) {
+      const match = resolveName(scaleMatch[1].trim().toLowerCase());
+      if (match) {
+        contextual.push({
+          id: `context-scale-${match}`,
+          label: `Scale ${match}`,
+          category: 'action',
+          searchText: q,
+          run: () => navigate(pathWithQuery(viewToPath('applications'), { workload: match, tab: 'overview' })),
+        });
+      }
+    }
+
+    if (whyMatch) {
+      const match = resolveName(whyMatch[1].trim().toLowerCase());
+      if (match) {
+        const stub = { name: match, runtime: 'kubernetes', image: '', status: 'error', created_at: '' };
+        const fix = inferFixRecommendations(stub);
+        contextual.push({
+          id: `context-why-${match}`,
+          label: fix ? `Why ${match} failing: ${fix.title}` : `Why is ${match} failing?`,
+          category: 'action',
+          searchText: q,
+          run: () =>
+            navigate(
+              pathWithQuery(viewToPath('copilot'), {
+                workload: match,
+                q: `Why is ${match} failing?`,
+              }),
+            ),
+        });
+      }
+    }
+
+    if (contextual.length > 0) {
+      const seen = new Set(contextual.map((c) => c.id));
+      results = [...contextual, ...results.filter((c) => !seen.has(c.id))].slice(0, 40);
+    }
+
+    return results;
+  }, [allCommands, query, recentCommands, workloads, navigate]);
 
   useEffect(() => {
     if (open) {

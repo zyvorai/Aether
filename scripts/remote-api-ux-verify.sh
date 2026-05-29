@@ -68,6 +68,11 @@ expect_code /api/observability/summary 200
 expect_code /api/metrics 200
 expect_code /api/platform/recommendations 200
 
+section "CloudOS / Kubernetes UX"
+expect_code /api/cluster/cilium/hubble 200
+expect_code /api/helm/catalog 200
+expect_code /api/intelligence/threats 200
+
 section "Overview / ops pages"
 for p in \
   /api/events/summary \
@@ -81,7 +86,6 @@ for p in \
   /api/rbac/keys \
   /api/audit \
   /api/audit/verify \
-  /api/gitops/status \
   /api/templates \
   /api/scheduler/utilization \
   /api/scheduler/optimize \
@@ -90,7 +94,17 @@ for p in \
   expect_code "${p}" 200
 done
 
-section "Confidential fabric"
+# GitOps can block when no repo is configured or the remote is slow — warn, do not fail deploy verify.
+f="$(fetch /api/gitops/status)"
+gitops_code="$(cat "${f}.code")"
+if [ "${gitops_code}" = "200" ]; then
+  ok "/api/gitops/status → 200"
+elif [ "${gitops_code}" = "000" ]; then
+  note "/api/gitops/status → timeout (no repo or slow remote — optional)"
+else
+  bad "/api/gitops/status → ${gitops_code} (expected 200)"
+fi
+
 for p in \
   /api/confidential/capabilities \
   /api/confidential/fleet \
@@ -103,6 +117,53 @@ for p in \
 done
 
 section "Cross-check UX data consistency"
+# Copilot troubleshoot against first cluster workload (when present)
+python3 - "${TMP}" "${API}" <<'PY'
+import json, sys, glob, os, urllib.request
+
+tmp = sys.argv[1]
+api = sys.argv[2]
+
+def load(path_suffix):
+    for f in glob.glob(os.path.join(tmp, "*" + path_suffix)):
+        with open(f) as fh:
+            return json.load(fh)
+    return None
+
+workloads_body = load("_api_workloads")
+workloads = workloads_body.get("data") if workloads_body else None
+if isinstance(workloads, list):
+    cluster = next((w for w in workloads if w.get("source") == "cluster"), None)
+    if cluster:
+        name = cluster.get("name", "")
+        payload = json.dumps({
+            "workload": name,
+            "cluster": cluster.get("cluster"),
+            "namespace": cluster.get("namespace"),
+            "kind": cluster.get("kind"),
+            "include_copilot_summary": False,
+        }).encode()
+        req = urllib.request.Request(
+            f"{api}/api/copilot/troubleshoot",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                body = json.load(resp)
+                if resp.status == 200 and body.get("success"):
+                    print(f"  copilot/troubleshoot: ok for {name}")
+                else:
+                    print(f"FAIL: copilot/troubleshoot for {name}: {body}")
+                    sys.exit(1)
+        except Exception as e:
+            print(f"FAIL: copilot/troubleshoot: {e}")
+            sys.exit(1)
+    else:
+        print("  copilot/troubleshoot: skip (no cluster workloads)")
+PY
+
 python3 - "${TMP}" "${API}" <<'PY'
 import json, sys, glob, os
 
@@ -197,6 +258,21 @@ print("  cross-checks passed")
 PY
 if [ $? -eq 0 ]; then ok "UX data consistency"; else bad "UX data consistency"; fi
 
+section "Four Pillars"
+expect_code /api/ecosystem/packetwolf/status 200
+expect_code /api/security/sbom 200
+expect_code /api/security/images 200
+expect_code /api/fleet/edge/agents 200
+expect_code /api/fleet/federation/policies 200
+
+section "Intelligent Fleet + Migration + Hosted"
+expect_code /api/fleet/drift 200
+expect_code /api/hosted/tenants 200
+expect_code /api/hosted/billing/usage 200
+expect_code /api/hosted/billing/metering 200
+expect_code /api/intelligence/remediation/plan 200
+
+section "Summary"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Summary: ${pass} passed, ${fail} failed, ${warn} warnings"

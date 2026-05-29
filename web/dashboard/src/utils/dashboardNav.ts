@@ -18,6 +18,7 @@ export interface DashboardViewMeta {
 
 export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'overview', path: '/', label: 'Dashboard', breadcrumb: 'Dashboard', subtitle: 'Real-time view across all runtimes', group: 'primary' },
+  { view: 'applications', path: '/applications', label: 'Applications', breadcrumb: 'Applications', subtitle: 'Manage Kubernetes apps like an operating system — not like YAML', group: 'primary', paletteLabel: 'Applications' },
   { view: 'workloads', path: '/workloads', label: 'Workloads', breadcrumb: 'Workloads', subtitle: 'Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3', group: 'primary' },
   { view: 'ai', path: '/ai', label: 'AI Engine', breadcrumb: 'AI Engine', subtitle: 'Intent scoring, runtime recommendations & migration planning', group: 'intelligence' },
   { view: 'copilot', path: '/copilot', label: 'Ops Copilot', breadcrumb: 'Ops Copilot', subtitle: 'Natural language operations — health, drift, cost, and cluster queries', group: 'intelligence', paletteLabel: 'Copilot' },
@@ -29,6 +30,10 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'confidential', path: '/confidential', label: 'Confidential Computing', breadcrumb: 'Confidential Computing', subtitle: 'TEE capabilities, attestation trust scores, and Ragnarok integration', group: 'intelligence', paletteLabel: 'Confidential' },
   { view: 'clusters', path: '/clusters', label: 'Cluster Browser', breadcrumb: 'Cluster Browser', subtitle: 'Browse and manage Kubernetes resources', group: 'operations' },
   { view: 'fleet', path: '/fleet', label: 'Fleet Overview', breadcrumb: 'Fleet Overview', subtitle: 'Multi-cluster inventory, Hubble, and PacketWolf links', group: 'operations', paletteLabel: 'Fleet' },
+  { view: 'hosted', path: '/hosted', label: 'Hosted SaaS', breadcrumb: 'Hosted SaaS', subtitle: 'Tenants, API keys, metering, and Stripe billing', group: 'resources', paletteLabel: 'Hosted' },
+  { view: 'activity', path: '/activity', label: 'Activity Monitor', breadcrumb: 'Activity Monitor', subtitle: 'CPU, memory, restarts, and errors across the fleet', group: 'operations', paletteLabel: 'Activity' },
+  { view: 'helm', path: '/helm', label: 'Helm App Store', breadcrumb: 'Helm App Store', subtitle: 'Install curated charts with a guided wizard', group: 'operations', paletteLabel: 'Helm Store' },
+  { view: 'security', path: '/security', label: 'Security Center', breadcrumb: 'Security Center', subtitle: 'Threats, secrets, policies, and hardening', group: 'intelligence', paletteLabel: 'Security' },
   { view: 'compose', path: '/compose', label: 'Compose Import', breadcrumb: 'Compose Import', subtitle: 'Import Docker Compose into Aether workloads', group: 'operations' },
   { view: 'editor', path: '/editor', label: 'Visual Editor', breadcrumb: 'Visual Editor', subtitle: 'Form-based workload designer (no YAML required)', group: 'operations' },
   { view: 'scheduler', path: '/scheduler', label: 'Scheduler', breadcrumb: 'Scheduler', subtitle: 'Scheduling recommendations and placement', group: 'operations' },

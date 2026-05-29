@@ -32,6 +32,8 @@ import { SeverityBadge } from '../Badge';
 import OnboardingStrip from '../OnboardingStrip';
 import EmptyState from '../EmptyState';
 import PlatformStatusPanel from '../PlatformStatusPanel';
+import K8sControlCenter from '../K8sControlCenter';
+import { isK8sApplication } from '../../utils/k8sUx';
 import { useServerCapabilities } from '../../contexts/ServerCapabilitiesContext';
 import { platformSetupNeeded } from '../../utils/navCapabilities';
 import type {
@@ -48,6 +50,7 @@ import type {
 } from '../../types/api';
 
 interface OverviewPageProps {
+  username?: string;
   onNavigate: (view: AppView) => void;
   sseConnected?: boolean;
 }
@@ -77,7 +80,7 @@ const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   apiKeys: 'API keys',
 };
 
-export default function OverviewPage({ onNavigate, sseConnected = false }: OverviewPageProps) {
+export default function OverviewPage({ username = '', onNavigate, sseConnected = false }: OverviewPageProps) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -262,6 +265,8 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
   const degraded = (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0);
   const aetherManagedCount = countAetherManaged(workloads);
   const clusterDiscoveredCount = workloads.filter((w) => w.source === 'cluster').length;
+  const k8sApps = workloads.filter(isK8sApplication);
+  const showK8sControlCenter = k8sApps.length > 0 || (clusterSummary?.enabled ?? false);
   const isEmptyPlatform = aetherManagedCount === 0;
 
   const setupHints = platformSetupNeeded(capabilities?.platform ?? null);
@@ -422,6 +427,15 @@ export default function OverviewPage({ onNavigate, sseConnected = false }: Overv
             Retry
           </button>
         </div>
+      ) : null}
+
+      {showK8sControlCenter ? (
+        <K8sControlCenter
+          username={username}
+          workloads={workloads}
+          clusterSummary={clusterSummary}
+          onNavigate={onNavigate}
+        />
       ) : null}
 
       {isEmptyPlatform ? (

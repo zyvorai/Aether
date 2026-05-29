@@ -58,8 +58,12 @@ run-dev:
 	@echo "Running aether in development mode..."
 	cargo run -- -v --help
 
-ci: test lint confidential-validate
+ci: test lint confidential-validate audit-warn
 	@echo "CI checks passed!"
+
+audit-warn:
+	@echo "Running cargo audit (non-blocking)..."
+	-cargo audit
 
 confidential-validate:
 	@chmod +x scripts/validate-confidential-examples.sh 2>/dev/null || true
@@ -89,10 +93,12 @@ watch:
 # Quick validation
 validate:
 	@echo "Validating example workloads..."
-	cargo run --release -- validate --spec workload.yaml
-	cargo run --release -- validate --spec workload-k8s.yaml
-	cargo run --release -- validate --spec workload-kubevirt.yaml
-	cargo run --release -- validate --spec workload-metal.yaml
+	@chmod +x scripts/validate-schema-examples.sh 2>/dev/null || true
+	@AETHER_BIN=./target/release/aether scripts/validate-schema-examples.sh
+
+post-deploy-verify:
+	@chmod +x scripts/post-deploy-verify.sh 2>/dev/null || true
+	@./scripts/post-deploy-verify.sh
 
 # Benchmark (if criterion is added)
 bench:

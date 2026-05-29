@@ -33,7 +33,10 @@ pub fn tools_openai_schema() -> serde_json::Value {
         {"type":"function","function":{"name":"confidential_migrate_plan","description":"Plan confidential migration with TEE compatibility checks","parameters":{"type":"object","properties":{"workload":{"type":"string"}},"required":["workload"]}}},
         {"type":"function","function":{"name":"trust_score_fleet","description":"AI confidential fleet analysis with trust scores and risk findings","parameters":{"type":"object","properties":{}}}},
         {"type":"function","function":{"name":"intelligence_place","description":"Global placement recommendation for a workload YAML spec","parameters":{"type":"object","properties":{"yaml":{"type":"string"}},"required":["yaml"]}}},
-        {"type":"function","function":{"name":"evolution_status","description":"Runtime evolution / learning status for the fleet","parameters":{"type":"object","properties":{}}}}
+        {"type":"function","function":{"name":"diagnose_workload","description":"Diagnose workload with live cluster evidence: health, events, logs, pods, recommendations","parameters":{"type":"object","properties":{"workload":{"type":"string"},"cluster":{"type":"string"},"namespace":{"type":"string"},"kind":{"type":"string"}},"required":["workload"]}}},
+        {"type":"function","function":{"name":"gitops_status","description":"GitOps reconciliation status","parameters":{"type":"object","properties":{}}}},
+        {"type":"function","function":{"name":"policy_violations","description":"Scan fleet for policy violations","parameters":{"type":"object","properties":{}}}},
+        {"type":"function","function":{"name":"ai_insights","description":"Combined AI insights: predictions, threats, cost, evolution","parameters":{"type":"object","properties":{}}}},
     ])
 }
 
@@ -234,6 +237,58 @@ pub async fn execute_tool(
                 AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
             let pairs = workload_pairs(&ctx.state).await;
             Ok(serde_json::to_value(EvolutionEngine::status_for_fleet(&pairs, &policy))?)
+        }
+        "diagnose_workload" => {
+            let workload = args
+                .get("workload")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("workload required"))?;
+            let store = ctx.state.read().await;
+            let req = crate::copilot::diagnose::DiagnoseRequest {
+                workload: workload.into(),
+                cluster: args.get("cluster").and_then(|v| v.as_str()).map(str::to_string),
+                namespace: args.get("namespace").and_then(|v| v.as_str()).map(str::to_string),
+                kind: args.get("kind").and_then(|v| v.as_str()).map(str::to_string),
+            };
+            let report = crate::copilot::diagnose::diagnose_workload(&req, &store).await?;
+            Ok(serde_json::to_value(report)?)
+        }
+        "gitops_status" => {
+            let path = crate::resources::aether_path("gitops.json");
+            if !path.exists() {
+                return Ok(serde_json::json!({
+                    "configured": false,
+                    "hint": "GitOps not configured"
+                }));
+            }
+            let data = std::fs::read_to_string(&path)?;
+            Ok(serde_json::from_str(&data)?)
+        }
+        "policy_violations" => {
+            let pairs = workload_pairs(&ctx.state).await;
+            let engine = crate::policy::PolicyEngine::production();
+            let mut violations = Vec::new();
+            for (spec, ws) in &pairs {
+                let result = engine.evaluate(spec);
+                if !result.passed {
+                    violations.push(serde_json::json!({
+                        "workload": ws.name,
+                        "violations": result.violations,
+                    }));
+                }
+            }
+            Ok(serde_json::json!({"violations": violations}))
+        }
+        "ai_insights" => {
+            let pairs = workload_pairs(&ctx.state).await;
+            let predictions = FailurePredictor::predict_fleet(&pairs);
+            let threats = SecurityEngine::scan_fleet(&pairs);
+            let cost = FinOpsEngine::optimize_fleet(&pairs);
+            Ok(serde_json::json!({
+                "predictions": predictions,
+                "threats": threats,
+                "cost": cost,
+            }))
         }
         other => anyhow::bail!("unknown tool: {other}"),
     }

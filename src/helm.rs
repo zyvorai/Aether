@@ -7,11 +7,138 @@
 //! Generates a complete Helm chart directory from an Aether workload spec.
 
 use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
 use std::path::Path;
 
 use crate::spec::{ServiceType, Workload};
+
+/// Curated Helm charts for the App Store UI.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HelmCatalogChart {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub chart: String,
+    pub repo: String,
+    pub version: String,
+    pub description: String,
+    pub storage_required: bool,
+    pub backup_supported: bool,
+    pub ha_available: bool,
+    pub monitoring_available: bool,
+}
+
+/// Static Helm catalog for dashboard App Store.
+pub fn helm_catalog() -> Vec<HelmCatalogChart> {
+    vec![
+        HelmCatalogChart {
+            id: "postgresql".into(),
+            name: "PostgreSQL".into(),
+            category: "Databases".into(),
+            chart: "bitnami/postgresql".into(),
+            repo: "https://charts.bitnami.com/bitnami".into(),
+            version: "16".into(),
+            description: "Production-grade PostgreSQL with backups and replication options.".into(),
+            storage_required: true,
+            backup_supported: true,
+            ha_available: true,
+            monitoring_available: true,
+        },
+        HelmCatalogChart {
+            id: "redis".into(),
+            name: "Redis".into(),
+            category: "Databases".into(),
+            chart: "bitnami/redis".into(),
+            repo: "https://charts.bitnami.com/bitnami".into(),
+            version: "7".into(),
+            description: "In-memory cache and message broker.".into(),
+            storage_required: true,
+            backup_supported: true,
+            ha_available: true,
+            monitoring_available: true,
+        },
+        HelmCatalogChart {
+            id: "prometheus".into(),
+            name: "Prometheus".into(),
+            category: "Observability".into(),
+            chart: "prometheus-community/prometheus".into(),
+            repo: "https://prometheus-community.github.io/helm-charts".into(),
+            version: "25".into(),
+            description: "Metrics collection and alerting stack.".into(),
+            storage_required: true,
+            backup_supported: false,
+            ha_available: true,
+            monitoring_available: true,
+        },
+        HelmCatalogChart {
+            id: "grafana".into(),
+            name: "Grafana".into(),
+            category: "Observability".into(),
+            chart: "grafana/grafana".into(),
+            repo: "https://grafana.github.io/helm-charts".into(),
+            version: "8".into(),
+            description: "Dashboards and visualization for Prometheus/Loki.".into(),
+            storage_required: false,
+            backup_supported: true,
+            ha_available: true,
+            monitoring_available: true,
+        },
+        HelmCatalogChart {
+            id: "keycloak".into(),
+            name: "Keycloak".into(),
+            category: "Security".into(),
+            chart: "bitnami/keycloak".into(),
+            repo: "https://charts.bitnami.com/bitnami".into(),
+            version: "24".into(),
+            description: "Identity and access management (OIDC/SAML).".into(),
+            storage_required: true,
+            backup_supported: true,
+            ha_available: true,
+            monitoring_available: true,
+        },
+        HelmCatalogChart {
+            id: "argo-cd".into(),
+            name: "Argo CD".into(),
+            category: "DevOps".into(),
+            chart: "argo/argo-cd".into(),
+            repo: "https://argoproj.github.io/argo-helm".into(),
+            version: "7".into(),
+            description: "GitOps continuous delivery for Kubernetes.".into(),
+            storage_required: false,
+            backup_supported: true,
+            ha_available: true,
+            monitoring_available: true,
+        },
+        HelmCatalogChart {
+            id: "nginx-ingress".into(),
+            name: "NGINX Ingress".into(),
+            category: "Networking".into(),
+            chart: "ingress-nginx/ingress-nginx".into(),
+            repo: "https://kubernetes.github.io/ingress-nginx".into(),
+            version: "4".into(),
+            description: "Ingress controller for HTTP/S routing.".into(),
+            storage_required: false,
+            backup_supported: false,
+            ha_available: true,
+            monitoring_available: true,
+        },
+        HelmCatalogChart {
+            id: "vault".into(),
+            name: "Vault".into(),
+            category: "Security".into(),
+            chart: "hashicorp/vault".into(),
+            repo: "https://helm.releases.hashicorp.com".into(),
+            version: "0.28".into(),
+            description: "Secrets management and encryption.".into(),
+            storage_required: true,
+            backup_supported: true,
+            ha_available: true,
+            monitoring_available: true,
+        },
+    ]
+}
 
 /// Export a workload specification as a Helm chart.
 ///

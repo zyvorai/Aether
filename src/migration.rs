@@ -4,6 +4,9 @@
 
 //! Migration engine for moving workloads between runtimes
 
+pub mod fleet;
+pub mod volume;
+
 use crate::runtime::{Instance, Runtime, RuntimeKind};
 use crate::spec::Workload;
 use crate::state::StateStore;

@@ -920,12 +920,22 @@ kubectl delete pvc -l managed-by=aether
 kubectl delete namespace aether-demo
 ```
 
+## Stop vs delete
+
+| Command | Controllers | Service / Ingress / HPA | PVC / Secrets / ConfigMaps |
+|---------|-------------|-------------------------|----------------------------|
+| `aether stop NAME` | Removed | Kept | Kept |
+| `aether stop NAME --cascade` | Removed | Removed | Kept |
+| `aether delete NAME` | Removed | Removed | Removed (labeled resources) |
+
+`stop` is a fast scale-to-zero: workload controllers (Deployment, StatefulSet, DaemonSet, Job, CronJob) are deleted while networking and storage objects remain for quick restart. Use `--cascade` on Kubernetes to also tear down the Service, Ingress, and HPA. Use `delete` for full cleanup including ConfigMaps, Secrets, PVC, and RBAC objects created by Aether.
+
 ## Next Steps
 
-- **Multi-cluster GitOps** — extend `AETHER_CONTEXT` per-environment pipelines
-- **Live cluster E2E** — enable `AETHER_LABS_LIVE=1` on a reference runner
-
----
+- **CloudOS dashboard** — Applications, Activity Monitor, Security Center, Helm App Store, AI troubleshoot with Apply fix (`/applications`, `/activity`, `/security`, `/helm`)
+- **Advanced Kubernetes spec** — `examples/workload-k8s-advanced.yaml` (Gateway API, VPA, KEDA, cert-manager, PDB)
+- **Schema validation** — `scripts/validate-schema-examples.sh` (Rust + JSON Schema)
+- **Multi-cluster GitOps** — per-environment `kubeContext` / `kubeNamespace` in GitOps config
 
 ## Example Commands Reference
 
