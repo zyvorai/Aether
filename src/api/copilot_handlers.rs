@@ -11,6 +11,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use crate::copilot::agent::{tool_context, CopilotAgent};
+use crate::copilot::diagnose::{DiagnoseRequest, DiagnoseResponse};
 use serde::Deserialize;
 use std::sync::LazyLock;
 
@@ -21,6 +22,70 @@ pub(crate) struct CopilotChatRequest {
     pub message: String,
     pub session_id: Option<String>,
     pub confirm_action_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct TroubleshootRequest {
+    pub workload: String,
+    pub cluster: Option<String>,
+    pub namespace: Option<String>,
+    pub kind: Option<String>,
+    pub include_copilot_summary: Option<bool>,
+}
+
+/// POST /api/copilot/troubleshoot — Live cluster evidence diagnosis.
+pub(crate) async fn api_copilot_troubleshoot(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<TroubleshootRequest>,
+) -> impl IntoResponse {
+    if req.workload.trim().is_empty() {
+        return err_bad_request::<DiagnoseResponse>("workload is required").into_response();
+    }
+    let store = app_state.state.read().await;
+    let diagnose_req = DiagnoseRequest {
+        workload: req.workload.clone(),
+        cluster: req.cluster.clone(),
+        namespace: req.namespace.clone(),
+        kind: req.kind.clone(),
+    };
+    let mut report = match crate::copilot::diagnose::diagnose_workload(&diagnose_req, &store).await {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<DiagnoseResponse> {
+                    success: false,
+                    data: None,
+                    error: Some(e.to_string()),
+                }),
+            )
+                .into_response();
+        }
+    };
+    drop(store);
+
+    if req.include_copilot_summary.unwrap_or(true) {
+        let role = crate::rbac::Role::Admin;
+        let ctx = tool_context(
+            app_state.state.clone(),
+            app_state.state_path.clone(),
+            role,
+        );
+        let prompt = format!(
+            "Summarize this workload diagnosis in 2-3 sentences with root cause and recommended fix:\n{}",
+            serde_json::to_string_pretty(&report).unwrap_or_default()
+        );
+        if let Ok(resp) = COPILOT
+            .chat(&prompt, None, None, &ctx)
+            .await
+        {
+            report
+                .evidence
+                .insert(0, format!("AI summary: {}", resp.reply));
+        }
+    }
+
+    ok_json(report).into_response()
 }
 
 /// POST /api/copilot/chat

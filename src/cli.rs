@@ -113,6 +113,10 @@ pub(crate) enum Commands {
     Stop {
         /// Workload name
         name: String,
+
+        /// Also remove Service, Ingress, and HPA (Kubernetes only; keeps PVCs and Secrets)
+        #[arg(long)]
+        cascade: bool,
     },
 
     /// Get instance status
@@ -550,6 +554,49 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         action: ConfidentialAction,
     },
+
+    /// CycloneDX SBOM export and verify
+    Sbom {
+        #[command(subcommand)]
+        action: SbomAction,
+    },
+
+    /// Edge site agent — register with control plane and drain reconcile queue
+    EdgeAgent {
+        /// Control plane API base URL
+        #[arg(long)]
+        control_plane: String,
+        /// Edge site name
+        #[arg(long)]
+        site: String,
+        /// Shared edge token (or AETHER_EDGE_TOKEN env)
+        #[arg(long, env = "AETHER_EDGE_TOKEN")]
+        token: Option<String>,
+        /// Local kube context for apply
+        #[arg(long)]
+        kube_context: Option<String>,
+        /// Print actions without applying
+        #[arg(long)]
+        dry_run: bool,
+        /// Heartbeat interval seconds
+        #[arg(long, default_value = "30")]
+        interval_secs: u64,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum SbomAction {
+    /// Export CycloneDX SBOM JSON
+    Export {
+        /// Output file (stdout when omitted)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Verify SBOM file format
+    Verify {
+        /// Path to cyclonedx.json
+        file: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -722,6 +769,8 @@ impl Commands {
             Self::Health { .. } => "health",
             Self::HelmExport { .. } => "helm-export",
             Self::Confidential { .. } => "confidential",
+            Self::Sbom { .. } => "sbom",
+            Self::EdgeAgent { .. } => "edge-agent",
         }
     }
 }

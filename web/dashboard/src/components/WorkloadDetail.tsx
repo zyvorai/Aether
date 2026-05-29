@@ -3,12 +3,16 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Link2 } from 'lucide-react';
 import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
+import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
 import LogViewer from './LogViewer';
+import FixItPanel, { type FixAction } from './FixItPanel';
+import ApplicationTopology from './ApplicationTopology';
+import AiTroubleshootPanel from './AiTroubleshootPanel';
 import Badge, { RuntimeBadge, SeverityBadge } from './Badge';
 import BarChart from './BarChart';
 import RadarChart from './RadarChart';
@@ -16,7 +20,7 @@ import IntentDebugger from './IntentDebugger';
 import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
 import type { ClusterResourceDetail, Event, ScoringResult, WorkloadResponse } from '../types/api';
 
-export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust';
+export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust' | 'topology';
 
 interface WorkloadDetailProps {
   workload: WorkloadResponse;
@@ -99,8 +103,9 @@ function ScoringResultsView({ data }: { data: ScoringResult }) {
 }
 
 export default function WorkloadDetail({ workload, onClose, onAction, onMigrate, initialTab = 'overview', canMutate = true }: WorkloadDetailProps) {
+  const navigate = useNavigate();
   const isAetherManaged = (workload.source ?? 'aether') === 'aether';
-  const isKubeWorkload = workload.runtime.toLowerCase().includes('kube') || (!isAetherManaged && Boolean(workload.cluster));
+  const isKubeWorkload = isK8sApplication(workload);
   const networkPolicyName = `${workload.name}-netpol`;
   const ciliumPolicyName = `${workload.name}-cilium`;
   const clusterBrowseNetworkPath = pathWithQuery(viewToPath('clusters'), {
@@ -329,6 +334,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   const tabs: { id: DetailTab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'logs', label: 'Logs' },
+    ...(isKubeWorkload ? [{ id: 'topology' as const, label: 'Topology' }] : []),
     { id: 'manifest', label: 'Manifest' },
     { id: 'drift', label: 'Drift' },
     { id: 'scoring', label: 'Scoring' },
@@ -336,13 +342,59 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
     { id: 'events', label: 'Events' },
   ];
 
+  function handleFixAction(action: FixAction) {
+    switch (action) {
+      case 'logs':
+        setActiveTab('logs');
+        break;
+      case 'restart':
+        void handleAction('restart');
+        break;
+      case 'scale':
+        setActiveTab('overview');
+        break;
+      case 'rollback':
+        void handleAction('rollback');
+        break;
+      case 'editor':
+        navigate(pathWithQuery(viewToPath('editor'), { workload: workload.name }));
+        break;
+      case 'clusters':
+        navigate(
+          pathWithQuery(viewToPath('clusters'), {
+            cluster: workload.cluster ?? undefined,
+            namespace: workload.namespace ?? undefined,
+          }),
+        );
+        break;
+      case 'copilot':
+        navigate(
+          pathWithQuery(viewToPath('copilot'), {
+            workload: workload.name,
+            q: `Why is ${workload.name} failing?`,
+          }),
+        );
+        break;
+    }
+  }
+
   return (
     <>
     <div className="bg-zinc-900 border border-zinc-700 rounded-xl mt-4 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-zinc-800 border-b border-zinc-700">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-bold text-white">{workload.name}</h3>
+          <div>
+            <h3 className="text-lg font-bold text-white">
+              {isKubeWorkload ? applicationLabel(workload) : workload.name}
+            </h3>
+            {isKubeWorkload && (
+              <p className="text-xs text-zinc-500">
+                Application · {workspaceLabel(workload.namespace)}
+                {workload.kind ? ` · ${workload.kind}` : ''}
+              </p>
+            )}
+          </div>
           <Badge text={workload.status} variant={getStatusVariant(workload.status)} />
           <span className="text-sm text-zinc-400">{workload.runtime}</span>
         </div>
@@ -383,6 +435,12 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
       <div className="p-4">
         {activeTab === 'overview' && (
           <div>
+            {isKubeWorkload && (
+              <div className="mb-4 space-y-4">
+                <FixItPanel workload={workload} onAction={handleFixAction} />
+                <AiTroubleshootPanel workload={workload} compact onApplied={onAction} />
+              </div>
+            )}
             {/* Action Buttons */}
             {isAetherManaged && canMutate ? (
               <div className="flex gap-2 mb-4 flex-wrap">
@@ -596,6 +654,10 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
 
         {activeTab === 'logs' && (
           <LogViewer workloadName={workload.name} logsPath={clusterLogsPath} />
+        )}
+
+        {activeTab === 'topology' && isKubeWorkload && (
+          <ApplicationTopology workload={workload} />
         )}
 
         {activeTab === 'manifest' && (

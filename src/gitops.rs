@@ -31,6 +31,91 @@ pub struct GitOpsConfig {
     /// Whether to auto-apply detected changes.
     #[serde(default)]
     pub auto_apply: bool,
+
+    /// Default kubectl context for sync apply (overridden per environment).
+    #[serde(default)]
+    pub kube_context: Option<String>,
+
+    /// Default namespace for sync apply (overridden per environment).
+    #[serde(default)]
+    pub kube_namespace: Option<String>,
+
+    /// Multi-environment GitOps targets (context/namespace/path per env).
+    #[serde(default)]
+    pub environments: Vec<GitOpsEnvironment>,
+}
+
+/// Per-environment GitOps target for multi-cluster pipelines.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub struct GitOpsEnvironment {
+    pub name: String,
+    #[serde(default)]
+    pub kube_context: Option<String>,
+    #[serde(default)]
+    pub kube_namespace: Option<String>,
+    #[serde(default)]
+    pub path: Option<String>,
+}
+
+impl GitOpsConfig {
+    /// Resolve kubectl context for an environment name (or default).
+    pub fn resolve_kube_context(&self, environment: Option<&str>) -> Option<&str> {
+        if let Some(env_name) = environment {
+            if let Some(env) = self.environments.iter().find(|e| e.name == env_name) {
+                return env.kube_context.as_deref();
+            }
+        }
+        self.kube_context.as_deref()
+    }
+
+    /// Resolve namespace for an environment name (or default).
+    pub fn resolve_kube_namespace(&self, environment: Option<&str>) -> Option<&str> {
+        if let Some(env_name) = environment {
+            if let Some(env) = self.environments.iter().find(|e| e.name == env_name) {
+                return env.kube_namespace.as_deref();
+            }
+        }
+        self.kube_namespace.as_deref()
+    }
+
+    /// Resolve deploy target; uses explicit context or federation recommendation.
+    pub async fn resolve_deploy_target(
+        &self,
+        environment: Option<&str>,
+        spec: &crate::spec::Workload,
+    ) -> anyhow::Result<DeployTarget> {
+        if let Some(ctx) = self.resolve_kube_context(environment) {
+            return Ok(DeployTarget {
+                kube_context: ctx.to_string(),
+                kube_namespace: self
+                    .resolve_kube_namespace(environment)
+                    .map(str::to_string),
+                source: if environment.is_some() {
+                    "environment".into()
+                } else {
+                    "explicit".into()
+                },
+            });
+        }
+        if let Some(cluster) = crate::fleet::federation::recommend_cluster(spec).await? {
+            return Ok(DeployTarget {
+                kube_context: cluster,
+                kube_namespace: self.resolve_kube_namespace(environment).map(str::to_string),
+                source: "federation".into(),
+            });
+        }
+        anyhow::bail!(
+            "no kube_context configured and federation could not recommend a cluster — set GitOps kube_context or AETHER_FEDERATION_CLUSTERS"
+        )
+    }
+}
+
+/// Resolved Kubernetes apply target for GitOps sync.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DeployTarget {
+    pub kube_context: String,
+    pub kube_namespace: Option<String>,
+    pub source: String,
 }
 
 fn default_branch() -> String {
@@ -53,6 +138,9 @@ impl Default for GitOpsConfig {
             path: default_path(),
             poll_interval_secs: default_poll_interval(),
             auto_apply: false,
+            kube_context: None,
+            kube_namespace: None,
+            environments: Vec::new(),
         }
     }
 }
@@ -526,6 +614,27 @@ mod tests {
         assert_eq!(config.poll_interval_secs, 60);
         assert!(!config.auto_apply);
         assert!(config.repo_url.is_empty());
+        assert!(config.kube_context.is_none());
+        assert!(config.environments.is_empty());
+    }
+
+    #[test]
+    fn test_gitops_resolve_kube_context_environment() {
+        let config = GitOpsConfig {
+            repo_url: "https://example.com/repo.git".into(),
+            kube_context: Some("dev-context".into()),
+            kube_namespace: Some("dev".into()),
+            environments: vec![GitOpsEnvironment {
+                name: "prod".into(),
+                kube_context: Some("prod-context".into()),
+                kube_namespace: Some("production".into()),
+                path: Some("envs/prod".into()),
+            }],
+            ..Default::default()
+        };
+        assert_eq!(config.resolve_kube_context(Some("prod")), Some("prod-context"));
+        assert_eq!(config.resolve_kube_namespace(Some("prod")), Some("production"));
+        assert_eq!(config.resolve_kube_context(None), Some("dev-context"));
     }
 
     // ----- GitOpsStatus initialization -----------------------------------
@@ -602,6 +711,9 @@ mod tests {
             path: "k8s/".to_string(),
             poll_interval_secs: 30,
             auto_apply: true,
+            kube_context: None,
+            kube_namespace: None,
+            environments: vec![],
         };
 
         let json = serde_json::to_string(&config).unwrap();

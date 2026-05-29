@@ -12,7 +12,7 @@
 | Cluster deploy bootstrap (egress CNPs/CCNPs) | **Shipped** |
 | API `GET /api/cluster/cilium/status` | **Shipped** |
 | Dashboard Platform Cilium card + Clusters **Network** tab | **Shipped** |
-| Hubble UI / flow queries | **Roadmap** (see [ROADMAP.md](../../ROADMAP.md)) |
+| Hubble UI auto-discovery + Fleet deep links | **Shipped** |
 | PacketWolf deep integration | **Roadmap** — observe layer stays in PacketWolf |
 
 ---
@@ -81,7 +81,7 @@ Environment variables:
 | `AETHER_PROMETHEUS_URL` | External Prometheus; enables whitelisted proxy queries |
 | `AETHER_GRAFANA_URL` | Grafana link on Platform / Metrics |
 | `AETHER_GRAFANA_DASHBOARD_UID` | Deep link to imported Aether dashboard |
-| `AETHER_HUBBLE_UI_URL` | Optional Hubble UI link (**Roadmap** — link only until Phase 3) |
+| `AETHER_HUBBLE_UI_URL` | Optional Hubble UI override; auto-discovery when unset |
 
 Import the bundled Grafana dashboard:
 
@@ -113,9 +113,17 @@ kubectl -n aether-system set env deployment/aether \
 
 ## Cilium connectivity check
 
-Post-deploy scripts run `aether_probe_cilium_connectivity` and optionally apply `deploy/k8s/bootstrap/cilium-connectivity-cronjob.yaml`. Results are stored in ConfigMap `aether-cilium-connectivity` and surfaced on the Platform page (`connectivity_check: ok|failed|skipped`).
+**Ship:** The control plane runs native probes via `POST /api/cluster/cilium/connectivity/probe` and after Kubernetes deploys. Results are stored in ConfigMap `aether-cilium-connectivity` and surfaced on the Platform page (`connectivity_check: ok|failed|skipped`, with `last_checked_at` and `detail`).
+
+Deploy scripts still run `aether_probe_cilium_connectivity` and optionally apply `deploy/k8s/bootstrap/cilium-connectivity-cronjob.yaml` for periodic checks.
 
 Skip with `AETHER_SKIP_CILIUM_CONNECTIVITY=1`.
+
+---
+
+## Hubble UI
+
+**Ship:** Hubble is auto-discovered from cluster Services/ConfigMaps when installed. Set `AETHER_HUBBLE_UI_URL` to override. Deep links: `{hubble_url}/?namespace={ns}&pod={pod}`.
 
 ---
 

@@ -25,6 +25,15 @@ test.describe('Mock IdP SSO flows', () => {
     });
   });
 
+  test('SAML encrypted assertion login when mock IdP encrypted mode enabled', async ({ page }) => {
+    test.skip(process.env.AETHER_MOCK_IDP_ENCRYPTED !== '1', 'requires AETHER_MOCK_IDP_ENCRYPTED=1');
+    await page.goto('/');
+    await page.getByRole('button', { name: /sign in with saml/i }).click();
+    await expect(page.getByText(/mock idp user|workloads|overview/i).first()).toBeVisible({
+      timeout: 20_000,
+    });
+  });
+
   test('OIDC login completes and reaches dashboard', async ({ page, context }) => {
     await context.clearCookies();
     await page.goto('/');

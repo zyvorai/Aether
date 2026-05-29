@@ -1,0 +1,283 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { Shield, AlertTriangle, Lock, KeyRound, FileCheck } from 'lucide-react';
+import { apiFetchSettled, apiPost } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import StatCard from '../StatCard';
+import Badge, { SeverityBadge } from '../Badge';
+import type { SecretSummary, ThreatReport, SbomMetadata, SignedImageManifest, RemediationPlan } from '../../types/api';
+
+export default function SecurityCenterPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [threats, setThreats] = useState<ThreatReport | null>(null);
+  const [secrets, setSecrets] = useState<SecretSummary[]>([]);
+  const [hardening, setHardening] = useState<string | null>(null);
+  const [sbom, setSbom] = useState<SbomMetadata | null>(null);
+  const [signedImages, setSignedImages] = useState<SignedImageManifest[]>([]);
+  const [packetwolfStatus, setPacketwolfStatus] = useState<{ configured: boolean; reachable: boolean } | null>(null);
+  const [remediation, setRemediation] = useState<RemediationPlan | null>(null);
+  const [remediationRunning, setRemediationRunning] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    const [threatsRes, secretsRes, sbomRes, imagesRes, pwRes] = await Promise.all([
+      apiFetchSettled<ThreatReport>('/intelligence/threats'),
+      apiFetchSettled<SecretSummary[]>('/secrets'),
+      apiFetchSettled<{ metadata: SbomMetadata }>('/security/sbom'),
+      apiFetchSettled<SignedImageManifest[]>('/security/images'),
+      apiFetchSettled<{ configured: boolean; reachable: boolean }>('/ecosystem/packetwolf/status'),
+    ]);
+    if (!threatsRes.ok && !secretsRes.ok) {
+      setLoadFailed(true);
+      setLoading(false);
+      return;
+    }
+    setThreats(threatsRes.ok ? threatsRes.data : null);
+    setSecrets(secretsRes.ok ? secretsRes.data : []);
+    setSbom(sbomRes.ok ? sbomRes.data.metadata : null);
+    setSignedImages(imagesRes.ok ? imagesRes.data : []);
+    setPacketwolfStatus(pwRes.ok ? pwRes.data : null);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function generateHardeningPlan() {
+    const res = await apiPost<{ reply: string }>('/copilot/chat', {
+      message: 'Generate a Kubernetes hardening plan based on current threats, secrets rotation needs, and policy gaps. Be concise with actionable bullets.',
+    });
+    if (res.success && res.data) {
+      setHardening((res.data as { reply?: string }).reply ?? JSON.stringify(res.data));
+    }
+  }
+
+  async function loadRemediation() {
+    const res = await apiFetchSettled<RemediationPlan>('/intelligence/remediation/plan');
+    if (res.ok) setRemediation(res.data);
+  }
+
+  async function executeRemediation(dryRun: boolean) {
+    setRemediationRunning(true);
+    const res = await apiPost<{ executed: string[]; skipped: string[] }>('/intelligence/remediation/execute', {
+      dry_run: dryRun,
+      max_actions: 10,
+    });
+    setRemediationRunning(false);
+    if (res.success && res.data) {
+      const n = res.data.executed?.length ?? 0;
+      window.dispatchEvent(
+        new CustomEvent('aether-toast', {
+          detail: { message: dryRun ? `Dry-run: ${n} actions` : `Executed ${n} remediation actions`, type: 'success' },
+        }),
+      );
+      void loadRemediation();
+    }
+  }
+
+  if (loading) return <PageLoading label="Loading security center…" />;
+  if (loadFailed) return <PageLoadError title="Security center unavailable" onRetry={() => void load()} />;
+
+  const criticalThreats = threats?.threats.filter((t) => t.severity === 'critical' || t.severity === 'high') ?? [];
+  const rotationNeeded = secrets.filter((s) => s.needs_rotation);
+  const highRiskCount = criticalThreats.length + rotationNeeded.length;
+
+  return (
+    <div data-testid="security-center-page">
+      <PageToolbar
+        onRefresh={() => void load()}
+        refreshing={loading}
+        actions={
+          <button
+            type="button"
+            onClick={() => void generateHardeningPlan()}
+            className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90"
+          >
+            Generate Hardening Plan
+          </button>
+        }
+      />
+
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-slate-100">Security Center</h2>
+        <p className="text-sm text-slate-500 mt-1">Privacy &amp; Security for your Kubernetes platform.</p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard title="High risk items" value={highRiskCount} color="red" icon={<AlertTriangle size={18} />} />
+        <StatCard title="Threats" value={threats?.threats.length ?? 0} color="yellow" icon={<Shield size={18} />} />
+        <StatCard title="Secrets" value={secrets.length} color="blue" icon={<KeyRound size={18} />} />
+        <StatCard title="Need rotation" value={rotationNeeded.length} color="orange" icon={<Lock size={18} />} />
+      </div>
+
+      {hardening && (
+        <div className="dash-card mb-6 border border-violet-500/20">
+          <h3 className="text-sm font-semibold text-violet-200 mb-2">AI Hardening Plan</h3>
+          <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans">{hardening}</pre>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="dash-card" data-testid="security-sbom-card">
+          <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2">
+            <FileCheck size={18} className="text-aether" /> SBOM
+          </h3>
+          {sbom ? (
+            <>
+              <p className="text-sm text-slate-400">{sbom.bom_format} {sbom.spec_version} · {sbom.component_count} components</p>
+              <a href="/api/security/sbom" className="mt-3 inline-block text-sm text-aether hover:underline" download="aether-sbom.json">
+                Download CycloneDX JSON
+              </a>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">SBOM not generated yet. Run <code className="text-slate-400">aether sbom export</code>.</p>
+          )}
+        </div>
+        <div className="dash-card" data-testid="security-images-card">
+          <h3 className="text-lg font-semibold text-slate-100 mb-3">Signed images</h3>
+          {signedImages.length === 0 ? (
+            <p className="text-sm text-slate-500">No signed VM images in catalog.</p>
+          ) : (
+            <ul className="space-y-2 text-sm text-slate-300">
+              {signedImages.slice(0, 6).map((img) => (
+                <li key={img.name} className="rounded border border-slate-800 px-3 py-2">
+                  <div className="font-medium text-slate-100">{img.name}</div>
+                  <div className="text-xs text-slate-500 font-mono truncate">{img.image_hash}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {packetwolfStatus?.configured ? (
+        <div className="dash-card mb-6" data-testid="security-packetwolf-card">
+          <h3 className="text-lg font-semibold text-slate-100 mb-2">PacketWolf</h3>
+          <p className="text-sm text-slate-400">
+            Bridge {packetwolfStatus.reachable ? 'reachable' : 'unreachable'} — verify egress from Fleet expanded apps.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="dash-card mb-6" data-testid="security-remediation-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h3 className="text-lg font-semibold text-slate-100">Anomaly remediation</h3>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void loadRemediation()} className="text-sm px-3 py-1.5 rounded border border-slate-700 text-slate-300">
+              Plan
+            </button>
+            <button
+              type="button"
+              disabled={remediationRunning}
+              onClick={() => void executeRemediation(true)}
+              className="text-sm px-3 py-1.5 rounded border border-slate-700 text-slate-300"
+            >
+              Dry-run
+            </button>
+            <button
+              type="button"
+              disabled={remediationRunning}
+              onClick={() => void executeRemediation(false)}
+              className="text-sm px-3 py-1.5 rounded bg-aether text-white"
+            >
+              Execute safe
+            </button>
+          </div>
+        </div>
+        {!remediation ? (
+          <p className="text-sm text-slate-400">Load a remediation plan from PacketWolf anomalies and fleet drift.</p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500">Sources: {remediation.sources.join(', ') || 'none'}</p>
+            {remediation.actions.slice(0, 6).map((a, i) => (
+              <div key={`${a.action_type}-${a.target}-${i}`} className="text-sm text-slate-300 border-t border-slate-800 pt-2">
+                <span className="font-mono text-aether">{a.action_type}</span> — {a.target}: {a.reason}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="dash-card">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
+            <Shield size={18} className="text-aether" /> Threat scan
+          </h3>
+          {criticalThreats.length === 0 ? (
+            <p className="text-sm text-emerald-400">No critical threats detected.</p>
+          ) : (
+            <div className="space-y-3">
+              {criticalThreats.slice(0, 8).map((t) => (
+                <div key={`${t.workload}-${t.category}`} className="rounded-lg border border-slate-800 p-3">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-sm font-medium text-slate-200">{t.workload}</span>
+                    <SeverityBadge severity={t.severity} />
+                  </div>
+                  <p className="text-xs text-slate-400">{t.reason}</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(pathWithQuery(viewToPath('copilot'), { workload: t.workload, q: `Fix security issue: ${t.reason}` }))}
+                    className="mt-2 text-xs text-aether hover:underline"
+                  >
+                    Fix with Copilot →
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="dash-card">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
+            <FileCheck size={18} className="text-aether" /> Policy &amp; secrets
+          </h3>
+          <div className="space-y-3 mb-4">
+            <button
+              type="button"
+              onClick={() => navigate(viewToPath('policy'))}
+              className="w-full text-left rounded-lg border border-slate-800 px-3 py-3 hover:border-aether/40"
+            >
+              <span className="text-sm text-slate-200">Open Policy Check</span>
+              <p className="text-xs text-slate-500 mt-0.5">Validate workloads against production rules</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(viewToPath('secrets'))}
+              className="w-full text-left rounded-lg border border-slate-800 px-3 py-3 hover:border-aether/40"
+            >
+              <span className="text-sm text-slate-200">Manage Secrets</span>
+              <p className="text-xs text-slate-500 mt-0.5">{rotationNeeded.length} secret(s) need rotation</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
+              className="w-full text-left rounded-lg border border-slate-800 px-3 py-3 hover:border-aether/40"
+            >
+              <span className="text-sm text-slate-200">Network policies</span>
+              <p className="text-xs text-slate-500 mt-0.5">Review Cilium and Kubernetes network policy gaps</p>
+            </button>
+          </div>
+          {rotationNeeded.slice(0, 5).map((s) => (
+            <div key={s.name} className="flex items-center justify-between text-sm py-2 border-t border-slate-800">
+              <span className="text-slate-300">{s.name}</span>
+              <Badge text="rotate" variant="yellow" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
+}

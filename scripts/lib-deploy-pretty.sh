@@ -137,7 +137,7 @@ aether_finale_remote_deploy() {
   if [ -n "${health}" ] && [ "${health}" != "${url}" ]; then
     aether_url_box "Health check" "${health}"
   fi
-  echo -e "  ${A_MAG}🧪${A_RST}  ${A_DIM}Next: ${A_RST}${A_CYN}./scripts/remote-api-ux-verify.sh${A_RST} ${A_DIM}·${A_RST} ${A_CYN}./scripts/health-check-all.sh${A_RST}"
+  echo -e "  ${A_MAG}🧪${A_RST}  ${A_DIM}Next: ${A_RST}${A_CYN}./scripts/post-deploy-verify.sh${A_RST} ${A_DIM}·${A_RST} ${A_CYN}./scripts/health-check-all.sh${A_RST}"
   echo -e "  ${A_OR}🚀${A_RST}  ${A_DIM}May your NodePorts be open and your rollouts serene.${A_RST}"
   echo ""
 }

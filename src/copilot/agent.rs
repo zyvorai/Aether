@@ -168,6 +168,17 @@ fn summarize_tool_result(name: &str, val: &serde_json::Value) -> String {
                 .unwrap_or(0.0);
             format!("Potential savings: {:.1}%", pct)
         }
+        "diagnose_workload" => {
+            let level = val.get("health_level").and_then(|v| v.as_str()).unwrap_or("unknown");
+            let summary = val.get("summary").and_then(|v| v.as_str()).unwrap_or("");
+            format!("Diagnosis: {level} — {summary}")
+        }
+        "ai_insights" => "Combined AI insights ready (predictions, threats, cost).".into(),
+        "policy_violations" => {
+            let n = val.pointer("/violations").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
+            format!("Found {n} workload(s) with policy violations.")
+        }
+        "gitops_status" => val.to_string(),
         _ => val.to_string(),
     }
 }

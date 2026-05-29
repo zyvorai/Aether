@@ -25,6 +25,8 @@ jobs:
         working-directory: web/dashboard
         run: |
           npm ci
+          npm run test
+          npm run validate:schema
           AETHER_DASHBOARD_BUILD="${{ env.AETHER_DASHBOARD_BUILD }}" npm run build
       - uses: actions/upload-artifact@v4
         with:
@@ -54,11 +56,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Validate example specs
         run: |
-          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/confidential-kata-workload.yaml examples/labs/metal3/workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
+          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/workload-k8s-advanced.yaml examples/confidential-kata-workload.yaml examples/labs/metal3/workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
             cargo run --quiet -- --spec "$f" validate
           done
-          chmod +x scripts/validate-confidential-examples.sh
+          chmod +x scripts/validate-confidential-examples.sh scripts/validate-schema-examples.sh
           AETHER_BIN=./target/debug/aether scripts/validate-confidential-examples.sh
+          AETHER_BIN=./target/debug/aether scripts/validate-schema-examples.sh
       - name: Run tests
         env:
           AETHER_DASHBOARD_BUILD: ${{ env.AETHER_DASHBOARD_BUILD }}
@@ -209,6 +212,55 @@ jobs:
           SERVER_PID=$!
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           npm run test:e2e -- tests/mock-idp-auth.spec.ts
+          kill $SERVER_PID || true
+
+  dashboard-exec-e2e:
+    name: Dashboard exec E2E (kind)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: [dashboard, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dashboard-dist
+          path: web/dashboard/dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/dashboard/package-lock.json
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.26.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+      - name: Kind Playwright fixture
+        env:
+          AETHER_E2E_KIND: "1"
+        run: |
+          chmod +x scripts/kind-playwright-fixture.sh
+          scripts/kind-playwright-fixture.sh
+      - name: Build aether
+        env:
+          AETHER_DASHBOARD_BUILD: ${{ env.AETHER_DASHBOARD_BUILD }}
+        run: cargo build --release
+      - name: Run cluster exec Playwright test
+        working-directory: web/dashboard
+        env:
+          AETHER_E2E_SKIP_SERVER: "1"
+          AETHER_E2E_BASE_URL: http://127.0.0.1:5090
+          AETHER_E2E_KIND: "1"
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+          ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          SERVER_PID=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
+          npm run test:e2e -- tests/cluster-exec-terminal.spec.ts
           kill $SERVER_PID || true
 
   coverage:

@@ -96,6 +96,17 @@ pub fn idp_certificate_pem() -> &'static str {
     MOCK_CERT_PEM
 }
 
+pub fn idp_private_key_pem() -> &'static str {
+    MOCK_KEY_PEM
+}
+
+fn mock_idp_encrypted() -> bool {
+    std::env::var("AETHER_MOCK_IDP_ENCRYPTED")
+        .ok()
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 pub fn sign_saml_element_for_test(element_xml: &str, element_id: &str) -> String {
     sign_saml_element(element_xml, element_id)
@@ -122,17 +133,30 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
 </saml2:Assertion>"#,
         issuer = xml_escape(&issuer),
     );
-    let signature = sign_saml_element(&assertion, &assertion_id);
+    let body = if mock_idp_encrypted() {
+        std::env::set_var("AETHER_SAML_SP_KEY", MOCK_KEY_PEM);
+        crate::saml_decrypt::encrypt_assertion_for_test(&assertion, MOCK_CERT_PEM)
+            .unwrap_or(assertion)
+    } else {
+        assertion
+    };
+    let signature = if mock_idp_encrypted() {
+        String::new()
+    } else {
+        sign_saml_element(&body, &assertion_id)
+    };
     let response_xml = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{response_id}" Version="2.0" IssueInstant="{instant}" Destination="{acs}">
   <saml2:Issuer>{issuer}</saml2:Issuer>
   <saml2p:Status><saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/></saml2p:Status>
   {signature}
-  {assertion}
+  {body}
 </saml2p:Response>"#,
         issuer = xml_escape(&issuer),
         acs = xml_escape(&acs),
+        body = body,
+        signature = signature,
     );
     let saml_response = base64::engine::general_purpose::STANDARD.encode(response_xml.as_bytes());
     let html = format!(

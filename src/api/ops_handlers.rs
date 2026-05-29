@@ -662,6 +662,11 @@ pub(crate) async fn api_workload_rollback(
     }))
 }
 
+/// GET /api/helm/catalog — Curated Helm charts for App Store UI.
+pub(crate) async fn api_helm_catalog() -> impl IntoResponse {
+    ok_json(crate::helm::helm_catalog())
+}
+
 /// POST /api/helm/export — Export a Helm chart from workload YAML.
 pub(crate) async fn api_helm_export(Json(req): Json<HelmExportRequest>) -> impl IntoResponse {
     let spec: Workload = match serde_yaml::from_str(&req.yaml) {

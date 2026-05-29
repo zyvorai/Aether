@@ -7,6 +7,8 @@
 //! Detects when running workload state diverges from the desired spec
 //! and provides reconciliation actions to bring them back in sync.
 
+pub mod fleet;
+
 use crate::output;
 use crate::runtime::RuntimeKind;
 use crate::spec::Workload;

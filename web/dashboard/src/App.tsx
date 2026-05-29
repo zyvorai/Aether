@@ -16,6 +16,7 @@ import { useSequenceShortcuts } from './hooks/useSequenceShortcut';
 import { useTheme } from './contexts/ThemeContext';
 import { appShellClass } from './utils/themeSurface';
 import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext';
+import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { pathToView, viewToPath } from './utils/dashboardRoutes';
 import { HERO_CONFIG } from './utils/dashboardNav';
@@ -26,6 +27,7 @@ import LoginGate from './components/LoginGate';
 
 // Page components — each is written by the pages agent
 import OverviewPage from './components/pages/OverviewPage';
+import ApplicationsPage from './components/pages/ApplicationsPage';
 import WorkloadsPage from './components/pages/WorkloadsPage';
 import ClustersPage from './components/pages/ClustersPage';
 import ComposePage from './components/pages/ComposePage';
@@ -55,6 +57,10 @@ import EditorPage from './components/pages/EditorPage';
 import ConfidentialPage from './components/pages/ConfidentialPage';
 import IntelligencePage from './components/pages/IntelligencePage';
 import FleetPage from './components/pages/FleetPage';
+import ActivityMonitorPage from './components/pages/ActivityMonitorPage';
+import SecurityCenterPage from './components/pages/SecurityCenterPage';
+import HelmCatalogPage from './components/pages/HelmCatalogPage';
+import HostedPage from './components/pages/HostedPage';
 import OpenApiPage from './components/pages/OpenApiPage';
 
 function AetherDashboard() {
@@ -276,6 +282,7 @@ function AetherDashboard() {
   const sequenceShortcuts = useMemo(
     () => [
       { sequence: ['g', 'd'] as [string, string], handler: () => handleNavigate('overview') },
+      { sequence: ['g', 'a'] as [string, string], handler: () => handleNavigate('applications') },
       { sequence: ['g', 'w'] as [string, string], handler: () => handleNavigate('workloads') },
       { sequence: ['g', 'c'] as [string, string], handler: () => handleNavigate('clusters') },
       { sequence: ['g', 'h'] as [string, string], handler: () => handleNavigate('health') },
@@ -321,7 +328,9 @@ function AetherDashboard() {
   function renderPage() {
     switch (currentView) {
       case 'overview':
-        return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
+        return <OverviewPage key={refreshKey} username={username} onNavigate={handleNavigate} sseConnected={sseConnected} />;
+      case 'applications':
+        return <ApplicationsPage key={refreshKey} />;
       case 'workloads':
         return (
           <WorkloadsPage
@@ -334,6 +343,14 @@ function AetherDashboard() {
         return <ClustersPage key={refreshKey} />;
       case 'fleet':
         return <FleetPage key={refreshKey} />;
+      case 'hosted':
+        return <HostedPage key={refreshKey} />;
+      case 'activity':
+        return <ActivityMonitorPage key={refreshKey} />;
+      case 'security':
+        return <SecurityCenterPage key={refreshKey} />;
+      case 'helm':
+        return <HelmCatalogPage key={refreshKey} />;
       case 'compose':
         return <ComposePage key={refreshKey} />;
       case 'ai':
@@ -389,12 +406,13 @@ function AetherDashboard() {
       case 'openapi':
         return <OpenApiPage key={refreshKey} />;
       default:
-        return <OverviewPage key={refreshKey} onNavigate={handleNavigate} sseConnected={sseConnected} />;
+        return <OverviewPage key={refreshKey} username={username} onNavigate={handleNavigate} sseConnected={sseConnected} />;
     }
   }
 
   return (
     <AuthProvider enabled={isAuthenticated}>
+    <WorkspaceProvider>
     <ServerCapabilitiesProvider>
       <DashboardShell
         shellClass={shellClass}
@@ -448,6 +466,7 @@ function AetherDashboard() {
         </ErrorBoundary>
       </DashboardShell>
     </ServerCapabilitiesProvider>
+    </WorkspaceProvider>
     </AuthProvider>
   );
 }

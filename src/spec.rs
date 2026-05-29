@@ -975,7 +975,7 @@ pub struct MeshConfig {
 fn default_true() -> bool { true }
 
 /// Kubernetes controller kind for `runtime.preferred: kube`.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum K8sWorkloadKind {
     #[default]
@@ -1240,6 +1240,11 @@ pub struct K8sGatewaySpec {
     pub host: String,
     #[serde(default)]
     pub paths: Vec<IngressPath>,
+    /// When true, create a Gateway CR (requires Gateway API CRDs).
+    #[serde(default)]
+    pub provision_gateway: bool,
+    #[serde(default)]
+    pub gateway_class_name: Option<String>,
 }
 
 fn default_gateway_namespace() -> String {

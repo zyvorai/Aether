@@ -41,6 +41,16 @@ interface EditorForm extends ConfidentialFormState {
   ingressHost: string;
   ingressPath: string;
   networkDenyAllIngress: boolean;
+  k8sWorkloadKind: string;
+  k8sGatewayEnabled: boolean;
+  k8sGatewayName: string;
+  k8sGatewayHost: string;
+  k8sGatewayProvision: boolean;
+  k8sVpaEnabled: boolean;
+  k8sKedaEnabled: boolean;
+  k8sCertManagerEnabled: boolean;
+  k8sPdbMinAvailable: string;
+  showAdvancedK8s: boolean;
 }
 
 const defaultForm: EditorForm = {
@@ -63,6 +73,16 @@ const defaultForm: EditorForm = {
   ingressHost: '',
   ingressPath: '/',
   networkDenyAllIngress: false,
+  k8sWorkloadKind: 'deployment',
+  k8sGatewayEnabled: false,
+  k8sGatewayName: '',
+  k8sGatewayHost: '',
+  k8sGatewayProvision: false,
+  k8sVpaEnabled: false,
+  k8sKedaEnabled: false,
+  k8sCertManagerEnabled: false,
+  k8sPdbMinAvailable: '',
+  showAdvancedK8s: false,
   ...defaultConfidentialFormState,
 };
 
@@ -395,6 +415,106 @@ export default function EditorPage() {
                 />
                 Deny all ingress (network policy)
               </label>
+              <label className="flex items-center gap-2 text-sm text-slate-300 mt-3">
+                <input
+                  type="checkbox"
+                  checked={form.showAdvancedK8s}
+                  onChange={(e) => handleChange('showAdvancedK8s', e.target.checked)}
+                  className="accent-aether"
+                />
+                Advanced Kubernetes options
+              </label>
+              {form.showAdvancedK8s && (
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-slate-800 p-4">
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Workload kind</label>
+                    <select
+                      value={form.k8sWorkloadKind}
+                      onChange={(e) => handleChange('k8sWorkloadKind', e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                    >
+                      <option value="deployment">Deployment</option>
+                      <option value="statefulSet">StatefulSet</option>
+                      <option value="daemonSet">DaemonSet</option>
+                      <option value="job">Job</option>
+                      <option value="cronJob">CronJob</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">PDB minAvailable</label>
+                    <input
+                      type="text"
+                      value={form.k8sPdbMinAvailable}
+                      onChange={(e) => handleChange('k8sPdbMinAvailable', e.target.value)}
+                      placeholder="1"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={form.k8sVpaEnabled}
+                      onChange={(e) => handleChange('k8sVpaEnabled', e.target.checked)}
+                      className="accent-aether"
+                    />
+                    Vertical Pod Autoscaler (VPA)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={form.k8sKedaEnabled}
+                      onChange={(e) => handleChange('k8sKedaEnabled', e.target.checked)}
+                      className="accent-aether"
+                    />
+                    KEDA ScaledObject
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={form.k8sCertManagerEnabled}
+                      onChange={(e) => handleChange('k8sCertManagerEnabled', e.target.checked)}
+                      className="accent-aether"
+                    />
+                    cert-manager Certificate (requires Ingress host)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={form.k8sGatewayEnabled}
+                      onChange={(e) => handleChange('k8sGatewayEnabled', e.target.checked)}
+                      className="accent-aether"
+                    />
+                    Gateway API HTTPRoute
+                  </label>
+                  {form.k8sGatewayEnabled && (
+                    <>
+                      <input
+                        type="text"
+                        value={form.k8sGatewayName}
+                        onChange={(e) => handleChange('k8sGatewayName', e.target.value)}
+                        placeholder="Gateway name"
+                        className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={form.k8sGatewayHost}
+                        onChange={(e) => handleChange('k8sGatewayHost', e.target.value)}
+                        placeholder="Gateway host"
+                        className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                      />
+                      <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                        <input
+                          type="checkbox"
+                          checked={form.k8sGatewayProvision}
+                          onChange={(e) => handleChange('k8sGatewayProvision', e.target.checked)}
+                          className="accent-aether"
+                        />
+                        Provision Gateway CR
+                      </label>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

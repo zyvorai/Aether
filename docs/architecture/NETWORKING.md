@@ -14,9 +14,9 @@ Workload `network` block drives adapter-specific manifests:
 | `ingress` | N/A (local) | Ingress + TLS | Route/Ingress* | Manual |
 | `network_policy` | N/A | NetworkPolicy CRD | Limited | N/A |
 | `cilium_network_policy` | N/A | CiliumNetworkPolicy CRD | N/A | N/A |
-
-See [Cilium guide](../guides/kubernetes/CILIUM.md) for bootstrap policies, dashboard visibility, and Roadmap items (Hubble).
 | `service_type` | N/A | ClusterIP/NodePort/LB | Service | N/A |
+
+See [Cilium guide](../guides/kubernetes/CILIUM.md) for bootstrap policies, dashboard visibility, and Hubble auto-discovery.
 
 \* Depends on cluster ingress controller.
 

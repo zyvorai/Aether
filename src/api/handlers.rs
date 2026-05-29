@@ -247,10 +247,20 @@ pub(crate) fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (Sta
 }
 
 /// Shorthand for a forbidden JSON response.
-fn err_forbidden<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
+pub(crate) fn err_forbidden<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
     (
         StatusCode::FORBIDDEN,
         Json(ApiResponse::error(msg.into())),
+    )
+}
+
+/// Shorthand for a service-unavailable JSON response.
+pub(crate) fn err_service_unavailable<T: serde::Serialize>(
+    e: impl std::fmt::Display,
+) -> (StatusCode, Json<ApiResponse<T>>) {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(ApiResponse::error(e.to_string())),
     )
 }
 
@@ -2922,6 +2932,33 @@ pub(crate) async fn api_cluster_cilium_status(
     }
 }
 
+/// POST /api/cluster/cilium/connectivity/probe - Run native Cilium connectivity check.
+pub(crate) async fn api_cluster_cilium_connectivity_probe(
+    Query(query): Query<ClusterCiliumStatusQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::cilium::probe_cilium_connectivity(
+        query.cluster.as_deref(),
+        query.namespace.as_deref(),
+    )
+    .await
+    {
+        Ok(result) => ok_json(result),
+        Err(error) => {
+            err_internal::<crate::kubecluster::cilium::ConnectivityProbeResult>(error)
+        }
+    }
+}
+
+/// GET /api/cluster/cilium/hubble - Discover Hubble UI URL.
+pub(crate) async fn api_cluster_cilium_hubble(
+    Query(query): Query<ClusterCiliumStatusQuery>,
+) -> impl IntoResponse {
+    match crate::kubecluster::cilium::discover_hubble_ui(query.cluster.as_deref()).await {
+        Ok(result) => ok_json(result),
+        Err(error) => err_internal::<crate::kubecluster::cilium::HubbleDiscoveryResponse>(error),
+    }
+}
+
 /// GET /api/observability/summary - Aether metrics + optional cluster/Cilium context.
 pub(crate) async fn api_observability_summary(
     Query(query): Query<ObservabilitySummaryQuery>,
@@ -4128,6 +4165,20 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
         .ok()
         .map(|s| serde_json::to_value(s).unwrap_or(serde_json::Value::Null))
         .unwrap_or(serde_json::Value::Null);
+    let hubble_ui_url = std::env::var("AETHER_HUBBLE_UI_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            None
+        });
+    let hubble_ui_url = if hubble_ui_url.is_some() {
+        hubble_ui_url
+    } else {
+        crate::kubecluster::cilium::discover_hubble_ui(None)
+            .await
+            .ok()
+            .and_then(|d| d.url)
+    };
     ok_json(serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
         "persistence": workload_backend,
@@ -4194,7 +4245,7 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
             "audit_webhook_configured": std::env::var("AETHER_AUDIT_WEBHOOK_URL").ok().filter(|s| !s.is_empty()).is_some(),
             "grafana_url": std::env::var("AETHER_GRAFANA_URL").ok().filter(|s| !s.is_empty()),
             "prometheus_url": std::env::var("AETHER_PROMETHEUS_URL").ok().filter(|s| !s.is_empty()),
-            "hubble_ui_url": std::env::var("AETHER_HUBBLE_UI_URL").ok().filter(|s| !s.is_empty()),
+            "hubble_ui_url": hubble_ui_url,
             "grafana_dashboard_uid": std::env::var("AETHER_GRAFANA_DASHBOARD_UID").ok().filter(|s| !s.is_empty()),
             "packetwolf_url": std::env::var("AETHER_PACKETWOLF_URL").ok().filter(|s| !s.is_empty()),
         },

@@ -290,7 +290,8 @@ fn decode_saml_response(b64: &str) -> Result<String, anyhow::Error> {
         .decode(b64.trim())
         .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(b64.trim()))
         .context("invalid SAMLResponse base64")?;
-    String::from_utf8(bytes).context("SAMLResponse not UTF-8")
+    let xml = String::from_utf8(bytes).context("SAMLResponse not UTF-8")?;
+    crate::saml_decrypt::normalize_saml_response_xml(&xml)
 }
 
 fn extract_name_id(xml: &str) -> Option<String> {

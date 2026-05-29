@@ -389,6 +389,122 @@
           }
         }
       }
+    },
+    "kubernetes": {
+      "type": "object",
+      "description": "Kubernetes-specific workload options",
+      "properties": {
+        "workloadKind": {
+          "type": "string",
+          "enum": ["deployment", "statefulSet", "daemonSet", "job", "cronJob"]
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "priorityClassName": { "type": "string" },
+        "nodeSelector": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key"],
+            "properties": {
+              "key": { "type": "string" },
+              "operator": { "type": "string" },
+              "value": { "type": "string" },
+              "effect": { "type": "string" }
+            }
+          }
+        },
+        "headlessService": { "type": "boolean" },
+        "buildAndPush": { "type": "boolean" },
+        "serviceAccountName": { "type": "string" },
+        "gateway": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "gatewayName": { "type": "string" },
+            "gatewayNamespace": { "type": "string" },
+            "host": { "type": "string" },
+            "provisionGateway": { "type": "boolean" },
+            "gatewayClassName": { "type": "string" },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": { "type": "string" },
+                  "pathType": { "type": "string" },
+                  "port": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "verticalPodAutoscaler": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "updateMode": { "type": "string" }
+          }
+        },
+        "keda": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "minReplicaCount": { "type": "integer" },
+            "maxReplicaCount": { "type": "integer" },
+            "pollingInterval": { "type": "integer" },
+            "triggers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string" },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "certManager": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "issuerName": { "type": "string" },
+            "issuerKind": { "type": "string" }
+          }
+        },
+        "podDisruptionBudget": {
+          "type": "object",
+          "properties": {
+            "minAvailable": { "type": "string" },
+            "maxUnavailable": { "type": "string" }
+          }
+        },
+        "serviceAccount": {
+          "type": "object",
+          "properties": {
+            "create": { "type": "boolean" },
+            "name": { "type": "string" }
+          }
+        },
+        "rolloutStrategy": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "maxSurge": { "type": "integer" },
+            "maxUnavailable": { "type": "integer" }
+          }
+        }
+      }
     }
   },
   "definitions": {

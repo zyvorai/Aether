@@ -1047,6 +1047,43 @@ pub(crate) fn build_gateway_http_route_json(namespace: &str, spec: &Workload) ->
     }))
 }
 
+pub(crate) fn build_gateway_provision_json(namespace: &str, spec: &Workload) -> Option<serde_json::Value> {
+    let gw = spec.kubernetes.as_ref()?.gateway.as_ref()?;
+    if !gw.enabled || !gw.provision_gateway {
+        return None;
+    }
+    let class_name = gw
+        .gateway_class_name
+        .clone()
+        .unwrap_or_else(|| "aether".into());
+    let gw_namespace = if gw.gateway_namespace == "default" {
+        namespace.to_string()
+    } else {
+        gw.gateway_namespace.clone()
+    };
+    Some(serde_json::json!({
+        "apiVersion": "gateway.networking.k8s.io/v1",
+        "kind": "Gateway",
+        "metadata": {
+            "name": gw.gateway_name.clone(),
+            "namespace": gw_namespace,
+            "labels": { "app": spec.metadata.name, "managed-by": "aether" }
+        },
+        "spec": {
+            "gatewayClassName": class_name,
+            "listeners": [{
+                "name": "http",
+                "protocol": "HTTP",
+                "port": 80,
+                "hostname": gw.host.clone(),
+                "allowedRoutes": {
+                    "namespaces": { "from": "Same" }
+                }
+            }]
+        }
+    }))
+}
+
 pub(crate) fn build_vpa_json(namespace: &str, spec: &Workload, target_kind: &str) -> Option<Value> {
     let vpa = spec.kubernetes.as_ref()?.vertical_pod_autoscaler.as_ref()?;
     if !vpa.enabled {
@@ -1264,7 +1301,7 @@ mod tests {
     use super::*;
     use crate::spec::{
         BuildSpec, HealthSpec, K8sWorkloadKind, Metadata, NetworkSpec, PersistenceSpec,
-        ResourceRequirements, RuntimePreference, RuntimeSpec, RuntimeType, ServiceType,
+        ResourceRequirements, RuntimePreference, RuntimeSpec, RuntimeType,
     };
     use std::collections::HashMap;
     use std::path::PathBuf;
@@ -1440,5 +1477,50 @@ mod tests {
         assert_eq!(sanitize_volume_name("--name--"), "name");
         assert_eq!(sanitize_volume_name(""), "vol");
         assert_eq!(sanitize_volume_name(&"a".repeat(100)).len(), 63);
+    }
+
+    #[test]
+    fn gateway_provision_uses_workload_namespace_when_default() {
+        use crate::spec::{K8sGatewaySpec, K8sWorkloadKind, KubernetesSpec};
+
+        let mut spec = test_workload();
+        spec.metadata.name = "web".into();
+        spec.kubernetes = Some(KubernetesSpec {
+            workload_kind: Some(K8sWorkloadKind::Deployment),
+            gateway: Some(K8sGatewaySpec {
+                enabled: true,
+                gateway_name: "edge".into(),
+                gateway_namespace: "default".into(),
+                host: "app.example.com".into(),
+                provision_gateway: true,
+                paths: vec![],
+                gateway_class_name: None,
+            }),
+            ..Default::default()
+        });
+        let gw = build_gateway_provision_json("staging", &spec).expect("gateway json");
+        assert_eq!(gw["metadata"]["namespace"], "staging");
+    }
+
+    #[test]
+    fn gateway_provision_keeps_explicit_gateway_namespace() {
+        use crate::spec::{K8sGatewaySpec, K8sWorkloadKind, KubernetesSpec};
+
+        let mut spec = test_workload();
+        spec.kubernetes = Some(KubernetesSpec {
+            workload_kind: Some(K8sWorkloadKind::Deployment),
+            gateway: Some(K8sGatewaySpec {
+                enabled: true,
+                gateway_name: "edge".into(),
+                gateway_namespace: "ingress-system".into(),
+                host: "app.example.com".into(),
+                provision_gateway: true,
+                paths: vec![],
+                gateway_class_name: None,
+            }),
+            ..Default::default()
+        });
+        let gw = build_gateway_provision_json("staging", &spec).expect("gateway json");
+        assert_eq!(gw["metadata"]["namespace"], "ingress-system");
     }
 }
