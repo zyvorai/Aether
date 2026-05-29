@@ -34,3 +34,18 @@ fn edge_register_heartbeat_enqueue_poll() {
     assert_eq!(jobs.len(), 1);
     assert_eq!(jobs[0].action, "gitops_sync");
 }
+
+#[tokio::test]
+async fn edge_executor_rejects_unknown_action() {
+    use aether::fleet::edge::EdgeJob;
+    use aether::fleet::edge_executor::execute_edge_job;
+
+    let job = EdgeJob {
+        id: "x".into(),
+        site: "s".into(),
+        action: "not_real".into(),
+        payload: serde_json::json!({}),
+        created_at: "now".into(),
+    };
+    assert!(execute_edge_job(&job).await.is_err());
+}
