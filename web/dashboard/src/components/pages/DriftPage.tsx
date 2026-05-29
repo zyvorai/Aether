@@ -14,7 +14,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import Badge, { SeverityBadge } from '../Badge';
-import type { WorkloadResponse, DriftReport, DriftReconcileResult } from '../../types/api';
+import type { WorkloadResponse, DriftReport, DriftReconcileResult, FleetDriftSummary } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
@@ -35,6 +35,7 @@ export default function DriftPage() {
   const [driftResult, setDriftResult] = useState<DriftReport | null>(null);
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [bulkScan, setBulkScan] = useState<BulkScanState | null>(null);
+  const [fleetDrift, setFleetDrift] = useState<FleetDriftSummary | null>(null);
   const [search, setSearch] = useWorkloadOrSearchFilter();
   const [workloadParam] = useQueryParam('workload');
   const scannedWorkloadRef = useRef<string | null>(null);
@@ -43,13 +44,17 @@ export default function DriftPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const result = await apiFetchSettled<WorkloadResponse[]>('/workloads');
+    const [result, fleetRes] = await Promise.all([
+      apiFetchSettled<WorkloadResponse[]>('/workloads'),
+      apiFetchSettled<FleetDriftSummary>('/fleet/drift'),
+    ]);
     if (!result.ok) {
       setLoadFailed(true);
       setWorkloads([]);
     } else {
       setWorkloads(result.data);
     }
+    setFleetDrift(fleetRes.ok ? fleetRes.data : null);
     setLoading(false);
   }, []);
 
@@ -175,6 +180,15 @@ export default function DriftPage() {
           ) : undefined
         }
       />
+
+      {fleetDrift ? (
+        <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="fleet-drift-summary">
+          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Tracked</div><div className="text-lg font-semibold text-slate-100">{fleetDrift.total_workloads}</div></div>
+          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
+          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
+          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
+        </div>
+      ) : null}
 
       <div className="mb-4">
         <button

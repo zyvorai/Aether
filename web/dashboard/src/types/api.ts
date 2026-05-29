@@ -662,6 +662,8 @@ export interface CiliumStatusResponse {
   egress_mode: string;
   metrics_server: boolean;
   connectivity_check?: string;
+  last_checked_at?: string | null;
+  connectivity_detail?: string | null;
 }
 
 export interface ObservabilitySummary {
@@ -677,6 +679,7 @@ export interface ObservabilitySummary {
 // ─── View types ──────────────────────────────────────────────────────
 export type AppView =
   | 'overview'
+  | 'applications'
   | 'workloads'
   | 'clusters'
   | 'compose'
@@ -706,7 +709,62 @@ export type AppView =
   | 'confidential'
   | 'intelligence'
   | 'fleet'
+  | 'hosted'
+  | 'activity'
+  | 'security'
+  | 'helm'
   | 'openapi';
+
+export interface HelmCatalogChart {
+  id: string;
+  name: string;
+  category: string;
+  chart: string;
+  repo: string;
+  version: string;
+  description: string;
+  storage_required: boolean;
+  backup_supported: boolean;
+  ha_available: boolean;
+  monitoring_available: boolean;
+}
+
+export interface DiagnoseEvent {
+  type_: string;
+  reason: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface DiagnoseRecommendation {
+  title: string;
+  summary: string;
+  action: string;
+  applyable?: boolean;
+}
+
+export interface DiagnoseResponse {
+  workload: string;
+  runtime?: string | null;
+  source: string;
+  health_level: string;
+  summary: string;
+  ready_pods: number;
+  total_pods: number;
+  warning_events: number;
+  events: DiagnoseEvent[];
+  log_excerpt?: string | null;
+  pods: Array<{
+    name: string;
+    phase: string;
+    ready: number;
+    total_containers: number;
+    restarts: number;
+    node?: string | null;
+  }>;
+  recommendations: DiagnoseRecommendation[];
+  evidence: string[];
+}
 
 // ─── Intelligence layer ────────────────────────────────────────────
 export interface FailureSignal {
@@ -1025,4 +1083,127 @@ export interface ConfidentialPlacementAdvice {
   blockers: string[];
   gitops_issues: string[];
   isolation_compliant: boolean;
+}
+
+export interface PacketWolfStatus {
+  configured: boolean;
+  reachable: boolean;
+  version?: string | null;
+  hint?: string | null;
+  cached?: boolean;
+}
+
+export interface EdgeAgentRecord {
+  site: string;
+  kube_context?: string | null;
+  labels: Record<string, string>;
+  registered_at: string;
+  last_heartbeat: string;
+  queue_depth: number;
+  last_error?: string | null;
+  online: boolean;
+}
+
+export interface FederationPlan {
+  workload: string;
+  recommended_runtime: string;
+  recommended_cluster?: string | null;
+  anomaly_signals_configured?: boolean;
+  total_anomalies?: number;
+  clusters: ClusterPlacementScore[];
+}
+
+export interface ClusterPlacementScore {
+  cluster: string;
+  score: number;
+  reachable: boolean;
+  server?: string | null;
+  runtime_hint: string;
+  reasons: string[];
+  anomaly_count?: number;
+  anomaly_penalty?: number;
+}
+
+export interface FleetDriftSummary {
+  total_workloads: number;
+  drifted: number;
+  critical: number;
+  warning: number;
+  rows: FleetDriftRow[];
+}
+
+export interface FleetDriftRow {
+  workload: string;
+  cluster?: string | null;
+  namespace?: string | null;
+  runtime: string;
+  has_drift: boolean;
+  severity: string;
+  drift_count: number;
+}
+
+export interface VolumeReplicationPlan {
+  source_cluster: string;
+  target_cluster: string;
+  namespace: string;
+  pvc_name: string;
+  steps: { order: number; action: string; detail: string }[];
+  warnings: string[];
+}
+
+export interface FleetMigrationPlan {
+  target_cluster: string;
+  strategy: string;
+  items: { workload: string; target_cluster: string; volume_replication: boolean; status: string }[];
+  warnings: string[];
+}
+
+export interface HostedTenant {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  active: boolean;
+}
+
+export interface BillingSummary {
+  period: string;
+  total_workloads: number;
+  tenants: { tenant_id: string; tenant_slug: string; plan: string; workload_count: number; api_requests_estimate: number }[];
+}
+
+export interface RemediationAction {
+  action_type: string;
+  target: string;
+  cluster?: string | null;
+  reason: string;
+  auto_safe: boolean;
+}
+
+export interface RemediationPlan {
+  generated_at: string;
+  sources: string[];
+  actions: RemediationAction[];
+  warnings: string[];
+}
+
+export interface SbomMetadata {
+  bom_format: string;
+  spec_version: string;
+  version: number;
+  serial_number: string;
+  component_count: number;
+  aether_version: string;
+  binary_sha256?: string | null;
+  dashboard_sha256?: string | null;
+}
+
+export interface SignedImageManifest {
+  name: string;
+  image_hash: string;
+  launch_digest?: string | null;
+  signing_key_id: string;
+  signed_at: string;
+  sbom_digest?: string | null;
+  signature?: string | null;
 }

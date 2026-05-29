@@ -1,0 +1,319 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Database, Download, Package, Search, Shield, Wrench } from 'lucide-react';
+import { apiFetchSettled, apiPost } from '../../utils/api';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import Modal from '../Modal';
+import type { ClusterSummary, HelmCatalogChart } from '../../types/api';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  buildValuesYaml,
+  defaultFormValues,
+  helmFormFields,
+  type HelmFormField,
+} from '../../utils/helmValuesForms';
+
+const CATEGORY_ICONS: Record<string, typeof Database> = {
+  Databases: Database,
+  Observability: Package,
+  Security: Shield,
+  DevOps: Wrench,
+  Networking: Package,
+};
+
+export default function HelmCatalogPage() {
+  const { canMutate } = useAuth();
+  const [charts, setCharts] = useState<HelmCatalogChart[]>([]);
+  const [clusters, setClusters] = useState<ClusterSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [selected, setSelected] = useState<HelmCatalogChart | null>(null);
+  const [installCluster, setInstallCluster] = useState('');
+  const [releaseName, setReleaseName] = useState('');
+  const [namespace, setNamespace] = useState('default');
+  const [formValues, setFormValues] = useState<Record<string, string | boolean>>({});
+  const [showAdvancedYaml, setShowAdvancedYaml] = useState(false);
+  const [valuesYaml, setValuesYaml] = useState('');
+  const [installing, setInstalling] = useState(false);
+  const [installMsg, setInstallMsg] = useState<string | null>(null);
+
+  const formFields: HelmFormField[] = useMemo(
+    () => (selected ? helmFormFields(selected.id) : []),
+    [selected],
+  );
+
+  const generatedYaml = useMemo(() => {
+    if (!selected) return '';
+    return buildValuesYaml(selected.id, formValues);
+  }, [selected, formValues]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    const [catalogRes, clusterRes] = await Promise.all([
+      apiFetchSettled<HelmCatalogChart[]>('/helm/catalog'),
+      apiFetchSettled<ClusterSummary>('/cluster/summary'),
+    ]);
+    if (!catalogRes.ok) {
+      setLoadFailed(true);
+      setLoading(false);
+      return;
+    }
+    setCharts(catalogRes.data);
+    setClusters(clusterRes.ok ? clusterRes.data : null);
+    if (clusterRes.ok && clusterRes.data.clusters[0]) {
+      setInstallCluster(clusterRes.data.clusters[0].name);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const categories = useMemo(() => ['all', ...Array.from(new Set(charts.map((c) => c.category))).sort()], [charts]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return charts.filter((c) => {
+      if (category !== 'all' && c.category !== category) return false;
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q);
+    });
+  }, [charts, search, category]);
+
+  function openInstall(chart: HelmCatalogChart) {
+    setSelected(chart);
+    setReleaseName(chart.id);
+    setFormValues(defaultFormValues(chart.id));
+    setShowAdvancedYaml(false);
+    setValuesYaml('');
+    setInstallMsg(null);
+  }
+
+  function setField(key: string, value: string | boolean) {
+    setFormValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function runInstall() {
+    if (!selected || !canMutate) return;
+    setInstalling(true);
+    setInstallMsg(null);
+    const yaml = showAdvancedYaml && valuesYaml.trim() ? valuesYaml : generatedYaml;
+    const res = await apiPost<string>('/cluster/helm/action', {
+      cluster: installCluster,
+      namespace,
+      release: releaseName,
+      action: 'install',
+      chart: selected.chart,
+      values_yaml: yaml || undefined,
+    });
+    setInstalling(false);
+    setInstallMsg(res.success ? (res.data ?? 'Install triggered') : (res.error ?? 'Install failed'));
+  }
+
+  if (loading) return <PageLoading label="Loading Helm catalog…" />;
+  if (loadFailed) return <PageLoadError title="Helm catalog unavailable" onRetry={() => void load()} />;
+
+  return (
+    <div data-testid="helm-catalog-page">
+      <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-slate-100">Helm App Store</h2>
+        <p className="text-sm text-slate-500 mt-1">Install curated charts with a guided wizard — no raw values.yaml required.</p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search charts…"
+            className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setCategory(cat)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                category === cat ? 'bg-aether/20 text-aether border border-aether/40' : 'border border-slate-700 text-slate-400'
+              }`}
+            >
+              {cat === 'all' ? 'All' : cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filtered.map((chart) => {
+          const Icon = CATEGORY_ICONS[chart.category] ?? Package;
+          return (
+            <article
+              key={chart.id}
+              className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 hover:border-aether/40 transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-aether/10 p-3 text-aether">
+                  <Icon size={22} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-slate-100">{chart.name}</h3>
+                  <p className="text-xs text-slate-500">{chart.category} · v{chart.version}</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-400 mt-3 line-clamp-2">{chart.description}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-slate-500">
+                {chart.storage_required && <span className="rounded bg-slate-800 px-2 py-0.5">Storage</span>}
+                {chart.ha_available && <span className="rounded bg-slate-800 px-2 py-0.5">HA</span>}
+                {chart.backup_supported && <span className="rounded bg-slate-800 px-2 py-0.5">Backup</span>}
+                {chart.monitoring_available && <span className="rounded bg-slate-800 px-2 py-0.5">Monitoring</span>}
+              </div>
+              <button
+                type="button"
+                onClick={() => openInstall(chart)}
+                disabled={!canMutate}
+                className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
+              >
+                <Download size={16} /> Install
+              </button>
+            </article>
+          );
+        })}
+      </div>
+
+      <Modal isOpen={Boolean(selected)} onClose={() => setSelected(null)} title={selected ? `Install ${selected.name}` : ''}>
+        {selected && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-400">{selected.description}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block text-xs text-slate-500">
+                Cluster
+                <select
+                  value={installCluster}
+                  onChange={(e) => setInstallCluster(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                >
+                  {(clusters?.clusters ?? []).map((c) => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-xs text-slate-500">
+                Namespace (workspace)
+                <input
+                  value={namespace}
+                  onChange={(e) => setNamespace(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="block text-xs text-slate-500">
+                Release name
+                <input
+                  value={releaseName}
+                  onChange={(e) => setReleaseName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+
+            {!showAdvancedYaml ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {formFields.map((field) => (
+                  <label key={field.key} className="block text-xs text-slate-500">
+                    {field.label}
+                    {field.type === 'boolean' ? (
+                      <input
+                        type="checkbox"
+                        checked={formValues[field.key] === true}
+                        onChange={(e) => setField(field.key, e.target.checked)}
+                        className="mt-2 accent-aether"
+                      />
+                    ) : field.type === 'select' && field.options ? (
+                      <select
+                        value={String(formValues[field.key] ?? '')}
+                        onChange={(e) => setField(field.key, e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      >
+                        {field.options.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
+                        value={String(formValues[field.key] ?? '')}
+                        placeholder={field.placeholder}
+                        onChange={(e) => setField(field.key, e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      />
+                    )}
+                    {field.help && <span className="block mt-1 text-[10px] text-slate-600">{field.help}</span>}
+                  </label>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex items-center gap-2 text-xs text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={showAdvancedYaml}
+                  onChange={(e) => setShowAdvancedYaml(e.target.checked)}
+                  className="accent-aether"
+                />
+                Edit raw values.yaml
+              </label>
+              {!showAdvancedYaml && (
+                <span className="text-[10px] text-slate-500">Generated from form above</span>
+              )}
+            </div>
+
+            {showAdvancedYaml ? (
+              <label className="block text-xs text-slate-500">
+                values.yaml
+                <textarea
+                  value={valuesYaml || generatedYaml}
+                  onChange={(e) => setValuesYaml(e.target.value)}
+                  rows={8}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono"
+                />
+              </label>
+            ) : (
+              <pre className="rounded-lg border border-slate-800 bg-slate-950 p-3 text-[11px] text-slate-400 font-mono max-h-40 overflow-auto">
+                {generatedYaml || '# No values generated'}
+              </pre>
+            )}
+            {installMsg && <p className="text-sm text-slate-300">{installMsg}</p>}
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setSelected(null)} className="rounded-lg border border-slate-700 px-4 py-2 text-sm">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void runInstall()}
+                disabled={installing || !installCluster}
+                className="rounded-lg bg-aether px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {installing ? 'Installing…' : 'Deploy'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}

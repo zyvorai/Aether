@@ -288,7 +288,7 @@ step 2 "${TOTAL_STEPS}" "🦀" "Building dashboard + release binary"
 if [ "${SKIP_RSYNC}" != "1" ] || [ -d "${REPO_ROOT}/web/dashboard/node_modules" ]; then
   if [ -f "${REPO_ROOT}/web/dashboard/package.json" ]; then
     info "Building embedded dashboard (web/dashboard/dist)..."
-    (cd "${REPO_ROOT}/web/dashboard" && (npm ci --prefer-offline 2>/dev/null || npm install) && npm run build)
+    (cd "${REPO_ROOT}/web/dashboard" && (npm ci --prefer-offline 2>/dev/null || npm install) && npm run test && npm run validate:schema && npm run build)
   fi
 elif [ -f "${REPO_ROOT}/web/dashboard/dist/index.html" ]; then
   info "Using existing web/dashboard/dist (set AETHER_SKIP_RSYNC=0 and sync source to rebuild UI)"
@@ -315,7 +315,7 @@ else
     fi
     cd ${REMOTE_DIR}
     if [ -f web/dashboard/package.json ]; then
-      cd web/dashboard && (npm ci --prefer-offline 2>/dev/null || npm install) && npm run build
+      cd web/dashboard && (npm ci --prefer-offline 2>/dev/null || npm install) && npm run test && npm run validate:schema && npm run build
     fi
     cargo build --release
     strip target/release/aether 2>/dev/null || true
@@ -493,4 +493,14 @@ DEPLOY_ELAPSED=$(( $(date +%s) - DEPLOY_START ))
 aether_finale_remote_deploy "${PUBLIC_URL}" "${HEALTH_URL}" "${DEPLOY_ELAPSED}"
 if [ -n "${AETHER_API_KEY}" ]; then
   info "🔐 API authentication is enabled on the remote deployment"
+fi
+
+if [ "${AETHER_SKIP_POST_DEPLOY_VERIFY:-0}" != "1" ] && [ "${SKIP_EXT_HEALTH}" != "1" ]; then
+  echo ""
+  info "Running post-deploy API verification…"
+  if AETHER_API="${HEALTH_URL%/health}" "${SCRIPT_DIR}/post-deploy-verify.sh"; then
+    info "Post-deploy verification passed"
+  else
+    warn "Post-deploy verification had failures (deployment is live — check logs above)"
+  fi
 fi

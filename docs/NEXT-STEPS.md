@@ -14,7 +14,13 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 
 ## Recently completed
 
-- **Kubernetes labs**: `examples/labs/kubernetes/workload.yaml`, `scripts/k8s-labs-e2e.sh`, CI `k8s-live-e2e` job (kind + live deploy)
+- **Remote deploy** — `./scripts/deploy-remote.sh 212.8.252.194 sus` (NodePort 30090, Cilium bootstrap, CloudOS UI)
+- **Post-deploy verify** — `scripts/post-deploy-verify.sh` (remote API + CloudOS + k8s smoke)
+- **Applications restart** — cluster workloads use `/api/cluster/action` restart (not only Aether-managed API)
+- **AI troubleshoot Apply fix**: restart, drift reconcile, and rollback wired to cluster/Aether APIs from WorkloadDetail
+- **Schema CI**: `scripts/validate-schema-examples.sh` + ajv cross-check in dashboard build; `examples/workload-k8s-advanced.yaml`
+- **API smoke**: Helm catalog, Hubble discovery, copilot troubleshoot in `scripts/k8s-api-smoke.sh`
+- **Kubernetes labs**: `examples/labs/kubernetes/workload.yaml`, `scripts/k8s-labs-e2e.sh`, CI `k8s-live-e2e` job (kind + live deploy + stop --cascade)
 - **SAML SSO**: env-gated SP with `/api/auth/saml/login`, `/api/auth/saml/acs`, dashboard Sign in with SAML
 - **Cost CLI JSON**: `aether --output json cost` emits structured `CostComparison` / `CostEstimate`
 - **Live pricing fetcher**: `scripts/fetch-pricing.sh` for `AETHER_PRICING_URL` overlays (Azure Retail API when reachable)
@@ -25,10 +31,18 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 - **Dashboard**: chargeback table on Metrics page; Playwright tests for auth, cost, cluster API
 - **Labs CI**: `labs-e2e` job + `scripts/labs-e2e.sh`
 
+- **Four Pillars shipped** — PacketWolf bridge, edge agent, federation placement, SBOM, SAML encrypted assertions, Playwright exec fixture
+- **Phase A (Intelligent Fleet)** — PacketWolf anomaly placement scoring, GitOps `resolve_deploy_target`, `GET /api/fleet/drift`, Fleet placement anomaly columns
+- **Phase B (Migration depth)** — `POST /api/migration/volume/plan`, `POST /api/migration/fleet/plan` for cross-cluster volume + coordinated fleet migrations
+- **Phase C (Hosted SaaS)** — `GET/POST /api/hosted/tenants`, `GET /api/hosted/billing/usage`, tenant store at `~/.aether/tenants.json`
+- **Phase D (Billing + remediation + volume execute)** — tenant API keys (`/api/hosted/tenants/:id/keys`), request metering (`/api/hosted/billing/metering`), Stripe checkout/webhook, `POST /api/migration/volume/execute`, `GET/POST /api/intelligence/remediation/*`, Hosted dashboard page
+- **New env vars**: `AETHER_PACKETWOLF_URL`, `AETHER_PACKETWOLF_API_KEY`, `AETHER_EDGE_TOKEN`, `AETHER_FEDERATION_CLUSTERS`, `AETHER_FEDERATION_WEIGHTS`, `AETHER_SAML_SP_KEY`, `AETHER_MOCK_IDP_ENCRYPTED`, `AETHER_E2E_KIND`, `AETHER_STRIPE_SECRET_KEY`, `AETHER_STRIPE_WEBHOOK_SECRET`, `AETHER_STRIPE_PRICE_TEAM`, `AETHER_STRIPE_PRICE_ENTERPRISE`
+- **New CLI**: `aether sbom export|verify`, `aether edge-agent --control-plane URL --site NAME`
+
 ## Remaining / optional
 
-- **Playwright in-browser exec terminal** with kind cluster fixtures on a dedicated runner
-- **SAML encrypted assertions** and full exclusive-C14N for all IdP XML dialects
+- **SAML** — additional IdP dialects (AES-256-GCM, alternate C14N)
+- **Edge agent** — full offline queue replay for all reconcile action types on disconnected sites
 
 ## Recommended Next Order
 

@@ -28,10 +28,14 @@ interface ChatMessage {
 
 const SUGGESTIONS = [
   'Why is my workload unhealthy?',
+  'Diagnose payment-service with live cluster evidence',
+  'Show AI insights: predictions, threats, and cost',
   'List all workloads and their runtimes',
+  'What policy violations exist in production?',
   'Show failure predictions for the fleet',
   'What cost optimizations are available?',
-  'Summarize platform context',
+  'Summarize GitOps sync status',
+  'Generate a security hardening plan',
 ];
 
 export default function CopilotPage() {

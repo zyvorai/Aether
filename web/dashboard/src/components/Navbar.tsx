@@ -44,10 +44,12 @@ import {
   ExternalLink,
   Sparkles,
   Globe,
+  Boxes,
 } from 'lucide-react';
 import { ZYVOR_HELP } from '../config/zyvorHelp';
 import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
+import { useProView } from '../hooks/useProView';
 import { useTheme, type AppTheme } from '../contexts/ThemeContext';
 import { THEME_OPTIONS, dropdownItemClass, dropdownSurfaceClass, navbarShellClass, themeSelectClass } from '../utils/themeSurface';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,12 +109,15 @@ const intelligenceItems: DropdownItem[] = [
   { label: 'Runtime Affinity', view: 'affinity', icon: <Target className="w-4 h-4" /> },
   { label: 'Drift Detection', view: 'drift', icon: <GitCompare className="w-4 h-4" /> },
   { label: 'Policy Check', view: 'policy', icon: <ShieldCheck className="w-4 h-4" /> },
+  { label: 'Security Center', view: 'security', icon: <Shield className="w-4 h-4" /> },
   { label: 'Confidential Computing', view: 'confidential', icon: <Lock className="w-4 h-4" /> },
 ];
 
 const operationsItems: DropdownItem[] = [
   { label: 'Cluster Browser', view: 'clusters', icon: <Container className="w-4 h-4" /> },
   { label: 'Fleet Overview', view: 'fleet', icon: <Globe className="w-4 h-4" /> },
+  { label: 'Activity Monitor', view: 'activity', icon: <BarChart3 className="w-4 h-4" /> },
+  { label: 'Helm App Store', view: 'helm', icon: <FileCode2 className="w-4 h-4" /> },
   { label: 'Compose Import', view: 'compose', icon: <Layers className="w-4 h-4" /> },
   { label: 'Visual Editor', view: 'editor', icon: <FileText className="w-4 h-4" /> },
   { label: 'Scheduler', view: 'scheduler', icon: <Settings className="w-4 h-4" /> },
@@ -142,8 +147,20 @@ const dropdownGroups: DropdownGroup[] = [
   { label: 'Resources', items: resourcesItems },
 ];
 
+const cloudOsNavItems: DropdownItem[] = [
+  { label: 'Applications', view: 'applications', icon: <Boxes className="w-4 h-4" /> },
+  { label: 'Health', view: 'health', icon: <HeartPulse className="w-4 h-4" /> },
+  { label: 'Logs', view: 'events', icon: <Bell className="w-4 h-4" /> },
+  { label: 'Deployments', view: 'workloads', icon: <Container className="w-4 h-4" /> },
+  { label: 'Storage', view: 'backups', icon: <Archive className="w-4 h-4" /> },
+  { label: 'Network', view: 'clusters', icon: <Globe className="w-4 h-4" /> },
+  { label: 'Backups', view: 'backups', icon: <Archive className="w-4 h-4" /> },
+  { label: 'Settings', view: 'platform', icon: <Settings className="w-4 h-4" /> },
+];
+
 const primaryItems: DropdownItem[] = [
   { label: 'Dashboard', view: 'overview', icon: <LayoutDashboard className="w-4 h-4" /> },
+  { label: 'Applications', view: 'applications', icon: <Boxes className="w-4 h-4" /> },
   { label: 'Workloads', view: 'workloads', icon: <Container className="w-4 h-4" /> },
 ];
 
@@ -433,6 +450,7 @@ export default function Navbar({
 }: NavbarProps) {
   const { theme, setTheme } = useTheme();
   const { role } = useAuth();
+  const [proView, setProView] = useProView();
   const { capabilities, gitopsConfigured } = useServerCapabilities();
   const [clusterCtx, setClusterCtx] = useState<string | null>(() => getClusterContext());
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -460,14 +478,15 @@ export default function Navbar({
     [platform, navExtras],
   );
 
-  const filteredMobileNavGroups = useMemo(
-    () =>
-      mobileNavGroups.map((group) => ({
-        ...group,
-        items: filterNavViews(group.items, platform, navExtras),
-      })),
-    [platform, navExtras],
-  );
+  const filteredMobileNavGroups = useMemo(() => {
+    const groups = proView
+      ? mobileNavGroups
+      : [{ label: 'CloudOS', items: [{ label: 'Dashboard', view: 'overview' as AppView, icon: <LayoutDashboard className="w-4 h-4" /> }, ...cloudOsNavItems] }];
+    return groups.map((group) => ({
+      ...group,
+      items: filterNavViews(group.items, platform, navExtras),
+    }));
+  }, [platform, navExtras, proView]);
 
   useEffect(() => {
     if (!helpMenuOpen) return;
@@ -503,13 +522,20 @@ export default function Navbar({
     };
   }, [mobileOpen]);
 
-  const desktopNav = (
+  const desktopNav = proView ? (
     <>
       <NavPill
         active={currentView === 'overview'}
         onClick={() => onNavigate('overview')}
         icon={<LayoutDashboard className="w-4 h-4" />}
         label="Dashboard"
+        compact
+      />
+      <NavPill
+        active={currentView === 'applications'}
+        onClick={() => onNavigate('applications')}
+        icon={<Boxes className="w-4 h-4" />}
+        label="Applications"
         compact
       />
       <NavPill
@@ -537,6 +563,26 @@ export default function Navbar({
           />
         );
       })}
+    </>
+  ) : (
+    <>
+      <NavPill
+        active={currentView === 'overview'}
+        onClick={() => onNavigate('overview')}
+        icon={<LayoutDashboard className="w-4 h-4" />}
+        label="Dashboard"
+        compact
+      />
+      {cloudOsNavItems.map((item) => (
+        <NavPill
+          key={item.view}
+          active={currentView === item.view}
+          onClick={() => onNavigate(item.view)}
+          icon={item.icon}
+          label={item.label}
+          compact
+        />
+      ))}
     </>
   );
 
@@ -567,6 +613,16 @@ export default function Navbar({
           </div>
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <label className="hidden xl:flex items-center gap-1.5 shrink-0 text-xs text-slate-500" title="Pro view shows full Kubernetes navigation">
+              <input
+                type="checkbox"
+                checked={proView}
+                onChange={(e) => setProView(e.target.checked)}
+                className="accent-aether"
+                aria-label="Pro view"
+              />
+              Pro
+            </label>
             <label className="hidden lg:flex items-center gap-1 shrink-0" title="Theme">
               <Palette className="w-3.5 h-3.5 shrink-0 text-slate-500" aria-hidden />
               <select

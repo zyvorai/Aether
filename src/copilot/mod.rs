@@ -5,6 +5,7 @@
 //! AI Ops Copilot — natural language control plane with tool calling.
 
 pub mod agent;
+pub mod diagnose;
 pub mod policy;
 pub mod provider;
 pub mod session;

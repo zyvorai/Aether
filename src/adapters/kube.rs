@@ -159,6 +159,20 @@ impl KubernetesRuntime {
                     .await;
                     Ok(())
                 }
+                "serviceaccount" => {
+                    let api: Api<ServiceAccount> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "role" => {
+                    let api: Api<Role> = Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
+                "rolebinding" => {
+                    let api: Api<RoleBinding> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
+                    api.delete(name, &DeleteParams::default()).await.map(|_| ())
+                }
                 _ => Ok(()),
             };
             match result {
@@ -166,6 +180,32 @@ impl KubernetesRuntime {
                 Err(e) => tracing::warn!("Failed to clean up {} '{}': {}", kind, name, e),
             }
         }
+    }
+
+    /// Stop the workload controller and remove Service, Ingress, and HPA (keeps PVCs and Secrets).
+    pub async fn stop_cascade(&self, instance: &Instance) -> crate::Result<()> {
+        self.stop(instance).await?;
+
+        let services: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
+        let service_name = format!("{}-service", instance.name);
+        if let Err(e) = services.delete(&service_name, &DeleteParams::default()).await {
+            tracing::debug!("Service deletion failed (may not exist): {}", e);
+        }
+
+        let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
+        let ingress_name = format!("{}-ingress", instance.name);
+        if let Err(e) = ingresses.delete(&ingress_name, &DeleteParams::default()).await {
+            tracing::debug!("Ingress deletion failed (may not exist): {}", e);
+        }
+
+        let hpas: Api<HorizontalPodAutoscaler> =
+            Api::namespaced(self.client.clone(), &self.namespace);
+        let hpa_name = format!("{}-hpa", instance.name);
+        if let Err(e) = hpas.delete(&hpa_name, &DeleteParams::default()).await {
+            tracing::debug!("HPA deletion failed (may not exist): {}", e);
+        }
+
+        Ok(())
     }
 
     /// Get pod status by looking up pods via label selectors.
@@ -251,7 +291,7 @@ fn graceful_delete_params() -> DeleteParams {
 }
 
 /// Execute a Kubernetes API future with a timeout.
-async fn kube_with_timeout<F, T>(op: &str, fut: F) -> crate::Result<T>
+pub(crate) async fn kube_with_timeout<F, T>(op: &str, fut: F) -> crate::Result<T>
 where
     F: std::future::Future<Output = Result<T, kube::Error>>,
 {
@@ -262,7 +302,7 @@ where
 }
 
 /// Check if a kube error is a 409 Conflict (resource already exists)
-fn is_already_exists(err: &kube::Error) -> bool {
+pub(crate) fn is_already_exists(err: &kube::Error) -> bool {
     matches!(err, kube::Error::Api(resp) if resp.code == 409)
 }
 
@@ -309,7 +349,7 @@ fn build_deployment_manifest(namespace: &str, image: &Image, spec: &Workload) ->
 }
 
 /// Build a Service manifest from workload spec.
-fn build_service_manifest(namespace: &str, spec: &Workload) -> Option<Service> {
+pub(crate) fn build_service_manifest(namespace: &str, spec: &Workload) -> Option<Service> {
     crate::adapters::kube_manifest::build_service_manifest(namespace, spec)
 }
 
@@ -418,7 +458,7 @@ fn egress_policy_ports(np: &crate::spec::NetworkPolicyConfig) -> Option<Vec<Netw
 }
 
 /// Build a NetworkPolicy manifest from workload spec.
-fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> Option<NetworkPolicy> {
+pub(crate) fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> Option<NetworkPolicy> {
     let np_config = spec.network.network_policy.as_ref()?;
 
     let mut labels = BTreeMap::new();
@@ -504,7 +544,7 @@ fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> Option<Netw
 }
 
 /// Build a PersistentVolumeClaim manifest from workload spec.
-fn build_pvc_manifest(namespace: &str, spec: &Workload) -> Option<PersistentVolumeClaim> {
+pub(crate) fn build_pvc_manifest(namespace: &str, spec: &Workload) -> Option<PersistentVolumeClaim> {
     if !spec.persistence.enabled {
         return None;
     }
@@ -543,7 +583,7 @@ fn build_pvc_manifest(namespace: &str, spec: &Workload) -> Option<PersistentVolu
 }
 
 /// Build ConfigMap manifests from workload spec.
-fn build_configmap_manifests(namespace: &str, spec: &Workload) -> Vec<ConfigMap> {
+pub(crate) fn build_configmap_manifests(namespace: &str, spec: &Workload) -> Vec<ConfigMap> {
     let config = match &spec.config {
         Some(c) => c,
         None => return vec![],
@@ -570,7 +610,7 @@ fn build_configmap_manifests(namespace: &str, spec: &Workload) -> Vec<ConfigMap>
 }
 
 /// Build Secret manifests from workload spec.
-fn build_secret_manifests(namespace: &str, spec: &Workload) -> Vec<Secret> {
+pub(crate) fn build_secret_manifests(namespace: &str, spec: &Workload) -> Vec<Secret> {
     let config = match &spec.config {
         Some(c) => c,
         None => return vec![],
@@ -604,7 +644,7 @@ fn build_secret_manifests(namespace: &str, spec: &Workload) -> Vec<Secret> {
 }
 
 /// Build an Ingress manifest from workload spec.
-fn build_ingress_manifest(namespace: &str, spec: &Workload) -> Option<Ingress> {
+pub(crate) fn build_ingress_manifest(namespace: &str, spec: &Workload) -> Option<Ingress> {
     let ingress_spec = match &spec.ingress {
         Some(i) if i.enabled => i,
         _ => return None,
@@ -676,7 +716,7 @@ fn build_ingress_manifest(namespace: &str, spec: &Workload) -> Option<Ingress> {
 }
 
 /// Build a HorizontalPodAutoscaler manifest from workload spec.
-fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodAutoscaler> {
+pub(crate) fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodAutoscaler> {
     let scaling_spec = match &spec.scaling {
         Some(s) if s.enabled => s,
         _ => return None,
@@ -891,7 +931,7 @@ fn build_cronjob_manifest(namespace: &str, image: &Image, spec: &Workload) -> Cr
     crate::adapters::kube_manifest::build_cronjob_manifest_v2(namespace, image, spec)
 }
 
-fn http_route_api_resource() -> ApiResource {
+pub(crate) fn http_route_api_resource() -> ApiResource {
     ApiResource {
         group: "gateway.networking.k8s.io".into(),
         version: "v1".into(),
@@ -901,7 +941,7 @@ fn http_route_api_resource() -> ApiResource {
     }
 }
 
-fn vpa_api_resource() -> ApiResource {
+pub(crate) fn vpa_api_resource() -> ApiResource {
     ApiResource {
         group: "autoscaling.k8s.io".into(),
         version: "v1".into(),
@@ -911,7 +951,7 @@ fn vpa_api_resource() -> ApiResource {
     }
 }
 
-fn keda_api_resource() -> ApiResource {
+pub(crate) fn keda_api_resource() -> ApiResource {
     ApiResource {
         group: "keda.sh".into(),
         version: "v1alpha1".into(),
@@ -921,7 +961,7 @@ fn keda_api_resource() -> ApiResource {
     }
 }
 
-async fn create_dynamic_resource(
+pub(crate) async fn create_dynamic_resource(
     client: &Client,
     namespace: &str,
     manifest: serde_json::Value,
@@ -948,7 +988,7 @@ async fn create_dynamic_resource(
     }
 }
 
-async fn delete_dynamic_resource(
+pub(crate) async fn delete_dynamic_resource(
     client: &Client,
     namespace: &str,
     name: &str,
@@ -960,17 +1000,45 @@ async fn delete_dynamic_resource(
     }
 }
 
-async fn create_hpa_if_needed(client: &Client, namespace: &str, spec: &Workload) {
-    if let Some(hpa) = build_hpa_manifest(namespace, spec) {
-        let hpas: Api<HorizontalPodAutoscaler> = Api::namespaced(client.clone(), namespace);
-        match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa)).await {
-            Ok(_) => tracing::info!("Created HPA: {}-hpa", spec.metadata.name),
-            Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                tracing::info!("HPA already exists: {}-hpa", spec.metadata.name)
-            }
-            Err(e) => tracing::warn!("HPA creation failed: {}", e),
+pub(crate) async fn reconcile_dynamic_resource(
+    client: &Client,
+    namespace: &str,
+    manifest: serde_json::Value,
+    api_resource: ApiResource,
+) -> crate::Result<()> {
+    let resource: DynamicObject = serde_json::from_value(manifest)?;
+    let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
+    let name = resource.name_any();
+    let pp = kube::api::PatchParams::apply("aether").force();
+    match kube_with_timeout(
+        &format!("{} reconcile", api_resource.kind),
+        api.patch(&name, &pp, &kube::api::Patch::Apply(resource)),
+    )
+    .await
+    {
+        Ok(_) => {
+            tracing::info!("Reconciled {}: {}", api_resource.kind, name);
+            Ok(())
         }
+        Err(e) => Err(e),
     }
+}
+
+fn instance_from_controller(
+    name: Option<String>,
+    uid: Option<String>,
+    created: Option<&k8s_openapi::apimachinery::pkg::apis::meta::v1::Time>,
+    image: Option<String>,
+) -> Option<Instance> {
+    Some(Instance {
+        id: uid.unwrap_or_else(|| "unknown".to_string()),
+        name: name.unwrap_or_else(|| "unknown".to_string()),
+        runtime: RuntimeKind::Kubernetes,
+        image: image.unwrap_or_else(|| "unknown".to_string()),
+        created_at: created
+            .map(|t| t.0.to_rfc3339())
+            .unwrap_or_else(crate::resources::now_rfc3339),
+    })
 }
 
 #[async_trait]
@@ -1028,284 +1096,22 @@ impl Runtime for KubernetesRuntime {
             spec.metadata.name
         );
 
-        // Track created resources for logging
-        let mut _created_configmaps: Vec<String> = Vec::new();
-        let mut _created_secrets: Vec<String> = Vec::new();
+        let workload_kind = spec.resolved_k8s_workload_kind();
+        let tracked = crate::adapters::kube_reconcile::reconcile_k8s_ancillaries(
+            &self.client,
+            &self.namespace,
+            spec,
+            workload_kind,
+            crate::adapters::kube_reconcile::ReconcileMode::Create,
+        )
+        .await?;
 
-        // Track resources created in this deployment for cleanup on failure
-        let mut new_resources: Vec<(&str, String)> = Vec::new();
-
-        // Create ConfigMaps
-        for configmap in build_configmap_manifests(&self.namespace, spec) {
-            let configmaps: Api<ConfigMap> =
-                Api::namespaced(self.client.clone(), &self.namespace);
-            let cm_name = configmap.metadata.name.clone().unwrap_or_default();
-
-            match kube_with_timeout("ConfigMap create", configmaps.create(&PostParams::default(), &configmap)).await {
-                Ok(_) => {
-                    tracing::info!("Created ConfigMap: {}", cm_name);
-                    new_resources.push(("configmap", cm_name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                    tracing::info!("ConfigMap already exists: {}", cm_name);
-                }
-                Err(e) => {
-                    tracing::error!("ConfigMap creation failed: {}", e);
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
-                }
-            }
-        }
-
-        // Create Secrets
-        for secret in build_secret_manifests(&self.namespace, spec) {
-            let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
-            let secret_name = secret.metadata.name.clone().unwrap_or_default();
-
-            match kube_with_timeout("Secret create", secrets.create(&PostParams::default(), &secret)).await {
-                Ok(_) => {
-                    tracing::info!("Created Secret: {}", secret_name);
-                    new_resources.push(("secret", secret_name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                    tracing::info!("Secret already exists: {}", secret_name);
-                }
-                Err(e) => {
-                    tracing::error!("Secret creation failed: {}", e);
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
-                }
-            }
-        }
-
-        // Docker registry pull secret (optional)
-        if let Some(secret) =
-            crate::adapters::kube_extras::build_docker_registry_secret(&self.namespace, spec)
-        {
-            let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
-            let secret_name = secret.metadata.name.clone().unwrap_or_default();
-            match kube_with_timeout("Registry Secret create", secrets.create(&PostParams::default(), &secret)).await {
-                Ok(_) => {
-                    tracing::info!("Created registry Secret: {}", secret_name);
-                    new_resources.push(("secret", secret_name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                    tracing::info!("Registry Secret already exists: {}", secret_name);
-                }
-                Err(e) => {
-                    tracing::error!("Registry Secret creation failed: {}", e);
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
-                }
-            }
-        }
-
-        // ServiceAccount + RBAC (optional)
-        if let Some(sa) =
-            crate::adapters::kube_extras::build_service_account(spec, &self.namespace)
-        {
-            let sa_name = sa.metadata.name.clone().unwrap_or_default();
-            let accounts: Api<ServiceAccount> =
-                Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("ServiceAccount create", accounts.create(&PostParams::default(), &sa)).await {
-                Ok(_) => {
-                    tracing::info!("Created ServiceAccount: {}", sa_name);
-                    new_resources.push(("serviceaccount", sa_name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                    tracing::info!("ServiceAccount already exists: {}", sa_name);
-                }
-                Err(e) => {
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
-                }
-            }
-        }
-        if let Some(role) = crate::adapters::kube_extras::build_role(spec, &self.namespace) {
-            let role_name = role.metadata.name.clone().unwrap_or_default();
-            let roles: Api<Role> = Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("Role create", roles.create(&PostParams::default(), &role)).await {
-                Ok(_) => {
-                    tracing::info!("Created Role: {}", role_name);
-                    new_resources.push(("role", role_name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {}
-                Err(e) => {
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
-                }
-            }
-        }
-        if let Some(binding) =
-            crate::adapters::kube_extras::build_role_binding(spec, &self.namespace)
-        {
-            let binding_name = binding.metadata.name.clone().unwrap_or_default();
-            let bindings: Api<RoleBinding> =
-                Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("RoleBinding create", bindings.create(&PostParams::default(), &binding)).await {
-                Ok(_) => {
-                    tracing::info!("Created RoleBinding: {}", binding_name);
-                    new_resources.push(("rolebinding", binding_name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {}
-                Err(e) => {
-                    self.cleanup_resources(&new_resources).await;
-                    return Err(e);
-                }
-            }
-        }
-
-        // Create PVC if needed (Deployment/Job — StatefulSet uses volumeClaimTemplates)
-        if crate::adapters::kube_manifest::needs_standalone_pvc(spec) {
-            if let Some(pvc) = build_pvc_manifest(&self.namespace, spec) {
-            let pvcs: Api<PersistentVolumeClaim> =
-                Api::namespaced(self.client.clone(), &self.namespace);
-
-            match kube_with_timeout("PVC create", pvcs.create(&PostParams::default(), &pvc)).await {
-                Ok(_) => { tracing::info!("Created PVC: {}-pvc", spec.metadata.name); new_resources.push(("pvc", format!("{}-pvc", spec.metadata.name))); }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("PVC already exists: {}-pvc", spec.metadata.name),
-                Err(e) => { tracing::error!("PVC creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
-            }
-            }
-        }
-
-        // Create Service if needed
-        if let Some(service) = build_service_manifest(&self.namespace, spec) {
-            let services: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("Service create", services.create(&PostParams::default(), &service)).await {
-                Ok(_) => { tracing::info!("Created Service: {}-service", spec.metadata.name); new_resources.push(("service", format!("{}-service", spec.metadata.name))); }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("Service already exists: {}-service", spec.metadata.name),
-                Err(e) => { tracing::error!("Service creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
-            }
-        }
-
-        // Create Ingress if needed
-        if let Some(ingress) = build_ingress_manifest(&self.namespace, spec) {
-            let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("Ingress create", ingresses.create(&PostParams::default(), &ingress)).await {
-                Ok(_) => { tracing::info!("Created Ingress: {}-ingress", spec.metadata.name); new_resources.push(("ingress", format!("{}-ingress", spec.metadata.name))); }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("Ingress already exists: {}-ingress", spec.metadata.name),
-                Err(e) => { tracing::error!("Ingress creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
-            }
-        }
-
-        // cert-manager Certificate (optional)
-        if let Some(cert) =
-            crate::adapters::kube_extras::build_certificate_json(&self.namespace, spec)
-        {
-            if create_dynamic_resource(
-                &self.client,
-                &self.namespace,
-                cert,
-                crate::adapters::kube_extras::certificate_api_resource(),
-            )
-            .await
-            .is_ok()
-            {
-                new_resources.push(("certificate", format!("{}-cert", spec.metadata.name)));
-            }
-        }
-
-        // ResourceQuota / LimitRange (optional namespace guardrails)
-        if let Some(rq) = crate::adapters::kube_extras::build_resource_quota(&self.namespace, spec) {
-            let name = rq.metadata.name.clone().unwrap_or_default();
-            let quotas: Api<ResourceQuota> = Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("ResourceQuota create", quotas.create(&PostParams::default(), &rq)).await {
-                Ok(_) => {
-                    tracing::info!("Created ResourceQuota: {}", name);
-                    new_resources.push(("resourcequota", name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                    tracing::info!("ResourceQuota already exists: {}", name);
-                }
-                Err(e) => {
-                    tracing::warn!("ResourceQuota creation failed: {}", e);
-                }
-            }
-        }
-        if let Some(lr) = crate::adapters::kube_extras::build_limit_range(&self.namespace, spec) {
-            let name = lr.metadata.name.clone().unwrap_or_default();
-            let ranges: Api<LimitRange> = Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("LimitRange create", ranges.create(&PostParams::default(), &lr)).await {
-                Ok(_) => {
-                    tracing::info!("Created LimitRange: {}", name);
-                    new_resources.push(("limitrange", name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                    tracing::info!("LimitRange already exists: {}", name);
-                }
-                Err(e) => {
-                    tracing::warn!("LimitRange creation failed: {}", e);
-                }
-            }
-        }
-
-        // Create NetworkPolicy if needed
-        if let Some(netpol) = build_networkpolicy_manifest(&self.namespace, spec) {
-            let netpols: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
-            let netpol_name = format!("{}-netpol", spec.metadata.name);
-            match kube_with_timeout("NetworkPolicy create", netpols.create(&PostParams::default(), &netpol)).await {
-                Ok(_) => { tracing::info!("Created NetworkPolicy: {}", netpol_name); new_resources.push(("networkpolicy", netpol_name)); }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => tracing::info!("NetworkPolicy already exists: {}", netpol_name),
-                Err(e) => { tracing::error!("NetworkPolicy creation failed: {}", e); self.cleanup_resources(&new_resources).await; return Err(e); }
-            }
-        }
-
-        if let Some(cnp) =
-            crate::adapters::kube_policy_extras::build_cilium_network_policy_json(&self.namespace, spec)
-        {
-            if create_dynamic_resource(
-                &self.client,
-                &self.namespace,
-                cnp,
-                crate::adapters::kube_policy_extras::cilium_network_policy_api_resource(),
-            )
-            .await
-            .is_ok()
-            {
-                new_resources.push(("cilium", format!("{}-cilium", spec.metadata.name)));
-            }
-        }
-
-        if let Some(calico) =
-            crate::adapters::kube_policy_extras::build_calico_network_policy_json(&self.namespace, spec)
-        {
-            if create_dynamic_resource(
-                &self.client,
-                &self.namespace,
-                calico,
-                crate::adapters::kube_policy_extras::calico_network_policy_api_resource(),
-            )
-            .await
-            .is_ok()
-            {
-                new_resources.push(("calico", format!("{}-calico", spec.metadata.name)));
-            }
-        }
-
-        // PodDisruptionBudget
-        if let Some(pdb) =
-            crate::adapters::kube_manifest::build_pdb_manifest(&self.namespace, spec)
-        {
-            let pdb_name = format!("{}-pdb", spec.metadata.name);
-            let pdbs: Api<PodDisruptionBudget> =
-                Api::namespaced(self.client.clone(), &self.namespace);
-            match kube_with_timeout("PDB create", pdbs.create(&PostParams::default(), &pdb)).await {
-                Ok(_) => {
-                    tracing::info!("Created PDB: {}", pdb_name);
-                    new_resources.push(("pdb", pdb_name));
-                }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
-                    tracing::info!("PDB already exists: {}", pdb_name);
-                }
-                Err(e) => {
-                    tracing::warn!("PDB creation failed: {}", e);
-                }
-            }
-        }
+        let mut new_resources: Vec<(&str, String)> = tracked
+            .iter()
+            .map(|r| (r.kind, r.name.clone()))
+            .collect();
 
         // Create workload controller
-        let workload_kind = spec.resolved_k8s_workload_kind();
         let (resource_name, resource_uid) = match workload_kind {
             K8sWorkloadKind::CronJob => {
                 let cronjob = build_cronjob_manifest(&self.namespace, image, spec);
@@ -1399,7 +1205,6 @@ impl Runtime for KubernetesRuntime {
                     .clone()
                     .unwrap_or_else(|| "unknown".to_string());
                 new_resources.push(("statefulset", name.clone()));
-                create_hpa_if_needed(&self.client, &self.namespace, spec).await;
                 (name, uid)
             }
             K8sWorkloadKind::DaemonSet => {
@@ -1492,77 +1297,25 @@ impl Runtime for KubernetesRuntime {
                     .clone()
                     .unwrap_or_else(|| "unknown".to_string());
                 new_resources.push(("deployment", name.clone()));
-                create_hpa_if_needed(&self.client, &self.namespace, spec).await;
                 (name, uid)
             }
         };
 
-        if let Some(route) =
-            crate::adapters::kube_manifest::build_gateway_http_route_json(&self.namespace, spec)
-        {
-            if create_dynamic_resource(
-                &self.client,
-                &self.namespace,
-                route,
-                http_route_api_resource(),
-            )
-            .await
-            .is_ok()
-            {
-                new_resources.push(("httproute", format!("{}-route", spec.metadata.name)));
-            }
-        }
-
-        let vpa_target = match workload_kind {
-            K8sWorkloadKind::StatefulSet => "StatefulSet",
-            _ => "Deployment",
-        };
-        if let Some(vpa) =
-            crate::adapters::kube_manifest::build_vpa_json(&self.namespace, spec, vpa_target)
-        {
-            if create_dynamic_resource(&self.client, &self.namespace, vpa, vpa_api_resource())
-                .await
-                .is_ok()
-            {
-                new_resources.push(("vpa", format!("{}-vpa", spec.metadata.name)));
-            }
-        }
-
-        if matches!(workload_kind, K8sWorkloadKind::Deployment | K8sWorkloadKind::StatefulSet) {
-            if let Some(keda) =
-                crate::adapters::kube_manifest::build_keda_json(&self.namespace, spec)
-            {
-                if create_dynamic_resource(&self.client, &self.namespace, keda, keda_api_resource())
-                    .await
-                    .is_ok()
-                {
-                    new_resources.push(("keda", format!("{}-keda", spec.metadata.name)));
-                }
-            }
-        }
-
-        if let Some(monitor) =
-            crate::adapters::kube_extras::build_service_monitor_json(&self.namespace, spec)
-        {
-            if create_dynamic_resource(
-                &self.client,
-                &self.namespace,
-                monitor,
-                crate::adapters::kube_extras::service_monitor_api_resource(),
-            )
-            .await
-            .is_ok()
-            {
-                new_resources.push(("servicemonitor", format!("{}-monitor", spec.metadata.name)));
-            }
-        }
-
-        Ok(Instance::new(
+        let inst = Instance::new(
             resource_uid,
             resource_name,
             RuntimeKind::Kubernetes,
             image.reference(),
-        ))
+        );
+        let ns = self.namespace.clone();
+        tokio::spawn(async move {
+            if let Err(e) =
+                crate::kubecluster::cilium::probe_cilium_connectivity(None, Some(&ns)).await
+            {
+                tracing::warn!("Post-deploy Cilium connectivity probe failed: {}", e);
+            }
+        });
+        Ok(inst)
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
@@ -1806,56 +1559,121 @@ impl Runtime for KubernetesRuntime {
             Err(e) => tracing::debug!("Secret list failed: {}", e),
         }
 
+        // ServiceAccount + RBAC (best-effort conventional names)
+        let accounts: Api<ServiceAccount> = Api::namespaced(self.client.clone(), &self.namespace);
+        if let Err(e) = accounts.delete(&instance.name, &DeleteParams::default()).await {
+            tracing::debug!("ServiceAccount deletion failed (may not exist): {}", e);
+        }
+        let roles: Api<Role> = Api::namespaced(self.client.clone(), &self.namespace);
+        let role_name = format!("{}-role", instance.name);
+        if let Err(e) = roles.delete(&role_name, &DeleteParams::default()).await {
+            tracing::debug!("Role deletion failed (may not exist): {}", e);
+        }
+        let bindings: Api<RoleBinding> = Api::namespaced(self.client.clone(), &self.namespace);
+        let binding_name = format!("{}-rolebinding", instance.name);
+        if let Err(e) = bindings.delete(&binding_name, &DeleteParams::default()).await {
+            tracing::debug!("RoleBinding deletion failed (may not exist): {}", e);
+        }
+
         Ok(())
     }
 
     async fn list(&self) -> crate::Result<Vec<Instance>> {
-        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
-
-        // List only deployments managed by aether
         let lp = ListParams::default().labels("managed-by=aether");
-        let deploy_list = deployments.list(&lp).await?;
+        let mut instances = Vec::new();
+        let mut seen = std::collections::HashSet::new();
 
-        let instances: Vec<Instance> = deploy_list
-            .items
-            .iter()
-            .map(|deploy| {
-                let name = deploy
-                    .metadata
-                    .name
-                    .clone()
-                    .unwrap_or_else(|| "unknown".to_string());
-
-                let uid = deploy
-                    .metadata
-                    .uid
-                    .clone()
-                    .unwrap_or_else(|| "unknown".to_string());
-
-                let image = deploy
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+        for deploy in deployments.list(&lp).await?.items {
+            if let Some(inst) = instance_from_controller(
+                deploy.metadata.name.clone(),
+                deploy.metadata.uid.clone(),
+                deploy.metadata.creation_timestamp.as_ref(),
+                deploy
                     .spec
                     .as_ref()
                     .and_then(|s| s.template.spec.as_ref())
                     .and_then(|ps| ps.containers.first())
-                    .and_then(|c| c.image.clone())
-                    .unwrap_or_else(|| "unknown".to_string());
-
-                let created_at = deploy
-                    .metadata
-                    .creation_timestamp
-                    .as_ref()
-                    .map(|t| t.0.to_rfc3339())
-                    .unwrap_or_else(crate::resources::now_rfc3339);
-
-                Instance {
-                    id: uid,
-                    name,
-                    runtime: RuntimeKind::Kubernetes,
-                    image,
-                    created_at,
+                    .and_then(|c| c.image.clone()),
+            ) {
+                if seen.insert(inst.name.clone()) {
+                    instances.push(inst);
                 }
-            })
-            .collect();
+            }
+        }
+
+        let sets: Api<StatefulSet> = Api::namespaced(self.client.clone(), &self.namespace);
+        for sts in sets.list(&lp).await?.items {
+            if let Some(inst) = instance_from_controller(
+                sts.metadata.name.clone(),
+                sts.metadata.uid.clone(),
+                sts.metadata.creation_timestamp.as_ref(),
+                sts.spec
+                    .as_ref()
+                    .and_then(|s| s.template.spec.as_ref())
+                    .and_then(|ps| ps.containers.first())
+                    .and_then(|c| c.image.clone()),
+            ) {
+                if seen.insert(inst.name.clone()) {
+                    instances.push(inst);
+                }
+            }
+        }
+
+        let daemon: Api<DaemonSet> = Api::namespaced(self.client.clone(), &self.namespace);
+        for ds in daemon.list(&lp).await?.items {
+            if let Some(inst) = instance_from_controller(
+                ds.metadata.name.clone(),
+                ds.metadata.uid.clone(),
+                ds.metadata.creation_timestamp.as_ref(),
+                ds.spec
+                    .as_ref()
+                    .and_then(|s| s.template.spec.as_ref())
+                    .and_then(|ps| ps.containers.first())
+                    .and_then(|c| c.image.clone()),
+            ) {
+                if seen.insert(inst.name.clone()) {
+                    instances.push(inst);
+                }
+            }
+        }
+
+        let jobs: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
+        for job in jobs.list(&lp).await?.items {
+            if let Some(inst) = instance_from_controller(
+                job.metadata.name.clone(),
+                job.metadata.uid.clone(),
+                job.metadata.creation_timestamp.as_ref(),
+                job.spec
+                    .as_ref()
+                    .and_then(|s| s.template.spec.as_ref())
+                    .and_then(|ps| ps.containers.first())
+                    .and_then(|c| c.image.clone()),
+            ) {
+                if seen.insert(inst.name.clone()) {
+                    instances.push(inst);
+                }
+            }
+        }
+
+        let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
+        for cj in cronjobs.list(&lp).await?.items {
+            if let Some(inst) = instance_from_controller(
+                cj.metadata.name.clone(),
+                cj.metadata.uid.clone(),
+                cj.metadata.creation_timestamp.as_ref(),
+                cj.spec
+                    .as_ref()
+                    .and_then(|s| s.job_template.spec.as_ref())
+                    .and_then(|jt| jt.template.spec.as_ref())
+                    .and_then(|ps| ps.containers.first())
+                    .and_then(|c| c.image.clone()),
+            ) {
+                if seen.insert(inst.name.clone()) {
+                    instances.push(inst);
+                }
+            }
+        }
 
         Ok(instances)
     }
@@ -1962,7 +1780,19 @@ impl Runtime for KubernetesRuntime {
             }
         };
 
-        create_hpa_if_needed(&self.client, &self.namespace, spec).await;
+        let workload_kind = spec.resolved_k8s_workload_kind();
+        if let Err(e) = crate::adapters::kube_reconcile::reconcile_k8s_ancillaries(
+            &self.client,
+            &self.namespace,
+            spec,
+            workload_kind,
+            crate::adapters::kube_reconcile::ReconcileMode::Update,
+        )
+        .await
+        {
+            tracing::warn!("Ancillary resource reconcile failed: {}", e);
+        }
+
         tracing::info!("Updated {} (rolling update triggered)", name);
         Ok(Instance::new(uid, name, RuntimeKind::Kubernetes, image.reference()))
     }
