@@ -48,6 +48,7 @@ pub mod resources;
 pub mod runtime;
 pub mod saml;
 pub mod saml_decrypt;
+pub mod saml_c14n;
 pub mod saml_verify;
 pub mod scheduler;
 pub mod sbom;
