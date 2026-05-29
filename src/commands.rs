@@ -4433,7 +4433,8 @@ pub(crate) async fn edge_agent_command(
     dry_run: bool,
     interval_secs: u64,
 ) -> Result<()> {
-    use aether::fleet::edge::{EdgeHeartbeatRequest, EdgeRegisterRequest};
+    use aether::fleet::edge::{EdgeHeartbeatRequest, EdgeJob, EdgeRegisterRequest};
+    use aether::fleet::edge_executor::{EdgeLocalQueue, execute_edge_jobs};
     use std::time::Duration;
 
     let base = control_plane.trim_end_matches('/');
@@ -4474,26 +4475,59 @@ pub(crate) async fn edge_agent_command(
 
     output::success(&format!("Edge agent '{site}' registered with {base}"));
 
+    let mut local_queue = EdgeLocalQueue::for_site(site);
+    let mut last_error: Option<String> = None;
+
     loop {
+        let (replay_ok, replay_fail) = local_queue.replay_all().await;
+        if replay_ok > 0 || replay_fail > 0 {
+            output::info(&format!(
+                "Offline queue replay: {replay_ok} ok, {replay_fail} retrying"
+            ));
+        }
+
+        let mut remote_jobs: Vec<EdgeJob> = Vec::new();
         let mut poll = client.get(format!("{base}/api/fleet/edge/queue?site={site}"));
         if let Some(ref t) = token_owned {
             poll = poll.header(reqwest::header::AUTHORIZATION, format!("Bearer {t}"));
         }
-        if let Ok(resp) = poll.send().await {
-            if let Ok(body) = resp.json::<serde_json::Value>().await {
-                if let Some(jobs) = body.pointer("/data").and_then(|d| d.as_array()) {
-                    for job in jobs {
-                        let action = job.get("action").and_then(|v| v.as_str()).unwrap_or("?");
-                        let id = job.get("id").and_then(|v| v.as_str()).unwrap_or("?");
-                        output::info(&format!("Edge job {id}: {action}"));
-                        if action == "gitops_sync" {
-                            let _ = gitops_command(crate::cli::GitOpsAction::Sync).await;
-                        } else if action == "stop" {
-                            if let Some(name) = job.pointer("/payload/workload").and_then(|v| v.as_str()) {
-                                let _ = stop_command(name, false).await;
+        match poll.send().await {
+            Ok(resp) if resp.status().is_success() => {
+                last_error = None;
+                if let Ok(body) = resp.json::<serde_json::Value>().await {
+                    if let Some(data) = body.pointer("/data") {
+                        if let Ok(jobs) = serde_json::from_value::<Vec<EdgeJob>>(data.clone()) {
+                            remote_jobs = jobs;
+                        } else if let Some(arr) = data.as_array() {
+                            for job in arr {
+                                if let Ok(j) = serde_json::from_value::<EdgeJob>(job.clone()) {
+                                    remote_jobs.push(j);
+                                }
                             }
                         }
                     }
+                }
+            }
+            Ok(resp) => {
+                last_error = Some(format!("queue poll HTTP {}", resp.status()));
+            }
+            Err(e) => {
+                last_error = Some(format!("queue poll failed: {e}"));
+                output::error(last_error.as_deref().unwrap_or("queue poll failed"));
+            }
+        }
+
+        if !remote_jobs.is_empty() {
+            let results = execute_edge_jobs(&remote_jobs).await;
+            for (job, result) in remote_jobs.iter().zip(results.iter()) {
+                if result.success {
+                    output::success(&format!("Edge job {}: {}", job.id, result.message));
+                } else {
+                    output::error(&format!(
+                        "Edge job {} ({}) failed: {}",
+                        job.id, job.action, result.message
+                    ));
+                    let _ = local_queue.push(job.clone());
                 }
             }
         }
@@ -4502,8 +4536,8 @@ pub(crate) async fn edge_agent_command(
             .post(format!("{base}/api/fleet/edge/heartbeat"))
             .json(&EdgeHeartbeatRequest {
                 site: site.to_string(),
-                queue_depth: 0,
-                last_error: None,
+                queue_depth: local_queue.len(),
+                last_error: last_error.clone(),
             });
         if let Some(ref t) = token_owned {
             hb = hb.header(reqwest::header::AUTHORIZATION, format!("Bearer {t}"));

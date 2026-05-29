@@ -15,7 +15,7 @@ fn tenant_key_issue_verify() {
     std::env::set_var("HOME", dir.path());
     let mut store = TenantKeyStore::load();
     let (plain, _) = store.issue("tenant-x", "ci").unwrap();
-    assert!(TenantKeyStore::load().verify(&plain).is_some());
+    assert!(store.verify(&plain).is_some());
 }
 
 #[test]
