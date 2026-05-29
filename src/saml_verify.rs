@@ -32,8 +32,15 @@ pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::R
     let target_id = reference_uri.trim_start_matches('#');
     let signed_element = extract_element_by_id(xml, target_id)
         .ok_or_else(|| anyhow::anyhow!("signed SAML element #{target_id} not found"))?;
-    let digest_actual =
-        base64::engine::general_purpose::STANDARD.encode(Sha256::digest(signed_element.as_bytes()));
+    let reference_xml = extract_element_xml(&signature_block, "Reference")
+        .ok_or_else(|| anyhow::anyhow!("SAML signature missing Reference"))?;
+    let transforms = crate::saml_c14n::extract_transform_algorithms(&reference_xml);
+    let digest_bytes = if transforms.is_empty() {
+        signed_element.as_bytes().to_vec()
+    } else {
+        crate::saml_c14n::digest_canonical_bytes(&signed_element, &transforms)?
+    };
+    let digest_actual = base64::engine::general_purpose::STANDARD.encode(Sha256::digest(&digest_bytes));
     if digest_actual != digest_expected.trim() {
         anyhow::bail!("SAML digest mismatch for #{target_id}");
     }
@@ -42,8 +49,12 @@ pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::R
     let verifying_key = VerifyingKey::<Sha256>::new(public_key);
     let signature = Signature::try_from(sig_bytes.as_slice())
         .map_err(|e| anyhow::anyhow!("invalid RSA signature: {e}"))?;
+    let c14n_algo = crate::saml_c14n::extract_canonicalization_method(&signed_info)
+        .unwrap_or_else(|| crate::saml_c14n::EXC_C14N.to_string());
+    let signed_info_bytes = crate::saml_c14n::canonicalize(&signed_info, &c14n_algo)
+        .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
     verifying_key
-        .verify(signed_info.as_bytes(), &signature)
+        .verify(signed_info_bytes.as_slice(), &signature)
         .map_err(|_| anyhow::anyhow!("SAML RSA-SHA256 signature verification failed"))?;
     Ok(())
 }

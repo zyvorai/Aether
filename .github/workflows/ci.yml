@@ -141,6 +141,27 @@ jobs:
             AETHER_K8S_KIND_SETUP=1 \
             scripts/k8s-labs-e2e.sh
 
+  reference-cluster-live:
+    name: Reference cluster live (optional)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build aether
+        run: cargo build --release
+      - name: Live Metal3/KubeVirt smoke when kubeconfig is configured
+        run: |
+          chmod +x scripts/labs-live-smoke.sh
+          if [ -n "${KUBECONFIG:-}" ] || [ -f "${HOME}/.kube/config" ]; then
+            AETHER_BIN=./target/release/aether AETHER_LABS_LIVE=1 scripts/labs-live-smoke.sh
+          else
+            echo "Skipping live reference cluster (no kubeconfig in CI runner)"
+          fi
+
   dashboard-e2e:
     name: Dashboard E2E
     runs-on: ubuntu-latest

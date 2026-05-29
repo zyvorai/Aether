@@ -20,7 +20,7 @@
 - **PacketWolf live bridge** — `/api/ecosystem/packetwolf/*`, Fleet + Security Center cards, `AETHER_PACKETWOLF_URL`
 - **Edge agent + federation** — `aether edge-agent`, `/api/fleet/edge/*`, `/api/fleet/federation/*`, Fleet Edge/Placement tabs
 - **CycloneDX SBOM** — `aether sbom export|verify`, `GET /api/security/sbom`, signed image catalog API
-- **SAML encrypted assertions** — AES-128-CBC + RSA-OAEP via `AETHER_SAML_SP_KEY`, mock IdP `AETHER_MOCK_IDP_ENCRYPTED=1`
+- **SAML encrypted assertions** — AES-128-CBC + AES-256-GCM + RSA-OAEP via `AETHER_SAML_SP_KEY`; exc/inclusive C14N verification; mock IdP `AETHER_MOCK_IDP_ENCRYPTED=1` / `AETHER_MOCK_IDP_ENCRYPTED_GCM=1`
 - **Playwright exec E2E** — `scripts/kind-playwright-fixture.sh`, `cluster-exec-terminal.spec.ts`, CI `dashboard-exec-e2e` job
 - **Intelligent Fleet** — anomaly-based placement (PacketWolf), GitOps auto-target via federation, fleet-wide drift API + dashboard
 - **Migration depth** — cross-cluster volume replication plans, coordinated fleet migration plans
