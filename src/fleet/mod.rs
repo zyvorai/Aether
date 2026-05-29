@@ -3,4 +3,5 @@
 //! Fleet edge agents and federation placement.
 
 pub mod edge;
+pub mod edge_executor;
 pub mod federation;

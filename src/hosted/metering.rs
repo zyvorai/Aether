@@ -46,10 +46,13 @@ impl UsageMeter {
     }
 
     fn global() -> std::sync::MutexGuard<'static, UsageMeter> {
-        CACHE
-            .get_or_init(|| Mutex::new(UsageMeter::load()))
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        let cache = CACHE.get_or_init(|| Mutex::new(UsageMeter::load()));
+        let mut guard = cache.lock().unwrap_or_else(|e| e.into_inner());
+        let current_path = crate::resources::aether_path("tenant-usage.json");
+        if guard.path != current_path {
+            *guard = UsageMeter::load();
+        }
+        guard
     }
 
     pub fn record(tenant_id: &str, path: &str) {

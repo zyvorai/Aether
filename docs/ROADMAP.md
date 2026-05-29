@@ -25,6 +25,8 @@
 - **Intelligent Fleet** — anomaly-based placement (PacketWolf), GitOps auto-target via federation, fleet-wide drift API + dashboard
 - **Migration depth** — cross-cluster volume replication plans, coordinated fleet migration plans
 - **Hosted SaaS foundation** — tenant registry, billing usage API, `X-Aether-Tenant` / `AETHER_TENANT_ID` isolation hooks
+- **Phase D** — Stripe billing hooks, tenant API keys + metering, volume replication executor, anomaly remediation APIs
+- **Edge agent replay** — offline queue persistence and multi-action executor (`gitops_sync`, workload lifecycle, drift, cluster actions)
 
 ---
 
@@ -32,9 +34,10 @@
 
 | Item | Area | Tag |
 |------|------|-----|
-| Hosted SaaS billing integration (Stripe) | Product | `hosted` |
-| Live volume replication executor (CSI/snapshot) | Migration | `migration` |
-| Anomaly auto-remediation workflows | AI | `ai` |
+- **Hosted SaaS billing integration (Stripe)** — shipped in Phase D
+- **Live volume replication executor (CSI/snapshot)** — shipped in Phase D
+- **Anomaly auto-remediation workflows** — shipped in Phase D
+- **Edge agent offline queue replay** — full action dispatch + local retry queue
 
 ---
 

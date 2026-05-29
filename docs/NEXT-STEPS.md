@@ -36,13 +36,13 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 - **Phase B (Migration depth)** — `POST /api/migration/volume/plan`, `POST /api/migration/fleet/plan` for cross-cluster volume + coordinated fleet migrations
 - **Phase C (Hosted SaaS)** — `GET/POST /api/hosted/tenants`, `GET /api/hosted/billing/usage`, tenant store at `~/.aether/tenants.json`
 - **Phase D (Billing + remediation + volume execute)** — tenant API keys (`/api/hosted/tenants/:id/keys`), request metering (`/api/hosted/billing/metering`), Stripe checkout/webhook, `POST /api/migration/volume/execute`, `GET/POST /api/intelligence/remediation/*`, Hosted dashboard page
+- **Edge agent offline replay** — `edge_executor` dispatches gitops/stop/start/restart/delete/drift/cluster actions with local offline queue at `~/.aether/edge-{site}-offline.json`
 - **New env vars**: `AETHER_PACKETWOLF_URL`, `AETHER_PACKETWOLF_API_KEY`, `AETHER_EDGE_TOKEN`, `AETHER_FEDERATION_CLUSTERS`, `AETHER_FEDERATION_WEIGHTS`, `AETHER_SAML_SP_KEY`, `AETHER_MOCK_IDP_ENCRYPTED`, `AETHER_E2E_KIND`, `AETHER_STRIPE_SECRET_KEY`, `AETHER_STRIPE_WEBHOOK_SECRET`, `AETHER_STRIPE_PRICE_TEAM`, `AETHER_STRIPE_PRICE_ENTERPRISE`
 - **New CLI**: `aether sbom export|verify`, `aether edge-agent --control-plane URL --site NAME`
 
 ## Remaining / optional
 
 - **SAML** — additional IdP dialects (AES-256-GCM, alternate C14N)
-- **Edge agent** — full offline queue replay for all reconcile action types on disconnected sites
 
 ## Recommended Next Order
 
