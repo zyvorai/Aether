@@ -42,13 +42,13 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 
 ## Remaining / optional
 
-- **SAML** — additional IdP dialects (AES-256-GCM, alternate C14N)
+- **SAML** — additional IdP dialects beyond exc/inclusive C14N and AES-256-GCM (e.g. exclusive with comments only)
 
 ## Recommended Next Order
 
-1. Kind fixtures for Playwright cluster exec/port-forward UI tests.
-2. Dedicated reference-cluster runner with `AETHER_LABS_LIVE=1` for Metal3/KubeVirt apply smoke.
-3. SAML encrypted assertions for production IdPs requiring WSS.
+1. Dedicated reference-cluster runner with `AETHER_LABS_LIVE=1` for Metal3/KubeVirt apply smoke — `make reference-cluster-live` / `scripts/labs-live-smoke.sh`
+2. Kind fixtures for Playwright cluster exec/port-forward UI tests.
+3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh`.
 
 ## Mock IdP (development / CI)
 

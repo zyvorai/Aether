@@ -107,6 +107,13 @@ fn mock_idp_encrypted() -> bool {
         .unwrap_or(false)
 }
 
+fn mock_idp_encrypted_gcm() -> bool {
+    std::env::var("AETHER_MOCK_IDP_ENCRYPTED_GCM")
+        .ok()
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 pub fn sign_saml_element_for_test(element_xml: &str, element_id: &str) -> String {
     sign_saml_element(element_xml, element_id)
@@ -133,14 +140,18 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
 </saml2:Assertion>"#,
         issuer = xml_escape(&issuer),
     );
-    let body = if mock_idp_encrypted() {
+    let body = if mock_idp_encrypted() || mock_idp_encrypted_gcm() {
         std::env::set_var("AETHER_SAML_SP_KEY", MOCK_KEY_PEM);
-        crate::saml_decrypt::encrypt_assertion_for_test(&assertion, MOCK_CERT_PEM)
-            .unwrap_or(assertion)
+        if mock_idp_encrypted_gcm() {
+            crate::saml_decrypt::encrypt_assertion_gcm_for_test(&assertion, MOCK_CERT_PEM)
+        } else {
+            crate::saml_decrypt::encrypt_assertion_for_test(&assertion, MOCK_CERT_PEM)
+        }
+        .unwrap_or(assertion)
     } else {
         assertion
     };
-    let signature = if mock_idp_encrypted() {
+    let signature = if mock_idp_encrypted() || mock_idp_encrypted_gcm() {
         String::new()
     } else {
         sign_saml_element(&body, &assertion_id)
@@ -185,8 +196,10 @@ fn sign_saml_element(element_xml: &str, element_id: &str) -> String {
         r#"</ds:DigestValue></ds:Reference></ds:SignedInfo>"#,
     ]
     .concat();
+    let signed_info_bytes = crate::saml_c14n::canonicalize(&signed_info, crate::saml_c14n::EXC_C14N)
+        .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
     let signing_key = SigningKey::<Sha256>::new(keys().private_key.clone());
-    let signature = signing_key.sign(signed_info.as_bytes());
+    let signature = signing_key.sign(&signed_info_bytes);
     let sig_b64 = base64::engine::general_purpose::STANDARD.encode(signature.to_bytes());
     [
         r#"<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">"#,
