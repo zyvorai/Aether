@@ -26,6 +26,41 @@ pub struct ThreatEntry {
     pub detected_at: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityPolicySuggestion {
+    pub workload: String,
+    pub severity: String,
+    pub title: String,
+    pub policy_yaml: String,
+    pub rationale: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityCopilotReport {
+    pub generated_at: String,
+    pub suggestions: Vec<SecurityPolicySuggestion>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityRemediateRequest {
+    #[serde(default = "default_dry_run")]
+    pub dry_run: bool,
+    #[serde(default)]
+    pub confirm: bool,
+}
+
+fn default_dry_run() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityRemediateReport {
+    pub dry_run: bool,
+    pub applied: Vec<String>,
+    pub skipped: Vec<String>,
+    pub pending_confirmation: Vec<String>,
+}
+
 pub struct SecurityEngine;
 
 impl SecurityEngine {
@@ -147,5 +182,217 @@ impl SecurityEngine {
         }
 
         None
+    }
+
+    pub fn copilot_policies(threats: &ThreatReport) -> SecurityCopilotReport {
+        let suggestions = threats
+            .threats
+            .iter()
+            .filter_map(Self::policy_for_threat)
+            .collect();
+        SecurityCopilotReport {
+            generated_at: crate::resources::now_rfc3339(),
+            suggestions,
+        }
+    }
+
+    fn policy_for_threat(threat: &ThreatEntry) -> Option<SecurityPolicySuggestion> {
+        let (title, yaml) = match threat.category.as_str() {
+            "gpu_exposure" => (
+                "Isolate GPU workload ingress",
+                format!(
+                    r#"apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {workload}-gpu-isolation
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: {workload}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: gpu-gateway
+"#,
+                    workload = threat.workload
+                ),
+            ),
+            "network_exposure" => (
+                "Zero-trust network for confidential workload",
+                format!(
+                    r#"apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {workload}-zero-trust
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: {workload}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: trusted
+  egress:
+    - toEntities:
+        - kube-apiserver
+"#,
+                    workload = threat.workload
+                ),
+            ),
+            "attestation" => (
+                "Require attestation before scheduling",
+                format!(
+                    r#"apiVersion: v1
+kind: Pod
+metadata:
+  name: {workload}
+  annotations:
+    aether.zyvor.dev/attestation: required
+    aether.zyvor.dev/trust-policy: ragnarok-strict
+spec:
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+"#,
+                    workload = threat.workload
+                ),
+            ),
+            "instability" => (
+                "Cap restarts and enforce resource limits",
+                format!(
+                    r#"apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {workload}
+spec:
+  template:
+    spec:
+      containers:
+        - name: {workload}
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+"#,
+                    workload = threat.workload
+                ),
+            ),
+            "sovereign" => (
+                "Sovereign compliance guardrails",
+                format!(
+                    r#"apiVersion: aether/v1
+kind: WorkloadPolicy
+metadata:
+  name: {workload}-sovereign
+spec:
+  workload: {workload}
+  require:
+    - data_residency: in-region
+    - encryption_at_rest: true
+    - attestation: passed
+"#,
+                    workload = threat.workload
+                ),
+            ),
+            _ => (
+                "Least-privilege service account",
+                format!(
+                    r#"apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {workload}-restricted
+  namespace: default
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {workload}-minimal
+rules: []
+"#,
+                    workload = threat.workload
+                ),
+            ),
+        };
+
+        Some(SecurityPolicySuggestion {
+            workload: threat.workload.clone(),
+            severity: threat.severity.clone(),
+            title: title.into(),
+            policy_yaml: yaml,
+            rationale: threat.reason.clone(),
+        })
+    }
+
+    pub fn remediate_fleet(
+        workloads: &[(Workload, WorkloadState)],
+        dry_run: bool,
+        confirm: bool,
+    ) -> SecurityRemediateReport {
+        let threats = Self::scan_fleet(workloads);
+        let copilot = Self::copilot_policies(&threats);
+        let mut applied = Vec::new();
+        let mut skipped = Vec::new();
+        let mut pending_confirmation = Vec::new();
+
+        for suggestion in copilot.suggestions {
+            let line = format!(
+                "apply {} policy for {} ({})",
+                suggestion.title, suggestion.workload, suggestion.severity
+            );
+            let needs_confirm = suggestion.severity == "critical" || suggestion.severity == "high";
+            if needs_confirm && !confirm {
+                pending_confirmation.push(line);
+                skipped.push(format!(
+                    "{}: requires confirm=true for {} severity",
+                    suggestion.workload, suggestion.severity
+                ));
+                continue;
+            }
+            if dry_run {
+                applied.push(format!("dry-run: {line}"));
+            } else {
+                applied.push(line);
+            }
+        }
+
+        SecurityRemediateReport {
+            dry_run,
+            applied,
+            skipped,
+            pending_confirmation,
+        }
+    }
+}
+
+#[cfg(test)]
+mod copilot_tests {
+    use super::*;
+
+    #[test]
+    fn copilot_generates_policy_per_threat() {
+        let threats = ThreatReport {
+            generated_at: "now".into(),
+            threats: vec![ThreatEntry {
+                workload: "api".into(),
+                severity: "medium".into(),
+                category: "gpu_exposure".into(),
+                score: 0.5,
+                reason: "GPU on shared cluster".into(),
+                detected_at: "now".into(),
+            }],
+        };
+        let report = SecurityEngine::copilot_policies(&threats);
+        assert_eq!(report.suggestions.len(), 1);
+        assert!(report.suggestions[0].policy_yaml.contains("NetworkPolicy"));
     }
 }

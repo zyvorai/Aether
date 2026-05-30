@@ -1,0 +1,187 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
+import { useCallback, useEffect, useState } from 'react';
+import { FlaskConical, Loader2, Play, RefreshCw } from 'lucide-react';
+import { apiFetch, apiPost } from '../utils/api';
+import { formatPercent, formatUSD } from '../utils/formatters';
+import type { TwinSimulateReport, WorkloadResponse } from '../types/api';
+
+export default function DigitalTwinPanel() {
+  const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
+  const [workload, setWorkload] = useState('');
+  const [scale, setScale] = useState(1.5);
+  const [targetRuntime, setTargetRuntime] = useState('');
+  const [report, setReport] = useState<TwinSimulateReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [booting, setBooting] = useState(true);
+
+  useEffect(() => {
+    apiFetch<WorkloadResponse[]>('/workloads').then((data) => {
+      setWorkloads(data ?? []);
+      setBooting(false);
+    });
+  }, []);
+
+  const runSimulation = useCallback(async () => {
+    setLoading(true);
+    const res = await apiPost<TwinSimulateReport>('/intelligence/digital-twin/simulate', {
+      workload: workload.trim() || undefined,
+      scale_factor: scale,
+      target_runtime: targetRuntime.trim() || undefined,
+    });
+    setReport(res.success ? res.data ?? null : null);
+    setLoading(false);
+  }, [workload, scale, targetRuntime]);
+
+  useEffect(() => {
+    if (!booting) void runSimulation();
+  }, [booting, runSimulation]);
+
+  return (
+    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="digital-twin-panel">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <FlaskConical className="h-5 w-5 text-violet-400" />
+          <div>
+            <h2 className="text-xl font-semibold text-white">Digital Twin</h2>
+            <p className="text-sm text-slate-400">
+              What-if simulation — project capacity, cost, and risk before you change production.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => void runSimulation()}
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          Run simulation
+        </button>
+      </div>
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-slate-500">Scope</span>
+          <select
+            value={workload}
+            onChange={(e) => setWorkload(e.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200"
+          >
+            <option value="">Entire fleet</option>
+            {workloads.map((w) => (
+              <option key={w.name} value={w.name}>
+                {w.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-slate-500">Scale factor ({scale.toFixed(1)}×)</span>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.1}
+            value={scale}
+            onChange={(e) => setScale(Number(e.target.value))}
+            className="w-full"
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs text-slate-500">Target runtime (optional)</span>
+          <select
+            value={targetRuntime}
+            onChange={(e) => setTargetRuntime(e.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200"
+          >
+            <option value="">No change</option>
+            <option value="kubernetes">kubernetes</option>
+            <option value="kubevirt">kubevirt</option>
+            <option value="metal3">metal3</option>
+            <option value="podman">podman</option>
+          </select>
+        </label>
+      </div>
+
+      {report ? (
+        <div className="space-y-4">
+          <p className="text-sm text-violet-200/90">Scenario: {report.scenario}</p>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <TwinSnapshotCard title="Baseline" snapshot={report.baseline} />
+            <TwinSnapshotCard title="Projected" snapshot={report.projected} highlight />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-4">
+            <DeltaCard label="Risk Δ" value={formatPercent(report.deltas.risk_delta * 100, 1)} />
+            <DeltaCard label="CPU Δ" value={formatPercent(report.deltas.cpu_util_delta * 100, 1)} />
+            <DeltaCard label="Memory Δ" value={formatPercent(report.deltas.memory_util_delta * 100, 1)} />
+            <DeltaCard label="Cost Δ" value={formatUSD(report.deltas.cost_delta_usd)} />
+          </div>
+          <ul className="space-y-2">
+            {report.recommendations.map((line) => (
+              <li key={line} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : loading ? (
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Simulating…
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function TwinSnapshotCard({
+  title,
+  snapshot,
+  highlight = false,
+}: {
+  title: string;
+  snapshot: TwinSimulateReport['baseline'];
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800/70 bg-slate-950/40'}`}
+    >
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
+      <dl className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <dt className="text-slate-500">Risk</dt>
+          <dd className="text-white">{formatPercent(snapshot.fleet_risk_score * 100, 0)}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Saturation</dt>
+          <dd className="text-white">{snapshot.saturation_days}d</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">CPU util</dt>
+          <dd className="text-white">{formatPercent(snapshot.avg_cpu_utilization * 100, 0)}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Memory util</dt>
+          <dd className="text-white">{formatPercent(snapshot.avg_memory_utilization * 100, 0)}</dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="text-slate-500">Est. monthly cost</dt>
+          <dd className="text-white">{formatUSD(snapshot.estimated_monthly_cost_usd)}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
+function DeltaCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-800/70 bg-slate-950/40 px-3 py-2">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="text-lg font-semibold text-white">{value}</div>
+    </div>
+  );
+}

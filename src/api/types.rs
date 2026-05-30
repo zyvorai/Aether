@@ -58,6 +58,14 @@ pub enum ServerEvent {
         workload: String,
         status: String,
     },
+    /// Migration progress for live activity cards
+    MigrationProgress {
+        workload: String,
+        phase: String,
+        percent: u8,
+        eta_secs: Option<u64>,
+        message: String,
+    },
 }
 
 /// Shared application state

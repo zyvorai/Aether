@@ -2,12 +2,16 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import Navbar from './Navbar';
 import Hero, { type HeroBadge } from './Hero';
 import Footer from './Footer';
-import VersionRefreshBanner from './VersionRefreshBanner';
+import CopilotRail, { CopilotRailToggle } from './CopilotRail';
+import AgentStatusDock from './AgentStatusDock';
+import CriticalIssueNotifier from './CriticalIssueNotifier';
+import LiveActivityDock from './LiveActivityDock';
 import SseReconnectBanner from './SseReconnectBanner';
+import VersionRefreshBanner from './VersionRefreshBanner';
 import ViewerBanner from './ViewerBanner';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import type { HelpTab } from './HelpDialog';
@@ -31,6 +35,7 @@ interface DashboardShellProps {
   commandPalette: ReactNode;
   helpDialog: ReactNode;
   toastContainer: ReactNode;
+  refreshKey?: number;
 }
 
 function buildHeroBadges(
@@ -95,12 +100,16 @@ export default function DashboardShell({
   commandPalette,
   helpDialog,
   toastContainer,
+  refreshKey = 0,
 }: DashboardShellProps) {
   const { capabilities, ready } = useServerCapabilities();
   const heroBadges = useMemo(
     () => buildHeroBadges(capabilities?.version, capabilities, ready, sseConnected),
     [capabilities, ready, sseConnected],
   );
+  const [copilotCollapsed, setCopilotCollapsed] = useState(false);
+  const [mobileCopilotOpen, setMobileCopilotOpen] = useState(false);
+  const showCompactHero = currentView === 'overview' || currentView === 'fabric';
 
   return (
     <div className={shellClass}>
@@ -124,9 +133,31 @@ export default function DashboardShell({
       <ViewerBanner />
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
-      <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />
-      <main id="main-content" className="flex-1 dash-content py-8 lg:py-10">{children}</main>
+      {!showCompactHero ? (
+        <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />
+      ) : null}
+      <div className="flex min-h-0 flex-1">
+        <main id="main-content" className="min-w-0 flex-1 dash-content py-8 lg:py-10">{children}</main>
+        <CopilotRail collapsed={copilotCollapsed} onCollapsedChange={setCopilotCollapsed} />
+      </div>
+      <CopilotRailToggle onClick={() => setMobileCopilotOpen(true)} />
+      {mobileCopilotOpen ? (
+        <div className="fixed inset-0 z-50 xl:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="Close copilot"
+            onClick={() => setMobileCopilotOpen(false)}
+          />
+          <div className="absolute inset-y-0 right-0 flex w-full max-w-md">
+            <CopilotRail collapsed={false} onCollapsedChange={() => setMobileCopilotOpen(false)} />
+          </div>
+        </div>
+      ) : null}
       <Footer />
+      <LiveActivityDock />
+      <AgentStatusDock />
+      <CriticalIssueNotifier refreshKey={refreshKey} />
       {commandPalette}
       {helpDialog}
       {toastContainer}

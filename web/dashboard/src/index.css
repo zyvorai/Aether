@@ -407,3 +407,30 @@
 .steel-theme .border-zinc-800 {
   border-color: rgba(140, 160, 190, 0.2) !important;
 }
+
+.glass-metric-card {
+  @apply rounded-2xl border border-slate-800/60 p-5 transition;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.48));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-metric-card:hover {
+  border-color: rgba(99, 164, 255, 0.28);
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.28);
+}
+
+.fabric-edge-animate {
+  stroke-dasharray: 6 4;
+  animation: fabric-flow 2.4s linear infinite;
+}
+
+@keyframes fabric-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.fabric-graph-svg {
+  touch-action: pan-x pan-y;
+}

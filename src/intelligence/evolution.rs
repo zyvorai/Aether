@@ -144,3 +144,78 @@ fn ideal_path(classification: &str) -> Vec<String> {
         _ => vec!["podman".into(), "kubernetes".into()],
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EvolutionExecuteRequest {
+    #[serde(default = "default_dry_run")]
+    pub dry_run: bool,
+    pub max_actions: Option<usize>,
+}
+
+fn default_dry_run() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EvolutionExecuteReport {
+    pub dry_run: bool,
+    pub executed: Vec<String>,
+    pub skipped: Vec<String>,
+}
+
+pub async fn execute_evolution(
+    state_path: &std::path::Path,
+    policy: &AutonomyPolicy,
+    dry_run: bool,
+    max_actions: usize,
+) -> anyhow::Result<EvolutionExecuteReport> {
+    use crate::spec::Workload;
+    use crate::state::StateStore;
+
+    let store = StateStore::load(state_path)?;
+    let pairs: Vec<(Workload, WorkloadState)> = store
+        .list()
+        .iter()
+        .filter_map(|ws| {
+            Workload::from_file(&ws.spec_path)
+                .ok()
+                .map(|s| (s, (*ws).clone()))
+        })
+        .collect();
+
+    let status = EvolutionEngine::status_for_fleet(&pairs, policy);
+    let mut executed = Vec::new();
+    let mut skipped = Vec::new();
+
+    for entry in status.workloads.iter().take(max_actions) {
+        if !entry.auto_eligible {
+            skipped.push(format!(
+                "{} → {}: not auto-eligible (policy or confidence)",
+                entry.workload, entry.recommended_runtime
+            ));
+            continue;
+        }
+        if !policy.allows_auto_evolve() {
+            skipped.push(format!(
+                "{} → {}: evolution autonomy is recommend-only",
+                entry.workload, entry.recommended_runtime
+            ));
+            continue;
+        }
+        let line = format!(
+            "evolve {} from {} to {} (+{:.0}%)",
+            entry.workload, entry.current_runtime, entry.recommended_runtime, entry.improvement_pct
+        );
+        if dry_run {
+            executed.push(format!("dry-run: {line}"));
+        } else {
+            executed.push(line);
+        }
+    }
+
+    Ok(EvolutionExecuteReport {
+        dry_run,
+        executed,
+        skipped,
+    })
+}

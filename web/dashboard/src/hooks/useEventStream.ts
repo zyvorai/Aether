@@ -6,7 +6,12 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { apiEventStreamUrl } from '../utils/api';
 
 interface ServerEvent {
-  type: 'workloadChanged' | 'eventEmitted' | 'healthUpdate';
+  type: 'workloadChanged' | 'eventEmitted' | 'healthUpdate' | 'migrationProgress';
+  workload?: string;
+  phase?: string;
+  percent?: number;
+  eta_secs?: number;
+  message?: string;
   [key: string]: unknown;
 }
 
