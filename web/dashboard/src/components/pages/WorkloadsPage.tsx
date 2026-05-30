@@ -278,6 +278,17 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   async function handleMigrate(name: string, target: string, strategy: string) {
     setActionLoading(`${name}-migrate`);
     setMigrateResult(null);
+    window.dispatchEvent(
+      new CustomEvent('aether-live-activity', {
+        detail: {
+          workload: name,
+          phase: 'running',
+          percent: 10,
+          eta_secs: 120,
+          message: `Migrating ${name} → ${target}`,
+        },
+      }),
+    );
     const res = await apiPost<string>(`/workloads/${name}/migrate`, { target_runtime: target, strategy });
     setActionLoading(null);
     if (res.success) {

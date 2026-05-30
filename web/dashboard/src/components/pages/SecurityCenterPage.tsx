@@ -13,6 +13,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
+import SecurityCopilotPanel from '../SecurityCopilotPanel';
 import type { SecretSummary, ThreatReport, SbomMetadata, SignedImageManifest, RemediationPlan } from '../../types/api';
 
 export default function SecurityCenterPage() {
@@ -113,6 +114,10 @@ export default function SecurityCenterPage() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-slate-100">Security Center</h2>
         <p className="text-sm text-slate-500 mt-1">Privacy &amp; Security for your Kubernetes platform.</p>
+      </div>
+
+      <div className="mb-8">
+        <SecurityCopilotPanel />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

@@ -1,0 +1,172 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
+//! Autonomous SRE runbook generation from live fleet intelligence.
+
+use crate::intelligence::autonomy::build_autonomy_status;
+use crate::intelligence::briefing::build_command_center_briefing;
+use crate::intelligence::finops::FinOpsEngine;
+use crate::intelligence::healer::build_healer_preview;
+use crate::intelligence::policy::AutonomyPolicy;
+use crate::intelligence::predict::FailurePredictor;
+use crate::intelligence::remediation;
+use crate::spec::Workload;
+use crate::state::{StateStore, WorkloadState};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SreRunbookSection {
+    pub title: String,
+    pub severity: String,
+    pub items: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SreRunbookReport {
+    pub generated_at: String,
+    pub summary: String,
+    pub sections: Vec<SreRunbookSection>,
+    pub runbook_markdown: String,
+}
+
+pub async fn build_sre_runbook(state_path: &Path) -> anyhow::Result<SreRunbookReport> {
+    let store = StateStore::load(state_path)?;
+    let pairs: Vec<(Workload, WorkloadState)> = store
+        .list()
+        .iter()
+        .filter_map(|ws| {
+            Workload::from_file(&ws.spec_path)
+                .ok()
+                .map(|s| (s, (*ws).clone()))
+        })
+        .collect();
+
+    let briefing = build_command_center_briefing(state_path)?;
+    let config = crate::config::Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let healer = build_healer_preview(&store, &policy).await;
+    let remediation = remediation::build_remediation_plan(&store).await;
+    let predictions = FailurePredictor::predict_fleet(&pairs);
+    let cost = FinOpsEngine::optimize_fleet(&pairs);
+    let autonomy = build_autonomy_status(state_path)?;
+
+    let mut sections = Vec::new();
+
+    if !briefing.issues.is_empty() {
+        sections.push(SreRunbookSection {
+            title: "Command Center issues".into(),
+            severity: "high".into(),
+            items: briefing
+                .issues
+                .iter()
+                .take(6)
+                .map(|i| format!("{} — {}", i.title, i.detail))
+                .collect(),
+        });
+    }
+
+    if !healer.would_execute.is_empty() {
+        sections.push(SreRunbookSection {
+            title: "Self-healing actions".into(),
+            severity: "medium".into(),
+            items: healer.would_execute.clone(),
+        });
+    }
+
+    if !remediation.actions.is_empty() {
+        sections.push(SreRunbookSection {
+            title: "Remediation queue".into(),
+            severity: "medium".into(),
+            items: remediation
+                .actions
+                .iter()
+                .take(6)
+                .map(|a| format!("{} {} — {}", a.action_type, a.target, a.reason))
+                .collect(),
+        });
+    }
+
+    let at_risk: Vec<_> = predictions
+        .predictions
+        .iter()
+        .filter(|p| p.risk_level == "high" || p.risk_level == "critical")
+        .map(|p| format!("{} — risk {:.0}%", p.workload, p.risk_score * 100.0))
+        .take(5)
+        .collect();
+    if !at_risk.is_empty() {
+        sections.push(SreRunbookSection {
+            title: "Capacity & failure risk".into(),
+            severity: "high".into(),
+            items: at_risk,
+        });
+    }
+
+    if !cost.recommendations.is_empty() {
+        sections.push(SreRunbookSection {
+            title: "FinOps opportunities".into(),
+            severity: "info".into(),
+            items: cost
+                .recommendations
+                .iter()
+                .take(4)
+                .map(|r| format!("{} — save ${:.0}/mo ({})", r.workload, r.savings_monthly_usd, r.reason))
+                .collect(),
+        });
+    }
+
+    sections.push(SreRunbookSection {
+        title: "Autonomy posture".into(),
+        severity: if autonomy.autonomy_enabled {
+            "info".into()
+        } else {
+            "medium".into()
+        },
+        items: autonomy.recommendations.clone(),
+    });
+
+    let summary = format!(
+        "Fleet health {:.0}% · {} issues · {} healing actions · ${:.0}/mo savings potential",
+        briefing.fleet_health_pct,
+        briefing.issues.len(),
+        healer.would_execute.len(),
+        cost
+            .recommendations
+            .iter()
+            .map(|r| r.savings_monthly_usd)
+            .sum::<f64>()
+    );
+
+    let mut md = format!("# Aether SRE Runbook\n\n{summary}\n\n");
+    for section in &sections {
+        md.push_str(&format!("## {}\n\n", section.title));
+        for item in &section.items {
+            md.push_str(&format!("- {item}\n"));
+        }
+        md.push('\n');
+    }
+    md.push_str("---\nGenerated by Aether Autonomous SRE.\n");
+
+    Ok(SreRunbookReport {
+        generated_at: crate::resources::now_rfc3339(),
+        summary,
+        sections,
+        runbook_markdown: md,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn sre_runbook_empty_fleet() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("state.json");
+        StateStore::new().save(&path).unwrap();
+        let report = build_sre_runbook(&path).await.unwrap();
+        assert!(!report.summary.is_empty());
+        assert!(report.runbook_markdown.contains("# Aether SRE Runbook"));
+    }
+}

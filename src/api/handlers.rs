@@ -3518,11 +3518,40 @@ pub(crate) async fn migrate_workload(
     );
 
     let migration_start = std::time::Instant::now();
+    let config = Config::load();
+    let advisor = crate::ai::migration::MigrationAdvisor::new(config.migration);
+    let plan_proposal = advisor.plan_proposal(&spec, source_runtime, target_runtime);
+    let eta_secs = plan_proposal.eta_secs;
+
+    emit_sse(
+        &app_state,
+        &ServerEvent::MigrationProgress {
+            workload: name.clone(),
+            phase: "running".into(),
+            percent: 5,
+            eta_secs: Some(eta_secs),
+            message: format!(
+                "Migrating {} from {} to {} ({})",
+                name, source_runtime, target_runtime, strategy_str
+            ),
+        },
+    );
+
     let engine = MigrationEngine::new(app_state.state_path.clone());
     let result = match engine.migrate(plan).await {
         Ok(r) => r,
         Err(e) => {
-            return err_internal::<String>(format!("Migration failed: {}", e))
+            emit_sse(
+                &app_state,
+                &ServerEvent::MigrationProgress {
+                    workload: name.clone(),
+                    phase: "failed".into(),
+                    percent: 0,
+                    eta_secs: Some(0),
+                    message: format!("Migration failed: {}", e),
+                },
+            );
+            return err_internal::<String>(format!("Migration failed: {}", e));
         }
     };
     let duration = migration_start.elapsed().as_secs_f64();
@@ -3580,6 +3609,20 @@ pub(crate) async fn migrate_workload(
             action: "migrated".to_string(),
         });
 
+        emit_sse(
+            &app_state,
+            &ServerEvent::MigrationProgress {
+                workload: name.clone(),
+                phase: "completed".into(),
+                percent: 100,
+                eta_secs: Some(0),
+                message: format!(
+                    "Migration complete in {:.0}s",
+                    migration_start.elapsed().as_secs()
+                ),
+            },
+        );
+
         let _ = crate::intelligence::record::record_migration_outcome(
             &name,
             &spec,
@@ -3599,6 +3642,16 @@ pub(crate) async fn migrate_workload(
         let error_msg = result
             .error
             .unwrap_or_else(|| "Unknown error".to_string());
+        emit_sse(
+            &app_state,
+            &ServerEvent::MigrationProgress {
+                workload: name.clone(),
+                phase: "failed".into(),
+                percent: 0,
+                eta_secs: Some(0),
+                message: error_msg.clone(),
+            },
+        );
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::<String>::error(format!(

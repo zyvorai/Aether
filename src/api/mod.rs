@@ -583,11 +583,257 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/right-size", post(ai_right_size))
         .route("/api/ai/tradeoff", post(ai_tradeoff))
         .route("/api/ai/migration-plan/:name/:target", get(api_ai_migration_plan))
+        .route("/api/command-center/briefing", get(api_command_center_briefing))
+        .route("/api/command-center/next-actions", get(api_command_center_next_actions))
+        .route(
+            "/api/command-center/notifications",
+            get(api_command_center_notifications),
+        )
         .route("/api/context/snapshot", get(api_context_snapshot))
         .route("/api/intelligence/predictions", get(api_intelligence_predictions))
         .route("/api/intelligence/predictions/:name", get(api_intelligence_prediction_workload))
         .route("/api/intelligence/cost-optimize", get(api_intelligence_cost_optimize))
         .route("/api/intelligence/threats", get(api_intelligence_threats))
+        .route(
+            "/api/intelligence/security/policies",
+            get(api_intelligence_security_policies),
+        )
+        .route(
+            "/api/intelligence/digital-twin/simulate",
+            post(api_intelligence_digital_twin_simulate),
+        )
+        .route("/api/intelligence/autonomy/status", get(api_intelligence_autonomy_status))
+        .route("/api/intelligence/knowledge-graph", get(api_intelligence_knowledge_graph))
+        .route("/api/intelligence/healer/preview", get(api_intelligence_healer_preview))
+        .route(
+            "/api/intelligence/intent-pipeline",
+            post(api_intelligence_intent_pipeline),
+        )
+        .route("/api/intelligence/sre/runbook", get(api_intelligence_sre_runbook))
+        .route(
+            "/api/intelligence/multicloud/posture",
+            get(api_intelligence_multicloud_posture),
+        )
+        .route(
+            "/api/intelligence/autonomous/placement",
+            get(api_intelligence_autonomous_placement),
+        )
+        .route("/api/intelligence/agents/status", get(api_intelligence_agents_status))
+        .route(
+            "/api/intelligence/healer/execute",
+            post(api_intelligence_healer_execute),
+        )
+        .route(
+            "/api/intelligence/evolution/execute",
+            post(api_intelligence_evolution_execute),
+        )
+        .route(
+            "/api/intelligence/gitops/agent/plan",
+            get(api_intelligence_gitops_agent_plan),
+        )
+        .route(
+            "/api/intelligence/gitops/agent/sync",
+            post(api_intelligence_gitops_agent_sync),
+        )
+        .route(
+            "/api/intelligence/cost-optimize/apply",
+            post(api_intelligence_cost_optimize_apply),
+        )
+        .route(
+            "/api/intelligence/security/remediate",
+            post(api_intelligence_security_remediate),
+        )
+        .route(
+            "/api/intelligence/capacity/scale-suggestions",
+            get(api_intelligence_capacity_scale_suggestions),
+        )
+        .route(
+            "/api/intelligence/capacity/scale/execute",
+            post(api_intelligence_capacity_scale_execute),
+        )
+        .route(
+            "/api/intelligence/intent/nl-parse",
+            post(api_intelligence_intent_nl_parse),
+        )
+        .route(
+            "/api/intelligence/intent-pipeline/deploy",
+            post(api_intelligence_intent_pipeline_deploy),
+        )
+        .route(
+            "/api/intelligence/intent/violations",
+            get(api_intelligence_intent_violations),
+        )
+        .route(
+            "/api/intelligence/intent/sla-breaches",
+            get(api_intelligence_intent_sla_breaches),
+        )
+        .route(
+            "/api/intelligence/intent/budget/enforce",
+            post(api_intelligence_intent_budget_enforce),
+        )
+        .route(
+            "/api/intelligence/intent/compliance/check",
+            post(api_intelligence_intent_compliance_check),
+        )
+        .route(
+            "/api/intelligence/intent/templates",
+            get(api_intelligence_intent_templates),
+        )
+        .route(
+            "/api/intelligence/intent/bundles",
+            post(api_intelligence_intent_bundles),
+        )
+        .route(
+            "/api/intelligence/intent/gitops-diff",
+            get(api_intelligence_intent_gitops_diff),
+        )
+        .route(
+            "/api/intelligence/intent/versions/:name",
+            get(api_intelligence_intent_versions),
+        )
+        .route(
+            "/api/intelligence/intent/versions/:name/rollback",
+            post(api_intelligence_intent_version_rollback),
+        )
+        .route(
+            "/api/intelligence/federation/execute",
+            post(api_intelligence_federation_execute),
+        )
+        .route(
+            "/api/intelligence/multicloud/cost-arbitrage",
+            get(api_intelligence_multicloud_cost_arbitrage),
+        )
+        .route(
+            "/api/intelligence/federation/health-mesh",
+            get(api_intelligence_federation_health_mesh),
+        )
+        .route(
+            "/api/intelligence/federation/unified-fabric",
+            get(api_intelligence_federation_unified_fabric),
+        )
+        .route(
+            "/api/intelligence/migration/volume-status",
+            get(api_intelligence_migration_volume_status),
+        )
+        .route(
+            "/api/intelligence/migration/wave-plan",
+            get(api_intelligence_migration_wave_plan),
+        )
+        .route(
+            "/api/intelligence/federation/geo-placement",
+            get(api_intelligence_federation_geo_placement),
+        )
+        .route(
+            "/api/intelligence/multicloud/cloud-accounts",
+            get(api_intelligence_multicloud_cloud_accounts),
+        )
+        .route(
+            "/api/intelligence/federation/region-lock",
+            get(api_intelligence_federation_region_lock),
+        )
+        .route(
+            "/api/intelligence/federation/packetwolf-guard",
+            get(api_intelligence_federation_packetwolf_guard),
+        )
+        .route(
+            "/api/intelligence/federation/packetwolf-guard/apply",
+            post(api_intelligence_federation_packetwolf_guard_apply),
+        )
+        .route("/api/intelligence/sre/schedule", get(api_intelligence_sre_schedule))
+        .route(
+            "/api/intelligence/sre/incident-timeline",
+            get(api_intelligence_sre_incident_timeline),
+        )
+        .route("/api/intelligence/sre/on-call", get(api_intelligence_sre_on_call))
+        .route(
+            "/api/intelligence/sre/on-call/test",
+            post(api_intelligence_sre_on_call_test),
+        )
+        .route("/api/intelligence/sre/postmortem", get(api_intelligence_sre_postmortem))
+        .route(
+            "/api/intelligence/sre/error-budgets",
+            get(api_intelligence_sre_error_budgets),
+        )
+        .route(
+            "/api/intelligence/sre/chaos/experiments",
+            get(api_intelligence_sre_chaos_experiments),
+        )
+        .route("/api/intelligence/sre/chaos/run", post(api_intelligence_sre_chaos_run))
+        .route("/api/intelligence/sre/game-days", get(api_intelligence_sre_game_days))
+        .route(
+            "/api/intelligence/sre/runbook/execute",
+            post(api_intelligence_sre_runbook_execute),
+        )
+        .route("/api/intelligence/sre/escalation", get(api_intelligence_sre_escalation))
+        .route("/api/intelligence/sre/mttr", get(api_intelligence_sre_mttr))
+        .route(
+            "/api/intelligence/graph/interactive",
+            get(api_intelligence_graph_interactive),
+        )
+        .route("/api/intelligence/graph/impact", get(api_intelligence_graph_impact))
+        .route(
+            "/api/intelligence/graph/blast-radius",
+            get(api_intelligence_graph_blast_radius),
+        )
+        .route(
+            "/api/intelligence/graph/import-k8s",
+            post(api_intelligence_graph_import_k8s),
+        )
+        .route(
+            "/api/intelligence/graph/threat-paths",
+            get(api_intelligence_graph_threat_paths),
+        )
+        .route("/api/intelligence/graph/search", get(api_intelligence_graph_search))
+        .route("/api/intelligence/graph/snapshots", get(api_intelligence_graph_snapshots))
+        .route(
+            "/api/intelligence/graph/snapshots/capture",
+            post(api_intelligence_graph_snapshots_capture),
+        )
+        .route("/api/intelligence/graph/cmdb", get(api_intelligence_graph_cmdb))
+        .route(
+            "/api/intelligence/graph/cmdb/sync",
+            post(api_intelligence_graph_cmdb_sync),
+        )
+        .route(
+            "/api/intelligence/graph/placement",
+            get(api_intelligence_graph_placement),
+        )
+        .route("/api/intelligence/graph/export", get(api_intelligence_graph_export))
+        .route(
+            "/api/intelligence/macos/tray-sparkline",
+            get(api_intelligence_macos_tray_sparkline),
+        )
+        .route(
+            "/api/intelligence/macos/live-activity",
+            get(api_intelligence_macos_live_activity),
+        )
+        .route("/api/intelligence/macos/dock-badge", get(api_intelligence_macos_dock_badge))
+        .route(
+            "/api/intelligence/macos/notifications",
+            get(api_intelligence_macos_notifications),
+        )
+        .route("/api/intelligence/macos/spotlight", get(api_intelligence_macos_spotlight))
+        .route("/api/intelligence/macos/shortcuts", get(api_intelligence_macos_shortcuts))
+        .route(
+            "/api/intelligence/macos/menu-extras",
+            get(api_intelligence_macos_menu_extras),
+        )
+        .route(
+            "/api/intelligence/macos/offline-cache",
+            get(api_intelligence_macos_offline_cache_get).post(api_intelligence_macos_offline_cache_write),
+        )
+        .route(
+            "/api/intelligence/macos/universal-links",
+            get(api_intelligence_macos_universal_links),
+        )
+        .route(
+            "/api/intelligence/macos/universal-links/resolve",
+            get(api_intelligence_macos_universal_links_resolve),
+        )
+        .route(
+            "/api/intelligence/macos/release-pipeline",
+            get(api_intelligence_macos_release_pipeline),
+        )
         .route("/api/intelligence/evolution/status", get(api_intelligence_evolution_status))
         .route("/api/intelligence/runtime-evolution/:name", get(api_intelligence_runtime_evolution))
         .route("/api/intelligence/place", post(api_intelligence_place))
@@ -598,6 +844,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         )
         .route("/api/copilot/chat", post(api_copilot_chat))
         .route("/api/copilot/troubleshoot", post(api_copilot_troubleshoot))
+        .route("/api/copilot/troubleshoot/fleet", get(api_copilot_troubleshoot_fleet))
         .route("/api/copilot/sessions/:id", get(api_copilot_session))
         .route("/api/copilot/confirm/:action_id", post(api_copilot_confirm))
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))

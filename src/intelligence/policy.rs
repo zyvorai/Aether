@@ -95,6 +95,10 @@ impl AutonomyPolicy {
             AutonomyTier::Recommend => false,
         }
     }
+
+    pub fn allows_auto_evolve(&self) -> bool {
+        self.auto_evolve != AutonomyTier::Recommend
+    }
 }
 
 fn env_bool(key: &str, default: bool) -> bool {

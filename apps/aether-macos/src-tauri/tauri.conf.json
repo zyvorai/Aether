@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Aether",
+  "version": "0.1.0",
+  "identifier": "dev.zyvor.aether",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "cd ../../../web/dashboard && npm run build",
+    "frontendDist": "../../../web/dashboard/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Aether",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 680,
+        "transparent": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "macOSPrivateApi": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": "dmg",
+    "icon": [],
+    "macOS": {
+      "minimumSystemVersion": "12.0",
+      "infoPlist": "Info.plist"
+    }
+  },
+  "plugins": {
+    "globalShortcut": {
+      "shortcuts": [
+        {
+          "key": "Command+K",
+          "description": "Open Aether command palette (Spotlight-style search)"
+        }
+      ]
+    }
+  }
+}

@@ -19,6 +19,9 @@ import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { pathToView, viewToPath } from './utils/dashboardRoutes';
+import { pathWithQuery } from './utils/urlState';
+import type { UniversalLinkResolveReport } from './types/api';
+import { syncMacOSLiveActivity } from './utils/macosBridge';
 import { HERO_CONFIG } from './utils/dashboardNav';
 import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode } from './utils/api';
 import CommandPalette from './components/CommandPalette';
@@ -26,6 +29,11 @@ import { pushRecentView } from './utils/recentViews';
 import LoginGate from './components/LoginGate';
 
 // Page components — each is written by the pages agent
+import FabricPage from './components/pages/FabricPage';
+import MigrationsPage from './components/pages/MigrationsPage';
+import ObservabilityPage from './components/pages/ObservabilityPage';
+import LabsPage from './components/pages/LabsPage';
+import SettingsPage from './components/pages/SettingsPage';
 import OverviewPage from './components/pages/OverviewPage';
 import ApplicationsPage from './components/pages/ApplicationsPage';
 import WorkloadsPage from './components/pages/WorkloadsPage';
@@ -153,7 +161,49 @@ function AetherDashboard() {
       setRefreshKey((k) => k + 1);
       setLastRefreshed(new Date());
     }
+    if (event.type === 'migrationProgress') {
+      window.dispatchEvent(new CustomEvent('aether-live-activity', { detail: event }));
+      const payload = event.payload as { workload?: string; progress?: number; message?: string } | undefined;
+      if (payload?.workload) {
+        void syncMacOSLiveActivity(
+          payload.workload,
+          payload.progress ?? 0,
+          payload.message ?? 'Migration in progress',
+        );
+      }
+      setRefreshKey((k) => k + 1);
+    }
   }, isAuthenticated);
+
+  useEffect(() => {
+    const openPalette = () => setCommandPaletteOpen(true);
+    window.addEventListener('aether-open-command-palette', openPalette);
+    window.addEventListener('aether-open-spotlight', openPalette);
+    (window as Window & { __AETHER_OPEN_COMMAND_PALETTE__?: () => void }).__AETHER_OPEN_COMMAND_PALETTE__ =
+      openPalette;
+    return () => {
+      window.removeEventListener('aether-open-command-palette', openPalette);
+      window.removeEventListener('aether-open-spotlight', openPalette);
+      delete (window as Window & { __AETHER_OPEN_COMMAND_PALETTE__?: () => void }).__AETHER_OPEN_COMMAND_PALETTE__;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onDeepLink = async (e: Event) => {
+      const url = (e as CustomEvent<{ url?: string }>).detail?.url;
+      if (!url) return;
+      const resolved = await apiFetch<UniversalLinkResolveReport>(
+        `/intelligence/macos/universal-links/resolve?url=${encodeURIComponent(url)}`,
+      );
+      if (!resolved?.view) return;
+      const params = Object.fromEntries(
+        Object.entries(resolved.query).map(([k, v]) => [k, v]),
+      ) as Record<string, string | undefined>;
+      navigate(pathWithQuery(viewToPath(resolved.view as AppView), params));
+    };
+    window.addEventListener('aether-deep-link', onDeepLink);
+    return () => window.removeEventListener('aether-deep-link', onDeepLink);
+  }, [navigate]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -328,7 +378,17 @@ function AetherDashboard() {
   function renderPage() {
     switch (currentView) {
       case 'overview':
-        return <OverviewPage key={refreshKey} username={username} onNavigate={handleNavigate} sseConnected={sseConnected} />;
+        return <OverviewPage key={refreshKey} username={username} onNavigate={handleNavigate} sseConnected={sseConnected} refreshKey={refreshKey} />;
+      case 'fabric':
+        return <FabricPage key={refreshKey} />;
+      case 'migrations':
+        return <MigrationsPage key={refreshKey} />;
+      case 'observability':
+        return <ObservabilityPage key={refreshKey} />;
+      case 'labs':
+        return <LabsPage key={refreshKey} />;
+      case 'settings':
+        return <SettingsPage key={refreshKey} />;
       case 'applications':
         return <ApplicationsPage key={refreshKey} />;
       case 'workloads':
@@ -455,6 +515,7 @@ function AetherDashboard() {
           />
         }
         toastContainer={<ToastContainer />}
+        refreshKey={refreshKey}
       >
         <ErrorBoundary>
           <Breadcrumb

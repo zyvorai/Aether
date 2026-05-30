@@ -5,7 +5,11 @@ Aether provides a full-featured React web dashboard and REST API for managing wo
 ## Overview
 
 The WebUI is a **React 18 single-page application** built with TypeScript, Tailwind CSS, and Vite. It provides:
-- **31 dashboard views**: Overview, workloads, AI/copilot/intelligence, confidential computing, fleet/clusters, GitOps, health/events/alerts, cost/scheduler/affinity, editor/compose/templates, secrets/backups/RBAC/audit, metrics/OpenAPI, and more (see `web/dashboard/src/utils/dashboardNav.ts`)
+- **AI Infrastructure OS navigation** (Pro view): 12 sections — Overview (Command Center), Fleet, Fabric, Workloads, AI Studio, Migrations, Observability, Security, Cost, GitOps, Labs, Settings
+- **37+ dashboard views** including AI/copilot/intelligence, confidential computing, fleet/clusters, GitOps, and legacy deep links (see `web/dashboard/src/utils/dashboardNav.ts`)
+- **Command Center** (`GET /api/command-center/briefing`) — narrative fleet briefing on `/`
+- **Runtime Fabric** (`/fabric`) — live Application → Runtime → Cluster topology graph
+- **Copilot rail** — permanent Ask Aether sidebar (xl+); full-page copilot at `/copilot`
 - **REST API**: Programmatic access to all operations (43+ endpoints)
 - **Dark metallic zinc theme**: Consistent dark UI with orange accents
 - **Responsive design**: Desktop and mobile support with collapsible menu

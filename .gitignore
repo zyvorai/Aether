@@ -7,6 +7,7 @@ web/dashboard/test-results/
 
 # Rust
 /target/
+**/target/
 Cargo.lock
 **/*.rs.bk
 *.pdb

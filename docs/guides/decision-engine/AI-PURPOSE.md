@@ -27,6 +27,7 @@
 ## API endpoints (intelligence layer)
 
 - `GET /api/context/snapshot` — unified platform context
+- `GET /api/command-center/briefing` — Command Center narrative (health, savings, migrations, capacity)
 - `GET /api/intelligence/predictions` — fleet failure risk
 - `GET /api/intelligence/cost-optimize` — FinOps recommendations
 - `GET /api/intelligence/evolution/status` — runtime evolution status

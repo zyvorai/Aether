@@ -9,6 +9,7 @@ import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import CostIntelligencePanel from '../CostIntelligencePanel';
 import EmptyState from '../EmptyState';
 import SpecWorkbench from '../SpecWorkbench';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
@@ -114,6 +115,7 @@ export default function CostPage() {
 
   return (
     <div className="space-y-6">
+      <CostIntelligencePanel />
       {workloadQuery.trim() ? (
         <WorkloadContextBanner
           testId="cost-workload-context"

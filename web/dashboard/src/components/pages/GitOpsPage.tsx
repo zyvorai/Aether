@@ -17,6 +17,8 @@ import PageLoadError from '../PageLoadError';
 import Modal from '../Modal';
 import Badge from '../Badge';
 import GitOpsCenter from '../GitOpsCenter';
+import GitOpsAgentPanel from '../GitOpsAgentPanel';
+import IntentGitOpsDiffPanel from '../IntentGitOpsDiffPanel';
 import type { GitOpsConfidentialAudit } from '../../types/api';
 
 interface GitOpsPayload {
@@ -254,6 +256,9 @@ export default function GitOpsPage() {
         onPreview={() => void openSyncConfirm()}
         syncing={syncing}
       />
+
+      <GitOpsAgentPanel />
+      <IntentGitOpsDiffPanel />
 
       {workloadFocus ? (
         <WorkloadContextBanner
