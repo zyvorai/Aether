@@ -11,6 +11,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use crate::config::Config;
+use crate::intelligence::briefing::build_command_center_briefing;
 use crate::intelligence::context::build_context_snapshot;
 use crate::intelligence::evolution::EvolutionEngine;
 use crate::intelligence::finops::FinOpsEngine;
@@ -34,6 +35,16 @@ async fn workload_pairs(
                 .map(|s| (s, (*ws).clone()))
         })
         .collect()
+}
+
+/// GET /api/command-center/briefing
+pub(crate) async fn api_command_center_briefing(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match build_command_center_briefing(&app_state.state_path) {
+        Ok(briefing) => ok_json(briefing).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
 }
 
 /// GET /api/context/snapshot
@@ -203,4 +214,814 @@ pub(crate) async fn api_intelligence_remediation_execute(
         Ok(result) => ok_json(result).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
+}
+
+/// POST /api/intelligence/digital-twin/simulate
+pub(crate) async fn api_intelligence_digital_twin_simulate(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<crate::intelligence::twin::TwinSimulateRequest>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::twin::DigitalTwinEngine::simulate(&pairs, &req)).into_response()
+}
+
+/// GET /api/intelligence/security/policies
+pub(crate) async fn api_intelligence_security_policies(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    let threats = SecurityEngine::scan_fleet(&pairs);
+    ok_json(SecurityEngine::copilot_policies(&threats)).into_response()
+}
+
+/// GET /api/intelligence/autonomy/status
+pub(crate) async fn api_intelligence_autonomy_status(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::autonomy::build_autonomy_status(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/knowledge-graph
+pub(crate) async fn api_intelligence_knowledge_graph(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::graph::build_knowledge_graph(&app_state.state_path) {
+        Ok(graph) => ok_json(graph).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/healer/preview
+pub(crate) async fn api_intelligence_healer_preview(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let store = app_state.state.read().await;
+    ok_json(crate::intelligence::healer::build_healer_preview(&store, &policy).await).into_response()
+}
+
+/// POST /api/intelligence/intent-pipeline
+pub(crate) async fn api_intelligence_intent_pipeline(
+    Json(req): Json<crate::intelligence::pipeline::IntentPipelineRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::pipeline::build_intent_pipeline(&req).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/sre/runbook
+pub(crate) async fn api_intelligence_sre_runbook(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::sre::build_sre_runbook(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/multicloud/posture
+pub(crate) async fn api_intelligence_multicloud_posture(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::multicloud::build_multicloud_posture(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/autonomous/placement
+pub(crate) async fn api_intelligence_autonomous_placement(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::pipeline::build_autonomous_placement(&app_state.state_path) {
+        Ok(status) => ok_json(status).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/command-center/next-actions
+pub(crate) async fn api_command_center_next_actions(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::actions::build_next_actions(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/agents/status
+pub(crate) async fn api_intelligence_agents_status(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::agents::build_agent_registry(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/healer/execute
+pub(crate) async fn api_intelligence_healer_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::healer::HealerExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let store = app_state.state.read().await;
+    let report = crate::intelligence::healer::execute_healer(
+        &store,
+        &app_state.state_path,
+        &policy,
+        body.dry_run,
+    )
+    .await;
+    ok_json(report).into_response()
+}
+
+/// GET /api/command-center/notifications
+pub(crate) async fn api_command_center_notifications(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::notifications::build_critical_notifications(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/evolution/execute
+pub(crate) async fn api_intelligence_evolution_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::evolution::EvolutionExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let max = body.max_actions.unwrap_or(5);
+    match crate::intelligence::evolution::execute_evolution(
+        &app_state.state_path,
+        &policy,
+        body.dry_run,
+        max,
+    )
+    .await
+    {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/gitops/agent/plan
+pub(crate) async fn api_intelligence_gitops_agent_plan(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::gitops_agent::build_gitops_agent_plan(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/gitops/agent/sync
+pub(crate) async fn api_intelligence_gitops_agent_sync(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::gitops_agent::GitOpsAgentExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    match crate::intelligence::gitops_agent::execute_gitops_agent(
+        &app_state.state_path,
+        &policy,
+        body.dry_run,
+    )
+    .await
+    {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/cost-optimize/apply
+pub(crate) async fn api_intelligence_cost_optimize_apply(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::finops::CostApplyRequest>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let pairs = workload_pairs(&app_state).await;
+    let patches = FinOpsEngine::build_cost_patches(&pairs);
+    let report = FinOpsEngine::apply_cost_patches(&patches, body.dry_run, &policy);
+    ok_json(report).into_response()
+}
+
+/// POST /api/intelligence/security/remediate
+pub(crate) async fn api_intelligence_security_remediate(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::security::SecurityRemediateRequest>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    let report = SecurityEngine::remediate_fleet(&pairs, body.dry_run, body.confirm);
+    ok_json(report).into_response()
+}
+
+/// GET /api/intelligence/capacity/scale-suggestions
+pub(crate) async fn api_intelligence_capacity_scale_suggestions(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::capacity::build_scale_suggestions(&pairs)).into_response()
+}
+
+/// POST /api/intelligence/capacity/scale/execute
+pub(crate) async fn api_intelligence_capacity_scale_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::capacity::CapacityScaleExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let pairs = workload_pairs(&app_state).await;
+    let suggestions = crate::intelligence::capacity::build_scale_suggestions(&pairs);
+    let report =
+        crate::intelligence::capacity::execute_scale_suggestions(&suggestions, &policy, body.dry_run);
+    ok_json(report).into_response()
+}
+
+/// POST /api/intelligence/intent/nl-parse
+pub(crate) async fn api_intelligence_intent_nl_parse(
+    Json(body): Json<crate::intelligence::intent_os::NlIntentRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::parse_nl_intent(&body) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/intent-pipeline/deploy
+pub(crate) async fn api_intelligence_intent_pipeline_deploy(
+    Json(body): Json<crate::intelligence::intent_os::IntentDeployRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::deploy_intent_pipeline(&body).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/intent/violations
+pub(crate) async fn api_intelligence_intent_violations(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::scan_intent_violations(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/intent/sla-breaches
+pub(crate) async fn api_intelligence_intent_sla_breaches(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::build_intent_sla_breaches(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/intent/budget/enforce
+pub(crate) async fn api_intelligence_intent_budget_enforce(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::intent_os::BudgetEnforceRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::enforce_intent_budget(&app_state.state_path, body.dry_run) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/intent/compliance/check
+pub(crate) async fn api_intelligence_intent_compliance_check(
+    Json(body): Json<serde_json::Value>,
+) -> impl axum::response::IntoResponse {
+    let spec: Workload = if let Ok(spec) = serde_json::from_value(body.clone()) {
+        spec
+    } else if let Some(yaml) = body.get("yaml").and_then(|v| v.as_str()) {
+        match serde_yaml::from_str(yaml) {
+            Ok(spec) => spec,
+            Err(e) => return err_internal::<serde_json::Value>(e.to_string()).into_response(),
+        }
+    } else {
+        return err_internal::<serde_json::Value>("expected workload JSON or yaml field".to_string())
+            .into_response();
+    };
+    ok_json(crate::intelligence::intent_os::check_compliance_gate(&spec)).into_response()
+}
+
+/// GET /api/intelligence/intent/templates
+pub(crate) async fn api_intelligence_intent_templates() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::intent_os::list_intent_templates()).into_response()
+}
+
+/// POST /api/intelligence/intent/bundles
+pub(crate) async fn api_intelligence_intent_bundles(
+    Json(body): Json<crate::intelligence::intent_os::IntentBundleRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::build_intent_bundle(&body) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/intent/gitops-diff
+pub(crate) async fn api_intelligence_intent_gitops_diff(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::build_intent_gitops_diff(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/intent/versions/:name
+pub(crate) async fn api_intelligence_intent_versions(
+    Path(name): Path<String>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::list_intent_versions(&name) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/intent/versions/:name/rollback
+pub(crate) async fn api_intelligence_intent_version_rollback(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+    Json(body): Json<crate::intelligence::intent_os::IntentRollbackRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::intent_os::rollback_intent_version(&app_state.state_path, &name, &body) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/federation/execute
+pub(crate) async fn api_intelligence_federation_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::federation_os::FederationExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::execute_federation_sync(
+        &app_state.state_path,
+        body.dry_run,
+        body.workload_name.as_deref(),
+    )
+    .await
+    {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/multicloud/cost-arbitrage
+pub(crate) async fn api_intelligence_multicloud_cost_arbitrage(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_cost_arbitrage(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/federation/health-mesh
+pub(crate) async fn api_intelligence_federation_health_mesh() -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_cluster_health_mesh().await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/federation/unified-fabric
+pub(crate) async fn api_intelligence_federation_unified_fabric(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_unified_fabric(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/migration/volume-status
+pub(crate) async fn api_intelligence_migration_volume_status(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_volume_replication_status(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/migration/wave-plan
+pub(crate) async fn api_intelligence_migration_wave_plan(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_migration_wave(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/federation/geo-placement
+pub(crate) async fn api_intelligence_federation_geo_placement(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_geo_placement(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/multicloud/cloud-accounts
+pub(crate) async fn api_intelligence_multicloud_cloud_accounts() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::federation_os::build_cloud_account_vault()).into_response()
+}
+
+/// GET /api/intelligence/federation/region-lock
+pub(crate) async fn api_intelligence_federation_region_lock(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_region_lock_posture(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/federation/packetwolf-guard
+pub(crate) async fn api_intelligence_federation_packetwolf_guard(
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::build_packetwolf_guard().await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/federation/packetwolf-guard/apply
+pub(crate) async fn api_intelligence_federation_packetwolf_guard_apply(
+    Json(body): Json<crate::intelligence::federation_os::PacketWolfGuardApplyRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::federation_os::apply_packetwolf_guard(body.dry_run).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/sre/schedule
+pub(crate) async fn api_intelligence_sre_schedule() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::sre_os::build_runbook_schedule()).into_response()
+}
+
+/// GET /api/intelligence/sre/incident-timeline
+pub(crate) async fn api_intelligence_sre_incident_timeline() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::sre_os::build_incident_timeline(50)).into_response()
+}
+
+/// GET /api/intelligence/sre/on-call
+pub(crate) async fn api_intelligence_sre_on_call() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::sre_os::build_on_call_status()).into_response()
+}
+
+/// POST /api/intelligence/sre/on-call/test
+pub(crate) async fn api_intelligence_sre_on_call_test(
+    Json(body): Json<crate::intelligence::sre_os::OnCallTestRequest>,
+) -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::sre_os::test_on_call_webhook(
+        body.dry_run,
+        body.provider.as_deref(),
+    ))
+    .into_response()
+}
+
+/// GET /api/intelligence/sre/postmortem
+pub(crate) async fn api_intelligence_sre_postmortem(
+    AxumState(app_state): AxumState<AppState>,
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let workload = query.get("workload").map(|s| s.as_str());
+    ok_json(
+        crate::intelligence::sre_os::build_postmortem(&app_state.state_path, workload).await,
+    )
+    .into_response()
+}
+
+/// GET /api/intelligence/sre/error-budgets
+pub(crate) async fn api_intelligence_sre_error_budgets(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::sre_os::build_error_budget_dashboard(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/sre/chaos/experiments
+pub(crate) async fn api_intelligence_sre_chaos_experiments(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::sre_os::build_chaos_catalog(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/sre/chaos/run
+pub(crate) async fn api_intelligence_sre_chaos_run(
+    Json(body): Json<crate::intelligence::sre_os::ChaosRunRequest>,
+) -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::sre_os::run_chaos_experiment(body.dry_run, &body.experiment_id))
+        .into_response()
+}
+
+/// GET /api/intelligence/sre/game-days
+pub(crate) async fn api_intelligence_sre_game_days(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::sre_os::build_game_day_plan(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/sre/runbook/execute
+pub(crate) async fn api_intelligence_sre_runbook_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::sre_os::RunbookExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    match crate::intelligence::sre_os::execute_runbook(&app_state.state_path, &policy, body.dry_run).await
+    {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/sre/escalation
+pub(crate) async fn api_intelligence_sre_escalation(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::sre_os::build_escalation_policies(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/sre/mttr
+pub(crate) async fn api_intelligence_sre_mttr(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::sre_os::build_mttr_report(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/interactive
+pub(crate) async fn api_intelligence_graph_interactive(
+    AxumState(app_state): AxumState<AppState>,
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let edge_kinds: Vec<String> = query
+        .get("edge_kinds")
+        .map(|s| {
+            s.split(',')
+                .map(|x| x.trim().to_string())
+                .filter(|x| !x.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    let node_kinds: Vec<String> = query
+        .get("node_kinds")
+        .map(|s| {
+            s.split(',')
+                .map(|x| x.trim().to_string())
+                .filter(|x| !x.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    match crate::intelligence::graph_os::build_interactive_graph(
+        &app_state.state_path,
+        &edge_kinds,
+        &node_kinds,
+    ) {
+        Ok(graph) => ok_json(graph).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/impact
+pub(crate) async fn api_intelligence_graph_impact(
+    AxumState(app_state): AxumState<AppState>,
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let workload = query.get("workload").cloned().unwrap_or_else(|| "api".into());
+    match crate::intelligence::graph_os::build_impact_analysis(&app_state.state_path, &workload) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/blast-radius
+pub(crate) async fn api_intelligence_graph_blast_radius(
+    AxumState(app_state): AxumState<AppState>,
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let workload = query.get("workload").cloned().unwrap_or_else(|| "api".into());
+    match crate::intelligence::graph_os::build_blast_radius(&app_state.state_path, &workload) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/graph/import-k8s
+pub(crate) async fn api_intelligence_graph_import_k8s(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::graph_os::K8sImportRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::graph_os::import_k8s_services(&app_state.state_path, body.dry_run) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/threat-paths
+pub(crate) async fn api_intelligence_graph_threat_paths(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::graph_os::build_threat_paths(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/search
+pub(crate) async fn api_intelligence_graph_search(
+    AxumState(app_state): AxumState<AppState>,
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let q = query.get("q").cloned().unwrap_or_default();
+    match crate::intelligence::graph_os::search_graph(&app_state.state_path, &q) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/snapshots
+pub(crate) async fn api_intelligence_graph_snapshots() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::graph_os::list_graph_snapshots()).into_response()
+}
+
+/// POST /api/intelligence/graph/snapshots
+pub(crate) async fn api_intelligence_graph_snapshots_capture(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::graph_os::GraphSnapshotCaptureRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::graph_os::capture_graph_snapshot(
+        &app_state.state_path,
+        body.label.as_deref(),
+    ) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/cmdb
+pub(crate) async fn api_intelligence_graph_cmdb() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::graph_os::build_cmdb_inventory()).into_response()
+}
+
+/// POST /api/intelligence/graph/cmdb/sync
+pub(crate) async fn api_intelligence_graph_cmdb_sync(
+    Json(body): Json<crate::intelligence::graph_os::CmdbSyncRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::graph_os::sync_cmdb_to_graph(body.dry_run) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/placement
+pub(crate) async fn api_intelligence_graph_placement(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::graph_os::build_graph_placement(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/graph/export
+pub(crate) async fn api_intelligence_graph_export(
+    AxumState(app_state): AxumState<AppState>,
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let format = query.get("format").cloned().unwrap_or_else(|| "neo4j".into());
+    match crate::intelligence::graph_os::export_graph(&app_state.state_path, &format) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/tray-sparkline
+pub(crate) async fn api_intelligence_macos_tray_sparkline(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::macos_os::build_tray_sparkline(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/live-activity
+pub(crate) async fn api_intelligence_macos_live_activity(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::macos_os::build_live_activity(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/dock-badge
+pub(crate) async fn api_intelligence_macos_dock_badge(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::macos_os::build_dock_badge(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/notifications
+pub(crate) async fn api_intelligence_macos_notifications(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::macos_os::build_native_notifications(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/spotlight
+pub(crate) async fn api_intelligence_macos_spotlight(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::macos_os::build_spotlight_index(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/shortcuts
+pub(crate) async fn api_intelligence_macos_shortcuts() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::macos_os::build_shortcuts_manifest()).into_response()
+}
+
+/// GET /api/intelligence/macos/menu-extras
+pub(crate) async fn api_intelligence_macos_menu_extras(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::macos_os::build_menu_extras(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/offline-cache
+pub(crate) async fn api_intelligence_macos_offline_cache_get() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::macos_os::read_offline_cache()).into_response()
+}
+
+/// POST /api/intelligence/macos/offline-cache
+pub(crate) async fn api_intelligence_macos_offline_cache_write(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::macos_os::write_offline_cache(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/macos/universal-links
+pub(crate) async fn api_intelligence_macos_universal_links() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::macos_os::link_registry()).into_response()
+}
+
+/// GET /api/intelligence/macos/universal-links/resolve
+pub(crate) async fn api_intelligence_macos_universal_links_resolve(
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let url = query.get("url").cloned().unwrap_or_else(|| "aether://command".into());
+    ok_json(crate::intelligence::macos_os::resolve_universal_link(&url)).into_response()
+}
+
+/// GET /api/intelligence/macos/release-pipeline
+pub(crate) async fn api_intelligence_macos_release_pipeline() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::macos_os::build_release_pipeline_status()).into_response()
 }

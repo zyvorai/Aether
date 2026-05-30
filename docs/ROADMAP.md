@@ -41,6 +41,166 @@
 
 ---
 
+## AI Infrastructure OS (Product Vision)
+
+Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI-OS.md](PHASES-AI-OS.md)
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| **v1** | Command Center, 12-section nav, Copilot sidebar, Runtime Fabric graph, promote Runtime Advisor / Root Cause / Migration / Cost / Fleet intelligence | **Ship (core)** |
+| **v2** | Digital Twin, Capacity Forecasting, Security Copilot, Intent Studio, Workload Generator | **Ship (core panels)** |
+| **v3** | Autonomous optimization, Self-healing agents, Knowledge Graph | **Ship (core panels)** |
+| **v4** | Full AI OS — multi-cloud, intent→infrastructure, autonomous SRE | **Ship (core panels)** |
+| **v5** | Autonomous execute — next actions, healer execute, unified agents, Spotlight | **Ship (core panels)** |
+| **v6** | Agent execute loop — notifications, migration, GitOps, cost, security, capacity | **Ship (core panels)** |
+| **v7** | Intent & Infrastructure — NL intent, deploy pipeline, violations, templates, versioning | **Ship (core panels)** |
+| **v8** | Multi-Cloud & Federation — mesh, arbitrage, geo, volume sync, wave planner, PacketWolf | **Ship (core panels)** |
+| **v9** | SRE & Reliability — incidents, error budgets, postmortems, on-call, escalation, MTTR | **Ship (core panels)** |
+| **v10** | Knowledge & Graph — impact, blast radius, CMDB, snapshots, placement, export | **Ship (core panels)** |
+| **v11** | macOS Native OS — tray sparkline, dock badge, notifications, offline cache, deep links | **Ship (core panels)** |
+
+### v1 deliverables (this sprint)
+
+| Item | Area | Tag |
+|------|------|-----|
+| Command Center briefing API | `src/intelligence/briefing.rs` | Ship |
+| 12-section dashboard navigation | `web/dashboard/` | Ship |
+| Copilot permanent sidebar | `web/dashboard/` | Ship |
+| Runtime Fabric graph page | `/fabric` | Ship |
+| AI Migration Planner wizard | `/migrations` | Ship |
+| Fleet Intelligence brief | `/fleet` | Ship |
+| Root Cause fleet view (batch troubleshoot) | `/observability` | Ship |
+| AI Studio hub (Intent + Advisor + Designer) | `/ai` | Ship |
+| Live Activity cards (migration SSE) | `LiveActivityDock` | Ship |
+| Tauri macOS shell (tray + ⌘K palette) | `apps/aether-macos/` | Lab |
+
+### v2 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Capacity Forecast panel | `/observability` | Ship |
+| Cost Intelligence panel | `/cost` | Ship |
+| Security Copilot (policy drafts) | `/security` + `GET /api/intelligence/security/policies` | Ship |
+| Digital Twin simulator | `/fabric` + `POST /api/intelligence/digital-twin/simulate` | Ship |
+| Tauri tray fleet health tooltip | `tray_health_update` invoke | Lab |
+
+### v3 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Autonomous Mode panel | `/settings` + `GET /api/intelligence/autonomy/status` | Ship |
+| Self-Healing orchestrator preview | `/observability` + `GET /api/intelligence/healer/preview` | Ship |
+| Infrastructure Knowledge Graph | `/labs` + `GET /api/intelligence/knowledge-graph` | Ship |
+| Agent Status dock (6 agents) | `AgentStatusDock` | Ship |
+
+### v4 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Intent → Infrastructure pipeline | `/ai?tab=pipeline` + `POST /api/intelligence/intent-pipeline` | Ship |
+| Autonomous SRE runbook | `/observability` + `GET /api/intelligence/sre/runbook` | Ship |
+| Multi-cloud posture | `/fleet` + `GET /api/intelligence/multicloud/posture` | Ship |
+| Autonomous placement | `/migrations` + `GET /api/intelligence/autonomous/placement` | Ship |
+
+### v5 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Command Center next actions | `/` + `GET /api/command-center/next-actions` | Ship |
+| Healer execute API | `/observability` + `POST /api/intelligence/healer/execute` | Ship |
+| Unified agent registry | `AgentStatusDock` + `GET /api/intelligence/agents/status` | Ship |
+| macOS Spotlight bridge | ⌘⇧Space → command palette | Lab |
+
+### v6 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Critical issue notifications | `CriticalIssueNotifier` + `GET /api/command-center/notifications` | Ship |
+| Autonomous migration execute | `/migrations` + `POST /api/intelligence/evolution/execute` | Ship |
+| GitOps agent auto-sync | `/gitops` + `GET/POST /api/intelligence/gitops/agent/*` | Ship |
+| Cost agent auto-right-size | `/cost` + `POST /api/intelligence/cost-optimize/apply` | Ship |
+| Security agent auto-remediate | `/security` + `POST /api/intelligence/security/remediate` | Ship |
+| Capacity agent auto-scale | `/observability` + capacity scale APIs | Ship |
+| Tauri critical alert tooltip | `tray_critical_alert` invoke | Lab |
+
+### v7 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Natural language intent parser | `/ai?tab=pipeline` + `POST /api/intelligence/intent/nl-parse` | Ship |
+| One-click pipeline deploy | `POST /api/intelligence/intent-pipeline/deploy` | Ship |
+| Intent violation dashboard | `IntentPlatformPanel` + `GET /api/intelligence/intent/violations` | Ship |
+| Intent SLA breaches | `CommandCenterIntentSla` + `GET /api/intelligence/intent/sla-breaches` | Ship |
+| Budget enforcement | `/cost` + `POST /api/intelligence/intent/budget/enforce` | Ship |
+| Compliance intent gates | deploy pipeline + `POST /api/intelligence/intent/compliance/check` | Ship |
+| Intent template library | `/ai?tab=intent` + `GET /api/intelligence/intent/templates` | Ship |
+| Multi-workload bundles | `POST /api/intelligence/intent/bundles` | Ship |
+| Intent GitOps diff | `/gitops` + `GET /api/intelligence/intent/gitops-diff` | Ship |
+| Intent versioning | `GET/POST /api/intelligence/intent/versions/*` | Ship |
+
+### v8 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Live federation execute | `/fleet` + `POST /api/intelligence/federation/execute` | Ship |
+| Cross-cloud cost arbitrage | `FederationPlatformPanel` + `GET /api/intelligence/multicloud/cost-arbitrage` | Ship |
+| Cluster health mesh | `GET /api/intelligence/federation/health-mesh` | Ship |
+| Unified edge + cloud fabric | `/fabric` + `GET /api/intelligence/federation/unified-fabric` | Ship |
+| Volume replication status | `/migrations` + `GET /api/intelligence/migration/volume-status` | Ship |
+| Migration wave planner | `/migrations` + `GET /api/intelligence/migration/wave-plan` | Ship |
+| Geo latency placement | `GET /api/intelligence/federation/geo-placement` | Ship |
+| Cloud account vault | `GET /api/intelligence/multicloud/cloud-accounts` | Ship |
+| Region lock enforcement | `GET /api/intelligence/federation/region-lock` | Ship |
+| PacketWolf placement guard | `GET/POST /api/intelligence/federation/packetwolf-guard/*` | Ship |
+
+### v9 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| SRE runbook scheduler | `SreReliabilityPanel` + `GET /api/intelligence/sre/schedule` | Ship |
+| Incident timeline | `GET /api/intelligence/sre/incident-timeline` | Ship |
+| On-call integration | `GET/POST /api/intelligence/sre/on-call/*` | Ship |
+| Postmortem generator | `GET /api/intelligence/sre/postmortem` | Ship |
+| Error budget dashboard | `GET /api/intelligence/sre/error-budgets` | Ship |
+| Chaos experiments | `GET/POST /api/intelligence/sre/chaos/*` | Lab |
+| Game days planner | `GET /api/intelligence/sre/game-days` | Lab |
+| Runbook execute | `POST /api/intelligence/sre/runbook/execute` | Ship |
+| Escalation policies | `GET /api/intelligence/sre/escalation` | Ship |
+| MTTR tracking | `GET /api/intelligence/sre/mttr` | Ship |
+
+### v10 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Interactive graph (pan/zoom + edge filters) | `/labs` + `GET /api/intelligence/graph/interactive` | Ship |
+| Impact analysis | `GraphPlatformPanel` + `GET /api/intelligence/graph/impact` | Ship |
+| Blast radius scoring | `GET /api/intelligence/graph/blast-radius` | Ship |
+| K8s service import | `POST /api/intelligence/graph/import-k8s` | Ship |
+| Threat propagation paths | `GET /api/intelligence/graph/threat-paths` | Ship |
+| Graph search | ⌘K action + `GET /api/intelligence/graph/search` | Ship |
+| Graph snapshots | `GET/POST /api/intelligence/graph/snapshots/*` | Ship |
+| CMDB sync | `GET/POST /api/intelligence/graph/cmdb/*` | Ship |
+| Graph-based placement | `GET /api/intelligence/graph/placement` | Ship |
+| Neo4j / JSON-LD export | `GET /api/intelligence/graph/export` | Lab |
+
+### v11 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Tray fleet sparkline | Tauri `tray_sparkline_update` + briefing sync | Ship |
+| Live Activity migrations | SSE + `live_activity_update` invoke | Lab |
+| Dock badge issue count | `dock_badge_update` + briefing sync | Ship |
+| Native notifications | `native_notification_show` + critical notifier | Ship |
+| Spotlight index | `GET /api/intelligence/macos/spotlight` | Lab |
+| Shortcuts manifest | `GET /api/intelligence/macos/shortcuts` | Lab |
+| Menu extras toggles | Tray menu + `GET /api/intelligence/macos/menu-extras` | Lab |
+| Offline briefing cache | `GET/POST /api/intelligence/macos/offline-cache` | Ship |
+| Universal links `aether://` | Tauri URL scheme + resolve API | Ship |
+| Notarized DMG CI | `.github/workflows/macos-dmg.yml` | Ship |
+| macOS platform panel | `/settings` `MacOSPlatformPanel` | Ship |
+
+---
+
 ## How to read this doc
 
 - **Ship** = in repo today with docs/tests

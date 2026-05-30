@@ -16,6 +16,9 @@ import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
+import FleetIntelligenceBrief from '../FleetIntelligenceBrief';
+import MultiCloudPanel from '../MultiCloudPanel';
+import FederationPlatformPanel from '../FederationPlatformPanel';
 import StatCard from '../StatCard';
 import type {
   ClusterPodSummary,
@@ -166,6 +169,9 @@ export default function FleetPage() {
 
   return (
     <div>
+      <FleetIntelligenceBrief onNavigate={(view) => { navigate(viewToPath(view)); }} />
+      <MultiCloudPanel />
+      <FederationPlatformPanel />
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
       {focusedWorkload ? (
         <WorkloadContextBanner testId="fleet-workload-context" workload={focusedWorkload} description="Fleet context">

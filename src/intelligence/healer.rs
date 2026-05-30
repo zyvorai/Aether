@@ -11,7 +11,7 @@ use crate::orchestrator::OrchestratorAction;
 use crate::runtime::create_runtime;
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -20,6 +20,161 @@ use tokio::sync::RwLock;
 pub struct HealerResult {
     pub executed: Vec<String>,
     pub skipped: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealerPreviewReport {
+    pub generated_at: String,
+    pub policy: AutonomyPolicy,
+    pub orchestrator_actions: Vec<String>,
+    pub drift_candidates: Vec<String>,
+    pub would_execute: Vec<String>,
+    pub would_skip: Vec<String>,
+}
+
+pub fn preview_orchestrator_actions(
+    actions: &[OrchestratorAction],
+    policy: &AutonomyPolicy,
+    drift_candidates: &[String],
+) -> HealerPreviewReport {
+    let mut would_execute = Vec::new();
+    let mut would_skip = Vec::new();
+    let orchestrator_actions: Vec<String> = actions.iter().map(|a| a.to_string()).collect();
+
+    for action in actions {
+        match action {
+            OrchestratorAction::Restart { workload, reason, .. } => {
+                if policy.allows_restart() {
+                    would_execute.push(format!("restart {workload}: {reason}"));
+                } else {
+                    would_skip.push(format!("restart {workload}: autonomy policy disabled"));
+                }
+            }
+            OrchestratorAction::Alert { workload, message } => {
+                would_execute.push(format!("alert {workload}: {message}"));
+            }
+            other => {
+                would_skip.push(format!("{other} (no auto executor)"));
+            }
+        }
+    }
+
+    for name in drift_candidates {
+        if policy.allows_drift_reconcile() {
+            would_execute.push(format!("reconcile drift on {name}"));
+        } else {
+            would_skip.push(format!("drift reconcile {name}: autonomy policy disabled"));
+        }
+    }
+
+    HealerPreviewReport {
+        generated_at: crate::resources::now_rfc3339(),
+        policy: policy.clone(),
+        orchestrator_actions,
+        drift_candidates: drift_candidates.to_vec(),
+        would_execute,
+        would_skip,
+    }
+}
+
+pub async fn build_healer_preview(
+    state: &StateStore,
+    policy: &AutonomyPolicy,
+) -> HealerPreviewReport {
+    use crate::orchestrator::{HealthStatus, Orchestrator, OrchestratorAction};
+
+    let mut actions = Vec::new();
+    if let Ok(orch) = Orchestrator::load(&Orchestrator::default_path()) {
+        for summary in orch.list_workloads() {
+            if matches!(
+                summary.health,
+                HealthStatus::Unhealthy | HealthStatus::Degraded
+            ) {
+                actions.push(OrchestratorAction::Restart {
+                    workload: summary.name.clone(),
+                    runtime: summary.runtime,
+                    reason: format!("health status {}", summary.health),
+                });
+            }
+        }
+    }
+
+    let detector = DriftDetector::new();
+    let mut drift_candidates = Vec::new();
+    for ws in state.list() {
+        let Ok(spec) = Workload::from_file(&ws.spec_path) else {
+            continue;
+        };
+        let report = detector.detect(&spec, ws);
+        if report.has_drift {
+            drift_candidates.push(ws.name.clone());
+        }
+    }
+
+    preview_orchestrator_actions(&actions, policy, &drift_candidates)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealerExecuteRequest {
+    #[serde(default = "default_dry_run")]
+    pub dry_run: bool,
+}
+
+fn default_dry_run() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealerExecuteReport {
+    pub dry_run: bool,
+    pub executed: Vec<String>,
+    pub skipped: Vec<String>,
+}
+
+pub async fn execute_healer(
+    state: &StateStore,
+    state_path: &Path,
+    policy: &AutonomyPolicy,
+    dry_run: bool,
+) -> HealerExecuteReport {
+    let preview = build_healer_preview(state, policy).await;
+    if dry_run {
+        return HealerExecuteReport {
+            dry_run: true,
+            executed: preview.would_execute,
+            skipped: preview.would_skip,
+        };
+    }
+
+    use crate::orchestrator::{HealthStatus, Orchestrator, OrchestratorAction};
+    let mut actions = Vec::new();
+    if let Ok(orch) = Orchestrator::load(&Orchestrator::default_path()) {
+        for summary in orch.list_workloads() {
+            if matches!(summary.health, HealthStatus::Unhealthy | HealthStatus::Degraded) {
+                actions.push(OrchestratorAction::Restart {
+                    workload: summary.name.clone(),
+                    runtime: summary.runtime,
+                    reason: format!("health status {}", summary.health),
+                });
+            }
+        }
+    }
+
+    let state_arc = Arc::new(RwLock::new(state.clone()));
+    let result = execute_orchestrator_actions(
+        &actions,
+        policy,
+        &state_arc,
+        state_path,
+        "api-healer-execute",
+    )
+    .await;
+
+    HealerExecuteReport {
+        dry_run: false,
+        executed: result.executed,
+        skipped: result.skipped,
+    }
 }
 
 pub async fn execute_orchestrator_actions(

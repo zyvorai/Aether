@@ -292,6 +292,31 @@ export interface MigrationAdvice {
   };
 }
 
+export interface MigrationPlanProposal {
+  advice: MigrationAdvice;
+  blast_radius_score: number;
+  rollback_probability: number;
+  eta_secs: number;
+  cost_impact_usd: number;
+  auto_eligible: boolean;
+}
+
+export interface FleetRootCauseEntry {
+  workload: string;
+  likely_cause: string;
+  confidence: number;
+  evidence: string[];
+  recommendation: string;
+  health_level: string;
+  summary: string;
+}
+
+export interface FleetRootCauseReport {
+  generated_at: string;
+  scanned: number;
+  diagnoses: FleetRootCauseEntry[];
+}
+
 // ─── Scheduler ───────────────────────────────────────────────────────
 export interface RuntimeUtilization {
   runtime: string;
@@ -679,6 +704,11 @@ export interface ObservabilitySummary {
 // ─── View types ──────────────────────────────────────────────────────
 export type AppView =
   | 'overview'
+  | 'fabric'
+  | 'migrations'
+  | 'observability'
+  | 'labs'
+  | 'settings'
   | 'applications'
   | 'workloads'
   | 'clusters'
@@ -815,6 +845,382 @@ export interface CostOptimizeReport {
   generated_at: string;
   total_potential_savings_pct: number;
   recommendations: CostOptimizeRecommendation[];
+}
+
+export interface SecurityPolicySuggestion {
+  workload: string;
+  severity: string;
+  title: string;
+  policy_yaml: string;
+  rationale: string;
+}
+
+export interface SecurityCopilotReport {
+  generated_at: string;
+  suggestions: SecurityPolicySuggestion[];
+}
+
+export interface TwinSnapshot {
+  fleet_risk_score: number;
+  avg_cpu_utilization: number;
+  avg_memory_utilization: number;
+  estimated_monthly_cost_usd: number;
+  saturation_days: number;
+}
+
+export interface TwinDeltas {
+  risk_delta: number;
+  cpu_util_delta: number;
+  memory_util_delta: number;
+  cost_delta_usd: number;
+}
+
+export interface TwinSimulateReport {
+  generated_at: string;
+  scenario: string;
+  baseline: TwinSnapshot;
+  projected: TwinSnapshot;
+  deltas: TwinDeltas;
+  recommendations: string[];
+}
+
+export interface AutonomyPolicy {
+  auto_restart: boolean;
+  auto_reconcile_drift: boolean;
+  auto_migrate: string;
+  auto_evolve: string;
+}
+
+export interface AutonomyEnvFlags {
+  aether_auto_restart: boolean;
+  aether_auto_reconcile: boolean;
+  reconciliation_auto_reconcile: boolean;
+}
+
+export interface WorkloadAutonomyOverride {
+  workload: string;
+  migration: string;
+  healing: string;
+  evolution: string;
+}
+
+export interface AutonomyStatusReport {
+  generated_at: string;
+  effective_policy: AutonomyPolicy;
+  env: AutonomyEnvFlags;
+  autonomy_enabled: boolean;
+  workload_overrides: WorkloadAutonomyOverride[];
+  recommendations: string[];
+}
+
+export interface HealerPreviewReport {
+  generated_at: string;
+  policy: AutonomyPolicy;
+  orchestrator_actions: string[];
+  drift_candidates: string[];
+  would_execute: string[];
+  would_skip: string[];
+}
+
+export interface HealerExecuteReport {
+  dry_run: boolean;
+  executed: string[];
+  skipped: string[];
+}
+
+export interface NextAction {
+  id: string;
+  title: string;
+  detail: string;
+  priority: number;
+  route: string;
+  action_type: string;
+}
+
+export interface NextActionsReport {
+  generated_at: string;
+  actions: NextAction[];
+}
+
+export interface AgentStatusEntry {
+  id: string;
+  label: string;
+  status: string;
+  detail: string;
+  route: string;
+  pending_count: number;
+}
+
+export interface AgentRegistryReport {
+  generated_at: string;
+  agents: AgentStatusEntry[];
+}
+
+export interface CriticalNotification {
+  id: string;
+  severity: string;
+  title: string;
+  detail: string;
+  workload?: string | null;
+  route: string;
+}
+
+export interface CriticalNotificationsReport {
+  generated_at: string;
+  notifications: CriticalNotification[];
+  notify_tray: boolean;
+}
+
+export interface EvolutionExecuteReport {
+  dry_run: boolean;
+  executed: string[];
+  skipped: string[];
+}
+
+export interface GitOpsAgentSyncReport {
+  generated_at: string;
+  federation_enabled: boolean;
+  federation_target?: string | null;
+  drift_workloads: string[];
+  planned_actions: string[];
+  auto_safe_count: number;
+}
+
+export interface GitOpsAgentExecuteReport {
+  dry_run: boolean;
+  executed: string[];
+  skipped: string[];
+}
+
+export interface CostApplyPatch {
+  workload: string;
+  field: string;
+  before: string;
+  after: string;
+  savings_monthly_usd: number;
+  patch_yaml: string;
+}
+
+export interface CostApplyReport {
+  dry_run: boolean;
+  patches: CostApplyPatch[];
+  applied: string[];
+  skipped: string[];
+}
+
+export interface SecurityRemediateReport {
+  dry_run: boolean;
+  applied: string[];
+  skipped: string[];
+  pending_confirmation: string[];
+}
+
+export interface ScaleSuggestion {
+  workload: string;
+  resource: string;
+  current: string;
+  suggested: string;
+  reason: string;
+  kind: string;
+  auto_safe: boolean;
+}
+
+export interface CapacityScaleReport {
+  generated_at: string;
+  suggestions: ScaleSuggestion[];
+}
+
+export interface CapacityScaleExecuteReport {
+  dry_run: boolean;
+  executed: string[];
+  skipped: string[];
+}
+
+export interface NlIntentReport {
+  generated_at: string;
+  parsed_goal: string;
+  intent_yaml: string;
+  spec_yaml: string;
+  confidence: number;
+  keywords: string[];
+}
+
+export interface IntentDeployReport {
+  dry_run: boolean;
+  workload_name: string;
+  validated: boolean;
+  policy_passed: boolean;
+  compliance_passed: boolean;
+  blocked: boolean;
+  block_reason?: string | null;
+  spec_path?: string | null;
+  steps: string[];
+}
+
+export interface IntentViolationEntry {
+  workload: string;
+  violation_type: string;
+  severity: string;
+  detail: string;
+  current_value: string;
+  intent_target: string;
+}
+
+export interface IntentViolationsReport {
+  generated_at: string;
+  violations: IntentViolationEntry[];
+  reconciliation_status: string;
+}
+
+export interface IntentSlaBreach {
+  workload: string;
+  metric: string;
+  current: string;
+  target: string;
+  severity: string;
+}
+
+export interface IntentSlaBreachesReport {
+  generated_at: string;
+  breaches: IntentSlaBreach[];
+}
+
+export interface IntentTemplate {
+  id: string;
+  goal: string;
+  title: string;
+  description: string;
+  spec_yaml: string;
+}
+
+export interface IntentTemplateLibrary {
+  generated_at: string;
+  templates: IntentTemplate[];
+}
+
+export interface IntentBundleWorkload {
+  role: string;
+  workload_name: string;
+  spec_yaml: string;
+}
+
+export interface IntentBundleReport {
+  generated_at: string;
+  bundle_name: string;
+  shared_intent_yaml: string;
+  workloads: IntentBundleWorkload[];
+}
+
+export interface IntentGitOpsDiffEntry {
+  workload: string;
+  has_drift: boolean;
+  live_intent_yaml: string;
+  gitops_intent_yaml?: string | null;
+  summary: string;
+}
+
+export interface IntentGitOpsDiffReport {
+  generated_at: string;
+  entries: IntentGitOpsDiffEntry[];
+}
+
+export interface IntentVersionEntry {
+  version_id: string;
+  recorded_at: string;
+  intent_yaml: string;
+  goal: string;
+}
+
+export interface IntentVersionHistory {
+  workload: string;
+  versions: IntentVersionEntry[];
+}
+
+export interface KnowledgeGraphNode {
+  id: string;
+  label: string;
+  kind: string;
+  severity?: string | null;
+}
+
+export interface KnowledgeGraphEdge {
+  from: string;
+  to: string;
+  kind: string;
+}
+
+export interface KnowledgeGraphStats {
+  workloads: number;
+  dependencies: number;
+  threats: number;
+  drifted: number;
+  clusters: number;
+}
+
+export interface KnowledgeGraphReport {
+  generated_at: string;
+  nodes: KnowledgeGraphNode[];
+  edges: KnowledgeGraphEdge[];
+  stats: KnowledgeGraphStats;
+}
+
+export interface AgentStatusSummary {
+  id: string;
+  label: string;
+  status: 'active' | 'idle' | 'alert';
+  detail: string;
+  view: AppView;
+}
+
+export interface IntentPipelineStep {
+  phase: string;
+  title: string;
+  detail: string;
+  action: string;
+}
+
+export interface IntentPipelineReport {
+  generated_at: string;
+  workload_name: string;
+  intent_yaml: string;
+  spec_yaml: string;
+  recommended_runtime: string;
+  confidence: number;
+  placement: PlacementRecommendation[];
+  steps: IntentPipelineStep[];
+}
+
+export interface SreRunbookSection {
+  title: string;
+  severity: string;
+  items: string[];
+}
+
+export interface SreRunbookReport {
+  generated_at: string;
+  summary: string;
+  sections: SreRunbookSection[];
+  runbook_markdown: string;
+}
+
+export interface ClusterPosture {
+  cluster: string;
+  reachable: boolean;
+  server?: string | null;
+  workload_count: number;
+  runtimes: string[];
+  anomaly_count: number;
+  score: number;
+}
+
+export interface MultiCloudPostureReport {
+  generated_at: string;
+  federation_enabled: boolean;
+  federation_clusters: string[];
+  clusters: ClusterPosture[];
+  fleet_workloads: number;
+  reachable_clusters: number;
+  recommended_actions: string[];
 }
 
 export interface EvolutionEntry {
@@ -1154,8 +1560,493 @@ export interface VolumeReplicationPlan {
 export interface FleetMigrationPlan {
   target_cluster: string;
   strategy: string;
-  items: { workload: string; target_cluster: string; volume_replication: boolean; status: string }[];
+  items: {
+    workload: string;
+    source_runtime: string;
+    target_runtime: string;
+    target_cluster: string;
+    strategy: string;
+    volume_replication: boolean;
+    status: string;
+  }[];
   warnings: string[];
+}
+
+export interface FederationExecuteReport {
+  dry_run: boolean;
+  target_cluster: string | null;
+  executed: string[];
+  skipped: string[];
+}
+
+export interface CostArbitrageEntry {
+  workload: string;
+  current_provider: string;
+  suggested_provider: string;
+  current_monthly_usd: number;
+  suggested_monthly_usd: number;
+  savings_usd: number;
+  reason: string;
+}
+
+export interface CostArbitrageReport {
+  generated_at: string;
+  entries: CostArbitrageEntry[];
+  total_savings_usd: number;
+}
+
+export interface ClusterMeshNode {
+  id: string;
+  label: string;
+  reachable: boolean;
+  score: number;
+  anomaly_count: number;
+}
+
+export interface ClusterMeshEdge {
+  from: string;
+  to: string;
+  kind: string;
+}
+
+export interface ClusterHealthMeshReport {
+  generated_at: string;
+  nodes: ClusterMeshNode[];
+  edges: ClusterMeshEdge[];
+}
+
+export interface UnifiedFabricNode {
+  id: string;
+  label: string;
+  kind: string;
+  online: boolean;
+  detail: string;
+}
+
+export interface UnifiedFabricEdge {
+  from: string;
+  to: string;
+}
+
+export interface UnifiedFabricReport {
+  generated_at: string;
+  nodes: UnifiedFabricNode[];
+  edges: UnifiedFabricEdge[];
+}
+
+export interface VolumeReplicationStatusEntry {
+  workload: string;
+  has_persistence: boolean;
+  plan_ready: boolean;
+  summary: string;
+}
+
+export interface VolumeReplicationStatusReport {
+  generated_at: string;
+  entries: VolumeReplicationStatusEntry[];
+}
+
+export interface MigrationWaveReport {
+  generated_at: string;
+  target_cluster: string;
+  wave_size: number;
+  plan: FleetMigrationPlan;
+}
+
+export interface GeoPlacementEntry {
+  cluster: string;
+  region_hint: string;
+  estimated_rtt_ms: number;
+  placement_score: number;
+}
+
+export interface GeoPlacementReport {
+  generated_at: string;
+  origin_region: string;
+  clusters: GeoPlacementEntry[];
+}
+
+export interface CloudAccountLink {
+  provider: string;
+  configured: boolean;
+  account_hint: string;
+  env_var: string;
+}
+
+export interface CloudAccountVaultReport {
+  generated_at: string;
+  accounts: CloudAccountLink[];
+}
+
+export interface RegionLockEntry {
+  workload: string;
+  compliant: boolean;
+  region_lock: string | null;
+  violations: string[];
+}
+
+export interface RegionLockReport {
+  generated_at: string;
+  sovereign_region_lock: string | null;
+  workloads: RegionLockEntry[];
+}
+
+export interface PacketWolfGuardEntry {
+  cluster: string;
+  anomaly_count: number;
+  blocked: boolean;
+  penalty: number;
+}
+
+export interface PacketWolfGuardReport {
+  generated_at: string;
+  configured: boolean;
+  blocked_clusters: string[];
+  entries: PacketWolfGuardEntry[];
+}
+
+export interface PacketWolfGuardApplyReport {
+  dry_run: boolean;
+  applied: string[];
+  skipped: string[];
+}
+
+export interface SreScheduleEntry {
+  id: string;
+  cron: string;
+  label: string;
+  enabled: boolean;
+  next_hint: string;
+}
+
+export interface SreRunbookScheduleReport {
+  generated_at: string;
+  scheduler_enabled: boolean;
+  entries: SreScheduleEntry[];
+}
+
+export interface IncidentTimelineEntry {
+  id: string;
+  timestamp: string;
+  source: string;
+  severity: string;
+  title: string;
+  detail: string;
+  workload: string | null;
+}
+
+export interface IncidentTimelineReport {
+  generated_at: string;
+  entries: IncidentTimelineEntry[];
+}
+
+export interface OnCallChannelStatus {
+  provider: string;
+  configured: boolean;
+  channel_count: number;
+  env_hint: string;
+}
+
+export interface OnCallIntegrationReport {
+  generated_at: string;
+  channels: OnCallChannelStatus[];
+  webhook_ready: boolean;
+}
+
+export interface PostmortemSection {
+  heading: string;
+  bullets: string[];
+}
+
+export interface PostmortemReport {
+  generated_at: string;
+  title: string;
+  sections: PostmortemSection[];
+  markdown: string;
+}
+
+export interface ErrorBudgetEntry {
+  workload: string;
+  status: string;
+  uptime_target_pct: number;
+  uptime_actual_pct: number;
+  error_budget: {
+    total_minutes: number;
+    consumed_minutes: number;
+    remaining_minutes: number;
+    consumed_pct: number;
+    projected_exhaustion_days: number | null;
+  };
+  burn_rate: number;
+}
+
+export interface ErrorBudgetDashboardReport {
+  generated_at: string;
+  entries: ErrorBudgetEntry[];
+}
+
+export interface ChaosExperiment {
+  id: string;
+  label: string;
+  target: string;
+  risk: string;
+  description: string;
+}
+
+export interface ChaosExperimentCatalog {
+  generated_at: string;
+  experiments: ChaosExperiment[];
+}
+
+export interface GameDayScenario {
+  id: string;
+  title: string;
+  duration_minutes: number;
+  steps: string[];
+  participants: string[];
+}
+
+export interface GameDayPlanReport {
+  generated_at: string;
+  scenarios: GameDayScenario[];
+}
+
+export interface RunbookExecuteReport {
+  dry_run: boolean;
+  runbook_summary: string;
+  executed: string[];
+  skipped: string[];
+}
+
+export interface EscalationStep {
+  order: number;
+  agent: string;
+  trigger: string;
+  action: string;
+}
+
+export interface EscalationPolicyReport {
+  generated_at: string;
+  policies: EscalationStep[];
+}
+
+export interface MttrEntry {
+  workload: string;
+  incidents: number;
+  avg_recovery_minutes: number;
+  last_incident: string | null;
+}
+
+export interface MttrReport {
+  generated_at: string;
+  fleet_avg_mttr_minutes: number;
+  entries: MttrEntry[];
+}
+
+export interface GraphImpactReport {
+  generated_at: string;
+  workload: string;
+  impact: {
+    workload: string;
+    affected_workloads: string[];
+    cascade_count: number;
+    severity: string;
+  };
+  downstream: string[];
+  summary: string;
+}
+
+export interface BlastRadiusReport {
+  generated_at: string;
+  workload: string;
+  blast_score: number;
+  impact: GraphImpactReport['impact'];
+  twin_risk_delta: number;
+  migration_blockers: string[];
+  summary: string;
+}
+
+export interface ThreatPath {
+  path: string[];
+  severity: string;
+  summary: string;
+}
+
+export interface ThreatPathsReport {
+  generated_at: string;
+  paths: ThreatPath[];
+}
+
+export interface GraphSearchHit {
+  id: string;
+  label: string;
+  kind: string;
+  score: number;
+  route: string;
+}
+
+export interface GraphSearchReport {
+  generated_at: string;
+  query: string;
+  hits: GraphSearchHit[];
+}
+
+export interface GraphSnapshot {
+  id: string;
+  captured_at: string;
+  label: string;
+  node_count: number;
+  edge_count: number;
+}
+
+export interface GraphSnapshotsReport {
+  generated_at: string;
+  snapshots: GraphSnapshot[];
+}
+
+export interface CmdbItem {
+  id: string;
+  name: string;
+  item_type: string;
+  dependencies: string[];
+}
+
+export interface CmdbSyncReport {
+  generated_at: string;
+  source: string;
+  items: CmdbItem[];
+  synced_edges: number;
+  dry_run: boolean;
+}
+
+export interface K8sServiceNode {
+  service: string;
+  workload: string;
+  service_type: string;
+  port: number;
+}
+
+export interface K8sImportReport {
+  generated_at: string;
+  services: K8sServiceNode[];
+  edges_added: number;
+  dry_run: boolean;
+}
+
+export interface GraphPlacementEntry {
+  workload: string;
+  startup_order: number;
+  depends_on: string[];
+  recommended_cluster: string | null;
+  co_locate_with: string | null;
+}
+
+export interface GraphPlacementReport {
+  generated_at: string;
+  entries: GraphPlacementEntry[];
+}
+
+export interface GraphExportReport {
+  generated_at: string;
+  format: string;
+  payload: string;
+  node_count: number;
+  edge_count: number;
+}
+
+export interface TraySparklineReport {
+  generated_at: string;
+  samples: number[];
+  sparkline: string;
+  fleet_health_pct: number;
+}
+
+export interface LiveActivityEntry {
+  workload: string;
+  phase: string;
+  progress_pct: number;
+  detail: string;
+}
+
+export interface LiveActivityReport {
+  generated_at: string;
+  active: LiveActivityEntry[];
+}
+
+export interface DockBadgeReport {
+  generated_at: string;
+  issue_count: number;
+  badge_label: string;
+}
+
+export interface SpotlightIndexItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  deep_link: string;
+}
+
+export interface SpotlightIndexReport {
+  generated_at: string;
+  items: SpotlightIndexItem[];
+}
+
+export interface ShortcutAction {
+  name: string;
+  phrase: string;
+  url: string;
+}
+
+export interface ShortcutsManifestReport {
+  generated_at: string;
+  shortcuts: ShortcutAction[];
+}
+
+export interface MenuExtraToggle {
+  id: string;
+  label: string;
+  enabled: boolean;
+}
+
+export interface MenuExtrasReport {
+  generated_at: string;
+  toggles: MenuExtraToggle[];
+}
+
+export interface OfflineCacheReport {
+  generated_at: string;
+  cached: boolean;
+  briefing: Record<string, unknown> | null;
+}
+
+export interface UniversalLinkRoute {
+  scheme: string;
+  path: string;
+  view: string;
+}
+
+export interface UniversalLinkRegistry {
+  generated_at: string;
+  routes: UniversalLinkRoute[];
+}
+
+export interface UniversalLinkResolveReport {
+  url: string;
+  view: string;
+  query: Record<string, string>;
+}
+
+export interface ReleasePipelineStep {
+  id: string;
+  label: string;
+  status: string;
+}
+
+export interface ReleasePipelineReport {
+  generated_at: string;
+  notarization_ready: boolean;
+  signing_identity_configured: boolean;
+  steps: ReleasePipelineStep[];
 }
 
 export interface HostedTenant {

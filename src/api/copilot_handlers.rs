@@ -88,6 +88,15 @@ pub(crate) async fn api_copilot_troubleshoot(
     ok_json(report).into_response()
 }
 
+/// GET /api/copilot/troubleshoot/fleet — Batch root-cause analysis for unhealthy workloads.
+pub(crate) async fn api_copilot_troubleshoot_fleet(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let store = app_state.state.read().await;
+    let report = crate::copilot::diagnose::diagnose_fleet(&store, 12).await;
+    ok_json(report).into_response()
+}
+
 /// POST /api/copilot/chat
 pub(crate) async fn api_copilot_chat(
     AxumState(app_state): AxumState<AppState>,

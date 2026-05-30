@@ -30,6 +30,34 @@ pub struct CostOptimizeRecommendation {
     pub reason: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostApplyPatch {
+    pub workload: String,
+    pub field: String,
+    pub before: String,
+    pub after: String,
+    pub savings_monthly_usd: f64,
+    pub patch_yaml: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostApplyRequest {
+    #[serde(default = "default_dry_run")]
+    pub dry_run: bool,
+}
+
+fn default_dry_run() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostApplyReport {
+    pub dry_run: bool,
+    pub patches: Vec<CostApplyPatch>,
+    pub applied: Vec<String>,
+    pub skipped: Vec<String>,
+}
+
 pub struct FinOpsEngine;
 
 impl FinOpsEngine {
@@ -63,6 +91,65 @@ impl FinOpsEngine {
             generated_at: crate::resources::now_rfc3339(),
             total_potential_savings_pct: pct,
             recommendations,
+        }
+    }
+
+    pub fn build_cost_patches(workloads: &[(Workload, WorkloadState)]) -> Vec<CostApplyPatch> {
+        let report = Self::optimize_fleet(workloads);
+        report
+            .recommendations
+            .iter()
+            .map(|rec| CostApplyPatch {
+                workload: rec.workload.clone(),
+                field: "runtime".into(),
+                before: rec.current_runtime.clone(),
+                after: rec.suggested_runtime.clone(),
+                savings_monthly_usd: rec.savings_monthly_usd,
+                patch_yaml: format!(
+                    "# FinOps right-size patch for {}\nmetadata:\n  name: {}\nspec:\n  runtime: {}\n# was: {}",
+                    rec.workload, rec.workload, rec.suggested_runtime, rec.current_runtime
+                ),
+            })
+            .collect()
+    }
+
+    pub fn apply_cost_patches(
+        patches: &[CostApplyPatch],
+        dry_run: bool,
+        policy: &crate::intelligence::policy::AutonomyPolicy,
+    ) -> CostApplyReport {
+        let mut applied = Vec::new();
+        let mut skipped = Vec::new();
+        if !policy.allows_auto_evolve() {
+            for patch in patches {
+                skipped.push(format!(
+                    "{} runtime patch: cost agent requires autonomy.evolution auto",
+                    patch.workload
+                ));
+            }
+            return CostApplyReport {
+                dry_run,
+                patches: patches.to_vec(),
+                applied,
+                skipped,
+            };
+        }
+        for patch in patches {
+            let line = format!(
+                "right-size {} runtime {} → {} (${:.0}/mo)",
+                patch.workload, patch.before, patch.after, patch.savings_monthly_usd
+            );
+            if dry_run {
+                applied.push(format!("dry-run: {line}"));
+            } else {
+                applied.push(line);
+            }
+        }
+        CostApplyReport {
+            dry_run,
+            patches: patches.to_vec(),
+            applied,
+            skipped,
         }
     }
 

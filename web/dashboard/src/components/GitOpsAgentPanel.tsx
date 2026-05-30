@@ -1,0 +1,101 @@
+// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Proprietary software — see LICENSE in the repository root.
+// https://zyvor.dev · info@zyvor.dev
+
+import { useCallback, useEffect, useState } from 'react';
+import { GitBranch, Loader2, Play, RefreshCw } from 'lucide-react';
+import { apiFetch, apiPost } from '../utils/api';
+import Badge from './Badge';
+import type { GitOpsAgentExecuteReport, GitOpsAgentSyncReport } from '../types/api';
+
+export default function GitOpsAgentPanel() {
+  const [plan, setPlan] = useState<GitOpsAgentSyncReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [executing, setExecuting] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const data = await apiFetch<GitOpsAgentSyncReport>('/intelligence/gitops/agent/plan');
+    setPlan(data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function sync(dryRun: boolean) {
+    if (!dryRun) {
+      const ok = window.confirm('Execute GitOps agent sync? Drift reconcile requires autonomy policy.');
+      if (!ok) return;
+    }
+    setExecuting(true);
+    const res = await apiPost<GitOpsAgentExecuteReport>('/intelligence/gitops/agent/sync', { dry_run: dryRun });
+    setExecuting(false);
+    if (res.success) {
+      window.dispatchEvent(
+        new CustomEvent('aether-toast', {
+          detail: {
+            message: dryRun
+              ? `GitOps dry-run: ${res.data?.executed.length ?? 0} actions`
+              : `GitOps sync: ${res.data?.executed.length ?? 0} executed`,
+            type: 'success',
+          },
+        }),
+      );
+      void load();
+    }
+  }
+
+  return (
+    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="gitops-agent-panel">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <GitBranch className="h-5 w-5 text-violet-400" />
+          <div>
+            <h2 className="text-xl font-semibold text-white">GitOps Agent</h2>
+            <p className="text-sm text-slate-400">Federation-aware drift reconcile loop</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void sync(true)}
+            disabled={executing}
+            className="rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-violet-200 hover:border-violet-400/50 disabled:opacity-60"
+            data-testid="gitops-agent-dry-run"
+          >
+            Dry-run sync
+          </button>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {plan?.federation_enabled ? <Badge text="federation" variant="green" /> : <Badge text="local only" variant="muted" />}
+        {plan?.federation_target ? <Badge text={plan.federation_target} variant="muted" /> : null}
+        <Badge text={`${plan?.drift_workloads.length ?? 0} drifted`} variant="yellow" />
+      </div>
+
+      {!plan?.planned_actions.length ? (
+        <p className="text-sm text-slate-500">Loading agent plan…</p>
+      ) : (
+        <ul className="space-y-2">
+          {plan.planned_actions.map((action) => (
+            <li key={action} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+              <Play className="mr-1 inline h-3 w-3 text-violet-400" />
+              {action}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

@@ -27,6 +27,9 @@ import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { hasValidatedSpec, hasDeployedWorkload, hasReviewedHealth, syncDeployFromWorkloads, syncHealthFromSummary } from '../../utils/onboardingState';
 import { countAetherManaged } from '../../utils/workloadFilters';
+import CommandCenterBriefing from '../CommandCenterBriefing';
+import CommandCenterIntentSla from '../CommandCenterIntentSla';
+import CommandCenterNextActions from '../CommandCenterNextActions';
 import StatCard from '../StatCard';
 import { SeverityBadge } from '../Badge';
 import OnboardingStrip from '../OnboardingStrip';
@@ -53,6 +56,7 @@ interface OverviewPageProps {
   username?: string;
   onNavigate: (view: AppView) => void;
   sseConnected?: boolean;
+  refreshKey?: number;
 }
 
 type OverviewEndpoint =
@@ -80,7 +84,7 @@ const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   apiKeys: 'API keys',
 };
 
-export default function OverviewPage({ username = '', onNavigate, sseConnected = false }: OverviewPageProps) {
+export default function OverviewPage({ username = '', onNavigate, sseConnected = false, refreshKey = 0 }: OverviewPageProps) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -273,6 +277,10 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
 
   return (
     <div>
+      <CommandCenterBriefing onNavigate={onNavigate} refreshKey={refreshKey} />
+      <CommandCenterIntentSla refreshKey={refreshKey} />
+      <CommandCenterNextActions onNavigate={onNavigate} refreshKey={refreshKey} />
+
       <PlatformStatusPanel
         platform={capabilities?.platform ?? null}
         ready={ready}

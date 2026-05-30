@@ -17,7 +17,12 @@ export interface DashboardViewMeta {
 }
 
 export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
-  { view: 'overview', path: '/', label: 'Dashboard', breadcrumb: 'Dashboard', subtitle: 'Real-time view across all runtimes', group: 'primary' },
+  { view: 'overview', path: '/', label: 'Overview', breadcrumb: 'Command Center', subtitle: 'Fleet briefing, savings, and capacity intelligence', group: 'primary', paletteLabel: 'Command Center' },
+  { view: 'fabric', path: '/fabric', label: 'Runtime Fabric', breadcrumb: 'Runtime Fabric', subtitle: 'Live Application → Runtime → Cluster → Node topology', group: 'primary', paletteLabel: 'Fabric' },
+  { view: 'migrations', path: '/migrations', label: 'Migrations', breadcrumb: 'Migrations', subtitle: 'AI migration planner with risk analysis and strategy', group: 'intelligence', paletteLabel: 'Migrations' },
+  { view: 'observability', path: '/observability', label: 'Observability', breadcrumb: 'Observability', subtitle: 'Health, metrics, events, and correlated diagnostics', group: 'operations', paletteLabel: 'Observability' },
+  { view: 'labs', path: '/labs', label: 'Labs', breadcrumb: 'Labs', subtitle: 'Experimental AI-generated infrastructure artifacts', group: 'resources', paletteLabel: 'Labs' },
+  { view: 'settings', path: '/settings', label: 'Settings', breadcrumb: 'Settings', subtitle: 'Platform, environments, secrets, and extensions', group: 'resources', paletteLabel: 'Settings' },
   { view: 'applications', path: '/applications', label: 'Applications', breadcrumb: 'Applications', subtitle: 'Manage Kubernetes apps like an operating system — not like YAML', group: 'primary', paletteLabel: 'Applications' },
   { view: 'workloads', path: '/workloads', label: 'Workloads', breadcrumb: 'Workloads', subtitle: 'Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3', group: 'primary' },
   { view: 'ai', path: '/ai', label: 'AI Engine', breadcrumb: 'AI Engine', subtitle: 'Intent scoring, runtime recommendations & migration planning', group: 'intelligence' },

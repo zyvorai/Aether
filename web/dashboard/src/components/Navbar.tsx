@@ -28,6 +28,7 @@ import {
   ClipboardList,
   BarChart3,
   RefreshCw,
+  Rocket,
   ChevronDown,
   Menu,
   X,
@@ -55,6 +56,7 @@ import { THEME_OPTIONS, dropdownItemClass, dropdownSurfaceClass, navbarShellClas
 import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import { filterNavViews, partitionNavViews, type AnnotatedNavItem } from '../utils/navCapabilities';
+import { AI_OS_NAV, isAiOsNavActive } from '../utils/aiOsNav';
 import { getClusterContext } from '../utils/clusterContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
 import PlatformHealthChip from './PlatformHealthChip';
@@ -479,9 +481,30 @@ export default function Navbar({
   );
 
   const filteredMobileNavGroups = useMemo(() => {
-    const groups = proView
-      ? mobileNavGroups
-      : [{ label: 'CloudOS', items: [{ label: 'Dashboard', view: 'overview' as AppView, icon: <LayoutDashboard className="w-4 h-4" /> }, ...cloudOsNavItems] }];
+    if (proView) {
+      return [
+        {
+          label: 'AI OS',
+          items: AI_OS_NAV.map((section) => ({
+            label: section.label,
+            view: section.primaryView as AppView,
+            icon:
+              section.id === 'overview' ? (
+                <LayoutDashboard className="w-4 h-4" />
+              ) : section.id === 'fabric' ? (
+                <GitBranch className="w-4 h-4" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              ),
+          })),
+        },
+        ...mobileNavGroups.slice(1),
+      ].map((group) => ({
+        ...group,
+        items: filterNavViews(group.items, platform, navExtras),
+      }));
+    }
+    const groups = [{ label: 'CloudOS', items: [{ label: 'Dashboard', view: 'overview' as AppView, icon: <LayoutDashboard className="w-4 h-4" /> }, ...cloudOsNavItems] }];
     return groups.map((group) => ({
       ...group,
       items: filterNavViews(group.items, platform, navExtras),
@@ -523,47 +546,44 @@ export default function Navbar({
   }, [mobileOpen]);
 
   const desktopNav = proView ? (
-    <>
-      <NavPill
-        active={currentView === 'overview'}
-        onClick={() => onNavigate('overview')}
-        icon={<LayoutDashboard className="w-4 h-4" />}
-        label="Dashboard"
-        compact
-      />
-      <NavPill
-        active={currentView === 'applications'}
-        onClick={() => onNavigate('applications')}
-        icon={<Boxes className="w-4 h-4" />}
-        label="Applications"
-        compact
-      />
-      <NavPill
-        active={currentView === 'workloads'}
-        onClick={() => onNavigate('workloads')}
-        icon={<Container className="w-4 h-4" />}
-        label="Workloads"
-        compact
-      />
-      {partitionedDropdownGroups.map((group) => {
-        if (group.ready.length === 0 && group.setup.length === 0) return null;
-        const isActive =
-          group.ready.some((item) => item.view === currentView) ||
-          group.setup.some((item) => item.view === currentView);
-        return (
-          <Dropdown
-            key={group.label}
-            group={group}
-            ready={group.ready}
-            setup={group.setup}
-            isActive={isActive}
-            currentView={currentView}
-            onNavigate={onNavigate}
-            theme={theme}
-          />
-        );
-      })}
-    </>
+    <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto pb-0.5">
+      {AI_OS_NAV.map((section) => (
+        <NavPill
+          key={section.id}
+          active={isAiOsNavActive(section, currentView)}
+          onClick={() => onNavigate(section.primaryView)}
+          icon={
+            section.id === 'overview' ? (
+              <LayoutDashboard className="w-4 h-4" />
+            ) : section.id === 'fabric' ? (
+              <GitBranch className="w-4 h-4" />
+            ) : section.id === 'ai-studio' ? (
+              <Brain className="w-4 h-4" />
+            ) : section.id === 'cost' ? (
+              <DollarSign className="w-4 h-4" />
+            ) : section.id === 'security' ? (
+              <Shield className="w-4 h-4" />
+            ) : section.id === 'gitops' ? (
+              <GitBranch className="w-4 h-4" />
+            ) : section.id === 'labs' ? (
+              <Sparkles className="w-4 h-4" />
+            ) : section.id === 'settings' ? (
+              <Settings className="w-4 h-4" />
+            ) : section.id === 'fleet' ? (
+              <Globe className="w-4 h-4" />
+            ) : section.id === 'workloads' ? (
+              <Container className="w-4 h-4" />
+            ) : section.id === 'migrations' ? (
+              <Rocket className="w-4 h-4" />
+            ) : (
+              <BarChart3 className="w-4 h-4" />
+            )
+          }
+          label={section.label}
+          compact
+        />
+      ))}
+    </div>
   ) : (
     <>
       <NavPill

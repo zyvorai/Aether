@@ -303,6 +303,114 @@ pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Res
     anyhow::bail!("workload not found: {}", req.workload)
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FleetRootCauseEntry {
+    pub workload: String,
+    pub likely_cause: String,
+    pub confidence: f64,
+    pub evidence: Vec<String>,
+    pub recommendation: String,
+    pub health_level: String,
+    pub summary: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FleetRootCauseReport {
+    pub generated_at: String,
+    pub scanned: usize,
+    pub diagnoses: Vec<FleetRootCauseEntry>,
+}
+
+/// Infer root cause label, confidence, and recommendation from a diagnosis report.
+pub fn infer_root_cause(report: &DiagnoseResponse) -> (String, f64, String) {
+    let log = report.log_excerpt.as_deref().unwrap_or("");
+    let combined = format!("{} {} {}", report.summary, log, report.evidence.join(" ")).to_lowercase();
+
+    if combined.contains("oom") || combined.contains("out of memory") || combined.contains("memory limit") {
+        let rec = report
+            .recommendations
+            .iter()
+            .find(|r| r.title.to_lowercase().contains("memory") || r.summary.to_lowercase().contains("memory"))
+            .map(|r| r.summary.clone())
+            .unwrap_or_else(|| "Increase memory limits or reduce workload memory footprint".into());
+        return ("OOM".into(), 0.91, rec);
+    }
+
+    if report.pods.iter().any(|p| p.restarts >= 3) {
+        let rec = report
+            .recommendations
+            .first()
+            .map(|r| r.summary.clone())
+            .unwrap_or_else(|| "Inspect crash logs and recent deployment changes".into());
+        return ("Crash loop / instability".into(), 0.85, rec);
+    }
+
+    if combined.contains("imagepull") || combined.contains("errimagepull") {
+        return (
+            "Image pull failure".into(),
+            0.88,
+            "Verify image name, registry credentials, and network reachability".into(),
+        );
+    }
+
+    if combined.contains("drift") {
+        return (
+            "Configuration drift".into(),
+            0.82,
+            "Reconcile desired spec with running state".into(),
+        );
+    }
+
+    if let Some(rec) = report.recommendations.first() {
+        return (rec.title.clone(), 0.72, rec.summary.clone());
+    }
+
+    (report.summary.clone(), 0.55, "Review logs, events, and recent changes".into())
+}
+
+/// Batch-diagnose unhealthy workloads across the fleet (state-managed workloads).
+pub async fn diagnose_fleet(store: &StateStore, max: usize) -> FleetRootCauseReport {
+    let names: Vec<String> = store.list().iter().map(|ws| ws.name.clone()).collect();
+    let mut diagnoses = Vec::new();
+
+    for name in names.into_iter().take(max) {
+        let req = DiagnoseRequest {
+            workload: name.clone(),
+            cluster: None,
+            namespace: None,
+            kind: None,
+        };
+        let Ok(report) = diagnose_workload(&req, store).await else {
+            continue;
+        };
+        if report.health_level == "healthy" {
+            continue;
+        }
+        let (likely_cause, confidence, recommendation) = infer_root_cause(&report);
+        diagnoses.push(FleetRootCauseEntry {
+            workload: report.workload.clone(),
+            likely_cause,
+            confidence,
+            evidence: report.evidence.clone(),
+            recommendation,
+            health_level: report.health_level.clone(),
+            summary: report.summary.clone(),
+        });
+    }
+
+    diagnoses.sort_by(|a, b| {
+        b.confidence
+            .partial_cmp(&a.confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    FleetRootCauseReport {
+        generated_at: crate::resources::now_rfc3339(),
+        scanned: store.list().len(),
+        diagnoses,
+    }
+}
+
 async fn resolve_target(req: &DiagnoseRequest, store: &StateStore) -> Result<ResolvedTarget> {
     if let Some(cluster) = req.cluster.as_deref().filter(|c| !c.is_empty()) {
         let namespace = req
@@ -391,6 +499,28 @@ fn short_name(workload: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn infer_root_cause_detects_oom() {
+        let report = DiagnoseResponse {
+            workload: "web".into(),
+            runtime: Some("kube".into()),
+            source: "aether".into(),
+            health_level: "failing".into(),
+            summary: "Pod OOMKilled".into(),
+            ready_pods: 0,
+            total_pods: 1,
+            warning_events: 1,
+            events: vec![],
+            log_excerpt: Some("Out of memory".into()),
+            pods: vec![],
+            recommendations: vec![],
+            evidence: vec!["Memory spike".into()],
+        };
+        let (cause, confidence, _) = infer_root_cause(&report);
+        assert_eq!(cause, "OOM");
+        assert!(confidence >= 0.9);
+    }
 
     #[test]
     fn short_name_parses_cluster_path() {
