@@ -126,10 +126,12 @@ export default function HelmCatalogPage() {
     <div data-testid="helm-catalog-page">
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-100">Helm App Store</h2>
-        <p className="text-sm text-slate-500 mt-1">Install curated charts with a guided wizard — no raw values.yaml required.</p>
-      </div>
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="overview-section-header">
+          <p className="section-label">Platform</p>
+          <h2 className="section-title">Helm App Store</h2>
+          <p className="section-subtitle">Install curated charts with a guided wizard — no raw values.yaml required.</p>
+        </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
@@ -139,7 +141,7 @@ export default function HelmCatalogPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search charts…"
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm"
+            className="glass-input pl-9"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -162,7 +164,7 @@ export default function HelmCatalogPage() {
           return (
             <article
               key={chart.id}
-              className="dash-card p-5 hover:border-aether/40 transition-colors"
+              className="hub-link-card p-5"
             >
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-aether/10 p-3 text-aether">
@@ -192,6 +194,7 @@ export default function HelmCatalogPage() {
           );
         })}
       </div>
+      </section>
 
       <Modal isOpen={Boolean(selected)} onClose={() => setSelected(null)} title={selected ? `Install ${selected.name}` : ''}>
         {selected && (

@@ -39,13 +39,13 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
 
   return (
     <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0a0d12]/80 backdrop-blur-md" onClick={onClose} />
+      <div className="glass-modal-backdrop" onClick={onClose} />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`overview-section-shell relative flex w-full animate-scale-in flex-col overflow-hidden shadow-2xl ${
+        className={`glass-modal-panel animate-scale-in ${
           isYaml ? 'max-h-[92vh] min-h-[min(720px,92vh)]' : 'max-h-[85vh]'
         } ${isWide ? 'max-w-[min(96rem,calc(100vw-2rem))]' : 'max-w-2xl'}`}
       >
@@ -56,7 +56,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-slate-700/80 bg-[#11151C]/60 p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+            className="quick-link-chip p-2 text-slate-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
           >
             <X className="h-5 w-5" />
           </button>

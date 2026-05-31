@@ -163,7 +163,6 @@ function OverviewFleetSnapshot({
         </CommandMetricCard>
 
         <div className="glass-metric-card glass-metric-accent-purple">
-          <div className="glass-metric-shine" aria-hidden />
           <div className="relative mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
             <Boxes className="h-3.5 w-3.5" />
             Control Surface
@@ -176,7 +175,7 @@ function OverviewFleetSnapshot({
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-xl border border-slate-800/60 bg-[#11151C]/60 p-3"
+                className="rounded-xl border border-slate-800/60 bg-[#11151C] p-3"
               >
                 <div className={`text-lg font-semibold ${controlEmpty ? 'text-slate-500' : 'text-white'}`}>
                   {item.value}
@@ -680,7 +679,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                 <button
                   type="button"
                   onClick={() => goFiltered('workloads', { deploy: '1' })}
-                  className="rounded-xl bg-gradient-to-r from-aether to-[#2563EB] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
+                  className="btn-primary rounded-xl px-4 py-2 text-sm font-medium"
                 >
                   Deploy YAML
                 </button>
@@ -817,7 +816,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
               {clusterSummary.clusters.length > 0 && (
                 <div className="space-y-2">
                   {clusterSummary.clusters.slice(0, 6).map((cluster) => (
-                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-3 py-2 text-sm backdrop-blur-sm">
+                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border border-slate-800/60 bg-[#11151C] px-3 py-2 text-sm">
                       <div>
                         <div className="text-slate-200 font-medium">{cluster.name}</div>
                         <div className="text-slate-500 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
@@ -863,7 +862,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                 <div
                   key={i}
                   data-testid={`overview-recent-event-${i}`}
-                  className="flex items-start gap-3 rounded-xl border border-slate-800/50 bg-[#11151C]/50 p-3 backdrop-blur-sm"
+                  className="flex items-start gap-3 rounded-xl border border-slate-800/50 bg-[#11151C] p-3"
                 >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">

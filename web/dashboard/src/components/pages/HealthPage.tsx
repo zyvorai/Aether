@@ -287,7 +287,7 @@ export default function HealthPage() {
         <EmptyState icon={<Inbox size={48} />} title="No managed workloads" description="No workloads are being monitored" />
       ) : (
         <>
-          <div className="dash-card-flush mb-6" data-testid="health-workload-table">
+          <div className="glass-panel-card-flush mb-6" data-testid="health-workload-table">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

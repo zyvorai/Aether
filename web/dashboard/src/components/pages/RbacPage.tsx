@@ -169,7 +169,7 @@ export default function RbacPage() {
         </WorkloadContextBanner>
       ) : null}
 
-      <div className="dash-card mb-6">
+      <div className="glass-panel-card mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Shield className="w-5 h-5 text-aether" />
           <h2 className="text-lg font-semibold text-slate-100">Create RBAC API key</h2>
@@ -214,7 +214,7 @@ export default function RbacPage() {
       {keys.length === 0 && !listLoading ? (
         <EmptyState icon={<KeyRound size={48} />} title="No RBAC keys" description="Create admin, operator, or viewer API keys." />
       ) : (
-        <div className="dash-card overflow-hidden" data-testid="rbac-keys-list">
+        <div className="glass-panel-card overflow-hidden" data-testid="rbac-keys-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
