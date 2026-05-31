@@ -819,7 +819,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <div className="overflow-x-auto min-w-0">
             <table className="w-full table-fixed border-collapse">
               <thead>
-                <tr className="border-b border-zinc-800">
+                <tr className="border-b border-slate-800/60">
                   <th className="w-10 py-3 px-2">
                     <input
                       type="checkbox"
@@ -844,7 +844,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               </thead>
               <tbody>
                 {filteredWorkloads.map((w) => (
-                  <tr key={w.name} className="border-b border-zinc-800/50 hover:bg-slate-800/60/30 transition-colors">
+                  <tr key={w.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                     <td className="py-3 px-2 align-top">
                       {isAetherManaged(w) && (
                         <input
@@ -869,7 +869,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
                       <div className="space-y-1 min-w-0">
                         <code
-                          className="text-xs bg-zinc-950 px-2 py-1 rounded text-slate-300 block w-full min-w-0 truncate"
+                          className="text-xs bg-[#0B0E14] px-2 py-1 rounded text-slate-300 block w-full min-w-0 truncate"
                           title={w.image}
                         >
                           {w.image}
@@ -1062,7 +1062,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 </p>
               )}
               {confidentialMigrationPlan && (
-                <div className="mt-3 p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs space-y-2">
+                <div className="mt-3 p-3 rounded-lg bg-[#0B0E14] border border-slate-800/60 text-xs space-y-2">
                   <p className="text-slate-400 font-mono break-all">
                     Channel: {confidentialMigrationPlan.encrypted_migration_uri}
                   </p>

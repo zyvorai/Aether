@@ -9,7 +9,7 @@ interface CodeBlockProps {
 
 export default function CodeBlock({ children, title }: CodeBlockProps) {
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-800/60">
+    <div className="glass-panel-card overflow-hidden rounded-xl border border-slate-800/60">
       {title && (
         <div className="bg-slate-800/60 px-4 py-2 border-b border-slate-800/60">
           <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -17,7 +17,7 @@ export default function CodeBlock({ children, title }: CodeBlockProps) {
           </span>
         </div>
       )}
-      <pre className="bg-zinc-950 p-4 overflow-x-auto text-sm text-slate-300 font-mono leading-relaxed">
+      <pre className="bg-[#0B0E14] p-4 overflow-x-auto text-sm text-slate-300 font-mono leading-relaxed">
         <code>{children}</code>
       </pre>
     </div>
