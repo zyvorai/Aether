@@ -100,16 +100,16 @@
 
 | # | Phase | Focus | Tag |
 |---|-------|-------|-----|
-| 65 | Copilot tool confirmation UX | Batch approve pending actions | Roadmap |
+| 65 | Copilot tool confirmation UX | Batch approve pending actions | **Ship** |
 | 66 | Voice copilot | Speech → infrastructure queries | Lab |
-| 67 | Copilot memory | Session + fleet context persistence | Roadmap |
-| 68 | Multi-agent copilot | Specialist sub-agents (SRE, FinOps) | Roadmap |
-| 69 | LLM intent parsing | Optional OpenAI/Anthropic backend | Roadmap |
-| 70 | Copilot runbook author | NL → markdown runbooks | Roadmap |
-| 71 | Copilot policy explainer | OPA violation plain English | Roadmap |
-| 72 | Copilot in terminal | `aether copilot` TUI mode | Roadmap |
-| 73 | Copilot audit trail | All NL actions logged | Roadmap |
-| 74 | Copilot RBAC scopes | Role-limited tool access | Roadmap |
+| 67 | Copilot memory | Session + fleet context persistence | **Ship** |
+| 68 | Multi-agent copilot | Specialist sub-agents (SRE, FinOps) | **Ship** |
+| 69 | LLM intent parsing | Optional OpenAI/Anthropic backend | **Ship** |
+| 70 | Copilot runbook author | NL → markdown runbooks | **Ship** |
+| 71 | Copilot policy explainer | OPA violation plain English | **Ship** |
+| 72 | Copilot in terminal | `aether copilot` TUI mode | **Ship** |
+| 73 | Copilot audit trail | All NL actions logged | **Ship** |
+| 74 | Copilot RBAC scopes | Role-limited tool access | **Ship** |
 
 ## Era H — FinOps & Cost (Phases 75–84)
 

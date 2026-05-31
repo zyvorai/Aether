@@ -58,6 +58,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v9** | SRE & Reliability — incidents, error budgets, postmortems, on-call, escalation, MTTR | **Ship (core panels)** |
 | **v10** | Knowledge & Graph — impact, blast radius, CMDB, snapshots, placement, export | **Ship (core panels)** |
 | **v11** | macOS Native OS — tray sparkline, dock badge, notifications, offline cache, deep links | **Ship (core panels)** |
+| **v12** | Copilot & LLM — batch confirm, memory, multi-agent, runbooks, policy explain, audit, RBAC | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -198,6 +199,22 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Universal links `aether://` | Tauri URL scheme + resolve API | Ship |
 | Notarized DMG CI | `.github/workflows/macos-dmg.yml` | Ship |
 | macOS platform panel | `/settings` `MacOSPlatformPanel` | Ship |
+
+### v12 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Batch confirm pending actions | `POST /api/copilot/confirm-batch` + Copilot page | Ship |
+| Copilot memory | `GET /api/intelligence/copilot/memory` | Ship |
+| Multi-agent routing | `POST /api/intelligence/copilot/route` | Ship |
+| LLM provider status | `GET /api/intelligence/copilot/llm-status` | Ship |
+| Voice copilot lab | `GET /api/intelligence/copilot/voice-lab` | Lab |
+| Runbook author | `POST /api/intelligence/copilot/runbook` | Ship |
+| Policy explainer | `POST /api/intelligence/copilot/policy-explain` | Ship |
+| Terminal copilot | `aether copilot` CLI REPL | Ship |
+| Copilot audit trail | `GET /api/intelligence/copilot/audit` | Ship |
+| Copilot RBAC scopes | `GET /api/intelligence/copilot/rbac-scopes` | Ship |
+| Copilot platform panel | `/copilot` `CopilotPlatformPanel` | Ship |
 
 ---
 

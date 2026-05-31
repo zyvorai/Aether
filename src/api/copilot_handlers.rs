@@ -25,6 +25,28 @@ pub(crate) struct CopilotChatRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub(crate) struct CopilotBatchConfirmRequest {
+    pub session_id: String,
+    pub action_ids: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct CopilotRouteRequest {
+    pub message: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct RunbookAuthorBody {
+    pub prompt: String,
+    pub workload: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct PolicyExplainerBody {
+    pub workload: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub(crate) struct TroubleshootRequest {
     pub workload: String,
     pub cluster: Option<String>,
@@ -175,4 +197,98 @@ pub(crate) async fn api_copilot_confirm(
         )
             .into_response(),
     }
+}
+
+/// POST /api/copilot/confirm-batch — Approve multiple pending tool actions.
+pub(crate) async fn api_copilot_confirm_batch(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<CopilotBatchConfirmRequest>,
+) -> impl IntoResponse {
+    if req.session_id.trim().is_empty() || req.action_ids.is_empty() {
+        return err_bad_request::<serde_json::Value>("session_id and action_ids required").into_response();
+    }
+    let role = crate::rbac::Role::Operator;
+    let ctx = tool_context(
+        app_state.state.clone(),
+        app_state.state_path.clone(),
+        role,
+    );
+    match COPILOT
+        .confirm_batch(&req.session_id, &req.action_ids, &ctx)
+        .await
+    {
+        Ok(resp) => ok_json(resp).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value> {
+                success: false,
+                data: None,
+                error: Some(e.to_string()),
+            }),
+        )
+            .into_response(),
+    }
+}
+
+/// GET /api/intelligence/copilot/memory
+pub(crate) async fn api_intelligence_copilot_memory() -> impl IntoResponse {
+    ok_json(crate::intelligence::copilot_os::read_copilot_memory()).into_response()
+}
+
+/// POST /api/intelligence/copilot/route
+pub(crate) async fn api_intelligence_copilot_route(Json(req): Json<CopilotRouteRequest>) -> impl IntoResponse {
+    ok_json(crate::intelligence::copilot_os::route_copilot_agent(&req.message)).into_response()
+}
+
+/// GET /api/intelligence/copilot/llm-status
+pub(crate) async fn api_intelligence_copilot_llm_status() -> impl IntoResponse {
+    ok_json(crate::intelligence::copilot_os::build_llm_provider_status()).into_response()
+}
+
+/// GET /api/intelligence/copilot/voice-lab
+pub(crate) async fn api_intelligence_copilot_voice_lab() -> impl IntoResponse {
+    ok_json(crate::intelligence::copilot_os::build_voice_copilot_lab()).into_response()
+}
+
+/// POST /api/intelligence/copilot/runbook
+pub(crate) async fn api_intelligence_copilot_runbook(Json(req): Json<RunbookAuthorBody>) -> impl IntoResponse {
+    if req.prompt.trim().is_empty() {
+        return err_bad_request::<serde_json::Value>("prompt is required").into_response();
+    }
+    ok_json(crate::intelligence::copilot_os::author_runbook(
+        &crate::intelligence::copilot_os::RunbookAuthorRequest {
+            prompt: req.prompt,
+            workload: req.workload,
+        },
+    ))
+    .into_response()
+}
+
+/// POST /api/intelligence/copilot/policy-explain
+pub(crate) async fn api_intelligence_copilot_policy_explain(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<PolicyExplainerBody>,
+) -> impl IntoResponse {
+    match crate::intelligence::copilot_os::explain_policy_violations(
+        &app_state.state_path,
+        &crate::intelligence::copilot_os::PolicyExplainerRequest {
+            workload: req.workload,
+        },
+    ) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/copilot/audit
+pub(crate) async fn api_intelligence_copilot_audit() -> impl IntoResponse {
+    ok_json(crate::intelligence::copilot_os::read_copilot_audit(50)).into_response()
+}
+
+/// GET /api/intelligence/copilot/rbac-scopes
+pub(crate) async fn api_intelligence_copilot_rbac_scopes() -> impl IntoResponse {
+    ok_json(crate::intelligence::copilot_os::build_copilot_rbac_scopes(
+        crate::rbac::Role::Admin,
+    ))
+    .into_response()
 }

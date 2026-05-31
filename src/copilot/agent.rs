@@ -8,6 +8,7 @@ use crate::copilot::policy::{role_allows_execute, tool_risk};
 use crate::copilot::provider::{provider_from_env, ChatMessage, LlmProvider};
 use crate::copilot::session::{CopilotSession, CopilotSessionStore, PendingAction};
 use crate::copilot::tools::{execute_tool, tools_openai_schema, ToolContext};
+use crate::intelligence::copilot_os::{append_copilot_audit, write_copilot_memory_entry, CopilotAuditEntry, CopilotMemoryEntry};
 use crate::rbac::Role;
 use crate::state::StateStore;
 use serde::{Deserialize, Serialize};
@@ -63,6 +64,14 @@ impl CopilotAgent {
                     session.messages.push(ChatMessage {
                         role: "assistant".into(),
                         content: format!("Executed {}: {}", action.tool, result),
+                    });
+                    let _ = append_copilot_audit(CopilotAuditEntry {
+                        timestamp: crate::resources::now_rfc3339(),
+                        session_id: session.id.clone(),
+                        action: "confirm".into(),
+                        tool: Some(action.tool.clone()),
+                        role: format!("{:?}", ctx.role),
+                        detail: action.description.clone(),
                     });
                 }
             }
@@ -127,6 +136,21 @@ impl CopilotAgent {
         session.updated_at = crate::resources::now_rfc3339();
         self.sessions.save(session.clone());
 
+        let _ = write_copilot_memory_entry(CopilotMemoryEntry {
+            session_id: session.id.clone(),
+            summary: reply.chars().take(240).collect(),
+            fleet_context: serde_json::json!({ "message_count": session.messages.len() }),
+            updated_at: session.updated_at.clone(),
+        });
+        let _ = append_copilot_audit(CopilotAuditEntry {
+            timestamp: crate::resources::now_rfc3339(),
+            session_id: session.id.clone(),
+            action: "chat".into(),
+            tool: tool_results.first().map(|t| t.tool.clone()),
+            role: format!("{:?}", ctx.role),
+            detail: message.chars().take(120).collect(),
+        });
+
         Ok(CopilotChatResponse {
             session_id: session.id,
             reply,
@@ -137,6 +161,62 @@ impl CopilotAgent {
 
     pub fn get_session(&self, id: &str) -> Option<CopilotSession> {
         self.sessions.get(id)
+    }
+
+    pub async fn confirm_batch(
+        &self,
+        session_id: &str,
+        action_ids: &[String],
+        ctx: &ToolContext,
+    ) -> anyhow::Result<crate::intelligence::copilot_os::BatchConfirmReport> {
+        let mut session = self
+            .sessions
+            .get(session_id)
+            .ok_or_else(|| anyhow::anyhow!("session not found"))?;
+
+        let mut confirmed = Vec::new();
+        let mut skipped = Vec::new();
+        let mut errors = Vec::new();
+
+        for action_id in action_ids {
+            if let Some(idx) = session.pending_actions.iter().position(|a| a.id == *action_id) {
+                let action = session.pending_actions.remove(idx);
+                if role_allows_execute(&ctx.role, true) {
+                    match execute_tool(ctx, &action.tool, &action.arguments).await {
+                        Ok(result) => {
+                            session.messages.push(ChatMessage {
+                                role: "assistant".into(),
+                                content: format!("Executed {}: {}", action.tool, result),
+                            });
+                            confirmed.push(action_id.clone());
+                            let _ = append_copilot_audit(CopilotAuditEntry {
+                                timestamp: crate::resources::now_rfc3339(),
+                                session_id: session.id.clone(),
+                                action: "batch_confirm".into(),
+                                tool: Some(action.tool),
+                                role: format!("{:?}", ctx.role),
+                                detail: action.description,
+                            });
+                        }
+                        Err(e) => errors.push(format!("{action_id}: {e}")),
+                    }
+                } else {
+                    skipped.push(action_id.clone());
+                }
+            } else {
+                skipped.push(action_id.clone());
+            }
+        }
+
+        session.updated_at = crate::resources::now_rfc3339();
+        self.sessions.save(session);
+
+        Ok(crate::intelligence::copilot_os::BatchConfirmReport {
+            session_id: session_id.to_string(),
+            confirmed,
+            skipped,
+            errors,
+        })
     }
 }
 

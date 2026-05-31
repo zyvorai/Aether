@@ -829,6 +829,58 @@ pub(crate) async fn tui_command() -> Result<()> {
     res
 }
 
+pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<()> {
+    use aether::copilot::agent::{tool_context, CopilotAgent};
+    use aether::rbac::Role;
+    use std::io::{self, Write};
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+
+    let state_path = StateStore::default_path();
+    let state = Arc::new(RwLock::new(StateStore::load(&state_path)?));
+    let ctx = tool_context(state, state_path, Role::Operator);
+    let agent = CopilotAgent::new();
+    let mut session_id: Option<String> = None;
+
+    if let Some(msg) = initial_message.filter(|m| !m.trim().is_empty()) {
+        let resp = agent.chat(&msg, session_id.as_deref(), None, &ctx).await?;
+        println!("{}", resp.reply);
+        for a in &resp.pending_actions {
+            println!(
+                "  [pending] {} — confirm: aether copilot (then confirm {})",
+                a.description, a.id
+            );
+        }
+        return Ok(());
+    }
+
+    output::info("Aether Copilot — type 'exit' or Ctrl+D to quit");
+    loop {
+        print!("copilot> ");
+        io::stdout().flush()?;
+        let mut line = String::new();
+        if io::stdin().read_line(&mut line)? == 0 {
+            break;
+        }
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if trimmed == "exit" || trimmed == "quit" {
+            break;
+        }
+        let resp = agent
+            .chat(trimmed, session_id.as_deref(), None, &ctx)
+            .await?;
+        session_id = Some(resp.session_id);
+        println!("{}", resp.reply);
+        for a in &resp.pending_actions {
+            println!("  [pending] {} — id: {}", a.description, a.id);
+        }
+    }
+    Ok(())
+}
+
 async fn run_tui<B: ratatui::backend::Backend>(
     terminal: &mut ratatui::Terminal<B>,
     app: &mut aether::ui::App,

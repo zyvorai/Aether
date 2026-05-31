@@ -16,6 +16,7 @@ pub mod agents;
 pub mod anomaly;
 pub mod autonomy;
 pub mod capacity;
+pub mod copilot_os;
 pub mod federation_os;
 pub mod gitops_agent;
 pub mod multicloud;
@@ -48,6 +49,14 @@ pub use context::build_context_snapshot;
 pub use evolution::{
     EvolutionEngine, EvolutionExecuteReport, EvolutionExecuteRequest, EvolutionStatus,
     execute_evolution,
+};
+pub use copilot_os::{
+    append_copilot_audit, author_runbook, build_copilot_rbac_scopes, build_llm_provider_status,
+    build_voice_copilot_lab, explain_policy_violations, read_copilot_audit, read_copilot_memory,
+    route_copilot_agent, write_copilot_memory_entry, BatchConfirmReport, CopilotAuditEntry,
+    CopilotAuditReport, CopilotMemoryEntry, CopilotMemoryReport, CopilotRbacScopesReport,
+    CopilotToolScope, LlmProviderStatusReport, MultiAgentRouteReport, PolicyExplainerReport,
+    PolicyExplainerRequest, RunbookAuthorReport, RunbookAuthorRequest, VoiceCopilotLabReport,
 };
 pub use federation_os::{
     apply_packetwolf_guard, build_cloud_account_vault, build_cluster_health_mesh,

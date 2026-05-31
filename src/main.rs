@@ -121,6 +121,7 @@ async fn main() -> Result<()> {
             .await
         }
         Commands::Tui => commands::tui_command().await,
+        Commands::Copilot { message } => commands::copilot_command(message).await,
         Commands::Completions { shell } => {
             commands::completions_command(&shell)
         }
