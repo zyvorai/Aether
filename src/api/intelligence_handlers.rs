@@ -1264,3 +1264,139 @@ pub(crate) async fn api_intelligence_security_score_trend(
     let pairs = workload_pairs(&app_state).await;
     ok_json(crate::intelligence::security_os::build_security_score_trend(&pairs)).into_response()
 }
+
+/// GET /v1/intelligence/briefing
+pub(crate) async fn api_v1_intelligence_briefing(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    api_command_center_briefing(AxumState(app_state)).await.into_response()
+}
+
+/// GET /v1/intelligence/threats
+pub(crate) async fn api_v1_intelligence_threats(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    api_intelligence_threats(AxumState(app_state)).await.into_response()
+}
+
+/// GET /v1/intelligence/cost-optimize
+pub(crate) async fn api_v1_intelligence_cost_optimize(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    api_intelligence_cost_optimize(AxumState(app_state)).await.into_response()
+}
+
+/// GET /v1/intelligence/predictions
+pub(crate) async fn api_v1_intelligence_predictions(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    api_intelligence_predictions(AxumState(app_state)).await.into_response()
+}
+
+/// GET /v1/intelligence/autonomy
+pub(crate) async fn api_v1_intelligence_autonomy(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::autonomy::build_autonomy_status(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/platform/saas-tenants
+pub(crate) async fn api_intelligence_platform_saas_tenants(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::platform_os::build_saas_tenant_dashboard(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/platform/plugin-marketplace
+pub(crate) async fn api_intelligence_platform_plugin_marketplace() -> impl axum::response::IntoResponse {
+    match crate::intelligence::platform_os::build_plugin_marketplace() {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/platform/helm-v2
+pub(crate) async fn api_intelligence_platform_helm_v2(
+    Json(body): Json<crate::intelligence::platform_os::HelmAiV2Request>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::platform_os::build_helm_ai_v2(&body).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/platform/terraform-export
+pub(crate) async fn api_intelligence_platform_terraform_export(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    let Some((spec, _)) = pairs.into_iter().next() else {
+        return err_internal::<serde_json::Value>("no workloads in fleet".to_string()).into_response();
+    };
+    ok_json(crate::intelligence::platform_os::build_terraform_export(&spec)).into_response()
+}
+
+/// GET /api/intelligence/platform/pulumi-bridge
+pub(crate) async fn api_intelligence_platform_pulumi_bridge(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    let Some((spec, _)) = pairs.into_iter().next() else {
+        return err_internal::<serde_json::Value>("no workloads in fleet".to_string()).into_response();
+    };
+    ok_json(crate::intelligence::platform_os::build_pulumi_bridge(&spec)).into_response()
+}
+
+/// GET /api/intelligence/platform/public-api
+pub(crate) async fn api_intelligence_platform_public_api() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::platform_os::build_public_api_manifest()).into_response()
+}
+
+/// GET /api/intelligence/platform/mobile-companion
+pub(crate) async fn api_intelligence_platform_mobile_companion() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::platform_os::build_mobile_companion_manifest()).into_response()
+}
+
+/// GET /api/intelligence/platform/ide-extensions
+pub(crate) async fn api_intelligence_platform_ide_extensions() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::platform_os::build_ide_extension_manifest()).into_response()
+}
+
+/// GET /api/intelligence/platform/community-intents
+pub(crate) async fn api_intelligence_platform_community_intents() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::platform_os::build_community_intent_library()).into_response()
+}
+
+/// GET /api/intelligence/platform/autonomous-sre
+pub(crate) async fn api_intelligence_platform_autonomous_sre(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::platform_os::build_autonomous_sre_status(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/platform/autonomous-sre/execute
+pub(crate) async fn api_intelligence_platform_autonomous_sre_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::platform_os::AutonomousSreExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    match crate::intelligence::platform_os::execute_autonomous_sre_loop(
+        &app_state.state_path,
+        &pairs,
+        &body,
+    )
+    .await
+    {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}

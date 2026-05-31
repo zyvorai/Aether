@@ -145,16 +145,16 @@
 
 | # | Phase | Focus | Tag |
 |---|-------|-------|-----|
-| 95 | Hosted SaaS multi-tenant UI | Tenant switcher + billing | Roadmap |
-| 96 | Plugin marketplace | Discover/install runtime plugins | Roadmap |
-| 97 | Helm AI generator v2 | Full chart + values from intent | Roadmap |
+| 95 | Hosted SaaS multi-tenant UI | Tenant switcher + billing | **Ship** |
+| 96 | Plugin marketplace | Discover/install runtime plugins | **Ship** |
+| 97 | Helm AI generator v2 | Full chart + values from intent | **Ship** |
 | 98 | Terraform export | Intent → TF modules | Lab |
 | 99 | Pulumi bridge | Programmatic infra from pipeline | Lab |
-| 100 | Public AI OS API | Versioned `/v1/intelligence/*` | Roadmap |
+| 100 | Public AI OS API | Versioned `/v1/intelligence/*` | **Ship** |
 | 101 | Mobile companion | Read-only fleet status app | Lab |
 | 102 | IDE extensions | VS Code / Cursor workload designer | Lab |
 | 103 | Community intent library | Shared goal templates | Lab |
-| 104 | Full autonomous SRE | Closed-loop ops without human gate | Roadmap |
+| 104 | Full autonomous SRE | Closed-loop ops without human gate | **Ship** |
 
 ---
 

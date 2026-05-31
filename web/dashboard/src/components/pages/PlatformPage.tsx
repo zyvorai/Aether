@@ -15,6 +15,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 import PlatformRecommendations from '../PlatformRecommendations';
+import EcosystemPlatformPanel from '../EcosystemPlatformPanel';
 import type { CiliumStatusResponse, PlatformRecommendation } from '../../types/api';
 
 interface Integrations {
@@ -204,6 +205,8 @@ export default function PlatformPage() {
       <div className="mb-6">
         <PlatformRecommendations items={recommendations} loading={recLoading} />
       </div>
+
+      <EcosystemPlatformPanel />
 
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
         <div className="overview-section-header">

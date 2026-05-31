@@ -140,6 +140,23 @@ pub fn helm_catalog() -> Vec<HelmCatalogChart> {
     ]
 }
 
+/// In-memory Helm chart preview (AI generator v2) without writing to disk.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HelmBundlePreview {
+    pub chart_yaml: String,
+    pub values_yaml: String,
+    pub workload: String,
+}
+
+pub fn preview_helm_bundle(spec: &Workload, chart_version: Option<&str>) -> HelmBundlePreview {
+    let version = chart_version.unwrap_or("0.1.0");
+    HelmBundlePreview {
+        chart_yaml: generate_chart_yaml(&spec.metadata.name, version),
+        values_yaml: generate_values_yaml(spec),
+        workload: spec.metadata.name.clone(),
+    }
+}
+
 /// Export a workload specification as a Helm chart.
 ///
 /// Creates a complete Helm chart directory structure at `output_dir` containing

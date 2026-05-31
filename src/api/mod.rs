@@ -936,6 +936,55 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/security/score-trend",
             get(api_intelligence_security_score_trend),
         )
+        .route("/v1/intelligence/briefing", get(api_v1_intelligence_briefing))
+        .route("/v1/intelligence/threats", get(api_v1_intelligence_threats))
+        .route("/v1/intelligence/cost-optimize", get(api_v1_intelligence_cost_optimize))
+        .route("/v1/intelligence/predictions", get(api_v1_intelligence_predictions))
+        .route("/v1/intelligence/autonomy", get(api_v1_intelligence_autonomy))
+        .route(
+            "/api/intelligence/platform/saas-tenants",
+            get(api_intelligence_platform_saas_tenants),
+        )
+        .route(
+            "/api/intelligence/platform/plugin-marketplace",
+            get(api_intelligence_platform_plugin_marketplace),
+        )
+        .route(
+            "/api/intelligence/platform/helm-v2",
+            post(api_intelligence_platform_helm_v2),
+        )
+        .route(
+            "/api/intelligence/platform/terraform-export",
+            get(api_intelligence_platform_terraform_export),
+        )
+        .route(
+            "/api/intelligence/platform/pulumi-bridge",
+            get(api_intelligence_platform_pulumi_bridge),
+        )
+        .route(
+            "/api/intelligence/platform/public-api",
+            get(api_intelligence_platform_public_api),
+        )
+        .route(
+            "/api/intelligence/platform/mobile-companion",
+            get(api_intelligence_platform_mobile_companion),
+        )
+        .route(
+            "/api/intelligence/platform/ide-extensions",
+            get(api_intelligence_platform_ide_extensions),
+        )
+        .route(
+            "/api/intelligence/platform/community-intents",
+            get(api_intelligence_platform_community_intents),
+        )
+        .route(
+            "/api/intelligence/platform/autonomous-sre",
+            get(api_intelligence_platform_autonomous_sre),
+        )
+        .route(
+            "/api/intelligence/platform/autonomous-sre/execute",
+            post(api_intelligence_platform_autonomous_sre_execute),
+        )
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",
