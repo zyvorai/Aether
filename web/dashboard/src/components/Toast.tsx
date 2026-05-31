@@ -70,7 +70,7 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
 
   return (
     <div
-      className={`pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.45)] ${borderBg} ${
+      className={`pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.45)] backdrop-blur-xl ${borderBg} ${
         item.exiting ? 'toast-exit' : 'toast-enter'
       }`}
     >

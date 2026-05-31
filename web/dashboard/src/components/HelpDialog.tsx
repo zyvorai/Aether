@@ -33,7 +33,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 px-4 pt-[8vh] backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-start justify-center bg-[#0a0d12]/80 px-4 pt-[8vh] backdrop-blur-md animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label="Help"
@@ -43,7 +43,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
       }}
     >
       <div
-        className="surface-panel w-full max-w-lg overflow-hidden rounded-2xl border border-slate-700/40 shadow-2xl"
+        className="overview-section-shell w-full max-w-lg overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-700/40 px-5 py-4">
@@ -58,7 +58,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
           </button>
         </div>
 
-        <div className="flex border-b border-slate-700/40 px-2 pt-1" role="tablist" aria-label="Help sections">
+        <div className="flex flex-wrap gap-2 border-b border-slate-800/60 px-4 py-3" role="tablist" aria-label="Help sections">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -66,11 +66,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => onTabChange(t.id)}
-              className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
-                tab === t.id
-                  ? 'border-aether text-aether'
-                  : 'border-transparent text-slate-500 hover:text-slate-300'
-              }`}
+              className={`tab-chip flex items-center gap-2 ${tab === t.id ? 'tab-chip-active' : ''}`}
             >
               {t.icon}
               {t.label}

@@ -38,27 +38,27 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
   const isWide = size === 'wide' || isYaml;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#0a0d12]/80 backdrop-blur-md" onClick={onClose} />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`surface-panel relative flex w-full animate-scale-in flex-col overflow-hidden rounded-[28px] shadow-2xl ${
+        className={`overview-section-shell relative flex w-full animate-scale-in flex-col overflow-hidden shadow-2xl ${
           isYaml ? 'max-h-[92vh] min-h-[min(720px,92vh)]' : 'max-h-[85vh]'
         } ${isWide ? 'max-w-[min(96rem,calc(100vw-2rem))]' : 'max-w-2xl'}`}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-800/80 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-800/60 px-6 py-4">
           <div>
-            <div className="mb-1 h-1 w-10 rounded-full bg-gradient-to-r from-aether to-cyan-300" />
+            <div className="mb-1 h-1 w-10 rounded-full bg-gradient-to-r from-aether to-aether-ai" />
             <h2 className="text-lg font-semibold text-white">{title}</h2>
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-slate-700/80 bg-slate-950/40 p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+            className="rounded-xl border border-slate-700/80 bg-[#11151C]/60 p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 

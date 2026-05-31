@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 import { Rocket, Wand2 } from 'lucide-react';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
+import GlassSection from './GlassSection';
 
 function slugFromPrompt(prompt: string): string {
   const words = prompt
@@ -88,19 +89,14 @@ export default function WorkloadDesignerPanel() {
   const name = useMemo(() => slugFromPrompt(prompt), [prompt]);
 
   return (
-    <section className="space-y-6" data-testid="workload-designer-panel">
-      <div className="surface-panel rounded-[28px] p-6 sm:p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <Wand2 className="h-5 w-5 text-aether" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">AI Workload Designer</h2>
-            <p className="text-sm text-slate-400">
-              Describe the outcome — Aether generates workload spec, scaling, storage, and monitoring hooks.
-            </p>
-          </div>
-        </div>
-
-        <textarea
+    <GlassSection
+      accent="purple"
+      testId="workload-designer-panel"
+      title="AI Workload Designer"
+      subtitle="Describe the outcome — Aether generates workload spec, scaling, storage, and monitoring hooks."
+      icon={<Wand2 className="h-5 w-5 text-aether" />}
+    >
+      <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={4}
@@ -160,7 +156,6 @@ export default function WorkloadDesignerPanel() {
             </div>
           </>
         ) : null}
-      </div>
-    </section>
+    </GlassSection>
   );
 }

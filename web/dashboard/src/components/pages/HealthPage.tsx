@@ -211,7 +211,13 @@ export default function HealthPage() {
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <section className="overview-section-shell mb-6 p-6 sm:p-8">
+          <div className="overview-section-header">
+            <p className="section-label">Health</p>
+            <h2 className="section-title">Fleet status</h2>
+            <p className="section-subtitle">Orchestrator health checks and circuit breaker state</p>
+          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <button type="button" data-testid="health-healthy-stat" onClick={() => setStatusFilter('healthy')} className="text-left">
             <StatCard title="Healthy" value={summary.healthy} color="green" />
           </button>
@@ -226,6 +232,7 @@ export default function HealthPage() {
           </button>
           <StatCard title="Circuits open" value={summary.circuits_open} color="orange" />
         </div>
+        </section>
       )}
 
       <PageToolbar
@@ -280,7 +287,7 @@ export default function HealthPage() {
         <EmptyState icon={<Inbox size={48} />} title="No managed workloads" description="No workloads are being monitored" />
       ) : (
         <>
-          <div className="dash-card overflow-hidden mb-6" data-testid="health-workload-table">
+          <div className="dash-card-flush mb-6" data-testid="health-workload-table">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -329,7 +336,7 @@ export default function HealthPage() {
           </div>
 
           {selected && (
-            <div className="dash-card" data-testid="health-detail-panel">
+            <div className="glass-panel-card" data-testid="health-detail-panel">
               <h3 className="text-lg font-semibold text-slate-100 mb-4">
                 Health detail:{' '}
                 <button
@@ -343,19 +350,19 @@ export default function HealthPage() {
                 </button>
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <div className="glass-panel-card py-3">
                   <div className="text-xs text-slate-500 mb-1">Total checks</div>
                   <div className="text-lg font-semibold text-slate-100">{selected.history.total_checks}</div>
                 </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <div className="glass-panel-card py-3">
                   <div className="text-xs text-slate-500 mb-1">Ready checks</div>
                   <div className="text-lg font-semibold text-emerald-400">{selected.history.ready_checks}</div>
                 </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <div className="glass-panel-card py-3">
                   <div className="text-xs text-slate-500 mb-1">Uptime</div>
                   <div className="text-lg font-semibold text-slate-100">{selected.history.uptime_percent.toFixed(2)}%</div>
                 </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <div className="glass-panel-card py-3">
                   <div className="text-xs text-slate-500 mb-1">Last state</div>
                   <div className="text-lg font-semibold text-slate-100">{selected.history.last_state}</div>
                 </div>

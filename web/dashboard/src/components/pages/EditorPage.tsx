@@ -668,7 +668,7 @@ export default function EditorPage() {
               data-testid="editor-validate-button"
               onClick={() => void handleValidate()}
               disabled={validating}
-              className="flex items-center gap-2 px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-sm font-medium text-slate-200 disabled:opacity-50"
+              className="flex items-center gap-2 btn-secondary disabled:opacity-50"
             >
               <CheckCircle className="w-4 h-4" />
               {validating ? 'Validating…' : 'Validate'}
@@ -679,7 +679,7 @@ export default function EditorPage() {
               data-testid="editor-deploy-button"
               onClick={() => void handleSave()}
               disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether/90 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+              className="flex items-center gap-2 btn-primary disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               {saving ? 'Deploying…' : 'Deploy workload'}

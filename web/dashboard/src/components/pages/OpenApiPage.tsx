@@ -210,7 +210,7 @@ export default function OpenApiPage() {
           type="button"
           data-testid="openapi-download-json"
           onClick={downloadOpenApiJson}
-          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
+          className="mt-3 inline-flex items-center gap-2 btn-secondary"
         >
           <Copy size={14} />
           Download JSON

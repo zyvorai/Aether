@@ -617,7 +617,7 @@ export default function Navbar({
               onClick={() => onNavigate('overview')}
               className="group flex min-w-0 items-center gap-2 transition-opacity hover:opacity-90"
             >
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-aether/25 bg-aether/10 shadow-[0_0_0_1px_rgba(99,164,255,0.08)] transition group-hover:border-aether/40 sm:h-10 sm:w-10">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-aether/25 bg-gradient-to-br from-aether/15 to-aether-ai/10 shadow-[0_0_0_1px_rgba(59,130,246,0.08)] transition group-hover:border-aether/40 sm:h-10 sm:w-10">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-aether/10" />
                 <Hexagon className="h-5 w-5 text-aether" />
               </div>
@@ -666,10 +666,8 @@ export default function Navbar({
                   onClick={() => setHelpMenuOpen((v) => !v)}
                   aria-expanded={helpMenuOpen}
                   aria-haspopup="menu"
-                  className={`flex items-center gap-1 rounded-xl p-2 text-sm transition-colors ${
-                    helpMenuOpen
-                      ? 'bg-slate-800/80 text-slate-100'
-                      : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-100'
+                  className={`flex items-center gap-1 rounded-xl border p-2 text-sm transition-colors ${
+                    helpMenuOpen ? 'nav-pill-active' : 'nav-pill'
                   }`}
                   title="Help (?)"
                   aria-label="Help menu"
@@ -683,7 +681,7 @@ export default function Navbar({
                 </button>
                 {helpMenuOpen && (
                   <div
-                    className="absolute right-0 top-full z-50 mt-1.5 min-w-[12.5rem] animate-scale-in rounded-xl border border-zinc-700 bg-zinc-900 py-1.5 shadow-xl"
+                    className={`absolute right-0 top-full z-50 mt-1.5 min-w-[12.5rem] animate-scale-in rounded-xl border py-1.5 shadow-xl ${dropdownSurfaceClass(theme)}`}
                     role="menu"
                   >
                     <button
@@ -693,7 +691,7 @@ export default function Navbar({
                         setHelpMenuOpen(false);
                         onOpenHelp('shortcuts');
                       }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
                     >
                       <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
                       Keyboard shortcuts
@@ -706,7 +704,7 @@ export default function Navbar({
                         setHelpMenuOpen(false);
                         onOpenHelp('about');
                       }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
                     >
                       <Info className="h-4 w-4 shrink-0" aria-hidden />
                       About
@@ -717,7 +715,7 @@ export default function Navbar({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
                     >
                       <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
                       Help &amp; documentation
@@ -729,7 +727,7 @@ export default function Navbar({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/80"
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
                     >
                       <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
                       Contact support
@@ -758,7 +756,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={handleRefreshClick}
-              className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-slate-100"
+              className="nav-pill rounded-xl border p-2 transition-colors"
               title="Refresh"
             >
               <RefreshCw className={`h-4 w-4${spinning ? ' animate-spin' : ''}`} />
@@ -775,7 +773,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-slate-100 lg:hidden"
+              className="nav-pill rounded-xl border p-2 transition-colors lg:hidden"
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             >
@@ -797,14 +795,12 @@ export default function Navbar({
         <>
           <button
             type="button"
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-50 bg-[#11151C]/50 backdrop-blur-md lg:hidden"
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
           <aside
-            className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l shadow-2xl animate-fade-in lg:hidden ${
-              'border-slate-800/60 bg-slate-950/98'
-            }`}
+            className="copilot-rail-glass fixed inset-y-0 right-0 z-50 flex w-full max-w-sm animate-fade-in flex-col border-l border-slate-800/40 shadow-2xl lg:hidden"
             aria-label="Navigation menu"
           >
             <div className="flex shrink-0 items-center justify-between border-b border-slate-800/60 px-4 py-3">

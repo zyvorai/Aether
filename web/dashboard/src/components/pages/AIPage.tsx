@@ -470,44 +470,64 @@ export default function AIPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="dash-card py-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wider">Workloads</div>
-          <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length}</div>
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="overview-section-header">
+          <p className="section-label">AI Engine</p>
+          <h2 className="section-title">Runtime intelligence</h2>
+          <p className="section-subtitle">Workloads, recommendations, and optimization signals</p>
         </div>
-        <div className="dash-card py-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wider">Running</div>
-          <div className="text-2xl font-semibold text-slate-100 mt-1">{runningCount}</div>
-        </div>
-        <div className="dash-card py-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wider">Stopped / other</div>
-          <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length - runningCount}</div>
-        </div>
-        <div className="dash-card py-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wider">Last recommendation</div>
-          <div className="text-2xl font-semibold text-slate-100 mt-1 truncate">
-            {recommendation?.recommended ?? '—'}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="glass-panel-card py-4">
+            <div className="text-xs text-slate-500 uppercase tracking-wider">Workloads</div>
+            <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length}</div>
+          </div>
+          <div className="glass-panel-card py-4">
+            <div className="text-xs text-slate-500 uppercase tracking-wider">Running</div>
+            <div className="text-2xl font-semibold text-slate-100 mt-1">{runningCount}</div>
+          </div>
+          <div className="glass-panel-card py-4">
+            <div className="text-xs text-slate-500 uppercase tracking-wider">Stopped / other</div>
+            <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length - runningCount}</div>
+          </div>
+          <div className="glass-panel-card py-4">
+            <div className="text-xs text-slate-500 uppercase tracking-wider">Last recommendation</div>
+            <div className="text-2xl font-semibold text-slate-100 mt-1 truncate">
+              {recommendation?.recommended ?? '—'}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <div data-testid="ai-tabs">
         <PageTabs tabs={STUDIO_TABS} active={activeTab} onChange={setActiveTab} />
       </div>
 
       {activeTab === 'intent' && (
-        <div className="space-y-8">
+        <section className="overview-section-shell space-y-8 p-6 sm:p-8 mb-8">
           <IntentStudioPanel />
           <IntentPlatformPanel />
-        </div>
+        </section>
       )}
-      {activeTab === 'pipeline' && <IntentPipelinePanel />}
-      {activeTab === 'advisor' && <RuntimeAdvisorPanel />}
-      {activeTab === 'designer' && <WorkloadDesignerPanel />}
+      {activeTab === 'pipeline' && (
+        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+          <IntentPipelinePanel />
+        </section>
+      )}
+      {activeTab === 'advisor' && (
+        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+          <RuntimeAdvisorPanel />
+        </section>
+      )}
+      {activeTab === 'designer' && (
+        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+          <WorkloadDesignerPanel />
+        </section>
+      )}
 
       {activeTab === 'recommend' && (
+        <section className="overview-section-shell p-6 sm:p-8 mb-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-min">
-          <div className="dash-card">
+          <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-aether/10 rounded-xl">
                 <Zap className="text-aether" size={20} />
@@ -537,11 +557,11 @@ export default function AIPage() {
             )}
           </div>
 
-          <div className="dash-card lg:col-span-2">
+          <div className="glass-panel-card lg:col-span-2">
             <IntentDebugger />
           </div>
 
-          <div className="dash-card">
+          <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-blue-500/10 rounded-xl">
                 <TrendingUp className="text-blue-400" size={20} />
@@ -556,7 +576,7 @@ export default function AIPage() {
               data-testid="ai-scaling-advice"
               onClick={() => void handleScaling()}
               disabled={loading === 'scaling'}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 rounded-xl font-medium transition text-white"
+              className="w-full py-3 btn-primary disabled:opacity-60"
             >
               {loading === 'scaling' ? 'Analyzing…' : 'Get Scaling Advice'}
             </button>
@@ -567,11 +587,13 @@ export default function AIPage() {
             )}
           </div>
         </div>
+        </section>
       )}
 
       {activeTab === 'optimize' && (
+        <section className="overview-section-shell p-6 sm:p-8 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="ai-optimize-panel">
-          <div className="dash-card">
+          <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <Target className="text-purple-400" size={20} />
               <h3 className="font-semibold text-slate-100">Intent Optimizer</h3>
@@ -598,7 +620,7 @@ export default function AIPage() {
             )}
           </div>
 
-          <div className="dash-card">
+          <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <Cpu className="text-emerald-400" size={20} />
               <h3 className="font-semibold text-slate-100">Resource Right-Sizer</h3>
@@ -625,7 +647,7 @@ export default function AIPage() {
             )}
           </div>
 
-          <div className="dash-card">
+          <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="text-orange-400" size={20} />
               <h3 className="font-semibold text-slate-100">Cost vs Performance</h3>
@@ -662,10 +684,12 @@ export default function AIPage() {
             )}
           </div>
         </div>
+        </section>
       )}
 
       {activeTab === 'analyze' && (
-        <div className="dash-card" data-testid="ai-analyze-panel">
+        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+        <div className="glass-panel-card" data-testid="ai-analyze-panel">
           <div className="flex items-center gap-3 mb-6">
             <Cpu className="text-cyan-400" size={22} />
             <h3 className="font-semibold text-xl text-slate-100">Workload Profiler & Analysis</h3>
@@ -721,6 +745,7 @@ export default function AIPage() {
             </div>
           )}
         </div>
+        </section>
       )}
     </div>
   );

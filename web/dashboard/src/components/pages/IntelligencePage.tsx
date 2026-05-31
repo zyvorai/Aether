@@ -16,6 +16,8 @@ import PageLoadError from '../PageLoadError';
 import PageTabs from '../PageTabs';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
+import GlassSection from '../GlassSection';
+import StatCard from '../StatCard';
 import type {
   CostOptimizeReport,
   EvolutionStatus,
@@ -215,6 +217,47 @@ export default function IntelligencePage() {
         </WorkloadContextBanner>
       ) : null}
 
+      <GlassSection
+        variant="hero"
+        accent="purple"
+        label="Intelligence"
+        title="Predictive ops"
+        subtitle="Fleet risk, threats, cost optimization, and placement intelligence"
+        className="mb-6 p-6 sm:p-8"
+        icon={<Brain className="h-5 w-5 text-aether-ai" />}
+      >
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard
+            title="Fleet risk"
+            value={predictions ? formatPercent(predictions.fleet_risk_score * 100, 1) : '—'}
+            color="purple"
+            compact
+            isEmpty={!predictions}
+          />
+          <StatCard
+            title="Threats"
+            value={threats?.threats.length ?? 0}
+            color="red"
+            compact
+            isEmpty={(threats?.threats.length ?? 0) === 0}
+          />
+          <StatCard
+            title="Cost saves"
+            value={cost ? formatPercent(cost.total_potential_savings_pct, 1) : '—'}
+            color="green"
+            compact
+            isEmpty={!cost}
+          />
+          <StatCard
+            title="Evolution"
+            value={evolution?.workloads.length ?? 0}
+            color="blue"
+            compact
+            isEmpty={(evolution?.workloads.length ?? 0) === 0}
+          />
+        </div>
+      </GlassSection>
+
       <div data-testid="intelligence-tabs">
       <PageTabs
         tabs={[
@@ -233,7 +276,7 @@ export default function IntelligencePage() {
         <div className="space-y-4 mt-4" data-testid="intelligence-predictions-panel">
           {predictions ? (
             <>
-              <div className="dash-card flex flex-wrap items-center gap-4">
+              <div className="glass-panel-card flex flex-wrap items-center gap-4">
                 <Brain className="text-aether shrink-0" size={22} />
                 <div>
                   <p className="text-sm text-slate-400">Fleet risk score</p>
@@ -250,7 +293,7 @@ export default function IntelligencePage() {
                   {predictions.predictions.map((row) => (
                     <div
                       key={row.workload}
-                      className={`dash-card ${
+                      className={`glass-panel-card ${
                         workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
                           ? 'ring-1 ring-aether/40 border-aether/30'
                           : ''
@@ -308,7 +351,7 @@ export default function IntelligencePage() {
             threats.threats.map((t) => (
               <div
                 key={`${t.workload}-${t.detected_at}`}
-                className={`dash-card ${
+                className={`glass-panel-card ${
                   workloadFocus && workloadMatchesFocus(t.workload, workloadFocus)
                     ? 'ring-1 ring-aether/40 border-aether/30'
                     : ''
@@ -354,7 +397,7 @@ export default function IntelligencePage() {
         <div className="space-y-4 mt-4">
           {cost ? (
             <>
-              <div className="dash-card">
+              <div className="glass-panel-card">
                 <p className="text-sm text-slate-400">Total potential savings</p>
                 <p className="text-2xl font-semibold text-emerald-400">
                   {formatPercent(cost.total_potential_savings_pct, 1)}
@@ -366,7 +409,7 @@ export default function IntelligencePage() {
                 cost.recommendations.map((rec) => (
                   <div
                     key={rec.workload}
-                    className={`dash-card ${
+                    className={`glass-panel-card ${
                       workloadFocus && workloadMatchesFocus(rec.workload, workloadFocus)
                         ? 'ring-1 ring-aether/40 border-aether/30'
                         : ''
@@ -421,7 +464,7 @@ export default function IntelligencePage() {
             evolution.workloads.map((row) => (
               <div
                 key={row.workload}
-                className={`dash-card ${
+                className={`glass-panel-card ${
                   workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
                     ? 'ring-1 ring-aether/40 border-aether/30'
                     : ''
@@ -476,7 +519,7 @@ export default function IntelligencePage() {
               Placement scheduler →
             </Link>
           </div>
-          <div className="dash-card space-y-3">
+          <div className="glass-panel-card space-y-3">
             <p className="text-sm text-slate-400">
               POST workload YAML to rank clusters and runtimes for global placement.
             </p>
@@ -491,7 +534,7 @@ export default function IntelligencePage() {
               data-testid="intelligence-place-submit"
               disabled={placeBusy}
               onClick={() => void runPlacement()}
-              className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
+              className="btn-primary disabled:opacity-50"
             >
               {placeBusy ? 'Ranking…' : 'Recommend placement'}
             </button>
@@ -500,7 +543,7 @@ export default function IntelligencePage() {
           {placeResults && placeResults.length > 0 && (
             <div className="space-y-3">
               {placeResults.map((rec, i) => (
-                <div key={`${rec.cluster ?? 'local'}-${rec.runtime}-${i}`} className="dash-card">
+                <div key={`${rec.cluster ?? 'local'}-${rec.runtime}-${i}`} className="glass-panel-card">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="font-medium text-slate-100">{rec.cluster ?? 'default cluster'}</span>
                     <Badge text={rec.runtime} variant="blue" />

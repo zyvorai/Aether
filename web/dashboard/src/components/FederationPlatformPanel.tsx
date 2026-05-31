@@ -16,6 +16,7 @@ import type {
   PacketWolfGuardReport,
   RegionLockReport,
 } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function FederationPlatformPanel() {
   const [tab, setTab] = useState<'mesh' | 'arbitrage' | 'geo' | 'accounts' | 'region' | 'packetwolf'>('mesh');
@@ -92,16 +93,13 @@ export default function FederationPlatformPanel() {
   ];
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="federation-platform-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Network className="h-5 w-5 text-teal-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Federation Platform</h2>
-            <p className="text-sm text-slate-400">Multi-cluster mesh, arbitrage, geo placement, and guards</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <GlassSection
+      accent="blue"
+      testId="federation-platform-panel"
+      title="Federation Platform"
+      subtitle="Multi-cluster mesh, arbitrage, geo placement, and guards"
+      icon={<Network className="h-5 w-5 text-teal-400" />}
+      actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void runFederationExecute()}
@@ -119,10 +117,8 @@ export default function FederationPlatformPanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-        </div>
-      </div>
-
-      <div className="mb-6 flex flex-wrap gap-2">
+        </div>}
+    ><div className="mb-6 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -229,6 +225,6 @@ export default function FederationPlatformPanel() {
           </ul>
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

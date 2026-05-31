@@ -272,7 +272,7 @@ export default function TemplatesPage() {
                           type="button"
                           onClick={() => void handleGenerate(t.name)}
                           disabled={generateLoading === t.name}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-aether hover:bg-aether/90 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors"
+                          className="flex items-center gap-1.5 btn-primary disabled:opacity-50 text-xs"
                         >
                           <Wand2 size={12} />
                           {generateLoading === t.name ? 'Generating…' : 'Generate'}
@@ -280,7 +280,7 @@ export default function TemplatesPage() {
                         <button
                           type="button"
                           onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', template: t.name }))}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors"
+                          className="flex items-center gap-1.5 btn-secondary text-xs"
                         >
                           <FileCode2 size={12} />
                           Use template
@@ -288,7 +288,7 @@ export default function TemplatesPage() {
                         <button
                           type="button"
                           onClick={() => setConfigureTemplate(t.name)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors"
+                          className="flex items-center gap-1.5 btn-secondary text-xs"
                         >
                           <Settings2 size={12} />
                           Configure
@@ -327,7 +327,7 @@ export default function TemplatesPage() {
               onClick={() => void handleDeployGenerated()}
               disabled={deployLoading || !generatedSpec}
               data-testid="template-deploy-generated"
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 shrink-0"
+              className="inline-flex items-center gap-2 btn-primary disabled:opacity-50 shrink-0"
             >
               <Rocket size={14} />
               {deployLoading ? 'Deploying…' : 'Deploy'}
@@ -398,7 +398,7 @@ export default function TemplatesPage() {
               void handleGenerate(configureTemplate, buildOverrides());
               setConfigureTemplate(null);
             }}
-            className="px-4 py-2 rounded-lg bg-aether hover:bg-aether/90 text-sm font-medium text-white"
+            className="btn-primary"
           >
             Generate
           </button>

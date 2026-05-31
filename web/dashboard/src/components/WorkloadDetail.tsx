@@ -380,51 +380,47 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
 
   return (
     <>
-    <div className="bg-zinc-900 border border-zinc-700 rounded-xl mt-4 overflow-hidden">
+    <div className="glass-panel-card mt-4 overflow-hidden p-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-zinc-800 border-b border-zinc-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/60 bg-[#161B24]/50">
         <div className="flex items-center gap-3">
           <div>
             <h3 className="text-lg font-bold text-white">
               {isKubeWorkload ? applicationLabel(workload) : workload.name}
             </h3>
             {isKubeWorkload && (
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-slate-500">
                 Application · {workspaceLabel(workload.namespace)}
                 {workload.kind ? ` · ${workload.kind}` : ''}
               </p>
             )}
           </div>
           <Badge text={workload.status} variant={getStatusVariant(workload.status)} />
-          <span className="text-sm text-zinc-400">{workload.runtime}</span>
+          <span className="text-sm text-slate-400">{workload.runtime}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => void copyShareLink()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-2.5 py-1 text-xs text-zinc-300 hover:border-aether/40 hover:text-aether transition-colors"
+            className="btn-secondary inline-flex items-center gap-1.5 px-2.5 py-1 text-xs"
             title="Copy shareable link"
           >
             <Link2 className="h-3.5 w-3.5" />
             {linkCopied ? 'Copied' : 'Share link'}
           </button>
-          <button type="button" onClick={onClose} className="text-zinc-400 hover:text-white text-xl leading-none" aria-label="Close">&times;</button>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close">&times;</button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-zinc-700">
+      <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-slate-800/60">
         {tabs.map(tab => (
           <button
             key={tab.id}
             type="button"
             data-testid={`workload-tab-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? 'text-aether border-b-2 border-aether bg-zinc-800/50'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
+            className={`tab-chip ${activeTab === tab.id ? 'tab-chip-active' : ''}`}
           >
             {tab.label}
           </button>
@@ -577,7 +573,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   { label: 'Cost', slug: 'cost', path: pathWithQuery(viewToPath('cost'), { workload: workload.name }) },
                   { label: 'Fleet', slug: 'fleet', path: pathWithQuery(viewToPath('fleet'), { workload: workload.name }) },
                   { label: 'Affinity', slug: 'affinity', path: pathWithQuery(viewToPath('affinity'), { workload: workload.name }) },
-                  { label: 'Envs', slug: 'envs', path: pathWithQuery(viewToPath('envs'), { workload: workload.name }) },
+                  { label: 'Envs', slug: 'envs', path: pathWithQuery(viewToPath('envs'), { q: workload.name }) },
                   { label: 'Intelligence', slug: 'intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions', workload: workload.name }) },
                 ] as const
               ).map((link) => (

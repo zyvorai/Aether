@@ -8,6 +8,7 @@ import { HeartPulse, Loader2, Play, RefreshCw } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import Badge from './Badge';
+import GlassSection from './GlassSection';
 import type { HealerExecuteReport, HealerPreviewReport, RemediationPlan } from '../types/api';
 
 export default function SelfHealingPanel() {
@@ -79,17 +80,13 @@ export default function SelfHealingPanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="self-healing-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <HeartPulse className="h-5 w-5 text-red-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Self-Healing Orchestrator</h2>
-            <p className="text-sm text-slate-400">
-              Preview autonomous restarts, drift reconcile, and anomaly remediation before they run.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="blue"
+      testId="self-healing-panel"
+      title="Self-Healing Orchestrator"
+      subtitle="Preview autonomous restarts, drift reconcile, and anomaly remediation before they run."
+      icon={<HeartPulse className="h-5 w-5 text-red-400" />}
+      actions={
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -126,8 +123,8 @@ export default function SelfHealingPanel() {
             Refresh
           </button>
         </div>
-      </div>
-
+      }
+    >
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <div className="glass-metric-card">
           <div className="text-2xl font-semibold text-white">{preview?.would_execute.length ?? 0}</div>
@@ -188,6 +185,6 @@ export default function SelfHealingPanel() {
           </Link>
         </div>
       </div>
-    </section>
+    </GlassSection>
   );
 }

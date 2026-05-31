@@ -148,9 +148,7 @@ export default function HelmCatalogPage() {
               key={cat}
               type="button"
               onClick={() => setCategory(cat)}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                category === cat ? 'bg-aether/20 text-aether border border-aether/40' : 'border border-slate-700 text-slate-400'
-              }`}
+              className={`tab-chip capitalize ${category === cat ? 'tab-chip-active' : ''}`}
             >
               {cat === 'all' ? 'All' : cat}
             </button>
@@ -164,7 +162,7 @@ export default function HelmCatalogPage() {
           return (
             <article
               key={chart.id}
-              className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 hover:border-aether/40 transition-colors"
+              className="dash-card p-5 hover:border-aether/40 transition-colors"
             >
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-aether/10 p-3 text-aether">
@@ -186,7 +184,7 @@ export default function HelmCatalogPage() {
                 type="button"
                 onClick={() => openInstall(chart)}
                 disabled={!canMutate}
-                className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
+                className="mt-4 w-full inline-flex items-center justify-center gap-2 btn-primary disabled:opacity-50"
               >
                 <Download size={16} /> Install
               </button>
@@ -306,7 +304,7 @@ export default function HelmCatalogPage() {
                 type="button"
                 onClick={() => void runInstall()}
                 disabled={installing || !installCluster}
-                className="rounded-lg bg-aether px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="btn-primary disabled:opacity-50"
               >
                 {installing ? 'Installing…' : 'Deploy'}
               </button>

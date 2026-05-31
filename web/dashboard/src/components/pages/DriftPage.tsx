@@ -161,7 +161,7 @@ export default function DriftPage() {
                 data-testid="drift-bulk-scan"
                 onClick={() => void handleBulkScan()}
                 disabled={bulkScan?.scanning}
-                className="rounded-xl border border-zinc-700 bg-zinc-950/60 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-800/80 disabled:opacity-50"
+                className="btn-secondary disabled:opacity-50"
               >
                 {bulkScan?.scanning ? 'Scanning…' : 'Scan all workloads'}
               </button>
@@ -171,7 +171,7 @@ export default function DriftPage() {
                   data-testid="drift-reconcile-all-confirm"
                   onClick={() => void handleReconcileAll()}
                   disabled={reconcileLoading}
-                  className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether-light disabled:opacity-50"
+                  className="btn-primary disabled:opacity-50"
                 >
                   {reconcileLoading ? 'Reconciling…' : `Reconcile all (${bulkScan.drifted.length})`}
                 </button>
@@ -182,12 +182,12 @@ export default function DriftPage() {
       />
 
       {fleetDrift ? (
-        <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="fleet-drift-summary">
+        <section className="overview-section-shell mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
           <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Tracked</div><div className="text-lg font-semibold text-slate-100">{fleetDrift.total_workloads}</div></div>
           <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
           <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
           <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
-        </div>
+        </section>
       ) : null}
 
       <div className="mb-4">
@@ -388,7 +388,7 @@ export default function DriftPage() {
                       data-testid="drift-reconcile-button"
                       onClick={() => void handleReconcile(driftResult.workload_name)}
                       disabled={reconcileLoading}
-                      className="px-4 py-2 bg-aether hover:bg-aether-light disabled:opacity-50 rounded-xl text-sm font-medium text-white"
+                      className="btn-primary disabled:opacity-50"
                     >
                       {reconcileLoading ? 'Reconciling…' : 'Apply reconciliation'}
                     </button>

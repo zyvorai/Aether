@@ -7,6 +7,7 @@ import { Copy, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import Badge, { SeverityBadge } from './Badge';
 import type { SreRunbookReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function AutonomousSrePanel() {
   const [report, setReport] = useState<SreRunbookReport | null>(null);
@@ -36,18 +37,13 @@ export default function AutonomousSrePanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="autonomous-sre-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <FileText className="h-5 w-5 text-amber-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Autonomous SRE Runbook</h2>
-            <p className="text-sm text-slate-400">
-              AI-generated operational brief from fleet health, healing, remediation, and FinOps.
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
+        <GlassSection
+      accent="purple"
+      testId="autonomous-sre-panel"
+      title="Autonomous SRE Runbook"
+      subtitle="AI-generated operational brief from fleet health, healing, remediation, and FinOps."
+      icon={<FileText className="h-5 w-5 text-amber-400" />}
+      actions={<div className="flex gap-2">
           <button
             type="button"
             onClick={() => void copyRunbook()}
@@ -64,10 +60,8 @@ export default function AutonomousSrePanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-        </div>
-      </div>
-
-      {report ? (
+        </div>}
+    >{report ? (
         <>
           <p className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-100">
             {report.summary}
@@ -102,6 +96,6 @@ export default function AutonomousSrePanel() {
           Generating runbook…
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

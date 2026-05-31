@@ -811,6 +811,7 @@ export default function ClustersPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Clusters" value={summary.cluster_count} color="blue" />
         <button
@@ -830,9 +831,10 @@ export default function ClustersPage() {
         <StatCard title="Namespaces" value={namespaces.length} color="orange" />
         <StatCard title={pageTab === 'network' ? 'Policies' : `${kind}s`} value={resources.length} color="purple" />
       </div>
+      </section>
 
       {ciliumStatus && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm">
+        <div className="glass-context-banner mb-6 flex flex-wrap items-center gap-2 text-sm">
           <span className="text-zinc-500">CNI</span>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'bg-zinc-800 text-zinc-300'}`}>
             {ciliumStatus.cni}

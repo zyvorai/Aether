@@ -60,11 +60,11 @@ function StatusTile({
   const c = toneClasses(tone);
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${c.ring}`}
+      className={`group relative overflow-hidden rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${c.ring}`}
     >
       <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl transition-opacity group-hover:opacity-80" />
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-aether">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#161B24]/60 text-aether">
           {icon}
         </div>
         <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} title={value} />
@@ -79,17 +79,19 @@ function StatusTile({
 export default function PlatformStatusPanel({ platform, ready, sseConnected, loading }: PlatformStatusPanelProps) {
   if (loading) {
     return (
-      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="skeleton h-28 rounded-2xl" />
-        ))}
-      </div>
+      <section className="overview-section-shell mb-8 p-6 sm:p-8">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton h-28 rounded-2xl" />
+          ))}
+        </div>
+      </section>
     );
   }
 
   if (!platform) {
     return (
-      <section className="mb-8 rounded-2xl border border-slate-700/40 bg-slate-900/40 px-4 py-4 text-sm text-slate-400">
+      <section className="overview-section-shell mb-8 p-6 text-sm text-slate-400">
         <p className="font-medium text-slate-300">Platform status unavailable</p>
         <p className="mt-1 text-xs leading-relaxed">
           Could not load <code className="text-slate-300">/api/server</code>. Check that the API is running and your
@@ -127,11 +129,12 @@ export default function PlatformStatusPanel({ platform, ready, sseConnected, loa
       : 'Local JSON on this node';
 
   return (
-    <section className="mb-8">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <section className="overview-section-shell mb-8 p-6 sm:p-8">
+      <div className="overview-section-header mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight text-white">Status</h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="section-label">Platform</p>
+          <h2 className="section-title">Status</h2>
+          <p className="section-subtitle">
             v{platform.version}
             {platform.tls ? ' · TLS' : ''}
           </p>

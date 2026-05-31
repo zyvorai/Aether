@@ -195,7 +195,8 @@ export default function ActivityMonitorPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Pods" value={metrics?.pod_count ?? 0} color="blue" icon={<Activity size={18} />} />
         <StatCard title="Applications" value={k8sApps.length} color="orange" icon={<Zap size={18} />} />
         <StatCard title="Failing apps" value={failingApps.length} color="red" icon={<AlertTriangle size={18} />} />
@@ -206,6 +207,7 @@ export default function ActivityMonitorPage() {
           icon={<Cpu size={18} />}
         />
       </div>
+      </section>
 
       <div className="flex flex-wrap gap-2 mb-6">
         {tabs.map(({ id, label, icon: Icon }) => (
@@ -213,11 +215,7 @@ export default function ActivityMonitorPage() {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-              tab === id
-                ? 'bg-aether/20 text-aether border border-aether/40'
-                : 'border border-slate-700 text-slate-400 hover:border-slate-600'
-            }`}
+            className={`tab-chip inline-flex items-center gap-2 ${tab === id ? 'tab-chip-active' : ''}`}
           >
             <Icon size={16} />
             {label}

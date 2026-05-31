@@ -27,6 +27,7 @@ import type {
   RunbookExecuteReport,
   SreRunbookScheduleReport,
 } from '../types/api';
+import GlassSection from './GlassSection';
 
 type Tab = 'timeline' | 'budget' | 'postmortem' | 'oncall' | 'escalation' | 'mttr' | 'chaos' | 'gamedays';
 
@@ -131,18 +132,13 @@ export default function SreReliabilityPanel() {
   ];
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="sre-reliability-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Shield className="h-5 w-5 text-rose-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">SRE Reliability Platform</h2>
-            <p className="text-sm text-slate-400">
-              Incident timeline, error budgets, postmortems, on-call, escalation, and MTTR
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <GlassSection
+      accent="blue"
+      testId="sre-reliability-panel"
+      title="SRE Reliability Platform"
+      subtitle="Incident timeline, error budgets, postmortems, on-call, escalation, and MTTR"
+      icon={<Shield className="h-5 w-5 text-rose-400" />}
+      actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void executeRunbook()}
@@ -160,10 +156,8 @@ export default function SreReliabilityPanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-        </div>
-      </div>
-
-      {schedule ? (
+        </div>}
+    >{schedule ? (
         <div className="mb-4 flex flex-wrap gap-2" data-testid="sre-runbook-schedule">
           <Badge text={schedule.scheduler_enabled ? 'scheduler on' : 'scheduler off'} variant="muted" />
           {schedule.entries.slice(0, 2).map((e) => (
@@ -347,6 +341,6 @@ export default function SreReliabilityPanel() {
           </pre>
         </details>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }
