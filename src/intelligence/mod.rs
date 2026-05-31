@@ -31,6 +31,7 @@ pub mod profile;
 pub mod record;
 pub mod remediation;
 pub mod platform_os;
+pub mod labs_os;
 pub mod security;
 pub mod security_os;
 pub mod sre;
@@ -94,6 +95,17 @@ pub use platform_os::{
     IdeExtensionManifest, MobileCompanionReport, PluginMarketplaceEntry, PluginMarketplaceReport,
     PublicApiManifest, PublicApiRoute, PulumiBridgeReport, SaasTenantDashboardReport,
     SaasTenantLine, TerraformExportReport,
+};
+pub use labs_os::{
+    build_labs_carbon_report, build_labs_community_intents, build_labs_compliance_report,
+    build_labs_graduation_overview, build_labs_graph_export, build_labs_ide_extensions,
+    build_labs_mobile_companion, build_labs_pulumi_bridge, build_labs_terraform_export,
+    build_labs_voice_copilot, import_community_intent, built_in_intent_library,
+    LabsCarbonReport, LabsCarbonWorkloadLine, LabsCommunityIntentImportRequest,
+    LabsCommunityIntentReport, LabsComplianceReport, LabsGraduatedFeature,
+    LabsGraduationOverview, LabsGraphExportReport, LabsIdeExtensionReport,
+    LabsMobileCompanionReport, LabsPulumiReport, LabsPulumiRequest, LabsTerraformReport,
+    LabsTerraformRequest, LabsVoiceCopilotReport,
 };
 pub use gitops_agent::{
     build_gitops_agent_plan, execute_gitops_agent, GitOpsAgentExecuteReport,

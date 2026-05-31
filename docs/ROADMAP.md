@@ -62,6 +62,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v13** | FinOps & Cost — chargeback, spot/RI, anomalies, unit economics, multi-cloud, trends | **Ship (core panels)** |
 | **v14** | Security & Compliance — policy apply, SBOM drift, zero-trust, threat hunt, score trend | **Ship (core panels)** |
 | **v15** | Platform & Ecosystem — SaaS tenants, plugins, Helm v2, v1 API, autonomous SRE | **Ship (core panels)** |
+| **v16** | Lab Graduation — Terraform/Pulumi v2, mobile, IDE, carbon, compliance, graph export | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -266,6 +267,22 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Community intents (Lab) | `GET /api/intelligence/platform/community-intents` | Lab |
 | Autonomous SRE loop | `GET/POST /api/intelligence/platform/autonomous-sre/*` | Ship |
 | Ecosystem platform panel | `/platform` `EcosystemPlatformPanel` | Ship |
+
+### v16 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Lab graduation overview | `/labs` + `GET /api/intelligence/labs/overview` | Ship |
+| Terraform export v2 | `POST /api/intelligence/labs/terraform-export` | Ship |
+| Pulumi bridge v2 | `POST /api/intelligence/labs/pulumi-bridge` | Ship |
+| Mobile companion PWA | `GET /api/intelligence/labs/mobile-companion` | Ship |
+| IDE extension pack | `GET /api/intelligence/labs/ide-extensions` | Ship |
+| Community intent import | `POST /api/intelligence/labs/community-intents/import` | Ship |
+| Carbon footprint ship | `GET /api/intelligence/labs/carbon` | Ship |
+| Compliance report ship | `GET /api/intelligence/labs/compliance-report` | Ship |
+| Voice copilot ship | `GET /api/intelligence/labs/voice-copilot` | Ship |
+| Graph export ship | `GET /api/intelligence/labs/graph-export` | Ship |
+| Labs graduation panel | `/labs` `LabsGraduationPanel` | Ship |
 
 ---
 

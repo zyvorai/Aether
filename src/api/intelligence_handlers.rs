@@ -1400,3 +1400,90 @@ pub(crate) async fn api_intelligence_platform_autonomous_sre_execute(
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
 }
+
+/// GET /api/intelligence/labs/overview
+pub(crate) async fn api_intelligence_labs_overview() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::labs_os::build_labs_graduation_overview()).into_response()
+}
+
+/// POST /api/intelligence/labs/terraform-export
+pub(crate) async fn api_intelligence_labs_terraform_export(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::labs_os::LabsTerraformRequest>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    match crate::intelligence::labs_os::build_labs_terraform_export(&pairs, &body).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/labs/pulumi-bridge
+pub(crate) async fn api_intelligence_labs_pulumi_bridge(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::labs_os::LabsPulumiRequest>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    match crate::intelligence::labs_os::build_labs_pulumi_bridge(&pairs, &body).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/labs/mobile-companion
+pub(crate) async fn api_intelligence_labs_mobile_companion() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::labs_os::build_labs_mobile_companion()).into_response()
+}
+
+/// GET /api/intelligence/labs/ide-extensions
+pub(crate) async fn api_intelligence_labs_ide_extensions() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::labs_os::build_labs_ide_extensions()).into_response()
+}
+
+/// GET /api/intelligence/labs/community-intents
+pub(crate) async fn api_intelligence_labs_community_intents() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::labs_os::build_labs_community_intents()).into_response()
+}
+
+/// POST /api/intelligence/labs/community-intents/import
+pub(crate) async fn api_intelligence_labs_community_intents_import(
+    Json(body): Json<crate::intelligence::labs_os::LabsCommunityIntentImportRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::labs_os::import_community_intent(&body) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => super::handlers::err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/labs/carbon
+pub(crate) async fn api_intelligence_labs_carbon(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::labs_os::build_labs_carbon_report(&pairs)).into_response()
+}
+
+/// GET /api/intelligence/labs/compliance-report
+pub(crate) async fn api_intelligence_labs_compliance_report(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::labs_os::build_labs_compliance_report(&pairs)).into_response()
+}
+
+/// GET /api/intelligence/labs/voice-copilot
+pub(crate) async fn api_intelligence_labs_voice_copilot() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::labs_os::build_labs_voice_copilot()).into_response()
+}
+
+/// GET /api/intelligence/labs/graph-export
+pub(crate) async fn api_intelligence_labs_graph_export(
+    AxumState(app_state): AxumState<AppState>,
+    axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl axum::response::IntoResponse {
+    let format = query.get("format").cloned().unwrap_or_else(|| "neo4j".into());
+    match crate::intelligence::labs_os::build_labs_graph_export(&app_state.state_path, &format) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
