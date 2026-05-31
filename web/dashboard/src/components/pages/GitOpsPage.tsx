@@ -205,7 +205,7 @@ export default function GitOpsPage() {
   function GitOpsFileCell({ filePath }: { filePath: string }) {
     const workloadName = workloadNameFromGitOpsPath(filePath);
     if (!workloadName) {
-      return <span className="font-mono text-xs text-zinc-300">{filePath}</span>;
+      return <span className="font-mono text-xs text-slate-300">{filePath}</span>;
     }
     return (
       <button
@@ -492,7 +492,7 @@ export default function GitOpsPage() {
                           }
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-zinc-300">
+                      <td className="py-2 pr-4 font-mono text-xs text-slate-300">
                         <GitOpsFileCell filePath={c.file_path} />
                       </td>
                       <td className="py-2 pr-4">
@@ -601,20 +601,20 @@ export default function GitOpsPage() {
           detected YAML changes. Review the diff preview below before syncing.
         </p>
         <div
-          className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3"
+          className="mb-4 rounded-xl border border-zinc-800 bg-[#11151C]/60 p-3"
           data-testid="gitops-diff-preview"
         >
           {previewLoading ? (
-            <p className="text-sm text-zinc-500">Loading pending changes…</p>
+            <p className="text-sm text-slate-500">Loading pending changes…</p>
           ) : previewError ? (
             <p className="text-sm text-red-400">{previewError}</p>
           ) : previewChanges.length === 0 ? (
-            <p className="text-sm text-zinc-500">No YAML changes detected in the latest commit.</p>
+            <p className="text-sm text-slate-500">No YAML changes detected in the latest commit.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-800 text-left text-xs uppercase tracking-wider text-zinc-500">
+                  <tr className="border-b border-zinc-800 text-left text-xs uppercase tracking-wider text-slate-500">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2">Commit</th>
@@ -635,10 +635,10 @@ export default function GitOpsPage() {
                           }
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-zinc-300">
+                      <td className="py-2 pr-4 font-mono text-xs text-slate-300">
                         <GitOpsFileCell filePath={c.file_path} />
                       </td>
-                      <td className="py-2 font-mono text-xs text-zinc-500 truncate max-w-[12rem]" title={c.commit}>
+                      <td className="py-2 font-mono text-xs text-slate-500 truncate max-w-[12rem]" title={c.commit}>
                         {c.commit.slice(0, 12)}
                       </td>
                     </tr>

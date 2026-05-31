@@ -921,6 +921,12 @@
     background: rgba(245, 158, 11, 0.08);
   }
 
+  .glass-alert-success {
+    @apply rounded-2xl border px-4 py-3 backdrop-blur-sm;
+    border-color: rgba(16, 185, 129, 0.28);
+    background: rgba(16, 185, 129, 0.08);
+  }
+
   .hub-link-card {
     @apply rounded-2xl border p-5 transition-all duration-200;
     border-color: rgba(148, 163, 184, 0.12);

@@ -119,10 +119,10 @@ export default function YamlInput({
   }
 
   const toolbarBtn =
-    'inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900/60 px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 disabled:cursor-not-allowed disabled:opacity-40';
+    'inline-flex items-center gap-1.5 rounded-lg border border-slate-800/60 bg-[#11151C]/80/60 px-2.5 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 disabled:cursor-not-allowed disabled:opacity-40';
 
   const textareaClass =
-    'w-full rounded-xl border border-zinc-700 bg-zinc-950 p-4 text-sm font-mono leading-relaxed text-zinc-300 placeholder-zinc-600 resize-y transition-colors focus:border-aether focus:outline-none focus:ring-1 focus:ring-aether/30';
+    'w-full rounded-xl border border-slate-800/60 bg-zinc-950 p-4 text-sm font-mono leading-relaxed text-slate-300 placeholder-zinc-600 resize-y transition-colors focus:border-aether focus:outline-none focus:ring-1 focus:ring-aether/30';
 
   return (
     <div className={isEditor ? 'flex min-h-0 flex-1 flex-col gap-3 overflow-hidden' : 'space-y-3'}>
@@ -151,9 +151,9 @@ export default function YamlInput({
 
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {editorLoading ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-950/90">
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-slate-800/60 bg-zinc-950/90">
                 <Loader2 className="w-6 h-6 animate-spin text-aether" />
-                <span className="ml-2 text-sm text-zinc-400">Loading template…</span>
+                <span className="ml-2 text-sm text-slate-400">Loading template…</span>
               </div>
             ) : null}
             <YamlCodeEditor
@@ -258,7 +258,7 @@ function EditorToolbar({
         {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         {expanded ? 'Collapse' : 'Expand'}
       </button>
-      <span className="ml-auto text-xs text-zinc-500">
+      <span className="ml-auto text-xs text-slate-500">
         {lineCount} lines
         {expanded ? ' · expanded' : ' · fit to content'}
       </span>

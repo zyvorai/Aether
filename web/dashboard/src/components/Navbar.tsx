@@ -279,8 +279,8 @@ function Dropdown({
             ))}
             {setup.length > 0 ? (
               <>
-                <div className="mx-3 my-1 border-t border-zinc-700/80" />
-                <p className="px-4 py-1 text-[10px] uppercase tracking-wider text-zinc-500">Setup required</p>
+                <div className="mx-3 my-1 border-t border-slate-800/60/80" />
+                <p className="px-4 py-1 text-[10px] uppercase tracking-wider text-slate-500">Setup required</p>
                 {setup.map((item) => (
                   <button
                     key={`setup-${item.view}`}
@@ -293,11 +293,11 @@ function Dropdown({
                     }}
                     className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm opacity-50 transition-colors hover:opacity-80 ${dropdownItemClass(false, theme)}`}
                   >
-                    <span className="text-zinc-500">{item.icon}</span>
+                    <span className="text-slate-500">{item.icon}</span>
                     <span className="flex flex-col items-start gap-0.5 text-left">
                       <span>{item.label}</span>
                       {item.visibility.setupHint ? (
-                        <span className="text-[10px] leading-tight text-zinc-500">{item.visibility.setupHint}</span>
+                        <span className="text-[10px] leading-tight text-slate-500">{item.visibility.setupHint}</span>
                       ) : null}
                     </span>
                   </button>

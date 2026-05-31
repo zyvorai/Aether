@@ -40,20 +40,20 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-[300px] flex items-center justify-center p-8">
-          <div className="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-xl p-8 text-center shadow-lg">
+          <div className="w-full max-w-lg bg-[#11151C]/80 border border-slate-800/60 rounded-xl p-8 text-center shadow-lg">
             <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-6 h-6 text-red-400" />
             </div>
-            <h2 className="text-lg font-semibold text-zinc-100 mb-2">
+            <h2 className="text-lg font-semibold text-slate-100 mb-2">
               Something went wrong
             </h2>
-            <p className="text-sm text-zinc-400 mb-6 break-words">
+            <p className="text-sm text-slate-400 mb-6 break-words">
               {this.state.error?.message || 'An unexpected error occurred while rendering this component.'}
             </p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={this.handleReset}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700 transition-colors"
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-slate-800/60 border border-slate-800/60 text-slate-300 hover:text-slate-100 hover:bg-slate-800/50 transition-colors"
               >
                 Try Again
               </button>

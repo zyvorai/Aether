@@ -276,10 +276,10 @@ export default function DriftPage() {
       ) : null}
 
       {bulkScan && !bulkScan.scanning ? (
-        <div data-testid="drift-bulk-summary" className="dash-card mb-6 text-sm text-zinc-300">
+        <div data-testid="drift-bulk-summary" className="dash-card mb-6 text-sm text-slate-300">
           Scanned {bulkScan.total} workload(s) — {bulkScan.drifted.length} with drift
           {bulkScan.drifted.length > 0 ? (
-            <span className="ml-2 text-zinc-500">({bulkScan.drifted.join(', ')})</span>
+            <span className="ml-2 text-slate-500">({bulkScan.drifted.join(', ')})</span>
           ) : null}
           <button
             type="button"
@@ -303,8 +303,8 @@ export default function DriftPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="dash-card">
-            <h2 className="text-lg font-semibold text-zinc-100 mb-1">Select workload</h2>
-            <p className="text-sm text-zinc-500 mb-4">Click a workload to check for configuration drift</p>
+            <h2 className="text-lg font-semibold text-slate-100 mb-1">Select workload</h2>
+            <p className="text-sm text-slate-500 mb-4">Click a workload to check for configuration drift</p>
             <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto" data-testid="drift-workload-select">
               {filtered.map((w) => (
                 <button
@@ -320,22 +320,22 @@ export default function DriftPage() {
                         ? 'border-aether/60 ring-1 ring-aether/30 bg-aether/5 text-aether'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                          : 'border-zinc-700 bg-zinc-950/60 text-zinc-200 hover:bg-zinc-800/80'
+                          : 'border-slate-800/60 bg-[#11151C]/60 text-slate-200 hover:bg-slate-800/60/80'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}
                 </button>
               ))}
               {filtered.length === 0 && (
-                <p className="text-sm text-zinc-500">No workloads match your search.</p>
+                <p className="text-sm text-slate-500">No workloads match your search.</p>
               )}
             </div>
           </div>
 
           <div className="dash-card min-h-[12rem]">
-            <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-4">Drift report</h3>
+            <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Drift report</h3>
             {!driftResult ? (
-              <p className="text-sm text-zinc-500">Select a workload or run a bulk scan to see drift analysis.</p>
+              <p className="text-sm text-slate-500">Select a workload or run a bulk scan to see drift analysis.</p>
             ) : (
               <div className="space-y-4" data-testid="drift-result-panel">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -356,22 +356,22 @@ export default function DriftPage() {
 
                 {driftResult.drifts.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-zinc-300 mb-2">Drifted fields</h4>
+                    <h4 className="text-sm font-medium text-slate-300 mb-2">Drifted fields</h4>
                     <div className="space-y-2 max-h-64 overflow-auto">
                       {driftResult.drifts.map((d, i) => (
-                        <div key={i} className="bg-zinc-950/50 rounded-lg p-3 border border-zinc-800">
+                        <div key={i} className="bg-[#11151C]/50 rounded-lg p-3 border border-zinc-800">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-sm font-medium text-zinc-200">{d.field}</span>
+                            <span className="text-sm font-medium text-slate-200">{d.field}</span>
                             <SeverityBadge severity={d.severity} />
                             <Badge text={d.category} variant="muted" />
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
                             <div>
-                              <span className="text-zinc-500">Expected: </span>
+                              <span className="text-slate-500">Expected: </span>
                               <span className="text-emerald-400">{d.expected}</span>
                             </div>
                             <div>
-                              <span className="text-zinc-500">Actual: </span>
+                              <span className="text-slate-500">Actual: </span>
                               <span className="text-red-400">{d.actual}</span>
                             </div>
                           </div>
@@ -397,13 +397,13 @@ export default function DriftPage() {
 
                 {driftResult.reconciliation_plan.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-zinc-300 mb-2">Reconciliation plan</h4>
+                    <h4 className="text-sm font-medium text-slate-300 mb-2">Reconciliation plan</h4>
                     <div className="space-y-2">
                       {driftResult.reconciliation_plan.map((step, i) => (
-                        <div key={i} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 text-sm">
-                          <div className="font-medium text-zinc-200">{step.action_type}</div>
-                          <p className="text-zinc-400 mt-1">{step.description}</p>
-                          <div className="flex gap-3 mt-2 text-xs text-zinc-500">
+                        <div key={i} className="rounded-lg border border-zinc-800 bg-[#11151C]/50 p-3 text-sm">
+                          <div className="font-medium text-slate-200">{step.action_type}</div>
+                          <p className="text-slate-400 mt-1">{step.description}</p>
+                          <div className="flex gap-3 mt-2 text-xs text-slate-500">
                             <span>Restart: {step.requires_restart ? 'yes' : 'no'}</span>
                             <span>Risk: {step.risk}</span>
                           </div>

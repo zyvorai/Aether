@@ -14,7 +14,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
   if (!validate && !policy) return null;
 
   return (
-    <div className="mt-3 space-y-3 shrink-0" data-testid="validate-result-panel">
+    <div className="glass-panel-card mt-3 space-y-3 shrink-0 p-4" data-testid="validate-result-panel">
       {validate ? (
         <div>
           <Badge
@@ -22,7 +22,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
             variant={validate.valid ? 'green' : 'red'}
           />
           {validate.workload_name && (
-            <p className="text-sm text-zinc-300 mt-2">Workload: {validate.workload_name}</p>
+            <p className="text-sm text-slate-300 mt-2">Workload: {validate.workload_name}</p>
           )}
           {validate.errors.length > 0 && (
             <ul className="mt-2 space-y-1">
@@ -42,7 +42,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
             text={policy.passed ? 'POLICY OK' : 'POLICY FAILED'}
             variant={policy.passed ? 'green' : 'red'}
           />
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {policy.policies_evaluated} policies evaluated
           </p>
           {policy.violations.length > 0 && (
