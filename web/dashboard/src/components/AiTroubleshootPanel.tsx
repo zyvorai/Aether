@@ -6,11 +6,11 @@ import { Bot, CheckCircle2, Loader2, Sparkles, Wrench } from 'lucide-react';
 import { apiPost } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
-import {
-  applyTroubleshootAction,
+import { applyTroubleshootAction,
   isApplyableRecommendation,
   TROUBLESHOOT_ACTION_LABELS,
 } from '../utils/troubleshootActions';
+import GlassSection from './GlassSection';
 import type { DiagnoseResponse, WorkloadResponse } from '../types/api';
 
 interface AiTroubleshootPanelProps {
@@ -95,32 +95,26 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
   }
 
   return (
-    <div
-      className={`rounded-xl border border-violet-500/25 bg-violet-950/20 ${compact ? 'p-3' : 'p-4'}`}
-      data-testid="ai-troubleshoot-panel"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <Sparkles className="text-violet-400 shrink-0 mt-0.5" size={18} />
-          <div className="min-w-0">
-            <h4 className="text-sm font-semibold text-violet-100">AI Troubleshooting</h4>
-            <p className="text-xs text-violet-200/70 mt-0.5">
-              Live cluster evidence — health, events, logs, and recommendations.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="purple"
+      testId="ai-troubleshoot-panel"
+      title="AI Troubleshooting"
+      subtitle="Live cluster evidence — health, events, logs, and recommendations."
+      icon={<Sparkles className="h-5 w-5 text-aether-ai" />}
+      className={compact ? '!p-3 sm:!p-3' : ''}
+      actions={
         <button
           type="button"
           onClick={() => void run()}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-violet-500/20 px-3 py-1.5 text-xs font-medium text-violet-100 hover:bg-violet-500/30 disabled:opacity-50 shrink-0"
+          className="btn-primary inline-flex items-center gap-1.5 !px-3 !py-1.5 !text-xs disabled:opacity-50"
           data-testid="ai-troubleshoot-diagnose"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Bot size={14} />}
           {loading ? 'Analyzing…' : 'Diagnose'}
         </button>
-      </div>
-
+      }
+    >
       {error && <p className="mt-3 text-xs text-red-300">{error}</p>}
       {appliedMessage && (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-300">
@@ -196,6 +190,6 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
           )}
         </div>
       )}
-    </div>
+    </GlassSection>
   );
 }

@@ -19,7 +19,7 @@ export default function FixItPanel({ workload, onAction }: FixItPanelProps) {
 
   return (
     <div
-      className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4"
+      className="glass-alert-warn rounded-xl p-4"
       data-testid="fix-it-panel"
     >
       <div className="flex items-start gap-3">
@@ -33,7 +33,7 @@ export default function FixItPanel({ workload, onAction }: FixItPanelProps) {
                 key={a.label}
                 type="button"
                 onClick={() => onAction(a.action)}
-                className="rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-100 hover:bg-amber-500/30"
+                className="btn-secondary !border-amber-500/30 !bg-amber-500/10 !text-amber-100 hover:!border-amber-400/40"
               >
                 {a.label}
               </button>

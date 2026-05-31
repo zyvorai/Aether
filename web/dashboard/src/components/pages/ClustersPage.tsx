@@ -79,7 +79,7 @@ function manifestContainerNames(manifest: Record<string, unknown>): string[] {
 
 export default function ClustersPage() {
   const navigate = useNavigate();
-  const panelClass = 'rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100';
+  const panelClass = 'rounded-xl border border-slate-800 bg-slate-950/60 text-slate-100';
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
   const [metricsSummary, setMetricsSummary] = useState<ClusterMetricsSummary | null>(null);
@@ -835,15 +835,15 @@ export default function ClustersPage() {
 
       {ciliumStatus && (
         <div className="glass-context-banner mb-6 flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-zinc-500">CNI</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'bg-zinc-800 text-zinc-300'}`}>
+          <span className="text-slate-500">CNI</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'bg-slate-800 text-slate-300'}`}>
             {ciliumStatus.cni}
           </span>
-          <span className="text-zinc-600">·</span>
-          <span className="text-zinc-500">Egress</span>
-          <span className="text-zinc-200">{ciliumStatus.egress_mode}</span>
-          <span className="text-zinc-600">·</span>
-          <span className="text-zinc-500">metrics-server</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-500">Egress</span>
+          <span className="text-slate-200">{ciliumStatus.egress_mode}</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-500">metrics-server</span>
           <span className={ciliumStatus.metrics_server ? 'text-emerald-400' : 'text-amber-400'}>
             {ciliumStatus.metrics_server ? 'ok' : 'missing'}
           </span>
@@ -863,28 +863,28 @@ export default function ClustersPage() {
 
       {metricsSummary && (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-            <div className="text-xs uppercase tracking-wider text-zinc-500">Metrics Scope</div>
-            <div className="mt-2 text-lg font-semibold text-zinc-100">{metricsSummary.scope}</div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div className="text-xs uppercase tracking-wider text-slate-500">Metrics Scope</div>
+            <div className="mt-2 text-lg font-semibold text-slate-100">{metricsSummary.scope}</div>
           </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-            <div className="text-xs uppercase tracking-wider text-zinc-500">CPU</div>
-            <div className="mt-2 text-lg font-semibold text-zinc-100">{metricsSummary.total_cpu_millicores}m</div>
-            <div className="mt-1 text-xs text-zinc-500">{metricsSummary.pod_count} pods measured</div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div className="text-xs uppercase tracking-wider text-slate-500">CPU</div>
+            <div className="mt-2 text-lg font-semibold text-slate-100">{metricsSummary.total_cpu_millicores}m</div>
+            <div className="mt-1 text-xs text-slate-500">{metricsSummary.pod_count} pods measured</div>
           </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-            <div className="text-xs uppercase tracking-wider text-zinc-500">Memory</div>
-            <div className="mt-2 text-lg font-semibold text-zinc-100">{metricsSummary.total_memory_mib} Mi</div>
-            <div className="mt-1 text-xs text-zinc-500">From `kubectl top pod`</div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div className="text-xs uppercase tracking-wider text-slate-500">Memory</div>
+            <div className="mt-2 text-lg font-semibold text-slate-100">{metricsSummary.total_memory_mib} Mi</div>
+            <div className="mt-1 text-xs text-slate-500">From `kubectl top pod`</div>
           </div>
         </div>
       )}
 
       {authStatus && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-300">
-          Cluster role: <span className="text-zinc-100">{authStatus.role}</span>
-          <span className="text-zinc-500"> · </span>
-          Signed in as <span className="text-zinc-100">{authStatus.username}</span>
+        <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-300">
+          Cluster role: <span className="text-slate-100">{authStatus.role}</span>
+          <span className="text-slate-500"> · </span>
+          Signed in as <span className="text-slate-100">{authStatus.username}</span>
         </div>
       )}
 
@@ -897,7 +897,7 @@ export default function ClustersPage() {
             syncClusterFilters({ cluster: e.target.value });
           }}
           data-testid="clusters-cluster-select"
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
         >
           {summary.clusters.map((item) => (
             <option key={item.name} value={item.name}>
@@ -912,7 +912,7 @@ export default function ClustersPage() {
             syncClusterFilters({ namespace: e.target.value });
           }}
           data-testid="clusters-namespace-select"
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
         >
           <option value="all">All namespaces</option>
           {namespaces.map((item) => (
@@ -926,14 +926,14 @@ export default function ClustersPage() {
             syncClusterFilters({ kind: e.target.value });
           }}
           data-testid="clusters-kind-select"
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
           disabled={pageTab === 'network'}
         >
           {kindOptions.map((item) => (
             <option key={item} value={item}>{item}</option>
           ))}
         </select>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400">
+        <div className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-400">
           {cluster || 'No cluster selected'} · {watchConnected ? 'watching live' : 'watch offline'}
         </div>
       </div>
@@ -943,16 +943,16 @@ export default function ClustersPage() {
           <input
             value={customApiVersion}
             onChange={(e) => setCustomApiVersion(e.target.value)}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
             placeholder="apiVersion e.g. example.com/v1"
           />
           <input
             value={customPlural}
             onChange={(e) => setCustomPlural(e.target.value)}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
             placeholder="plural e.g. widgets"
           />
-          <label className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200">
+          <label className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200">
             <input type="checkbox" checked={customNamespaced} onChange={(e) => setCustomNamespaced(e.target.checked)} />
             Namespaced resource
           </label>
@@ -1000,23 +1000,23 @@ export default function ClustersPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Name</th>
+                <tr className="border-b border-slate-800">
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Name</th>
                   {pageTab === 'network' && (
-                    <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Kind</th>
+                    <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Kind</th>
                   )}
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Namespace</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Status</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Detail</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-4">Created</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Namespace</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Status</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Detail</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Created</th>
                 </tr>
               </thead>
               <tbody>
                 {resources.map((resource) => (
-                  <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                  <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => openDetail(resource)} className="text-left font-medium text-zinc-200 hover:text-aether transition-colors">
+                        <button onClick={() => openDetail(resource)} className="text-left font-medium text-slate-200 hover:text-aether transition-colors">
                           {resource.name}
                         </button>
                         {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
@@ -1031,12 +1031,12 @@ export default function ClustersPage() {
                       </div>
                     </td>
                     {pageTab === 'network' && (
-                      <td className="py-3 px-4 text-sm text-zinc-400">{resource.kind}</td>
+                      <td className="py-3 px-4 text-sm text-slate-400">{resource.kind}</td>
                     )}
-                    <td className="py-3 px-4 text-sm text-zinc-400">{resource.namespace}</td>
-                    <td className="py-3 px-4 text-sm text-zinc-200">{resource.status}</td>
-                    <td className="py-3 px-4 text-sm text-zinc-500">{resource.detail ?? '—'}</td>
-                    <td className="py-3 px-4 text-sm text-zinc-400">{formatTimestamp(resource.created_at)}</td>
+                    <td className="py-3 px-4 text-sm text-slate-400">{resource.namespace}</td>
+                    <td className="py-3 px-4 text-sm text-slate-200">{resource.status}</td>
+                    <td className="py-3 px-4 text-sm text-slate-500">{resource.detail ?? '—'}</td>
+                    <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(resource.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1142,14 +1142,14 @@ export default function ClustersPage() {
               )}
               {['Deployment', 'StatefulSet'].includes(selected.kind) && (
                 <>
-                  <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2">
-                    <span className="text-xs text-zinc-500">Replicas</span>
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2">
+                    <span className="text-xs text-slate-500">Replicas</span>
                     <input
                       type="number"
                       min={0}
                       value={replicasInput}
                       onChange={(e) => setReplicasInput(e.target.value)}
-                      className="w-20 rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100"
+                      className="w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
                     />
                   </div>
                   <button
@@ -1165,7 +1165,7 @@ export default function ClustersPage() {
                 <button
                   onClick={() => handleResourceAction('restart')}
                   disabled={!!actionLoading || !canMutateCluster}
-                  className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
                 >
                   <RefreshCw size={14} />
                   {actionLoading === 'restart' ? 'Restarting...' : 'Restart'}
@@ -1184,24 +1184,24 @@ export default function ClustersPage() {
 
             {(detailTab === 'overview' || detailTab === 'manifest') && (
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-zinc-500">Cluster</span><p className="text-white">{selected.cluster}</p></div>
-              <div><span className="text-zinc-500">Namespace</span><p className="text-white">{selected.namespace}</p></div>
-              <div><span className="text-zinc-500">Kind</span><p className="text-white">{selected.kind}</p></div>
-              <div><span className="text-zinc-500">API Version</span><p className="text-white">{selected.api_version ?? 'unknown'}</p></div>
+              <div><span className="text-slate-500">Cluster</span><p className="text-white">{selected.cluster}</p></div>
+              <div><span className="text-slate-500">Namespace</span><p className="text-white">{selected.namespace}</p></div>
+              <div><span className="text-slate-500">Kind</span><p className="text-white">{selected.kind}</p></div>
+              <div><span className="text-slate-500">API Version</span><p className="text-white">{selected.api_version ?? 'unknown'}</p></div>
             </div>
             )}
 
             {detailTab === 'overview' && ((selected.owner_references?.length ?? 0) > 0 || (selected.owned_resources?.length ?? 0) > 0) && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Owner graph</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Owner graph</h4>
                 {(selected.owner_references?.length ?? 0) > 0 && (
                   <div className="mb-3">
-                    <p className="text-xs text-zinc-500 mb-2">Owned by</p>
+                    <p className="text-xs text-slate-500 mb-2">Owned by</p>
                     <div className="flex flex-wrap gap-2">
                       {selected.owner_references!.map((owner) => (
                         <span
                           key={`${owner.kind}/${owner.name}`}
-                          className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs text-zinc-200"
+                          className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-200"
                         >
                           {owner.kind}/{owner.name}
                           {owner.controller ? ' (controller)' : ''}
@@ -1212,7 +1212,7 @@ export default function ClustersPage() {
                 )}
                 {(selected.owned_resources?.length ?? 0) > 0 && (
                   <div>
-                    <p className="text-xs text-zinc-500 mb-2">Owns</p>
+                    <p className="text-xs text-slate-500 mb-2">Owns</p>
                     <div className="flex flex-wrap gap-2">
                       {selected.owned_resources!.map((child) => (
                         <span
@@ -1229,41 +1229,41 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && healthSummary && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Health</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Health</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 text-sm">
                   <div>
-                    <div className="text-zinc-500">Level</div>
+                    <div className="text-slate-500">Level</div>
                     <div className={healthSummary.level === 'healthy' ? 'text-emerald-400' : healthSummary.level === 'degraded' ? 'text-amber-400' : 'text-red-400'}>{healthSummary.level}</div>
                   </div>
                   <div>
-                    <div className="text-zinc-500">Pods</div>
-                    <div className="text-zinc-100">{healthSummary.ready_pods}/{healthSummary.total_pods} ready</div>
+                    <div className="text-slate-500">Pods</div>
+                    <div className="text-slate-100">{healthSummary.ready_pods}/{healthSummary.total_pods} ready</div>
                   </div>
                   <div>
-                    <div className="text-zinc-500">Warnings</div>
-                    <div className="text-zinc-100">{healthSummary.warning_events}</div>
+                    <div className="text-slate-500">Warnings</div>
+                    <div className="text-slate-100">{healthSummary.warning_events}</div>
                   </div>
                   <div>
-                    <div className="text-zinc-500">Summary</div>
-                    <div className="text-zinc-100">{healthSummary.summary}</div>
+                    <div className="text-slate-500">Summary</div>
+                    <div className="text-slate-100">{healthSummary.summary}</div>
                   </div>
                 </div>
               </div>
             )}
 
             {detailTab === 'overview' && selected.conditions.length > 0 && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Conditions</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Conditions</h4>
                 <div className="space-y-2">
                   {selected.conditions.map((condition) => (
-                    <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="rounded-md bg-zinc-900 px-3 py-2 text-sm">
+                    <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="rounded-md bg-slate-900 px-3 py-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-zinc-100">{condition.type_}</span>
+                        <span className="font-medium text-slate-100">{condition.type_}</span>
                         <span className={condition.status === 'True' ? 'text-emerald-400' : 'text-amber-400'}>{condition.status}</span>
                       </div>
-                      {condition.reason && <div className="mt-1 text-xs text-zinc-400">{condition.reason}</div>}
-                      {condition.message && <div className="mt-1 text-xs text-zinc-500">{condition.message}</div>}
+                      {condition.reason && <div className="mt-1 text-xs text-slate-400">{condition.reason}</div>}
+                      {condition.message && <div className="mt-1 text-xs text-slate-500">{condition.message}</div>}
                     </div>
                   ))}
                 </div>
@@ -1271,18 +1271,18 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && selected.pods.length > 0 && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Pods</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Pods</h4>
                 <div className="space-y-2">
                   {selected.pods.map((pod) => (
-                    <div key={pod.name} className="grid grid-cols-5 gap-3 rounded-md bg-zinc-900 px-3 py-2 text-sm">
+                    <div key={pod.name} className="grid grid-cols-5 gap-3 rounded-md bg-slate-900 px-3 py-2 text-sm">
                       <div className="col-span-2">
-                        <div className="text-zinc-100">{pod.name}</div>
-                        <div className="text-xs text-zinc-500">{pod.node ?? 'node unknown'}</div>
+                        <div className="text-slate-100">{pod.name}</div>
+                        <div className="text-xs text-slate-500">{pod.node ?? 'node unknown'}</div>
                       </div>
-                      <div className="text-zinc-300">{pod.phase}</div>
-                      <div className="text-zinc-300">{pod.ready}/{pod.total_containers} ready</div>
-                      <div className="text-zinc-300">{pod.restarts} restarts</div>
+                      <div className="text-slate-300">{pod.phase}</div>
+                      <div className="text-slate-300">{pod.ready}/{pod.total_containers} ready</div>
+                      <div className="text-slate-300">{pod.restarts} restarts</div>
                     </div>
                   ))}
                 </div>
@@ -1290,26 +1290,26 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'events' && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Event correlation</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Event correlation</h4>
                 <EventCorrelationPanel events={selectedEvents} resourceName={selected.name} />
               </div>
             )}
 
             {detailTab === 'events' && selectedEvents.length > 0 && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Cluster events</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Cluster events</h4>
                 <div className="space-y-2 max-h-64 overflow-auto">
                   {selectedEvents.map((event, index) => (
-                    <div key={`${event.timestamp}:${event.reason}:${index}`} className="rounded-md bg-zinc-900 px-3 py-2 text-sm">
+                    <div key={`${event.timestamp}:${event.reason}:${index}`} className="rounded-md bg-slate-900 px-3 py-2 text-sm">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-zinc-100">{event.reason}</div>
+                        <div className="text-slate-100">{event.reason}</div>
                         <div className={event.type_ === 'Warning' ? 'text-amber-400 text-xs' : 'text-emerald-400 text-xs'}>
                           {event.type_}
                         </div>
                       </div>
-                      <div className="mt-1 text-xs text-zinc-400">{event.message || 'No event message'}</div>
-                      <div className="mt-1 text-xs text-zinc-600">{formatTimestamp(event.timestamp)}</div>
+                      <div className="mt-1 text-xs text-slate-400">{event.message || 'No event message'}</div>
+                      <div className="mt-1 text-xs text-slate-600">{formatTimestamp(event.timestamp)}</div>
                     </div>
                   ))}
                 </div>
@@ -1317,17 +1317,17 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && relatedAudit.length > 0 && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Related audit trail</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Related audit trail</h4>
                 <div className="space-y-2 max-h-48 overflow-auto">
                   {relatedAudit.map((entry) => (
-                    <div key={entry.id} className="rounded-md bg-zinc-900 px-3 py-2 text-sm">
+                    <div key={entry.id} className="rounded-md bg-slate-900 px-3 py-2 text-sm">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-zinc-100">{String(entry.action)}</span>
-                        <span className="text-xs text-zinc-500">{String(entry.result)}</span>
+                        <span className="text-slate-100">{String(entry.action)}</span>
+                        <span className="text-xs text-slate-500">{String(entry.result)}</span>
                       </div>
-                      <div className="mt-1 text-xs text-zinc-400">{entry.message}</div>
-                      <div className="mt-1 text-xs text-zinc-600 truncate" title={entry.workload}>
+                      <div className="mt-1 text-xs text-slate-400">{entry.message}</div>
+                      <div className="mt-1 text-xs text-slate-600 truncate" title={entry.workload}>
                         {entry.workload}
                       </div>
                     </div>
@@ -1337,14 +1337,14 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && topMetrics.length > 0 && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Metrics</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Metrics</h4>
                 <div className="space-y-2">
                   {topMetrics.map((metric) => (
-                    <div key={metric.name} className="grid grid-cols-3 gap-3 rounded-md bg-zinc-900 px-3 py-2 text-sm">
-                      <div className="text-zinc-100">{metric.name}</div>
-                      <div className="text-zinc-300">CPU {metric.cpu}</div>
-                      <div className="text-zinc-300">Memory {metric.memory}</div>
+                    <div key={metric.name} className="grid grid-cols-3 gap-3 rounded-md bg-slate-900 px-3 py-2 text-sm">
+                      <div className="text-slate-100">{metric.name}</div>
+                      <div className="text-slate-300">CPU {metric.cpu}</div>
+                      <div className="text-slate-300">Memory {metric.memory}</div>
                     </div>
                   ))}
                 </div>
@@ -1352,10 +1352,10 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && rollout && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-zinc-200">Rollout</h4>
-                  <div className="text-xs text-zinc-400">{rollout.status}</div>
+                  <h4 className="text-sm font-semibold text-slate-200">Rollout</h4>
+                  <div className="text-xs text-slate-400">{rollout.status}</div>
                 </div>
                 <div className="mb-3 flex flex-wrap gap-2">
                   <button
@@ -1379,9 +1379,9 @@ export default function ClustersPage() {
                   >
                     {actionLoading === 'rollout-restart' ? 'Restarting...' : 'Rollout Restart'}
                   </button>
-                  <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2">
-                    <span className="text-xs text-zinc-500">Revision</span>
-                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-zinc-100 outline-none">
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2">
+                    <span className="text-xs text-slate-500">Revision</span>
+                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-slate-100 outline-none">
                       {rollout.history.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>
                           {entry.revision}
@@ -1391,7 +1391,7 @@ export default function ClustersPage() {
                     <button
                       onClick={() => handleRolloutAction('undo')}
                       disabled={!!actionLoading || !rolloutRevision}
-                      className="rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-1 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-50"
+                      className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
                     >
                       {actionLoading === 'rollout-undo' ? 'Undoing...' : 'Undo'}
                     </button>
@@ -1399,12 +1399,12 @@ export default function ClustersPage() {
                 </div>
                 <div className="space-y-2">
                   {rollout.history.length === 0 ? (
-                    <div className="text-sm text-zinc-500">No rollout revisions reported.</div>
+                    <div className="text-sm text-slate-500">No rollout revisions reported.</div>
                   ) : (
                     rollout.history.map((entry) => (
-                      <div key={entry.revision} className="rounded-md bg-zinc-900 px-3 py-2 text-sm">
-                        <div className="text-zinc-100">Revision {entry.revision}</div>
-                        <div className="mt-1 text-xs text-zinc-500">{entry.change_cause}</div>
+                      <div key={entry.revision} className="rounded-md bg-slate-900 px-3 py-2 text-sm">
+                        <div className="text-slate-100">Revision {entry.revision}</div>
+                        <div className="mt-1 text-xs text-slate-500">{entry.change_cause}</div>
                       </div>
                     ))
                   )}
@@ -1413,21 +1413,21 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && selected.kind === 'HelmRelease' && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-zinc-200">Helm</h4>
-                  <div className="text-xs text-zinc-400">{helmHistory.length} revisions</div>
+                  <h4 className="text-sm font-semibold text-slate-200">Helm</h4>
+                  <div className="text-xs text-slate-400">{helmHistory.length} revisions</div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                   <input
                     value={helmChart}
                     onChange={(e) => setHelmChart(e.target.value)}
-                    className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                     placeholder="repo/chart or chart reference"
                   />
-                  <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2">
-                    <span className="text-xs text-zinc-500">Revision</span>
-                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-zinc-100 outline-none">
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2">
+                    <span className="text-xs text-slate-500">Revision</span>
+                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-slate-100 outline-none">
                       {helmHistory.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>{entry.revision}</option>
                       ))}
@@ -1438,7 +1438,7 @@ export default function ClustersPage() {
                   value={helmValues}
                   onChange={(e) => setHelmValues(e.target.value)}
                   rows={10}
-                  className="mt-3 w-full rounded bg-zinc-950 p-3 text-xs text-zinc-300 font-mono border border-zinc-800"
+                  className="mt-3 w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
                   spellCheck={false}
                   placeholder="Helm values YAML"
                 />
@@ -1460,20 +1460,20 @@ export default function ClustersPage() {
                   <button
                     onClick={() => handleHelmAction('rollback')}
                     disabled={!!actionLoading || !helmRevision}
-                    className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 disabled:opacity-50"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
                   >
                     {actionLoading === 'helm-rollback' ? 'Rolling Back...' : 'Rollback'}
                   </button>
                 </div>
                 <div className="mt-3 space-y-2">
                   {helmHistory.map((entry) => (
-                    <div key={entry.revision} className="rounded-md bg-zinc-900 px-3 py-2 text-sm">
+                    <div key={entry.revision} className="rounded-md bg-slate-900 px-3 py-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-zinc-100">Revision {entry.revision}</span>
-                        <span className="text-zinc-400">{entry.status}</span>
+                        <span className="text-slate-100">Revision {entry.revision}</span>
+                        <span className="text-slate-400">{entry.status}</span>
                       </div>
-                      <div className="mt-1 text-xs text-zinc-500">{entry.chart}{entry.app_version ? ` · ${entry.app_version}` : ''}</div>
-                      <div className="mt-1 text-xs text-zinc-600">{entry.description ?? 'No description'} · {formatTimestamp(entry.updated)}</div>
+                      <div className="mt-1 text-xs text-slate-500">{entry.chart}{entry.app_version ? ` · ${entry.app_version}` : ''}</div>
+                      <div className="mt-1 text-xs text-slate-600">{entry.description ?? 'No description'} · {formatTimestamp(entry.updated)}</div>
                     </div>
                   ))}
                 </div>
@@ -1481,35 +1481,35 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'logs' && selectedLogsPath && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Logs</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Logs</h4>
                 <LogViewer workloadName={selected.name} logsPath={selectedLogsPath} />
               </div>
             )}
 
             {detailTab === 'terminal' && ((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-zinc-200">Terminal</h4>
+                  <h4 className="text-sm font-semibold text-slate-200">Terminal</h4>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setTerminalExpanded((value) => !value)}
-                      className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs text-zinc-200 hover:bg-zinc-800"
+                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800"
                     >
                       {terminalExpanded ? 'Compact' : 'Expand'}
                     </button>
-                    <div className={`text-xs ${execConnected ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                    <div className={`text-xs ${execConnected ? 'text-emerald-400' : 'text-slate-500'}`}>
                       {execConnected ? 'connected' : 'disconnected'}
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                  <select value={execPod} onChange={(e) => setExecPod(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+                  <select value={execPod} onChange={(e) => setExecPod(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100">
                     {(selected.kind === 'Pod' ? [selected.name] : selected.pods.map((pod) => pod.name)).map((podName) => (
                       <option key={podName} value={podName}>{podName}</option>
                     ))}
                   </select>
-                  <select value={execContainer} onChange={(e) => setExecContainer(e.target.value)} disabled={selectedContainers.length === 0} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 disabled:opacity-60">
+                  <select value={execContainer} onChange={(e) => setExecContainer(e.target.value)} disabled={selectedContainers.length === 0} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 disabled:opacity-60">
                     <option value="">default container</option>
                     {selectedContainers.map((containerName) => (
                       <option key={containerName} value={containerName}>{containerName}</option>
@@ -1518,7 +1518,7 @@ export default function ClustersPage() {
                   <input
                     value={execCommand}
                     onChange={(e) => setExecCommand(e.target.value)}
-                    className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                     placeholder="/bin/sh"
                   />
                   <div className="flex gap-2 lg:col-span-3">
@@ -1532,13 +1532,13 @@ export default function ClustersPage() {
                     <button
                       onClick={disconnectExec}
                       disabled={!execConnected}
-                      className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
                     >
                       Disconnect
                     </button>
                   </div>
                 </div>
-                <pre className={`mt-3 overflow-auto rounded-lg border border-zinc-800 bg-black p-3 text-xs text-emerald-300 ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
+                <pre className={`mt-3 overflow-auto rounded-lg border border-slate-800 bg-black p-3 text-xs text-emerald-300 ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
                 <div className="mt-3 flex gap-2">
                   <input
                     value={execInput}
@@ -1549,7 +1549,7 @@ export default function ClustersPage() {
                         sendExecLine();
                       }
                     }}
-                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                    className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                     placeholder="Type a command and press Enter"
                   />
                   <button
@@ -1564,10 +1564,10 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'terminal' && (((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) || selected.kind === 'Service') && (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Port Forward</h4>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Port Forward</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
-                  <select value={selected.kind === 'Service' ? selected.name : portForwardPod} onChange={(e) => setPortForwardPod(e.target.value)} disabled={selected.kind === 'Service'} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 disabled:opacity-60">
+                  <select value={selected.kind === 'Service' ? selected.name : portForwardPod} onChange={(e) => setPortForwardPod(e.target.value)} disabled={selected.kind === 'Service'} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 disabled:opacity-60">
                     {((selected.kind === 'Service') ? [selected.name] : (selected.kind === 'Pod' ? [selected.name] : selected.pods.map((pod) => pod.name))).map((podName) => (
                       <option key={podName} value={podName}>{podName}</option>
                     ))}
@@ -1576,14 +1576,14 @@ export default function ClustersPage() {
                     type="number"
                     value={portForwardRemotePort}
                     onChange={(e) => setPortForwardRemotePort(e.target.value)}
-                    className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                     placeholder="Remote port"
                   />
                   <input
                     type="number"
                     value={portForwardLocalPort}
                     onChange={(e) => setPortForwardLocalPort(e.target.value)}
-                    className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                     placeholder="Local port (optional)"
                   />
                   <div className="flex gap-2">
@@ -1597,14 +1597,14 @@ export default function ClustersPage() {
                     <button
                       onClick={handlePortForwardStop}
                       disabled={!portForwardSession}
-                      className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
                     >
                       {actionLoading === 'port-forward-stop' ? 'Stopping...' : 'Stop'}
                     </button>
                   </div>
                 </div>
                 {portForwardSession && (
-                  <div className="mt-3 rounded-md bg-zinc-900 px-3 py-2 text-sm text-zinc-300">
+                  <div className="mt-3 rounded-md bg-slate-900 px-3 py-2 text-sm text-slate-300">
                     Active: <span className="text-emerald-300">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
                   </div>
                 )}
@@ -1612,9 +1612,9 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'manifest' && (
-            <div className="rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-zinc-200">Manifest</h4>
+                <h4 className="text-sm font-semibold text-slate-200">Manifest</h4>
                 <button
                   onClick={handleApply}
                   disabled={!!actionLoading || selected.kind === 'HelmRelease'}
@@ -1628,14 +1628,14 @@ export default function ClustersPage() {
                 value={manifestDraft}
                 onChange={(e) => setManifestDraft(e.target.value)}
                 rows={18}
-                className="w-full rounded bg-zinc-950 p-3 text-xs text-zinc-300 font-mono border border-zinc-800"
+                className="w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
                 spellCheck={false}
               />
               <div className="mt-3">
                 <CodeBlock title="Current Resource">{JSON.stringify(selected.manifest, null, 2)}</CodeBlock>
               </div>
-              <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-zinc-200">Diff Preview</h4>
+              <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-slate-200">Diff Preview</h4>
                 <pre className="max-h-80 overflow-auto text-xs">
                   {serverDiff.map((line, index) => (
                     <div
@@ -1645,7 +1645,7 @@ export default function ClustersPage() {
                           ? 'text-emerald-300'
                           : line.kind === 'remove'
                             ? 'text-red-300'
-                            : 'text-zinc-500'
+                            : 'text-slate-500'
                       }
                     >
                       {line.text}
@@ -1667,40 +1667,40 @@ export default function ClustersPage() {
         <div data-testid="clusters-create-modal" className="space-y-4">
           {kind === 'HelmRelease' ? (
             <>
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-slate-400">
                 Install a Helm release into the selected cluster and namespace.
               </p>
               <input
                 value={createHelmRelease}
                 onChange={(e) => setCreateHelmRelease(e.target.value)}
-                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                 placeholder="release name"
               />
               <input
                 value={createHelmChart}
                 onChange={(e) => setCreateHelmChart(e.target.value)}
-                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                 placeholder="repo/chart or chart path"
               />
               <textarea
                 value={createHelmValues}
                 onChange={(e) => setCreateHelmValues(e.target.value)}
                 rows={14}
-                className="w-full rounded bg-zinc-950 p-3 text-xs text-zinc-300 font-mono border border-zinc-800"
+                className="w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
                 spellCheck={false}
                 placeholder="Helm values YAML"
               />
             </>
           ) : (
             <>
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-slate-400">
                 Provide a JSON manifest. Aether will apply it directly to the selected cluster.
               </p>
               <textarea
                 value={createManifestDraft}
                 onChange={(e) => setCreateManifestDraft(e.target.value)}
                 rows={18}
-                className="w-full rounded bg-zinc-950 p-3 text-xs text-zinc-300 font-mono border border-zinc-800"
+                className="w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
                 spellCheck={false}
               />
             </>
