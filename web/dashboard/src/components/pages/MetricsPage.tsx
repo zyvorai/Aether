@@ -382,7 +382,7 @@ export default function MetricsPage() {
                 </thead>
                 <tbody>
                   {chargeback.lines.slice(0, 12).map((line) => (
-                    <tr key={line.workload} className="border-b border-zinc-800/80">
+                    <tr key={line.workload} className="border-b border-slate-800/80">
                       <td className="py-2 pr-4 font-mono text-xs">
                         <button
                           type="button"

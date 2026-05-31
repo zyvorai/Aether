@@ -381,7 +381,7 @@ export default function ConfidentialPage() {
               <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-800/60">BYOK signing active</span>
             )}
           </div>
-          <p className="text-xs text-zinc-600 mt-2">
+          <p className="text-xs text-slate-600 mt-2">
             CLI: <code className="text-slate-400">aether --spec workload.yaml confidential sovereign-check</code>
           </p>
         </div>
@@ -400,7 +400,7 @@ export default function ConfidentialPage() {
           <p className="text-xs text-slate-500 mb-2">RuntimeClasses: {kata.supported_runtime_classes.join(', ')}</p>
           <p className="text-xs text-slate-500 mb-2">Requires: {kata.operator_requirements.join(' · ')}</p>
           {kata.notes.map((n) => (
-            <p key={n} className="text-xs text-zinc-600">{n}</p>
+            <p key={n} className="text-xs text-slate-600">{n}</p>
           ))}
         </div>
       )}
@@ -455,7 +455,7 @@ export default function ConfidentialPage() {
           </p>
           <div className="space-y-2 max-h-48 overflow-auto">
             {intel.workloads.map((row) => (
-              <div key={row.workload} className="text-sm p-2 rounded border border-zinc-800 bg-[#11151C]/50">
+              <div key={row.workload} className="text-sm p-2 rounded border border-slate-800/60 bg-[#11151C]/50">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
@@ -582,7 +582,7 @@ export default function ConfidentialPage() {
                       />
                     </div>
                   ) : (
-                    <p className="text-xs text-zinc-600 mb-2">No launch digest in spec</p>
+                    <p className="text-xs text-slate-600 mb-2">No launch digest in spec</p>
                   )}
                   <TrustBar label="Attestation" value={row.trust.attestation_score} />
                 </button>
@@ -611,7 +611,7 @@ export default function ConfidentialPage() {
                   </thead>
                   <tbody>
                     {images.map((img) => (
-                      <tr key={img.name} className="border-b border-zinc-800">
+                      <tr key={img.name} className="border-b border-slate-800/60">
                         <td className="py-2 pr-3 text-slate-200">{img.name}</td>
                         <td className="py-2 pr-3 font-mono text-xs text-slate-400 truncate max-w-[12rem]">
                           {img.launch_digest ?? img.image_hash}
@@ -637,14 +637,14 @@ export default function ConfidentialPage() {
                   value={signName}
                   onChange={(e) => setSignName(e.target.value)}
                   placeholder="Catalog name"
-                  className="rounded bg-zinc-950 border border-slate-800/60 px-3 py-1.5 text-sm text-slate-200"
+                  className="rounded bg-[#0B0E14] border border-slate-800/60 px-3 py-1.5 text-sm text-slate-200"
                 />
                 <input
                   type="text"
                   value={signPath}
                   onChange={(e) => setSignPath(e.target.value)}
                   placeholder="/path/on/host/disk.qcow2"
-                  className="rounded bg-zinc-950 border border-slate-800/60 px-3 py-1.5 text-sm font-mono text-slate-200"
+                  className="rounded bg-[#0B0E14] border border-slate-800/60 px-3 py-1.5 text-sm font-mono text-slate-200"
                 />
               </div>
               <input
@@ -652,7 +652,7 @@ export default function ConfidentialPage() {
                 value={signKey}
                 onChange={(e) => setSignKey(e.target.value)}
                 placeholder="Signing key id"
-                className="w-full rounded bg-zinc-950 border border-slate-800/60 px-3 py-1.5 text-sm font-mono text-slate-200"
+                className="w-full rounded bg-[#0B0E14] border border-slate-800/60 px-3 py-1.5 text-sm font-mono text-slate-200"
               />
               <button
                 type="submit"
@@ -673,14 +673,14 @@ export default function ConfidentialPage() {
                 value={verifyName}
                 onChange={(e) => setVerifyName(e.target.value)}
                 placeholder="Catalog image name"
-                className="w-full px-3 py-1.5 text-sm rounded bg-zinc-950 border border-slate-800/60 text-slate-200"
+                className="w-full px-3 py-1.5 text-sm rounded bg-[#0B0E14] border border-slate-800/60 text-slate-200"
               />
               <input
                 type="text"
                 value={verifyPath}
                 onChange={(e) => setVerifyPath(e.target.value)}
                 placeholder="/path/on/server/disk.qcow2"
-                className="w-full px-3 py-1.5 text-sm rounded bg-zinc-950 border border-slate-800/60 text-slate-200 font-mono"
+                className="w-full px-3 py-1.5 text-sm rounded bg-[#0B0E14] border border-slate-800/60 text-slate-200 font-mono"
               />
               <button
                 type="submit"
@@ -704,7 +704,7 @@ export default function ConfidentialPage() {
                 value={verifyDigest}
                 onChange={(e) => setVerifyDigest(e.target.value)}
                 placeholder="sha256:… or launch digest"
-                className="flex-1 min-w-0 px-3 py-1.5 text-sm rounded bg-zinc-950 border border-slate-800/60 text-slate-200 font-mono"
+                className="flex-1 min-w-0 px-3 py-1.5 text-sm rounded bg-[#0B0E14] border border-slate-800/60 text-slate-200 font-mono"
               />
               <button
                 type="submit"
@@ -745,7 +745,7 @@ export default function ConfidentialPage() {
         </div>
       </div>
 
-      <p className="text-xs text-zinc-600">
+      <p className="text-xs text-slate-600">
         See docs/guides/security/RAGNAROK-AND-AETHER.md for composite bundle setup (RAGNAROK_URL).
       </p>
     </div>
