@@ -14,6 +14,7 @@ import PageLoadError from '../PageLoadError';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import SecurityCopilotPanel from '../SecurityCopilotPanel';
+import SecurityPlatformPanel from '../SecurityPlatformPanel';
 import type { SecretSummary, ThreatReport, SbomMetadata, SignedImageManifest, RemediationPlan } from '../../types/api';
 
 export default function SecurityCenterPage() {
@@ -119,6 +120,8 @@ export default function SecurityCenterPage() {
       <div className="mb-8">
         <SecurityCopilotPanel />
       </div>
+
+      <SecurityPlatformPanel />
 
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

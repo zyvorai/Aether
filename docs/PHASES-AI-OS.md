@@ -130,16 +130,16 @@
 
 | # | Phase | Focus | Tag |
 |---|-------|-------|-----|
-| 85 | Policy auto-apply | Security Copilot → cluster apply | Roadmap |
-| 86 | SBOM drift alerts | Image digest changes | Roadmap |
-| 87 | Confidential fleet dashboard | Ragnarok attestation fleet view | Roadmap |
-| 88 | Zero-trust rollout wizard | Cilium policy staged deploy | Roadmap |
+| 85 | Policy auto-apply | Security Copilot → cluster apply | **Ship** |
+| 86 | SBOM drift alerts | Image digest changes | **Ship** |
+| 87 | Confidential fleet dashboard | Ragnarok attestation fleet view | **Ship** |
+| 88 | Zero-trust rollout wizard | Cilium policy staged deploy | **Ship** |
 | 89 | Compliance report PDF | SOC2-style export | Lab |
-| 90 | Secret rotation agent | Auto-rotate on policy | Roadmap |
-| 91 | Image signing enforcement | Block unsigned deploys | Roadmap |
-| 92 | Threat hunt mode | PacketWolf deep investigation UI | Roadmap |
-| 93 | Sovereign audit log | Region compliance trail | Roadmap |
-| 94 | Security score trend | Fleet posture over time | Roadmap |
+| 90 | Secret rotation agent | Auto-rotate on policy | **Ship** |
+| 91 | Image signing enforcement | Block unsigned deploys | **Ship** |
+| 92 | Threat hunt mode | PacketWolf deep investigation UI | **Ship** |
+| 93 | Sovereign audit log | Region compliance trail | **Ship** |
+| 94 | Security score trend | Fleet posture over time | **Ship** |
 
 ## Era J — Platform & Ecosystem (Phases 95–104)
 
