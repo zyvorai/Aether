@@ -11,6 +11,7 @@ import { viewToPath } from '../utils/dashboardRoutes';
 import type { WorkloadResponse } from '../types/api';
 import PageLoading from './PageLoading';
 import EmptyState from './EmptyState';
+import GlassSection from './GlassSection';
 
 export interface FabricNode {
   id: string;
@@ -317,28 +318,27 @@ export function FabricPageContent() {
   if (loading) return <PageLoading label="Loading runtime fabric…" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-aether">Runtime Fabric</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Live infrastructure topology</h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-400">
-            Application → Runtime → Cluster → Node → CPU / GPU / Storage. Click a workload to drill down.
-          </p>
-        </div>
+    <GlassSection
+      accent="neutral"
+      label="Runtime Fabric"
+      title="Live infrastructure topology"
+      subtitle="Application → Runtime → Cluster → Node → CPU / GPU / Storage. Click a workload to drill down."
+      className="!mb-0"
+      actions={
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-aether/40"
+          className="btn-secondary inline-flex items-center gap-2"
         >
           <RefreshCw className="h-4 w-4" />
           Refresh
         </button>
-      </div>
+      }
+    >
       <RuntimeFabricGraph
         workloads={workloads}
         onSelectWorkload={(name) => navigate(pathWithQuery(viewToPath('workloads'), { workload: name }))}
       />
-    </div>
+    </GlassSection>
   );
 }

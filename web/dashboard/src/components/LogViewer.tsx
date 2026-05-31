@@ -27,14 +27,12 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
     } catch { /* ignore */ }
   }, [logsPath, workloadName]);
 
-  // Initial fetch + polling every 3s
   useEffect(() => {
     fetchLogs();
     const interval = setInterval(fetchLogs, 3000);
     return () => clearInterval(interval);
   }, [fetchLogs]);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (following && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
@@ -58,56 +56,51 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
     if (lower.includes('error') || lower.includes('fatal') || lower.includes('panic')) return 'text-red-400';
     if (lower.includes('warn')) return 'text-orange-400';
     if (lower.includes('info')) return 'text-green-400';
-    if (lower.includes('debug') || lower.includes('trace')) return 'text-zinc-500';
-    return 'text-zinc-300';
+    if (lower.includes('debug') || lower.includes('trace')) return 'text-slate-500';
+    return 'text-slate-300';
   };
 
   return (
-    <div>
-      {/* Controls */}
-      <div className="flex items-center gap-2 mb-2">
+    <div className="glass-panel-card p-4" data-testid="log-viewer">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           type="text"
           placeholder="Filter logs..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="bg-zinc-800 border border-zinc-600 rounded px-2 py-1 text-sm text-white flex-1"
+          className="min-w-[12rem] flex-1 rounded-xl border border-slate-700/80 bg-[#11151C]/80 px-3 py-2 text-sm text-white outline-none focus:border-aether/40"
         />
         <button
+          type="button"
           onClick={() => setFollowing(!following)}
-          className={`px-2 py-1 text-xs rounded border ${
-            following ? 'bg-emerald-600/20 text-emerald-400 border-emerald-600/30' : 'bg-zinc-700 text-zinc-400 border-zinc-600'
-          }`}
+          className={`tab-chip ${following ? 'tab-chip-active !border-emerald-500/30 !bg-emerald-500/10 !text-emerald-300' : ''}`}
         >
           {following ? 'Following' : 'Follow'}
         </button>
-        <button
-          onClick={fetchLogs}
-          className="px-2 py-1 text-xs rounded bg-zinc-700 text-zinc-300 border border-zinc-600 hover:bg-zinc-600"
-        >
+        <button type="button" onClick={fetchLogs} className="btn-secondary !px-3 !py-1.5 !text-xs">
           Refresh
         </button>
         <button
-          onClick={() => { navigator.clipboard.writeText(filteredLogs.join('\n')); }}
-          className="px-2 py-1 text-xs rounded bg-zinc-700 text-zinc-300 border border-zinc-600 hover:bg-zinc-600"
+          type="button"
+          onClick={() => { void navigator.clipboard.writeText(filteredLogs.join('\n')); }}
+          className="btn-secondary !px-3 !py-1.5 !text-xs"
         >
           Copy
         </button>
-        <span className="text-xs text-zinc-500">{filteredLogs.length} lines</span>
+        <span className="text-xs text-slate-500">{filteredLogs.length} lines</span>
       </div>
 
-      {/* Log Output */}
       <pre
         ref={containerRef}
         onScroll={handleScroll}
-        className="bg-zinc-950 rounded p-3 text-xs font-mono overflow-auto max-h-96 border border-zinc-700"
+        className="max-h-96 overflow-auto rounded-xl border border-slate-800/60 bg-[#0a0d12]/90 p-3 font-mono text-xs backdrop-blur-sm"
       >
         {filteredLogs.length === 0 ? (
-          <span className="text-zinc-500">No logs available. Press Refresh to reload.</span>
+          <span className="text-slate-500">No logs available. Press Refresh to reload.</span>
         ) : (
           filteredLogs.map((line, i) => (
             <div key={i} className="flex">
-              <span className="text-zinc-600 select-none w-12 text-right pr-2 border-r border-zinc-800 mr-2">
+              <span className="mr-2 w-12 shrink-0 select-none border-r border-slate-800/80 pr-2 text-right text-slate-600">
                 {i + 1}
               </span>
               <span className={getLineColor(line)}>{line}</span>
