@@ -7,6 +7,7 @@ import CapacityForecastPanel from '../CapacityForecastPanel';
 import CapacityScalePanel from '../CapacityScalePanel';
 import SelfHealingPanel from '../SelfHealingPanel';
 import AutonomousSrePanel from '../AutonomousSrePanel';
+import ExtensionsGraduationPanel from '../ExtensionsGraduationPanel';
 import SreReliabilityPanel from '../SreReliabilityPanel';
 import SectionHubPage from '../SectionHubPage';
 import { Activity, BarChart3, Bell, BellRing, FileCheck, HeartPulse } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function ObservabilityPage() {
       <CapacityScalePanel />
       <SelfHealingPanel />
       <AutonomousSrePanel />
+      <ExtensionsGraduationPanel />
       <SreReliabilityPanel />
       <SectionHubPage
         title="Observability tools"

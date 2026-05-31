@@ -171,6 +171,21 @@
 | 113 | Graph export | Neo4j Cypher + JSON-LD download | **Ship** |
 | 114 | Lab graduation hub | `/api/intelligence/labs/*` overview | **Ship** |
 
+## Era L — Extensions & Native Ship (Phases 115–124)
+
+| # | Phase | Focus | Tag |
+|---|-------|-------|-----|
+| 115 | Chaos experiments | Controlled fault injection with dry-run/live gate | **Ship** |
+| 116 | Game days planner | Fleet-wide drill scenarios | **Ship** |
+| 117 | Live Activity migrations | macOS migration progress cards | **Ship** |
+| 118 | Spotlight index | Workload deep links for macOS search | **Ship** |
+| 119 | Shortcuts manifest | Siri Shortcuts for common ops | **Ship** |
+| 120 | Menu extras toggles | Tray agent toggles | **Ship** |
+| 121 | Chaos live execute | `AETHER_CHAOS_ENABLED=1` gate | **Ship** |
+| 122 | Game day execute | Dry-run scenario runner | **Ship** |
+| 123 | Native extensions bundle | Spotlight + Shortcuts + Live Activity | **Ship** |
+| 124 | SRE extensions bundle | Chaos catalog + game day summary | **Ship** |
+
 ---
 
 ## How to use this doc

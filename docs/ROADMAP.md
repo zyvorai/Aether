@@ -63,6 +63,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v14** | Security & Compliance — policy apply, SBOM drift, zero-trust, threat hunt, score trend | **Ship (core panels)** |
 | **v15** | Platform & Ecosystem — SaaS tenants, plugins, Helm v2, v1 API, autonomous SRE | **Ship (core panels)** |
 | **v16** | Lab Graduation — Terraform/Pulumi v2, mobile, IDE, carbon, compliance, graph export | **Ship (core panels)** |
+| **v17** | Extensions & Native — chaos, game days, Spotlight, Shortcuts, Live Activity | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -283,6 +284,21 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Voice copilot ship | `GET /api/intelligence/labs/voice-copilot` | Ship |
 | Graph export ship | `GET /api/intelligence/labs/graph-export` | Ship |
 | Labs graduation panel | `/labs` `LabsGraduationPanel` | Ship |
+
+### v17 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Extensions graduation overview | `/observability` + `GET /api/intelligence/extensions/overview` | Ship |
+| Chaos experiments ship | `GET/POST /api/intelligence/extensions/chaos/*` | Ship |
+| Game days ship + execute | `GET/POST /api/intelligence/extensions/game-days/*` | Ship |
+| Live Activity ship | `GET /api/intelligence/extensions/live-activity` | Ship |
+| Spotlight index ship | `GET /api/intelligence/extensions/spotlight` | Ship |
+| Shortcuts manifest ship | `GET /api/intelligence/extensions/shortcuts` | Ship |
+| Menu extras ship | `GET /api/intelligence/extensions/menu-extras` | Ship |
+| Native extensions bundle | `GET /api/intelligence/extensions/native-bundle` | Ship |
+| SRE extensions bundle | `GET /api/intelligence/extensions/sre-bundle` | Ship |
+| Extensions graduation panel | `/observability` `ExtensionsGraduationPanel` | Ship |
 
 ---
 

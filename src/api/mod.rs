@@ -1023,6 +1023,50 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/labs/graph-export",
             get(api_intelligence_labs_graph_export),
         )
+        .route(
+            "/api/intelligence/extensions/overview",
+            get(api_intelligence_extensions_overview),
+        )
+        .route(
+            "/api/intelligence/extensions/chaos/experiments",
+            get(api_intelligence_extensions_chaos_experiments),
+        )
+        .route(
+            "/api/intelligence/extensions/chaos/run",
+            post(api_intelligence_extensions_chaos_run),
+        )
+        .route(
+            "/api/intelligence/extensions/game-days",
+            get(api_intelligence_extensions_game_days),
+        )
+        .route(
+            "/api/intelligence/extensions/game-days/execute",
+            post(api_intelligence_extensions_game_days_execute),
+        )
+        .route(
+            "/api/intelligence/extensions/live-activity",
+            get(api_intelligence_extensions_live_activity),
+        )
+        .route(
+            "/api/intelligence/extensions/spotlight",
+            get(api_intelligence_extensions_spotlight),
+        )
+        .route(
+            "/api/intelligence/extensions/shortcuts",
+            get(api_intelligence_extensions_shortcuts),
+        )
+        .route(
+            "/api/intelligence/extensions/menu-extras",
+            get(api_intelligence_extensions_menu_extras),
+        )
+        .route(
+            "/api/intelligence/extensions/native-bundle",
+            get(api_intelligence_extensions_native_bundle),
+        )
+        .route(
+            "/api/intelligence/extensions/sre-bundle",
+            get(api_intelligence_extensions_sre_bundle),
+        )
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",
