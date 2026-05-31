@@ -479,6 +479,81 @@
   border-color: rgba(140, 160, 190, 0.2) !important;
 }
 
+.steel-theme .command-center-shell,
+.steel-theme .overview-section-shell,
+.steel-theme .glass-panel-card,
+.steel-theme .copilot-rail-glass {
+  border-color: rgba(140, 160, 190, 0.16);
+  background:
+    linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(14, 18, 26, 0.98) 100%);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.steel-theme .glass-metric-card {
+  border-color: rgba(140, 160, 190, 0.14);
+  background: rgba(14, 18, 26, 0.72);
+}
+
+.steel-theme .quick-link-chip {
+  border-color: rgba(140, 160, 190, 0.18);
+  background: rgba(14, 18, 26, 0.65);
+}
+
+.steel-theme .tab-chip-active {
+  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+
+.steel-theme .navbar-blur {
+  background: rgba(11, 16, 23, 0.88);
+  border-color: rgba(140, 160, 190, 0.12);
+}
+
+.aurora-theme .command-center-shell,
+.aurora-theme .overview-section-shell,
+.aurora-theme .glass-panel-card,
+.aurora-theme .copilot-rail-glass {
+  border-color: rgba(167, 139, 250, 0.2);
+  background:
+    linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%),
+    radial-gradient(circle at top left, rgba(167, 139, 250, 0.1), transparent 40%);
+  box-shadow: 0 18px 50px rgba(30, 10, 60, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.aurora-theme .glass-metric-card {
+  border-color: rgba(167, 139, 250, 0.16);
+  background: rgba(8, 12, 24, 0.72);
+}
+
+.aurora-theme .quick-link-chip {
+  border-color: rgba(167, 139, 250, 0.2);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.aurora-theme .quick-link-chip:hover {
+  border-color: rgba(34, 211, 238, 0.28);
+}
+
+.aurora-theme .tab-chip-active {
+  border-color: rgba(167, 139, 250, 0.35);
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.18), rgba(34, 211, 238, 0.08));
+  color: #e9d5ff;
+}
+
+.aurora-theme .btn-primary {
+  background: linear-gradient(to right, #7c3aed, #0891b2);
+}
+
+.aurora-theme .section-label-purple {
+  color: #c084fc !important;
+}
+
+.aurora-theme .navbar-blur {
+  background: rgba(4, 8, 18, 0.82);
+  border-color: rgba(167, 139, 250, 0.14);
+}
+
   .command-center-shell {
     position: relative;
     overflow: hidden;
