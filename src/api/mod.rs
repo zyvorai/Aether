@@ -985,6 +985,44 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/platform/autonomous-sre/execute",
             post(api_intelligence_platform_autonomous_sre_execute),
         )
+        .route("/api/intelligence/labs/overview", get(api_intelligence_labs_overview))
+        .route(
+            "/api/intelligence/labs/terraform-export",
+            post(api_intelligence_labs_terraform_export),
+        )
+        .route(
+            "/api/intelligence/labs/pulumi-bridge",
+            post(api_intelligence_labs_pulumi_bridge),
+        )
+        .route(
+            "/api/intelligence/labs/mobile-companion",
+            get(api_intelligence_labs_mobile_companion),
+        )
+        .route(
+            "/api/intelligence/labs/ide-extensions",
+            get(api_intelligence_labs_ide_extensions),
+        )
+        .route(
+            "/api/intelligence/labs/community-intents",
+            get(api_intelligence_labs_community_intents),
+        )
+        .route(
+            "/api/intelligence/labs/community-intents/import",
+            post(api_intelligence_labs_community_intents_import),
+        )
+        .route("/api/intelligence/labs/carbon", get(api_intelligence_labs_carbon))
+        .route(
+            "/api/intelligence/labs/compliance-report",
+            get(api_intelligence_labs_compliance_report),
+        )
+        .route(
+            "/api/intelligence/labs/voice-copilot",
+            get(api_intelligence_labs_voice_copilot),
+        )
+        .route(
+            "/api/intelligence/labs/graph-export",
+            get(api_intelligence_labs_graph_export),
+        )
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",
