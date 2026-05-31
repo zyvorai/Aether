@@ -450,7 +450,7 @@ export default function GitOpsPage() {
           <h3 className="text-sm font-semibold text-slate-100 mb-3">Last sync result</h3>
           <p className="text-sm text-slate-300 mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (
-            <div className="mb-4 glass-panel-card-flush overflow-x-auto">
+            <div className="mb-4 dash-card-flush overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
@@ -509,7 +509,7 @@ export default function GitOpsPage() {
             </div>
           )}
           {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
-            <div className="mb-4 glass-panel-card-flush overflow-x-auto">
+            <div className="mb-4 dash-card-flush overflow-x-auto">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-2 px-4 pt-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Confidential compliance
@@ -601,7 +601,7 @@ export default function GitOpsPage() {
           detected YAML changes. Review the diff preview below before syncing.
         </p>
         <div
-          className="mb-4 rounded-xl border border-slate-800/60 bg-[#11151C] p-3"
+          className="mb-4 rounded-xl border border-slate-800/60 bg-[#11151C]/60 p-3"
           data-testid="gitops-diff-preview"
         >
           {previewLoading ? (

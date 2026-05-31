@@ -149,10 +149,10 @@ export default function IntentDebugger() {
         {scores.map((s) => (
           <div
             key={s.runtime}
-            className={`rounded-xl border p-3 ${
+            className={`rounded-xl border p-3 backdrop-blur-sm ${
               s.runtime === recommended
                 ? 'border-aether/40 bg-aether/5'
-                : 'border-slate-800/60 bg-[#11151C]'
+                : 'border-slate-800/60 bg-[#11151C]/50'
             }`}
           >
             <p className="text-sm font-medium text-white mb-2">{s.runtime}</p>

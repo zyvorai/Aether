@@ -162,7 +162,7 @@ export default function SLAPage() {
       />
 
       {canMutate && (
-        <div className="glass-panel-card mb-6">
+        <div className="dash-card mb-6">
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Add SLA target</h3>
           <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3" data-testid="sla-add-form">
             <input
@@ -221,7 +221,7 @@ export default function SLAPage() {
           {filtered.map((w) => {
             const sla = slaData[w.name];
             return (
-              <div key={w.name} className="glass-panel-card">
+              <div key={w.name} className="dash-card">
                 <h2 className="text-lg font-semibold text-slate-100 mb-4">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name })}

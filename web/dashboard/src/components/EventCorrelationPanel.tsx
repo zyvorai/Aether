@@ -62,7 +62,7 @@ export default function EventCorrelationPanel({ events, resourceName }: Props) {
         </div>
       ) : null}
 
-      <div className="glass-panel-card-flush max-h-64 overflow-y-auto">
+      <div className="dash-card-flush max-h-64 overflow-y-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">

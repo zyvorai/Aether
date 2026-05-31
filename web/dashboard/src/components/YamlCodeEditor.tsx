@@ -55,9 +55,9 @@ function surfaceTheme() {
   return EditorView.theme({
     '&': {
       height: '100%',
-      backgroundColor: 'rgba(8, 11, 16, 0.88)',
-      color: '#cbd5e1',
-      border: '1px solid rgba(148, 163, 184, 0.12)',
+      backgroundColor: '#09090b',
+      color: '#d4d4d8',
+      border: '1px solid #3f3f46',
       borderRadius: '12px',
       overflow: 'hidden',
     },
@@ -66,8 +66,8 @@ function surfaceTheme() {
       fontFamily: 'inherit',
     },
     '.cm-gutters': {
-      backgroundColor: 'rgba(17, 21, 28, 0.92)',
-      color: '#64748b',
+      backgroundColor: '#18181b',
+      color: '#71717a',
     },
     '.cm-activeLineGutter': {
       backgroundColor: '#27272a',

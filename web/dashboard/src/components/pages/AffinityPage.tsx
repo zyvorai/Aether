@@ -189,7 +189,7 @@ export default function AffinityPage() {
       </div>
 
       {tab === 'matrix' && (
-        <div className="glass-panel-card overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
+        <div className="dash-card overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-slate-100">Runtime compatibility matrix</h2>
             <Link to={viewToPath('scheduler')} className="text-xs text-aether hover:underline" data-testid="affinity-scheduler-link">
@@ -227,7 +227,7 @@ export default function AffinityPage() {
       )}
 
       {tab === 'stats' && stats && (
-        <div className="glass-panel-card mb-6" data-testid="affinity-stats-panel">
+        <div className="dash-card mb-6" data-testid="affinity-stats-panel">
           <div className="mb-3 flex flex-wrap gap-2">
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { tab: 'place' })}
@@ -250,7 +250,7 @@ export default function AffinityPage() {
               return (
               <div
                 key={cls}
-                className={`glass-panel-card ${
+                className={`dash-card ${
                   classMatchesWorkload(cls) ? 'ring-1 ring-aether/40 border-aether/30' : ''
                 }`}
                 data-testid={classMatchesWorkload(cls) ? 'affinity-workload-highlight' : undefined}

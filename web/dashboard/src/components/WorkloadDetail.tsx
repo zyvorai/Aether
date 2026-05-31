@@ -382,7 +382,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
     <>
     <div className="glass-panel-card mt-4 overflow-hidden p-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/60 bg-[rgba(22,27,36,0.5)]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/60 bg-[#161B24]/50">
         <div className="flex items-center gap-3">
           <div>
             <h3 className="text-lg font-bold text-white">
@@ -589,7 +589,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
             </div>
 
             {isAetherManaged ? (
-              <div className="mt-4 glass-drawer p-3" data-testid="workload-snapshots">
+              <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/60 p-3" data-testid="workload-snapshots">
                 <h4 className="mb-2 text-sm font-semibold text-slate-200">Snapshots</h4>
                 {snapshotsLoading ? (
                   <p className="text-xs text-slate-500">Loading snapshots…</p>
@@ -620,7 +620,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
             ) : null}
 
             {isKubeWorkload && (
-              <div className="mt-4 glass-drawer p-3">
+              <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Network policies</h4>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
@@ -670,11 +670,11 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 </div>
 
                 {clusterDetail.conditions.length > 0 && (
-                  <div className="glass-drawer p-3">
+                  <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                     <h4 className="mb-3 text-sm font-semibold text-slate-200">Conditions</h4>
                     <div className="space-y-2">
                       {clusterDetail.conditions.map((condition) => (
-                        <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
+                        <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="rounded-md bg-slate-900 px-3 py-2 text-sm">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-slate-100">{condition.type_}</span>
                             <span className={condition.status === 'True' ? 'text-emerald-400' : 'text-amber-400'}>
@@ -690,11 +690,11 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 )}
 
                 {clusterDetail.pods.length > 0 && (
-                  <div className="glass-drawer p-3">
+                  <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                     <h4 className="mb-3 text-sm font-semibold text-slate-200">Pods</h4>
                     <div className="space-y-2">
                       {clusterDetail.pods.map((pod) => (
-                        <div key={pod.name} className="grid grid-cols-5 gap-3 glass-table-row rounded-md px-3 py-2 text-sm">
+                        <div key={pod.name} className="grid grid-cols-5 gap-3 rounded-md bg-slate-900 px-3 py-2 text-sm">
                           <div className="col-span-2">
                             <div className="text-slate-100">{pod.name}</div>
                             <div className="text-xs text-slate-500">{pod.node ?? 'node unknown'}</div>
@@ -708,9 +708,9 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   </div>
                 )}
 
-                <div className="glass-drawer p-3">
+                <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                   <h4 className="mb-3 text-sm font-semibold text-slate-200">Manifest</h4>
-                  <pre className="glass-code-block-body max-h-96">
+                  <pre className="max-h-96 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-300">
                     {JSON.stringify(clusterDetail.manifest, null, 2)}
                   </pre>
                 </div>
@@ -847,7 +847,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
             ) : (
               <div className="space-y-2 max-h-96 overflow-auto">
                 {events.map((ev, i) => (
-                  <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 glass-drawer p-3">
+                  <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 rounded-lg bg-slate-950/60 p-3">
                     <SeverityBadge severity={ev.severity} />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-slate-200">{ev.title}</div>
@@ -866,8 +866,8 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
       {/* Shell Modal - Real WebSocket Terminal */}
       {shellOpen && (
         <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-[60] ${shellFullscreen ? 'p-0' : ''}`}>
-          <div className={`glass-modal-panel overflow-hidden transition-all ${shellFullscreen ? 'w-full h-full max-w-none rounded-none' : 'w-full max-w-4xl mx-4'}`}>
-            <div className="flex items-center justify-between border-b border-slate-800/60 px-5 py-3">
+          <div className={`bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden transition-all ${shellFullscreen ? 'w-full h-full max-w-none rounded-none' : 'w-full max-w-4xl mx-4'}`}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 bg-slate-900">
               <div className="flex items-center gap-3">
                 <div className="font-medium">Shell — {workload.name}</div>
                 <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
@@ -914,14 +914,14 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 ref={(el) => {
                   if (el) el.scrollTop = el.scrollHeight;
                 }}
-                className="glass-code-block-body h-[420px] font-mono text-sm text-emerald-400"
+                className="bg-[#0a0c10] rounded-xl p-4 font-mono text-sm text-emerald-400 h-[420px] overflow-auto whitespace-pre-wrap border border-slate-800 shadow-inner"
               >
                 {shellOutput || '[aether] Connecting to pod shell...\n'}
               </div>
 
               <div className="mt-4 flex gap-2 items-center">
                 <select 
-                  className="glass-select text-sm text-slate-400"
+                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-400"
                   defaultValue="/bin/sh"
                 >
                   <option value="/bin/sh">/bin/sh</option>
@@ -938,7 +938,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                       setShellInput('');
                     }
                   }}
-                  className="glass-input flex-1 font-mono focus:border-emerald-600"
+                  className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-emerald-600"
                   placeholder="Type command and press Enter..."
                   disabled={!shellConnected}
                 />

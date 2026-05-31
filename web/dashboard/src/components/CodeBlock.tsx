@@ -9,15 +9,15 @@ interface CodeBlockProps {
 
 export default function CodeBlock({ children, title }: CodeBlockProps) {
   return (
-    <div className="glass-code-block">
+    <div className="glass-panel-card overflow-hidden rounded-xl border border-slate-800/60">
       {title && (
-        <div className="glass-code-block-header">
-          <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+        <div className="bg-slate-800/60 px-4 py-2 border-b border-slate-800/60">
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
             {title}
           </span>
         </div>
       )}
-      <pre className="glass-code-block-body">
+      <pre className="bg-[#0B0E14] p-4 overflow-x-auto text-sm text-slate-300 font-mono leading-relaxed">
         <code>{children}</code>
       </pre>
     </div>

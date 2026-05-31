@@ -2,7 +2,6 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-/** Secure section wrapper (legacy GlassSection name kept for compat). */
 import type { ReactNode } from 'react';
 
 type GlassAccent = 'blue' | 'purple' | 'red' | 'neutral';
@@ -59,7 +58,7 @@ export default function GlassSection({
         <div className={`overview-section-header flex flex-wrap items-start justify-between gap-3 ${variant === 'panel' ? 'mb-4' : 'mb-5'}`}>
           <div className="flex min-w-0 flex-1 items-start gap-3">
             {icon ? (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1F2937] bg-[#161B24]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
                 {icon}
               </div>
             ) : null}

@@ -60,11 +60,11 @@ function StatusTile({
   const c = toneClasses(tone);
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${c.ring}`}
+      className={`group relative overflow-hidden rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${c.ring}`}
     >
       <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl transition-opacity group-hover:opacity-80" />
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1F2937] bg-[#161B24] text-aether">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#161B24]/60 text-aether">
           {icon}
         </div>
         <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} title={value} />

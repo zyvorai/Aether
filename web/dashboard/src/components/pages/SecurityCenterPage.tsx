@@ -133,14 +133,14 @@ export default function SecurityCenterPage() {
       </section>
 
       {hardening && (
-        <div className="glass-panel-card mb-6 border border-violet-500/20">
+        <div className="dash-card mb-6 border border-violet-500/20">
           <h3 className="text-sm font-semibold text-violet-200 mb-2">AI Hardening Plan</h3>
           <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans">{hardening}</pre>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="glass-panel-card" data-testid="security-sbom-card">
+        <div className="dash-card" data-testid="security-sbom-card">
           <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2">
             <FileCheck size={18} className="text-aether" /> SBOM
           </h3>
@@ -155,7 +155,7 @@ export default function SecurityCenterPage() {
             <p className="text-sm text-slate-500">SBOM not generated yet. Run <code className="text-slate-400">aether sbom export</code>.</p>
           )}
         </div>
-        <div className="glass-panel-card" data-testid="security-images-card">
+        <div className="dash-card" data-testid="security-images-card">
           <h3 className="text-lg font-semibold text-slate-100 mb-3">Signed images</h3>
           {signedImages.length === 0 ? (
             <p className="text-sm text-slate-500">No signed VM images in catalog.</p>
@@ -173,7 +173,7 @@ export default function SecurityCenterPage() {
       </div>
 
       {packetwolfStatus?.configured ? (
-        <div className="glass-panel-card mb-6" data-testid="security-packetwolf-card">
+        <div className="dash-card mb-6" data-testid="security-packetwolf-card">
           <h3 className="text-lg font-semibold text-slate-100 mb-2">PacketWolf</h3>
           <p className="text-sm text-slate-400">
             Bridge {packetwolfStatus.reachable ? 'reachable' : 'unreachable'} — verify egress from Fleet expanded apps.
@@ -181,7 +181,7 @@ export default function SecurityCenterPage() {
         </div>
       ) : null}
 
-      <div className="glass-panel-card mb-6" data-testid="security-remediation-card">
+      <div className="dash-card mb-6" data-testid="security-remediation-card">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h3 className="text-lg font-semibold text-slate-100">Anomaly remediation</h3>
           <div className="flex gap-2">
@@ -221,7 +221,7 @@ export default function SecurityCenterPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-panel-card">
+        <div className="dash-card">
           <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
             <Shield size={18} className="text-aether" /> Threat scan
           </h3>
@@ -249,7 +249,7 @@ export default function SecurityCenterPage() {
           )}
         </div>
 
-        <div className="glass-panel-card">
+        <div className="dash-card">
           <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
             <FileCheck size={18} className="text-aether" /> Policy &amp; secrets
           </h3>

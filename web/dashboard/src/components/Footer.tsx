@@ -6,6 +6,6 @@ import { ZyvorFooter } from './ZyvorBrand';
 
 export default function Footer() {
   return (
-    <ZyvorFooter className="mt-auto border-t border-[#11151C] bg-[#11151C]" />
+    <ZyvorFooter className="mt-auto border-t border-[#11151C] bg-[#11151C]/60 backdrop-blur-xl" />
   );
 }

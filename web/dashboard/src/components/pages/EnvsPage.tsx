@@ -268,9 +268,8 @@ export default function EnvsPage() {
         }
       />
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="glass-panel-card">
+        <div className="dash-card">
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Promote workload</h3>
           <form onSubmit={(e) => void handlePromote(e)} className="space-y-3">
             <input
@@ -279,7 +278,7 @@ export default function EnvsPage() {
               onChange={(e) => setPromoteWorkload(e.target.value)}
               placeholder="Workload name"
               data-testid="envs-promote-workload"
-              className="glass-input"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
             />
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -287,14 +286,14 @@ export default function EnvsPage() {
                 value={promoteFrom}
                 onChange={(e) => setPromoteFrom(e.target.value)}
                 placeholder="From env"
-                className="glass-input"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
               />
               <input
                 type="text"
                 value={promoteTo}
                 onChange={(e) => setPromoteTo(e.target.value)}
                 placeholder="To env"
-                className="glass-input"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
               />
             </div>
             <button
@@ -310,7 +309,7 @@ export default function EnvsPage() {
             <p data-testid="envs-promote-result" className="mt-3 text-sm text-slate-400">{promoteResult}</p>
           ) : null}
         </div>
-        <div className="glass-panel-card">
+        <div className="dash-card">
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Environment parity</h3>
           <form onSubmit={(e) => void handleParity(e)} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -319,14 +318,14 @@ export default function EnvsPage() {
                 value={parityEnv1}
                 onChange={(e) => setParityEnv1(e.target.value)}
                 placeholder="Env A"
-                className="glass-input"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
               />
               <input
                 type="text"
                 value={parityEnv2}
                 onChange={(e) => setParityEnv2(e.target.value)}
                 placeholder="Env B"
-                className="glass-input"
+                className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
               />
             </div>
             <button
@@ -354,7 +353,7 @@ export default function EnvsPage() {
       {environments.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No environments" description="No environments have been configured" />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="envs-list">
+        <div className="dash-card overflow-hidden" data-testid="envs-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -397,8 +396,6 @@ export default function EnvsPage() {
         </div>
       )}
 
-      </section>
-
       <Modal
         isOpen={selectedEnvironment !== null}
         onClose={() => setSelectedEnvironment(null)}
@@ -431,7 +428,7 @@ export default function EnvsPage() {
                 ) : (
                   <ul className="space-y-1 text-sm">
                     {Object.entries(selectedEnvironment.workloads).map(([name, value]) => (
-                      <li key={name} className="flex justify-between gap-2 rounded-lg bg-[#11151C] px-3 py-2 border border-slate-800">
+                      <li key={name} className="flex justify-between gap-2 rounded-lg bg-slate-950/60 px-3 py-2 border border-slate-800">
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: name })}
                           className="text-slate-200 hover:text-aether"
@@ -451,7 +448,7 @@ export default function EnvsPage() {
                 ) : (
                   <ul className="space-y-1 text-sm">
                     {Object.entries(selectedEnvironment.variables).map(([name, value]) => (
-                      <li key={name} className="flex justify-between gap-2 rounded-lg bg-[#11151C] px-3 py-2 border border-slate-800">
+                      <li key={name} className="flex justify-between gap-2 rounded-lg bg-slate-950/60 px-3 py-2 border border-slate-800">
                         <span className="text-slate-400 font-mono">{name}</span>
                         <span className="text-slate-200 truncate">{String(value)}</span>
                       </li>
@@ -472,7 +469,7 @@ export default function EnvsPage() {
               type="text"
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
-              className="glass-input"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
             />
           </div>
           <div>
@@ -480,7 +477,7 @@ export default function EnvsPage() {
             <select
               value={createTier}
               onChange={(e) => setCreateTier(e.target.value)}
-              className="glass-input"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
             >
               <option value="development">development</option>
               <option value="staging">staging</option>

@@ -101,7 +101,7 @@ export default function WorkloadDesignerPanel() {
           onChange={(e) => setPrompt(e.target.value)}
           rows={4}
           placeholder="Create Kafka cluster — 3 brokers, HA, 200k msgs/sec, production"
-          className="w-full rounded-2xl border border-slate-700/80 bg-[#11151C] px-4 py-3 text-sm text-slate-100 outline-none focus:border-aether/50"
+          className="w-full rounded-2xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-aether/50"
           data-testid="workload-designer-prompt"
         />
 

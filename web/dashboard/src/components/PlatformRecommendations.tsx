@@ -49,7 +49,7 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
 
   if (loading) {
     return (
-      <div className="glass-panel-card">
+      <div className="dash-card">
         <div className="skeleton h-6 w-48 rounded mb-4" />
         <div className="space-y-3">
           <div className="skeleton h-20 rounded-xl" />
@@ -60,7 +60,7 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
   }
 
   return (
-    <div className="glass-panel-card" data-testid="platform-recommendations">
+    <div className="dash-card" data-testid="platform-recommendations">
       <h2 className="text-lg font-semibold text-slate-100 mb-1">Setup recommendations</h2>
       <p className="text-sm text-slate-500 mb-4">
         Optional improvements and remediation steps. Dismiss items you have already addressed.
