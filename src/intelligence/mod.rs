@@ -32,6 +32,7 @@ pub mod record;
 pub mod remediation;
 pub mod platform_os;
 pub mod labs_os;
+pub mod extensions_os;
 pub mod security;
 pub mod security_os;
 pub mod sre;
@@ -105,7 +106,16 @@ pub use labs_os::{
     LabsCommunityIntentReport, LabsComplianceReport, LabsGraduatedFeature,
     LabsGraduationOverview, LabsGraphExportReport, LabsIdeExtensionReport,
     LabsMobileCompanionReport, LabsPulumiReport, LabsPulumiRequest, LabsTerraformReport,
-    LabsTerraformRequest, LabsVoiceCopilotReport,
+    LabsTerraformRequest,     LabsVoiceCopilotReport,
+};
+pub use extensions_os::{
+    build_extensions_graduation_overview, build_native_extensions_bundle, build_ship_chaos_catalog,
+    build_ship_game_days, build_ship_live_activity, build_ship_menu_extras, build_ship_shortcuts,
+    build_ship_spotlight, build_sre_extensions_bundle, execute_game_day_scenario, run_ship_chaos,
+    ExtensionsGraduatedFeature, ExtensionsGraduationOverview, GameDayExecuteReport,
+    GameDayExecuteRequest, NativeExtensionsBundle, ShipChaosCatalogReport, ShipChaosRunReport,
+    ShipGameDayReport, ShipLiveActivityReport, ShipMenuExtrasReport, ShipShortcutsReport,
+    ShipSpotlightReport, SreExtensionsBundle,
 };
 pub use gitops_agent::{
     build_gitops_agent_plan, execute_gitops_agent, GitOpsAgentExecuteReport,

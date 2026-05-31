@@ -1487,3 +1487,108 @@ pub(crate) async fn api_intelligence_labs_graph_export(
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
 }
+
+/// GET /api/intelligence/extensions/overview
+pub(crate) async fn api_intelligence_extensions_overview() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::extensions_os::build_extensions_graduation_overview()).into_response()
+}
+
+/// GET /api/intelligence/extensions/chaos/experiments
+pub(crate) async fn api_intelligence_extensions_chaos_experiments(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::build_ship_chaos_catalog(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/extensions/chaos/run
+pub(crate) async fn api_intelligence_extensions_chaos_run(
+    Json(body): Json<crate::intelligence::sre_os::ChaosRunRequest>,
+) -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::extensions_os::run_ship_chaos(
+        body.dry_run,
+        &body.experiment_id,
+    ))
+    .into_response()
+}
+
+/// GET /api/intelligence/extensions/game-days
+pub(crate) async fn api_intelligence_extensions_game_days(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::build_ship_game_days(&app_state.state_path).await {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// POST /api/intelligence/extensions/game-days/execute
+pub(crate) async fn api_intelligence_extensions_game_days_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::extensions_os::GameDayExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::execute_game_day_scenario(&app_state.state_path, &body)
+        .await
+    {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => super::handlers::err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/extensions/live-activity
+pub(crate) async fn api_intelligence_extensions_live_activity(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::build_ship_live_activity(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/extensions/spotlight
+pub(crate) async fn api_intelligence_extensions_spotlight(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::build_ship_spotlight(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/extensions/shortcuts
+pub(crate) async fn api_intelligence_extensions_shortcuts() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::extensions_os::build_ship_shortcuts()).into_response()
+}
+
+/// GET /api/intelligence/extensions/menu-extras
+pub(crate) async fn api_intelligence_extensions_menu_extras(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::build_ship_menu_extras(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/extensions/native-bundle
+pub(crate) async fn api_intelligence_extensions_native_bundle(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::build_native_extensions_bundle(&app_state.state_path) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/extensions/sre-bundle
+pub(crate) async fn api_intelligence_extensions_sre_bundle(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::extensions_os::build_sre_extensions_bundle(&app_state.state_path).await
+    {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
