@@ -34,7 +34,7 @@ export function navbarShellClass(theme: AppTheme): string {
     case 'aurora':
       return 'navbar-aurora border-violet-500/25';
     default:
-      return 'navbar-blur border-slate-800/60';
+      return 'navbar-blur navbar-glass-accent relative border-slate-800/40';
   }
 }
 
@@ -58,7 +58,7 @@ export function themeSelectClass(theme: AppTheme): string {
 }
 
 export function dropdownSurfaceClass(_theme: AppTheme): string {
-  return 'bg-zinc-900 border-zinc-700';
+  return 'border border-slate-700/60 bg-[#11151C]/92 backdrop-blur-xl';
 }
 
 export function dropdownItemClass(active: boolean, _theme: AppTheme): string {

@@ -9,6 +9,7 @@ import { formatPercent, formatUSD } from '../utils/formatters';
 import type { MigrationAdvice, MigrationPlanProposal, WorkloadResponse } from '../types/api';
 import WorkloadSelect from './WorkloadSelect';
 import Badge from './Badge';
+import GlassSection from './GlassSection';
 
 const TARGET_RUNTIMES = ['kube', 'podman', 'kubevirt', 'metal3'] as const;
 
@@ -119,21 +120,15 @@ export default function MigrationPlannerPanel() {
   const confidence = plan ? Math.round((1 - plan.rollback_probability) * 100) : 0;
 
   return (
-    <section
-      className="overflow-hidden rounded-[28px] border border-slate-800/50 bg-slate-950/45 p-6 backdrop-blur-xl sm:p-8"
-      data-testid="migration-planner"
+    <GlassSection
+      accent="blue"
+      testId="migration-planner"
+      variant="hero"
+      label="AI Migration Planner"
+      title="Move workload with risk analysis"
+      subtitle="Select a workload and target runtime. Aether recommends strategy, predicted downtime, and migration risk."
+      icon={<Rocket className="h-5 w-5 text-aether" />}
     >
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-aether">AI Migration Planner</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Move workload with risk analysis</h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-400">
-            Select a workload and target runtime. Aether recommends strategy, predicted downtime, and migration risk.
-          </p>
-        </div>
-        <Rocket className="hidden h-10 w-10 text-aether/40 sm:block" aria-hidden />
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="space-y-4">
           <div>
@@ -285,6 +280,6 @@ export default function MigrationPlannerPanel() {
           </div>
         )}
       </div>
-    </section>
+    </GlassSection>
   );
 }

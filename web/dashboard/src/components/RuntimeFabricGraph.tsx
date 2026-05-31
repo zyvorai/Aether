@@ -165,11 +165,13 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
 
   if (graph.nodes.length === 0) {
     return (
-      <EmptyState
-        icon={<Box size={40} />}
-        title="No fabric topology yet"
-        description="Deploy workloads to see the live Application → Runtime → Cluster → Node graph."
-      />
+      <div data-testid="runtime-fabric-graph">
+        <EmptyState
+          icon={<Box size={40} />}
+          title="No fabric topology yet"
+          description="Deploy workloads to see the live Application → Runtime → Cluster → Node graph."
+        />
+      </div>
     );
   }
 

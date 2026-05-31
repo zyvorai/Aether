@@ -238,7 +238,7 @@ export default function GitOpsPage() {
             data-testid="gitops-sync-now"
             onClick={() => void openSyncConfirm()}
             disabled={syncing || data?.configured === false}
-            className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm font-medium text-aether hover:bg-aether/20 disabled:opacity-40"
+            className="inline-flex items-center gap-2 btn-primary disabled:opacity-40"
           >
             {syncing ? 'Syncing…' : 'Sync now'}
           </button>
@@ -326,7 +326,7 @@ export default function GitOpsPage() {
         </WorkloadContextBanner>
       ) : null}
 
-      <div className="dash-card" data-testid="gitops-status-panel">
+      <div className="glass-panel-card" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
           <GitBranch className="w-5 h-5 text-aether" />
           <h2 className="text-lg font-semibold text-slate-100">GitOps reconciliation</h2>
@@ -364,7 +364,7 @@ export default function GitOpsPage() {
                 <button
                   type="submit"
                   disabled={initializing || !initRepo.trim()}
-                  className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether hover:bg-aether/30 disabled:opacity-50"
+                  className="btn-primary disabled:opacity-50"
                 >
                   {initializing ? 'Initializing…' : 'Initialize GitOps'}
                 </button>
@@ -446,11 +446,11 @@ export default function GitOpsPage() {
       </div>
 
       {syncResult && (
-        <div className="dash-card" data-testid="gitops-sync-result">
+        <div className="glass-panel-card" data-testid="gitops-sync-result">
           <h3 className="text-sm font-semibold text-slate-100 mb-3">Last sync result</h3>
           <p className="text-sm text-slate-300 mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (
-            <div className="mb-4 overflow-x-auto">
+            <div className="mb-4 dash-card-flush overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
@@ -509,8 +509,8 @@ export default function GitOpsPage() {
             </div>
           )}
           {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
-            <div className="mb-4 overflow-x-auto">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <div className="mb-4 dash-card-flush overflow-x-auto">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-2 px-4 pt-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Confidential compliance
                 </h4>
@@ -652,7 +652,7 @@ export default function GitOpsPage() {
           <button
             type="button"
             onClick={() => setSyncConfirmOpen(false)}
-            className="px-4 py-2 rounded-lg text-sm bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+            className="btn-secondary"
           >
             Cancel
           </button>
@@ -663,7 +663,7 @@ export default function GitOpsPage() {
               void sync();
             }}
             data-testid="gitops-sync-confirm-button"
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-aether text-white hover:bg-aether/90"
+            className="btn-primary"
           >
             Sync now
           </button>

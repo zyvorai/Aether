@@ -7,6 +7,7 @@ import { GitBranch, Loader2, Play, RefreshCw } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
 import Badge from './Badge';
 import type { GitOpsAgentExecuteReport, GitOpsAgentSyncReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function GitOpsAgentPanel() {
   const [plan, setPlan] = useState<GitOpsAgentSyncReport | null>(null);
@@ -48,16 +49,13 @@ export default function GitOpsAgentPanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="gitops-agent-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <GitBranch className="h-5 w-5 text-violet-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">GitOps Agent</h2>
-            <p className="text-sm text-slate-400">Federation-aware drift reconcile loop</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <GlassSection
+      accent="purple"
+      testId="gitops-agent-panel"
+      title="GitOps Agent"
+      subtitle="Federation-aware drift reconcile loop"
+      icon={<GitBranch className="h-5 w-5 text-violet-400" />}
+      actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void sync(true)}
@@ -75,10 +73,8 @@ export default function GitOpsAgentPanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-        </div>
-      </div>
-
-      <div className="mb-4 flex flex-wrap gap-2">
+        </div>}
+    ><div className="mb-4 flex flex-wrap gap-2">
         {plan?.federation_enabled ? <Badge text="federation" variant="green" /> : <Badge text="local only" variant="muted" />}
         {plan?.federation_target ? <Badge text={plan.federation_target} variant="muted" /> : null}
         <Badge text={`${plan?.drift_workloads.length ?? 0} drifted`} variant="yellow" />
@@ -96,6 +92,6 @@ export default function GitOpsAgentPanel() {
           ))}
         </ul>
       )}
-    </section>
+    </GlassSection>
   );
 }

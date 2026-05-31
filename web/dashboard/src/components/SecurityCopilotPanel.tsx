@@ -7,6 +7,7 @@ import { Copy, Loader2, RefreshCw, Shield } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
 import Badge, { SeverityBadge } from './Badge';
 import type { SecurityCopilotReport, SecurityRemediateReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function SecurityCopilotPanel() {
   const [report, setReport] = useState<SecurityCopilotReport | null>(null);
@@ -61,18 +62,13 @@ export default function SecurityCopilotPanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="security-copilot-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Shield className="h-5 w-5 text-red-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Security Copilot</h2>
-            <p className="text-sm text-slate-400">
-              Least-privilege policy drafts generated from live threat intelligence.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <GlassSection
+      accent="purple"
+      testId="security-copilot-panel"
+      title="Security Copilot"
+      subtitle="Least-privilege policy drafts generated from live threat intelligence."
+      icon={<Shield className="h-5 w-5 text-red-400" />}
+      actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void remediate(true)}
@@ -90,10 +86,8 @@ export default function SecurityCopilotPanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-        </div>
-      </div>
-
-      {!report?.suggestions.length ? (
+        </div>}
+    >{!report?.suggestions.length ? (
         <p className="text-sm text-slate-500">No policy suggestions — threat scan is clean.</p>
       ) : (
         <ul className="space-y-4">
@@ -125,6 +119,6 @@ export default function SecurityCopilotPanel() {
           ))}
         </ul>
       )}
-    </section>
+    </GlassSection>
   );
 }

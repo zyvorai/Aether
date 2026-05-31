@@ -141,7 +141,7 @@ export default function SecretsPage() {
 
   return (
     <div>
-      <p className="mb-4 text-sm text-slate-500 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3">
+      <p className="glass-context-banner mb-4 text-sm text-slate-500">
         Secrets stored with <code className="text-slate-400">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.{' '}
         <button
           type="button"
@@ -241,7 +241,7 @@ export default function SecretsPage() {
             type="button"
             data-testid="secrets-create-button"
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            className="inline-flex items-center gap-2 btn-primary"
           >
             <Plus size={16} />
             Create secret
@@ -394,7 +394,7 @@ export default function SecretsPage() {
             type="button"
             disabled={creating}
             onClick={() => void handleCreate()}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            className="btn-primary disabled:opacity-50"
           >
             {creating ? 'Creating…' : 'Create'}
           </button>

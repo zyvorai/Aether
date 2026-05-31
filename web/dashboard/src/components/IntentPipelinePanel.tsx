@@ -10,6 +10,7 @@ import { formatPercent } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import type { IntentDeployReport, IntentPipelineReport, NlIntentReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 const GOALS = [
   { id: 'performance', label: 'Low latency' },
@@ -85,18 +86,13 @@ export default function IntentPipelinePanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="intent-pipeline-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Wand2 className="h-5 w-5 text-violet-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Intent → Infrastructure</h2>
-            <p className="text-sm text-slate-400">
-              Describe outcomes — Aether generates spec, runtime, placement, and deploy steps.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <GlassSection
+      accent="purple"
+      testId="intent-pipeline-panel"
+      title="Intent → Infrastructure"
+      subtitle="Describe outcomes — Aether generates spec, runtime, placement, and deploy steps."
+      icon={<Wand2 className="h-5 w-5 text-violet-400" />}
+      actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void deployPipeline(true)}
@@ -115,10 +111,8 @@ export default function IntentPipelinePanel() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Run pipeline
           </button>
-        </div>
-      </div>
-
-      <label className="mb-6 block text-sm" data-testid="intent-nl-input">
+        </div>}
+    ><label className="mb-6 block text-sm" data-testid="intent-nl-input">
         <span className="mb-1 block text-xs text-slate-500">Natural language intent</span>
         <textarea
           value={nlText}
@@ -222,6 +216,6 @@ export default function IntentPipelinePanel() {
           </pre>
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

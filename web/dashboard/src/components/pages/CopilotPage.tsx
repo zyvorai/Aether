@@ -179,10 +179,17 @@ export default function CopilotPage() {
           </>
         ) : null}
       </WorkloadContextBanner>
-      <div className="dash-card flex flex-1 flex-col overflow-hidden p-0">
-        <div className="flex items-center gap-2 border-b border-slate-800/60 px-4 py-3">
-          <Bot className="h-5 w-5 text-violet-400" aria-hidden />
-          <h2 className="text-sm font-semibold text-slate-100">AI Ops Copilot</h2>
+      <div className="copilot-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
+        <div className="relative z-[1] flex items-center gap-3 border-b border-slate-800/50 px-4 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
+            <Bot className="h-4 w-4 text-[#c084fc]" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-white">AI Ops Copilot</h2>
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
+              Infrastructure agent
+            </p>
+          </div>
           {messages.length > 0 && (
             <button
               type="button"
@@ -192,17 +199,17 @@ export default function CopilotPage() {
                 setSessionId(null);
                 setPending([]);
               }}
-              className="ml-auto rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-400 hover:text-slate-200"
+              className="rounded-lg border border-slate-700/80 px-2 py-1 text-xs text-slate-400 transition hover:border-slate-600 hover:text-slate-200"
             >
               Clear chat
             </button>
           )}
           {messages.length === 0 && (
-            <span className="ml-auto text-xs text-slate-500">Natural language control plane</span>
+            <span className="text-xs text-slate-500">Natural language control plane</span>
           )}
           <Link
             to={viewToPath('intelligence')}
-            className="text-xs text-aether hover:underline ml-auto"
+            className="text-xs text-aether hover:underline"
             data-testid="copilot-intelligence-link"
           >
             Intelligence reports →
@@ -245,10 +252,10 @@ export default function CopilotPage() {
           ) : null}
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4">
           {messages.length === 0 && (
-            <div className="rounded-xl border border-dashed border-slate-700/60 bg-slate-900/40 p-6 text-center">
-              <Sparkles className="mx-auto mb-3 h-8 w-8 text-violet-400/80" aria-hidden />
+            <div className="rounded-2xl border border-aether-ai/15 bg-[#161B24]/50 px-4 py-6 text-center backdrop-blur-sm">
+              <Sparkles className="mx-auto mb-3 h-8 w-8 text-[#c084fc]/80" aria-hidden />
               <p className="text-sm text-slate-400">
                 Ask about health, drift, costs, migrations, or cluster state.
               </p>
@@ -263,7 +270,7 @@ export default function CopilotPage() {
                       setInput(s);
                       void send(s);
                     }}
-                    className="rounded-full border border-slate-700/80 bg-slate-800/60 px-3 py-1 text-xs text-slate-300 hover:border-violet-500/40 hover:text-violet-200"
+                    className="copilot-prompt-chip"
                   >
                     {s}
                   </button>
@@ -277,8 +284,8 @@ export default function CopilotPage() {
               key={`${msg.role}-${i}`}
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                 msg.role === 'user'
-                  ? 'ml-auto bg-violet-600/30 text-violet-50'
-                  : 'bg-slate-800/80 text-slate-200'
+                  ? 'ml-auto border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
+                  : 'border border-slate-800/60 bg-[#161B24]/80 text-slate-200'
               }`}
             >
               {msg.content}
@@ -286,7 +293,7 @@ export default function CopilotPage() {
           ))}
 
           {pending.length > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3" data-testid="copilot-pending-actions">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-sm" data-testid="copilot-pending-actions">
               <p className="mb-2 text-xs font-medium text-amber-200">Actions awaiting confirmation</p>
               {pending.map((a) => (
                 <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs text-slate-300">
@@ -304,13 +311,16 @@ export default function CopilotPage() {
           )}
 
           {loading && (
-            <div className="text-xs text-slate-500 animate-pulse">Copilot is thinking…</div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-aether-ai" />
+              Copilot is thinking…
+            </div>
           )}
           <div ref={bottomRef} />
         </div>
 
         <form
-          className="flex gap-2 border-t border-slate-800/60 p-3"
+          className="relative z-[1] flex gap-2 border-t border-slate-800/50 p-3"
           onSubmit={(e) => {
             e.preventDefault();
             void send(input);
@@ -324,14 +334,14 @@ export default function CopilotPage() {
             }}
             placeholder="Ask Aether anything…"
             data-testid="copilot-input"
-            className="flex-1 rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-500/50"
+            className="min-w-0 flex-1 rounded-xl border border-slate-700/70 bg-[#11151C]/80 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
           <button
             type="submit"
             data-testid="copilot-send-button"
             disabled={loading || !input.trim()}
-            className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-aether to-aether-ai px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-aether-ai/20 transition hover:opacity-90 disabled:opacity-50"
           >
             <Send className="h-4 w-4" aria-hidden />
             Send

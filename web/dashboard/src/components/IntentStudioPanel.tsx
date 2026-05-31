@@ -4,6 +4,7 @@
 
 import { useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import GlassSection from './GlassSection';
 
 const GOALS = [
   { id: 'performance', label: 'Performance', weight: 'high-latency' },
@@ -63,17 +64,14 @@ export default function IntentStudioPanel() {
   }
 
   return (
-    <section className="space-y-6" data-testid="intent-studio-panel">
-      <div className="surface-panel rounded-[28px] p-6 sm:p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-violet-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Intent Studio</h2>
-            <p className="text-sm text-slate-400">What matters? Aether builds the intent block — no YAML editing required.</p>
-          </div>
-        </div>
-
-        <label className="mb-4 block">
+    <GlassSection
+      accent="purple"
+      testId="intent-studio-panel"
+      title="Intent Studio"
+      subtitle="What matters? Aether builds the intent block — no YAML editing required."
+      icon={<Sparkles className="h-5 w-5 text-violet-400" />}
+    >
+      <label className="mb-4 block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500">Workload name</span>
           <input
             value={workloadName}
@@ -121,7 +119,6 @@ export default function IntentStudioPanel() {
             {generatedYaml}
           </pre>
         ) : null}
-      </div>
-    </section>
+    </GlassSection>
   );
 }

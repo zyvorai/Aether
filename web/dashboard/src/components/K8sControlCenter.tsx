@@ -37,36 +37,36 @@ export default function K8sControlCenter({
   ];
 
   return (
-    <section className="dash-card mb-6" data-testid="k8s-control-center">
-      <div className="mb-6">
-        <p className="text-sm text-slate-400">Kubernetes Control Center</p>
-        <h2 className="text-2xl font-semibold text-slate-100 mt-1">
+    <section className="overview-section-shell mb-8 p-6 sm:p-8" data-testid="k8s-control-center">
+      <div className="overview-section-header mb-6">
+        <p className="section-label">Kubernetes</p>
+        <h2 className="section-title">
           Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},{' '}
-          {greeting}.
+          {greeting}
         </h2>
-        <p className="text-sm text-slate-400 mt-2">
+        <p className="section-subtitle">
           {failing === 0 && warnings === 0
             ? 'Production Kubernetes looks healthy.'
             : `${failing + warnings} application${failing + warnings === 1 ? '' : 's'} need attention.`}
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard title="Clusters" value={clusters} color="blue" icon={<Server size={18} />} />
-        <StatCard title="Applications" value={apps.length} color="orange" icon={<Boxes size={18} />} />
-        <StatCard title="Healthy" value={healthy} color="green" icon={<Shield size={18} />} />
-        <StatCard title="Needs fix" value={failing + warnings} color="yellow" icon={<AlertTriangle size={18} />} />
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard title="Clusters" value={clusters} color="blue" icon={<Server size={16} />} compact isEmpty={clusters === 0} />
+        <StatCard title="Applications" value={apps.length} color="orange" icon={<Boxes size={16} />} compact isEmpty={apps.length === 0} />
+        <StatCard title="Healthy" value={healthy} color="green" icon={<Shield size={16} />} compact isEmpty={healthy === 0} />
+        <StatCard title="Needs fix" value={failing + warnings} color="yellow" icon={<AlertTriangle size={16} />} compact isEmpty={failing + warnings === 0} />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {actions.map(({ label, view, icon: Icon }) => (
           <button
             key={label}
             type="button"
             onClick={() => onNavigate(view)}
-            className="flex flex-col items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-200 hover:border-aether/40 hover:bg-aether/5 transition-colors"
+            className="quick-link-chip flex flex-col items-center gap-2 py-4"
           >
-            <Icon size={22} className="text-aether" />
+            <Icon size={20} className="text-aether" />
             <span className="text-center text-xs font-medium">{label}</span>
           </button>
         ))}

@@ -9,6 +9,7 @@ import { apiFetch } from '../utils/api';
 import { pathWithQuery } from '../utils/urlState';
 import { viewToPath } from '../utils/dashboardRoutes';
 import type { KnowledgeGraphReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 const KIND_COLORS: Record<string, string> = {
   workload: 'rgb(99 164 255)',
@@ -73,17 +74,13 @@ export default function KnowledgeGraphPanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="knowledge-graph-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <GitBranch className="h-5 w-5 text-teal-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Infrastructure Knowledge Graph</h2>
-            <p className="text-sm text-slate-400">
-              Workloads, dependencies, threats, and drift — unified graph for impact analysis.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="purple"
+      testId="knowledge-graph-panel"
+      title="Infrastructure Knowledge Graph"
+      subtitle="Workloads, dependencies, threats, and drift — unified graph for impact analysis."
+      icon={<GitBranch className="h-5 w-5 text-teal-400" />}
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -92,8 +89,8 @@ export default function KnowledgeGraphPanel() {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
         </button>
-      </div>
-
+      }
+    >
       <div className="mb-4 flex flex-wrap gap-2" data-testid="graph-edge-filters">
         {EDGE_KINDS.map((kind) => {
           const active = edgeFilter.includes(kind);
@@ -207,6 +204,6 @@ export default function KnowledgeGraphPanel() {
           Building knowledge graph…
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

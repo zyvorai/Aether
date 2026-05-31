@@ -585,7 +585,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               type="button"
               data-testid="workloads-deploy-button"
               onClick={() => openDeployModal(setDeployYaml, setDeployConfidential, setDeployModal)}
-              className="inline-flex items-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white transition hover:bg-aether-light"
+              className="btn-primary inline-flex items-center gap-2"
             >
               <Plus size={16} />
               Deploy
@@ -594,7 +594,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               type="button"
               data-testid="workloads-validate-button"
               onClick={() => setValidateModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
+              className="btn-secondary inline-flex items-center gap-2"
             >
               <ClipboardCheck size={16} />
               Validate
@@ -709,7 +709,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       ) : null}
 
       {sourceFilterVal !== 'all' ? (
-        <div className="mb-4 rounded-xl border border-slate-700/80 bg-slate-950/50 px-4 py-3 text-sm text-slate-400">
+        <div className="glass-context-banner mb-4 text-sm text-slate-400">
           Showing <span className="text-slate-200">{filteredWorkloads.length}</span> of{' '}
           <span className="text-slate-200">{workloads.length}</span> workloads
           {sourceFilterVal === 'aether' ? ' (Aether managed only)' : ' (Kubernetes discovered only)'}.
@@ -736,26 +736,33 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <StatCard title="Total" value={workloads.length} color="orange" />
-        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="text-left">
-          <StatCard title="Running" value={runningCount} color="green" />
-        </button>
-        <button type="button" onClick={() => setStatusFilter('stopped')} className="text-left">
-          <StatCard title="Stopped" value={stoppedCount} color="red" />
-        </button>
-        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="text-left">
-          <StatCard title="Aether" value={aetherManagedCount} color="purple" />
-        </button>
-        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="text-left">
-          <StatCard title="Discovered" value={clusterDiscoveredCount} color="blue" />
-        </button>
-        <StatCard
-          title="Namespaces"
-          value={namespaces.filter((namespace) => namespace !== 'all').length}
-          color="green"
-        />
-      </div>
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="overview-section-header">
+          <p className="section-label">Fabric</p>
+          <h2 className="section-title">Workload inventory</h2>
+          <p className="section-subtitle">Managed and discovered workloads across runtimes</p>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <StatCard title="Total" value={workloads.length} color="orange" />
+          <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="text-left">
+            <StatCard title="Running" value={runningCount} color="green" />
+          </button>
+          <button type="button" onClick={() => setStatusFilter('stopped')} className="text-left">
+            <StatCard title="Stopped" value={stoppedCount} color="red" />
+          </button>
+          <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="text-left">
+            <StatCard title="Aether" value={aetherManagedCount} color="purple" />
+          </button>
+          <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="text-left">
+            <StatCard title="Discovered" value={clusterDiscoveredCount} color="blue" />
+          </button>
+          <StatCard
+            title="Namespaces"
+            value={namespaces.filter((namespace) => namespace !== 'all').length}
+            color="green"
+          />
+        </div>
+      </section>
 
       {selectedNames.size > 0 && canMutate && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3" data-testid="workloads-bulk-bar">
@@ -779,7 +786,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 <button
                   type="button"
                   onClick={() => openDeployModal(setDeployYaml, setDeployConfidential, setDeployModal)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 transition-colors"
+                  className="btn-primary inline-flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
                   Deploy YAML
@@ -787,7 +794,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 <button
                   type="button"
                   onClick={() => navigate(viewToPath('editor'))}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                  className="btn-secondary inline-flex items-center gap-2"
                 >
                   <FileCode2 className="h-4 w-4" />
                   Visual Editor
@@ -795,7 +802,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 <button
                   type="button"
                   onClick={() => navigate(viewToPath('compose'))}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                  className="btn-secondary inline-flex items-center gap-2"
                 >
                   <Layers className="h-4 w-4" />
                   Import Compose
@@ -938,10 +945,10 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           Delete {selectedNames.size} selected workload(s)? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => setBulkConfirmDelete(false)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm font-medium transition-colors">
+          <button type="button" onClick={() => setBulkConfirmDelete(false)} className="btn-secondary">
             Cancel
           </button>
-          <button type="button" onClick={() => void bulkDelete()} className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors">
+          <button type="button" onClick={() => void bulkDelete()} className="btn-danger">
             Delete all
           </button>
         </div>
@@ -961,18 +968,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <button
             type="button"
             onClick={() => setConfirmAction(null)}
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm font-medium transition-colors"
+            className="btn-secondary"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleConfirmedAction}
-            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
-              confirmAction?.type === 'delete'
-                ? 'bg-red-600 hover:bg-red-500'
-                : 'bg-amber-600 hover:bg-amber-500'
-            }`}
+            className={confirmAction?.type === 'delete' ? 'btn-danger' : 'btn-primary'}
           >
             {confirmAction?.type === 'delete' ? 'Delete' : 'Stop'}
           </button>

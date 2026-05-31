@@ -341,9 +341,7 @@ export default function FleetPage() {
             type="button"
             data-testid={t === 'edge' ? 'fleet-edge-tab' : t === 'placement' ? 'fleet-placement-tab' : 'fleet-overview-tab'}
             onClick={() => setTab(t === 'overview' ? '' : t)}
-            className={`rounded-lg px-3 py-1.5 text-sm capitalize ${
-              activeTab === t ? 'bg-aether text-white' : 'border border-slate-700 text-slate-300 hover:border-aether/40'
-            }`}
+            className={`tab-chip capitalize ${activeTab === t ? 'tab-chip-active' : ''}`}
           >
             {t === 'edge' ? 'Edge Sites' : t === 'placement' ? 'Placement' : 'Overview'}
           </button>
@@ -432,10 +430,10 @@ export default function FleetPage() {
 
       {activeTab === 'overview' ? (
       <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Clusters" value={summary?.cluster_count ?? 0} color="blue" icon={<Globe size={18} />} />
+      <div className="overview-section-shell mb-8 grid grid-cols-1 gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4 sm:p-8">
+        <StatCard title="Clusters" value={summary?.cluster_count ?? 0} color="blue" icon={<Globe size={16} />} compact isEmpty={(summary?.cluster_count ?? 0) === 0} />
         <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left" data-testid="fleet-healthy-stat">
-          <StatCard title="Healthy" value={summary?.healthy_clusters ?? 0} color="green" icon={<Shield size={18} />} />
+          <StatCard title="Healthy" value={summary?.healthy_clusters ?? 0} color="green" icon={<Shield size={16} />} compact isEmpty={(summary?.healthy_clusters ?? 0) === 0} />
         </button>
         <button
           type="button"
@@ -443,24 +441,25 @@ export default function FleetPage() {
           onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { source: 'cluster' }))}
           className="text-left"
         >
-          <StatCard title="Workloads" value={summary?.workload_count ?? 0} color="purple" icon={<Server size={18} />} />
+          <StatCard title="Workloads" value={summary?.workload_count ?? 0} color="purple" icon={<Server size={16} />} compact isEmpty={(summary?.workload_count ?? 0) === 0} />
         </button>
         <StatCard
           title="Backend"
           value={summary?.connected ? 'connected' : 'offline'}
           color={summary?.connected ? 'green' : 'red'}
-          icon={<Network size={18} />}
+          icon={<Network size={16} />}
+          compact
         />
       </div>
 
       {summary?.error && (
-        <div className="mb-4 rounded-xl border border-amber-800/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-200">
+        <div className="glass-alert-warn mb-4 text-sm text-amber-200">
           Kubeconfig inventory: {summary.error}
         </div>
       )}
 
-      <div className="dash-card mb-6">
-        <h2 className="text-lg font-semibold text-slate-100 mb-4">Registered clusters</h2>
+      <div className="glass-panel-card mb-6">
+        <h2 className="panel-title mb-4">Registered clusters</h2>
         {clusters.length === 0 ? (
           <p className="text-sm text-slate-500">
             No clusters in kubeconfig inventory. Configure kubeconfig on the API server or open{' '}
@@ -477,7 +476,7 @@ export default function FleetPage() {
                 type="button"
                 data-testid={`fleet-cluster-${c.name}`}
                 onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
-                className="w-full text-left rounded-xl border border-slate-800 px-4 py-3 hover:border-aether/40 transition-colors"
+                className="w-full text-left rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-4 py-3 backdrop-blur-sm transition hover:border-aether/30"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-slate-100">{c.name}</span>
@@ -495,10 +494,10 @@ export default function FleetPage() {
         </p>
       </div>
 
-      <div className="dash-card mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div className="glass-panel-card mb-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-100">Hubble flow links</h2>
+            <h2 className="panel-title">Hubble flow links</h2>
             <p className="text-sm text-slate-500 mt-1">
               Per-pod deep links into Hubble UI. Expand an application to see individual pod flows.
             </p>
@@ -596,8 +595,8 @@ export default function FleetPage() {
         )}
       </div>
 
-      <div className="dash-card">
-        <h2 className="text-lg font-semibold text-slate-100 mb-4">Network observability</h2>
+      <div className="glass-panel-card">
+        <h2 className="panel-title mb-4">Network observability</h2>
         <p className="text-sm text-slate-500 mb-4">
           Deep Hubble flow queries and PacketWolf east-west verification are integrated via env URLs on the control plane.
         </p>

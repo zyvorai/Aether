@@ -7,6 +7,7 @@ import { GitBranch, Loader2, RefreshCw } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import Badge from './Badge';
 import type { IntentGitOpsDiffReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function IntentGitOpsDiffPanel() {
   const [report, setReport] = useState<IntentGitOpsDiffReport | null>(null);
@@ -24,15 +25,13 @@ export default function IntentGitOpsDiffPanel() {
   }, [load]);
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="intent-gitops-diff-panel">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <GitBranch className="h-5 w-5 text-amber-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Intent GitOps diff</h2>
-            <p className="text-sm text-slate-400">Intent block drift separate from spec drift</p>
-          </div>
-        </div>
+    <GlassSection
+      accent="purple"
+      testId="intent-gitops-diff-panel"
+      title="Intent GitOps diff"
+      subtitle="Intent block drift separate from spec drift"
+      icon={<GitBranch className="h-5 w-5 text-amber-400" />}
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -41,8 +40,8 @@ export default function IntentGitOpsDiffPanel() {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
         </button>
-      </div>
-
+      }
+    >
       {!report?.entries.length ? (
         <p className="text-sm text-slate-500">No workloads with intent blocks tracked.</p>
       ) : (
@@ -61,6 +60,6 @@ export default function IntentGitOpsDiffPanel() {
           ))}
         </ul>
       )}
-    </section>
+    </GlassSection>
   );
 }

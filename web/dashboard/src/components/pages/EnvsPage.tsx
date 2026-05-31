@@ -260,7 +260,7 @@ export default function EnvsPage() {
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether hover:bg-aether/30"
+              className="btn-primary"
             >
               Create environment
             </button>
@@ -487,7 +487,7 @@ export default function EnvsPage() {
           <button
             type="submit"
             disabled={mutating || !createName.trim()}
-            className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether"
+            className="btn-primary disabled:opacity-50"
           >
             Create
           </button>

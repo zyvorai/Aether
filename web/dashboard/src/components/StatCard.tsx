@@ -9,6 +9,8 @@ interface StatCardProps {
   value: string | number;
   color: 'orange' | 'green' | 'red' | 'blue' | 'purple' | 'yellow';
   icon?: ReactNode;
+  isEmpty?: boolean;
+  compact?: boolean;
 }
 
 const colorMap: Record<StatCardProps['color'], string> = {
@@ -29,10 +31,13 @@ const borderMap: Record<StatCardProps['color'], string> = {
   yellow: 'border-amber-500/20',
 };
 
-export default function StatCard({ title, value, color, icon }: StatCardProps) {
+export default function StatCard({ title, value, color, icon, isEmpty, compact }: StatCardProps) {
+  const numericEmpty = typeof value === 'number' && value === 0;
+  const empty = isEmpty ?? numericEmpty;
+
   return (
     <div
-      className={`${colorMap[color]} ${borderMap[color]} interactive-lift group relative overflow-hidden rounded-2xl border p-5 card-glow transition-all duration-200`}
+      className={`${colorMap[color]} ${borderMap[color]} interactive-lift group relative overflow-hidden rounded-2xl border card-glow transition-all duration-200 ${compact ? 'stat-card-compact p-4' : 'p-5'} ${empty ? 'stat-card-empty' : ''}`}
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-70" />
       <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-opacity group-hover:opacity-100" />
@@ -44,8 +49,10 @@ export default function StatCard({ title, value, color, icon }: StatCardProps) {
       <p className="relative mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
         {title}
       </p>
-      <p className="relative text-3xl font-semibold tracking-tight text-white">{value}</p>
-      <div className="premium-divider relative mt-4 opacity-70" />
+      <p className={`relative font-semibold tracking-tight ${empty ? 'text-slate-500' : 'text-white'} ${compact ? 'stat-value text-2xl' : 'text-3xl'}`}>
+        {value}
+      </p>
+      {!compact ? <div className="premium-divider relative mt-4 opacity-70" /> : null}
     </div>
   );
 }

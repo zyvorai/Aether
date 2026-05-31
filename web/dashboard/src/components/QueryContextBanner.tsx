@@ -140,7 +140,7 @@ export function WorkloadContextBanner({
   return (
     <div
       data-testid={testId}
-      className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+      className="mb-6 glass-context-banner"
     >
       {description ?? 'Workload context'} for <span className="font-mono text-aether">{name}</span>
       {' · '}
@@ -175,7 +175,7 @@ export function SearchQueryContextBanner({
   return (
     <div
       data-testid={testId}
-      className="mb-6 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3 text-sm text-slate-300"
+      className="mb-6 glass-context-banner"
     >
       Filtered {entityLabel} matching <span className="font-mono text-aether">{q}</span>
       {' · '}

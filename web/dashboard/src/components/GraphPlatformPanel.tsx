@@ -27,6 +27,7 @@ import type {
   K8sImportReport,
   ThreatPathsReport,
 } from '../types/api';
+import GlassSection from './GlassSection';
 
 type Tab = 'impact' | 'blast' | 'threats' | 'search' | 'snapshots' | 'cmdb' | 'placement' | 'export';
 
@@ -110,16 +111,13 @@ export default function GraphPlatformPanel() {
   ];
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="graph-platform-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Radar className="h-5 w-5 text-cyan-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Graph Intelligence Platform</h2>
-            <p className="text-sm text-slate-400">Impact, blast radius, CMDB sync, placement, and export</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <GlassSection
+      accent="blue"
+      testId="graph-platform-panel"
+      title="Graph Intelligence Platform"
+      subtitle="Impact, blast radius, CMDB sync, placement, and export"
+      icon={<Radar className="h-5 w-5 text-cyan-400" />}
+      actions={<div className="flex flex-wrap items-center gap-2">
           <input
             value={workload}
             onChange={(e) => setWorkload(e.target.value)}
@@ -130,10 +128,8 @@ export default function GraphPlatformPanel() {
           <button type="button" onClick={() => void load()} className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
-        </div>
-      </div>
-
-      {k8sImport ? (
+        </div>}
+    >{k8sImport ? (
         <p className="mb-4 text-xs text-slate-500" data-testid="k8s-import-status">
           K8s services discovered: {k8sImport.services.length} (dry-run import)
         </p>
@@ -305,6 +301,6 @@ export default function GraphPlatformPanel() {
           ) : null}
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

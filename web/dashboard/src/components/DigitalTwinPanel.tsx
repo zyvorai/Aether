@@ -7,6 +7,7 @@ import { FlaskConical, Loader2, Play, RefreshCw } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
 import { formatPercent, formatUSD } from '../utils/formatters';
 import type { TwinSimulateReport, WorkloadResponse } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function DigitalTwinPanel() {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
@@ -40,17 +41,13 @@ export default function DigitalTwinPanel() {
   }, [booting, runSimulation]);
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="digital-twin-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <FlaskConical className="h-5 w-5 text-violet-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Digital Twin</h2>
-            <p className="text-sm text-slate-400">
-              What-if simulation — project capacity, cost, and risk before you change production.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="blue"
+      testId="digital-twin-panel"
+      title="Digital Twin"
+      subtitle="What-if simulation — project capacity, cost, and risk before you change production."
+      icon={<FlaskConical className="h-5 w-5 text-violet-400" />}
+      actions={
         <button
           type="button"
           onClick={() => void runSimulation()}
@@ -60,8 +57,8 @@ export default function DigitalTwinPanel() {
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           Run simulation
         </button>
-      </div>
-
+      }
+    >
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-slate-500">Scope</span>
@@ -133,7 +130,7 @@ export default function DigitalTwinPanel() {
           Simulating…
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }
 

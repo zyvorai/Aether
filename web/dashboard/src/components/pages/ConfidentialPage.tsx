@@ -657,7 +657,7 @@ export default function ConfidentialPage() {
               <button
                 type="submit"
                 disabled={signBusy || !canMutate || !signName.trim() || !signPath.trim()}
-                className="rounded bg-aether/20 text-aether border border-aether/40 px-3 py-1.5 text-sm hover:bg-aether/30 disabled:opacity-50"
+                className="btn-secondary disabled:opacity-50"
               >
                 {signBusy ? 'Signing…' : 'Sign image'}
               </button>
@@ -685,7 +685,7 @@ export default function ConfidentialPage() {
               <button
                 type="submit"
                 disabled={verifyBusy || !verifyName.trim() || !verifyPath.trim()}
-                className="px-3 py-1.5 text-sm rounded bg-aether/20 text-aether border border-aether/40 hover:bg-aether/30 disabled:opacity-50"
+                className="btn-secondary disabled:opacity-50"
               >
                 {verifyBusy ? 'Verifying…' : 'Verify file'}
               </button>
@@ -709,7 +709,7 @@ export default function ConfidentialPage() {
               <button
                 type="submit"
                 disabled={verifyBusy || !verifyDigest.trim()}
-                className="px-3 py-1.5 text-sm rounded bg-aether/20 text-aether border border-aether/40 hover:bg-aether/30 disabled:opacity-50"
+                className="btn-secondary disabled:opacity-50"
               >
                 {verifyBusy ? 'Checking…' : 'Verify'}
               </button>

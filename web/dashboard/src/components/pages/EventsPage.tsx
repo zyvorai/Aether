@@ -165,7 +165,8 @@ export default function EventsPage() {
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <button type="button" onClick={() => setCategory('all')} className="text-left">
             <StatCard title="Total" value={summary.total_events} color="blue" />
           </button>
@@ -199,6 +200,7 @@ export default function EventsPage() {
             </Link>
           ) : null}
         </div>
+        </section>
       )}
 
       <PageToolbar

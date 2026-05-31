@@ -200,13 +200,13 @@ export default function MetricsPage() {
       {!prometheusUrl && !summary?.prometheus_configured ? (
         <div
           data-testid="metrics-prom-setup-banner"
-          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-700/80 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-300"
+          className="glass-context-banner mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-300"
         >
           <span>Prometheus is not linked — set Prometheus URL on Platform &amp; HA for live query explorer and external links.</span>
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="rounded-lg border border-aether/40 bg-aether/10 px-3 py-1 text-xs font-medium text-aether hover:bg-aether/20"
+            className="btn-secondary text-xs"
           >
             Open Platform
           </button>
@@ -214,6 +214,12 @@ export default function MetricsPage() {
       ) : null}
 
       {summary && (
+        <section className="overview-section-shell mb-6 p-6 sm:p-8">
+          <div className="overview-section-header">
+            <p className="section-label">Observability</p>
+            <h2 className="section-title">Platform metrics</h2>
+            <p className="section-subtitle">API traffic, migrations, and cluster resource signals</p>
+          </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard title="API requests" value={Math.round(summary.api_http_requests_total)} color="blue" />
           <StatCard title="Migrations" value={Math.round(summary.migrations_total)} color="orange" />
@@ -224,12 +230,10 @@ export default function MetricsPage() {
             color="green"
           />
         </div>
-      )}
 
-      {summary && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="dash-card">
-            <h2 className="text-lg font-semibold text-slate-100 mb-3">Workloads by runtime</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-panel-card">
+            <h2 className="panel-title mb-3">Workloads by runtime</h2>
             {runtimeEntries.length > 0 ? (
               <dl className="space-y-2 text-sm">
                 {runtimeEntries.map(([runtime, count]) => (
@@ -243,8 +247,8 @@ export default function MetricsPage() {
               <p className="text-sm text-slate-500">No running workload gauges reported yet.</p>
             )}
           </div>
-          <div className="dash-card">
-            <h2 className="text-lg font-semibold text-slate-100 mb-3">Cluster & Cilium</h2>
+          <div className="glass-panel-card">
+            <h2 className="panel-title mb-3">Cluster & Cilium</h2>
             {summary.cluster_metrics ? (
               <dl className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between">
@@ -298,10 +302,11 @@ export default function MetricsPage() {
             )}
           </div>
         </div>
+        </section>
       )}
 
       {chargeback && (
-        <div className="dash-card mb-6" data-testid="metrics-chargeback-panel">
+        <div className="glass-panel-card mb-6" data-testid="metrics-chargeback-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="text-lg font-semibold text-slate-100">Chargeback (showback)</h2>
             <div className="flex items-center gap-3">
@@ -365,7 +370,7 @@ export default function MetricsPage() {
             · spot ${chargeback.totalSpotMonthlyUsd.toFixed(2)}/mo · 36-mo TCO ${chargeback.tco36MonthsUsd.toFixed(0)}
           </p>
           {chargeback.lines.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="dash-card-flush overflow-x-auto">
               <table className="w-full text-sm text-left text-slate-300">
                 <thead className="text-xs uppercase text-slate-500 border-b border-zinc-700">
                   <tr>
@@ -404,7 +409,7 @@ export default function MetricsPage() {
       )}
 
       {(grafanaUrl || prometheusUrl) && (
-        <div className="dash-card mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
+        <div className="glass-panel-card mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
           <p className="text-sm text-slate-400">External observability stack linked to this API.</p>
           <div className="flex flex-wrap gap-3">
             {grafanaUrl && (
@@ -432,7 +437,7 @@ export default function MetricsPage() {
       )}
 
       {summary?.prometheus_configured && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-3">Prometheus query explorer</h2>
           <p className="text-sm text-slate-500 mb-4">Instant queries via the whitelisted API proxy.</p>
           <form onSubmit={(e) => void runPromQuery(e)} className="flex flex-wrap gap-3 mb-4" data-testid="metrics-prometheus-query">
@@ -446,7 +451,7 @@ export default function MetricsPage() {
             <button
               type="submit"
               disabled={promQuerying}
-              className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether hover:bg-aether/30 disabled:opacity-50"
+              className="btn-primary disabled:opacity-50"
             >
               {promQuerying ? 'Querying…' : 'Run query'}
             </button>
@@ -457,9 +462,9 @@ export default function MetricsPage() {
         </div>
       )}
 
-      <div className="dash-card">
+      <div className="glass-panel-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-100">Prometheus metrics</h2>
+          <h2 className="panel-title">Prometheus metrics</h2>
           <span className="text-xs text-slate-500">{lineCount} metric lines</span>
         </div>
         <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>

@@ -279,7 +279,7 @@ export default function AlertsPage() {
             <button
               type="button"
               onClick={() => setShowAddChannel((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
+              className="inline-flex items-center gap-1.5 btn-secondary px-3 py-1.5 text-xs font-medium"
             >
               <Plus size={14} />
               Add webhook
@@ -294,7 +294,7 @@ export default function AlertsPage() {
             </p>
           )}
           {showAddChannel && (
-            <div data-testid="alerts-add-channel-form" className="mb-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
+            <div data-testid="alerts-add-channel-form" className="glass-context-banner mb-4 p-4 space-y-3">
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -330,7 +330,7 @@ export default function AlertsPage() {
                   type="button"
                   onClick={() => void handleCreateChannel()}
                   disabled={channelSaving}
-                  className="px-4 py-2 bg-aether hover:bg-aether/90 disabled:opacity-50 rounded-lg text-sm font-medium text-white"
+                  className="btn-primary disabled:opacity-50"
                 >
                   {channelSaving ? 'Saving…' : 'Create'}
                 </button>
@@ -451,7 +451,7 @@ export default function AlertsPage() {
             onClick={() => void handleTestWebhook()}
             disabled={testLoading || !testChannel}
             data-testid="alerts-test-webhook"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl text-sm font-medium text-white"
+            className="btn-primary disabled:opacity-50"
           >
             {testLoading ? 'Sending…' : 'Send test'}
           </button>
@@ -466,7 +466,7 @@ export default function AlertsPage() {
             data-testid="alerts-flush-queue"
             onClick={() => void handleFlushQueue()}
             disabled={flushLoading || queue.length === 0}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            className="btn-secondary disabled:opacity-50 text-xs"
           >
             {flushLoading ? 'Flushing…' : 'Flush queue'}
           </button>

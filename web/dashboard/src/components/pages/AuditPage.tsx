@@ -253,7 +253,8 @@ export default function AuditPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="text-left">
           <StatCard title="Total events" value={audit.summary.total_events} color="blue" />
         </button>
@@ -271,6 +272,7 @@ export default function AuditPage() {
           <StatCard title="Tampered" value={verify.tampered} color={verify.tampered > 0 ? 'red' : 'blue'} />
         )}
       </div>
+      </section>
 
       {verify && (
         <div className="dash-card mb-6" data-testid="audit-verify-panel">

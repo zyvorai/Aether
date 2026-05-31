@@ -8,6 +8,7 @@ import { apiFetch } from '../utils/api';
 import { formatPercent } from '../utils/formatters';
 import Badge from './Badge';
 import type { MultiCloudPostureReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function MultiCloudPanel() {
   const [report, setReport] = useState<MultiCloudPostureReport | null>(null);
@@ -25,17 +26,13 @@ export default function MultiCloudPanel() {
   }, [load]);
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="multicloud-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Globe className="h-5 w-5 text-teal-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Multi-Cloud Posture</h2>
-            <p className="text-sm text-slate-400">
-              Federated cluster reachability, anomaly signals, and placement scores.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="blue"
+      testId="multicloud-panel"
+      title="Multi-Cloud Posture"
+      subtitle="Federated cluster reachability, anomaly signals, and placement scores."
+      icon={<Globe className="h-5 w-5 text-teal-400" />}
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -44,8 +41,8 @@ export default function MultiCloudPanel() {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
         </button>
-      </div>
-
+      }
+    >
       {report ? (
         <>
           <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -88,6 +85,6 @@ export default function MultiCloudPanel() {
           Loading multi-cloud posture…
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

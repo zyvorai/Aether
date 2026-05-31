@@ -24,7 +24,7 @@ export default function PageTabs<T extends string>({
   className = '',
 }: PageTabsProps<T>) {
   return (
-    <div className={`flex flex-wrap gap-1 border-b border-slate-800 pb-1 mb-6 ${className}`}>
+    <div className={`mb-6 flex flex-wrap gap-2 ${className}`}>
       {tabs.map((tab) => {
         const isActive = active === tab.id;
         return (
@@ -33,11 +33,7 @@ export default function PageTabs<T extends string>({
             type="button"
             onClick={() => onChange(tab.id)}
             aria-selected={isActive}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-medium transition-all ${
-              isActive
-                ? 'bg-slate-900/80 text-white border-b-2 border-aether'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-            }`}
+            className={`tab-chip flex items-center gap-2 ${isActive ? 'tab-chip-active' : ''}`}
           >
             {tab.icon}
             {tab.label}

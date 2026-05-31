@@ -10,6 +10,7 @@ import { formatPercent } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import Badge from './Badge';
+import GlassSection from './GlassSection';
 
 import type { FleetRootCauseReport } from '../types/api';
 
@@ -36,23 +37,14 @@ export default function FleetRootCausePanel() {
   }, [load]);
 
   return (
-    <section
-      className="mb-8 overflow-hidden rounded-[28px] border border-slate-800/50 bg-slate-950/45 p-6 backdrop-blur-xl"
-      data-testid="fleet-root-cause-panel"
-    >
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10">
-            <Stethoscope className="h-5 w-5 text-violet-300" />
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-aether">AI Root Cause Analysis</p>
-            <h2 className="text-xl font-semibold text-white">Fleet incident correlation</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Batch diagnosis across unhealthy workloads with evidence and recommendations.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="blue"
+      testId="fleet-root-cause-panel"
+      label="AI Root Cause Analysis"
+      title="Fleet incident correlation"
+      subtitle="Batch diagnosis across unhealthy workloads with evidence and recommendations."
+      icon={<Stethoscope className="h-5 w-5 text-violet-300" />}
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -61,8 +53,8 @@ export default function FleetRootCausePanel() {
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Scan fleet
         </button>
-      </div>
-
+      }
+    >
       {loading && !report ? (
         <div className="flex items-center gap-2 py-8 text-sm text-slate-500">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -135,6 +127,6 @@ export default function FleetRootCausePanel() {
           ))}
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }
