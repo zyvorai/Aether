@@ -30,6 +30,7 @@ pub mod predict;
 pub mod profile;
 pub mod record;
 pub mod remediation;
+pub mod platform_os;
 pub mod security;
 pub mod security_os;
 pub mod sre;
@@ -82,6 +83,17 @@ pub use finops_os::{
     MulticloudCostCompareReport, MulticloudCostRow, ReservedInstancePlannerReport,
     ReservedInstanceRecommendation, SpotAdvisorEntry, SpotAdvisorReport, UnitEconomicsEntry,
     UnitEconomicsReport,
+};
+pub use platform_os::{
+    build_autonomous_sre_status, build_community_intent_library, build_helm_ai_v2,
+    build_ide_extension_manifest, build_mobile_companion_manifest, build_plugin_marketplace,
+    build_public_api_manifest, build_pulumi_bridge, build_saas_tenant_dashboard,
+    build_terraform_export, execute_autonomous_sre_loop, AutonomousSreExecuteReport,
+    AutonomousSreExecuteRequest, AutonomousSreStatusReport, CommunityIntentEntry,
+    CommunityIntentLibraryReport, HelmAiV2Report, HelmAiV2Request, IdeExtensionEntry,
+    IdeExtensionManifest, MobileCompanionReport, PluginMarketplaceEntry, PluginMarketplaceReport,
+    PublicApiManifest, PublicApiRoute, PulumiBridgeReport, SaasTenantDashboardReport,
+    SaasTenantLine, TerraformExportReport,
 };
 pub use gitops_agent::{
     build_gitops_agent_plan, execute_gitops_agent, GitOpsAgentExecuteReport,

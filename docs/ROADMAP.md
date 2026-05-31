@@ -61,6 +61,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v12** | Copilot & LLM — batch confirm, memory, multi-agent, runbooks, policy explain, audit, RBAC | **Ship (core panels)** |
 | **v13** | FinOps & Cost — chargeback, spot/RI, anomalies, unit economics, multi-cloud, trends | **Ship (core panels)** |
 | **v14** | Security & Compliance — policy apply, SBOM drift, zero-trust, threat hunt, score trend | **Ship (core panels)** |
+| **v15** | Platform & Ecosystem — SaaS tenants, plugins, Helm v2, v1 API, autonomous SRE | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -249,6 +250,22 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Sovereign audit log | `GET/POST /api/intelligence/security/sovereign-audit` | Ship |
 | Security score trend | `GET /api/intelligence/security/score-trend` | Ship |
 | Security platform panel | `/security` `SecurityPlatformPanel` | Ship |
+
+### v15 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| SaaS tenant dashboard | `GET /api/intelligence/platform/saas-tenants` | Ship |
+| Plugin marketplace | `GET /api/intelligence/platform/plugin-marketplace` | Ship |
+| Helm AI generator v2 | `POST /api/intelligence/platform/helm-v2` | Ship |
+| Terraform export (Lab) | `GET /api/intelligence/platform/terraform-export` | Lab |
+| Pulumi bridge (Lab) | `GET /api/intelligence/platform/pulumi-bridge` | Lab |
+| Public v1 AI OS API | `/v1/intelligence/*` | Ship |
+| Mobile companion (Lab) | `GET /api/intelligence/platform/mobile-companion` | Lab |
+| IDE extensions (Lab) | `GET /api/intelligence/platform/ide-extensions` | Lab |
+| Community intents (Lab) | `GET /api/intelligence/platform/community-intents` | Lab |
+| Autonomous SRE loop | `GET/POST /api/intelligence/platform/autonomous-sre/*` | Ship |
+| Ecosystem platform panel | `/platform` `EcosystemPlatformPanel` | Ship |
 
 ---
 
