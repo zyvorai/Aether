@@ -819,8 +819,8 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                   {clusterSummary.clusters.slice(0, 6).map((cluster) => (
                     <div key={cluster.name} className="flex items-center justify-between rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-3 py-2 text-sm backdrop-blur-sm">
                       <div>
-                        <div className="text-zinc-200 font-medium">{cluster.name}</div>
-                        <div className="text-zinc-500 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
+                        <div className="text-slate-200 font-medium">{cluster.name}</div>
+                        <div className="text-slate-500 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
                       </div>
                       <div className={cluster.reachable ? 'text-emerald-400' : 'text-amber-400'}>
                         {cluster.reachable ? 'reachable' : 'offline'}
@@ -867,8 +867,8 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                 >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-zinc-200 truncate">{ev.title}</div>
-                    <div className="text-xs text-zinc-500 mt-0.5">{ev.message}</div>
+                    <div className="text-sm font-medium text-slate-200 truncate">{ev.title}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{ev.message}</div>
                     <div className="text-xs text-zinc-600 mt-1 flex flex-wrap items-center gap-2">
                       {formatTimestamp(ev.timestamp)}
                       {ev.workload ? (

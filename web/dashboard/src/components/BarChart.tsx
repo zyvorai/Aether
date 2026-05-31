@@ -16,13 +16,13 @@ export default function BarChart({ label, percent, detail }: BarChartProps) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-zinc-300">{label}</span>
+        <span className="text-sm text-slate-300">{label}</span>
         <div className="flex items-center gap-2">
-          {detail && <span className="text-xs text-zinc-500">{detail}</span>}
-          <span className="text-sm font-medium text-zinc-200">{clamped.toFixed(1)}%</span>
+          {detail && <span className="text-xs text-slate-500">{detail}</span>}
+          <span className="text-sm font-medium text-slate-200">{clamped.toFixed(1)}%</span>
         </div>
       </div>
-      <div className="h-2.5 bg-zinc-700/50 rounded-full overflow-hidden">
+      <div className="h-2.5 rounded-full overflow-hidden border border-slate-800/60 bg-slate-900/40">
         <div
           className={`h-full rounded-full transition-all duration-500 ${getBarColor(clamped)}`}
           style={{ width: `${clamped}%` }}

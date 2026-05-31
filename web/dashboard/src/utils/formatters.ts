@@ -48,7 +48,7 @@ export function getRuntimeColor(runtime: string): string {
   if (r.includes('kube') || r.includes('k8s')) return 'text-emerald-400';
   if (r.includes('metal')) return 'text-red-400';
   if (r.includes('docker')) return 'text-cyan-400';
-  return 'text-zinc-400';
+  return 'text-slate-400';
 }
 
 export function getRuntimeBg(runtime: string): string {
@@ -58,7 +58,7 @@ export function getRuntimeBg(runtime: string): string {
   if (r.includes('kube') || r.includes('k8s')) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
   if (r.includes('metal')) return 'bg-red-500/10 text-red-400 border-red-500/20';
   if (r.includes('docker')) return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
-  return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+  return 'bg-zinc-500/10 text-slate-400 border-zinc-500/20';
 }
 
 export function getSeverityColor(severity: string): string {
@@ -66,7 +66,7 @@ export function getSeverityColor(severity: string): string {
   if (s === 'CRITICAL' || s === 'ERROR') return 'bg-red-500/10 text-red-400 border-red-500/20';
   if (s === 'WARNING' || s === 'WARN') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
   if (s === 'INFO') return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-  return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+  return 'bg-zinc-500/10 text-slate-400 border-zinc-500/20';
 }
 
 export function getHealthColor(health: string): string {
@@ -74,7 +74,7 @@ export function getHealthColor(health: string): string {
   if (h === 'healthy') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
   if (h === 'degraded') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
   if (h === 'unhealthy') return 'bg-red-500/10 text-red-400 border-red-500/20';
-  return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+  return 'bg-zinc-500/10 text-slate-400 border-zinc-500/20';
 }
 
 export function getBarColor(percent: number): string {

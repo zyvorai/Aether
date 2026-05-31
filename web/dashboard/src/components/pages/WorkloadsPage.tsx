@@ -545,7 +545,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   }).length;
   const stoppedCount = workloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length;
 
-  const filterSelectClass = 'rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100';
+  const filterSelectClass = 'rounded-lg border border-slate-800/60 bg-[#11151C]/80 px-3 py-2 text-sm text-slate-100';
 
   return (
     <div>
@@ -834,17 +834,17 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                       }}
                     />
                   </th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[18%] min-w-0">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[12%] min-w-0">Runtime</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[36%] min-w-0">Image</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Status</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[14%] min-w-0">Created</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-zinc-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Actions</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[18%] min-w-0">Name</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[12%] min-w-0">Runtime</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[36%] min-w-0">Image</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Status</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[14%] min-w-0">Created</th>
+                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredWorkloads.map((w) => (
-                  <tr key={w.name} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                  <tr key={w.name} className="border-b border-zinc-800/50 hover:bg-slate-800/60/30 transition-colors">
                     <td className="py-3 px-2 align-top">
                       {isAetherManaged(w) && (
                         <input
@@ -855,7 +855,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                         />
                       )}
                     </td>
-                    <td className="py-3 px-3 sm:px-4 font-medium text-zinc-200 align-top min-w-0">
+                    <td className="py-3 px-3 sm:px-4 font-medium text-slate-200 align-top min-w-0">
                       <button
                         type="button"
                         onClick={() => openWorkloadDetail(w, 'overview')}
@@ -869,14 +869,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
                       <div className="space-y-1 min-w-0">
                         <code
-                          className="text-xs bg-zinc-950 px-2 py-1 rounded text-zinc-300 block w-full min-w-0 truncate"
+                          className="text-xs bg-zinc-950 px-2 py-1 rounded text-slate-300 block w-full min-w-0 truncate"
                           title={w.image}
                         >
                           {w.image}
                         </code>
                         {(w.cluster || w.namespace || w.kind) && (
                           <div
-                            className="text-[11px] text-zinc-500 truncate"
+                            className="text-[11px] text-slate-500 truncate"
                             title={[w.kind, w.cluster, w.namespace].filter(Boolean).join(' · ')}
                           >
                             {[w.kind, w.cluster, w.namespace].filter(Boolean).join(' · ')}
@@ -887,30 +887,30 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
                       <Badge text={w.status} variant={getStatusVariant(w.status)} />
                     </td>
-                    <td className="py-3 px-3 sm:px-4 text-sm text-zinc-400 align-top min-w-0 whitespace-nowrap">{formatTimestamp(w.created_at)}</td>
+                    <td className="py-3 px-3 sm:px-4 text-sm text-slate-400 align-top min-w-0 whitespace-nowrap">{formatTimestamp(w.created_at)}</td>
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
                       <div className="flex flex-wrap gap-1">
                         {isAetherManaged(w) ? (
                           <>
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
                             {canMutate ? (
                               <>
-                            <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
-                            <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
-                            <button type="button" onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
-                            <button type="button" onClick={() => setUpdateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-sky-400 hover:bg-sky-500/10 rounded transition-colors" title="Update spec"><FileText size={14} /></button>
-                            <button type="button" onClick={() => setMigrateModal(w.name)} className="p-1.5 text-zinc-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
+                            <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
+                            <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
+                            <button type="button" onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-slate-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
+                            <button type="button" onClick={() => setUpdateModal(w.name)} className="p-1.5 text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 rounded transition-colors" title="Update spec"><FileText size={14} /></button>
+                            <button type="button" onClick={() => setMigrateModal(w.name)} className="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
                               </>
                             ) : null}
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'drift')} className="p-1.5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'drift')} className="p-1.5 text-slate-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
                             {canMutate ? (
-                            <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
+                            <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
                             ) : null}
                           </>
                         ) : (
-                          <span className="text-xs text-zinc-500 px-2 py-1">
+                          <span className="text-xs text-slate-500 px-2 py-1">
                             K8s discovered
                           </span>
                         )}
@@ -941,7 +941,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         onClose={() => setBulkConfirmDelete(false)}
         title="Confirm bulk delete"
       >
-        <p className="text-sm text-zinc-300 mb-6">
+        <p className="text-sm text-slate-300 mb-6">
           Delete {selectedNames.size} selected workload(s)? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
@@ -959,7 +959,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         onClose={() => setConfirmAction(null)}
         title={confirmAction?.type === 'delete' ? 'Confirm Delete' : 'Confirm Stop'}
       >
-        <p className="text-sm text-zinc-300 mb-6">
+        <p className="text-sm text-slate-300 mb-6">
           {confirmAction?.type === 'delete'
             ? `Are you sure you want to delete "${confirmAction.name}"?`
             : `Stop workload "${confirmAction?.name}"?`}
@@ -995,7 +995,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         size="wide"
       >
         <div data-testid="workloads-migrate-modal">
-        <p className="text-sm text-zinc-400 mb-4">Select target runtime to load migration advice:</p>
+        <p className="text-sm text-slate-400 mb-4">Select target runtime to load migration advice:</p>
         <div className="grid grid-cols-2 gap-3 mb-6">
           {runtimes.map((rt) => (
             <button
@@ -1006,7 +1006,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors capitalize ${
                 migrateTarget === rt
                   ? 'border-aether/50 bg-aether/10 text-aether'
-                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200'
+                  : 'bg-slate-800/60 hover:bg-slate-800/50 border-slate-800/60 text-slate-200'
               }`}
             >
               {adviceLoading && migrateTarget === rt ? 'Loading advice…' : rt}
@@ -1015,35 +1015,35 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         </div>
 
         {migrateAdvice && migrateTarget && (
-          <div className="rounded-xl border border-zinc-700 bg-zinc-950/60 p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-zinc-100">
+          <div className="rounded-xl border border-slate-800/60 bg-[#11151C]/60 p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-slate-100">
               Advice: {migrateAdvice.source_runtime} → {migrateAdvice.target_runtime}
             </h4>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-zinc-500">Strategy</span>
-                <p className="text-zinc-200">{migrateAdvice.recommended_strategy}</p>
+                <span className="text-slate-500">Strategy</span>
+                <p className="text-slate-200">{migrateAdvice.recommended_strategy}</p>
               </div>
               <div>
-                <span className="text-zinc-500">Risk</span>
-                <p className="text-zinc-200">{migrateAdvice.risk_level}</p>
+                <span className="text-slate-500">Risk</span>
+                <p className="text-slate-200">{migrateAdvice.risk_level}</p>
               </div>
               <div>
-                <span className="text-zinc-500">Est. downtime</span>
-                <p className="text-zinc-200">{migrateAdvice.estimated_downtime_secs}s</p>
+                <span className="text-slate-500">Est. downtime</span>
+                <p className="text-slate-200">{migrateAdvice.estimated_downtime_secs}s</p>
               </div>
               {migrateAdvice.timing && (
                 <div>
-                  <span className="text-zinc-500">Timing</span>
-                  <p className="text-zinc-200">{migrateAdvice.timing.recommendation}</p>
+                  <span className="text-slate-500">Timing</span>
+                  <p className="text-slate-200">{migrateAdvice.timing.recommendation}</p>
                 </div>
               )}
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wider text-zinc-500 mb-2 block">Migration strategy</span>
+              <span className="text-xs uppercase tracking-wider text-slate-500 mb-2 block">Migration strategy</span>
               <div className="flex flex-wrap gap-2">
                 {(['immediate', 'blue-green', 'rolling', 'confidential-blue-green'] as const).map((s) => (
-                  <label key={s} className="inline-flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+                  <label key={s} className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
                     <input
                       type="radio"
                       name="migrate-strategy"
@@ -1063,7 +1063,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               )}
               {confidentialMigrationPlan && (
                 <div className="mt-3 p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs space-y-2">
-                  <p className="text-zinc-400 font-mono break-all">
+                  <p className="text-slate-400 font-mono break-all">
                     Channel: {confidentialMigrationPlan.encrypted_migration_uri}
                   </p>
                   {confidentialMigrationPlan.blockers.length > 0 ? (

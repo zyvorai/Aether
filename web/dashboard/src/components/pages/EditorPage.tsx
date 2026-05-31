@@ -304,7 +304,7 @@ export default function EditorPage() {
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-zinc-700 rounded-xl hover:bg-zinc-800/80 text-zinc-300"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-800/60 rounded-xl hover:bg-slate-800/60/80 text-slate-300"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? 'Hide' : 'Show'} YAML
@@ -313,7 +313,7 @@ export default function EditorPage() {
           <button
             type="button"
             onClick={() => (yamlEditMode ? disableYamlEdit() : enableYamlEdit())}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-zinc-700 rounded-xl hover:bg-zinc-800/80 text-zinc-300"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-800/60 rounded-xl hover:bg-slate-800/60/80 text-slate-300"
           >
             <Pencil className="w-4 h-4" />
             {yamlEditMode ? 'Sync from form' : 'Edit YAML directly'}
@@ -711,7 +711,7 @@ export default function EditorPage() {
 
         {showPreview && (
           <div className="dash-card flex min-h-0 flex-col">
-            <div className="mb-3 flex items-center gap-2 text-sm text-zinc-400">
+            <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
               <Eye className="h-4 w-4" /> Live YAML preview
             </div>
             <div className="min-h-0 flex-1" data-testid="editor-yaml-preview">
