@@ -349,7 +349,7 @@ export default function FleetPage() {
       </div>
 
       {activeTab === 'edge' ? (
-        <div className="glass-panel-card mb-6" data-testid="fleet-edge-panel">
+        <div className="dash-card mb-6" data-testid="fleet-edge-panel">
           <h2 className="text-lg font-semibold text-slate-100 mb-4">Edge sites</h2>
           {edgeAgents.length === 0 ? (
             <p className="text-sm text-slate-500">No edge agents registered. Run <code className="text-slate-400">aether edge-agent</code> at remote sites.</p>
@@ -370,7 +370,7 @@ export default function FleetPage() {
       ) : null}
 
       {activeTab === 'placement' ? (
-        <div className="glass-panel-card mb-6" data-testid="fleet-placement-panel">
+        <div className="dash-card mb-6" data-testid="fleet-placement-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-slate-100">Federation placement</h2>
             <button
@@ -476,7 +476,7 @@ export default function FleetPage() {
                 type="button"
                 data-testid={`fleet-cluster-${c.name}`}
                 onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
-                className="w-full text-left rounded-xl border border-slate-800/60 bg-[#11151C] px-4 py-3 transition hover:border-aether/30"
+                className="w-full text-left rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-4 py-3 backdrop-blur-sm transition hover:border-aether/30"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-slate-100">{c.name}</span>

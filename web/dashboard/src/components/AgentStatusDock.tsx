@@ -79,7 +79,7 @@ export default function AgentStatusDock() {
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="mb-2 rounded-full border border-slate-700/80 bg-[#11151C] px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 transition hover:border-aether/30 hover:text-blue-200"
+        className="mb-2 rounded-full border border-slate-700/80 bg-[#11151C]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 backdrop-blur-xl transition hover:border-aether/30 hover:text-blue-200"
       >
         {collapsed ? 'Show agents' : 'Hide agents'}
       </button>
@@ -92,7 +92,7 @@ export default function AgentStatusDock() {
                 key={agent.id}
                 type="button"
                 onClick={() => navigate(viewToPath(agent.view))}
-                className={`copilot-agent-chip rounded-xl px-3 py-2 text-left transition hover:border-aether/30 ${tone(agent.status)}`}
+                className={`copilot-agent-chip rounded-xl px-3 py-2 text-left backdrop-blur-xl transition hover:border-aether/30 ${tone(agent.status)}`}
               >
                 <div className="flex items-center gap-2">
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${agentStatusDot(agent.status)}`} />

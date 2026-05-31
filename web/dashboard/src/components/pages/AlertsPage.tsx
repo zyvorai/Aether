@@ -269,9 +269,8 @@ export default function AlertsPage() {
         ) : null}
       </div>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-panel-card">
+        <div className="dash-card">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <Radio className="text-aether" size={20} />
@@ -349,7 +348,7 @@ export default function AlertsPage() {
               {channels.map((ch) => (
                 <li
                   key={ch.name}
-                  className="rounded-xl border border-slate-800 bg-[#11151C] px-4 py-3"
+                  className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-slate-100">{ch.name}</span>
@@ -377,7 +376,7 @@ export default function AlertsPage() {
           )}
         </div>
 
-        <div className="glass-panel-card" data-testid="alerts-rules-panel">
+        <div className="dash-card" data-testid="alerts-rules-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <BellRing className="text-amber-400" size={20} />
@@ -398,7 +397,7 @@ export default function AlertsPage() {
               {rules.map((rule) => (
                 <li
                   key={rule.name}
-                  className="rounded-xl border border-slate-800 bg-[#11151C] px-4 py-3"
+                  className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-medium text-slate-100">{rule.name}</span>
@@ -427,7 +426,7 @@ export default function AlertsPage() {
         </div>
       </div>
 
-      <div className="glass-panel-card mt-6">
+      <div className="dash-card mt-6">
         <div className="flex items-center gap-3 mb-4">
           <Send className="text-blue-400" size={20} />
           <h2 className="text-lg font-semibold text-slate-100">Test webhook</h2>
@@ -439,7 +438,7 @@ export default function AlertsPage() {
           <select
             value={testChannel}
             onChange={(e) => setTestChannel(e.target.value)}
-            className="glass-select min-w-[12rem]"
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 min-w-[12rem]"
           >
             {channels.map((ch) => (
               <option key={ch.name} value={ch.name}>
@@ -459,7 +458,7 @@ export default function AlertsPage() {
         </div>
       </div>
 
-      <div className="glass-panel-card mt-6" data-testid="alerts-webhook-queue">
+      <div className="dash-card mt-6" data-testid="alerts-webhook-queue">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-slate-100">Webhook retry queue</h2>
           <button
@@ -499,7 +498,6 @@ export default function AlertsPage() {
           </div>
         )}
       </div>
-      </section>
     </div>
   );
 }

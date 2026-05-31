@@ -545,7 +545,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   }).length;
   const stoppedCount = workloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length;
 
-  const filterSelectClass = 'glass-select';
+  const filterSelectClass = 'rounded-lg border border-slate-800/60 bg-[#11151C]/80 px-3 py-2 text-sm text-slate-100';
 
   return (
     <div>
@@ -815,7 +815,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <EmptyState icon={<Inbox size={48} />} title="No matching workloads" description="Try adjusting your search or filters" />
         )
       ) : (
-        <div className="glass-table-shell" data-testid="workloads-table">
+        <div className="dash-card-flush" data-testid="workloads-table">
           <div className="overflow-x-auto min-w-0">
             <table className="w-full table-fixed border-collapse">
               <thead>
@@ -844,7 +844,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               </thead>
               <tbody>
                 {filteredWorkloads.map((w) => (
-                  <tr key={w.name} className="glass-table-row">
+                  <tr key={w.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                     <td className="py-3 px-2 align-top">
                       {isAetherManaged(w) && (
                         <input
@@ -1015,7 +1015,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         </div>
 
         {migrateAdvice && migrateTarget && (
-          <div className="glass-panel-card p-4 space-y-3">
+          <div className="rounded-xl border border-slate-800/60 bg-[#11151C]/60 p-4 space-y-3">
             <h4 className="text-sm font-semibold text-slate-100">
               Advice: {migrateAdvice.source_runtime} → {migrateAdvice.target_runtime}
             </h4>

@@ -217,7 +217,7 @@ export default function ApplicationsPage() {
           ))}
         </div>
       ) : (
-        <div className="glass-panel-card overflow-hidden">
+        <div className="dash-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-slate-500 border-b border-slate-800">
