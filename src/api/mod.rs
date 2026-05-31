@@ -1107,6 +1107,46 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/production/ci-smoke-manifest",
             get(api_intelligence_production_ci_smoke_manifest),
         )
+        .route(
+            "/api/intelligence/livelabs/overview",
+            get(api_intelligence_livelabs_overview),
+        )
+        .route(
+            "/api/intelligence/livelabs/reference-runner",
+            get(api_intelligence_livelabs_reference_runner),
+        )
+        .route(
+            "/api/intelligence/livelabs/kind-fixture",
+            get(api_intelligence_livelabs_kind_fixture),
+        )
+        .route(
+            "/api/intelligence/livelabs/live-smoke",
+            get(api_intelligence_livelabs_live_smoke),
+        )
+        .route(
+            "/api/intelligence/livelabs/post-deploy-verify",
+            get(api_intelligence_livelabs_post_deploy_verify),
+        )
+        .route(
+            "/api/intelligence/livelabs/kubernetes-lab",
+            get(api_intelligence_livelabs_kubernetes_lab),
+        )
+        .route(
+            "/api/intelligence/livelabs/advanced-runtime-labs",
+            get(api_intelligence_livelabs_advanced_runtime_labs),
+        )
+        .route(
+            "/api/intelligence/livelabs/ci-pipeline",
+            get(api_intelligence_livelabs_ci_pipeline),
+        )
+        .route(
+            "/api/intelligence/livelabs/cluster-exec",
+            get(api_intelligence_livelabs_cluster_exec),
+        )
+        .route(
+            "/api/intelligence/livelabs/confidential-lab",
+            get(api_intelligence_livelabs_confidential_lab),
+        )
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",
