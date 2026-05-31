@@ -896,6 +896,46 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             post(api_intelligence_finops_budget_webhook),
         )
         .route("/api/intelligence/finops/trends", get(api_intelligence_finops_trends))
+        .route(
+            "/api/intelligence/security/policy-apply",
+            post(api_intelligence_security_policy_apply),
+        )
+        .route(
+            "/api/intelligence/security/sbom-drift",
+            get(api_intelligence_security_sbom_drift),
+        )
+        .route(
+            "/api/intelligence/security/confidential-fleet",
+            get(api_intelligence_security_confidential_fleet),
+        )
+        .route(
+            "/api/intelligence/security/zero-trust-wizard",
+            get(api_intelligence_security_zero_trust_wizard),
+        )
+        .route(
+            "/api/intelligence/security/compliance-report",
+            get(api_intelligence_security_compliance_report),
+        )
+        .route(
+            "/api/intelligence/security/rotation-agent",
+            post(api_intelligence_security_rotation_agent),
+        )
+        .route(
+            "/api/intelligence/security/image-enforcement",
+            get(api_intelligence_security_image_enforcement),
+        )
+        .route(
+            "/api/intelligence/security/threat-hunt",
+            post(api_intelligence_security_threat_hunt),
+        )
+        .route(
+            "/api/intelligence/security/sovereign-audit",
+            get(api_intelligence_security_sovereign_audit_get).post(api_intelligence_security_sovereign_audit_append),
+        )
+        .route(
+            "/api/intelligence/security/score-trend",
+            get(api_intelligence_security_score_trend),
+        )
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",

@@ -31,6 +31,7 @@ pub mod profile;
 pub mod record;
 pub mod remediation;
 pub mod security;
+pub mod security_os;
 pub mod sre;
 pub mod sre_os;
 pub mod store;
@@ -128,6 +129,17 @@ pub use record::{record_deployment_outcome, record_migration_outcome};
 pub use security::{
     SecurityCopilotReport, SecurityEngine, SecurityRemediateReport, SecurityRemediateRequest,
     ThreatReport,
+};
+pub use security_os::{
+    append_sovereign_audit, apply_security_policies, build_compliance_report,
+    build_confidential_fleet_dashboard, build_image_signing_enforcement, build_security_score_trend,
+    build_zero_trust_wizard, detect_sbom_drift, read_sovereign_audit, run_secret_rotation_agent,
+    run_threat_hunt, ComplianceReport, ComplianceReportSection, ConfidentialFleetDashboardReport,
+    ImageSigningEnforcementReport, ImageSigningEntry, PolicyAutoApplyReport, PolicyAutoApplyRequest,
+    SbomDriftAlert, SbomDriftReport, SecretRotationAction, SecretRotationAgentReport,
+    SecretRotationAgentRequest, SecurityScoreTrendPoint, SecurityScoreTrendReport, SovereignAuditEntry,
+    SovereignAuditReport, ThreatHuntFinding, ThreatHuntReport, ThreatHuntRequest,
+    ZeroTrustWizardReport, ZeroTrustWizardStep,
 };
 pub use sre::{build_sre_runbook, SreRunbookReport};
 pub use sre_os::{

@@ -60,6 +60,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v11** | macOS Native OS — tray sparkline, dock badge, notifications, offline cache, deep links | **Ship (core panels)** |
 | **v12** | Copilot & LLM — batch confirm, memory, multi-agent, runbooks, policy explain, audit, RBAC | **Ship (core panels)** |
 | **v13** | FinOps & Cost — chargeback, spot/RI, anomalies, unit economics, multi-cloud, trends | **Ship (core panels)** |
+| **v14** | Security & Compliance — policy apply, SBOM drift, zero-trust, threat hunt, score trend | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -232,6 +233,22 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Budget alerts webhook | `POST /api/intelligence/finops/budget-webhook` | Ship |
 | FinOps trends & forecast | `GET /api/intelligence/finops/trends` | Ship |
 | FinOps platform panel v2 | `/cost` `FinOpsPlatformPanel` | Ship |
+
+### v14 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Policy auto-apply | `POST /api/intelligence/security/policy-apply` | Ship |
+| SBOM drift alerts | `GET /api/intelligence/security/sbom-drift` | Ship |
+| Confidential fleet dashboard | `GET /api/intelligence/security/confidential-fleet` | Ship |
+| Zero-trust rollout wizard | `GET /api/intelligence/security/zero-trust-wizard` | Ship |
+| Compliance report (Lab) | `GET /api/intelligence/security/compliance-report` | Lab |
+| Secret rotation agent | `POST /api/intelligence/security/rotation-agent` | Ship |
+| Image signing enforcement | `GET /api/intelligence/security/image-enforcement` | Ship |
+| Threat hunt mode | `POST /api/intelligence/security/threat-hunt` | Ship |
+| Sovereign audit log | `GET/POST /api/intelligence/security/sovereign-audit` | Ship |
+| Security score trend | `GET /api/intelligence/security/score-trend` | Ship |
+| Security platform panel | `/security` `SecurityPlatformPanel` | Ship |
 
 ---
 
