@@ -6,11 +6,11 @@
 
 | Item | Value |
 |------|-------|
-| Branch | `main` (synced with `origin/main` after v12 push) |
-| Commit | v12 Era G — `feat(ai-os): ship copilot & LLM platform v12 (phases 65–74)` |
-| Uncommitted | `web/dashboard/node_modules/*` only (safe to discard: `git checkout -- web/dashboard/node_modules`) |
+| Branch | `main` (synced with `origin/main` after v13 push) |
+| Commit | v13 Era H — `feat(ai-os): ship FinOps & cost platform v13 (phases 75–84)` |
+| Uncommitted | `web/dashboard/node_modules/*` only (safe to discard) |
 
-## Shipped (v1–v12)
+## Shipped (v1–v13)
 
 | Batch | Era | Phases | Key modules |
 |-------|-----|--------|-------------|
@@ -19,51 +19,29 @@
 | v8 | C Multi-Cloud | 25–34 | `federation_os.rs`, federation panels |
 | v9 | D SRE | 35–44 | `sre_os.rs`, SRE reliability panel |
 | v10 | E Knowledge Graph | 45–54 | `graph_os.rs`, graph platform |
-| v11 | F macOS Native | 55–64 | `macos_os.rs`, Tauri shell, `MacOSPlatformPanel` |
-| v12 | G Copilot & LLM | 65–74 | `copilot_os.rs`, `CopilotPlatformPanel`, `aether copilot` CLI |
+| v11 | F macOS Native | 55–64 | `macos_os.rs`, `MacOSPlatformPanel` |
+| v12 | G Copilot & LLM | 65–74 | `copilot_os.rs`, `CopilotPlatformPanel` |
+| v13 | H FinOps & Cost | 75–84 | `finops_os.rs`, `FinOpsPlatformPanel` |
 
-Docs: `docs/PHASES-AI-OS.md`, `docs/ROADMAP.md` (eras marked **Ship** through phase 74).
+Docs: `docs/PHASES-AI-OS.md`, `docs/ROADMAP.md` (eras marked **Ship** through phase 84).
 
-## Next batch — v13 Era H (phases 75–84)
+## Next batch — v14 Era I (phases 85–94)
 
-**FinOps & Cost** — see `docs/PHASES-AI-OS.md` § Era H.
-
-| # | Phase | Focus |
-|---|-------|-------|
-| 75 | Chargeback automation | Owner/project auto-attribution |
-| 76 | Spot/preemptible advisor | Workload → spot eligibility |
-| 77 | Reserved instance planner | RI/SP recommendation engine |
-| 78 | Cost anomaly detection | Spend spike alerts |
-| 79 | Unit economics | Cost per request metric |
-| 80 | FinOps agent execute | Auto-downsize on schedule |
-| 81 | Multi-cloud cost compare | Live AWS/GCP/Azure in pipeline |
-| 82 | Budget guardrails | Hard/soft spend caps |
-| 83 | Cost forecast API | ML spend projection |
-| 84 | FinOps dashboard panel | Unified cost intelligence UI |
+See `docs/PHASES-AI-OS.md` § Era I for the next era scope.
 
 **Implementation pattern (repeat per batch):**
 
-1. `src/intelligence/finops_os.rs` (or extend `finops.rs`) + handlers
-2. Dashboard panel(s) with `data-testid`, route wiring, Command Palette hooks
-3. `web/dashboard/tests/ai-os-v13.spec.ts`
-4. Mark phases 75–84 **Ship** in `PHASES-AI-OS.md` + ROADMAP v13 section
+1. `src/intelligence/*_os.rs` + API handlers
+2. Dashboard panel(s) with `data-testid`
+3. `web/dashboard/tests/ai-os-v14.spec.ts`
+4. Mark phases **Ship** in `PHASES-AI-OS.md` + ROADMAP
 
-## Deploy
-
-**Live** on `212.8.252.194:30090` (remote Linux build — do **not** use `--local-build` from macOS).
-
-```bash
-./scripts/deploy-remote.sh 212.8.252.194 sus   # remote cargo on Linux
-./scripts/post-deploy-verify.sh 212.8.252.194 sus
-# UI: http://212.8.252.194:30090
-```
-
-## Local dev after reboot
+## Local dev
 
 ```bash
 cargo build --release
 cd web/dashboard && npm run build && cd ../..
-cargo build --release   # embed dashboard dist
+cargo build --release
 AETHER_MOCK_IDP=1 cargo run -- serve --port 5090
-# E2E: cd web/dashboard && npm run test:e2e -- tests/ai-os-v*.spec.ts
+# E2E: cd web/dashboard && npm run test:e2e -- tests/ai-os-v13.spec.ts
 ```
