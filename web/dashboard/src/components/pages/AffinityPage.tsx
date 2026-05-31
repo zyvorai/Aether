@@ -256,7 +256,7 @@ export default function AffinityPage() {
                 data-testid={classMatchesWorkload(cls) ? 'affinity-workload-highlight' : undefined}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                  <h2 className="text-lg font-semibold text-zinc-100 capitalize">
+                  <h2 className="text-lg font-semibold text-slate-100 capitalize">
                     {cls.replace(/-/g, ' ')}
                   </h2>
                   {top && (
@@ -276,7 +276,7 @@ export default function AffinityPage() {
                         percent={s.composite_score * 100}
                         detail={`${s.total_deployments} deploys`}
                       />
-                      <div className="flex gap-3 text-xs text-zinc-500 pl-1">
+                      <div className="flex gap-3 text-xs text-slate-500 pl-1">
                         <span>Confidence: {(s.confidence * 100).toFixed(0)}%</span>
                         <span>Success: {(s.success_rate * 100).toFixed(0)}%</span>
                       </div>

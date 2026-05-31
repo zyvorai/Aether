@@ -138,13 +138,13 @@ export default function SchedulerPage() {
           utilization.map((rt) => (
             <div key={rt.runtime} className="dash-card">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-zinc-100 capitalize">{rt.runtime}</h2>
+                <h2 className="text-lg font-semibold text-slate-100 capitalize">{rt.runtime}</h2>
                 <div className="flex items-center gap-2">
                   <Badge
                     text={rt.healthy ? 'Healthy' : 'Unhealthy'}
                     variant={rt.healthy ? 'green' : 'red'}
                   />
-                  <span className="text-xs text-zinc-500">{formatUSD(rt.estimated_cost_per_day)}/day</span>
+                  <span className="text-xs text-slate-500">{formatUSD(rt.estimated_cost_per_day)}/day</span>
                 </div>
               </div>
 
@@ -169,7 +169,7 @@ export default function SchedulerPage() {
       </div>
 
       <div className="dash-card mb-6" data-testid="scheduler-placements">
-        <h2 className="text-lg font-semibold text-zinc-100 mb-4">Current placements</h2>
+        <h2 className="text-lg font-semibold text-slate-100 mb-4">Current placements</h2>
         {placements.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No placements" description="No scheduler placement records yet" />
         ) : (
@@ -211,7 +211,7 @@ export default function SchedulerPage() {
 
       <div className="dash-card" data-testid="scheduler-suggestions">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-zinc-100">Optimization Suggestions</h2>
+          <h2 className="text-lg font-semibold text-slate-100">Optimization Suggestions</h2>
           <div className="flex items-center gap-2">
             <Link to={viewToPath('affinity')} className="text-xs text-aether hover:underline">
               Runtime affinity →
@@ -224,7 +224,7 @@ export default function SchedulerPage() {
             data-testid="scheduler-refresh-optimize"
             onClick={() => void handleRefresh()}
             disabled={refreshing}
-            className="text-xs rounded-lg border border-zinc-700 px-3 py-1.5 text-zinc-300 hover:border-aether/40 disabled:opacity-50"
+            className="text-xs rounded-lg border border-slate-800/60 px-3 py-1.5 text-slate-300 hover:border-aether/40 disabled:opacity-50"
           >
             {refreshing ? 'Refreshing…' : 'Refresh suggestions'}
           </button>
@@ -235,10 +235,10 @@ export default function SchedulerPage() {
         ) : (
           <div className="space-y-3">
             {suggestions.map((s, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 bg-zinc-950/50 rounded-lg">
+              <div key={i} className="flex items-start gap-3 p-3 bg-[#11151C]/50 rounded-lg">
                 <Badge text={s.category} variant="blue" />
                 <div className="flex-1">
-                  <div className="text-sm text-zinc-200">{s.message}</div>
+                  <div className="text-sm text-slate-200">{s.message}</div>
                   {s.potential_saving !== null && (
                     <div className="text-xs text-emerald-400 mt-1">
                       Potential saving: {formatUSD(s.potential_saving)}/day

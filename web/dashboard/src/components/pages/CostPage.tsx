@@ -179,7 +179,7 @@ export default function CostPage() {
       {chargeback ? (
         <div className="dash-card" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-            <h2 className="text-lg font-semibold text-zinc-100">Fleet chargeback</h2>
+            <h2 className="text-lg font-semibold text-slate-100">Fleet chargeback</h2>
             <button
               type="button"
               data-testid="cost-fleet-metrics-link"
@@ -208,7 +208,7 @@ export default function CostPage() {
               Placement scheduler →
             </Link>
           </div>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-slate-400">
             {chargeback.pricingSource} · {chargeback.region} · fleet {formatUSD(chargeback.totalMonthlyUsd)}/mo
             · {chargeback.lines.length} workload line(s)
           </p>
@@ -226,7 +226,7 @@ export default function CostPage() {
                   >
                     {line.workload}
                   </Link>
-                  <span className="text-zinc-500">{formatUSD(line.monthlyUsd)}/mo</span>
+                  <span className="text-slate-500">{formatUSD(line.monthlyUsd)}/mo</span>
                 </li>
               ))}
             </ul>

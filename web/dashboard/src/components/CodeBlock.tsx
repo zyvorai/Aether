@@ -9,15 +9,15 @@ interface CodeBlockProps {
 
 export default function CodeBlock({ children, title }: CodeBlockProps) {
   return (
-    <div className="rounded-xl overflow-hidden border border-zinc-700">
+    <div className="rounded-xl overflow-hidden border border-slate-800/60">
       {title && (
-        <div className="bg-zinc-800 px-4 py-2 border-b border-zinc-700">
-          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+        <div className="bg-slate-800/60 px-4 py-2 border-b border-slate-800/60">
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
             {title}
           </span>
         </div>
       )}
-      <pre className="bg-zinc-950 p-4 overflow-x-auto text-sm text-zinc-300 font-mono leading-relaxed">
+      <pre className="bg-zinc-950 p-4 overflow-x-auto text-sm text-slate-300 font-mono leading-relaxed">
         <code>{children}</code>
       </pre>
     </div>

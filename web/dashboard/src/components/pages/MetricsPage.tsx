@@ -200,7 +200,7 @@ export default function MetricsPage() {
       {!prometheusUrl && !summary?.prometheus_configured ? (
         <div
           data-testid="metrics-prom-setup-banner"
-          className="glass-context-banner mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-300"
+          className="glass-context-banner mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-300"
         >
           <span>Prometheus is not linked — set Prometheus URL on Platform &amp; HA for live query explorer and external links.</span>
           <button
@@ -357,7 +357,7 @@ export default function MetricsPage() {
                 type="button"
                 data-testid="metrics-chargeback-export"
                 onClick={downloadChargebackCsv}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-aether/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800/60 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export CSV
@@ -372,7 +372,7 @@ export default function MetricsPage() {
           {chargeback.lines.length > 0 ? (
             <div className="dash-card-flush overflow-x-auto">
               <table className="w-full text-sm text-left text-slate-300">
-                <thead className="text-xs uppercase text-slate-500 border-b border-zinc-700">
+                <thead className="text-xs uppercase text-slate-500 border-b border-slate-800/60">
                   <tr>
                     <th className="py-2 pr-4">Workload</th>
                     <th className="py-2 pr-4">Owner</th>
