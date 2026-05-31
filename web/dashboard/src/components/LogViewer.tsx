@@ -93,7 +93,7 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
       <pre
         ref={containerRef}
         onScroll={handleScroll}
-        className="max-h-96 overflow-auto rounded-xl border border-slate-800/60 bg-[#0a0d12]/90 p-3 font-mono text-xs backdrop-blur-sm"
+        className="max-h-96 overflow-auto rounded-xl border border-slate-800/60 bg-[#0a0c11] p-3 font-mono text-xs"
       >
         {filteredLogs.length === 0 ? (
           <span className="text-slate-500">No logs available. Press Refresh to reload.</span>

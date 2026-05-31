@@ -136,7 +136,7 @@ export default function SchedulerPage() {
           <EmptyState icon={<Inbox size={48} />} title="No utilization data" description="No runtimes are reporting utilization" />
         ) : (
           utilization.map((rt) => (
-            <div key={rt.runtime} className="dash-card">
+            <div key={rt.runtime} className="glass-panel-card">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-100 capitalize">{rt.runtime}</h2>
                 <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export default function SchedulerPage() {
         )}
       </div>
 
-      <div className="dash-card mb-6" data-testid="scheduler-placements">
+      <div className="glass-panel-card mb-6" data-testid="scheduler-placements">
         <h2 className="text-lg font-semibold text-slate-100 mb-4">Current placements</h2>
         {placements.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No placements" description="No scheduler placement records yet" />
@@ -209,7 +209,7 @@ export default function SchedulerPage() {
         )}
       </div>
 
-      <div className="dash-card" data-testid="scheduler-suggestions">
+      <div className="glass-panel-card" data-testid="scheduler-suggestions">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-slate-100">Optimization Suggestions</h2>
           <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export default function SchedulerPage() {
         ) : (
           <div className="space-y-3">
             {suggestions.map((s, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 bg-[#11151C]/50 rounded-lg">
+              <div key={i} className="flex items-start gap-3 p-3 bg-[#11151C] rounded-lg">
                 <Badge text={s.category} variant="blue" />
                 <div className="flex-1">
                   <div className="text-sm text-slate-200">{s.message}</div>

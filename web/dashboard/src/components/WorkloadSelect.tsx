@@ -27,7 +27,7 @@ export default function WorkloadSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 outline-none focus:border-aether/50 focus-visible:ring-2 focus-visible:ring-aether/30 ${className}`}
+      className={`rounded-xl border border-slate-700/80 bg-[#11151C] px-3 py-2 text-sm text-slate-100 outline-none focus:border-aether/50 focus-visible:ring-2 focus-visible:ring-aether/30 ${className}`}
     >
       {allowEmpty && <option value="">{placeholder}</option>}
       {names.map((name) => (

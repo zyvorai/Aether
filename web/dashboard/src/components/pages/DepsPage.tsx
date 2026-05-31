@@ -69,7 +69,7 @@ function GraphVisual({
           {edges.map((edge, i) => (
             <li
               key={`${edge.from}-${edge.to}-${i}`}
-              className="flex items-center gap-2 text-sm rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2"
+              className="flex items-center gap-2 text-sm rounded-xl bg-[#11151C] border border-slate-800 px-4 py-2"
             >
               <span className="font-medium text-slate-200"><WorkloadNodeLink name={edge.from} /></span>
               <ArrowRight size={14} className="text-aether shrink-0" />
@@ -99,7 +99,7 @@ function GraphVisual({
         {graph.startup_order.map((name, i) => (
           <div key={name} className="flex items-center gap-3">
             {i > 0 && <ArrowRight size={14} className="text-slate-600 shrink-0 -ml-1" />}
-            <div className="flex items-center gap-3 flex-1 rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2">
+            <div className="flex items-center gap-3 flex-1 rounded-xl bg-[#11151C] border border-slate-800 px-4 py-2">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-aether/10 text-xs font-semibold text-aether">
                 {i + 1}
               </span>
@@ -282,7 +282,7 @@ export default function DepsPage() {
         </WorkloadContextBanner>
       ) : null}
 
-      <div className="dash-card mb-6">
+      <div className="glass-panel-card mb-6">
         <h2 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
           <Plus size={20} className="text-emerald-400" />
           Add dependency
@@ -340,7 +340,7 @@ export default function DepsPage() {
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="dash-card lg:col-span-2" data-testid="deps-graph-panel">
+            <div className="glass-panel-card lg:col-span-2" data-testid="deps-graph-panel">
               <h2 className="text-lg font-semibold text-slate-100 mb-4">Dependency graph</h2>
               {(graph.edges?.length ?? 0) > 0 && (graph.nodes?.length ?? 0) > 0 ? (
                 <DependencyGraphVisual
@@ -361,7 +361,7 @@ export default function DepsPage() {
               )}
             </div>
 
-            <div className="dash-card" data-testid="deps-issues-panel">
+            <div className="glass-panel-card" data-testid="deps-issues-panel">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="text-lg font-semibold text-slate-100">Issues</h2>
                 <button

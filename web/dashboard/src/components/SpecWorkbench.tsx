@@ -31,7 +31,7 @@ export default function SpecWorkbench({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="dash-card">
+      <div className="glass-panel-card">
         <h2 className={`text-lg font-semibold mb-1 ${'text-slate-100'}`}>{title}</h2>
         {description && (
           <p className={`text-sm mb-4 ${'text-slate-500'}`}>{description}</p>
@@ -45,7 +45,7 @@ export default function SpecWorkbench({
         />
         {sidePanel}
       </div>
-      <div className="dash-card min-h-[12rem]">
+      <div className="glass-panel-card min-h-[12rem]">
         <h3 className={`text-sm font-medium uppercase tracking-wider mb-4 ${'text-slate-400'}`}>
           Results
         </h3>

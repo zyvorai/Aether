@@ -675,7 +675,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               {secretStatus.map((s) => (
                 <div
                   key={s.secret_name}
-                  className="flex flex-wrap items-center justify-between gap-2 text-sm py-1.5 px-2 rounded bg-slate-950/60 border border-slate-800"
+                  className="flex flex-wrap items-center justify-between gap-2 text-sm py-1.5 px-2 rounded bg-[#11151C] border border-slate-800"
                 >
                   <span className="text-slate-300">{s.secret_name}</span>
                   <div className="flex items-center gap-2">

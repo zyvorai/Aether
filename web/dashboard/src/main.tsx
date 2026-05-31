@@ -8,6 +8,7 @@ import { BrowserRouter } from 'react-router';
 import App from './App';
 import { ThemeProvider } from './contexts/ThemeContext';
 import './index.css';
+import './secure-design.css';
 import './zyvor-premium-login.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

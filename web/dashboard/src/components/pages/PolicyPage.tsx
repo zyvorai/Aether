@@ -275,7 +275,7 @@ export default function PolicyPage() {
       ) : null}
 
       {opaConfigured && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
             <ShieldCheck size={20} className="text-aether" />
             OPA admission (live)
