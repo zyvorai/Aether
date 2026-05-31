@@ -862,6 +862,40 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/copilot/rbac-scopes",
             get(api_intelligence_copilot_rbac_scopes),
         )
+        .route(
+            "/api/intelligence/finops/chargeback",
+            get(api_intelligence_finops_chargeback),
+        )
+        .route(
+            "/api/intelligence/finops/spot-advisor",
+            get(api_intelligence_finops_spot_advisor),
+        )
+        .route(
+            "/api/intelligence/finops/reserved-planner",
+            get(api_intelligence_finops_reserved_planner),
+        )
+        .route(
+            "/api/intelligence/finops/anomalies",
+            get(api_intelligence_finops_anomalies),
+        )
+        .route(
+            "/api/intelligence/finops/unit-economics",
+            get(api_intelligence_finops_unit_economics),
+        )
+        .route(
+            "/api/intelligence/finops/execute",
+            post(api_intelligence_finops_execute),
+        )
+        .route(
+            "/api/intelligence/finops/multicloud-compare",
+            get(api_intelligence_finops_multicloud_compare),
+        )
+        .route("/api/intelligence/finops/carbon", get(api_intelligence_finops_carbon))
+        .route(
+            "/api/intelligence/finops/budget-webhook",
+            post(api_intelligence_finops_budget_webhook),
+        )
+        .route("/api/intelligence/finops/trends", get(api_intelligence_finops_trends))
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",

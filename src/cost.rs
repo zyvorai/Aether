@@ -612,6 +612,11 @@ fn apply_purchase_model(monthly: f64) -> (f64, f64) {
     (spot, reserved)
 }
 
+/// Spot and reserved monthly costs derived from on-demand pricing.
+pub fn purchase_model_costs(on_demand_monthly: f64) -> (f64, f64) {
+    apply_purchase_model(on_demand_monthly)
+}
+
 /// Build a chargeback report from deployed workloads and on-disk specs.
 pub fn chargeback_report(
     workloads: &[(&str, &std::path::PathBuf)],

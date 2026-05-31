@@ -115,16 +115,16 @@
 
 | # | Phase | Focus | Tag |
 |---|-------|-------|-----|
-| 75 | Chargeback automation | Owner/project auto-attribution | Roadmap |
-| 76 | Spot/preemptible advisor | Workload → spot eligibility | Roadmap |
-| 77 | Reserved instance planner | RI/SP recommendation engine | Roadmap |
-| 78 | Cost anomaly detection | Spend spike alerts | Roadmap |
-| 79 | Unit economics | Cost per request metric | Roadmap |
-| 80 | FinOps agent execute | Auto-downsize on schedule | Roadmap |
-| 81 | Multi-cloud cost compare | Live AWS/GCP/Azure in pipeline | Roadmap |
+| 75 | Chargeback automation | Owner/project auto-attribution | **Ship** |
+| 76 | Spot/preemptible advisor | Workload → spot eligibility | **Ship** |
+| 77 | Reserved instance planner | RI/SP recommendation engine | **Ship** |
+| 78 | Cost anomaly detection | Spend spike alerts | **Ship** |
+| 79 | Unit economics | Cost per request metric | **Ship** |
+| 80 | FinOps agent execute | Auto-downsize on schedule | **Ship** |
+| 81 | Multi-cloud cost compare | Live AWS/GCP/Azure in pipeline | **Ship** |
 | 82 | Carbon footprint | Region carbon-aware placement | Lab |
-| 83 | Budget alerts webhook | Slack/email on cap breach | Roadmap |
-| 84 | FinOps dashboard v2 | Trend charts + forecasts | Roadmap |
+| 83 | Budget alerts webhook | Slack/email on cap breach | **Ship** |
+| 84 | FinOps dashboard v2 | Trend charts + forecasts | **Ship** |
 
 ## Era I — Security & Compliance (Phases 85–94)
 

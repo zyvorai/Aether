@@ -59,6 +59,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v10** | Knowledge & Graph — impact, blast radius, CMDB, snapshots, placement, export | **Ship (core panels)** |
 | **v11** | macOS Native OS — tray sparkline, dock badge, notifications, offline cache, deep links | **Ship (core panels)** |
 | **v12** | Copilot & LLM — batch confirm, memory, multi-agent, runbooks, policy explain, audit, RBAC | **Ship (core panels)** |
+| **v13** | FinOps & Cost — chargeback, spot/RI, anomalies, unit economics, multi-cloud, trends | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -215,6 +216,22 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Copilot audit trail | `GET /api/intelligence/copilot/audit` | Ship |
 | Copilot RBAC scopes | `GET /api/intelligence/copilot/rbac-scopes` | Ship |
 | Copilot platform panel | `/copilot` `CopilotPlatformPanel` | Ship |
+
+### v13 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Chargeback automation | `GET /api/intelligence/finops/chargeback` | Ship |
+| Spot/preemptible advisor | `GET /api/intelligence/finops/spot-advisor` | Ship |
+| Reserved instance planner | `GET /api/intelligence/finops/reserved-planner` | Ship |
+| Cost anomaly detection | `GET /api/intelligence/finops/anomalies` | Ship |
+| Unit economics | `GET /api/intelligence/finops/unit-economics` | Ship |
+| FinOps agent execute | `POST /api/intelligence/finops/execute` | Ship |
+| Multi-cloud cost compare | `GET /api/intelligence/finops/multicloud-compare` | Ship |
+| Carbon footprint (Lab) | `GET /api/intelligence/finops/carbon` | Lab |
+| Budget alerts webhook | `POST /api/intelligence/finops/budget-webhook` | Ship |
+| FinOps trends & forecast | `GET /api/intelligence/finops/trends` | Ship |
+| FinOps platform panel v2 | `/cost` `FinOpsPlatformPanel` | Ship |
 
 ---
 

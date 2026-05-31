@@ -1025,3 +1025,116 @@ pub(crate) async fn api_intelligence_macos_universal_links_resolve(
 pub(crate) async fn api_intelligence_macos_release_pipeline() -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::macos_os::build_release_pipeline_status()).into_response()
 }
+
+async fn finops_workload_refs(app_state: &AppState) -> Vec<(String, std::path::PathBuf)> {
+    let store = app_state.state.read().await;
+    store
+        .list()
+        .iter()
+        .map(|ws| (ws.name.clone(), ws.spec_path.clone()))
+        .collect()
+}
+
+/// GET /api/intelligence/finops/chargeback
+pub(crate) async fn api_intelligence_finops_chargeback(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let rows = finops_workload_refs(&app_state).await;
+    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    match crate::intelligence::finops_os::build_chargeback_automation(&refs) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/finops/spot-advisor
+pub(crate) async fn api_intelligence_finops_spot_advisor(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::finops_os::build_spot_advisor(&pairs)).into_response()
+}
+
+/// GET /api/intelligence/finops/reserved-planner
+pub(crate) async fn api_intelligence_finops_reserved_planner(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::finops_os::build_reserved_instance_planner(&pairs)).into_response()
+}
+
+/// GET /api/intelligence/finops/anomalies
+pub(crate) async fn api_intelligence_finops_anomalies(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let rows = finops_workload_refs(&app_state).await;
+    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    match crate::intelligence::finops_os::detect_cost_anomalies(&refs) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/finops/unit-economics
+pub(crate) async fn api_intelligence_finops_unit_economics(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::finops_os::build_unit_economics(&pairs)).into_response()
+}
+
+/// POST /api/intelligence/finops/execute
+pub(crate) async fn api_intelligence_finops_execute(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::finops_os::FinOpsExecuteRequest>,
+) -> impl axum::response::IntoResponse {
+    let config = Config::load();
+    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::finops_os::execute_finops_agent(
+        &pairs, &policy, &body,
+    ))
+    .into_response()
+}
+
+/// GET /api/intelligence/finops/multicloud-compare
+pub(crate) async fn api_intelligence_finops_multicloud_compare(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::finops_os::build_multicloud_cost_compare(&pairs)).into_response()
+}
+
+/// GET /api/intelligence/finops/carbon
+pub(crate) async fn api_intelligence_finops_carbon(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::finops_os::build_carbon_footprint(&pairs)).into_response()
+}
+
+/// POST /api/intelligence/finops/budget-webhook
+pub(crate) async fn api_intelligence_finops_budget_webhook(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::finops_os::BudgetWebhookRequest>,
+) -> impl axum::response::IntoResponse {
+    let rows = finops_workload_refs(&app_state).await;
+    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    match crate::intelligence::finops_os::dispatch_budget_webhook(&refs, &body) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/finops/trends
+pub(crate) async fn api_intelligence_finops_trends(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let rows = finops_workload_refs(&app_state).await;
+    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    let pairs = workload_pairs(&app_state).await;
+    match crate::intelligence::finops_os::build_finops_trends(&refs, &pairs) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}

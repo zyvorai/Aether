@@ -8,6 +8,7 @@ pub mod briefing;
 pub mod context;
 pub mod evolution;
 pub mod finops;
+pub mod finops_os;
 pub mod healer;
 pub mod metrics;
 pub mod placement;
@@ -69,6 +70,17 @@ pub use federation_os::{
 };
 pub use finops::{
     CostApplyPatch, CostApplyReport, CostApplyRequest, CostOptimizeReport, FinOpsEngine,
+};
+pub use finops_os::{
+    build_carbon_footprint, build_chargeback_automation, build_finops_trends,
+    build_multicloud_cost_compare, build_reserved_instance_planner, build_spot_advisor,
+    build_unit_economics, detect_cost_anomalies, dispatch_budget_webhook, execute_finops_agent,
+    BudgetWebhookReport, BudgetWebhookRequest, CarbonFootprintEntry, CarbonFootprintReport,
+    ChargebackAutomationLine, ChargebackAutomationReport, CostAnomalyEntry, CostAnomalyReport,
+    FinOpsExecuteReport, FinOpsExecuteRequest, FinOpsTrendPoint, FinOpsTrendsReport,
+    MulticloudCostCompareReport, MulticloudCostRow, ReservedInstancePlannerReport,
+    ReservedInstanceRecommendation, SpotAdvisorEntry, SpotAdvisorReport, UnitEconomicsEntry,
+    UnitEconomicsReport,
 };
 pub use gitops_agent::{
     build_gitops_agent_plan, execute_gitops_agent, GitOpsAgentExecuteReport,
