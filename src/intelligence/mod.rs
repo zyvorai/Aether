@@ -33,6 +33,7 @@ pub mod remediation;
 pub mod platform_os;
 pub mod labs_os;
 pub mod extensions_os;
+pub mod production_os;
 pub mod security;
 pub mod security_os;
 pub mod sre;
@@ -116,6 +117,15 @@ pub use extensions_os::{
     GameDayExecuteRequest, NativeExtensionsBundle, ShipChaosCatalogReport, ShipChaosRunReport,
     ShipGameDayReport, ShipLiveActivityReport, ShipMenuExtrasReport, ShipShortcutsReport,
     ShipSpotlightReport, SreExtensionsBundle,
+};
+pub use production_os::{
+    build_auth_plane_report, build_ci_smoke_manifest, build_durability_plane_report,
+    build_edge_fleet_plane_report, build_ha_plane_report, build_hosted_plane_report,
+    build_opa_plane_report, build_post_deploy_manifest, build_production_overview,
+    build_production_scorecard, AuthPlaneReport, CiSmokeManifest, DurabilityPlaneReport,
+    EdgeFleetPlaneReport, HaPlaneReport, HostedPlaneReport, OpaPlaneReport, PostDeployManifest,
+    ProductionCheck, ProductionFeature, ProductionOverview, ProductionRuntimeSnapshot,
+    ProductionScorecard,
 };
 pub use gitops_agent::{
     build_gitops_agent_plan, execute_gitops_agent, GitOpsAgentExecuteReport,

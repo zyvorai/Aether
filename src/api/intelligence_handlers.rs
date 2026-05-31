@@ -1592,3 +1592,80 @@ pub(crate) async fn api_intelligence_extensions_sre_bundle(
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
 }
+
+async fn production_runtime_snapshot(
+    app_state: &AppState,
+) -> crate::intelligence::production_os::ProductionRuntimeSnapshot {
+    crate::intelligence::production_os::ProductionRuntimeSnapshot {
+        postgres_required: app_state.workload_state_pg.is_some(),
+        postgres_ok: if let Some(ref pg) = app_state.workload_state_pg {
+            pg.ping_ok().await
+        } else {
+            true
+        },
+        redis_required: app_state.shared_cache.uses_redis(),
+        redis_ok: app_state.shared_cache.redis_ping_ok().await,
+        tls_active: app_state.tls_active,
+    }
+}
+
+/// GET /api/intelligence/production/overview
+pub(crate) async fn api_intelligence_production_overview() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_production_overview()).into_response()
+}
+
+/// GET /api/intelligence/production/scorecard
+pub(crate) async fn api_intelligence_production_scorecard(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let snap = production_runtime_snapshot(&app_state).await;
+    ok_json(crate::intelligence::production_os::build_production_scorecard(&snap)).into_response()
+}
+
+/// GET /api/intelligence/production/auth-plane
+pub(crate) async fn api_intelligence_production_auth_plane(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_auth_plane_report(
+        app_state.saml.is_some(),
+    ))
+    .into_response()
+}
+
+/// GET /api/intelligence/production/opa-plane
+pub(crate) async fn api_intelligence_production_opa_plane() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_opa_plane_report()).into_response()
+}
+
+/// GET /api/intelligence/production/ha-plane
+pub(crate) async fn api_intelligence_production_ha_plane(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let snap = production_runtime_snapshot(&app_state).await;
+    ok_json(crate::intelligence::production_os::build_ha_plane_report(&snap)).into_response()
+}
+
+/// GET /api/intelligence/production/durability-plane
+pub(crate) async fn api_intelligence_production_durability_plane() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_durability_plane_report()).into_response()
+}
+
+/// GET /api/intelligence/production/hosted-plane
+pub(crate) async fn api_intelligence_production_hosted_plane() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_hosted_plane_report()).into_response()
+}
+
+/// GET /api/intelligence/production/edge-fleet
+pub(crate) async fn api_intelligence_production_edge_fleet() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_edge_fleet_plane_report()).into_response()
+}
+
+/// GET /api/intelligence/production/post-deploy-manifest
+pub(crate) async fn api_intelligence_production_post_deploy_manifest() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_post_deploy_manifest()).into_response()
+}
+
+/// GET /api/intelligence/production/ci-smoke-manifest
+pub(crate) async fn api_intelligence_production_ci_smoke_manifest() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::production_os::build_ci_smoke_manifest()).into_response()
+}
