@@ -296,7 +296,7 @@ export default function PolicyPage() {
             data-testid="policy-opa-check-button"
             onClick={() => void handleOpaCheck()}
             disabled={opaLoading}
-            className="mt-3 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
+            className="mt-3 btn-primary disabled:opacity-50"
           >
             {opaLoading ? 'Checking…' : 'Check with OPA'}
           </button>

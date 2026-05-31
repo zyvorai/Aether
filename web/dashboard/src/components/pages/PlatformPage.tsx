@@ -205,8 +205,14 @@ export default function PlatformPage() {
         <PlatformRecommendations items={recommendations} loading={recLoading} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="dash-card" data-testid="platform-runtime-panel">
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="overview-section-header">
+          <p className="section-label">Platform</p>
+          <h2 className="section-title">Runtime & policy</h2>
+          <p className="section-subtitle">API server, HA mode, OPA, and integration status</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-panel-card" data-testid="platform-runtime-panel">
           <div className="flex items-center gap-3 mb-4">
             <Server className="text-aether" size={20} />
             <h2 className="text-lg font-semibold text-slate-100">Runtime</h2>
@@ -237,7 +243,7 @@ export default function PlatformPage() {
           </dl>
         </div>
 
-        <div className="dash-card">
+        <div className="glass-panel-card">
           <div className="flex items-center gap-3 mb-4">
             <Shield className="text-emerald-400" size={20} />
             <h2 className="text-lg font-semibold text-slate-100">Policy & integrations</h2>
@@ -327,9 +333,16 @@ export default function PlatformPage() {
             <code className="text-slate-400">AETHER_OPA_URL</code>
           </p>
         </div>
-      </div>
+        </div>
+      </section>
 
-      <div className="dash-card mt-6">
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="overview-section-header">
+          <p className="section-label">Network</p>
+          <h2 className="section-title">Kubernetes / Cilium</h2>
+          <p className="section-subtitle">CNI status, connectivity checks, and bootstrap policies</p>
+        </div>
+      <div className="glass-panel-card">
         <div className="flex items-center gap-3 mb-4">
           <Network className="text-purple-400" size={20} />
           <h2 className="text-lg font-semibold text-slate-100">Kubernetes / Cilium</h2>
@@ -425,8 +438,15 @@ export default function PlatformPage() {
           <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code>.
         </p>
       </div>
+      </section>
 
-      <div className="dash-card mt-6" data-testid="platform-observability-panel">
+      <section className="overview-section-shell p-6 sm:p-8">
+        <div className="overview-section-header">
+          <p className="section-label">Observability</p>
+          <h2 className="section-title">External links</h2>
+          <p className="section-subtitle">Grafana, Prometheus, Hubble, and PacketWolf integrations</p>
+        </div>
+      <div className="glass-panel-card" data-testid="platform-observability-panel">
         <div className="flex items-center gap-3 mb-4">
           <Database className="text-blue-400" size={20} />
           <h2 className="text-lg font-semibold text-slate-100">Observability links</h2>
@@ -512,6 +532,7 @@ export default function PlatformPage() {
           . Set <code className="text-slate-400">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.
         </p>
       </div>
+      </section>
     </div>
   );
 }

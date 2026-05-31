@@ -206,7 +206,7 @@ export default function BackupsPage() {
             type="button"
             data-testid="backups-create-button"
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            className="inline-flex items-center gap-2 btn-primary"
           >
             <Plus size={16} />
             Create backup
@@ -283,7 +283,7 @@ export default function BackupsPage() {
               type="button"
               onClick={() => void handleCreate()}
               disabled={creating}
-              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-sm font-medium text-white"
+              className="btn-primary disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create backup'}
             </button>
@@ -313,7 +313,7 @@ export default function BackupsPage() {
             type="button"
             onClick={() => void handleRestore()}
             disabled={restoring}
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-sm font-medium text-white"
+            className="btn-primary disabled:opacity-50"
           >
             {restoring ? 'Restoring…' : 'Restore'}
           </button>

@@ -10,6 +10,7 @@ import { formatPercent } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import type { CommandCenterBriefingData } from './CommandCenterBriefing';
 import type { PredictionReport, RuntimeUtilization } from '../types/api';
+import GlassSection from './GlassSection';
 
 function utilTone(value: number): string {
   if (value >= 0.85) return 'text-red-300';
@@ -76,17 +77,13 @@ export default function CapacityForecastPanel() {
       : 0;
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="capacity-forecast-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Gauge className="h-5 w-5 text-amber-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Capacity Forecast</h2>
-            <p className="text-sm text-slate-400">
-              Scheduler utilization + failure predictions + saturation horizon.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="blue"
+      testId="capacity-forecast-panel"
+      title="Capacity Forecast"
+      subtitle="Scheduler utilization + failure predictions + saturation horizon."
+      icon={<Gauge className="h-5 w-5 text-amber-400" />}
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -95,8 +92,8 @@ export default function CapacityForecastPanel() {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
         </button>
-      </div>
-
+      }
+    >
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 rounded-2xl border border-slate-800/70 bg-slate-950/40 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Runtime utilization</p>
@@ -155,6 +152,6 @@ export default function CapacityForecastPanel() {
           )}
         </div>
       </div>
-    </section>
+    </GlassSection>
   );
 }

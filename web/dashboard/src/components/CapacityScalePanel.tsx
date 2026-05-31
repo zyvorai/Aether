@@ -7,6 +7,7 @@ import { Gauge, Loader2, Play, RefreshCw } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
 import Badge from './Badge';
 import type { CapacityScaleExecuteReport, CapacityScaleReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function CapacityScalePanel() {
   const [report, setReport] = useState<CapacityScaleReport | null>(null);
@@ -45,16 +46,13 @@ export default function CapacityScalePanel() {
   }
 
   return (
-    <section className="surface-panel mb-8 rounded-[28px] p-6 sm:p-8" data-testid="capacity-scale-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Gauge className="h-5 w-5 text-amber-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Capacity Auto-Scale</h2>
-            <p className="text-sm text-slate-400">Predictive HPA/VPA suggestions from failure signals</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <GlassSection
+      accent="blue"
+      testId="capacity-scale-panel"
+      title="Capacity Auto-Scale"
+      subtitle="Predictive HPA/VPA suggestions from failure signals"
+      icon={<Gauge className="h-5 w-5 text-amber-400" />}
+      actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void execute(true)}
@@ -72,10 +70,8 @@ export default function CapacityScalePanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-        </div>
-      </div>
-
-      {!report?.suggestions.length ? (
+        </div>}
+    >{!report?.suggestions.length ? (
         <p className="text-sm text-slate-500">No scaling suggestions — capacity headroom looks adequate.</p>
       ) : (
         <ul className="space-y-2">
@@ -97,6 +93,6 @@ export default function CapacityScalePanel() {
           ))}
         </ul>
       )}
-    </section>
+    </GlassSection>
   );
 }

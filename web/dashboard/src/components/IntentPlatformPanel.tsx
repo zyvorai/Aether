@@ -12,6 +12,7 @@ import type {
   IntentVersionHistory,
   IntentViolationsReport,
 } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function IntentPlatformPanel() {
   const [tab, setTab] = useState<'violations' | 'templates' | 'bundles' | 'versions'>('violations');
@@ -60,15 +61,13 @@ export default function IntentPlatformPanel() {
   ];
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="intent-platform-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Layers className="h-5 w-5 text-violet-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Intent Platform</h2>
-            <p className="text-sm text-slate-400">Violations, templates, bundles, and version history</p>
-          </div>
-        </div>
+    <GlassSection
+      accent="purple"
+      testId="intent-platform-panel"
+      title="Intent Platform"
+      subtitle="Violations, templates, bundles, and version history"
+      icon={<Layers className="h-5 w-5 text-violet-400" />}
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -77,8 +76,8 @@ export default function IntentPlatformPanel() {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
         </button>
-      </div>
-
+      }
+    >
       <div className="mb-6 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
@@ -187,6 +186,6 @@ export default function IntentPlatformPanel() {
           )}
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

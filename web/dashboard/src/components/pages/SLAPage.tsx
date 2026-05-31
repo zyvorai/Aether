@@ -184,7 +184,7 @@ export default function SLAPage() {
             <button
               type="submit"
               disabled={adding || !addWorkload.trim()}
-              className="rounded-xl bg-aether/20 border border-aether/40 px-4 py-2 text-sm text-aether disabled:opacity-50"
+              className="btn-primary disabled:opacity-50"
             >
               {adding ? 'Adding…' : 'Add target'}
             </button>
@@ -202,12 +202,14 @@ export default function SLAPage() {
       )}
 
       {workloads.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard title="With SLA" value={slaConfiguredCount} color="green" />
           <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="text-left" data-testid="sla-breach-stat">
             <StatCard title="Compliance gaps" value={complianceGapCount} color={complianceGapCount > 0 ? 'red' : 'blue'} />
           </Link>
         </div>
+        </section>
       )}
 
       {workloads.length === 0 ? (

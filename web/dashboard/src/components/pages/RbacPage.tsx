@@ -195,7 +195,7 @@ export default function RbacPage() {
             type="button"
             onClick={() => void handleCreate()}
             disabled={loading || !name.trim()}
-            className="rounded-xl bg-aether hover:bg-aether/90 disabled:opacity-50 px-4 py-2.5 text-sm font-medium text-white"
+            className="btn-primary disabled:opacity-50"
           >
             {loading ? 'Creating…' : 'Create key'}
           </button>

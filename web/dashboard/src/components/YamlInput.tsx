@@ -186,7 +186,7 @@ export default function YamlInput({
             type="button"
             onClick={handleValidateClick}
             disabled={!value.trim() || validateLoading || editorLoading}
-            className="flex items-center gap-2 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-aether/50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
           >
             {validateLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -201,7 +201,7 @@ export default function YamlInput({
           data-testid={submitTestId ?? 'yaml-submit'}
           onClick={handleSubmit}
           disabled={!value.trim() || loading || submitDisabled || editorLoading}
-          className={`flex shrink-0 items-center gap-2 px-5 py-2.5 bg-aether hover:bg-aether-light disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-aether/50 ${isEditor ? '' : 'w-full sm:w-auto justify-center'}`}
+          className={`flex shrink-0 items-center gap-2 btn-primary disabled:cursor-not-allowed disabled:opacity-40 ${isEditor ? '' : 'w-full sm:w-auto justify-center'}`}
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {buttonText}

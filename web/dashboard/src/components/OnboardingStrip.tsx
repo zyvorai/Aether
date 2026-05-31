@@ -59,16 +59,21 @@ export default function OnboardingStrip({
 
   return (
     <section
-      className="mb-6 rounded-2xl border border-aether/25 bg-aether/5 p-5"
+      className="overview-section-shell mb-6 p-5 sm:p-6"
+      style={{
+        background:
+          'linear-gradient(165deg, rgba(59, 130, 246, 0.08) 0%, rgba(168, 85, 247, 0.06) 48%, rgba(17, 21, 28, 0.88) 100%)',
+      }}
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className={`text-sm font-semibold ${'text-white'}`}>Getting started</h3>
-          <p className={`text-xs mt-0.5 ${'text-slate-400'}`}>
+          <p className="section-label">Onboarding</p>
+          <h3 className="section-title text-base">Getting started</h3>
+          <p className="section-subtitle text-xs">
             {completed}/{steps.length} steps complete — follow the checklist to stand up your first workload.
           </p>
         </div>
-        <span className="rounded-full border border-aether/30 bg-aether/10 px-2.5 py-0.5 text-[11px] font-medium text-aether">
+        <span className="rounded-full border border-aether/30 bg-aether/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
           New platform
         </span>
       </div>
@@ -78,10 +83,10 @@ export default function OnboardingStrip({
             <button
               type="button"
               onClick={step.onClick}
-              className={`w-full text-left rounded-xl border p-4 transition-colors flex items-start gap-3 ${
+              className={`glass-metric-card flex w-full items-start gap-3 text-left ${
                 step.done
-                  ? 'border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10'
-                  : 'border-slate-700/80 bg-slate-950/40 hover:border-aether/35 hover:bg-slate-900/60'
+                  ? 'border-emerald-500/30 !bg-emerald-500/[0.06]'
+                  : ''
               }`}
             >
               <span className={`mt-0.5 shrink-0 text-xs font-mono ${'text-slate-500'}`}>

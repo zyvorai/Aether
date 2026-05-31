@@ -73,13 +73,13 @@ export default function LiveActivityDock() {
 
   return (
     <div
-      className="fixed bottom-6 left-6 z-40 flex max-w-sm flex-col gap-2"
+      className="fixed bottom-4 left-4 z-40 flex max-w-sm flex-col-reverse gap-2 xl:bottom-6 xl:left-6"
       data-testid="live-activity-dock"
     >
       {activities.map((activity) => (
         <div
           key={activity.id}
-          className="animate-fade-in overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-950/90 p-4 shadow-2xl backdrop-blur-xl"
+          className="overview-section-shell animate-fade-in overflow-hidden p-4 shadow-2xl"
           data-testid={`live-activity-${activity.kind}`}
         >
           <div className="mb-2 flex items-start justify-between gap-2">
@@ -110,7 +110,7 @@ export default function LiveActivityDock() {
                   ? 'bg-red-500'
                   : activity.phase === 'completed'
                     ? 'bg-emerald-400'
-                    : 'bg-gradient-to-r from-aether to-violet-400'
+                    : 'bg-gradient-to-r from-aether to-aether-ai'
               }`}
               style={{ width: `${Math.min(100, Math.max(4, activity.percent))}%` }}
             />

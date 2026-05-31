@@ -9,6 +9,7 @@ import { apiFetch } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import Badge from './Badge';
 import type { AutonomyStatusReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 function tierVariant(enabled: boolean): 'green' | 'muted' {
   return enabled ? 'green' : 'muted';
@@ -32,17 +33,13 @@ export default function AutonomousModePanel() {
   const policy = report?.effective_policy;
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="autonomous-mode-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Bot className="h-5 w-5 text-violet-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Autonomous Mode</h2>
-            <p className="text-sm text-slate-400">
-              Global policy for self-healing, drift reconcile, migration, and evolution agents.
-            </p>
-          </div>
-        </div>
+    <GlassSection
+      accent="purple"
+      testId="autonomous-mode-panel"
+      title="Autonomous Mode"
+      subtitle="Global policy for self-healing, drift reconcile, migration, and evolution agents."
+      icon={<Bot className="h-5 w-5 text-violet-400" />}
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -51,8 +48,8 @@ export default function AutonomousModePanel() {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
         </button>
-      </div>
-
+      }
+    >
       {report ? (
         <>
           <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -125,6 +122,6 @@ export default function AutonomousModePanel() {
           Loading autonomy policy…
         </div>
       ) : null}
-    </section>
+    </GlassSection>
   );
 }

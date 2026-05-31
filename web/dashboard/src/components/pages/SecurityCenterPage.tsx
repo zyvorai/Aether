@@ -104,7 +104,7 @@ export default function SecurityCenterPage() {
           <button
             type="button"
             onClick={() => void generateHardeningPlan()}
-            className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90"
+            className="btn-primary"
           >
             Generate Hardening Plan
           </button>
@@ -120,12 +120,14 @@ export default function SecurityCenterPage() {
         <SecurityCopilotPanel />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="High risk items" value={highRiskCount} color="red" icon={<AlertTriangle size={18} />} />
         <StatCard title="Threats" value={threats?.threats.length ?? 0} color="yellow" icon={<Shield size={18} />} />
         <StatCard title="Secrets" value={secrets.length} color="blue" icon={<KeyRound size={18} />} />
         <StatCard title="Need rotation" value={rotationNeeded.length} color="orange" icon={<Lock size={18} />} />
       </div>
+      </section>
 
       {hardening && (
         <div className="dash-card mb-6 border border-violet-500/20">
@@ -180,14 +182,14 @@ export default function SecurityCenterPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h3 className="text-lg font-semibold text-slate-100">Anomaly remediation</h3>
           <div className="flex gap-2">
-            <button type="button" onClick={() => void loadRemediation()} className="text-sm px-3 py-1.5 rounded border border-slate-700 text-slate-300">
+            <button type="button" onClick={() => void loadRemediation()} className="btn-secondary text-sm px-3 py-1.5">
               Plan
             </button>
             <button
               type="button"
               disabled={remediationRunning}
               onClick={() => void executeRemediation(true)}
-              className="text-sm px-3 py-1.5 rounded border border-slate-700 text-slate-300"
+              className="btn-secondary text-sm px-3 py-1.5"
             >
               Dry-run
             </button>
@@ -195,7 +197,7 @@ export default function SecurityCenterPage() {
               type="button"
               disabled={remediationRunning}
               onClick={() => void executeRemediation(false)}
-              className="text-sm px-3 py-1.5 rounded bg-aether text-white"
+              className="btn-primary text-sm px-3 py-1.5"
             >
               Execute safe
             </button>

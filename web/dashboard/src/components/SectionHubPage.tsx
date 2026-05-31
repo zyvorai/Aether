@@ -23,17 +23,18 @@ interface SectionHubPageProps {
 
 export default function SectionHubPage({ title, subtitle, links }: SectionHubPageProps) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold text-white">{title}</h2>
-        <p className="mt-2 max-w-2xl text-sm text-slate-400">{subtitle}</p>
+    <section className="overview-section-shell p-6 sm:p-8">
+      <div className="overview-section-header">
+        <p className="section-label">Tools</p>
+        <h2 className="section-title">{title}</h2>
+        <p className="section-subtitle max-w-2xl">{subtitle}</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {links.map((link) => (
           <Link
             key={link.view}
             to={viewToPath(link.view)}
-            className="group surface-panel interactive-lift rounded-2xl p-5 transition hover:border-aether/30"
+            className="group hub-link-card"
           >
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-aether/20 bg-aether/10 text-aether">
               {link.icon}
@@ -48,6 +49,6 @@ export default function SectionHubPage({ title, subtitle, links }: SectionHubPag
           </Link>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

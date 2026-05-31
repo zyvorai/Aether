@@ -10,6 +10,7 @@ import { formatPercent, formatUSD } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import Badge from './Badge';
 import type { CostApplyReport, CostOptimizeReport } from '../types/api';
+import GlassSection from './GlassSection';
 
 function riskVariant(risk: string): 'green' | 'yellow' | 'red' | 'muted' {
   const l = risk.toLowerCase();
@@ -74,18 +75,13 @@ export default function CostIntelligencePanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="cost-intelligence-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-emerald-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Cost Intelligence</h2>
-            <p className="text-sm text-slate-400">
-              FinOps recommendations from utilization profiles and runtime placement.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
+        <GlassSection
+      accent="blue"
+      testId="cost-intelligence-panel"
+      title="Cost Intelligence"
+      subtitle="FinOps recommendations from utilization profiles and runtime placement."
+      icon={<Sparkles className="h-5 w-5 text-emerald-400" />}
+      actions={<div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => void enforceBudget(true)}
@@ -115,10 +111,8 @@ export default function CostIntelligencePanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-        </div>
-      </div>
-
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        </div>}
+    ><div className="mb-6 grid gap-3 sm:grid-cols-3">
         <div className="glass-metric-card">
           <DollarSign className="mb-2 h-4 w-4 text-emerald-400" />
           <div className="text-2xl font-semibold text-emerald-300">{formatUSD(totalSavings)}</div>
@@ -173,6 +167,6 @@ export default function CostIntelligencePanel() {
           ))}
         </ul>
       )}
-    </section>
+    </GlassSection>
   );
 }

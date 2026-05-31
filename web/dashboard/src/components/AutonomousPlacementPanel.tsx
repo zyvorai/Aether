@@ -11,6 +11,7 @@ import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import Badge from './Badge';
 import type { EvolutionExecuteReport, EvolutionStatus } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function AutonomousPlacementPanel() {
   const [status, setStatus] = useState<EvolutionStatus | null>(null);
@@ -57,18 +58,13 @@ export default function AutonomousPlacementPanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="autonomous-placement-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <MapPin className="h-5 w-5 text-emerald-400" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Autonomous Placement</h2>
-            <p className="text-sm text-slate-400">
-              Fleet runtime evolution — auto-eligible migrations ranked by improvement confidence.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <GlassSection
+      accent="purple"
+      testId="autonomous-placement-panel"
+      title="Autonomous Placement"
+      subtitle="Fleet runtime evolution — auto-eligible migrations ranked by improvement confidence."
+      icon={<MapPin className="h-5 w-5 text-emerald-400" />}
+      actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void runEvolution(true)}
@@ -86,10 +82,8 @@ export default function AutonomousPlacementPanel() {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
           </button>
-        </div>
-      </div>
-
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        </div>}
+    ><div className="mb-6 grid gap-3 sm:grid-cols-3">
         <div className="glass-metric-card">
           <div className="text-2xl font-semibold text-white">{status?.workloads.length ?? 0}</div>
           <div className="text-xs text-slate-500">Tracked workloads</div>
@@ -137,6 +131,6 @@ export default function AutonomousPlacementPanel() {
           ))}
         </ul>
       )}
-    </section>
+    </GlassSection>
   );
 }

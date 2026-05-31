@@ -9,11 +9,18 @@ export default {
     extend: {
       colors: {
         aether: {
-          DEFAULT: '#63a4ff',
-          light: '#8bc2ff',
-          dark: '#2d6fd2',
-          dim: 'rgba(99, 164, 255, 0.14)',
-          glow: 'rgba(99, 164, 255, 0.28)',
+          DEFAULT: '#3B82F6',
+          light: '#60A5FA',
+          dark: '#2563EB',
+          dim: 'rgba(59, 130, 246, 0.14)',
+          glow: 'rgba(59, 130, 246, 0.28)',
+        },
+        'aether-ai': {
+          DEFAULT: '#A855F7',
+          light: '#C084FC',
+          dark: '#9333EA',
+          dim: 'rgba(168, 85, 247, 0.14)',
+          glow: 'rgba(168, 85, 247, 0.28)',
         },
       },
       animation: {

@@ -78,29 +78,29 @@ export default function HostedPage() {
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
       {billing && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1">
+        <section className="overview-section-shell mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8">
+          <div className="dash-card py-3 px-4">
+            <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
               <Users size={16} /> Tenants
             </div>
-            <div className="text-2xl font-semibold">{billing.tenants.length}</div>
+            <div className="text-2xl font-semibold text-slate-100">{billing.tenants.length}</div>
           </div>
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1">
+          <div className="dash-card py-3 px-4">
+            <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
               <Building2 size={16} /> Workloads
             </div>
-            <div className="text-2xl font-semibold">{billing.total_workloads}</div>
+            <div className="text-2xl font-semibold text-slate-100">{billing.total_workloads}</div>
           </div>
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1">
+          <div className="dash-card py-3 px-4">
+            <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
               <CreditCard size={16} /> Period
             </div>
-            <div className="text-2xl font-semibold">{billing.period}</div>
+            <div className="text-2xl font-semibold text-slate-100">{billing.period}</div>
           </div>
-        </div>
+        </section>
       )}
 
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 mb-6">
+      <div className="dash-card mb-6">
         <h3 className="font-medium mb-3 flex items-center gap-2">
           <KeyRound size={18} /> Create tenant
         </h3>
@@ -137,7 +137,7 @@ export default function HostedPage() {
             type="button"
             disabled={creating}
             onClick={() => void handleCreate()}
-            className="px-4 py-2 rounded bg-[var(--brand)] text-white text-sm font-medium"
+            className="btn-primary disabled:opacity-50"
           >
             {creating ? 'Creating…' : 'Create'}
           </button>
@@ -151,7 +151,7 @@ export default function HostedPage() {
           description="Create a tenant to enable multi-tenant API keys and billing."
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+        <div className="dash-card-flush overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-[var(--surface-elevated)] text-left">
               <tr>

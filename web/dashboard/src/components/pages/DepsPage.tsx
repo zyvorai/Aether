@@ -312,7 +312,7 @@ export default function DepsPage() {
             type="button"
             onClick={() => void handleAddDependency()}
             disabled={addLoading || !addWorkload.trim() || !addDependency.trim()}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-sm font-medium"
+            className="flex items-center gap-2 btn-primary disabled:opacity-50"
           >
             <Plus size={16} />
             {addLoading ? 'Adding…' : 'Add'}
@@ -324,7 +324,8 @@ export default function DepsPage() {
         <EmptyState icon={<Inbox size={48} />} title="No dependency data" description="No dependency graph available" />
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6" data-testid="deps-stats-panel">
+          <section className="overview-section-shell mb-6 p-6 sm:p-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-testid="deps-stats-panel">
             <StatCard title="Workloads" value={graph.stats.total_workloads} color="blue" />
             <StatCard title="Edges" value={graph.stats.total_edges} color="purple" />
             <StatCard title="Root" value={graph.stats.root_workloads} color="green" />
@@ -336,6 +337,7 @@ export default function DepsPage() {
               color={graph.stats.has_cycles ? 'red' : 'green'}
             />
           </div>
+          </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="dash-card lg:col-span-2" data-testid="deps-graph-panel">

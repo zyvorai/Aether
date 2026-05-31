@@ -137,7 +137,7 @@ export default function ApplicationsPage() {
           <button
             type="button"
             onClick={() => navigate(pathWithQuery(viewToPath('editor'), { deploy: '1' }))}
-            className="inline-flex items-center gap-2 rounded-xl bg-aether px-3 py-2 text-sm font-medium text-white hover:bg-aether/90"
+            className="inline-flex items-center gap-2 btn-primary"
           >
             <Plus size={16} /> Deploy App
           </button>
@@ -152,11 +152,7 @@ export default function ApplicationsPage() {
               key={ws}
               type="button"
               onClick={() => setWorkspace(ws)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                workspace === ws
-                  ? 'bg-aether/20 text-aether border border-aether/40'
-                  : 'border border-slate-700 text-slate-400 hover:border-slate-600'
-              }`}
+              className={`tab-chip capitalize ${workspace === ws ? 'tab-chip-active' : ''}`}
             >
               {ws === 'all' ? 'All Workspaces' : workspaceLabel(ws)}
             </button>
@@ -201,7 +197,7 @@ export default function ApplicationsPage() {
             <button
               type="button"
               onClick={() => navigate(pathWithQuery(viewToPath('editor'), { deploy: '1' }))}
-              className="rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90"
+              className="btn-primary"
             >
               Deploy App
             </button>

@@ -28,6 +28,7 @@ import type {
   TraySparklineReport,
   UniversalLinkRegistry,
 } from '../types/api';
+import GlassSection from './GlassSection';
 
 export default function MacOSPlatformPanel() {
   const [loading, setLoading] = useState(true);
@@ -77,24 +78,19 @@ export default function MacOSPlatformPanel() {
   }
 
   return (
-    <section className="surface-panel rounded-[28px] p-6 sm:p-8" data-testid="macos-platform-panel">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Apple className="h-5 w-5 text-slate-200" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">macOS Native OS</h2>
-            <p className="text-sm text-slate-400">Tray sparkline, dock badge, Spotlight, offline cache, deep links</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
+        <GlassSection
+      accent="blue"
+      testId="macos-platform-panel"
+      title="macOS Native OS"
+      subtitle="Tray sparkline, dock badge, Spotlight, offline cache, deep links"
+      icon={<Apple className="h-5 w-5 text-slate-200" />}
+      actions={<div className="flex gap-2">
           <Badge text={inShell ? 'Tauri shell' : 'Web only'} variant={inShell ? 'green' : 'muted'} />
           <button type="button" onClick={() => void load()} className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
-        </div>
-      </div>
-
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        </div>}
+    ><div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="glass-metric-card" data-testid="tray-sparkline-panel">
           <div className="font-mono text-2xl text-emerald-300">{sparkline?.sparkline ?? '▁▁▁▁'}</div>
           <div className="text-xs text-slate-500">Tray sparkline · {sparkline?.fleet_health_pct.toFixed(0) ?? 0}%</div>
@@ -204,6 +200,6 @@ export default function MacOSPlatformPanel() {
           ))}
         </div>
       </div>
-    </section>
+    </GlassSection>
   );
 }

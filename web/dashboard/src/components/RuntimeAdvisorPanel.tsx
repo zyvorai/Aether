@@ -11,6 +11,7 @@ import Badge, { RuntimeBadge } from './Badge';
 import BarChart from './BarChart';
 import type { ScoringResult, RuntimeScore } from '../types/api';
 import { formatPercent } from '../utils/formatters';
+import GlassSection from './GlassSection';
 
 function confidenceVariant(confidence: number): 'green' | 'yellow' | 'muted' {
   if (confidence >= 0.8) return 'green';
@@ -56,14 +57,12 @@ export default function RuntimeAdvisorPanel() {
 
   return (
     <section className="space-y-6" data-testid="runtime-advisor-panel">
-      <div className="surface-panel rounded-[28px] p-6 sm:p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <Target className="h-5 w-5 text-aether" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">AI Runtime Advisor</h2>
-            <p className="text-sm text-slate-400">Recommended runtime with reasons, warnings, and confidence.</p>
-          </div>
-        </div>
+      <GlassSection
+        accent="purple"
+        title="AI Runtime Advisor"
+        subtitle="Recommended runtime with reasons, warnings, and confidence."
+        icon={<Target className="h-5 w-5 text-aether" />}
+      >
         <YamlInput
           buttonText="Analyze placement"
           onSubmit={(yaml) => void analyze(yaml)}
@@ -87,7 +86,7 @@ export default function RuntimeAdvisorPanel() {
             </div>
           </div>
         ) : null}
-      </div>
+      </GlassSection>
       <IntentDebugger />
     </section>
   );
