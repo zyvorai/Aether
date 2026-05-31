@@ -156,6 +156,21 @@
 | 103 | Community intent library | Shared goal templates | Lab |
 | 104 | Full autonomous SRE | Closed-loop ops without human gate | **Ship** |
 
+## Era K — Lab Graduation (Phases 105–114)
+
+| # | Phase | Focus | Tag |
+|---|-------|-------|-----|
+| 105 | Terraform export v2 | Intent → OpenTofu modules + variables | **Ship** |
+| 106 | Pulumi bridge v2 | TypeScript/Python programs from pipeline | **Ship** |
+| 107 | Mobile companion | PWA manifest + read-only fleet APIs | **Ship** |
+| 108 | IDE extensions | VS Code/Cursor install commands + OpenAPI | **Ship** |
+| 109 | Community intents | Import/publish shared goal templates | **Ship** |
+| 110 | Carbon footprint | Per-workload CO₂e estimates | **Ship** |
+| 111 | Compliance report | SOC2-style JSON evidence bundle | **Ship** |
+| 112 | Voice copilot | Web Speech API manifest | **Ship** |
+| 113 | Graph export | Neo4j Cypher + JSON-LD download | **Ship** |
+| 114 | Lab graduation hub | `/api/intelligence/labs/*` overview | **Ship** |
+
 ---
 
 ## How to use this doc
