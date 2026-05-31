@@ -847,6 +847,21 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/copilot/troubleshoot/fleet", get(api_copilot_troubleshoot_fleet))
         .route("/api/copilot/sessions/:id", get(api_copilot_session))
         .route("/api/copilot/confirm/:action_id", post(api_copilot_confirm))
+        .route("/api/copilot/confirm-batch", post(api_copilot_confirm_batch))
+        .route("/api/intelligence/copilot/memory", get(api_intelligence_copilot_memory))
+        .route("/api/intelligence/copilot/route", post(api_intelligence_copilot_route))
+        .route("/api/intelligence/copilot/llm-status", get(api_intelligence_copilot_llm_status))
+        .route("/api/intelligence/copilot/voice-lab", get(api_intelligence_copilot_voice_lab))
+        .route("/api/intelligence/copilot/runbook", post(api_intelligence_copilot_runbook))
+        .route(
+            "/api/intelligence/copilot/policy-explain",
+            post(api_intelligence_copilot_policy_explain),
+        )
+        .route("/api/intelligence/copilot/audit", get(api_intelligence_copilot_audit))
+        .route(
+            "/api/intelligence/copilot/rbac-scopes",
+            get(api_intelligence_copilot_rbac_scopes),
+        )
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",

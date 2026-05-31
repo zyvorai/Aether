@@ -94,6 +94,38 @@ export function useCopilotChat() {
     [send],
   );
 
+  const confirmBatch = useCallback(async () => {
+    if (!sessionId || pending.length === 0 || loading) return;
+    setLoading(true);
+    try {
+      const res = await apiPost<{
+        session_id: string;
+        confirmed: string[];
+        skipped: string[];
+        errors: string[];
+      }>('/copilot/confirm-batch', {
+        session_id: sessionId,
+        action_ids: pending.map((a) => a.id),
+      });
+      if (res.success && res.data) {
+        const { confirmed, skipped, errors } = res.data;
+        const summary = [
+          confirmed.length ? `Confirmed ${confirmed.length} action(s).` : '',
+          skipped.length ? `Skipped ${skipped.length}.` : '',
+          errors.length ? errors.join('\n') : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
+        if (summary) {
+          setMessages((m) => [...m, { role: 'assistant', content: summary }]);
+        }
+        setPending((p) => p.filter((a) => !confirmed.includes(a.id)));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, pending, sessionId]);
+
   const clearChat = useCallback(() => {
     setMessages([]);
     setSessionId(null);
@@ -105,9 +137,11 @@ export function useCopilotChat() {
     input,
     setInput,
     loading,
+    sessionId,
     pending,
     send,
     confirmAction,
+    confirmBatch,
     clearChat,
     quickPrompts: QUICK_PROMPTS,
   };
