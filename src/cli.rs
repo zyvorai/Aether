@@ -178,6 +178,12 @@ pub(crate) enum Commands {
     /// Launch interactive TUI dashboard (k9s-style real-time monitoring)
     Tui,
 
+    /// Interactive AI copilot in the terminal (phase 72)
+    Copilot {
+        /// Optional initial message (non-interactive single turn)
+        message: Option<String>,
+    },
+
     /// Generate shell completions
     Completions {
         /// Shell type (bash, zsh, fish, powershell, elvish)
@@ -725,6 +731,7 @@ impl Commands {
             Self::List => "list",
             Self::Migrate { .. } => "migrate",
             Self::Tui => "tui",
+            Self::Copilot { .. } => "copilot",
             Self::Completions { .. } => "completions",
             Self::Metrics => "metrics",
             Self::Backup { .. } => "backup",

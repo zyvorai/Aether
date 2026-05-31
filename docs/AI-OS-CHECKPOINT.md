@@ -1,16 +1,16 @@
 # AI OS Backlog — Reboot Checkpoint
 
-> Saved: 2026-05-30 · Resume with **"cont"** to ship the next batch.
+> Saved: 2026-05-31 · Resume with **"cont"** to ship the next batch.
 
 ## Git state
 
 | Item | Value |
 |------|-------|
-| Branch | `main` (synced with `origin/main`) |
-| Commit | `2c36766` — `feat(ai-os): ship intelligence backlog v1–v11 through macOS native OS` |
+| Branch | `main` (synced with `origin/main` after v12 push) |
+| Commit | v12 Era G — `feat(ai-os): ship copilot & LLM platform v12 (phases 65–74)` |
 | Uncommitted | `web/dashboard/node_modules/*` only (safe to discard: `git checkout -- web/dashboard/node_modules`) |
 
-## Shipped (v1–v11)
+## Shipped (v1–v12)
 
 | Batch | Era | Phases | Key modules |
 |-------|-----|--------|-------------|
@@ -20,36 +20,37 @@
 | v9 | D SRE | 35–44 | `sre_os.rs`, SRE reliability panel |
 | v10 | E Knowledge Graph | 45–54 | `graph_os.rs`, graph platform |
 | v11 | F macOS Native | 55–64 | `macos_os.rs`, Tauri shell, `MacOSPlatformPanel` |
+| v12 | G Copilot & LLM | 65–74 | `copilot_os.rs`, `CopilotPlatformPanel`, `aether copilot` CLI |
 
-Docs: `docs/PHASES-AI-OS.md`, `docs/ROADMAP.md` (eras marked **Ship** through phase 64).
+Docs: `docs/PHASES-AI-OS.md`, `docs/ROADMAP.md` (eras marked **Ship** through phase 74).
 
-## Next batch — v12 Era G (phases 65–74)
+## Next batch — v13 Era H (phases 75–84)
 
-**Copilot & LLM** — see `docs/PHASES-AI-OS.md` § Era G.
+**FinOps & Cost** — see `docs/PHASES-AI-OS.md` § Era H.
 
 | # | Phase | Focus |
 |---|-------|-------|
-| 65 | Copilot tool confirmation UX | Batch approve pending actions |
-| 66 | Voice copilot | Speech → infra queries (Lab) |
-| 67 | Copilot memory | Session + fleet context |
-| 68 | Multi-agent copilot | SRE / FinOps sub-agents |
-| 69 | LLM intent parsing | Optional OpenAI/Anthropic backend |
-| 70 | Copilot runbook author | NL → markdown runbooks |
-| 71 | Copilot policy explainer | OPA violation plain English |
-| 72 | Copilot in terminal | `aether copilot` TUI mode |
-| 73 | Copilot audit trail | All NL actions logged |
-| 74 | Copilot RBAC scopes | Role-limited tool access |
+| 75 | Chargeback automation | Owner/project auto-attribution |
+| 76 | Spot/preemptible advisor | Workload → spot eligibility |
+| 77 | Reserved instance planner | RI/SP recommendation engine |
+| 78 | Cost anomaly detection | Spend spike alerts |
+| 79 | Unit economics | Cost per request metric |
+| 80 | FinOps agent execute | Auto-downsize on schedule |
+| 81 | Multi-cloud cost compare | Live AWS/GCP/Azure in pipeline |
+| 82 | Budget guardrails | Hard/soft spend caps |
+| 83 | Cost forecast API | ML spend projection |
+| 84 | FinOps dashboard panel | Unified cost intelligence UI |
 
 **Implementation pattern (repeat per batch):**
 
-1. `src/intelligence/copilot_os.rs` (or extend `src/copilot/`) + handlers in `src/api/intelligence_handlers.rs`
+1. `src/intelligence/finops_os.rs` (or extend `finops.rs`) + handlers
 2. Dashboard panel(s) with `data-testid`, route wiring, Command Palette hooks
-3. `web/dashboard/tests/ai-os-v12.spec.ts`
-4. Mark phases 65–74 **Ship** in `PHASES-AI-OS.md` + ROADMAP v12 section
+3. `web/dashboard/tests/ai-os-v13.spec.ts`
+4. Mark phases 75–84 **Ship** in `PHASES-AI-OS.md` + ROADMAP v13 section
 
 ## Deploy
 
-**Live** on `212.8.252.194:30090` (commit `2c36766`, remote Linux build — do **not** use `--local-build` from macOS).
+**Live** on `212.8.252.194:30090` (remote Linux build — do **not** use `--local-build` from macOS).
 
 ```bash
 ./scripts/deploy-remote.sh 212.8.252.194 sus   # remote cargo on Linux
@@ -57,15 +58,12 @@ Docs: `docs/PHASES-AI-OS.md`, `docs/ROADMAP.md` (eras marked **Ship** through ph
 # UI: http://212.8.252.194:30090
 ```
 
-## CI note
-
-Push `2c36766` triggered [CI run 26684161065](https://github.com/ssahani/Aether/actions/runs/26684161065) — **Dashboard build** and **Security Audit** jobs failed in ~3s (likely Actions quota/billing, not compile). Re-run after reboot or fix billing.
-
 ## Local dev after reboot
 
 ```bash
 cargo build --release
-cd web/dashboard && npm run dev   # or npm run build
+cd web/dashboard && npm run build && cd ../..
+cargo build --release   # embed dashboard dist
 AETHER_MOCK_IDP=1 cargo run -- serve --port 5090
-# E2E: npm run test:e2e -- tests/ai-os-v*.spec.ts
+# E2E: cd web/dashboard && npm run test:e2e -- tests/ai-os-v*.spec.ts
 ```

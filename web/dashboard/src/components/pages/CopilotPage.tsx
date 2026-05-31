@@ -9,6 +9,7 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiPost } from '../../utils/api';
+import CopilotPlatformPanel from '../CopilotPlatformPanel';
 
 interface ToolResult {
   tool: string;
@@ -115,6 +116,38 @@ export default function CopilotPage() {
   const confirmAction = (actionId: string) => {
     void send('confirm', actionId);
     setPending((p) => p.filter((a) => a.id !== actionId));
+  };
+
+  const confirmBatch = async () => {
+    if (!sessionId || pending.length === 0 || loading) return;
+    setLoading(true);
+    try {
+      const res = await apiPost<{
+        session_id: string;
+        confirmed: string[];
+        skipped: string[];
+        errors: string[];
+      }>('/copilot/confirm-batch', {
+        session_id: sessionId,
+        action_ids: pending.map((a) => a.id),
+      });
+      if (res.success && res.data) {
+        const { confirmed, skipped, errors } = res.data;
+        const summary = [
+          confirmed.length ? `Confirmed ${confirmed.length} action(s).` : '',
+          skipped.length ? `Skipped ${skipped.length}.` : '',
+          errors.length ? errors.join('\n') : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
+        if (summary) {
+          setMessages((m) => [...m, { role: 'assistant', content: summary }]);
+        }
+        setPending((p) => p.filter((a) => !confirmed.includes(a.id)));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const workloadFocus = workloadParam.trim();
@@ -294,7 +327,19 @@ export default function CopilotPage() {
 
           {pending.length > 0 && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-sm" data-testid="copilot-pending-actions">
-              <p className="mb-2 text-xs font-medium text-amber-200">Actions awaiting confirmation</p>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-amber-200">Actions awaiting confirmation</p>
+                {pending.length > 1 ? (
+                  <button
+                    type="button"
+                    data-testid="copilot-confirm-batch"
+                    onClick={() => void confirmBatch()}
+                    className="rounded-lg bg-amber-600 px-2 py-1 text-xs text-white hover:bg-amber-500"
+                  >
+                    Approve all ({pending.length})
+                  </button>
+                ) : null}
+              </div>
               {pending.map((a) => (
                 <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs text-slate-300">
                   <span>{a.description}</span>
@@ -348,6 +393,8 @@ export default function CopilotPage() {
           </button>
         </form>
       </div>
+
+      <CopilotPlatformPanel />
     </div>
   );
 }
