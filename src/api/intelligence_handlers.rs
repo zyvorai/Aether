@@ -1138,3 +1138,129 @@ pub(crate) async fn api_intelligence_finops_trends(
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
 }
+
+fn security_state_dir(app_state: &AppState) -> std::path::PathBuf {
+    app_state
+        .state_path
+        .parent()
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| crate::resources::aether_path(""))
+}
+
+async fn confidential_workload_triples(
+    app_state: &AppState,
+) -> Vec<(String, Workload, String)> {
+    let store = app_state.state.read().await;
+    store
+        .list()
+        .iter()
+        .filter_map(|w| {
+            Workload::from_file(&w.spec_path)
+                .ok()
+                .filter(|s| s.confidential.as_ref().is_some_and(|c| c.enabled))
+                .map(|s| (w.name.clone(), s, w.runtime.to_string()))
+        })
+        .collect()
+}
+
+/// POST /api/intelligence/security/policy-apply
+pub(crate) async fn api_intelligence_security_policy_apply(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::security_os::PolicyAutoApplyRequest>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::security_os::apply_security_policies(&pairs, &body)).into_response()
+}
+
+/// GET /api/intelligence/security/sbom-drift
+pub(crate) async fn api_intelligence_security_sbom_drift() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::security_os::detect_sbom_drift()).into_response()
+}
+
+/// GET /api/intelligence/security/confidential-fleet
+pub(crate) async fn api_intelligence_security_confidential_fleet(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let svc = crate::ragnarok::attestation::AttestationService::new(security_state_dir(&app_state));
+    let catalog = crate::ragnarok::image::ImageCatalog::load(&security_state_dir(&app_state));
+    let triples = confidential_workload_triples(&app_state).await;
+    let refs: Vec<(&str, &Workload, &str)> = triples
+        .iter()
+        .map(|(n, s, r)| (n.as_str(), s, r.as_str()))
+        .collect();
+    ok_json(crate::intelligence::security_os::build_confidential_fleet_dashboard(
+        &refs, &svc, &catalog,
+    ))
+    .into_response()
+}
+
+/// GET /api/intelligence/security/zero-trust-wizard
+pub(crate) async fn api_intelligence_security_zero_trust_wizard(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::security_os::build_zero_trust_wizard(&pairs)).into_response()
+}
+
+/// GET /api/intelligence/security/compliance-report
+pub(crate) async fn api_intelligence_security_compliance_report(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::security_os::build_compliance_report(&pairs)).into_response()
+}
+
+/// POST /api/intelligence/security/rotation-agent
+pub(crate) async fn api_intelligence_security_rotation_agent(
+    Json(body): Json<crate::intelligence::security_os::SecretRotationAgentRequest>,
+) -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::security_os::run_secret_rotation_agent(&body)).into_response()
+}
+
+/// GET /api/intelligence/security/image-enforcement
+pub(crate) async fn api_intelligence_security_image_enforcement(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    let catalog = crate::ragnarok::image::ImageCatalog::load(&security_state_dir(&app_state));
+    ok_json(crate::intelligence::security_os::build_image_signing_enforcement(
+        &pairs, &catalog,
+    ))
+    .into_response()
+}
+
+/// POST /api/intelligence/security/threat-hunt
+pub(crate) async fn api_intelligence_security_threat_hunt(
+    AxumState(app_state): AxumState<AppState>,
+    Json(body): Json<crate::intelligence::security_os::ThreatHuntRequest>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(
+        crate::intelligence::security_os::run_threat_hunt(&pairs, &body).await,
+    )
+    .into_response()
+}
+
+/// GET /api/intelligence/security/sovereign-audit
+pub(crate) async fn api_intelligence_security_sovereign_audit_get() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::security_os::read_sovereign_audit(50)).into_response()
+}
+
+/// POST /api/intelligence/security/sovereign-audit
+pub(crate) async fn api_intelligence_security_sovereign_audit_append(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    match crate::intelligence::security_os::append_sovereign_audit(&pairs) {
+        Ok(report) => ok_json(report).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
+/// GET /api/intelligence/security/score-trend
+pub(crate) async fn api_intelligence_security_score_trend(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    let pairs = workload_pairs(&app_state).await;
+    ok_json(crate::intelligence::security_os::build_security_score_trend(&pairs)).into_response()
+}
