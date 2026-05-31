@@ -252,7 +252,7 @@ export default function SecretsPage() {
       {secrets.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No secrets" description="No secrets have been stored" />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="secrets-list">
+        <div className="dash-card overflow-hidden" data-testid="secrets-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

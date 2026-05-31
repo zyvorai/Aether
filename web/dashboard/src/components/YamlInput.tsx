@@ -118,10 +118,11 @@ export default function YamlInput({
     e.target.value = '';
   }
 
-  const toolbarBtn = 'quick-link-chip text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40';
+  const toolbarBtn =
+    'inline-flex items-center gap-1.5 rounded-lg border border-slate-800/60 bg-[#11151C]/80 px-2.5 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40 disabled:cursor-not-allowed disabled:opacity-40';
 
   const textareaClass =
-    'glass-input font-mono leading-relaxed text-slate-300 placeholder-slate-600 resize-y p-4';
+    'w-full rounded-xl border border-slate-800/60 bg-[#0B0E14] p-4 text-sm font-mono leading-relaxed text-slate-300 placeholder-slate-600 resize-y transition-colors focus:border-aether focus:outline-none focus:ring-1 focus:ring-aether/30';
 
   return (
     <div className={isEditor ? 'flex min-h-0 flex-1 flex-col gap-3 overflow-hidden' : 'space-y-3'}>
@@ -150,7 +151,7 @@ export default function YamlInput({
 
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {editorLoading ? (
-              <div className="glass-code-block absolute inset-0 z-10 flex items-center justify-center">
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-slate-800/60 bg-[#0B0E14]/90">
                 <Loader2 className="w-6 h-6 animate-spin text-aether" />
                 <span className="ml-2 text-sm text-slate-400">Loading template…</span>
               </div>
@@ -179,7 +180,7 @@ export default function YamlInput({
 
       {footer}
 
-      <div className={`relative z-10 flex flex-wrap items-center justify-end gap-2 ${isEditor ? 'shrink-0 pt-2' : ''}`}>
+      <div className={`relative z-10 flex flex-wrap items-center justify-end gap-2 ${isEditor ? 'shrink-0 bg-[#0B0E14] pt-2' : ''}`}>
         {showValidateButton && onValidate ? (
           <button
             type="button"

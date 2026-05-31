@@ -218,7 +218,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
       <div className="relative z-[1] flex-1 space-y-2 overflow-y-auto p-3">
         {messages.length === 0 ? (
           <div className="space-y-4">
-            <div className="glass-drawer rounded-2xl px-3 py-3">
+            <div className="rounded-2xl border border-aether-ai/15 bg-[#161B24]/50 px-3 py-3 backdrop-blur-sm">
               <p className="text-xs leading-relaxed text-slate-400">
                 Not a chatbot — an infrastructure co-pilot. Ask about health, cost, migrations, security, or
                 capacity.
@@ -251,7 +251,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
             className={`max-w-full rounded-2xl px-3 py-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
               msg.role === 'user'
                 ? 'ml-6 border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
-                : 'mr-2 glass-drawer text-slate-200'
+                : 'mr-2 border border-slate-800/60 bg-[#161B24]/80 text-slate-200'
             }`}
           >
             {msg.content}
@@ -259,7 +259,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
         ))}
 
         {pending.length > 0 ? (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 backdrop-blur-sm">
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
               Awaiting confirmation
             </p>
@@ -299,7 +299,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
           onChange={(e) => setInput(e.target.value)}
           placeholder={selectedAgent ? `Ask ${agents.find((a) => a.id === selectedAgent)?.label ?? 'Aether'}…` : 'Ask Aether…'}
           data-testid="copilot-rail-input"
-          className="glass-input min-w-0 flex-1 py-2.5 text-xs focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
+          className="min-w-0 flex-1 rounded-xl border border-slate-700/70 bg-[#11151C]/80 px-3 py-2.5 text-xs text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
           disabled={loading}
         />
         <button
@@ -321,7 +321,7 @@ export function CopilotRailToggle({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-aether-ai/40 bg-[#2563EB] px-4 py-2.5 text-sm font-medium text-white shadow-lg xl:hidden"
+      className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-aether-ai/40 bg-gradient-to-r from-aether to-aether-ai px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-aether-ai/25 backdrop-blur-xl xl:hidden"
       data-testid="copilot-rail-mobile-toggle"
     >
       <Bot className="h-4 w-4" />

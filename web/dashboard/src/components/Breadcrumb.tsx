@@ -28,7 +28,7 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
         <button
           type="button"
           onClick={() => onNavigate('overview')}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-400 transition hover:bg-[#161B24] hover:text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
         >
           <Home className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
           <span className="hidden sm:inline">Home</span>
@@ -42,7 +42,7 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
               type="button"
               data-testid="breadcrumb-workload"
               onClick={() => navigate(pathWithQuery(viewToPath(currentView), { workload }))}
-              className="truncate max-w-[12rem] rounded-lg px-2 py-1.5 text-sm font-mono text-aether hover:bg-[#161B24] hover:underline"
+              className="truncate max-w-[12rem] rounded-lg px-2 py-1.5 text-sm font-mono text-aether hover:bg-white/[0.04] hover:underline"
             >
               {workload}
             </button>

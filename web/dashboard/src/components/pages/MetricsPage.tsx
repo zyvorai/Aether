@@ -370,7 +370,7 @@ export default function MetricsPage() {
             · spot ${chargeback.totalSpotMonthlyUsd.toFixed(2)}/mo · 36-mo TCO ${chargeback.tco36MonthsUsd.toFixed(0)}
           </p>
           {chargeback.lines.length > 0 ? (
-            <div className="glass-panel-card-flush overflow-x-auto">
+            <div className="dash-card-flush overflow-x-auto">
               <table className="w-full text-sm text-left text-slate-300">
                 <thead className="text-xs uppercase text-slate-500 border-b border-slate-800/60">
                   <tr>

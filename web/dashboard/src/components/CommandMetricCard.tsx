@@ -46,6 +46,7 @@ export default function CommandMetricCard({
       className={`glass-metric-card group text-left ${accentClass[accent]} ${isEmpty ? 'glass-metric-empty' : ''}`}
       data-testid={testId}
     >
+      <div className="glass-metric-shine" aria-hidden />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">

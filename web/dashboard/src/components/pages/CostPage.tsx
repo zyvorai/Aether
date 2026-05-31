@@ -177,7 +177,7 @@ export default function CostPage() {
         </WorkloadContextBanner>
       ) : null}
       {chargeback ? (
-        <div className="glass-panel-card" data-testid="cost-fleet-chargeback">
+        <div className="dash-card" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <h2 className="text-lg font-semibold text-slate-100">Fleet chargeback</h2>
             <button

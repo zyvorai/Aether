@@ -321,9 +321,8 @@ export default function EditorPage() {
         ) : null}
       </div>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-        <div className="glass-panel-card space-y-6">
+        <div className="dash-card space-y-6">
           <div>
             <h3 className="text-sm font-medium text-slate-400 mb-3">Basic information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -333,7 +332,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  className="glass-input"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                 />
               </div>
               <div>
@@ -342,7 +341,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.image}
                   onChange={(e) => handleChange('image', e.target.value)}
-                  className="glass-input"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                 />
               </div>
             </div>
@@ -354,7 +353,7 @@ export default function EditorPage() {
               <select
                 value={form.runtime}
                 onChange={(e) => handleChange('runtime', e.target.value)}
-                className="glass-input"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
               >
                 {runtimes.map((r) => (
                   <option key={r} value={r}>
@@ -369,7 +368,7 @@ export default function EditorPage() {
                 type="number"
                 value={form.replicas}
                 onChange={(e) => handleChange('replicas', parseInt(e.target.value, 10) || 1)}
-                className="glass-input"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
               />
             </div>
           </div>
@@ -384,7 +383,7 @@ export default function EditorPage() {
                     type="text"
                     value={form.k8sNamespace}
                     onChange={(e) => handleChange('k8sNamespace', e.target.value)}
-                    className="glass-input"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                   />
                 </div>
                 <div>
@@ -393,7 +392,7 @@ export default function EditorPage() {
                     type="text"
                     value={form.k8sServiceAccount}
                     onChange={(e) => handleChange('k8sServiceAccount', e.target.value)}
-                    className="glass-input"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -403,7 +402,7 @@ export default function EditorPage() {
                     value={form.k8sNodeSelector}
                     onChange={(e) => handleChange('k8sNodeSelector', e.target.value)}
                     placeholder="kubernetes.io/arch=amd64"
-                    className="glass-input"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                   />
                 </div>
               </div>
@@ -599,7 +598,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.cpu}
                   onChange={(e) => handleChange('cpu', e.target.value)}
-                  className="glass-input"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                 />
               </div>
               <div>
@@ -608,7 +607,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.memory}
                   onChange={(e) => handleChange('memory', e.target.value)}
-                  className="glass-input"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
                 />
               </div>
             </div>
@@ -619,7 +618,7 @@ export default function EditorPage() {
             <select
               value={form.intent}
               onChange={(e) => handleChange('intent', e.target.value)}
-              className="glass-input"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
             >
               {intents.map((i) => (
                 <option key={i} value={i}>
@@ -711,7 +710,7 @@ export default function EditorPage() {
         </div>
 
         {showPreview && (
-          <div className="glass-panel-card flex min-h-0 flex-col">
+          <div className="dash-card flex min-h-0 flex-col">
             <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
               <Eye className="h-4 w-4" /> Live YAML preview
             </div>
@@ -730,7 +729,6 @@ export default function EditorPage() {
           </div>
         )}
       </div>
-      </section>
     </div>
   );
 }

@@ -22,13 +22,6 @@ export default {
           dim: 'rgba(168, 85, 247, 0.14)',
           glow: 'rgba(168, 85, 247, 0.28)',
         },
-        secure: {
-          bg: '#0A0C11',
-          surface: '#11151C',
-          elevated: '#161B24',
-          border: '#1F2937',
-          'border-strong': '#374151',
-        },
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

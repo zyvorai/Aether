@@ -76,7 +76,7 @@ export default function IntentStudioPanel() {
           <input
             value={workloadName}
             onChange={(e) => setWorkloadName(e.target.value)}
-            className="w-full max-w-md rounded-xl border border-slate-700/80 bg-[#11151C] px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-500/50"
+            className="w-full max-w-md rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-500/50"
             placeholder="my-app"
           />
         </label>

@@ -223,7 +223,7 @@ export default function ActivityMonitorPage() {
         ))}
       </div>
 
-      <div className="glass-panel-card">
+      <div className="dash-card">
         {tab === 'cpu' && (
           <div>
             <h3 className="text-sm font-semibold text-slate-300 mb-4">Top CPU pods</h3>
