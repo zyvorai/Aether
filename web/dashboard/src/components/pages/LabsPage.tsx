@@ -5,12 +5,14 @@
 import KnowledgeGraphPanel from '../KnowledgeGraphPanel';
 import GraphPlatformPanel from '../GraphPlatformPanel';
 import LabsGraduationPanel from '../LabsGraduationPanel';
+import LiveLabsPanel from '../LiveLabsPanel';
 import SectionHubPage from '../SectionHubPage';
 import { FileCode2, FlaskConical, GitBranch, Layers, Terminal } from 'lucide-react';
 
 export default function LabsPage() {
   return (
     <div className="space-y-8">
+      <LiveLabsPanel />
       <LabsGraduationPanel />
       <KnowledgeGraphPanel />
       <GraphPlatformPanel />

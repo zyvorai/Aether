@@ -34,6 +34,7 @@ pub mod platform_os;
 pub mod labs_os;
 pub mod extensions_os;
 pub mod production_os;
+pub mod livelabs_os;
 pub mod security;
 pub mod security_os;
 pub mod sre;
@@ -126,6 +127,14 @@ pub use production_os::{
     EdgeFleetPlaneReport, HaPlaneReport, HostedPlaneReport, OpaPlaneReport, PostDeployManifest,
     ProductionCheck, ProductionFeature, ProductionOverview, ProductionRuntimeSnapshot,
     ProductionScorecard,
+};
+pub use livelabs_os::{
+    build_advanced_runtime_labs_report, build_ci_pipeline_report, build_cluster_exec_report,
+    build_confidential_lab_report, build_kind_fixture_report, build_kubernetes_lab_report,
+    build_livelabs_overview, build_live_smoke_report, build_post_deploy_verify_report,
+    build_reference_runner_report, AdvancedRuntimeLabReport, CiPipelineReport, ClusterExecReport,
+    ConfidentialLabReport, KindFixtureReport, KubernetesLabReport, LiveLabsFeature,
+    LiveLabsOverview, LiveSmokeReport, PostDeployVerifyReport, ReferenceRunnerReport,
 };
 pub use gitops_agent::{
     build_gitops_agent_plan, execute_gitops_agent, GitOpsAgentExecuteReport,

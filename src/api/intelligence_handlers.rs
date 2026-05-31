@@ -1669,3 +1669,53 @@ pub(crate) async fn api_intelligence_production_post_deploy_manifest() -> impl a
 pub(crate) async fn api_intelligence_production_ci_smoke_manifest() -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::production_os::build_ci_smoke_manifest()).into_response()
 }
+
+/// GET /api/intelligence/livelabs/overview
+pub(crate) async fn api_intelligence_livelabs_overview() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_livelabs_overview()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/reference-runner
+pub(crate) async fn api_intelligence_livelabs_reference_runner() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_reference_runner_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/kind-fixture
+pub(crate) async fn api_intelligence_livelabs_kind_fixture() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_kind_fixture_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/live-smoke
+pub(crate) async fn api_intelligence_livelabs_live_smoke() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_live_smoke_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/post-deploy-verify
+pub(crate) async fn api_intelligence_livelabs_post_deploy_verify() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_post_deploy_verify_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/kubernetes-lab
+pub(crate) async fn api_intelligence_livelabs_kubernetes_lab() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_kubernetes_lab_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/advanced-runtime-labs
+pub(crate) async fn api_intelligence_livelabs_advanced_runtime_labs() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_advanced_runtime_labs_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/ci-pipeline
+pub(crate) async fn api_intelligence_livelabs_ci_pipeline() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_ci_pipeline_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/cluster-exec
+pub(crate) async fn api_intelligence_livelabs_cluster_exec() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_cluster_exec_report()).into_response()
+}
+
+/// GET /api/intelligence/livelabs/confidential-lab
+pub(crate) async fn api_intelligence_livelabs_confidential_lab() -> impl axum::response::IntoResponse {
+    ok_json(crate::intelligence::livelabs_os::build_confidential_lab_report()).into_response()
+}
