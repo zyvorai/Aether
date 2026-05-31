@@ -39,7 +39,7 @@ function actionTone(actionType: string): string {
     case 'capacity':
       return 'border-amber-500/20 bg-amber-500/[0.06]';
     default:
-      return 'border-slate-800/70 bg-[#161B24]/60';
+      return 'border-slate-800/70 bg-[#161B24]';
   }
 }
 
@@ -145,7 +145,7 @@ export default function CommandCenterNextActions({
       </div>
 
       {actions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700/60 bg-[#161B24]/40 px-6 py-10 text-center backdrop-blur-sm">
+        <div className="rounded-2xl border border-dashed border-slate-700/60 bg-[#161B24]/40 px-6 py-10 text-center">
           <Sparkles className="mx-auto mb-3 h-8 w-8 text-slate-600" />
           <p className="text-sm font-medium text-slate-300">Queue is clear</p>
           <p className="mt-1 text-xs text-slate-500">
@@ -165,7 +165,7 @@ export default function CommandCenterNextActions({
                   data-testid={`next-action-${action.id}`}
                 >
                   <span className="next-action-priority">{action.priority}</span>
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.04]">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#1F2937] bg-[#161B24]">
                     <Icon className="h-4 w-4 text-slate-400" />
                   </span>
                   <span className="min-w-0 flex-1">

@@ -217,7 +217,7 @@ export default function BackupsPage() {
       {backups.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No backups" description="Create a backup to get started" />
       ) : (
-        <div className="dash-card overflow-hidden" data-testid="backups-list">
+        <div className="glass-panel-card overflow-hidden" data-testid="backups-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

@@ -607,7 +607,7 @@ export default function Navbar({
   );
 
   return (
-    <nav className={`sticky top-0 z-40 overflow-visible border-b ${navbarShellClass(theme)}`}>
+    <nav id="app-topnav" className={`navbar-solid sticky top-0 z-40 overflow-visible border-b ${navbarShellClass(theme)}`}>
       <div className="dash-content min-w-0">
         {/* Row 1: brand + utilities (always fits viewport) */}
         <div className="flex min-w-0 items-center justify-between gap-2 py-2 sm:py-2.5">
@@ -617,12 +617,11 @@ export default function Navbar({
               onClick={() => onNavigate('overview')}
               className="group flex min-w-0 items-center gap-2 transition-opacity hover:opacity-90"
             >
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-aether/25 bg-gradient-to-br from-aether/15 to-aether-ai/10 shadow-[0_0_0_1px_rgba(59,130,246,0.08)] transition group-hover:border-aether/40 sm:h-10 sm:w-10">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-aether/10" />
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#1F2937] bg-[#161B24] sm:h-10 sm:w-10">
                 <Hexagon className="h-5 w-5 text-aether" />
               </div>
               <div className="min-w-0 text-left">
-                <span className="block truncate bg-gradient-to-r from-white to-slate-400 bg-clip-text text-base font-semibold tracking-tight text-transparent sm:text-lg">
+                <span className="block truncate text-base font-semibold tracking-tight text-slate-100 sm:text-lg">
                   Aether
                 </span>
                 <span className="hidden 2xl:block text-[10px] uppercase tracking-[0.2em] text-slate-500">
@@ -795,7 +794,7 @@ export default function Navbar({
         <>
           <button
             type="button"
-            className="fixed inset-0 z-50 bg-[#11151C]/50 backdrop-blur-md lg:hidden"
+            className="fixed inset-0 z-50 bg-[#11151C] lg:hidden"
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />

@@ -60,17 +60,17 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
 
   const borderBg =
     item.type === 'success'
-      ? 'border-emerald-500/30 bg-slate-900/95'
+      ? 'border-emerald-500/30 glass-drawer'
       : item.type === 'error'
-        ? 'border-red-500/30 bg-slate-900/95'
-        : 'border-aether/30 bg-slate-900/95';
+        ? 'border-red-500/30 glass-drawer'
+        : 'border-aether/30 glass-drawer';
 
   const iconColor =
     item.type === 'success' ? 'text-emerald-500' : item.type === 'error' ? 'text-red-500' : 'text-aether';
 
   return (
     <div
-      className={`pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.45)] backdrop-blur-xl ${borderBg} ${
+      className={`pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3 rounded-2xl px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.45)] ${borderBg} ${
         item.exiting ? 'toast-exit' : 'toast-enter'
       }`}
     >

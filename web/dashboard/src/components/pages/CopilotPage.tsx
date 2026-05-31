@@ -212,7 +212,7 @@ export default function CopilotPage() {
           </>
         ) : null}
       </WorkloadContextBanner>
-      <div className="copilot-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
+      <div className="copilot-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-xl border">
         <div className="relative z-[1] flex items-center gap-3 border-b border-slate-800/50 px-4 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
             <Bot className="h-4 w-4 text-[#c084fc]" aria-hidden />
@@ -287,7 +287,7 @@ export default function CopilotPage() {
 
         <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4">
           {messages.length === 0 && (
-            <div className="rounded-2xl border border-aether-ai/15 bg-[#161B24]/50 px-4 py-6 text-center backdrop-blur-sm">
+            <div className="rounded-2xl border border-aether-ai/15 bg-[#161B24] px-4 py-6 text-center">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-[#c084fc]/80" aria-hidden />
               <p className="text-sm text-slate-400">
                 Ask about health, drift, costs, migrations, or cluster state.
@@ -326,7 +326,7 @@ export default function CopilotPage() {
           ))}
 
           {pending.length > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-sm" data-testid="copilot-pending-actions">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3" data-testid="copilot-pending-actions">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-amber-200">Actions awaiting confirmation</p>
                 {pending.length > 1 ? (

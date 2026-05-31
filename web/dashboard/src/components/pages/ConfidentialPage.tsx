@@ -304,7 +304,7 @@ export default function ConfidentialPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div
-          className="dash-card lg:col-span-2"
+          className="glass-panel-card lg:col-span-2"
           data-testid={integration?.mode === 'composite' ? 'confidential-composite-banner' : undefined}
         >
           <div className="flex items-start justify-between gap-4 mb-4">
@@ -346,7 +346,7 @@ export default function ConfidentialPage() {
           )}
         </div>
 
-        <div className="dash-card">
+        <div className="glass-panel-card">
           <h2 className="text-sm font-medium uppercase tracking-wider text-slate-400 mb-3">Host TEE</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -366,7 +366,7 @@ export default function ConfidentialPage() {
       </div>
 
       {sovereign && (sovereign.offline_attestation || sovereign.region_lock) && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2">Sovereign mode</h2>
           <div className="flex flex-wrap gap-3 text-sm text-slate-400">
             {sovereign.offline_attestation && (
@@ -388,7 +388,7 @@ export default function ConfidentialPage() {
       )}
 
       {kata && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2">Kata / Confidential Containers</h2>
           <div className="flex flex-wrap gap-2 mb-3">
             <Badge text={kata.hypervisor} variant="muted" />
@@ -406,7 +406,7 @@ export default function ConfidentialPage() {
       )}
 
       {fleetTrust.length > 0 && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2">Fleet trust scores</h2>
           <p className="text-sm text-slate-500 mb-4">
             Composite trust from attestation, network policy, and firmware exposure across confidential workloads.
@@ -427,7 +427,7 @@ export default function ConfidentialPage() {
                     }),
                   )
                 }
-                className={`text-left rounded-lg border bg-[#11151C]/50 p-3 hover:border-aether/40 transition-colors ${
+                className={`text-left rounded-lg border bg-[#11151C] p-3 hover:border-aether/40 transition-colors ${
                   focused ? 'border-aether/50 ring-1 ring-aether/30' : 'border-slate-800/60'
                 }`}
               >
@@ -448,14 +448,14 @@ export default function ConfidentialPage() {
       )}
 
       {intel && intel.workloads.length > 0 && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2">AI confidential intelligence</h2>
           <p className="text-sm text-slate-500 mb-3">
             Fleet trust avg {Math.round(intel.fleet_trust_avg * 100)}% · {intel.critical_count} high-risk workload(s)
           </p>
           <div className="space-y-2 max-h-48 overflow-auto">
             {intel.workloads.map((row) => (
-              <div key={row.workload} className="text-sm p-2 rounded border border-slate-800/60 bg-[#11151C]/50">
+              <div key={row.workload} className="text-sm p-2 rounded border border-slate-800/60 bg-[#11151C]">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
@@ -478,7 +478,7 @@ export default function ConfidentialPage() {
         </div>
       )}
 
-      <div className="dash-card mb-6" data-testid="confidential-migration-wizard">
+      <div className="glass-panel-card mb-6" data-testid="confidential-migration-wizard">
         <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
           <Terminal className="w-5 h-5" />
           Encrypted migration (Phase 6)
@@ -491,7 +491,7 @@ export default function ConfidentialPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-        <div className="dash-card" data-testid="confidential-fleet-panel">
+        <div className="glass-panel-card" data-testid="confidential-fleet-panel">
           <h2 className="text-lg font-semibold text-slate-100 mb-1 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
             Confidential workloads
@@ -542,7 +542,7 @@ export default function ConfidentialPage() {
                       }),
                     )
                   }
-                  className={`w-full text-left p-3 rounded-lg border bg-[#11151C]/50 transition-colors ${
+                  className={`w-full text-left p-3 rounded-lg border bg-[#11151C] transition-colors ${
                     workloadQuery.trim() === row.workload
                       ? 'border-aether/60 ring-1 ring-aether/30'
                       : 'border-slate-800/60 hover:border-aether/40'
@@ -591,7 +591,7 @@ export default function ConfidentialPage() {
           )}
         </div>
 
-        <div className="dash-card space-y-5">
+        <div className="glass-panel-card space-y-5">
           <div>
             <h2 className="text-lg font-semibold text-slate-100 mb-1">Measured images</h2>
             <p className="text-sm text-slate-500 mb-4">

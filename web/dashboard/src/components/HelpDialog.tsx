@@ -33,7 +33,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-[#0a0d12]/80 px-4 pt-[8vh] backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[60] flex animate-fade-in items-start justify-center px-4 pt-[8vh]"
       role="dialog"
       aria-modal="true"
       aria-label="Help"
@@ -42,8 +42,9 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
         if (e.key === 'Escape') onClose();
       }}
     >
+      <div className="glass-modal-backdrop absolute inset-0" aria-hidden />
       <div
-        className="overview-section-shell w-full max-w-lg overflow-hidden shadow-2xl"
+        className="glass-modal-panel relative w-full max-w-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-700/40 px-5 py-4">

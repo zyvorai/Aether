@@ -142,7 +142,7 @@ export default function LiveLabsPanel() {
             {ci.jobs.map((j) => (
               <li
                 key={j.id}
-                className="flex flex-col rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-3 py-2"
+                className="flex flex-col rounded-xl border border-slate-800/60 bg-[#11151C] px-3 py-2"
               >
                 <span className="text-slate-200">{j.description}</span>
                 <span className="text-xs text-slate-500 font-mono mt-1">{j.command}</span>

@@ -31,7 +31,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
 
   return (
     <article
-      className={`rounded-2xl border bg-slate-900/60 p-4 shadow-lg transition-all hover:bg-slate-900/80 ${border}`}
+      className={`hub-link-card interactive-lift ${border}`}
       data-testid={`app-card-${applicationLabel(app)}`}
     >
       <button type="button" onClick={onOpen} className="w-full text-left">

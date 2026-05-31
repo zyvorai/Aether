@@ -113,7 +113,7 @@ export default function GitOpsCenter({
           {changes.slice(0, 8).map((c) => (
             <div
               key={`${c.file_path}-${c.commit}`}
-              className="flex items-center justify-between gap-3 rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-3 py-2 backdrop-blur-sm"
+              className="flex items-center justify-between gap-3 rounded-xl border border-slate-800/60 bg-[#11151C] px-3 py-2"
             >
               <span className="text-sm text-slate-200">{humanChange(c)}</span>
               <Badge text={c.change_type} variant="yellow" />

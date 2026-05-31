@@ -185,7 +185,7 @@ export default function PluginsPage() {
           <select
             value={runtimeFilter}
             onChange={(e) => setRuntimeFilter(e.target.value)}
-            className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+            className="rounded-xl border border-slate-700/80 bg-[#11151C] px-3 py-2 text-sm text-slate-200"
             aria-label="Runtime filter"
             data-testid="plugins-runtime-filter"
           >
@@ -222,7 +222,7 @@ export default function PluginsPage() {
       </div>
 
       {discoverSummary && (
-        <div data-testid="plugins-discover-summary" className="dash-card mb-6 text-sm text-slate-300">
+        <div data-testid="plugins-discover-summary" className="glass-panel-card mb-6 text-sm text-slate-300">
           {discoverSummary}
           <button
             type="button"
@@ -235,7 +235,7 @@ export default function PluginsPage() {
       )}
 
       {canMutate && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h3 className="text-sm font-semibold text-slate-200 mb-2">Register plugin manifest</h3>
           <form onSubmit={(e) => void handleRegister(e)} className="space-y-3" data-testid="plugins-register-form">
             <textarea
@@ -256,7 +256,7 @@ export default function PluginsPage() {
       {visiblePlugins.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No plugins" description="No plugins match your filters. Try discovering plugins." />
       ) : (
-        <div className="dash-card overflow-hidden" data-testid="plugins-list">
+        <div className="glass-panel-card overflow-hidden" data-testid="plugins-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -330,7 +330,7 @@ export default function PluginsPage() {
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-slate-200">Command</div>
-              <code className="block rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-300 font-mono">
+              <code className="block glass-input text-slate-300 font-mono">
                 {selectedPlugin.command}
               </code>
             </div>
