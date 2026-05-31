@@ -64,6 +64,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v15** | Platform & Ecosystem — SaaS tenants, plugins, Helm v2, v1 API, autonomous SRE | **Ship (core panels)** |
 | **v16** | Lab Graduation — Terraform/Pulumi v2, mobile, IDE, carbon, compliance, graph export | **Ship (core panels)** |
 | **v17** | Extensions & Native — chaos, game days, Spotlight, Shortcuts, Live Activity | **Ship (core panels)** |
+| **v18** | Production & Trust — scorecard, auth/HA/OPA planes, CI verify manifests | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -299,6 +300,22 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Native extensions bundle | `GET /api/intelligence/extensions/native-bundle` | Ship |
 | SRE extensions bundle | `GET /api/intelligence/extensions/sre-bundle` | Ship |
 | Extensions graduation panel | `/observability` `ExtensionsGraduationPanel` | Ship |
+
+### v18 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Production overview | `/platform` + `GET /api/intelligence/production/overview` | Ship |
+| Production scorecard | `GET /api/intelligence/production/scorecard` | Ship |
+| Auth plane | `GET /api/intelligence/production/auth-plane` | Ship |
+| OPA plane | `GET /api/intelligence/production/opa-plane` | Ship |
+| HA plane | `GET /api/intelligence/production/ha-plane` | Ship |
+| Durability plane | `GET /api/intelligence/production/durability-plane` | Ship |
+| Hosted plane | `GET /api/intelligence/production/hosted-plane` | Ship |
+| Edge fleet plane | `GET /api/intelligence/production/edge-fleet` | Ship |
+| Post-deploy manifest | `GET /api/intelligence/production/post-deploy-manifest` | Ship |
+| CI smoke manifest | `GET /api/intelligence/production/ci-smoke-manifest` | Ship |
+| Production trust panel | `/platform` `ProductionTrustPanel` | Ship |
 
 ---
 
