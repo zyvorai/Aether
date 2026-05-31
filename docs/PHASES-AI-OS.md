@@ -186,6 +186,21 @@
 | 123 | Native extensions bundle | Spotlight + Shortcuts + Live Activity | **Ship** |
 | 124 | SRE extensions bundle | Chaos catalog + game day summary | **Ship** |
 
+## Era M — Production & Trust (Phases 125–134)
+
+| # | Phase | Focus | Tag |
+|---|-------|-------|-----|
+| 125 | Production scorecard | Readiness % from auth/HA/OPA/durability checks | **Ship** |
+| 126 | Auth plane status | API key, OIDC, SAML, RBAC paths | **Ship** |
+| 127 | OPA enforcement plane | Configure + enforce paths manifest | **Ship** |
+| 128 | HA backends plane | PostgreSQL + Redis readiness | **Ship** |
+| 129 | Durability plane | Remote backup + audit webhook | **Ship** |
+| 130 | Hosted SaaS plane | Tenants, Stripe, metering endpoints | **Ship** |
+| 131 | Edge fleet plane | Edge agent registry summary | **Ship** |
+| 132 | Post-deploy verify manifest | Health + smoke script steps | **Ship** |
+| 133 | CI smoke manifest | labs-e2e, Playwright, kind jobs | **Ship** |
+| 134 | Production trust hub | `/api/intelligence/production/*` overview | **Ship** |
+
 ---
 
 ## How to use this doc

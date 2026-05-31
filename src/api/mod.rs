@@ -1067,6 +1067,46 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/extensions/sre-bundle",
             get(api_intelligence_extensions_sre_bundle),
         )
+        .route(
+            "/api/intelligence/production/overview",
+            get(api_intelligence_production_overview),
+        )
+        .route(
+            "/api/intelligence/production/scorecard",
+            get(api_intelligence_production_scorecard),
+        )
+        .route(
+            "/api/intelligence/production/auth-plane",
+            get(api_intelligence_production_auth_plane),
+        )
+        .route(
+            "/api/intelligence/production/opa-plane",
+            get(api_intelligence_production_opa_plane),
+        )
+        .route(
+            "/api/intelligence/production/ha-plane",
+            get(api_intelligence_production_ha_plane),
+        )
+        .route(
+            "/api/intelligence/production/durability-plane",
+            get(api_intelligence_production_durability_plane),
+        )
+        .route(
+            "/api/intelligence/production/hosted-plane",
+            get(api_intelligence_production_hosted_plane),
+        )
+        .route(
+            "/api/intelligence/production/edge-fleet",
+            get(api_intelligence_production_edge_fleet),
+        )
+        .route(
+            "/api/intelligence/production/post-deploy-manifest",
+            get(api_intelligence_production_post_deploy_manifest),
+        )
+        .route(
+            "/api/intelligence/production/ci-smoke-manifest",
+            get(api_intelligence_production_ci_smoke_manifest),
+        )
         .route("/api/confidential/capabilities", get(api_confidential_capabilities))
         .route(
             "/api/confidential/security-profiles",
