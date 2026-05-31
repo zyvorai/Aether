@@ -869,7 +869,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-slate-200 truncate">{ev.title}</div>
                     <div className="text-xs text-slate-500 mt-0.5">{ev.message}</div>
-                    <div className="text-xs text-zinc-600 mt-1 flex flex-wrap items-center gap-2">
+                    <div className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
                       {formatTimestamp(ev.timestamp)}
                       {ev.workload ? (
                         <button

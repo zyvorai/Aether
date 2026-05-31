@@ -466,16 +466,13 @@
   border-color: rgba(140, 160, 190, 0.14);
 }
 
-.steel-theme .bg-zinc-950 {
+.steel-theme .bg-\[\#0B0E14\],
+.steel-theme .bg-\[\#11151C\] {
   background-color: rgba(8, 12, 18, 0.95) !important;
 }
 
-.steel-theme .bg-zinc-900 {
-  background-color: rgba(14, 18, 26, 0.92) !important;
-}
-
-.steel-theme .border-zinc-700,
-.steel-theme .border-zinc-800 {
+.steel-theme .border-slate-800\/60,
+.steel-theme .border-slate-800\/80 {
   border-color: rgba(140, 160, 190, 0.2) !important;
 }
 
