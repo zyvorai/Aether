@@ -201,6 +201,21 @@
 | 133 | CI smoke manifest | labs-e2e, Playwright, kind jobs | **Ship** |
 | 134 | Production trust hub | `/api/intelligence/production/*` overview | **Ship** |
 
+## Era N — Live Labs & Reference Cluster (Phases 135–144)
+
+| # | Phase | Focus | Tag |
+|---|-------|-------|-----|
+| 135 | Reference cluster runner | `make reference-cluster-live` + kubeconfig gate | **Ship** |
+| 136 | Kind Playwright fixture | kind cluster + nginx-playwright pod manifest | **Ship** |
+| 137 | Labs live smoke | reference-cluster-e2e + labs-e2e steps | **Ship** |
+| 138 | Post-deploy verify | Health + remote UX + k8s API smoke steps | **Ship** |
+| 139 | Kubernetes live lab | k8s lab specs + k8s-labs-e2e script | **Ship** |
+| 140 | Advanced runtime labs | Metal3 + KubeVirt lab spec catalog | **Ship** |
+| 141 | CI pipeline jobs | labs-e2e, k8s-live, dashboard-exec CI jobs | **Ship** |
+| 142 | Cluster exec E2E | kind fixture + exec/port-forward APIs | **Ship** |
+| 143 | Confidential lab | kata + SNP confidential spec catalog | **Ship** |
+| 144 | Live labs hub | `/api/intelligence/livelabs/*` overview | **Ship** |
+
 ---
 
 ## How to use this doc

@@ -65,6 +65,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | **v16** | Lab Graduation — Terraform/Pulumi v2, mobile, IDE, carbon, compliance, graph export | **Ship (core panels)** |
 | **v17** | Extensions & Native — chaos, game days, Spotlight, Shortcuts, Live Activity | **Ship (core panels)** |
 | **v18** | Production & Trust — scorecard, auth/HA/OPA planes, CI verify manifests | **Ship (core panels)** |
+| **v19** | Live Labs & Reference Cluster — kubeconfig gates, kind fixtures, CI pipeline | **Ship (core panels)** |
 
 ### v1 deliverables (this sprint)
 
@@ -316,6 +317,22 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Post-deploy manifest | `GET /api/intelligence/production/post-deploy-manifest` | Ship |
 | CI smoke manifest | `GET /api/intelligence/production/ci-smoke-manifest` | Ship |
 | Production trust panel | `/platform` `ProductionTrustPanel` | Ship |
+
+### v19 deliverables
+
+| Item | Area | Tag |
+|------|------|-----|
+| Live labs overview | `/labs` + `GET /api/intelligence/livelabs/overview` | Ship |
+| Reference cluster runner | `GET /api/intelligence/livelabs/reference-runner` | Ship |
+| Kind Playwright fixture | `GET /api/intelligence/livelabs/kind-fixture` | Ship |
+| Labs live smoke | `GET /api/intelligence/livelabs/live-smoke` | Ship |
+| Post-deploy verify | `GET /api/intelligence/livelabs/post-deploy-verify` | Ship |
+| Kubernetes live lab | `GET /api/intelligence/livelabs/kubernetes-lab` | Ship |
+| Advanced runtime labs | `GET /api/intelligence/livelabs/advanced-runtime-labs` | Ship |
+| CI pipeline jobs | `GET /api/intelligence/livelabs/ci-pipeline` | Ship |
+| Cluster exec E2E | `GET /api/intelligence/livelabs/cluster-exec` | Ship |
+| Confidential lab | `GET /api/intelligence/livelabs/confidential-lab` | Ship |
+| Live labs panel | `/labs` `LiveLabsPanel` | Ship |
 
 ---
 
