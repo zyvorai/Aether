@@ -278,10 +278,14 @@
   background-size: 32px 32px;
 }
 .login-glass {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(51, 65, 85, 0.6);
+  background:
+    linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(17, 21, 28, 0.98) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow:
+    0 24px 64px rgba(2, 6, 23, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   animation: login-pulse-glow 5s ease-in-out infinite;
 }
 .login-input {
@@ -290,8 +294,10 @@
   border-radius: 0.75rem;
   font-size: 0.875rem;
   color: #f1f5f9;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(51, 65, 85, 0.7);
+  background: rgba(10, 13, 18, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .login-input:focus {
@@ -373,11 +379,13 @@
     linear-gradient(180deg, #040812 0%, #0a1020 100%);
 }
 .login-page-aurora .login-glass {
-  background: rgba(10, 16, 32, 0.82);
-  border-color: rgba(167, 139, 250, 0.22);
+  background:
+    linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%),
+    radial-gradient(circle at top left, rgba(167, 139, 250, 0.1), transparent 40%);
+  border-color: rgba(167, 139, 250, 0.2);
 }
 .login-page-aurora .login-input {
-  background: rgba(8, 12, 24, 0.88);
+  background: rgba(8, 12, 24, 0.78);
   border-color: rgba(167, 139, 250, 0.22);
   color: #e2e8f0;
 }
@@ -399,11 +407,12 @@
     linear-gradient(180deg, #121820 0%, #1a2230 100%);
 }
 .login-page-steel .login-glass {
-  background: rgba(26, 34, 48, 0.85);
-  border-color: rgba(140, 160, 190, 0.18);
+  background:
+    linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(14, 18, 26, 0.98) 100%);
+  border-color: rgba(140, 160, 190, 0.16);
 }
 .login-page-steel .login-input {
-  background: rgba(18, 24, 32, 0.9);
+  background: rgba(8, 12, 18, 0.82);
   border-color: rgba(140, 160, 190, 0.22);
   color: #eef3f8;
 }
