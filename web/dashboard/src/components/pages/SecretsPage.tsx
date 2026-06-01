@@ -230,6 +230,8 @@ export default function SecretsPage() {
           </>
         ) : null}
       </SearchQueryContextBanner>
+
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -252,7 +254,7 @@ export default function SecretsPage() {
       {secrets.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No secrets" description="No secrets have been stored" />
       ) : (
-        <div className="dash-card overflow-hidden" data-testid="secrets-list">
+        <div className="glass-panel-card overflow-hidden" data-testid="secrets-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -355,6 +357,8 @@ export default function SecretsPage() {
           </div>
         </div>
       )}
+      </section>
+
 
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create secret">
         <div data-testid="secrets-create-modal" className="space-y-4">

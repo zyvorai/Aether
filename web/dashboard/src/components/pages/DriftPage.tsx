@@ -183,10 +183,10 @@ export default function DriftPage() {
 
       {fleetDrift ? (
         <section className="overview-section-shell mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
-          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Tracked</div><div className="text-lg font-semibold text-slate-100">{fleetDrift.total_workloads}</div></div>
-          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
-          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
-          <div className="dash-card py-3 px-4"><div className="text-xs text-slate-500">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Tracked</div><div className="text-lg font-semibold text-slate-100">{fleetDrift.total_workloads}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
         </section>
       ) : null}
 
@@ -276,7 +276,7 @@ export default function DriftPage() {
       ) : null}
 
       {bulkScan && !bulkScan.scanning ? (
-        <div data-testid="drift-bulk-summary" className="dash-card mb-6 text-sm text-slate-300">
+        <div data-testid="drift-bulk-summary" className="glass-panel-card mb-6 text-sm text-slate-300">
           Scanned {bulkScan.total} workload(s) — {bulkScan.drifted.length} with drift
           {bulkScan.drifted.length > 0 ? (
             <span className="ml-2 text-slate-500">({bulkScan.drifted.join(', ')})</span>
@@ -302,7 +302,7 @@ export default function DriftPage() {
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to check for drift" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="dash-card">
+          <div className="glass-panel-card">
             <h2 className="text-lg font-semibold text-slate-100 mb-1">Select workload</h2>
             <p className="text-sm text-slate-500 mb-4">Click a workload to check for configuration drift</p>
             <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto" data-testid="drift-workload-select">
@@ -320,7 +320,7 @@ export default function DriftPage() {
                         ? 'border-aether/60 ring-1 ring-aether/30 bg-aether/5 text-aether'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                          : 'border-slate-800/60 bg-[#11151C]/60 text-slate-200 hover:bg-slate-800/60/80'
+                          : 'border-slate-800/60 glass-panel-card text-slate-200 hover:bg-slate-800/60/80'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}
@@ -332,7 +332,7 @@ export default function DriftPage() {
             </div>
           </div>
 
-          <div className="dash-card min-h-[12rem]">
+          <div className="glass-panel-card min-h-[12rem]">
             <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Drift report</h3>
             {!driftResult ? (
               <p className="text-sm text-slate-500">Select a workload or run a bulk scan to see drift analysis.</p>
@@ -359,7 +359,7 @@ export default function DriftPage() {
                     <h4 className="text-sm font-medium text-slate-300 mb-2">Drifted fields</h4>
                     <div className="space-y-2 max-h-64 overflow-auto">
                       {driftResult.drifts.map((d, i) => (
-                        <div key={i} className="bg-[#11151C]/50 rounded-lg p-3 border border-slate-800/60">
+                        <div key={i} className="glass-panel-card rounded-lg p-3 border border-slate-800/60">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-sm font-medium text-slate-200">{d.field}</span>
                             <SeverityBadge severity={d.severity} />
@@ -400,7 +400,7 @@ export default function DriftPage() {
                     <h4 className="text-sm font-medium text-slate-300 mb-2">Reconciliation plan</h4>
                     <div className="space-y-2">
                       {driftResult.reconciliation_plan.map((step, i) => (
-                        <div key={i} className="rounded-lg border border-slate-800/60 bg-[#11151C]/50 p-3 text-sm">
+                        <div key={i} className="rounded-lg border border-slate-800/60 glass-panel-card p-3 text-sm">
                           <div className="font-medium text-slate-200">{step.action_type}</div>
                           <p className="text-slate-400 mt-1">{step.description}</p>
                           <div className="flex gap-3 mt-2 text-xs text-slate-500">

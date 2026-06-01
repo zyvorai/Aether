@@ -162,7 +162,7 @@ export default function IntentPlatformPanel() {
             <input
               value={versionWorkload}
               onChange={(e) => setVersionWorkload(e.target.value)}
-              className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
+              className="glass-input"
               placeholder="Workload name"
             />
             <button

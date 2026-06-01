@@ -17,7 +17,7 @@ import {
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-8">
+    <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
       <AutonomousModePanel />
       <MacOSPlatformPanel />
       <SectionHubPage
@@ -68,6 +68,6 @@ export default function SettingsPage() {
           },
         ]}
       />
-    </div>
+    </section>
   );
 }

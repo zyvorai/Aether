@@ -101,7 +101,7 @@ export default function WorkloadDesignerPanel() {
           onChange={(e) => setPrompt(e.target.value)}
           rows={4}
           placeholder="Create Kafka cluster — 3 brokers, HA, 200k msgs/sec, production"
-          className="w-full rounded-2xl border border-slate-700/80 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-aether/50"
+          className="glass-input"
           data-testid="workload-designer-prompt"
         />
 
@@ -134,7 +134,7 @@ export default function WorkloadDesignerPanel() {
 
         {spec ? (
           <>
-            <pre className="mt-6 max-h-96 overflow-auto rounded-2xl border border-slate-800/80 bg-slate-950/80 p-4 text-xs text-slate-300">
+            <pre className="glass-code-block-body mt-6 max-h-96 text-xs text-slate-300">
               {spec}
             </pre>
             <div className="mt-4 flex flex-wrap gap-2">

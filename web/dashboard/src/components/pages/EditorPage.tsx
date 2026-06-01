@@ -270,6 +270,7 @@ export default function EditorPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <FileText className="w-6 h-6 text-aether" />
@@ -322,7 +323,7 @@ export default function EditorPage() {
       </div>
 
       <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-        <div className="dash-card space-y-6">
+        <div className="glass-panel-card space-y-6">
           <div>
             <h3 className="text-sm font-medium text-slate-400 mb-3">Basic information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -332,7 +333,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                  className="glass-input"
                 />
               </div>
               <div>
@@ -341,7 +342,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.image}
                   onChange={(e) => handleChange('image', e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                  className="glass-input"
                 />
               </div>
             </div>
@@ -353,7 +354,7 @@ export default function EditorPage() {
               <select
                 value={form.runtime}
                 onChange={(e) => handleChange('runtime', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                className="glass-input"
               >
                 {runtimes.map((r) => (
                   <option key={r} value={r}>
@@ -368,7 +369,7 @@ export default function EditorPage() {
                 type="number"
                 value={form.replicas}
                 onChange={(e) => handleChange('replicas', parseInt(e.target.value, 10) || 1)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                className="glass-input"
               />
             </div>
           </div>
@@ -383,7 +384,7 @@ export default function EditorPage() {
                     type="text"
                     value={form.k8sNamespace}
                     onChange={(e) => handleChange('k8sNamespace', e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                    className="glass-input"
                   />
                 </div>
                 <div>
@@ -392,7 +393,7 @@ export default function EditorPage() {
                     type="text"
                     value={form.k8sServiceAccount}
                     onChange={(e) => handleChange('k8sServiceAccount', e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                    className="glass-input"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -402,7 +403,7 @@ export default function EditorPage() {
                     value={form.k8sNodeSelector}
                     onChange={(e) => handleChange('k8sNodeSelector', e.target.value)}
                     placeholder="kubernetes.io/arch=amd64"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                    className="glass-input"
                   />
                 </div>
               </div>
@@ -431,7 +432,7 @@ export default function EditorPage() {
                     <select
                       value={form.k8sWorkloadKind}
                       onChange={(e) => handleChange('k8sWorkloadKind', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                      className="glass-input"
                     >
                       <option value="deployment">Deployment</option>
                       <option value="statefulSet">StatefulSet</option>
@@ -447,7 +448,7 @@ export default function EditorPage() {
                       value={form.k8sPdbMinAvailable}
                       onChange={(e) => handleChange('k8sPdbMinAvailable', e.target.value)}
                       placeholder="1"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                      className="glass-input"
                     />
                   </div>
                   <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
@@ -493,14 +494,14 @@ export default function EditorPage() {
                         value={form.k8sGatewayName}
                         onChange={(e) => handleChange('k8sGatewayName', e.target.value)}
                         placeholder="Gateway name"
-                        className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                        className="glass-input"
                       />
                       <input
                         type="text"
                         value={form.k8sGatewayHost}
                         onChange={(e) => handleChange('k8sGatewayHost', e.target.value)}
                         placeholder="Gateway host"
-                        className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                        className="glass-input"
                       />
                       <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
                         <input
@@ -537,7 +538,7 @@ export default function EditorPage() {
                     type="number"
                     value={form.scalingMin}
                     onChange={(e) => handleChange('scalingMin', parseInt(e.target.value, 10) || 1)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                    className="glass-input"
                   />
                 </div>
                 <div>
@@ -546,7 +547,7 @@ export default function EditorPage() {
                     type="number"
                     value={form.scalingMax}
                     onChange={(e) => handleChange('scalingMax', parseInt(e.target.value, 10) || 1)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                    className="glass-input"
                   />
                 </div>
               </div>
@@ -567,14 +568,14 @@ export default function EditorPage() {
                   value={form.ingressHost}
                   onChange={(e) => handleChange('ingressHost', e.target.value)}
                   placeholder="app.example.com"
-                  className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  className="glass-input"
                 />
                 <input
                   type="text"
                   value={form.ingressPath}
                   onChange={(e) => handleChange('ingressPath', e.target.value)}
                   placeholder="/"
-                  className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  className="glass-input"
                 />
               </div>
             )}
@@ -598,7 +599,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.cpu}
                   onChange={(e) => handleChange('cpu', e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                  className="glass-input"
                 />
               </div>
               <div>
@@ -607,7 +608,7 @@ export default function EditorPage() {
                   type="text"
                   value={form.memory}
                   onChange={(e) => handleChange('memory', e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+                  className="glass-input"
                 />
               </div>
             </div>
@@ -618,7 +619,7 @@ export default function EditorPage() {
             <select
               value={form.intent}
               onChange={(e) => handleChange('intent', e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"
+              className="glass-input"
             >
               {intents.map((i) => (
                 <option key={i} value={i}>
@@ -634,7 +635,7 @@ export default function EditorPage() {
               value={form.env}
               onChange={(e) => handleChange('env', e.target.value)}
               rows={3}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono text-slate-100"
+              className="glass-input font-mono text-slate-100"
             />
           </div>
 
@@ -710,7 +711,7 @@ export default function EditorPage() {
         </div>
 
         {showPreview && (
-          <div className="dash-card flex min-h-0 flex-col">
+          <div className="glass-panel-card flex min-h-0 flex-col">
             <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
               <Eye className="h-4 w-4" /> Live YAML preview
             </div>
@@ -729,6 +730,7 @@ export default function EditorPage() {
           </div>
         )}
       </div>
+      </section>
     </div>
   );
 }

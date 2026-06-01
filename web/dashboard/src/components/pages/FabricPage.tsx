@@ -8,10 +8,10 @@ import UnifiedFabricPanel from '../UnifiedFabricPanel';
 
 export default function FabricPage() {
   return (
-    <div className="space-y-8">
+    <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
       <DigitalTwinPanel />
       <UnifiedFabricPanel />
       <FabricPageContent />
-    </div>
+    </section>
   );
 }

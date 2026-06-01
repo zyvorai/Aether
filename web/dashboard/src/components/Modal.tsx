@@ -39,13 +39,13 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
 
   return (
     <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0a0d12]/80 backdrop-blur-md" onClick={onClose} />
+      <div className="glass-modal-backdrop" onClick={onClose} />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`overview-section-shell relative flex w-full animate-scale-in flex-col overflow-hidden shadow-2xl ${
+        className={`glass-modal-panel animate-scale-in shadow-2xl ${
           isYaml ? 'max-h-[92vh] min-h-[min(720px,92vh)]' : 'max-h-[85vh]'
         } ${isWide ? 'max-w-[min(96rem,calc(100vw-2rem))]' : 'max-w-2xl'}`}
       >

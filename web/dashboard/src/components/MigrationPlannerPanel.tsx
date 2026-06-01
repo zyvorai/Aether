@@ -144,7 +144,7 @@ export default function MigrationPlannerPanel() {
           </div>
 
           {selected ? (
-            <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-sm">
+            <div className="glass-panel-card p-4 text-sm">
               <div className="text-slate-400">Current runtime</div>
               <div className="mt-1 font-medium capitalize text-slate-100">{selected.runtime}</div>
             </div>
@@ -164,7 +164,7 @@ export default function MigrationPlannerPanel() {
                   className={`rounded-xl border px-3 py-2.5 text-sm font-medium capitalize transition ${
                     target === rt
                       ? 'border-aether/50 bg-aether/10 text-aether'
-                      : 'border-slate-800 bg-slate-900/50 text-slate-300 hover:border-slate-700'
+                      : 'border-slate-800 glass-panel-card text-slate-300 hover:border-slate-700'
                   } disabled:opacity-40`}
                   data-testid={`migration-target-${rt}`}
                 >
@@ -208,7 +208,7 @@ export default function MigrationPlannerPanel() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4">
+            <div className="glass-panel-card p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-100">
                 <Shield className="h-4 w-4 text-aether" />
                 Risk analysis
@@ -273,7 +273,7 @@ export default function MigrationPlannerPanel() {
             </div>
           </div>
         ) : (
-          <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-dashed border-slate-800/80 bg-slate-900/30 p-8 text-center">
+          <div className="glass-empty-state min-h-[280px] border-dashed p-8 text-center">
             <p className="max-w-sm text-sm text-slate-500">
               Choose a workload and target runtime to generate a migration plan with risk matrix and strategy.
             </p>

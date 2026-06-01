@@ -83,7 +83,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
                   tee === 'tdx' ? 'kata-clh-tdx' : 'kata-clh-snp',
                 );
               }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              className="glass-input"
             >
               <option value="sev-snp">AMD SEV-SNP</option>
               <option value="tdx">Intel TDX</option>
@@ -95,7 +95,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               <select
                 value={state.confidentialSecurityProfile ?? ''}
                 onChange={(e) => onChange('confidentialSecurityProfile', e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                className="glass-input"
               >
                 <option value="">Custom (manual runtime class)</option>
                 {profiles.map((p) => (
@@ -117,7 +117,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
                     e.target.value as NonNullable<ConfidentialFormState['confidentialKataRuntime']>,
                   )
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                className="glass-input"
               >
                 <option value="kata-clh-snp">kata-clh-snp (Cloud Hypervisor)</option>
                 <option value="kata-clh-tdx">kata-clh-tdx (Cloud Hypervisor)</option>
@@ -133,7 +133,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               onChange={(e) =>
                 onChange('attestationPolicy', e.target.value as NonNullable<ConfidentialFormState['attestationPolicy']>)
               }
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              className="glass-input"
             >
               <option value="strict">strict — digest required</option>
               <option value="standard">standard — baseline measurements</option>
@@ -146,7 +146,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               value={state.confidentialRegionLock ?? ''}
               onChange={(e) => onChange('confidentialRegionLock', e.target.value)}
               placeholder="e.g. us-east-1 or sovereign-zone-a"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              className="glass-input"
             />
           </div>
           <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
@@ -192,7 +192,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               onChange={(e) => onChange('confidentialSecretNames', e.target.value)}
               rows={2}
               placeholder="db-credentials, api-key"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              className="glass-input"
             />
           </div>
           <div className="md:col-span-2">
@@ -202,7 +202,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               value={state.imageDigest ?? ''}
               onChange={(e) => onChange('imageDigest', e.target.value)}
               placeholder="sha256 launch digest — aether confidential image verify-digest"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100"
+              className="glass-input font-mono"
             />
           </div>
         </div>

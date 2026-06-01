@@ -184,7 +184,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
           )}
 
           {report.log_excerpt && (
-            <pre className="max-h-32 overflow-auto rounded-lg bg-slate-950 p-2 text-[10px] text-slate-400 font-mono">
+            <pre className="glass-code-block-body max-h-32 text-[10px] text-slate-400 font-mono">
               {report.log_excerpt.slice(-1200)}
             </pre>
           )}

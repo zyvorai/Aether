@@ -11,7 +11,7 @@ import { FileCode2, FlaskConical, GitBranch, Layers, Terminal } from 'lucide-rea
 
 export default function LabsPage() {
   return (
-    <div className="space-y-8">
+    <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
       <LiveLabsPanel />
       <LabsGraduationPanel />
       <KnowledgeGraphPanel />
@@ -52,6 +52,6 @@ export default function LabsPage() {
           },
         ]}
       />
-    </div>
+    </section>
   );
 }

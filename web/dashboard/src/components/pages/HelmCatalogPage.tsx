@@ -126,10 +126,12 @@ export default function HelmCatalogPage() {
     <div data-testid="helm-catalog-page">
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-100">Helm App Store</h2>
-        <p className="text-sm text-slate-500 mt-1">Install curated charts with a guided wizard — no raw values.yaml required.</p>
-      </div>
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <div className="overview-section-header mb-6">
+          <p className="section-label">Platform</p>
+          <h2 className="section-title">Helm App Store</h2>
+          <p className="section-subtitle">Install curated charts with a guided wizard — no raw values.yaml required.</p>
+        </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
@@ -139,7 +141,7 @@ export default function HelmCatalogPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search charts…"
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm"
+            className="glass-input pl-9"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -162,7 +164,7 @@ export default function HelmCatalogPage() {
           return (
             <article
               key={chart.id}
-              className="dash-card p-5 hover:border-aether/40 transition-colors"
+              className="glass-panel-card p-5 hover:border-aether/40 transition-colors"
             >
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-aether/10 p-3 text-aether">
@@ -192,6 +194,7 @@ export default function HelmCatalogPage() {
           );
         })}
       </div>
+      </section>
 
       <Modal isOpen={Boolean(selected)} onClose={() => setSelected(null)} title={selected ? `Install ${selected.name}` : ''}>
         {selected && (
@@ -203,7 +206,7 @@ export default function HelmCatalogPage() {
                 <select
                   value={installCluster}
                   onChange={(e) => setInstallCluster(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="glass-input mt-1"
                 >
                   {(clusters?.clusters ?? []).map((c) => (
                     <option key={c.name} value={c.name}>{c.name}</option>
@@ -215,7 +218,7 @@ export default function HelmCatalogPage() {
                 <input
                   value={namespace}
                   onChange={(e) => setNamespace(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="glass-input mt-1"
                 />
               </label>
               <label className="block text-xs text-slate-500">
@@ -223,7 +226,7 @@ export default function HelmCatalogPage() {
                 <input
                   value={releaseName}
                   onChange={(e) => setReleaseName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="glass-input mt-1"
                 />
               </label>
             </div>
@@ -244,7 +247,7 @@ export default function HelmCatalogPage() {
                       <select
                         value={String(formValues[field.key] ?? '')}
                         onChange={(e) => setField(field.key, e.target.value)}
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        className="glass-input mt-1"
                       >
                         {field.options.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -256,7 +259,7 @@ export default function HelmCatalogPage() {
                         value={String(formValues[field.key] ?? '')}
                         placeholder={field.placeholder}
                         onChange={(e) => setField(field.key, e.target.value)}
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        className="glass-input mt-1"
                       />
                     )}
                     {field.help && <span className="block mt-1 text-[10px] text-slate-600">{field.help}</span>}
@@ -287,11 +290,11 @@ export default function HelmCatalogPage() {
                   value={valuesYaml || generatedYaml}
                   onChange={(e) => setValuesYaml(e.target.value)}
                   rows={8}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono"
+                  className="glass-input mt-1 font-mono"
                 />
               </label>
             ) : (
-              <pre className="rounded-lg border border-slate-800 bg-slate-950 p-3 text-[11px] text-slate-400 font-mono max-h-40 overflow-auto">
+              <pre className="glass-code-block-body text-[11px] text-slate-400 font-mono max-h-40 overflow-auto">
                 {generatedYaml || '# No values generated'}
               </pre>
             )}

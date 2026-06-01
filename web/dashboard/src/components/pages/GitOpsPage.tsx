@@ -326,6 +326,8 @@ export default function GitOpsPage() {
         </WorkloadContextBanner>
       ) : null}
 
+      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
+
       <div className="glass-panel-card" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
           <GitBranch className="w-5 h-5 text-aether" />
@@ -348,7 +350,7 @@ export default function GitOpsPage() {
                   value={initRepo}
                   onChange={(e) => setInitRepo(e.target.value)}
                   placeholder="https://github.com/org/aether-workloads.git"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100"
+                  className="glass-input text-slate-100"
                 />
               </div>
               <div>
@@ -357,7 +359,7 @@ export default function GitOpsPage() {
                   type="text"
                   value={initBranch}
                   onChange={(e) => setInitBranch(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100"
+                  className="glass-input text-slate-100"
                 />
               </div>
               <div className="flex items-end">
@@ -450,7 +452,7 @@ export default function GitOpsPage() {
           <h3 className="text-sm font-semibold text-slate-100 mb-3">Last sync result</h3>
           <p className="text-sm text-slate-300 mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (
-            <div className="mb-4 dash-card-flush overflow-x-auto">
+            <div className="mb-4 glass-table-shell overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
@@ -509,7 +511,7 @@ export default function GitOpsPage() {
             </div>
           )}
           {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
-            <div className="mb-4 dash-card-flush overflow-x-auto">
+            <div className="mb-4 glass-table-shell overflow-x-auto">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-2 px-4 pt-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Confidential compliance
@@ -593,6 +595,8 @@ export default function GitOpsPage() {
           )}
         </div>
       )}
+      </section>
+
 
       <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
         <div data-testid="gitops-sync-confirm">
@@ -601,7 +605,7 @@ export default function GitOpsPage() {
           detected YAML changes. Review the diff preview below before syncing.
         </p>
         <div
-          className="mb-4 rounded-xl border border-slate-800/60 bg-[#11151C]/60 p-3"
+          className="mb-4 rounded-xl border border-slate-800/60 glass-panel-card p-3"
           data-testid="gitops-diff-preview"
         >
           {previewLoading ? (

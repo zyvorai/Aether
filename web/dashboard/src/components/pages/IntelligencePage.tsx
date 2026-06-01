@@ -217,6 +217,7 @@ export default function IntelligencePage() {
         </WorkloadContextBanner>
       ) : null}
 
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <GlassSection
         variant="hero"
         accent="purple"
@@ -527,7 +528,7 @@ export default function IntelligencePage() {
               value={placeYaml}
               onChange={(e) => setPlaceYaml(e.target.value)}
               rows={14}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100"
+              className="glass-input font-mono text-xs"
             />
             <button
               type="button"
@@ -575,6 +576,7 @@ export default function IntelligencePage() {
           )}
         </div>
       )}
+      </section>
     </div>
   );
 }

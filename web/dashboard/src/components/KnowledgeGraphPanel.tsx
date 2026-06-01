@@ -142,7 +142,7 @@ export default function KnowledgeGraphPanel() {
             <p className="text-sm text-slate-500">Deploy workloads to populate the knowledge graph.</p>
           ) : (
             <div
-              className="overflow-auto rounded-2xl border border-slate-800 bg-slate-950/50"
+              className="glass-code-block overflow-auto"
               data-testid="interactive-graph-canvas"
               onMouseDown={(e) => {
                 dragRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
