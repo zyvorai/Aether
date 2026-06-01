@@ -15,7 +15,11 @@ pub mod backup_remote;
 pub mod completions;
 pub mod compose;
 pub mod config;
-pub mod copilot;
+pub mod zeus;
+#[deprecated(note = "use crate::zeus")]
+pub mod copilot {
+    pub use crate::zeus::*;
+}
 pub mod cost;
 pub mod dependencies;
 pub mod drift;

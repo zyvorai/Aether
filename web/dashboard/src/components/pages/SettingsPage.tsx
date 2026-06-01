@@ -8,6 +8,7 @@ import NavPreferencesPanel from '../NavPreferencesPanel';
 import SectionHubPage from '../SectionHubPage';
 import {
   Archive,
+  Bot,
   Container,
   KeyRound,
   Layers,
@@ -61,6 +62,12 @@ export default function SettingsPage() {
             title: 'Cluster Browser',
             description: 'Browse and manage Kubernetes resources.',
             icon: <Container className="h-5 w-5" />,
+          },
+          {
+            view: 'ai-providers',
+            title: 'AI Providers',
+            description: 'Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints for Zeus.',
+            icon: <Bot className="h-5 w-5" />,
           },
           {
             view: 'rbac',

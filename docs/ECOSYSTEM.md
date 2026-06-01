@@ -34,7 +34,7 @@
                     │    VM inspect · guest   │
                     └─────────────────────────┘
 
-        HyperSDK (runtime SDK) ──► Zeus (orchestration layer)
+        HyperSDK (runtime SDK) ──► Aether + Zeus (control plane + AI OS)
 ```
 
 ---
@@ -44,11 +44,11 @@
 | Product | Role |
 |---------|------|
 | **Aether** | Universal runtime portability — deploy, migrate, intent placement |
+| **Zeus** | AI infrastructure operating layer built into Aether — multi-LLM, multi-agent, ambient intelligence (see [ZEUS.md](ZEUS.md)) |
 | **Ragnarok** | Confidential execution layer — attestation, measured images, attest-gated secrets; standalone binary + UI, optional composite with Aether via `RAGNAROK_URL` |
 | **PacketWolf** | Network/workload observability |
 | **GuestKit** | Guest VM inspection and tooling |
 | **HyperSDK** | Shared runtime SDK foundation |
-| **Zeus** | Higher-level orchestration (platform) |
 
 ---
 
