@@ -110,14 +110,14 @@ export default function SelfHealingPanel() {
             type="button"
             onClick={() => void runRemediation(true)}
             disabled={executing}
-            className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40 disabled:opacity-60"
+            className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40 disabled:opacity-60"
           >
             Dry-run remediation
           </button>
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -154,7 +154,7 @@ export default function SelfHealingPanel() {
                 </li>
               ))}
               {preview?.would_skip.map((line) => (
-                <li key={line} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-400">
+                <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-400">
                   {line}
                 </li>
               ))}
@@ -169,7 +169,7 @@ export default function SelfHealingPanel() {
           ) : (
             <ul className="space-y-2">
               {remediation.actions.slice(0, 6).map((action) => (
-                <li key={`${action.action_type}-${action.target}`} className="rounded-lg border border-slate-800 px-3 py-2 text-sm">
+                <li key={`${action.action_type}-${action.target}`} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-white">{action.action_type}</span>
                     <Badge text={action.target} variant="muted" />

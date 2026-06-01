@@ -153,7 +153,7 @@ function OverviewFleetSnapshot({
           onClick={() => onNavigate('health')}
         >
           {!signalEmpty ? (
-            <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800/80">
+            <div className="relative mt-4 h-1.5 glass-progress-track">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-aether"
                 style={{ width: `${Math.min(100, Math.max(8, (healthy / Math.max(1, healthy + degraded)) * 100))}%` }}
@@ -176,7 +176,7 @@ function OverviewFleetSnapshot({
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-xl border border-slate-800/60 glass-panel-card p-3"
+                className="rounded-xl border glass-divider glass-panel-card p-3"
               >
                 <div className={`text-lg font-semibold ${controlEmpty ? 'text-slate-500' : 'text-white'}`}>
                   {item.value}
@@ -358,10 +358,10 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
     return (
       <div className="space-y-8">
         <div className="command-center-shell animate-pulse p-8">
-          <div className="h-8 w-48 rounded-lg bg-slate-800/80" />
+          <div className="h-8 w-48 rounded-lg glass-inset-surface" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 rounded-2xl bg-slate-800/60" />
+              <div key={i} className="h-32 rounded-2xl glass-inset-surface" />
             ))}
           </div>
         </div>
@@ -817,7 +817,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
               {clusterSummary.clusters.length > 0 && (
                 <div className="space-y-2">
                   {clusterSummary.clusters.slice(0, 6).map((cluster) => (
-                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border border-slate-800/60 glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
+                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
                       <div>
                         <div className="text-slate-200 font-medium">{cluster.name}</div>
                         <div className="text-slate-500 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
@@ -863,7 +863,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                 <div
                   key={i}
                   data-testid={`overview-recent-event-${i}`}
-                  className="flex items-start gap-3 rounded-xl border border-slate-800/50 glass-panel-card p-3 backdrop-blur-sm"
+                  className="flex items-start gap-3 rounded-xl border glass-divider/50 glass-panel-card p-3 backdrop-blur-sm"
                 >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">

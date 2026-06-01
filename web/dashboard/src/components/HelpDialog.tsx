@@ -22,7 +22,7 @@ const TABS: { id: HelpTab; label: string; icon: React.ReactNode }[] = [
 
 function Kbd({ children }: { children: string }) {
   return (
-    <kbd className="min-w-[1.5rem] rounded border border-slate-600/80 bg-slate-800 px-1.5 py-0.5 text-center text-xs font-mono text-slate-300 shadow-sm">
+    <kbd className="min-w-[1.5rem] rounded border glass-divider/80 glass-inset-surface px-1.5 py-0.5 text-center text-xs font-mono text-slate-300 shadow-sm">
       {children}
     </kbd>
   );
@@ -47,19 +47,19 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
         className="glass-modal-panel relative w-full max-w-lg overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-700/40 px-5 py-4">
+        <div className="flex items-center justify-between glass-divider-b/40 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-100">Help</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800/80 hover:text-slate-100"
+            className="rounded-lg p-1.5 text-slate-400 transition glass-inset-hover hover:text-slate-100"
             aria-label="Close help"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-b border-slate-800/60 px-4 py-3" role="tablist" aria-label="Help sections">
+        <div className="flex flex-wrap gap-2 glass-divider-b px-4 py-3" role="tablist" aria-label="Help sections">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -67,7 +67,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => onTabChange(t.id)}
-              className={`tab-chip flex items-center gap-2 ${tab === t.id ? 'tab-chip-active' : ''}`}
+              className={`tab-chip glass-tab flex items-center gap-2 ${tab === t.id ? 'tab-chip-active glass-tab-active' : ''}`}
             >
               {t.icon}
               {t.label}
@@ -93,7 +93,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 space-y-1 border-t border-slate-700/50 pt-3 text-xs text-slate-500">
+              <p className="mt-4 space-y-1 glass-divider-t pt-3 text-xs text-slate-500">
                 <span>
                   Sequence shortcuts use two letters in order (wait under half a second between keys). Shortcuts are
                   disabled while focus is in a field.

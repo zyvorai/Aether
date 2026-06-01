@@ -94,7 +94,7 @@ export default function IntentStudioPanel() {
                   className={`rounded-full border px-4 py-2 text-sm transition ${
                     active
                       ? 'border-violet-500/50 bg-violet-500/15 text-violet-100'
-                      : 'border-slate-800 glass-panel-card text-slate-400 hover:border-slate-700'
+                      : 'glass-divider glass-panel-card text-slate-400 hover:border-aether/30'
                   }`}
                   data-testid={`intent-goal-${goal.id}`}
                 >

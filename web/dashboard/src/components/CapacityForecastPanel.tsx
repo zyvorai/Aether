@@ -26,7 +26,7 @@ function UtilBar({ label, value }: { label: string; value: number }) {
         <span className="text-slate-500">{label}</span>
         <span className={utilTone(value)}>{pct}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+      <div className="h-2 overflow-hidden rounded-full glass-inset-surface">
         <div
           className={`h-full rounded-full transition-all ${value >= 0.85 ? 'bg-red-500' : value >= 0.7 ? 'bg-amber-500' : 'bg-emerald-500'}`}
           style={{ width: `${Math.min(100, pct)}%` }}
@@ -87,7 +87,7 @@ export default function CapacityForecastPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -119,7 +119,7 @@ export default function CapacityForecastPanel() {
           ) : (
             <ul className="space-y-2">
               {topRisks.map((row) => (
-                <li key={row.workload} className="rounded-lg border border-slate-800 px-3 py-2 text-sm">
+                <li key={row.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                   <Link
                     to={`${viewToPath('workloads')}?workload=${encodeURIComponent(row.workload)}`}
                     className="font-medium text-aether hover:underline"

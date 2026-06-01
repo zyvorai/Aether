@@ -166,7 +166,7 @@ export default function ActivityMonitorPage() {
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide ${
               sseConnected && liveEnabled
                 ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                : 'bg-slate-800 text-slate-500 border border-slate-700'
+                : 'glass-inset-surface text-slate-500 border glass-divider'
             }`}
           >
             <Radio size={12} className={sseConnected && liveEnabled ? 'animate-pulse' : ''} />
@@ -232,7 +232,7 @@ export default function ActivityMonitorPage() {
             ) : (
               <div className="space-y-2">
                 {topCpu.map((p) => (
-                  <div key={p.name} className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2">
+                  <div key={p.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
                     <span className="text-sm text-slate-200 font-mono">{p.name}</span>
                     <span className="text-sm text-aether">{p.cpu}</span>
                   </div>
@@ -250,7 +250,7 @@ export default function ActivityMonitorPage() {
             ) : (
               <div className="space-y-2">
                 {topMemory.map((p) => (
-                  <div key={p.name} className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2">
+                  <div key={p.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
                     <span className="text-sm text-slate-200 font-mono">{p.name}</span>
                     <span className="text-sm text-aether">{p.memory}</span>
                   </div>
@@ -291,7 +291,7 @@ export default function ActivityMonitorPage() {
             ) : (
               <div className="space-y-2">
                 {warningEvents.map((ev, i) => (
-                  <div key={`${ev.timestamp}-${i}`} className="rounded-lg border border-slate-800 px-3 py-2">
+                  <div key={`${ev.timestamp}-${i}`} className="rounded-lg border glass-divider px-3 py-2">
                     <p className="text-sm text-slate-200">{ev.message}</p>
                     <p className="text-xs text-slate-500 mt-1">{ev.workload ?? 'platform'} · {ev.category}</p>
                   </div>

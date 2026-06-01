@@ -262,7 +262,7 @@ export default function PluginsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="glass-divider-b">
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Version</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Runtime</th>
@@ -272,7 +272,7 @@ export default function PluginsPage() {
               </thead>
               <tbody>
                 {visiblePlugins.map((p) => (
-                  <tr key={p.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                  <tr key={p.name} className="glass-table-row glass-inset-hover transition-colors">
                     <td className="py-3 px-4 font-medium text-slate-200">{p.name}</td>
                     <td className="py-3 px-4 text-sm text-slate-300">{p.version}</td>
                     <td className="py-3 px-4 text-sm text-slate-300">{p.runtime_kind}</td>
@@ -287,7 +287,7 @@ export default function PluginsPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedPlugin(p)}
-                        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800"
+                        className="rounded-lg border glass-divider px-3 py-1.5 text-xs font-medium text-slate-300 glass-inset-hover"
                       >
                         Inspect
                       </button>

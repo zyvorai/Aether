@@ -223,7 +223,7 @@ export default function BackupsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="glass-divider-b">
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">File</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workloads</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Created</th>
@@ -233,7 +233,7 @@ export default function BackupsPage() {
               </thead>
               <tbody>
                 {filtered.map((b) => (
-                  <tr key={b.filename} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                  <tr key={b.filename} className="glass-table-row glass-inset-hover transition-colors">
                     <td className="py-3 px-4">
                       <code className="glass-table-row text-xs px-2 py-1 rounded text-slate-300">{b.filename}</code>
                       {b.description && <p className="text-xs text-slate-500 mt-1">{b.description}</p>}
@@ -245,7 +245,7 @@ export default function BackupsPage() {
                       <button
                         type="button"
                         onClick={() => setRestoreOpen(b.filename)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:border-emerald-600/50 hover:text-emerald-300"
+                        className="inline-flex items-center gap-1.5 rounded-lg border glass-divider px-2.5 py-1 text-xs text-slate-300 hover:border-emerald-600/50 hover:text-emerald-300"
                       >
                         <RotateCcw size={12} />
                         Restore
@@ -280,7 +280,7 @@ export default function BackupsPage() {
             className="glass-input"
           />
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">
+            <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 rounded-lg text-sm text-slate-300 glass-inset-hover">
               Cancel
             </button>
             <button
@@ -305,12 +305,12 @@ export default function BackupsPage() {
             type="checkbox"
             checked={restoreMerge}
             onChange={(e) => setRestoreMerge(e.target.checked)}
-            className="rounded border-slate-600"
+            className="rounded glass-divider"
           />
           Merge workloads not already present
         </label>
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => setRestoreOpen(null)} className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">
+          <button type="button" onClick={() => setRestoreOpen(null)} className="px-4 py-2 rounded-lg text-sm text-slate-300 glass-inset-hover">
             Cancel
           </button>
           <button

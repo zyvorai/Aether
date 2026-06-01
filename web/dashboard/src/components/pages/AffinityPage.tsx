@@ -199,7 +199,7 @@ export default function AffinityPage() {
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">
+              <tr className="glass-divider-b text-xs uppercase text-slate-500">
                 <th className="py-2 px-3 text-left">Class</th>
                 <th className="py-2 px-3 text-left">Runtime</th>
                 <th className="py-2 px-3 text-left">Compat</th>
@@ -208,7 +208,7 @@ export default function AffinityPage() {
             </thead>
             <tbody>
               {matrix.map((row) => (
-                <tr key={`${row.class}-${row.runtime}`} className="border-b border-slate-800/50">
+                <tr key={`${row.class}-${row.runtime}`} className="glass-table-row">
                   <td className="py-2 px-3">{row.class}</td>
                   <td className="py-2 px-3">
                     <Link

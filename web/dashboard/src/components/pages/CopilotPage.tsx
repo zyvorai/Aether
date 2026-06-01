@@ -214,7 +214,7 @@ export default function CopilotPage() {
       </WorkloadContextBanner>
       <section className="overview-section-shell mb-6 flex min-h-0 flex-1 flex-col p-4 sm:p-6">
       <div className="copilot-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
-        <div className="relative z-[1] flex items-center gap-3 border-b border-slate-800/50 px-4 py-4">
+        <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
             <Bot className="h-4 w-4 text-[#c084fc]" aria-hidden />
           </div>
@@ -233,7 +233,7 @@ export default function CopilotPage() {
                 setSessionId(null);
                 setPending([]);
               }}
-              className="rounded-lg border border-slate-700/80 px-2 py-1 text-xs text-slate-400 transition hover:border-slate-600 hover:text-slate-200"
+              className="rounded-lg border glass-divider px-2 py-1 text-xs text-slate-400 transition hover:border-aether/30 hover:text-slate-200"
             >
               Clear chat
             </button>
@@ -288,7 +288,7 @@ export default function CopilotPage() {
 
         <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4">
           {messages.length === 0 && (
-            <div className="rounded-2xl border border-aether-ai/15 bg-[#161B24]/50 px-4 py-6 text-center backdrop-blur-sm">
+            <div className="rounded-2xl border border-aether-ai/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-sm">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-[#c084fc]/80" aria-hidden />
               <p className="text-sm text-slate-400">
                 Ask about health, drift, costs, migrations, or cluster state.
@@ -319,7 +319,7 @@ export default function CopilotPage() {
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                 msg.role === 'user'
                   ? 'ml-auto border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
-                  : 'border border-slate-800/60 bg-[#161B24]/80 text-slate-200'
+                  : 'border glass-divider glass-inset-surface text-slate-200'
               }`}
             >
               {msg.content}
@@ -366,7 +366,7 @@ export default function CopilotPage() {
         </div>
 
         <form
-          className="relative z-[1] flex gap-2 border-t border-slate-800/50 p-3"
+          className="relative z-[1] flex gap-2 glass-divider-t/50 p-3"
           onSubmit={(e) => {
             e.preventDefault();
             void send(input);

@@ -125,7 +125,7 @@ export default function GraphPlatformPanel() {
             className="glass-input"
             data-testid="graph-workload-input"
           />
-          <button type="button" onClick={() => void load()} className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300">
+          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
         </div>}
@@ -142,7 +142,7 @@ export default function GraphPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200' : 'border-slate-700 text-slate-400'
+              tab === t.id ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200' : 'glass-divider text-slate-400'
             }`}
           >
             {t.label}
@@ -183,7 +183,7 @@ export default function GraphPlatformPanel() {
       {tab === 'threats' ? (
         <ul className="space-y-2" data-testid="threat-paths-panel">
           {(threats?.paths ?? []).slice(0, 8).map((p, i) => (
-            <li key={i} className="rounded-lg border border-slate-800 px-3 py-2 text-sm">
+            <li key={i} className="rounded-lg border glass-divider px-3 py-2 text-sm">
               <ShieldAlert className="mr-1 inline h-3.5 w-3.5 text-red-400" />
               {p.summary}
               <div className="mt-1 text-xs text-slate-500">{p.path.join(' → ')}</div>
@@ -213,7 +213,7 @@ export default function GraphPlatformPanel() {
           </div>
           <ul className="space-y-2">
             {(search?.hits ?? []).map((h) => (
-              <li key={h.id} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+              <li key={h.id} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
                 {h.label} <Badge text={h.kind} variant="muted" />
               </li>
             ))}
@@ -263,7 +263,7 @@ export default function GraphPlatformPanel() {
       {tab === 'placement' ? (
         <ul className="space-y-2" data-testid="graph-placement-panel">
           {(placement?.entries ?? []).slice(0, 8).map((e) => (
-            <li key={e.workload} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+            <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
               #{e.startup_order} {e.workload}
               {e.recommended_cluster ? <Badge text={e.recommended_cluster} variant="green" /> : null}
               {e.co_locate_with ? (
@@ -280,7 +280,7 @@ export default function GraphPlatformPanel() {
             <button
               type="button"
               onClick={() => void loadExport('neo4j')}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300"
+              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-xs text-slate-300"
             >
               <Download className="h-3.5 w-3.5" />
               Neo4j Cypher
@@ -288,14 +288,14 @@ export default function GraphPlatformPanel() {
             <button
               type="button"
               onClick={() => void loadExport('jsonld')}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300"
+              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-xs text-slate-300"
             >
               <GitBranch className="h-3.5 w-3.5" />
               JSON-LD
             </button>
           </div>
           {exportReport ? (
-            <pre className="max-h-48 overflow-auto rounded-xl border border-slate-800 bg-black/40 p-3 text-xs text-slate-300">
+            <pre className="max-h-48 overflow-auto rounded-xl border glass-divider bg-black/40 p-3 text-xs text-slate-300">
               {exportReport.payload.slice(0, 2000)}
             </pre>
           ) : null}

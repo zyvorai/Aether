@@ -43,7 +43,7 @@ export default function AutonomousModePanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -91,7 +91,7 @@ export default function AutonomousModePanel() {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Workload overrides</p>
               <ul className="space-y-2">
                 {report.workload_overrides.map((row) => (
-                  <li key={row.workload} className="rounded-xl border border-slate-800 px-3 py-2 text-sm text-slate-300">
+                  <li key={row.workload} className="rounded-xl border glass-divider px-3 py-2 text-sm text-slate-300">
                     <Link
                       to={`${viewToPath('workloads')}?workload=${encodeURIComponent(row.workload)}`}
                       className="font-medium text-aether hover:underline"
@@ -110,7 +110,7 @@ export default function AutonomousModePanel() {
 
           <ul className="space-y-2">
             {report.recommendations.map((line) => (
-              <li key={line} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
                 {line}
               </li>
             ))}

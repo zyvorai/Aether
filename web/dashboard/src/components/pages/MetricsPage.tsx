@@ -289,7 +289,7 @@ export default function MetricsPage() {
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
-                className="rounded-xl border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40 hover:text-aether"
+                className="rounded-xl border glass-divider px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40 hover:text-aether"
                 data-testid="metrics-cluster-browser-link"
               >
                 Open cluster browser (network)
@@ -357,7 +357,7 @@ export default function MetricsPage() {
                 type="button"
                 data-testid="metrics-chargeback-export"
                 onClick={downloadChargebackCsv}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800/60 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export CSV
@@ -372,7 +372,7 @@ export default function MetricsPage() {
           {chargeback.lines.length > 0 ? (
             <div className="glass-table-shell overflow-x-auto">
               <table className="w-full text-sm text-left text-slate-300">
-                <thead className="text-xs uppercase text-slate-500 border-b border-slate-800/60">
+                <thead className="text-xs uppercase text-slate-500 glass-divider-b">
                   <tr>
                     <th className="py-2 pr-4">Workload</th>
                     <th className="py-2 pr-4">Owner</th>
@@ -382,7 +382,7 @@ export default function MetricsPage() {
                 </thead>
                 <tbody>
                   {chargeback.lines.slice(0, 12).map((line) => (
-                    <tr key={line.workload} className="border-b border-slate-800/80">
+                    <tr key={line.workload} className="glass-divider-b/80">
                       <td className="py-2 pr-4 font-mono text-xs">
                         <button
                           type="button"
@@ -427,7 +427,7 @@ export default function MetricsPage() {
                 href={prometheusUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
               >
                 Prometheus <ExternalLink size={14} />
               </a>

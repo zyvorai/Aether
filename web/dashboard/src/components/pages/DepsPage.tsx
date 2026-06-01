@@ -57,7 +57,7 @@ function GraphVisual({
             <span
               key={node}
               className={`quick-link-chip rounded-full px-3 py-1.5 text-sm text-slate-200 ${
-                highlightWorkload === node ? 'border-aether/60 ring-1 ring-aether/30' : 'border-slate-700'
+                highlightWorkload === node ? 'border-aether/60 ring-1 ring-aether/30' : 'glass-divider'
               }`}
               data-testid={highlightWorkload === node ? 'deps-workload-highlight' : undefined}
             >

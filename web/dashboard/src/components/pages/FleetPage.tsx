@@ -356,7 +356,7 @@ export default function FleetPage() {
           ) : (
             <div className="space-y-3">
               {edgeAgents.map((a) => (
-                <div key={a.site} className="rounded-lg border border-slate-800 p-3 flex items-center justify-between gap-3">
+                <div key={a.site} className="rounded-lg border glass-divider p-3 flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium text-slate-100">{a.site}</div>
                     <div className="text-xs text-slate-500">{a.kube_context ?? 'default context'} · queue depth {a.queue_depth}</div>
@@ -401,7 +401,7 @@ export default function FleetPage() {
               ) : null}
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-slate-500 border-b border-slate-800">
+                  <tr className="text-left text-slate-500 glass-divider-b">
                     <th className="py-2">Cluster</th>
                     <th>Score</th>
                     <th>Anomalies</th>
@@ -411,7 +411,7 @@ export default function FleetPage() {
                 </thead>
                 <tbody>
                   {placementPlan.clusters.map((c) => (
-                    <tr key={c.cluster} className="border-b border-slate-900">
+                    <tr key={c.cluster} className="border-b glass-divider">
                       <td className="py-2 text-slate-200">{c.cluster}</td>
                       <td>{c.score.toFixed(1)}</td>
                       <td className="text-slate-400">{c.anomaly_count ?? 0}</td>
@@ -476,7 +476,7 @@ export default function FleetPage() {
                 type="button"
                 data-testid={`fleet-cluster-${c.name}`}
                 onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
-                className="w-full text-left rounded-xl border border-slate-800/60 glass-panel-card px-4 py-3 backdrop-blur-sm transition hover:border-aether/30"
+                className="w-full text-left rounded-xl border glass-divider glass-panel-card px-4 py-3 backdrop-blur-sm transition hover:border-aether/30"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-slate-100">{c.name}</span>
@@ -526,11 +526,11 @@ export default function FleetPage() {
               const nsHref = base ? hubbleNamespaceUrl(base, ns) : null;
 
               return (
-                <div key={app.name} className="rounded-xl border border-slate-800 overflow-hidden">
+                <div key={app.name} className="rounded-xl border glass-divider overflow-hidden">
                   <button
                     type="button"
                     onClick={() => toggleApp(app)}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/30"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left glass-inset-hover"
                   >
                     {expanded ? (
                       <ChevronDown size={16} className="text-slate-500 shrink-0" />
@@ -552,7 +552,7 @@ export default function FleetPage() {
                     )}
                   </button>
                   {expanded && (
-                    <div className="border-t border-slate-800 px-4 py-3 glass-panel-card">
+                    <div className="glass-divider-t px-4 py-3 glass-panel-card">
                       {loadingPods ? (
                         <p className="text-xs text-slate-500">Loading pods…</p>
                       ) : pods.length === 0 ? (
@@ -562,7 +562,7 @@ export default function FleetPage() {
                           {pods.map((pod) => (
                             <div
                               key={pod.name}
-                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800/80 px-3 py-2"
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border glass-divider px-3 py-2"
                             >
                               <div className="min-w-0">
                                 <span className="text-sm font-mono text-slate-200">{pod.name}</span>
@@ -629,7 +629,7 @@ export default function FleetPage() {
               href={integrations.prometheus_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
             >
               Prometheus <ExternalLink size={14} />
             </a>
@@ -665,7 +665,7 @@ export default function FleetPage() {
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-300 glass-inset-hover"
           >
             Platform & HA settings
           </button>

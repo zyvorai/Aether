@@ -133,7 +133,7 @@ export default function LabsGraduationPanel() {
             {overview.features.map((f) => (
               <li
                 key={f.phase}
-                className="flex items-center justify-between rounded-xl border border-slate-800/60 glass-panel-card px-3 py-2"
+                className="flex items-center justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2"
               >
                 <span className="text-slate-200">
                   Phase {f.phase}: {f.name}

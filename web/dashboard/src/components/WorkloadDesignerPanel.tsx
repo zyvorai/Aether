@@ -115,7 +115,7 @@ export default function WorkloadDesignerPanel() {
               key={sample}
               type="button"
               onClick={() => setPrompt(sample)}
-              className="rounded-full border border-slate-800 px-3 py-1 text-xs text-slate-400 hover:border-aether/30 hover:text-slate-200"
+              className="rounded-full border glass-divider px-3 py-1 text-xs text-slate-400 hover:border-aether/30 hover:text-slate-200"
             >
               {sample}
             </button>
@@ -149,7 +149,7 @@ export default function WorkloadDesignerPanel() {
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('editor'), { workload: name }))}
-                className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm text-slate-300 hover:border-aether/40"
+                className="rounded-xl border glass-divider px-4 py-2.5 text-sm text-slate-300 hover:border-aether/40"
               >
                 Open in editor
               </button>

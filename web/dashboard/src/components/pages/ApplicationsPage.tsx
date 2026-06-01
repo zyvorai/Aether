@@ -173,7 +173,7 @@ export default function ApplicationsPage() {
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-aether text-aether' : 'border-slate-700 text-slate-400'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-aether text-aether' : 'glass-divider text-slate-400'}`}
             aria-label="Grid view"
           >
             <Grid3X3 size={16} />
@@ -181,7 +181,7 @@ export default function ApplicationsPage() {
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-aether text-aether' : 'border-slate-700 text-slate-400'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-aether text-aether' : 'glass-divider text-slate-400'}`}
             aria-label="List view"
           >
             <LayoutList size={16} />
@@ -221,7 +221,7 @@ export default function ApplicationsPage() {
         <div className="glass-panel-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-slate-500 border-b border-slate-800">
+              <tr className="text-left text-xs text-slate-500 glass-divider-b">
                 <th className="p-3">Application</th>
                 <th className="p-3">Workspace</th>
                 <th className="p-3">Status</th>
@@ -231,7 +231,7 @@ export default function ApplicationsPage() {
             </thead>
             <tbody>
               {filtered.map((app) => (
-                <tr key={`${app.cluster}-${app.namespace}-${app.name}`} className="border-b border-slate-800/60 hover:bg-slate-800/30">
+                <tr key={`${app.cluster}-${app.namespace}-${app.name}`} className="glass-divider-b glass-inset-hover">
                   <td className="p-3 font-medium text-slate-100">{app.name}</td>
                   <td className="p-3 text-slate-400">{workspaceLabel(app.namespace)}</td>
                   <td className="p-3 text-slate-300">{app.status}</td>

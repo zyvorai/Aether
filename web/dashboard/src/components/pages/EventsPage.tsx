@@ -285,7 +285,7 @@ export default function EventsPage() {
                 type="button"
                 data-testid="events-clear-filters"
                 onClick={clearFilters}
-                className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-aether hover:border-aether/40"
+                className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-400 hover:text-aether hover:border-aether/40"
               >
                 Clear filters
               </button>

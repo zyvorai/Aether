@@ -68,7 +68,7 @@ export default function GitOpsAgentPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -85,7 +85,7 @@ export default function GitOpsAgentPanel() {
       ) : (
         <ul className="space-y-2">
           {plan.planned_actions.map((action) => (
-            <li key={action} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+            <li key={action} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
               <Play className="mr-1 inline h-3 w-3 text-violet-400" />
               {action}
             </li>

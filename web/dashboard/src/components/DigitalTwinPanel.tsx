@@ -118,7 +118,7 @@ export default function DigitalTwinPanel() {
           </div>
           <ul className="space-y-2">
             {report.recommendations.map((line) => (
-              <li key={line} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
                 {line}
               </li>
             ))}
@@ -145,7 +145,7 @@ function TwinSnapshotCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800/70 glass-panel-card'}`}
+      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'glass-divider glass-panel-card'}`}
     >
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
       <dl className="grid grid-cols-2 gap-3 text-sm">

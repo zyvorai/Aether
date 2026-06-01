@@ -192,7 +192,7 @@ export default function AuditPage() {
                 type="button"
                 data-testid="audit-export-json"
                 onClick={() => downloadExport('json')}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 JSON
@@ -201,7 +201,7 @@ export default function AuditPage() {
                 type="button"
                 data-testid="audit-export-csv"
                 onClick={() => downloadExport('csv')}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 CSV
@@ -223,7 +223,7 @@ export default function AuditPage() {
               type="button"
               data-testid="audit-clear-filters"
               onClick={() => setResultFilter('')}
-              className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-aether"
+              className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-400 hover:text-aether"
             >
               Clear result filter
             </button>
@@ -287,7 +287,7 @@ export default function AuditPage() {
               data-testid="audit-reverify"
               onClick={() => void reVerify()}
               disabled={verifying}
-              className="ml-auto rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-aether/40 disabled:opacity-50"
+              className="ml-auto rounded-lg border glass-divider px-3 py-1 text-xs text-slate-300 hover:border-aether/40 disabled:opacity-50"
             >
               {verifying ? 'Verifying…' : 'Re-verify integrity'}
             </button>

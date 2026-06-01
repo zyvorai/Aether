@@ -54,10 +54,10 @@ export default function FleetIntelligenceBrief({ onNavigate }: FleetIntelligence
   if (loading) {
     return (
       <div className="command-center-shell mb-6 animate-pulse p-6 sm:p-8">
-        <div className="h-6 w-40 rounded bg-slate-800" />
+        <div className="h-6 w-40 rounded glass-inset-surface" />
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-slate-800/70" />
+            <div key={i} className="h-20 rounded-2xl glass-inset-surface/70" />
           ))}
         </div>
       </div>
