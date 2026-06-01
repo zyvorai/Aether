@@ -33,7 +33,7 @@ export default function PageTabs<T extends string>({
             type="button"
             onClick={() => onChange(tab.id)}
             aria-selected={isActive}
-            className={`tab-chip flex items-center gap-2 ${isActive ? 'tab-chip-active' : ''}`}
+            className={`glass-tab tab-chip flex items-center gap-2 ${isActive ? 'glass-tab-active tab-chip-active glass-tab-active' : ''}`}
           >
             {tab.icon}
             {tab.label}

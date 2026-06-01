@@ -215,7 +215,7 @@ export default function ActivityMonitorPage() {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`tab-chip inline-flex items-center gap-2 ${tab === id ? 'tab-chip-active' : ''}`}
+            className={`glass-tab tab-chip inline-flex items-center gap-2 ${tab === id ? 'glass-tab-active tab-chip-active' : ''}`}
           >
             <Icon size={16} />
             {label}

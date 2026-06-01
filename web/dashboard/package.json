@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run check:hex-surfaces && tsc && vite build",
     "test": "vitest run",
     "validate:schema": "node ../../scripts/schema-validate-examples.mjs",
     "preview": "vite preview",

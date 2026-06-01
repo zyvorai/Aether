@@ -150,7 +150,7 @@ export default function HelmCatalogPage() {
               key={cat}
               type="button"
               onClick={() => setCategory(cat)}
-              className={`tab-chip capitalize ${category === cat ? 'tab-chip-active' : ''}`}
+              className={`glass-tab tab-chip capitalize ${category === cat ? 'glass-tab-active tab-chip-active' : ''}`}
             >
               {cat === 'all' ? 'All' : cat}
             </button>

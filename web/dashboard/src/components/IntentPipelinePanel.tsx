@@ -129,7 +129,7 @@ export default function IntentPipelinePanel() {
           Parse NL → intent block
         </button>
         {nlReport ? (
-          <pre className="mt-2 max-h-32 overflow-auto rounded-lg bg-black/40 p-2 text-[11px] text-slate-400">
+          <pre className="mt-2 max-h-32 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-slate-400">
             {nlReport.intent_yaml}
           </pre>
         ) : null}
@@ -211,7 +211,7 @@ export default function IntentPipelinePanel() {
             </Link>
           </div>
 
-          <pre className="max-h-48 overflow-auto rounded-xl border glass-divider bg-black/40 p-3 text-xs text-slate-300">
+          <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-slate-300">
             {report.spec_yaml}
           </pre>
         </div>

@@ -73,7 +73,7 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
         <button
           type="button"
           onClick={() => setFollowing(!following)}
-          className={`tab-chip ${following ? 'tab-chip-active !border-emerald-500/30 !bg-emerald-500/10 !text-emerald-300' : ''}`}
+          className={`glass-tab tab-chip ${following ? 'glass-tab-active tab-chip-active !border-emerald-500/30 !bg-emerald-500/10 !text-emerald-300' : ''}`}
         >
           {following ? 'Following' : 'Follow'}
         </button>
