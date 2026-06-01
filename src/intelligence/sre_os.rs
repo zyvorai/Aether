@@ -5,7 +5,7 @@
 //! SRE & Reliability OS — runbook scheduler, incidents, on-call, postmortems, chaos, MTTR.
 
 use crate::audit::{ActionResult, AuditAction, AuditLog};
-use crate::copilot::diagnose::{diagnose_fleet, FleetRootCauseEntry};
+use crate::zeus::diagnose::{diagnose_fleet, FleetRootCauseEntry};
 use crate::events::{ChannelType, EventBus};
 use crate::health::HealthHistory;
 use crate::intelligence::healer::{build_healer_preview, execute_healer, HealerExecuteReport};

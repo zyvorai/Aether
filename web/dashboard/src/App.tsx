@@ -40,7 +40,8 @@ import WorkloadsPage from './components/pages/WorkloadsPage';
 import ClustersPage from './components/pages/ClustersPage';
 import ComposePage from './components/pages/ComposePage';
 import AIPage from './components/pages/AIPage';
-import CopilotPage from './components/pages/CopilotPage';
+import ZeusPage from './components/pages/ZeusPage';
+import AiProvidersPage from './components/pages/AiProvidersPage';
 import CostPage from './components/pages/CostPage';
 import AffinityPage from './components/pages/AffinityPage';
 import DriftPage from './components/pages/DriftPage';
@@ -422,8 +423,11 @@ function AetherDashboard() {
         return <ComposePage key={refreshKey} />;
       case 'ai':
         return <AIPage key={refreshKey} />;
+      case 'zeus':
       case 'copilot':
-        return <CopilotPage key={refreshKey} />;
+        return <ZeusPage key={refreshKey} />;
+      case 'ai-providers':
+        return <AiProvidersPage key={refreshKey} />;
       case 'cost':
         return <CostPage key={refreshKey} />;
       case 'affinity':

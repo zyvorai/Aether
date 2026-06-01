@@ -150,7 +150,7 @@ export default function PlatformPage() {
             className="text-aether hover:underline"
             data-testid="platform-copilot-link"
           >
-            Copilot →
+            Zeus →
           </Link>
           {' · '}
           <Link

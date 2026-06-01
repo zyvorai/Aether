@@ -65,12 +65,15 @@ pub async fn build_agent_registry(state_path: &Path) -> anyhow::Result<AgentRegi
         .count() as u32;
 
     let agents = vec![
-        entry("sre", "SRE Healer", healer.would_execute.len() as u32, "observability"),
-        entry("cost", "Cost", cost.recommendations.len() as u32, "cost"),
-        entry("security", "Security", threats.threats.len() as u32, "security"),
-        entry("capacity", "Capacity", at_risk, "observability"),
-        entry("migration", "Migration", migrate_candidates, "migrations"),
-        entry("gitops", "GitOps", remediation.actions.len() as u32, "gitops"),
+        entry("sre", "Zeus SRE", healer.would_execute.len() as u32, "observability"),
+        entry("architect", "Zeus Architect", migrate_candidates, "ai"),
+        entry("devops", "Zeus DevOps", remediation.actions.len() as u32, "gitops"),
+        entry("kubernetes", "Zeus Kubernetes", at_risk, "clusters"),
+        entry("security", "Zeus Security", threats.threats.len() as u32, "security"),
+        entry("cost", "Zeus Cost Optimizer", cost.recommendations.len() as u32, "cost"),
+        entry("observability", "Zeus Observability", at_risk, "observability"),
+        entry("ai_engineer", "Zeus AI Engineer", 0, "confidential"),
+        entry("database", "Zeus Database Expert", 0, "workloads"),
     ];
 
     Ok(AgentRegistryReport {

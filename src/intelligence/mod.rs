@@ -17,6 +17,7 @@ pub mod agents;
 pub mod anomaly;
 pub mod autonomy;
 pub mod capacity;
+pub mod zeus_os;
 pub mod copilot_os;
 pub mod federation_os;
 pub mod gitops_agent;
@@ -57,13 +58,20 @@ pub use evolution::{
     EvolutionEngine, EvolutionExecuteReport, EvolutionExecuteRequest, EvolutionStatus,
     execute_evolution,
 };
+pub use zeus_os::{
+    append_zeus_audit, author_runbook, build_llm_provider_status, build_zeus_insights,
+    build_zeus_rbac_scopes, build_voice_zeus_lab, explain_policy_violations, read_zeus_audit,
+    read_zeus_memory, route_zeus_agent, write_zeus_memory_entry, BatchConfirmReport,
+    LlmProviderStatusReport, MultiAgentRouteReport, PolicyExplainerReport, PolicyExplainerRequest,
+    RunbookAuthorReport, RunbookAuthorRequest, VoiceZeusLabReport, ZeusAuditEntry, ZeusAuditReport,
+    ZeusInsightsReport, ZeusMemoryEntry, ZeusMemoryReport, ZeusMemorySettings, ZeusRbacScopesReport,
+    ZeusToolScope,
+};
 pub use copilot_os::{
-    append_copilot_audit, author_runbook, build_copilot_rbac_scopes, build_llm_provider_status,
-    build_voice_copilot_lab, explain_policy_violations, read_copilot_audit, read_copilot_memory,
-    route_copilot_agent, write_copilot_memory_entry, BatchConfirmReport, CopilotAuditEntry,
+    append_copilot_audit, build_copilot_rbac_scopes, build_voice_copilot_lab, read_copilot_audit,
+    read_copilot_memory, route_copilot_agent, write_copilot_memory_entry, CopilotAuditEntry,
     CopilotAuditReport, CopilotMemoryEntry, CopilotMemoryReport, CopilotRbacScopesReport,
-    CopilotToolScope, LlmProviderStatusReport, MultiAgentRouteReport, PolicyExplainerReport,
-    PolicyExplainerRequest, RunbookAuthorReport, RunbookAuthorRequest, VoiceCopilotLabReport,
+    CopilotToolScope, VoiceCopilotLabReport,
 };
 pub use federation_os::{
     apply_packetwolf_guard, build_cloud_account_vault, build_cluster_health_mesh,
