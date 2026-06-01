@@ -74,4 +74,4 @@ cd web/dashboard && npm run test:e2e -- tests/liquid-glass-smoke.spec.ts
 node scripts/check-no-hex-surfaces.mjs
 ```
 
-Smoke tests assert `.overview-section-shell` (or `.command-center-shell`) is visible and `backdrop-filter` is not `none` across routes and themes. The guard script runs as part of `npm run build` and fails if `bg-[#` or `bg-black` surface fills appear in `src/**/*.tsx`.
+Smoke tests assert `.overview-section-shell` (or `.command-center-shell`) is visible and `backdrop-filter` is not `none` on all 41 dashboard routes (dark default plus steel/aurora theme sweeps). The guard script runs as part of `npm run build` and is also invoked by `make ci` via the `dashboard-glass` target.

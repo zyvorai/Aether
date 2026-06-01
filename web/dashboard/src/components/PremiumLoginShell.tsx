@@ -327,7 +327,7 @@ export function LoginRemember({
 export function LoginDivider({ label = 'or' }: { label?: string }) {
   return (
     <div className="relative py-3 mt-4 text-center text-xs uppercase tracking-[0.22em] text-slate-500">
-      <span className="relative bg-[rgba(17,21,28,0.72)] px-2 backdrop-blur-sm">{label}</span>
+      <span className="relative glass-inset-surface px-2">{label}</span>
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 glass-divider-t" />
     </div>
   );
