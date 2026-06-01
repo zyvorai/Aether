@@ -56,7 +56,7 @@ function GraphVisual({
           {nodes.map((node) => (
             <span
               key={node}
-              className={`rounded-full border bg-slate-950/80 px-3 py-1.5 text-sm text-slate-200 ${
+              className={`quick-link-chip rounded-full px-3 py-1.5 text-sm text-slate-200 ${
                 highlightWorkload === node ? 'border-aether/60 ring-1 ring-aether/30' : 'border-slate-700'
               }`}
               data-testid={highlightWorkload === node ? 'deps-workload-highlight' : undefined}
@@ -69,7 +69,7 @@ function GraphVisual({
           {edges.map((edge, i) => (
             <li
               key={`${edge.from}-${edge.to}-${i}`}
-              className="flex items-center gap-2 text-sm rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2"
+              className="glass-panel-card flex items-center gap-2 text-sm px-4 py-2"
             >
               <span className="font-medium text-slate-200"><WorkloadNodeLink name={edge.from} /></span>
               <ArrowRight size={14} className="text-aether shrink-0" />
@@ -99,7 +99,7 @@ function GraphVisual({
         {graph.startup_order.map((name, i) => (
           <div key={name} className="flex items-center gap-3">
             {i > 0 && <ArrowRight size={14} className="text-slate-600 shrink-0 -ml-1" />}
-            <div className="flex items-center gap-3 flex-1 rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2">
+            <div className="glass-panel-card flex items-center gap-3 flex-1 px-4 py-2">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-aether/10 text-xs font-semibold text-aether">
                 {i + 1}
               </span>
@@ -295,7 +295,7 @@ export default function DepsPage() {
               value={addWorkload}
               onChange={(e) => setAddWorkload(e.target.value)}
               placeholder="e.g. web-app"
-              className="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-aether"
+              className="glass-input text-slate-200 placeholder-slate-600 focus:outline-none focus:border-aether"
             />
           </div>
           <div>
@@ -305,7 +305,7 @@ export default function DepsPage() {
               value={addDependency}
               onChange={(e) => setAddDependency(e.target.value)}
               placeholder="e.g. database"
-              className="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-aether"
+              className="glass-input text-slate-200 placeholder-slate-600 focus:outline-none focus:border-aether"
             />
           </div>
           <button

@@ -185,7 +185,7 @@ export default function ActivityMonitorPage() {
                 setSelectedCluster(e.target.value);
                 void load(true);
               }}
-              className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-300"
+              className="glass-input text-xs"
             >
               {(clusterSummary?.clusters ?? []).map((c) => (
                 <option key={c.name} value={c.name}>{c.name}</option>

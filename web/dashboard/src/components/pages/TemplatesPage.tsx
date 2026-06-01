@@ -321,7 +321,7 @@ export default function TemplatesPage() {
         title={`Generated: ${generateName}`}
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+          <div className="flex items-center justify-between gap-4 glass-panel-card px-4 py-3">
             <div>
               <div className="text-sm font-medium text-slate-100">Generated workload spec</div>
               <div className="text-xs text-slate-500">Preview and deploy the generated template.</div>
@@ -351,7 +351,7 @@ export default function TemplatesPage() {
               </button>
             ) : null}
           </div>
-          <div className="glass-panel-card bg-slate-950/80 p-4">
+          <div className="glass-panel-card p-4">
             <h4 className="text-xs uppercase tracking-wider text-slate-500 mb-2">Preview</h4>
             <pre className="text-xs text-emerald-300 font-mono whitespace-pre-wrap overflow-auto max-h-48">
               {specPreview(generatedSpec)}
@@ -387,7 +387,7 @@ export default function TemplatesPage() {
               value={params[key]}
               onChange={(e) => setParams((current) => ({ ...current, [key]: e.target.value }))}
               placeholder={label}
-              className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+              className="glass-input"
             />
           ))}
         </div>

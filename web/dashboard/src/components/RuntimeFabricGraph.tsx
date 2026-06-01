@@ -208,7 +208,7 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
         <span className="ml-auto text-xs text-slate-500">{graph.nodes.length} nodes · live</span>
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border border-slate-800/60 bg-slate-950/60 backdrop-blur-xl">
+      <div className="glass-panel-card overflow-hidden rounded-[24px]">
         <svg
           viewBox={`${-pan.x} ${-pan.y} ${layout.width / zoom} ${layout.height / zoom}`}
           className="w-full min-h-[360px] fabric-graph-svg"

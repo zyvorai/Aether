@@ -291,7 +291,7 @@ export default function PolicyPage() {
             value={opaManifest}
             onChange={(e) => setOpaManifest(e.target.value)}
             rows={12}
-            className={`w-full font-mono text-sm rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-slate-200`}
+            className={`glass-input font-mono`}
           />
           <button
             type="button"

@@ -881,7 +881,7 @@ export default function ClustersPage() {
       )}
 
       {authStatus && (
-        <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-300">
+        <div className="glass-panel-card px-4 py-3 text-sm text-slate-300">
           Cluster role: <span className="text-slate-100">{authStatus.role}</span>
           <span className="text-slate-500"> · </span>
           Signed in as <span className="text-slate-100">{authStatus.username}</span>
@@ -1142,14 +1142,14 @@ export default function ClustersPage() {
               )}
               {['Deployment', 'StatefulSet'].includes(selected.kind) && (
                 <>
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2">
+                  <div className="flex items-center gap-2 glass-drawer px-3 py-2">
                     <span className="text-xs text-slate-500">Replicas</span>
                     <input
                       type="number"
                       min={0}
                       value={replicasInput}
                       onChange={(e) => setReplicasInput(e.target.value)}
-                      className="w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                      className="glass-input w-20"
                     />
                   </div>
                   <button
@@ -1192,7 +1192,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && ((selected.owner_references?.length ?? 0) > 0 || (selected.owned_resources?.length ?? 0) > 0) && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Owner graph</h4>
                 {(selected.owner_references?.length ?? 0) > 0 && (
                   <div className="mb-3">
@@ -1201,7 +1201,7 @@ export default function ClustersPage() {
                       {selected.owner_references!.map((owner) => (
                         <span
                           key={`${owner.kind}/${owner.name}`}
-                          className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-200"
+                          className="quick-link-chip rounded-full px-3 py-1 text-xs"
                         >
                           {owner.kind}/{owner.name}
                           {owner.controller ? ' (controller)' : ''}
@@ -1229,7 +1229,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && healthSummary && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Health</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 text-sm">
                   <div>
@@ -1253,7 +1253,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && selected.conditions.length > 0 && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Conditions</h4>
                 <div className="space-y-2">
                   {selected.conditions.map((condition) => (
@@ -1271,7 +1271,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && selected.pods.length > 0 && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Pods</h4>
                 <div className="space-y-2">
                   {selected.pods.map((pod) => (
@@ -1290,14 +1290,14 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'events' && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Event correlation</h4>
                 <EventCorrelationPanel events={selectedEvents} resourceName={selected.name} />
               </div>
             )}
 
             {detailTab === 'events' && selectedEvents.length > 0 && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Cluster events</h4>
                 <div className="space-y-2 max-h-64 overflow-auto">
                   {selectedEvents.map((event, index) => (
@@ -1317,7 +1317,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && relatedAudit.length > 0 && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Related audit trail</h4>
                 <div className="space-y-2 max-h-48 overflow-auto">
                   {relatedAudit.map((entry) => (
@@ -1337,7 +1337,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && topMetrics.length > 0 && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Metrics</h4>
                 <div className="space-y-2">
                   {topMetrics.map((metric) => (
@@ -1352,7 +1352,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && rollout && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-slate-200">Rollout</h4>
                   <div className="text-xs text-slate-400">{rollout.status}</div>
@@ -1379,7 +1379,7 @@ export default function ClustersPage() {
                   >
                     {actionLoading === 'rollout-restart' ? 'Restarting...' : 'Rollout Restart'}
                   </button>
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2">
+                  <div className="flex items-center gap-2 glass-drawer px-3 py-2">
                     <span className="text-xs text-slate-500">Revision</span>
                     <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-slate-100 outline-none">
                       {rollout.history.map((entry) => (
@@ -1413,7 +1413,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'overview' && selected.kind === 'HelmRelease' && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-slate-200">Helm</h4>
                   <div className="text-xs text-slate-400">{helmHistory.length} revisions</div>
@@ -1425,7 +1425,7 @@ export default function ClustersPage() {
                     className="glass-select"
                     placeholder="repo/chart or chart reference"
                   />
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2">
+                  <div className="flex items-center gap-2 glass-drawer px-3 py-2">
                     <span className="text-xs text-slate-500">Revision</span>
                     <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-slate-100 outline-none">
                       {helmHistory.map((entry) => (
@@ -1438,7 +1438,7 @@ export default function ClustersPage() {
                   value={helmValues}
                   onChange={(e) => setHelmValues(e.target.value)}
                   rows={10}
-                  className="mt-3 w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
+                  className="glass-code-block-body mt-3 w-full text-xs"
                   spellCheck={false}
                   placeholder="Helm values YAML"
                 />
@@ -1481,20 +1481,20 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'logs' && selectedLogsPath && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Logs</h4>
                 <LogViewer workloadName={selected.name} logsPath={selectedLogsPath} />
               </div>
             )}
 
             {detailTab === 'terminal' && ((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-slate-200">Terminal</h4>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setTerminalExpanded((value) => !value)}
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800"
+                      className="quick-link-chip px-3 py-1 text-xs"
                     >
                       {terminalExpanded ? 'Compact' : 'Expand'}
                     </button>
@@ -1564,7 +1564,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'terminal' && (((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) || selected.kind === 'Service') && (
-              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="glass-drawer p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Port Forward</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
                   <select value={selected.kind === 'Service' ? selected.name : portForwardPod} onChange={(e) => setPortForwardPod(e.target.value)} disabled={selected.kind === 'Service'} className="glass-select disabled:opacity-60">
@@ -1612,7 +1612,7 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'manifest' && (
-            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+            <div className="glass-drawer p-3">
               <div className="mb-3 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-slate-200">Manifest</h4>
                 <button
@@ -1628,13 +1628,13 @@ export default function ClustersPage() {
                 value={manifestDraft}
                 onChange={(e) => setManifestDraft(e.target.value)}
                 rows={18}
-                className="w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
+                className="glass-code-block-body w-full text-xs"
                 spellCheck={false}
               />
               <div className="mt-3">
                 <CodeBlock title="Current Resource">{JSON.stringify(selected.manifest, null, 2)}</CodeBlock>
               </div>
-              <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+              <div className="glass-drawer mt-3 p-3">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Diff Preview</h4>
                 <pre className="max-h-80 overflow-auto text-xs">
                   {serverDiff.map((line, index) => (
@@ -1673,20 +1673,20 @@ export default function ClustersPage() {
               <input
                 value={createHelmRelease}
                 onChange={(e) => setCreateHelmRelease(e.target.value)}
-                className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="glass-input"
                 placeholder="release name"
               />
               <input
                 value={createHelmChart}
                 onChange={(e) => setCreateHelmChart(e.target.value)}
-                className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="glass-input"
                 placeholder="repo/chart or chart path"
               />
               <textarea
                 value={createHelmValues}
                 onChange={(e) => setCreateHelmValues(e.target.value)}
                 rows={14}
-                className="w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
+                className="glass-code-block-body w-full text-xs"
                 spellCheck={false}
                 placeholder="Helm values YAML"
               />
@@ -1700,7 +1700,7 @@ export default function ClustersPage() {
                 value={createManifestDraft}
                 onChange={(e) => setCreateManifestDraft(e.target.value)}
                 rows={18}
-                className="w-full rounded bg-slate-950 p-3 text-xs text-slate-300 font-mono border border-slate-800"
+                className="glass-code-block-body w-full text-xs"
                 spellCheck={false}
               />
             </>

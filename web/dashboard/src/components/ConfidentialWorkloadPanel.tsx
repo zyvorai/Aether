@@ -10,6 +10,7 @@ import { WorkloadScopedCrossLinks } from './QueryContextBanner';
 import { apiFetch, apiPost } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import Badge from './Badge';
+import GlassSection from './GlassSection';
 import type {
   AttestationExplain,
   AttestationStatus,
@@ -279,7 +280,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
   }
 
   return (
-    <div className="space-y-6 py-2">
+    <GlassSection variant="panel" accent="red" className="space-y-6 py-2" testId="confidential-workload-panel">
       {!notConfidential && (
         <div className="text-xs" data-testid="trust-panel-cross-links">
           <WorkloadScopedCrossLinks
@@ -701,6 +702,6 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           )}
         </div>
       )}
-    </div>
+    </GlassSection>
   );
 }

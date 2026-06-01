@@ -317,7 +317,7 @@ export function LoginRemember({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 rounded border-slate-600 bg-slate-900 accent-blue-500"
+        className="h-4 w-4 rounded border-slate-600/80 bg-transparent accent-blue-500"
       />
       <span className="text-sm text-slate-400">{label}</span>
     </label>
@@ -327,7 +327,7 @@ export function LoginRemember({
 export function LoginDivider({ label = 'or' }: { label?: string }) {
   return (
     <div className="relative py-3 mt-4 text-center text-xs uppercase tracking-[0.22em] text-slate-500">
-      <span className="relative px-2 bg-slate-900/40">{label}</span>
+      <span className="relative bg-[rgba(17,21,28,0.72)] px-2 backdrop-blur-sm">{label}</span>
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-slate-700/60" />
     </div>
   );

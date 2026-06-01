@@ -51,7 +51,7 @@ function severityTone(severity: string): string {
   const s = severity.toLowerCase();
   if (s === 'critical' || s === 'high') return 'border-red-500/30 bg-red-500/10 text-red-200';
   if (s === 'medium') return 'border-amber-500/30 bg-amber-500/10 text-amber-200';
-  return 'border-slate-700/60 bg-slate-900/50 text-slate-300';
+  return 'glass-panel-card text-slate-300';
 }
 
 function contextualSubtitle(issueCount: number, fleetHealth: number): string {

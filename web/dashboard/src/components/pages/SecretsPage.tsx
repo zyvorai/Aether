@@ -310,7 +310,7 @@ export default function SecretsPage() {
                     {expandedSecret === s.name && secretDetail && (
                       <tr className="border-b border-slate-800/50">
                         <td colSpan={6} className="px-4 py-3">
-                          <div className="bg-slate-950/50 rounded-xl p-4 space-y-3 border border-slate-800">
+                          <div className="glass-panel-card p-4 space-y-3 border border-slate-800">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                               <div>
                                 <span className="text-slate-500">Keys: </span>
@@ -368,7 +368,7 @@ export default function SecretsPage() {
               type="text"
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              className="glass-input"
             />
           </div>
           <div>
@@ -377,7 +377,7 @@ export default function SecretsPage() {
               type="text"
               value={createNamespace}
               onChange={(e) => setCreateNamespace(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              className="glass-input"
             />
           </div>
           <div>
@@ -386,7 +386,7 @@ export default function SecretsPage() {
               value={createKeys}
               onChange={(e) => setCreateKeys(e.target.value)}
               rows={5}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100"
+              className="glass-input font-mono"
             />
           </div>
         </div>

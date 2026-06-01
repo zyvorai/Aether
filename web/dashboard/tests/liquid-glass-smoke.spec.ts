@@ -12,16 +12,47 @@ const GLASS_ROUTES = [
   { path: '/settings', shell: '.overview-section-shell' },
 ];
 
+async function assertGlassBlur(page: import('@playwright/test').Page, shell: string) {
+  const glassShell = page.locator(shell).first();
+  await expect(glassShell).toBeVisible({ timeout: 15_000 });
+  const backdropFilter = await glassShell.evaluate((el) => getComputedStyle(el).backdropFilter);
+  expect(backdropFilter).not.toBe('none');
+}
+
 test.describe('Liquid Glass smoke', () => {
   for (const { path, shell } of GLASS_ROUTES) {
     test(`glass shell visible with blur on ${path}`, async ({ page }) => {
       await page.goto(path);
-
-      const glassShell = page.locator(shell).first();
-      await expect(glassShell).toBeVisible({ timeout: 15_000 });
-
-      const backdropFilter = await glassShell.evaluate((el) => getComputedStyle(el).backdropFilter);
-      expect(backdropFilter).not.toBe('none');
+      await assertGlassBlur(page, shell);
     });
   }
+
+  for (const theme of ['steel', 'aurora'] as const) {
+    test(`overview shell blur with ${theme} theme`, async ({ page }) => {
+      await page.goto('/workloads');
+      await assertGlassBlur(page, '.overview-section-shell');
+
+      const themeSelect = page.locator('nav select').first();
+      await expect(themeSelect).toBeVisible({ timeout: 10_000 });
+      await themeSelect.selectOption(theme);
+
+      await expect(page.locator('html')).toHaveClass(new RegExp(`${theme}-theme`));
+      await assertGlassBlur(page, '.overview-section-shell');
+    });
+  }
+
+  test('clusters detail uses glass-drawer when resource selected', async ({ page }) => {
+    await page.goto('/clusters');
+    const empty = page.getByText('No Kubernetes contexts').first();
+    const table = page.getByTestId('clusters-resource-table');
+    const hasTable = await table.isVisible({ timeout: 15_000 }).catch(() => false);
+    if (!hasTable) {
+      await expect(empty.or(page.getByRole('heading', { name: /cluster browser/i }))).toBeVisible();
+      return;
+    }
+
+    const firstRow = table.locator('tbody tr').first();
+    await firstRow.click();
+    await expect(page.locator('.glass-drawer').first()).toBeVisible({ timeout: 10_000 });
+  });
 });
