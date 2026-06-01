@@ -25,6 +25,7 @@ jobs:
         working-directory: web/dashboard
         run: |
           npm ci
+          npm run check:hex-surfaces
           npm run test
           npm run validate:schema
           AETHER_DASHBOARD_BUILD="${{ env.AETHER_DASHBOARD_BUILD }}" npm run build

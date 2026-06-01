@@ -144,4 +144,19 @@ test.describe('Liquid Glass smoke', () => {
     const tab = page.locator('.glass-tab').first();
     await expect(tab).toBeVisible({ timeout: 10_000 });
   });
+
+  test('login gate card uses glass blur when visible', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.clear();
+    });
+    await page.goto('/');
+    const loginCard = page.locator('.login-glass').first();
+    const visible = await loginCard.isVisible({ timeout: 8000 }).catch(() => false);
+    if (!visible) {
+      await expect(page.getByRole('button', { name: 'Help menu' })).toBeVisible({ timeout: 10_000 });
+      return;
+    }
+    const backdropFilter = await loginCard.evaluate((el) => getComputedStyle(el).backdropFilter);
+    expect(backdropFilter).not.toBe('none');
+  });
 });
