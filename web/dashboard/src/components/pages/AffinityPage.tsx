@@ -182,7 +182,7 @@ export default function AffinityPage() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`tab-chip capitalize ${tab === t ? 'tab-chip-active' : ''}`}
+            className={`glass-tab tab-chip capitalize ${tab === t ? 'glass-tab-active tab-chip-active' : ''}`}
           >
             {t === 'recommend' ? 'Recommendations' : t}
           </button>

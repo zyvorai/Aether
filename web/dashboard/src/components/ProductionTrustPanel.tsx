@@ -78,7 +78,7 @@ export default function ProductionTrustPanel() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={tab === t ? 'tab-chip-active' : 'tab-chip'}
+            className={tab === t ? 'glass-tab-active tab-chip-active' : 'glass-tab tab-chip'}
           >
             {t === 'scorecard' ? 'Scorecard' : t === 'auth' ? 'Auth' : 'Ops'}
           </button>

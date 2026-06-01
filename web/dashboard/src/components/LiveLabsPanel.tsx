@@ -82,7 +82,7 @@ export default function LiveLabsPanel() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={tab === t ? 'tab-chip-active' : 'tab-chip'}
+            className={tab === t ? 'glass-tab-active tab-chip-active' : 'glass-tab tab-chip'}
           >
             {t === 'runner' ? 'Runner' : t === 'fixtures' ? 'Fixtures' : 'Pipeline'}
           </button>

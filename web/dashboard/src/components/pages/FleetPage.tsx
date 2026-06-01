@@ -341,7 +341,7 @@ export default function FleetPage() {
             type="button"
             data-testid={t === 'edge' ? 'fleet-edge-tab' : t === 'placement' ? 'fleet-placement-tab' : 'fleet-overview-tab'}
             onClick={() => setTab(t === 'overview' ? '' : t)}
-            className={`tab-chip capitalize ${activeTab === t ? 'tab-chip-active' : ''}`}
+            className={`glass-tab tab-chip capitalize ${activeTab === t ? 'glass-tab-active tab-chip-active' : ''}`}
           >
             {t === 'edge' ? 'Edge Sites' : t === 'placement' ? 'Placement' : 'Overview'}
           </button>
