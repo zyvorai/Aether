@@ -263,10 +263,10 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
 }
 
 const STUDIO_TABS = [
-  { id: 'intent' as const, label: 'Intent Studio', icon: <Sparkles size={16} /> },
-  { id: 'pipeline' as const, label: 'Pipeline', icon: <Wand2 size={16} /> },
   { id: 'advisor' as const, label: 'Runtime Advisor', icon: <Brain size={16} /> },
   { id: 'designer' as const, label: 'Workload Designer', icon: <Wand2 size={16} /> },
+  { id: 'intent' as const, label: 'Intent Studio', icon: <Sparkles size={16} /> },
+  { id: 'pipeline' as const, label: 'Pipeline', icon: <Wand2 size={16} /> },
   { id: 'recommend' as const, label: 'Advanced', icon: <Zap size={16} /> },
   { id: 'optimize' as const, label: 'Optimization', icon: <Target size={16} /> },
   { id: 'analyze' as const, label: 'Analysis', icon: <Cpu size={16} /> },
@@ -282,12 +282,12 @@ export default function AIPage() {
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   type AiTab = 'intent' | 'pipeline' | 'advisor' | 'designer' | 'recommend' | 'optimize' | 'analyze';
-  const [tabParam, setTabParam] = useQueryParam('tab', 'intent');
+  const [tabParam, setTabParam] = useQueryParam('tab', 'advisor');
   const activeTab: AiTab = (
     ['intent', 'pipeline', 'advisor', 'designer', 'recommend', 'optimize', 'analyze'] as const
   ).includes(tabParam as AiTab)
     ? (tabParam as AiTab)
-    : 'intent';
+    : 'advisor';
   const setActiveTab = (next: AiTab) => setTabParam(next);
   const [workloadQuery, setWorkloadQuery] = useQueryParam('workload', '');
   const [selectedWorkload, setSelectedWorkload] = useState('');

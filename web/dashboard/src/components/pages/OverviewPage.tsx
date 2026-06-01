@@ -18,6 +18,8 @@ import {
   RefreshCw,
   Rocket,
   WifiOff,
+  ChevronDown,
+  ChevronRight,
   Layers,
   Gauge,
 } from 'lucide-react';
@@ -496,6 +498,174 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
       <CommandCenterIntentSla refreshKey={refreshKey} />
       <CommandCenterNextActions onNavigate={onNavigate} refreshKey={refreshKey} />
 
+      {isEmptyPlatform ? (
+        <div className="mb-6 space-y-4">
+          <OnboardingStrip
+            hasWorkloads={deployDone || aetherManagedCount > 0}
+            hasValidated={specValidated}
+            hasHealthChecks={healthDone || (healthSummary?.healthy ?? 0) + (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0) > 0}
+            onNavigate={onNavigate}
+            onDeploy={() => goFiltered('workloads', { deploy: '1' })}
+            onValidate={() => goFiltered('workloads', { validate: '1' })}
+          />
+          <EmptyState
+            icon={<Rocket size={48} />}
+            title="Deploy your first workload"
+            description="Aether is connected but no workloads are running yet. Deploy a YAML spec, use the visual editor, or import Docker Compose."
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goFiltered('workloads', { deploy: '1' })}
+                  className="rounded-xl bg-gradient-to-r from-aether to-[#2563EB] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
+                >
+                  Deploy YAML
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('editor')}
+                  className="quick-link-chip"
+                >
+                  Visual Editor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('templates')}
+                  className="quick-link-chip"
+                >
+                  Try a template
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('compose')}
+                  className="quick-link-chip"
+                >
+                  Import Compose
+                </button>
+              </div>
+            }
+          />
+        </div>
+      ) : null}
+
+      <LegacyOverviewDetails
+        onNavigate={onNavigate}
+        goFiltered={goFiltered}
+        focusedWorkload={focusedWorkload}
+        capabilities={capabilities}
+        ready={ready}
+        sseConnected={sseConnected}
+        platformLoading={platformLoading}
+        setupHints={setupHints}
+        failedEndpoints={failedEndpoints}
+        load={load}
+        showK8sControlCenter={showK8sControlCenter}
+        username={username}
+        workloads={workloads}
+        clusterSummary={clusterSummary}
+        isEmptyPlatform={isEmptyPlatform}
+        aetherManagedCount={aetherManagedCount}
+        clusterDiscoveredCount={clusterDiscoveredCount}
+        healthy={healthy}
+        degraded={degraded}
+        plugins={plugins}
+        environments={environments}
+        apiKeys={apiKeys}
+        eventSummary={eventSummary}
+        backups={backups}
+        secrets={secrets}
+        events={events}
+        healthSummary={healthSummary}
+        quickLinks={quickLinks}
+      />
+    </div>
+  );
+}
+
+function LegacyOverviewDetails({
+  onNavigate,
+  goFiltered,
+  focusedWorkload,
+  capabilities,
+  ready,
+  sseConnected,
+  platformLoading,
+  setupHints,
+  failedEndpoints,
+  load,
+  showK8sControlCenter,
+  username,
+  workloads,
+  clusterSummary,
+  isEmptyPlatform,
+  aetherManagedCount,
+  clusterDiscoveredCount,
+  healthy,
+  degraded,
+  plugins,
+  environments,
+  apiKeys,
+  eventSummary,
+  backups,
+  secrets,
+  events,
+  healthSummary,
+  quickLinks,
+}: {
+  onNavigate: (view: AppView) => void;
+  goFiltered: (view: AppView, params?: Record<string, string>) => void;
+  focusedWorkload?: string;
+  capabilities: ReturnType<typeof useServerCapabilities>['capabilities'];
+  ready: ReturnType<typeof useServerCapabilities>['ready'];
+  sseConnected: boolean;
+  platformLoading: boolean;
+  setupHints: string[];
+  failedEndpoints: OverviewEndpoint[];
+  load: () => Promise<void>;
+  showK8sControlCenter: boolean;
+  username: string;
+  workloads: WorkloadResponse[];
+  clusterSummary: ClusterSummary | null;
+  isEmptyPlatform: boolean;
+  aetherManagedCount: number;
+  clusterDiscoveredCount: number;
+  healthy: number;
+  degraded: number;
+  plugins: PluginInfo[];
+  environments: Environment[];
+  apiKeys: ApiKeySummary[];
+  eventSummary: EventSummary | null;
+  backups: BackupInfo[];
+  secrets: SecretSummary[];
+  events: Event[];
+  healthSummary: HealthSummary | null;
+  quickLinks: QuickLink[];
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (isEmptyPlatform) {
+    return null;
+  }
+
+  return (
+    <section className="overview-section-shell mb-8 p-6 sm:p-8" data-testid="overview-legacy-details-section">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+        aria-expanded={open}
+        data-testid="overview-legacy-details-toggle"
+      >
+        <div>
+          <p className="section-label">Details</p>
+          <h2 className="section-title">Platform inventory &amp; events</h2>
+          <p className="section-subtitle">Legacy metrics, clusters, health, and quick links — drill down from Command Center</p>
+        </div>
+        {open ? <ChevronDown className="h-5 w-5 text-slate-500" /> : <ChevronRight className="h-5 w-5 text-slate-500" />}
+      </button>
+
+      {open ? (
+        <div className="mt-6 space-y-8" data-testid="overview-legacy-details">
       <PlatformStatusPanel
         platform={capabilities?.platform ?? null}
         ready={ready}
@@ -659,56 +829,6 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
           clusterSummary={clusterSummary}
           onNavigate={onNavigate}
         />
-      ) : null}
-
-      {isEmptyPlatform ? (
-        <div className="mb-6 space-y-4">
-          <OnboardingStrip
-            hasWorkloads={deployDone || aetherManagedCount > 0}
-            hasValidated={specValidated}
-            hasHealthChecks={healthDone || (healthSummary?.healthy ?? 0) + (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0) > 0}
-            onNavigate={onNavigate}
-            onDeploy={() => goFiltered('workloads', { deploy: '1' })}
-            onValidate={() => goFiltered('workloads', { validate: '1' })}
-          />
-          <EmptyState
-            icon={<Rocket size={48} />}
-            title="Deploy your first workload"
-            description="Aether is connected but no workloads are running yet. Deploy a YAML spec, use the visual editor, or import Docker Compose."
-            action={
-              <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => goFiltered('workloads', { deploy: '1' })}
-                  className="rounded-xl bg-gradient-to-r from-aether to-[#2563EB] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
-                >
-                  Deploy YAML
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('editor')}
-                  className="quick-link-chip"
-                >
-                  Visual Editor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('templates')}
-                  className="quick-link-chip"
-                >
-                  Try a template
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('compose')}
-                  className="quick-link-chip"
-                >
-                  Import Compose
-                </button>
-              </div>
-            }
-          />
-        </div>
       ) : null}
 
       <OverviewFleetSnapshot
@@ -930,6 +1050,8 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
           )}
         </div>
       </div>
-    </div>
+        </div>
+      ) : null}
+    </section>
   );
 }

@@ -48,6 +48,8 @@ export default function GitOpsAgentPanel() {
     }
   }
 
+  const prLinks = plan?.pr_links ?? [];
+
   return (
         <GlassSection
       accent="purple"
@@ -92,6 +94,22 @@ export default function GitOpsAgentPanel() {
           ))}
         </ul>
       )}
+
+      {prLinks.length > 0 ? (
+        <div className="mt-4" data-testid="gitops-agent-pr-links">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Agent pull requests</p>
+          <ul className="space-y-2">
+            {prLinks.map((pr) => (
+              <li key={pr.url} className="rounded-lg border glass-divider px-3 py-2 text-sm">
+                <a href={pr.url} target="_blank" rel="noreferrer" className="text-aether hover:underline">
+                  {pr.title}
+                </a>
+                <span className="ml-2 text-xs text-slate-500">{pr.workload}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </GlassSection>
   );
 }

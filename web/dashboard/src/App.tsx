@@ -21,7 +21,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { pathToView, viewToPath } from './utils/dashboardRoutes';
 import { pathWithQuery } from './utils/urlState';
 import type { UniversalLinkResolveReport } from './types/api';
-import { syncMacOSLiveActivity } from './utils/macosBridge';
+import { syncMacOSLiveActivity, subscribeMacOSNavigate } from './utils/macosBridge';
 import { HERO_CONFIG } from './utils/dashboardNav';
 import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode } from './utils/api';
 import CommandPalette from './components/CommandPalette';
@@ -203,6 +203,13 @@ function AetherDashboard() {
     };
     window.addEventListener('aether-deep-link', onDeepLink);
     return () => window.removeEventListener('aether-deep-link', onDeepLink);
+  }, [navigate]);
+
+  useEffect(() => {
+    return subscribeMacOSNavigate((path) => {
+      navigate(path);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   }, [navigate]);
 
   useEffect(() => {

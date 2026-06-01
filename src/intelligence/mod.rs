@@ -151,9 +151,9 @@ pub use macos_os::{
 pub use graph::{build_knowledge_graph, KnowledgeGraphReport};
 pub use graph_os::{
     build_blast_radius, build_cmdb_inventory, build_graph_placement, build_impact_analysis,
-    build_interactive_graph, build_threat_paths, capture_graph_snapshot, export_graph,
-    import_k8s_services, list_graph_snapshots, search_graph, sync_cmdb_to_graph, BlastRadiusReport,
-    CmdbSyncReport, CmdbSyncRequest, GraphExportReport, GraphImpactReport, GraphPlacementReport,
+    build_interactive_graph, build_runtime_fabric_topology, build_threat_paths, capture_graph_snapshot,
+    export_graph, import_k8s_services, list_graph_snapshots, search_graph, sync_cmdb_to_graph,
+    BlastRadiusReport, CmdbSyncReport, CmdbSyncRequest, FabricTopologyReport, GraphExportReport, GraphImpactReport, GraphPlacementReport,
     GraphSearchReport, GraphSnapshotCaptureReport, GraphSnapshotCaptureRequest, GraphSnapshotsReport,
     InteractiveGraphRequest, K8sImportReport, K8sImportRequest, ThreatPathsReport,
 };

@@ -59,6 +59,7 @@ import { filterNavViews, partitionNavViews, type AnnotatedNavItem } from '../uti
 import { AI_OS_NAV, isAiOsNavActive } from '../utils/aiOsNav';
 import { getClusterContext } from '../utils/clusterContext';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
+import { isMacOSShell } from '../utils/macosBridge';
 import PlatformHealthChip from './PlatformHealthChip';
 
 function maskBearer(token: string | null): string {
@@ -633,16 +634,18 @@ export default function Navbar({
           </div>
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-            <label className="hidden xl:flex items-center gap-1.5 shrink-0 text-xs text-slate-500" title="Pro view shows full Kubernetes navigation">
-              <input
-                type="checkbox"
-                checked={proView}
-                onChange={(e) => setProView(e.target.checked)}
-                className="accent-aether"
-                aria-label="Pro view"
-              />
-              Pro
-            </label>
+            {!isMacOSShell() ? (
+              <label className="hidden xl:flex items-center gap-1.5 shrink-0 text-xs text-slate-500" title="Classic CloudOS navigation (AI OS is default)">
+                <input
+                  type="checkbox"
+                  checked={!proView}
+                  onChange={(e) => setProView(!e.target.checked)}
+                  className="accent-aether"
+                  aria-label="Classic navigation"
+                />
+                Classic
+              </label>
+            ) : null}
             <label className="hidden lg:flex items-center gap-1 shrink-0" title="Theme">
               <Palette className="w-3.5 h-3.5 shrink-0 text-slate-500" aria-hidden />
               <select
