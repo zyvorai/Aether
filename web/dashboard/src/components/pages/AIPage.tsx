@@ -72,7 +72,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
   const isRecommended = score.runtime === recommended;
 
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'border-slate-800/80 bg-slate-950/40'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'border-slate-800/80 glass-panel-card'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended && <Badge text="Recommended" variant="accent" />}
@@ -124,7 +124,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
         <DetailRow label="Reason" value={advice.reason} />
       </dl>
       {advice.forecast && (
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+        <div className="rounded-xl border border-slate-800/80 glass-panel-card p-3">
           <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Forecast</h4>
           <dl className="space-y-0">
             <DetailRow label="Trend" value={advice.forecast.trend} />
@@ -138,7 +138,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
         </div>
       )}
       {advice.cost_impact && (
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+        <div className="rounded-xl border border-slate-800/80 glass-panel-card p-3">
           <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Cost impact</h4>
           <dl className="space-y-0">
             <DetailRow label="Current hourly" value={formatUSD(advice.cost_impact.current_hourly)} />
@@ -203,7 +203,7 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
         <div className="space-y-2">
           <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Recommendations</h4>
           {data.recommendations.map((rec, i) => (
-            <div key={i} className="rounded-lg border border-slate-800/80 bg-slate-950/40 p-3 text-sm">
+            <div key={i} className="rounded-lg border border-slate-800/80 glass-panel-card p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Badge text={rec.priority} variant={rec.priority === 'Critical' ? 'red' : 'blue'} />
                 <span className="font-medium text-slate-200">{rec.title}</span>
@@ -704,7 +704,7 @@ export default function AIPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {workloads.slice(0, 12).map((w) => (
-                <div key={w.name} className="flex gap-2 rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+                <div key={w.name} className="flex gap-2 rounded-xl border border-slate-800/80 glass-panel-card p-3">
                   <span className="flex-1 truncate text-sm text-slate-300 self-center font-mono">{w.name}</span>
                   <button
                     type="button"

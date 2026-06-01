@@ -104,6 +104,26 @@
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(15, 23, 42, 0.58));
     border: 1px solid rgba(148, 163, 184, 0.12);
     box-shadow: 0 16px 40px rgba(2, 6, 23, 0.22);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .glass-toolbar {
+    @apply mb-6 flex flex-col gap-3 rounded-[20px] border p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
+    border-color: rgba(148, 163, 184, 0.12);
+    background:
+      linear-gradient(165deg, rgba(22, 27, 36, 0.88) 0%, rgba(17, 21, 28, 0.82) 100%);
+    box-shadow:
+      0 16px 48px rgba(2, 6, 23, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-footer {
+    @apply mt-auto border-t backdrop-blur-xl;
+    border-color: rgba(148, 163, 184, 0.12);
+    background: rgba(17, 21, 28, 0.72);
   }
 
   .steel-grid {
@@ -484,7 +504,10 @@
 .steel-theme .glass-drawer,
 .steel-theme .glass-modal-panel,
 .steel-theme .glass-code-block,
-.steel-theme .glass-empty-state {
+.steel-theme .glass-empty-state,
+.steel-theme .glass-toolbar,
+.steel-theme .surface-panel,
+.steel-theme .surface-panel-soft {
   border-color: rgba(140, 160, 190, 0.16);
   background:
     linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(14, 18, 26, 0.98) 100%);
@@ -531,7 +554,10 @@
 .aurora-theme .glass-drawer,
 .aurora-theme .glass-modal-panel,
 .aurora-theme .glass-code-block,
-.aurora-theme .glass-empty-state {
+.aurora-theme .glass-empty-state,
+.aurora-theme .glass-toolbar,
+.aurora-theme .surface-panel,
+.aurora-theme .surface-panel-soft {
   border-color: rgba(167, 139, 250, 0.2);
   background:
     linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%),

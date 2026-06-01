@@ -69,7 +69,7 @@ export default function AgentStatusDock() {
       ? 'border-red-500/30 bg-red-500/[0.08]'
       : status === 'active'
         ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
-        : 'border-slate-800/60 bg-[#161B24]/80';
+        : 'border-slate-800/60 glass-panel-card';
 
   return (
     <div
@@ -79,7 +79,7 @@ export default function AgentStatusDock() {
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="mb-2 rounded-full border border-slate-700/80 bg-[#11151C]/90 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 backdrop-blur-xl transition hover:border-aether/30 hover:text-blue-200"
+        className="glass-dropdown-surface mb-2 rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 transition hover:border-aether/30 hover:text-blue-200"
       >
         {collapsed ? 'Show agents' : 'Hide agents'}
       </button>

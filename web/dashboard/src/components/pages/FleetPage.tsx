@@ -530,7 +530,7 @@ export default function FleetPage() {
                   <button
                     type="button"
                     onClick={() => toggleApp(app)}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-900/50"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/30"
                   >
                     {expanded ? (
                       <ChevronDown size={16} className="text-slate-500 shrink-0" />
@@ -552,7 +552,7 @@ export default function FleetPage() {
                     )}
                   </button>
                   {expanded && (
-                    <div className="border-t border-slate-800 px-4 py-3 bg-slate-950/40">
+                    <div className="border-t border-slate-800 px-4 py-3 glass-panel-card">
                       {loadingPods ? (
                         <p className="text-xs text-slate-500">Loading pods…</p>
                       ) : pods.length === 0 ? (

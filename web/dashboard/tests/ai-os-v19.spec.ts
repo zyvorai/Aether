@@ -91,7 +91,15 @@ test.describe('AI Infrastructure OS v19 — Live Labs & Reference Cluster', () =
     await page.goto('/labs');
     await expect(page.getByTestId('live-labs-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('live-labs-runner-panel')).toBeVisible();
-    await page.getByTestId('live-labs-panel').getByRole('button', { name: 'Pipeline' }).click();
+
+    const agentDock = page.getByTestId('agent-status-dock');
+    if (await agentDock.isVisible()) {
+      await agentDock.getByRole('button').first().click();
+    }
+
+    const pipelineTab = page.getByTestId('live-labs-panel').getByRole('button', { name: 'Pipeline' });
+    await pipelineTab.scrollIntoViewIfNeeded();
+    await pipelineTab.click();
     await expect(page.getByTestId('live-labs-pipeline-panel')).toBeVisible();
   });
 });

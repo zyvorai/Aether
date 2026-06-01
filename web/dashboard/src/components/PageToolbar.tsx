@@ -29,7 +29,7 @@ export default function PageToolbar({
   actions,
 }: PageToolbarProps) {
   return (
-    <div className="surface-panel mb-6 flex flex-col gap-3 rounded-[20px] p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+    <div className="glass-toolbar">
       <div className="flex flex-1 flex-wrap items-center gap-2 min-w-0">
         {onSearchChange !== undefined && (
           <div className="relative flex-1 min-w-[12rem] max-w-md">

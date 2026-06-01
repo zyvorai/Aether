@@ -795,7 +795,7 @@ export default function Navbar({
         <>
           <button
             type="button"
-            className="fixed inset-0 z-50 bg-[#11151C]/50 backdrop-blur-md lg:hidden"
+            className="glass-modal-backdrop fixed inset-0 z-50 lg:hidden"
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
@@ -834,7 +834,7 @@ export default function Navbar({
               </button>
             ) : null}
 
-            <div className="rounded-2xl surface-panel-soft px-4 py-3">
+            <div className="glass-panel-card rounded-2xl px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{authModeLabel}</div>
               <div className="mt-1 text-sm font-medium font-mono tracking-tight text-slate-200">
                 {bearerPreview}

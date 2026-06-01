@@ -216,7 +216,7 @@ export default function AuditPage() {
             value={workloadFilter}
             onChange={(e) => setWorkloadFilter(e.target.value)}
             placeholder="Filter by workload…"
-            className="rounded-xl border border-slate-700/80 bg-slate-950/70 px-3 py-2.5 text-sm text-slate-100 min-w-[10rem]"
+            className="glass-select min-w-[10rem]"
           />
           {resultFilter && (
             <button
@@ -316,7 +316,7 @@ export default function AuditPage() {
           <h2 className="text-lg font-semibold text-slate-100 mb-4">Recent events</h2>
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filteredEvents.map((ev) => (
-              <div key={ev.id} className="flex items-start gap-3 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">
+              <div key={ev.id} className="glass-panel-card flex items-start gap-3 p-4">
                 <Badge text={ev.result} variant={ev.result.toLowerCase() === 'success' ? 'green' : 'red'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

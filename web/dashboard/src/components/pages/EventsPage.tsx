@@ -214,7 +214,7 @@ export default function EventsPage() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+              className="glass-select"
               aria-label="Category filter"
               data-testid="events-category-filter"
             >
@@ -263,14 +263,14 @@ export default function EventsPage() {
               value={workloadFilter}
               onChange={(e) => setWorkloadFilter(e.target.value)}
               placeholder="Workload name…"
-              className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200 min-w-[10rem]"
+              className="glass-select min-w-[10rem]"
               aria-label="Workload filter"
               data-testid="events-workload-filter"
             />
             <select
               value={severity}
               onChange={(e) => setSeverity(e.target.value)}
-              className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+              className="glass-select"
               aria-label="Severity filter"
               data-testid="events-severity-filter"
             >
@@ -302,7 +302,7 @@ export default function EventsPage() {
         <div className="glass-panel-card" data-testid="events-list">
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filtered.map((ev, i) => (
-              <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">
+              <div key={`${ev.timestamp}-${i}`} className="glass-panel-card flex items-start gap-3 p-4">
                 <div className="flex flex-col gap-1.5 shrink-0">
                   <SeverityBadge severity={ev.severity} />
                   <Badge text={ev.category} variant="muted" />

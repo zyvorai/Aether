@@ -94,7 +94,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
           <select
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            className="glass-input"
           >
             {workloads.map((w) => (
               <option key={w.workload} value={w.workload}>
@@ -108,7 +108,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
           <select
             value={target}
             onChange={(e) => setTarget(e.target.value as (typeof TARGETS)[number])}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            className="glass-input"
           >
             {TARGETS.map((t) => (
               <option key={t} value={t}>
@@ -126,7 +126,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
       )}
 
       {plan && !loading && (
-        <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 space-y-3">
+        <div className="rounded-xl glass-panel-card p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               text={plan.recommended_strategy.replace(/([A-Z])/g, '-$1').toLowerCase()}
