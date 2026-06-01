@@ -65,7 +65,7 @@ export default function DigitalTwinPanel() {
           <select
             value={workload}
             onChange={(e) => setWorkload(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200"
+            className="glass-input"
           >
             <option value="">Entire fleet</option>
             {workloads.map((w) => (
@@ -92,7 +92,7 @@ export default function DigitalTwinPanel() {
           <select
             value={targetRuntime}
             onChange={(e) => setTargetRuntime(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200"
+            className="glass-input"
           >
             <option value="">No change</option>
             <option value="kubernetes">kubernetes</option>
@@ -145,7 +145,7 @@ function TwinSnapshotCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800/70 bg-slate-950/40'}`}
+      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800/70 glass-panel-card'}`}
     >
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
       <dl className="grid grid-cols-2 gap-3 text-sm">
@@ -176,7 +176,7 @@ function TwinSnapshotCard({
 
 function DeltaCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-800/70 bg-slate-950/40 px-3 py-2">
+    <div className="glass-panel-card px-3 py-2">
       <div className="text-xs text-slate-500">{label}</div>
       <div className="text-lg font-semibold text-white">{value}</div>
     </div>

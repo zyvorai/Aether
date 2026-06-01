@@ -107,7 +107,7 @@ export default function AutonomousPlacementPanel() {
           {candidates.slice(0, 8).map((row) => (
             <li
               key={row.workload}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-slate-800/70 bg-slate-950/40 px-4 py-3"
+              className="flex flex-wrap items-start justify-between gap-3 glass-panel-card px-4 py-3"
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2">

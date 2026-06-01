@@ -176,8 +176,10 @@ export default function CostPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
+
+      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
       {chargeback ? (
-        <div className="dash-card" data-testid="cost-fleet-chargeback">
+        <div className="glass-panel-card" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <h2 className="text-lg font-semibold text-slate-100">Fleet chargeback</h2>
             <button
@@ -246,6 +248,7 @@ export default function CostPage() {
         result={resultContent}
       />
       </div>
+      </section>
     </div>
   );
 }

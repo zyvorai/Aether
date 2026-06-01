@@ -193,7 +193,7 @@ export default function CopilotPlatformPanel() {
             <input
               value={routeMessage}
               onChange={(e) => setRouteMessage(e.target.value)}
-              className="min-w-[240px] flex-1 rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-200"
+              className="glass-input min-w-[240px] flex-1"
               data-testid="copilot-route-input"
             />
             <button
@@ -256,7 +256,7 @@ export default function CopilotPlatformPanel() {
             <input
               value={runbookPrompt}
               onChange={(e) => setRunbookPrompt(e.target.value)}
-              className="min-w-[240px] flex-1 rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-200"
+              className="glass-input min-w-[240px] flex-1"
               data-testid="copilot-runbook-input"
             />
             <button
@@ -270,7 +270,7 @@ export default function CopilotPlatformPanel() {
             </button>
           </div>
           {runbook ? (
-            <pre className="max-h-64 overflow-auto rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-xs text-slate-300 whitespace-pre-wrap">
+            <pre className="glass-code-block-body max-h-64 text-xs text-slate-300 whitespace-pre-wrap">
               {runbook.markdown}
             </pre>
           ) : (

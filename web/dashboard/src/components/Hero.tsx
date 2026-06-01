@@ -24,7 +24,7 @@ export default function Hero({ title, subtitle, badges }: HeroProps) {
   return (
     <div className="relative border-b border-slate-800/50">
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0d12]/95 via-[#11151C]/40 to-[#0a0d12]/95" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0d12]/95 via-[rgba(22,27,36,0.45)] to-[#0a0d12]/95" />
         <div className="absolute inset-0 steel-grid opacity-40" />
         <div className="hero-orb absolute -top-20 left-0 h-72 w-72 rounded-full bg-aether/14" />
         <div className="hero-orb hero-orb-delayed absolute -top-10 right-8 h-80 w-80 rounded-full bg-aether-ai/10" />

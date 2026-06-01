@@ -95,7 +95,7 @@ export default function CapacityForecastPanel() {
       }
     >
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-4 rounded-2xl border border-slate-800/70 bg-slate-950/40 p-4">
+        <div className="space-y-4 glass-panel-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Runtime utilization</p>
           <UtilBar label="Fleet CPU (avg)" value={avgCpu} />
           <UtilBar label="Fleet memory (avg)" value={avgMem} />
@@ -106,7 +106,7 @@ export default function CapacityForecastPanel() {
           ))}
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-slate-800/70 bg-slate-950/40 p-4">
+        <div className="space-y-3 glass-panel-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Fleet risk</p>
           <div className="flex items-end gap-2">
             <span className="text-3xl font-semibold text-white">
@@ -133,7 +133,7 @@ export default function CapacityForecastPanel() {
           )}
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-slate-800/70 bg-slate-950/40 p-4">
+        <div className="space-y-3 glass-panel-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Saturation horizon</p>
           {(briefing?.capacity_risks ?? []).length === 0 ? (
             <p className="text-sm text-slate-500">No capacity saturation signals in the next 30 days.</p>

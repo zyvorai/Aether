@@ -58,7 +58,7 @@ export function themeSelectClass(theme: AppTheme): string {
 }
 
 export function dropdownSurfaceClass(_theme: AppTheme): string {
-  return 'border border-slate-700/60 bg-[#11151C]/92 backdrop-blur-xl';
+  return 'glass-dropdown-surface';
 }
 
 export function dropdownItemClass(active: boolean, _theme: AppTheme): string {

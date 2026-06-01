@@ -299,7 +299,7 @@ export default function EventsPage() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting search or severity filter" />
       ) : (
-        <div className="dash-card" data-testid="events-list">
+        <div className="glass-panel-card" data-testid="events-list">
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filtered.map((ev, i) => (
               <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">

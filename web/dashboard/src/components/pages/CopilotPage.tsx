@@ -212,6 +212,7 @@ export default function CopilotPage() {
           </>
         ) : null}
       </WorkloadContextBanner>
+      <section className="overview-section-shell mb-6 flex min-h-0 flex-1 flex-col p-4 sm:p-6">
       <div className="copilot-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
         <div className="relative z-[1] flex items-center gap-3 border-b border-slate-800/50 px-4 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
@@ -379,7 +380,7 @@ export default function CopilotPage() {
             }}
             placeholder="Ask Aether anything…"
             data-testid="copilot-input"
-            className="min-w-0 flex-1 rounded-xl border border-slate-700/70 bg-[#11151C]/80 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
+            className="glass-input min-w-0 flex-1 text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
           <button
@@ -395,6 +396,7 @@ export default function CopilotPage() {
       </div>
 
       <CopilotPlatformPanel />
+      </section>
     </div>
   );
 }

@@ -68,7 +68,7 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
           placeholder="Filter logs..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="min-w-[12rem] flex-1 rounded-xl border border-slate-700/80 bg-[#11151C]/80 px-3 py-2 text-sm text-white outline-none focus:border-aether/40"
+          className="glass-input min-w-[12rem] flex-1"
         />
         <button
           type="button"
@@ -93,7 +93,7 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
       <pre
         ref={containerRef}
         onScroll={handleScroll}
-        className="max-h-96 overflow-auto rounded-xl border border-slate-800/60 bg-[#0a0d12]/90 p-3 font-mono text-xs backdrop-blur-sm"
+        className="glass-code-block-body max-h-96 overflow-auto p-3 text-xs"
       >
         {filteredLogs.length === 0 ? (
           <span className="text-slate-500">No logs available. Press Refresh to reload.</span>

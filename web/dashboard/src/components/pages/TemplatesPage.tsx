@@ -206,6 +206,8 @@ export default function TemplatesPage() {
           </>
         ) : null}
       </SearchQueryContextBanner>
+
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
@@ -247,7 +249,7 @@ export default function TemplatesPage() {
       {templates.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No templates" description="No templates are available" />
       ) : (
-        <div className="dash-card overflow-hidden" data-testid="templates-list">
+        <div className="glass-panel-card overflow-hidden" data-testid="templates-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -305,6 +307,8 @@ export default function TemplatesPage() {
           </div>
         </div>
       )}
+      </section>
+
 
       <Modal
         isOpen={generateResult !== null}
@@ -347,7 +351,7 @@ export default function TemplatesPage() {
               </button>
             ) : null}
           </div>
-          <div className="dash-card bg-slate-950/80 p-4">
+          <div className="glass-panel-card bg-slate-950/80 p-4">
             <h4 className="text-xs uppercase tracking-wider text-slate-500 mb-2">Preview</h4>
             <pre className="text-xs text-emerald-300 font-mono whitespace-pre-wrap overflow-auto max-h-48">
               {specPreview(generatedSpec)}

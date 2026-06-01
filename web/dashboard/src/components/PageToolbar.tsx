@@ -40,7 +40,7 @@ export default function PageToolbar({
               value={search ?? ''}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-xl border border-slate-700/80 bg-slate-950/70 py-2.5 pl-9 pr-3 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-aether/50 focus:bg-slate-950/90 focus-visible:ring-2 focus-visible:ring-aether/30"
+              className="glass-input pl-9"
             />
           </div>
         )}

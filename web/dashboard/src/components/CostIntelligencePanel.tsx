@@ -137,7 +137,7 @@ export default function CostIntelligencePanel() {
           {report.recommendations.slice(0, 5).map((rec) => (
             <li
               key={rec.workload}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-slate-800/70 bg-slate-950/40 px-4 py-3"
+              className="flex flex-wrap items-start justify-between gap-3 glass-panel-card px-4 py-3"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">

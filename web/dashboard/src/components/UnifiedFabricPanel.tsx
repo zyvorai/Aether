@@ -48,7 +48,7 @@ export default function UnifiedFabricPanel() {
       </div>
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {(report?.nodes ?? []).slice(0, 12).map((n) => (
-          <li key={n.id} className="rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-3 py-2 text-sm backdrop-blur-sm">
+          <li key={n.id} className="rounded-xl border border-slate-800/60 glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <Badge text={n.kind} variant="muted" />
               <span className="font-medium text-white">{n.label}</span>

@@ -1168,9 +1168,9 @@ export default function CommandPalette({
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div className="fixed inset-0 bg-[#0a0d12]/80 backdrop-blur-md" />
+      <div className="glass-modal-backdrop fixed inset-0" onClick={onClose} />
       <div
-        className="overview-section-shell relative w-full max-w-xl overflow-hidden shadow-2xl"
+        className="glass-modal-panel relative w-full max-w-xl overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`flex items-center px-4 py-4 border-b ${'border-slate-800'}`}>

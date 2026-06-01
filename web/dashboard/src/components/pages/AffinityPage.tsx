@@ -175,6 +175,7 @@ export default function AffinityPage() {
         </WorkloadContextBanner>
       ) : null}
 
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="flex gap-2 mb-6" data-testid="affinity-tabs">
         {(['recommend', 'matrix', 'stats'] as const).map((t) => (
           <button
@@ -189,7 +190,7 @@ export default function AffinityPage() {
       </div>
 
       {tab === 'matrix' && (
-        <div className="dash-card overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
+        <div className="glass-panel-card overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-slate-100">Runtime compatibility matrix</h2>
             <Link to={viewToPath('scheduler')} className="text-xs text-aether hover:underline" data-testid="affinity-scheduler-link">
@@ -227,7 +228,7 @@ export default function AffinityPage() {
       )}
 
       {tab === 'stats' && stats && (
-        <div className="dash-card mb-6" data-testid="affinity-stats-panel">
+        <div className="glass-panel-card mb-6" data-testid="affinity-stats-panel">
           <div className="mb-3 flex flex-wrap gap-2">
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { tab: 'place' })}
@@ -250,7 +251,7 @@ export default function AffinityPage() {
               return (
               <div
                 key={cls}
-                className={`dash-card ${
+                className={`glass-panel-card ${
                   classMatchesWorkload(cls) ? 'ring-1 ring-aether/40 border-aether/30' : ''
                 }`}
                 data-testid={classMatchesWorkload(cls) ? 'affinity-workload-highlight' : undefined}
@@ -297,6 +298,7 @@ export default function AffinityPage() {
           </div>
         )
       )}
+      </section>
     </div>
   );
 }

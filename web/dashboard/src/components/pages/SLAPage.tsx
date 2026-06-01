@@ -162,7 +162,7 @@ export default function SLAPage() {
       />
 
       {canMutate && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Add SLA target</h3>
           <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3" data-testid="sla-add-form">
             <input
@@ -170,12 +170,12 @@ export default function SLAPage() {
               value={addWorkload}
               onChange={(e) => setAddWorkload(e.target.value)}
               placeholder="Workload name"
-              className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm min-w-[160px]"
+              className="glass-input min-w-[160px]"
             />
             <select
               value={addTier}
               onChange={(e) => setAddTier(e.target.value)}
-              className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm"
+              className="glass-input"
             >
               <option value="standard">standard</option>
               <option value="high-availability">high-availability</option>
@@ -221,7 +221,7 @@ export default function SLAPage() {
           {filtered.map((w) => {
             const sla = slaData[w.name];
             return (
-              <div key={w.name} className="dash-card">
+              <div key={w.name} className="glass-panel-card">
                 <h2 className="text-lg font-semibold text-slate-100 mb-4">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name })}
