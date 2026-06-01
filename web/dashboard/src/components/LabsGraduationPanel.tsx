@@ -109,7 +109,7 @@ export default function LabsGraduationPanel() {
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={tab === t.id ? 'tab-chip-active' : 'tab-chip'}
+            className={tab === t.id ? 'glass-tab-active tab-chip-active' : 'glass-tab tab-chip'}
           >
             {t.label}
           </button>

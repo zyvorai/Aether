@@ -83,7 +83,7 @@ export default function ExtensionsGraduationPanel() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={tab === t ? 'tab-chip-active' : 'tab-chip'}
+            className={tab === t ? 'glass-tab-active tab-chip-active' : 'glass-tab tab-chip'}
           >
             {t === 'overview' ? 'Overview' : t === 'chaos' ? 'SRE Chaos' : 'macOS Native'}
           </button>

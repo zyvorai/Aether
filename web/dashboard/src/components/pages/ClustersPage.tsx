@@ -1538,7 +1538,7 @@ export default function ClustersPage() {
                     </button>
                   </div>
                 </div>
-                <pre className={`mt-3 overflow-auto rounded-lg border glass-divider bg-black p-3 text-xs text-emerald-300 ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
+                <pre className={`mt-3 overflow-auto rounded-lg glass-code-block-body text-xs text-emerald-300 ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
                 <div className="mt-3 flex gap-2">
                   <input
                     value={execInput}

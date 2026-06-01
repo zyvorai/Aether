@@ -420,7 +420,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
             type="button"
             data-testid={`workload-tab-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            className={`tab-chip glass-tab ${activeTab === tab.id ? 'tab-chip-active glass-tab-active' : ''}`}
+            className={`glass-tab tab-chip ${activeTab === tab.id ? 'glass-tab-active tab-chip-active' : ''}`}
           >
             {tab.label}
           </button>

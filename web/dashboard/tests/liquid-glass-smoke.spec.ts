@@ -90,4 +90,12 @@ test.describe('Liquid Glass smoke', () => {
     const inset = page.locator('.glass-inset-surface, .glass-panel-card').first();
     await expect(inset).toBeVisible({ timeout: 10_000 });
   });
+
+  test('fleet page tab chips use glass-tab', async ({ page }) => {
+    await ensureAuthenticated(page);
+    await page.goto('/fleet');
+    await expect(page.locator('.overview-section-shell').first()).toBeVisible({ timeout: 15_000 });
+    const tab = page.locator('.glass-tab').first();
+    await expect(tab).toBeVisible({ timeout: 10_000 });
+  });
 });

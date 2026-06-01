@@ -67,7 +67,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => onTabChange(t.id)}
-              className={`tab-chip glass-tab flex items-center gap-2 ${tab === t.id ? 'tab-chip-active glass-tab-active' : ''}`}
+              className={`glass-tab tab-chip flex items-center gap-2 ${tab === t.id ? 'glass-tab-active tab-chip-active glass-tab-active' : ''}`}
             >
               {t.icon}
               {t.label}

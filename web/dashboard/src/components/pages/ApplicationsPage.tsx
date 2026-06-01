@@ -153,7 +153,7 @@ export default function ApplicationsPage() {
               key={ws}
               type="button"
               onClick={() => setWorkspace(ws)}
-              className={`tab-chip capitalize ${workspace === ws ? 'tab-chip-active' : ''}`}
+              className={`glass-tab tab-chip capitalize ${workspace === ws ? 'glass-tab-active tab-chip-active' : ''}`}
             >
               {ws === 'all' ? 'All Workspaces' : workspaceLabel(ws)}
             </button>

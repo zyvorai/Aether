@@ -295,7 +295,7 @@ export default function GraphPlatformPanel() {
             </button>
           </div>
           {exportReport ? (
-            <pre className="max-h-48 overflow-auto rounded-xl border glass-divider bg-black/40 p-3 text-xs text-slate-300">
+            <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-slate-300">
               {exportReport.payload.slice(0, 2000)}
             </pre>
           ) : null}

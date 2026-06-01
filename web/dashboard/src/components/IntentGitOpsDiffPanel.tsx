@@ -53,7 +53,7 @@ export default function IntentGitOpsDiffPanel() {
                 {entry.has_drift ? <Badge text="drift" variant="yellow" /> : <Badge text="synced" variant="green" />}
               </div>
               <p className="text-xs text-slate-400">{entry.summary}</p>
-              <pre className="mt-2 max-h-24 overflow-auto rounded-lg bg-black/40 p-2 text-[11px] text-slate-400">
+              <pre className="mt-2 max-h-24 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-slate-400">
                 {entry.live_intent_yaml}
               </pre>
             </li>
