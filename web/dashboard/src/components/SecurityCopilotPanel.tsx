@@ -81,7 +81,7 @@ export default function SecurityCopilotPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -105,14 +105,14 @@ export default function SecurityCopilotPanel() {
                 <button
                   type="button"
                   onClick={() => void copyYaml(item.workload, item.policy_yaml)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-aether/40"
+                  className="inline-flex items-center gap-1 rounded-lg border glass-divider px-2 py-1 text-xs text-slate-300 hover:border-aether/40"
                 >
                   <Copy className="h-3 w-3" />
                   {copied === item.workload ? 'Copied' : 'Copy YAML'}
                 </button>
               </div>
               <p className="mb-3 text-sm text-slate-400">{item.rationale}</p>
-              <pre className="max-h-48 overflow-auto rounded-xl border border-slate-800 bg-black/40 p-3 text-xs text-slate-300">
+              <pre className="max-h-48 overflow-auto rounded-xl border glass-divider bg-black/40 p-3 text-xs text-slate-300">
                 {item.policy_yaml}
               </pre>
             </li>

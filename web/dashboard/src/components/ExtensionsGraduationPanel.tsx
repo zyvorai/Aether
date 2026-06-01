@@ -105,7 +105,7 @@ export default function ExtensionsGraduationPanel() {
           </p>
           <ul className="space-y-2 text-sm">
             {overview.features.slice(0, 6).map((f) => (
-              <li key={f.phase} className="flex justify-between rounded-xl border border-slate-800/60 glass-panel-card px-3 py-2">
+              <li key={f.phase} className="flex justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2">
                 <span className="text-slate-200">Phase {f.phase}: {f.name}</span>
                 <span className="text-xs text-emerald-400 uppercase">{f.status}</span>
               </li>
@@ -118,7 +118,7 @@ export default function ExtensionsGraduationPanel() {
         <div data-testid="extensions-chaos-panel" className="space-y-4">
           <ul className="space-y-2 text-sm">
             {(chaos.catalog.experiments ?? []).slice(0, 4).map((e) => (
-              <li key={e.id} className="flex items-center justify-between rounded-xl border border-slate-800/60 px-3 py-2">
+              <li key={e.id} className="flex items-center justify-between rounded-xl border glass-divider px-3 py-2">
                 <span className="text-slate-200">{e.label}</span>
                 <button type="button" onClick={() => void runChaos(e.id)} className="btn-secondary text-xs">
                   Dry-run

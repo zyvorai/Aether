@@ -220,7 +220,7 @@ export default function RbacPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="glass-divider-b">
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Role</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Created</th>
@@ -229,7 +229,7 @@ export default function RbacPage() {
               </thead>
               <tbody>
                 {filtered.map((entry) => (
-                  <tr key={entry.name} className="border-b border-slate-800/70 hover:bg-slate-800/30">
+                  <tr key={entry.name} className="glass-divider-b glass-inset-hover">
                     <td className="py-3 px-4 text-sm font-medium text-slate-100">{entry.name}</td>
                     <td className="py-3 px-4">
                       <Badge
@@ -280,7 +280,7 @@ export default function RbacPage() {
                 setKeyCopied(true);
                 setTimeout(() => setKeyCopied(false), 2000);
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
+              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
             >
               <Copy size={14} />
               {keyCopied ? 'Copied' : 'Copy key'}
@@ -296,7 +296,7 @@ export default function RbacPage() {
             Revoke access for <span className="text-slate-200 font-medium">{revokeName}</span>?
           </p>
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setRevokeName(null)} className="rounded-lg px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+            <button type="button" onClick={() => setRevokeName(null)} className="rounded-lg px-4 py-2 text-sm text-slate-300 glass-inset-hover">
               Cancel
             </button>
             <button type="button" onClick={() => void handleRevoke()} className="rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-sm font-medium text-white">

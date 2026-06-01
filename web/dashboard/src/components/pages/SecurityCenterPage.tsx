@@ -162,7 +162,7 @@ export default function SecurityCenterPage() {
           ) : (
             <ul className="space-y-2 text-sm text-slate-300">
               {signedImages.slice(0, 6).map((img) => (
-                <li key={img.name} className="rounded border border-slate-800 px-3 py-2">
+                <li key={img.name} className="rounded border glass-divider px-3 py-2">
                   <div className="font-medium text-slate-100">{img.name}</div>
                   <div className="text-xs text-slate-500 font-mono truncate">{img.image_hash}</div>
                 </li>
@@ -212,7 +212,7 @@ export default function SecurityCenterPage() {
           <div className="space-y-2">
             <p className="text-xs text-slate-500">Sources: {remediation.sources.join(', ') || 'none'}</p>
             {remediation.actions.slice(0, 6).map((a, i) => (
-              <div key={`${a.action_type}-${a.target}-${i}`} className="text-sm text-slate-300 border-t border-slate-800 pt-2">
+              <div key={`${a.action_type}-${a.target}-${i}`} className="text-sm text-slate-300 glass-divider-t pt-2">
                 <span className="font-mono text-aether">{a.action_type}</span> — {a.target}: {a.reason}
               </div>
             ))}
@@ -230,7 +230,7 @@ export default function SecurityCenterPage() {
           ) : (
             <div className="space-y-3">
               {criticalThreats.slice(0, 8).map((t) => (
-                <div key={`${t.workload}-${t.category}`} className="rounded-lg border border-slate-800 p-3">
+                <div key={`${t.workload}-${t.category}`} className="rounded-lg border glass-divider p-3">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="text-sm font-medium text-slate-200">{t.workload}</span>
                     <SeverityBadge severity={t.severity} />
@@ -257,7 +257,7 @@ export default function SecurityCenterPage() {
             <button
               type="button"
               onClick={() => navigate(viewToPath('policy'))}
-              className="w-full text-left rounded-lg border border-slate-800 px-3 py-3 hover:border-aether/40"
+              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-aether/40"
             >
               <span className="text-sm text-slate-200">Open Policy Check</span>
               <p className="text-xs text-slate-500 mt-0.5">Validate workloads against production rules</p>
@@ -265,7 +265,7 @@ export default function SecurityCenterPage() {
             <button
               type="button"
               onClick={() => navigate(viewToPath('secrets'))}
-              className="w-full text-left rounded-lg border border-slate-800 px-3 py-3 hover:border-aether/40"
+              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-aether/40"
             >
               <span className="text-sm text-slate-200">Manage Secrets</span>
               <p className="text-xs text-slate-500 mt-0.5">{rotationNeeded.length} secret(s) need rotation</p>
@@ -273,14 +273,14 @@ export default function SecurityCenterPage() {
             <button
               type="button"
               onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
-              className="w-full text-left rounded-lg border border-slate-800 px-3 py-3 hover:border-aether/40"
+              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-aether/40"
             >
               <span className="text-sm text-slate-200">Network policies</span>
               <p className="text-xs text-slate-500 mt-0.5">Review Cilium and Kubernetes network policy gaps</p>
             </button>
           </div>
           {rotationNeeded.slice(0, 5).map((s) => (
-            <div key={s.name} className="flex items-center justify-between text-sm py-2 border-t border-slate-800">
+            <div key={s.name} className="flex items-center justify-between text-sm py-2 glass-divider-t">
               <span className="text-slate-300">{s.name}</span>
               <Badge text="rotate" variant="yellow" />
             </div>

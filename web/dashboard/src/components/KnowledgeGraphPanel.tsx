@@ -84,7 +84,7 @@ export default function KnowledgeGraphPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -104,7 +104,7 @@ export default function KnowledgeGraphPanel() {
                 )
               }
               className={`rounded-full border px-3 py-1 text-xs ${
-                active ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'border-slate-700 text-slate-400'
+                active ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'glass-divider text-slate-400'
               }`}
             >
               {kind}
@@ -114,7 +114,7 @@ export default function KnowledgeGraphPanel() {
         <button
           type="button"
           onClick={() => setZoom((z) => Math.min(2.5, z + 0.2))}
-          className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400"
+          className="rounded-full border glass-divider px-3 py-1 text-xs text-slate-400"
           data-testid="graph-zoom-in"
         >
           Zoom +
@@ -122,7 +122,7 @@ export default function KnowledgeGraphPanel() {
         <button
           type="button"
           onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
-          className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400"
+          className="rounded-full border glass-divider px-3 py-1 text-xs text-slate-400"
         >
           Zoom −
         </button>

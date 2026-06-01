@@ -69,7 +69,7 @@ export default function AgentStatusDock() {
       ? 'border-red-500/30 bg-red-500/[0.08]'
       : status === 'active'
         ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
-        : 'border-slate-800/60 glass-panel-card';
+        : 'glass-divider glass-panel-card';
 
   return (
     <div

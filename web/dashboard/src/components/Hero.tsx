@@ -22,7 +22,7 @@ const badgeTone: Record<HeroBadge['tone'], string> = {
 
 export default function Hero({ title, subtitle, badges }: HeroProps) {
   return (
-    <div className="relative border-b border-slate-800/50">
+    <div className="relative glass-table-row">
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a0d12]/95 via-[rgba(22,27,36,0.45)] to-[#0a0d12]/95" />
         <div className="absolute inset-0 steel-grid opacity-40" />

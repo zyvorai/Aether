@@ -48,7 +48,7 @@ export default function FleetRootCausePanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-sm text-slate-300 hover:border-aether/40"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Scan fleet
@@ -108,7 +108,7 @@ export default function FleetRootCausePanel() {
               </div>
 
               {row.evidence.length > 0 ? (
-                <ul className="mt-3 space-y-1 border-t border-slate-800/60 pt-3 text-xs text-slate-500">
+                <ul className="mt-3 space-y-1 glass-divider-t/60 pt-3 text-xs text-slate-500">
                   {row.evidence.slice(0, 4).map((ev) => (
                     <li key={ev}>• {ev}</li>
                   ))}

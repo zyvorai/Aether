@@ -150,7 +150,7 @@ export default function YamlInput({
 
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {editorLoading ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-slate-800/60 bg-[#0B0E14]/90">
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border glass-divider glass-inset-surface">
                 <Loader2 className="w-6 h-6 animate-spin text-aether" />
                 <span className="ml-2 text-sm text-slate-400">Loading template…</span>
               </div>
@@ -179,7 +179,7 @@ export default function YamlInput({
 
       {footer}
 
-      <div className={`relative z-10 flex flex-wrap items-center justify-end gap-2 ${isEditor ? 'shrink-0 bg-[#0B0E14] pt-2' : ''}`}>
+      <div className={`relative z-10 flex flex-wrap items-center justify-end gap-2 ${isEditor ? 'shrink-0 glass-inset-surface pt-2' : ''}`}>
         {showValidateButton && onValidate ? (
           <button
             type="button"

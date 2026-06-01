@@ -84,7 +84,7 @@ function ScoringResultsView({ data }: { data: ScoringResult }) {
               className={`rounded-lg border px-3 py-2 ${
                 s.runtime === data.recommended
                   ? 'border-aether/30 bg-aether/5'
-                  : 'border-slate-700 bg-slate-800/50'
+                  : 'glass-divider glass-inset-surface'
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-1">
@@ -382,7 +382,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
     <>
     <div className="glass-panel-card mt-4 overflow-hidden p-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/60 bg-[#161B24]/50">
+      <div className="flex items-center justify-between px-4 py-3 glass-divider-b glass-inset-surface">
         <div className="flex items-center gap-3">
           <div>
             <h3 className="text-lg font-bold text-white">
@@ -413,14 +413,14 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-slate-800/60">
+      <div className="flex flex-wrap gap-2 px-4 py-3 glass-divider-b">
         {tabs.map(tab => (
           <button
             key={tab.id}
             type="button"
             data-testid={`workload-tab-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            className={`tab-chip ${activeTab === tab.id ? 'tab-chip-active' : ''}`}
+            className={`tab-chip glass-tab ${activeTab === tab.id ? 'tab-chip-active glass-tab-active' : ''}`}
           >
             {tab.label}
           </button>
@@ -456,7 +456,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                         ? 'bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30'
                         : action === 'rollback'
                           ? 'bg-amber-600/20 text-amber-300 hover:bg-amber-600/40 border border-amber-600/30'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600'
+                        : 'glass-inset-surface text-slate-300 hover:bg-white/[0.08] border glass-divider'
                     } disabled:opacity-50`}
                   >
                     {actionLoading === action ? '...' : action.charAt(0).toUpperCase() + action.slice(1)}
@@ -486,7 +486,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   <button
                     onClick={() => handleAction('restart')}
                     disabled={!!actionLoading}
-                    className="px-3 py-1.5 text-sm font-medium rounded bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600 disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm font-medium rounded glass-inset-surface text-slate-300 hover:bg-white/[0.08] border glass-divider disabled:opacity-50"
                   >
                     {actionLoading === 'restart' ? '...' : 'Restart'}
                   </button>
@@ -499,7 +499,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                           min={0}
                           value={replicasInput}
                           onChange={(e) => setReplicasInput(e.target.value)}
-                          className="w-24 rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-white"
+                          className="w-24 rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-white"
                         />
                       </div>
                       <button
@@ -581,7 +581,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   key={link.label}
                   href={link.path}
                   data-testid={`workload-link-${link.slug}`}
-                  className="rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                  className="rounded-lg border glass-divider px-2.5 py-1 text-xs text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
                 >
                   {link.label}
                 </a>
@@ -731,7 +731,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                     : 'No drift detected'}
                 </div>
                 {((driftData as Record<string, unknown>).drifts as Array<Record<string, string>>)?.map((d, i: number) => (
-                  <div key={i} className="bg-slate-800 rounded p-2 mb-2 text-sm">
+                  <div key={i} className="glass-inset-surface rounded p-2 mb-2 text-sm">
                     <span className={`font-medium ${d.severity === 'Critical' ? 'text-red-400' : d.severity === 'Warning' ? 'text-orange-400' : 'text-blue-400'}`}>
                       [{d.severity}]
                     </span>
@@ -791,7 +791,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 <ScoringResultsView data={scoringData} />
               </>
             )}
-            <div className="mt-6 border-t border-slate-800 pt-4">
+            <div className="mt-6 glass-divider-t pt-4">
               <IntentDebugger />
             </div>
           </div>
@@ -868,10 +868,10 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
         <div className={`fixed inset-0 flex items-center justify-center z-[60] ${shellFullscreen ? 'p-0' : ''}`}>
           <div className="glass-modal-backdrop absolute inset-0" aria-hidden />
           <div className={`glass-modal-panel relative overflow-hidden transition-all ${shellFullscreen ? 'h-full w-full max-w-none rounded-none' : 'mx-4 w-full max-w-4xl'}`}>
-            <div className="flex items-center justify-between border-b border-slate-800/60 bg-[rgba(22,27,36,0.5)] px-5 py-3">
+            <div className="flex items-center justify-between glass-divider-b glass-inset-surface px-5 py-3">
               <div className="flex items-center gap-3">
                 <div className="font-medium">Shell — {workload.name}</div>
-                <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'glass-inset-surface text-slate-400'}`}>
                   {shellConnected ? 'Connected' : 'Disconnected'}
                 </div>
               </div>
@@ -879,19 +879,19 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => navigator.clipboard.writeText(shellOutput)}
-                  className="text-xs px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
                 >
                   Copy
                 </button>
                 <button 
                   onClick={() => setShellOutput('')}
-                  className="text-xs px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
                 >
                   Clear
                 </button>
                 <button 
                   onClick={() => setShellFullscreen(!shellFullscreen)}
-                  className="text-xs px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
                 >
                   {shellFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                 </button>

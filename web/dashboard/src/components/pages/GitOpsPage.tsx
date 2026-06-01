@@ -455,7 +455,7 @@ export default function GitOpsPage() {
             <div className="mb-4 glass-table-shell overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2 pr-4">Confidential</th>
@@ -481,7 +481,7 @@ export default function GitOpsPage() {
                             ? 'muted'
                             : 'muted';
                     return (
-                    <tr key={`${c.commit}-${c.file_path}`} className="border-b border-slate-800/50">
+                    <tr key={`${c.commit}-${c.file_path}`} className="glass-table-row">
                       <td className="py-2 pr-4">
                         <Badge
                           text={c.change_type}
@@ -527,7 +527,7 @@ export default function GitOpsPage() {
               </div>
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
                     <th className="py-2 pr-4">Workload</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2 pr-4">GitOps issues</th>
@@ -538,7 +538,7 @@ export default function GitOpsPage() {
                   {parsedSync.confidentialCompliance
                     .filter((row) => row.confidential_enabled)
                     .map((row) => (
-                      <tr key={row.file_path} className="border-b border-slate-800/50 align-top">
+                      <tr key={row.file_path} className="glass-table-row align-top">
                         <td className="py-2 pr-4 text-slate-200">
                           {row.workload ? (
                             <button
@@ -605,7 +605,7 @@ export default function GitOpsPage() {
           detected YAML changes. Review the diff preview below before syncing.
         </p>
         <div
-          className="mb-4 rounded-xl border border-slate-800/60 glass-panel-card p-3"
+          className="mb-4 rounded-xl border glass-divider glass-panel-card p-3"
           data-testid="gitops-diff-preview"
         >
           {previewLoading ? (
@@ -618,7 +618,7 @@ export default function GitOpsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800/60 text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2">Commit</th>
@@ -626,7 +626,7 @@ export default function GitOpsPage() {
                 </thead>
                 <tbody>
                   {previewChanges.map((c) => (
-                    <tr key={`${c.commit}-${c.file_path}`} className="border-b border-slate-800/50">
+                    <tr key={`${c.commit}-${c.file_path}`} className="glass-table-row">
                       <td className="py-2 pr-4">
                         <Badge
                           text={c.change_type}

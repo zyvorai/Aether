@@ -182,7 +182,7 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
         <button
           type="button"
           onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
-          className="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-400 hover:text-white"
+          className="rounded-lg border glass-divider px-2 py-1 text-xs text-slate-400 hover:text-white"
           aria-label="Zoom in"
         >
           <ZoomIn className="h-4 w-4" />
@@ -190,7 +190,7 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
         <button
           type="button"
           onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
-          className="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-400 hover:text-white"
+          className="rounded-lg border glass-divider px-2 py-1 text-xs text-slate-400 hover:text-white"
           aria-label="Zoom out"
         >
           <ZoomOut className="h-4 w-4" />
@@ -201,7 +201,7 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
             setZoom(1);
             setPan({ x: 0, y: 0 });
           }}
-          className="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-400 hover:text-white"
+          className="rounded-lg border glass-divider px-2 py-1 text-xs text-slate-400 hover:text-white"
         >
           Reset view
         </button>

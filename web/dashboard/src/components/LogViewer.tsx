@@ -100,7 +100,7 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
         ) : (
           filteredLogs.map((line, i) => (
             <div key={i} className="flex">
-              <span className="mr-2 w-12 shrink-0 select-none border-r border-slate-800/80 pr-2 text-right text-slate-600">
+              <span className="mr-2 w-12 shrink-0 select-none border-r glass-divider pr-2 text-right text-slate-600">
                 {i + 1}
               </span>
               <span className={getLineColor(line)}>{line}</span>

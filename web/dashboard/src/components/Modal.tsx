@@ -49,7 +49,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
           isYaml ? 'max-h-[92vh] min-h-[min(720px,92vh)]' : 'max-h-[85vh]'
         } ${isWide ? 'max-w-[min(96rem,calc(100vw-2rem))]' : 'max-w-2xl'}`}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-800/60 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between glass-divider-b px-6 py-4">
           <div>
             <div className="mb-1 h-1 w-10 rounded-full bg-gradient-to-r from-aether to-aether-ai" />
             <h2 className="text-lg font-semibold text-white">{title}</h2>

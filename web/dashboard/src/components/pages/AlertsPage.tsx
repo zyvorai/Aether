@@ -478,7 +478,7 @@ export default function AlertsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">
+                <tr className="glass-divider-b text-xs uppercase text-slate-500">
                   <th className="py-2 px-3 text-left">URL</th>
                   <th className="py-2 px-3 text-left">Method</th>
                   <th className="py-2 px-3 text-left">Attempts</th>
@@ -487,7 +487,7 @@ export default function AlertsPage() {
               </thead>
               <tbody>
                 {queue.map((item, i) => (
-                  <tr key={`${item.url}-${i}`} className="border-b border-slate-800/50">
+                  <tr key={`${item.url}-${i}`} className="glass-table-row">
                     <td className="py-2 px-3 font-mono text-xs text-slate-400 max-w-xs truncate">{item.url}</td>
                     <td className="py-2 px-3">{item.method}</td>
                     <td className="py-2 px-3">{item.attempts}/{item.max_attempts}</td>

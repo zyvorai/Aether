@@ -32,7 +32,7 @@ function toast(message: string, type: 'success' | 'error') {
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2 border-b border-slate-800/60 last:border-0">
+    <div className="flex items-start justify-between gap-4 py-2 glass-divider-b last:border-0">
       <span className="text-xs font-medium uppercase tracking-wider text-slate-500 shrink-0">{label}</span>
       <span className="text-sm text-slate-200 text-right">{value}</span>
     </div>
@@ -72,7 +72,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
   const isRecommended = score.runtime === recommended;
 
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'border-slate-800/80 glass-panel-card'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'glass-divider glass-panel-card'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended && <Badge text="Recommended" variant="accent" />}
@@ -124,7 +124,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
         <DetailRow label="Reason" value={advice.reason} />
       </dl>
       {advice.forecast && (
-        <div className="rounded-xl border border-slate-800/80 glass-panel-card p-3">
+        <div className="rounded-xl border glass-divider glass-panel-card p-3">
           <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Forecast</h4>
           <dl className="space-y-0">
             <DetailRow label="Trend" value={advice.forecast.trend} />
@@ -138,7 +138,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
         </div>
       )}
       {advice.cost_impact && (
-        <div className="rounded-xl border border-slate-800/80 glass-panel-card p-3">
+        <div className="rounded-xl border glass-divider glass-panel-card p-3">
           <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Cost impact</h4>
           <dl className="space-y-0">
             <DetailRow label="Current hourly" value={formatUSD(advice.cost_impact.current_hourly)} />
@@ -203,7 +203,7 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
         <div className="space-y-2">
           <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Recommendations</h4>
           {data.recommendations.map((rec, i) => (
-            <div key={i} className="rounded-lg border border-slate-800/80 glass-panel-card p-3 text-sm">
+            <div key={i} className="rounded-lg border glass-divider glass-panel-card p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Badge text={rec.priority} variant={rec.priority === 'Critical' ? 'red' : 'blue'} />
                 <span className="font-medium text-slate-200">{rec.title}</span>
@@ -551,7 +551,7 @@ export default function AIPage() {
               placeholder="Paste workload YAML for AI analysis..."
             />
             {recommendation && (
-              <div className="mt-6 pt-6 border-t border-slate-800/80">
+              <div className="mt-6 pt-6 glass-divider-t/80">
                 <ScoringResultPanel result={recommendation} />
               </div>
             )}
@@ -581,7 +581,7 @@ export default function AIPage() {
               {loading === 'scaling' ? 'Analyzing…' : 'Get Scaling Advice'}
             </button>
             {scalingAdvice && (
-              <div className="mt-5 pt-5 border-t border-slate-800/80">
+              <div className="mt-5 pt-5 glass-divider-t/80">
                 <ScalingAdvicePanel advice={scalingAdvice} />
               </div>
             )}
@@ -613,7 +613,7 @@ export default function AIPage() {
               {intentLoading ? 'Optimizing…' : 'Optimize Intent'}
             </button>
             {intentResult && (
-              <dl className="mt-5 pt-5 border-t border-slate-800/80 space-y-0">
+              <dl className="mt-5 pt-5 glass-divider-t/80 space-y-0">
                 <DetailRow label="Recommended intent" value={intentResult.recommendedIntent} />
                 <DetailRow label="Reason" value={intentResult.reason} />
               </dl>
@@ -640,7 +640,7 @@ export default function AIPage() {
               {resizeLoading ? 'Analyzing…' : 'Analyze Resources'}
             </button>
             {resizeResult && (
-              <dl className="mt-5 pt-5 border-t border-slate-800/80 space-y-0">
+              <dl className="mt-5 pt-5 glass-divider-t/80 space-y-0">
                 <DetailRow label="Suggestion" value={resizeResult.suggestion} />
                 <DetailRow label="Potential savings" value={resizeResult.savings} />
               </dl>
@@ -667,7 +667,7 @@ export default function AIPage() {
               {tradeoffLoading ? 'Comparing…' : 'Compare Tradeoff'}
             </button>
             {tradeoffResult && (
-              <div className="mt-5 pt-5 border-t border-slate-800/80">
+              <div className="mt-5 pt-5 glass-divider-t/80">
                 <dl className="space-y-0">
                   <DetailRow label="Best runtime" value={tradeoffResult.bestRuntime} />
                   <DetailRow label="Score" value={tradeoffResult.score} />
@@ -704,13 +704,13 @@ export default function AIPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {workloads.slice(0, 12).map((w) => (
-                <div key={w.name} className="flex gap-2 rounded-xl border border-slate-800/80 glass-panel-card p-3">
+                <div key={w.name} className="flex gap-2 rounded-xl border glass-divider glass-panel-card p-3">
                   <span className="flex-1 truncate text-sm text-slate-300 self-center font-mono">{w.name}</span>
                   <button
                     type="button"
                     onClick={() => void handleProfile(w.name)}
                     disabled={loading === `profile-${w.name}`}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs disabled:opacity-60"
+                    className="flex items-center justify-center gap-1 px-3 py-2 glass-inset-surface glass-inset-hover rounded-lg text-xs disabled:opacity-60"
                   >
                     <Cpu size={14} /> Profile
                   </button>
@@ -718,7 +718,7 @@ export default function AIPage() {
                     type="button"
                     onClick={() => void handleAnalyze(w.name)}
                     disabled={loading === `analyze-${w.name}`}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs disabled:opacity-60"
+                    className="flex items-center justify-center gap-1 px-3 py-2 glass-inset-surface glass-inset-hover rounded-lg text-xs disabled:opacity-60"
                   >
                     <Search size={14} /> Analyze
                   </button>
@@ -728,7 +728,7 @@ export default function AIPage() {
           )}
 
           {profilerResults && (
-            <div className="mt-8 pt-6 border-t border-slate-800/80">
+            <div className="mt-8 pt-6 glass-divider-t/80">
               <h4 className="text-sm font-medium text-cyan-400 mb-4">
                 Profile: {profilerWorkload}
               </h4>
@@ -737,7 +737,7 @@ export default function AIPage() {
           )}
 
           {analyzeResults && (
-            <div className="mt-8 pt-6 border-t border-slate-800/80">
+            <div className="mt-8 pt-6 glass-divider-t/80">
               <h4 className="text-sm font-medium text-cyan-400 mb-4">
                 Log analysis: {profilerWorkload}
               </h4>

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
 import { test, expect } from '@playwright/test';
+import { ensureAuthenticated } from './helpers/auth';
 
 const GLASS_ROUTES = [
   { path: '/', shell: '.command-center-shell, .overview-section-shell' },
@@ -54,5 +55,39 @@ test.describe('Liquid Glass smoke', () => {
     const firstRow = table.locator('tbody tr').first();
     await firstRow.click();
     await expect(page.locator('.glass-drawer').first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('workloads detail panel uses glass tabs when workload selected', async ({ page }) => {
+    await ensureAuthenticated(page);
+    await page.goto('/workloads');
+    const table = page.locator('table tbody tr');
+    const hasRows = await table.first().isVisible({ timeout: 15_000 }).catch(() => false);
+    if (!hasRows) {
+      await expect(page.locator('.overview-section-shell').first()).toBeVisible();
+      return;
+    }
+    await table.first().click();
+    const detail = page.locator('.glass-panel-card .glass-tab, .glass-panel-card .tab-chip').first();
+    await expect(detail).toBeVisible({ timeout: 10_000 });
+    const panel = page.locator('.glass-panel-card').filter({ has: detail }).first();
+    const backdropFilter = await panel.evaluate((el) => getComputedStyle(el).backdropFilter);
+    expect(backdropFilter).not.toBe('none');
+  });
+
+  test('validate modal uses glass-modal-panel', async ({ page }) => {
+    await ensureAuthenticated(page);
+    await page.goto('/workloads?validate=1');
+    const panel = page.locator('.glass-modal-panel').first();
+    await expect(panel).toBeVisible({ timeout: 15_000 });
+    const backdropFilter = await panel.evaluate((el) => getComputedStyle(el).backdropFilter);
+    expect(backdropFilter).not.toBe('none');
+  });
+
+  test('copilot page uses glass inset surfaces', async ({ page }) => {
+    await ensureAuthenticated(page);
+    await page.goto('/copilot');
+    await expect(page.locator('.overview-section-shell').first()).toBeVisible({ timeout: 15_000 });
+    const inset = page.locator('.glass-inset-surface, .glass-panel-card').first();
+    await expect(inset).toBeVisible({ timeout: 10_000 });
   });
 });

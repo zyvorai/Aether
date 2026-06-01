@@ -102,11 +102,11 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
   if (loading && !briefing) {
     return (
       <div className="command-center-shell mb-8 animate-pulse p-6 sm:p-8">
-        <div className="h-8 w-48 rounded-lg bg-slate-800/80" />
-        <div className="mt-2 h-4 w-72 rounded-lg bg-slate-800/50" />
+        <div className="h-8 w-48 rounded-lg glass-inset-surface" />
+        <div className="mt-2 h-4 w-72 rounded-lg glass-inset-surface" />
         <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 rounded-2xl bg-slate-800/60" />
+            <div key={i} className="h-32 rounded-2xl glass-inset-surface" />
           ))}
         </div>
       </div>
@@ -162,15 +162,15 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           testId="briefing-fleet-health"
         >
           {!fleetEmpty ? (
-            <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800/80">
+            <div className="relative mt-4 h-1.5 glass-progress-track">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-aether to-aether-ai transition-all"
                 style={{ width: `${Math.min(100, Math.max(4, briefing.fleet_health_pct))}%` }}
               />
             </div>
           ) : (
-            <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800/60">
-              <div className="h-full w-1/4 rounded-full bg-slate-700/80" />
+            <div className="relative mt-4 h-1.5 glass-progress-track">
+              <div className="h-full w-1/4 rounded-full glass-inset-surface/80" />
             </div>
           )}
         </CommandMetricCard>

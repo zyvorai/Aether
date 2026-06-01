@@ -223,7 +223,7 @@ export default function OpenApiPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
+              <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
                 <th className="py-2 px-4">Method</th>
                 <th className="py-2 px-4">Path</th>
                 <th className="py-2 px-4">Summary</th>
@@ -240,7 +240,7 @@ export default function OpenApiPage() {
                 <tr
                   key={`${row.method}-${row.path}`}
                   data-testid={workloadRoute ? 'openapi-workload-route-highlight' : undefined}
-                  className={`border-b border-slate-800/50 hover:bg-slate-800/20 ${workloadRoute ? 'bg-aether/5' : ''}`}
+                  className={`glass-table-row glass-inset-hover ${workloadRoute ? 'bg-aether/5' : ''}`}
                 >
                   <td className="py-2 px-4 font-mono text-xs text-aether">{row.method}</td>
                   <td className="py-2 px-4 font-mono text-xs text-slate-300">
@@ -274,7 +274,7 @@ export default function OpenApiPage() {
                       type="button"
                       data-testid={`openapi-copy-${row.method}-${row.path}`}
                       onClick={() => void copyPath(row.path)}
-                      className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-aether"
+                      className="rounded-lg p-1.5 text-slate-500 glass-inset-hover hover:text-aether"
                       title="Copy path"
                     >
                       <Copy size={14} />

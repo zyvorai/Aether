@@ -25,7 +25,7 @@ function severityBorder(severity: string): string {
     case 'warn':
       return 'border-amber-500/30 bg-amber-500/5';
     default:
-      return 'border-slate-600/40 bg-slate-800/30';
+      return 'glass-divider/40 glass-inset-surface';
   }
 }
 
@@ -81,7 +81,7 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-slate-100">{item.title}</p>
-                    <span className="rounded-md border border-slate-600/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-slate-500">
+                    <span className="rounded-md border glass-divider/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-slate-500">
                       {item.category}
                     </span>
                   </div>
@@ -94,7 +94,7 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
                   type="button"
                   data-testid={`platform-rec-dismiss-${item.id}`}
                   onClick={() => handleDismiss(item.id)}
-                  className="shrink-0 rounded-lg p-1 text-slate-500 hover:bg-slate-800/80 hover:text-slate-300"
+                  className="shrink-0 rounded-lg p-1 text-slate-500 glass-inset-hover hover:text-slate-300"
                   aria-label={`Dismiss ${item.title}`}
                 >
                   <X size={16} />

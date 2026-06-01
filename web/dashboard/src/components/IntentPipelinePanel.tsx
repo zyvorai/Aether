@@ -124,7 +124,7 @@ export default function IntentPipelinePanel() {
           type="button"
           onClick={() => void parseNl()}
           disabled={loading}
-          className="mt-2 rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-aether/40"
+          className="mt-2 rounded-lg border glass-divider px-3 py-1 text-xs text-slate-300 hover:border-aether/40"
         >
           Parse NL → intent block
         </button>
@@ -155,7 +155,7 @@ export default function IntentPipelinePanel() {
                 className={`rounded-full border px-3 py-1 text-xs ${
                   selected.has(g.id)
                     ? 'border-violet-500/40 bg-violet-500/10 text-violet-200'
-                    : 'border-slate-700 text-slate-400'
+                    : 'glass-divider text-slate-400'
                 }`}
               >
                 {g.label}
@@ -189,7 +189,7 @@ export default function IntentPipelinePanel() {
               {report.steps.map((step) => (
                 <li key={step.phase} className="glass-panel-card px-4 py-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-white">
-                    <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] uppercase text-slate-400">{step.phase}</span>
+                    <span className="rounded glass-inset-surface px-2 py-0.5 text-[10px] uppercase text-slate-400">{step.phase}</span>
                     {step.title}
                   </div>
                   <p className="mt-1 text-sm text-slate-400">{step.detail}</p>
@@ -211,7 +211,7 @@ export default function IntentPipelinePanel() {
             </Link>
           </div>
 
-          <pre className="max-h-48 overflow-auto rounded-xl border border-slate-800 bg-black/40 p-3 text-xs text-slate-300">
+          <pre className="max-h-48 overflow-auto rounded-xl border glass-divider bg-black/40 p-3 text-xs text-slate-300">
             {report.spec_yaml}
           </pre>
         </div>

@@ -104,7 +104,7 @@ test.describe('Dashboard UX polish', () => {
     });
     const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByTestId('yaml-submit')).toBeEnabled();
+    await expect(dialog.getByTestId('workloads-deploy-submit')).toBeEnabled();
     const editor = dialog.getByRole('textbox', { name: /workload yaml/i });
     await expect(editor).toContainText('apiVersion: aether/v1');
     await expect(dialog.getByText(/\d+ lines/)).toBeVisible();
@@ -146,7 +146,7 @@ test.describe('Dashboard UX polish', () => {
     await page.reload();
     await page.goto('/workloads');
     await expect(page.getByText(/Read-only session/i)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('button', { name: 'Deploy' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Deploy YAML' })).toHaveCount(0);
+    await expect(page.getByTestId('workloads-deploy-button')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Deploy YAML', exact: true })).toHaveCount(0);
   });
 });

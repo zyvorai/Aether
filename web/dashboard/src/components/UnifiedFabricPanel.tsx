@@ -37,7 +37,7 @@ export default function UnifiedFabricPanel() {
             <p className="text-sm text-slate-400">Edge agents linked to federated clusters and workloads</p>
           </div>
         </div>
-        <button type="button" onClick={() => void load()} className="rounded-xl border border-slate-700/80 px-3 py-2 text-xs text-slate-300 transition hover:border-aether/30">
+        <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 transition hover:border-aether/30">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       </div>
@@ -48,7 +48,7 @@ export default function UnifiedFabricPanel() {
       </div>
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {(report?.nodes ?? []).slice(0, 12).map((n) => (
-          <li key={n.id} className="rounded-xl border border-slate-800/60 glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
+          <li key={n.id} className="rounded-xl border glass-divider glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <Badge text={n.kind} variant="muted" />
               <span className="font-medium text-white">{n.label}</span>

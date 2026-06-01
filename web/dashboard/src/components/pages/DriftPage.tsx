@@ -320,7 +320,7 @@ export default function DriftPage() {
                         ? 'border-aether/60 ring-1 ring-aether/30 bg-aether/5 text-aether'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                          : 'border-slate-800/60 glass-panel-card text-slate-200 hover:bg-slate-800/60/80'
+                          : 'glass-divider glass-panel-card text-slate-200 hover:bg-white/[0.04]'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}
@@ -359,7 +359,7 @@ export default function DriftPage() {
                     <h4 className="text-sm font-medium text-slate-300 mb-2">Drifted fields</h4>
                     <div className="space-y-2 max-h-64 overflow-auto">
                       {driftResult.drifts.map((d, i) => (
-                        <div key={i} className="glass-panel-card rounded-lg p-3 border border-slate-800/60">
+                        <div key={i} className="glass-panel-card rounded-lg p-3 border glass-divider">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-sm font-medium text-slate-200">{d.field}</span>
                             <SeverityBadge severity={d.severity} />
@@ -400,7 +400,7 @@ export default function DriftPage() {
                     <h4 className="text-sm font-medium text-slate-300 mb-2">Reconciliation plan</h4>
                     <div className="space-y-2">
                       {driftResult.reconciliation_plan.map((step, i) => (
-                        <div key={i} className="rounded-lg border border-slate-800/60 glass-panel-card p-3 text-sm">
+                        <div key={i} className="rounded-lg border glass-divider glass-panel-card p-3 text-sm">
                           <div className="font-medium text-slate-200">{step.action_type}</div>
                           <p className="text-slate-400 mt-1">{step.description}</p>
                           <div className="flex gap-3 mt-2 text-xs text-slate-500">

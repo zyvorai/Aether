@@ -324,7 +324,7 @@ export default function IntelligencePage() {
                       {row.predictions.length > 0 && (
                         <ul className="space-y-2 text-sm">
                           {row.predictions.map((sig, i) => (
-                            <li key={`${sig.kind}-${i}`} className="rounded-lg border border-slate-800 px-3 py-2">
+                            <li key={`${sig.kind}-${i}`} className="rounded-lg border glass-divider px-3 py-2">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-slate-200">{sig.kind}</span>
                                 <span className="text-xs text-slate-500">{sig.horizon}</span>
