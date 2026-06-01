@@ -40,14 +40,14 @@ Inspired by Arc, Linear, Raycast, Warp, Cursor, and Apple System Settings:
 | **Fleet** | Multi-cluster inventory | `/fleet` | Activity, Intelligence |
 | **Fabric** | Runtime topology graph | `/fabric` | — |
 | **Workloads** | Deploy & manage | `/workloads` | Applications, Editor, Templates |
-| **AI Studio** | Intent & scoring | `/ai` | Copilot, Affinity, Confidential |
+| **AI Studio** | Intent & scoring | `/ai` | Zeus, Affinity, Confidential |
 | **Migrations** | Plan & execute moves | `/migrations` | Migration planner, Evolution |
 | **Observability** | Logs, metrics, events | `/observability` | Health, Events, Metrics, Alerts |
 | **Security** | Threats & posture | `/security` | RBAC, Audit, Policy |
 | **Cost** | FinOps intelligence | `/cost` | — |
 | **GitOps** | Reconciliation | `/gitops` | Drift |
 | **Labs** | Experimental AI features | `/labs` | Helm, Compose, OpenAPI |
-| **Settings** | Platform configuration | `/settings` | Platform, Envs, Secrets, Plugins |
+| **Settings** | Platform configuration | `/settings` | Platform, AI Providers, Envs, Secrets, Plugins |
 
 Legacy URLs remain valid for bookmarks and E2E tests.
 
@@ -71,15 +71,21 @@ Predicted Capacity Risk: GPU cluster reaches saturation in 12 days
 
 ---
 
-## AI Copilot (Permanent Sidebar)
+## Zeus (Ambient AI Layer)
 
-Cursor-style right rail — infrastructure agent, not chatbot.
+Zeus is the AI infrastructure operating layer — present everywhere, not a destination chat page.
 
-- Natural language: health, drift, cost, migrations, cluster queries
-- Tool calling with pending action confirmation
-- Context-aware from current workload / fleet state
+- **ZeusContextBar** — proactive insights on every page
+- **ZeusRail** — collapsible power-user console (right rail)
+- **Inline action cards** — recommendations on workload, security, and cost surfaces
+- Multi-LLM routing with specialist agents (Architect, DevOps, Kubernetes, Security, SRE, Cost, etc.)
+- Tool calling with approval-gated mutations
 
-**API:** `POST /api/copilot/chat`, `POST /api/copilot/troubleshoot`
+**API:** `POST /api/zeus/chat`, `GET /api/zeus/insights`, `GET/POST /api/zeus/providers`
+
+Legacy `/api/copilot/*` routes remain as deprecated aliases.
+
+See [ZEUS.md](ZEUS.md) for full reference.
 
 ---
 

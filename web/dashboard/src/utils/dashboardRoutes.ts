@@ -18,5 +18,6 @@ export function viewToPath(view: AppView): string {
 
 export function pathToView(pathname: string): AppView | null {
   const normalized = pathname.replace(/\/+$/, '') || '/';
+  if (normalized === '/copilot') return 'zeus';
   return PATH_TO_VIEW.get(normalized) ?? null;
 }

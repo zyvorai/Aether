@@ -6,7 +6,8 @@ import { useMemo, useState, type ReactNode } from 'react';
 import Navbar from './Navbar';
 import Hero, { type HeroBadge } from './Hero';
 import Footer from './Footer';
-import CopilotRail, { CopilotRailToggle } from './CopilotRail';
+import ZeusRail, { ZeusRailToggle } from './ZeusRail';
+import ZeusContextBar from './ZeusContextBar';
 import AgentStatusDock from './AgentStatusDock';
 import CriticalIssueNotifier from './CriticalIssueNotifier';
 import LiveActivityDock from './LiveActivityDock';
@@ -107,8 +108,8 @@ export default function DashboardShell({
     () => buildHeroBadges(capabilities?.version, capabilities, ready, sseConnected),
     [capabilities, ready, sseConnected],
   );
-  const [copilotCollapsed, setCopilotCollapsed] = useState(false);
-  const [mobileCopilotOpen, setMobileCopilotOpen] = useState(false);
+  const [zeusCollapsed, setZeusCollapsed] = useState(false);
+  const [mobileZeusOpen, setMobileZeusOpen] = useState(false);
   const showCompactHero = currentView === 'overview' || currentView === 'fabric';
 
   return (
@@ -130,6 +131,7 @@ export default function DashboardShell({
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
       />
+      <ZeusContextBar refreshKey={refreshKey} />
       <ViewerBanner />
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
@@ -138,19 +140,19 @@ export default function DashboardShell({
       ) : null}
       <div className="flex min-h-0 flex-1">
         <main id="main-content" className="min-w-0 flex-1 dash-content py-8 lg:py-10">{children}</main>
-        <CopilotRail collapsed={copilotCollapsed} onCollapsedChange={setCopilotCollapsed} />
+        <ZeusRail collapsed={zeusCollapsed} onCollapsedChange={setZeusCollapsed} />
       </div>
-      <CopilotRailToggle onClick={() => setMobileCopilotOpen(true)} />
-      {mobileCopilotOpen ? (
+      <ZeusRailToggle onClick={() => setMobileZeusOpen(true)} />
+      {mobileZeusOpen ? (
         <div className="fixed inset-0 z-50 xl:hidden">
           <button
             type="button"
             className="glass-modal-backdrop absolute inset-0"
-            aria-label="Close copilot"
-            onClick={() => setMobileCopilotOpen(false)}
+            aria-label="Close Zeus"
+            onClick={() => setMobileZeusOpen(false)}
           />
           <div className="absolute inset-y-0 right-0 flex w-full max-w-md">
-            <CopilotRail collapsed={false} onCollapsedChange={() => setMobileCopilotOpen(false)} />
+            <ZeusRail collapsed={false} onCollapsedChange={() => setMobileZeusOpen(false)} />
           </div>
         </div>
       ) : null}

@@ -151,14 +151,14 @@ export default function CommandPalette({
         },
       },
       {
-        id: `workload-${name}-copilot`,
-        label: `Ask copilot about: ${name}`,
+        id: `workload-${name}-zeus`,
+        label: `Ask Zeus about: ${name}`,
         category: 'workload-action' as const,
         searchText: `copilot ask health ${name} workload`,
         workloadName: name,
         run: () => {
           navigate(
-            pathWithQuery(viewToPath('copilot'), {
+            pathWithQuery(viewToPath('zeus'), {
               workload: name,
               q: `Why is ${name} unhealthy?`,
             }),
@@ -496,7 +496,7 @@ export default function CommandPalette({
         workloadName: name,
         run: () => {
           navigate(
-            pathWithQuery(viewToPath('copilot'), {
+            pathWithQuery(viewToPath('zeus'), {
               workload: name,
               q: `Why is ${name} failing?`,
             }),
@@ -633,20 +633,20 @@ export default function CommandPalette({
         view: 'intelligence',
       },
       {
-        id: 'action-copilot',
-        label: 'Open ops copilot',
+        id: 'action-zeus',
+        label: 'Open Zeus',
         category: 'action',
-        searchText: 'copilot chat assistant natural language',
-        view: 'copilot',
+        searchText: 'zeus chat assistant natural language',
+        view: 'zeus',
       },
       {
-        id: 'action-copilot-health',
-        label: 'Ask copilot about fleet health',
+        id: 'action-zeus-health',
+        label: 'Ask Zeus about fleet health',
         category: 'action',
         searchText: 'copilot health unhealthy workloads fleet fleet health ask',
         run: () =>
           navigate(
-            pathWithQuery(viewToPath('copilot'), {
+            pathWithQuery(viewToPath('zeus'), {
               q: 'Why is my workload unhealthy?',
             }),
           ),
@@ -708,7 +708,7 @@ export default function CommandPalette({
         view: 'fabric',
       },
       {
-        id: 'action-ai-os-security-copilot',
+        id: 'action-ai-os-security-zeus',
         label: 'Generate security policies',
         category: 'action',
         searchText: 'security copilot policy least privilege network hardening',
@@ -1081,7 +1081,7 @@ export default function CommandPalette({
           searchText: q,
           run: () =>
             navigate(
-              pathWithQuery(viewToPath('copilot'), {
+              pathWithQuery(viewToPath('zeus'), {
                 workload: match,
                 q: `Why is ${match} failing?`,
               }),

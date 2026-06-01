@@ -830,7 +830,7 @@ pub(crate) async fn tui_command() -> Result<()> {
 }
 
 pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<()> {
-    use aether::copilot::agent::{tool_context, CopilotAgent};
+    use aether::zeus::agent::{tool_context, ZeusAgent};
     use aether::rbac::Role;
     use std::io::{self, Write};
     use std::sync::Arc;
@@ -839,11 +839,11 @@ pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<(
     let state_path = StateStore::default_path();
     let state = Arc::new(RwLock::new(StateStore::load(&state_path)?));
     let ctx = tool_context(state, state_path, Role::Operator);
-    let agent = CopilotAgent::new();
+    let agent = ZeusAgent::new();
     let mut session_id: Option<String> = None;
 
     if let Some(msg) = initial_message.filter(|m| !m.trim().is_empty()) {
-        let resp = agent.chat(&msg, session_id.as_deref(), None, &ctx).await?;
+        let resp = agent.chat(&msg, session_id.as_deref(), None, None, &ctx).await?;
         println!("{}", resp.reply);
         for a in &resp.pending_actions {
             println!(
@@ -870,7 +870,7 @@ pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<(
             break;
         }
         let resp = agent
-            .chat(trimmed, session_id.as_deref(), None, &ctx)
+            .chat(trimmed, session_id.as_deref(), None, None, &ctx)
             .await?;
         session_id = Some(resp.session_id);
         println!("{}", resp.reply);

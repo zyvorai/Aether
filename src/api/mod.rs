@@ -12,7 +12,7 @@ mod types;
 mod handlers;
 mod platform_recommendations;
 mod intelligence_handlers;
-mod copilot_handlers;
+mod zeus_handlers;
 mod confidential_handlers;
 mod ops_handlers;
 mod security_handlers;
@@ -26,7 +26,7 @@ pub use types::ApiConfig;
 use types::AppState;
 use handlers::*;
 use intelligence_handlers::*;
-use copilot_handlers::*;
+use zeus_handlers::*;
 use confidential_handlers::*;
 use ops_handlers::*;
 use security_handlers::*;
@@ -845,6 +845,42 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route(
             "/api/intelligence/remediation/execute",
             post(api_intelligence_remediation_execute),
+        )
+        .route("/api/zeus/chat", post(api_zeus_chat))
+        .route("/api/zeus/troubleshoot", post(api_zeus_troubleshoot))
+        .route("/api/zeus/troubleshoot/fleet", get(api_zeus_troubleshoot_fleet))
+        .route("/api/zeus/sessions/:id", get(api_zeus_session))
+        .route("/api/zeus/confirm/:action_id", post(api_zeus_confirm))
+        .route("/api/zeus/confirm-batch", post(api_zeus_confirm_batch))
+        .route("/api/zeus/insights", get(api_zeus_insights))
+        .route("/api/zeus/providers", get(api_zeus_providers_list).post(api_zeus_providers_upsert))
+        .route("/api/zeus/providers/status", get(api_zeus_providers_status))
+        .route("/api/zeus/providers/registry", post(api_zeus_providers_save_registry))
+        .route("/api/zeus/providers/:id", axum::routing::delete(api_zeus_providers_delete))
+        .route("/api/zeus/providers/:id/test", post(api_zeus_providers_test))
+        .route("/api/zeus/prompts", get(api_zeus_prompts_list).post(api_zeus_prompts_upsert))
+        .route("/api/zeus/prompts/export", get(api_zeus_prompts_export))
+        .route("/api/zeus/prompts/import", post(api_zeus_prompts_import))
+        .route("/api/zeus/prompts/:id", axum::routing::delete(api_zeus_prompts_delete))
+        .route("/api/zeus/marketplace", get(api_zeus_marketplace))
+        .route("/api/zeus/marketplace/install", post(api_zeus_marketplace_install))
+        .route("/api/zeus/marketplace/uninstall", post(api_zeus_marketplace_uninstall))
+        .route("/api/zeus/agents", get(api_zeus_agents_list))
+        .route("/api/intelligence/zeus/memory", get(api_intelligence_zeus_memory))
+        .route("/api/intelligence/zeus/memory/settings", post(api_intelligence_zeus_memory_settings))
+        .route("/api/intelligence/zeus/memory/purge", post(api_intelligence_zeus_memory_purge))
+        .route("/api/intelligence/zeus/route", post(api_intelligence_zeus_route))
+        .route("/api/intelligence/zeus/llm-status", get(api_intelligence_zeus_llm_status))
+        .route("/api/intelligence/zeus/voice-lab", get(api_intelligence_zeus_voice_lab))
+        .route("/api/intelligence/zeus/runbook", post(api_intelligence_zeus_runbook))
+        .route(
+            "/api/intelligence/zeus/policy-explain",
+            post(api_intelligence_zeus_policy_explain),
+        )
+        .route("/api/intelligence/zeus/audit", get(api_intelligence_zeus_audit))
+        .route(
+            "/api/intelligence/zeus/rbac-scopes",
+            get(api_intelligence_zeus_rbac_scopes),
         )
         .route("/api/copilot/chat", post(api_copilot_chat))
         .route("/api/copilot/troubleshoot", post(api_copilot_troubleshoot))

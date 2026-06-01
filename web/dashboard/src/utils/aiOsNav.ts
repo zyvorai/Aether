@@ -41,8 +41,8 @@ export const AI_OS_NAV: AiOsNavSection[] = [
   {
     id: 'ai-studio',
     label: 'AI Studio',
-    primaryView: 'ai',
-    views: ['ai', 'copilot', 'affinity', 'confidential'],
+    primaryView: 'zeus',
+    views: ['ai', 'zeus', 'copilot', 'affinity', 'confidential'],
   },
   {
     id: 'migrations',
