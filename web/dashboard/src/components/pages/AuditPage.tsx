@@ -275,7 +275,7 @@ export default function AuditPage() {
       </section>
 
       {verify && (
-        <div className="dash-card mb-6" data-testid="audit-verify-panel">
+        <div className="glass-panel-card mb-6" data-testid="audit-verify-panel">
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">Integrity verification</div>
           <div className="flex items-center gap-3 flex-wrap">
             <Badge text={verify.integrity} variant={verify.integrity === 'VERIFIED' ? 'green' : 'red'} />
@@ -312,7 +312,7 @@ export default function AuditPage() {
       ) : filteredEvents.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting your search" />
       ) : (
-        <div className="dash-card">
+        <div className="glass-panel-card">
           <h2 className="text-lg font-semibold text-slate-100 mb-4">Recent events</h2>
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filteredEvents.map((ev) => (

@@ -22,7 +22,7 @@ function confidenceVariant(confidence: number): 'green' | 'yellow' | 'muted' {
 function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recommended: string }) {
   const isRecommended = score.runtime === recommended;
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'border-slate-800/80 bg-slate-950/40'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'border-slate-800/80 glass-panel-card'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended ? <Badge text="Recommended" variant="accent" /> : null}

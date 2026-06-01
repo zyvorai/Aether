@@ -517,7 +517,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             {showExplain ? 'Hide attestation explain' : 'Explain attestation'}
           </button>
           {showExplain && explain && (
-            <div className="mt-3 p-3 rounded-lg bg-slate-950 border border-slate-700 text-sm">
+            <div className="glass-drawer mt-3 text-sm">
               <p className="text-slate-300 mb-2">{explain.summary}</p>
               {explain.failure_reasons.length > 0 && (
                 <ul className="space-y-1 text-xs text-red-300/90">
@@ -558,7 +558,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             <select
               value={attestTee}
               onChange={(e) => setAttestTee(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100"
+              className="glass-input"
             >
               <option value="sev-snp">sev-snp</option>
               <option value="tdx">tdx</option>
@@ -570,7 +570,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               type="text"
               value={attestLaunchDigest}
               onChange={(e) => setAttestLaunchDigest(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 font-mono text-xs text-slate-100"
+              className="glass-input font-mono text-xs"
             />
           </div>
         </div>
@@ -581,7 +581,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             onChange={(e) => setAttestReportB64(e.target.value)}
             rows={4}
             placeholder="Paste attestation report from guest or Ragnarok"
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 font-mono text-xs text-slate-100"
+            className="glass-input font-mono text-xs"
           />
         </div>
         <button
@@ -626,7 +626,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         {guestkitHistory.length > 0 ? (
           <div className="space-y-2 max-h-40 overflow-auto" data-testid="guestkit-history-panel">
             {guestkitHistory.slice().reverse().map((entry) => (
-              <div key={entry.inspected_at} className="text-xs p-2 rounded bg-slate-950 border border-slate-800">
+              <div key={entry.inspected_at} className="glass-table-row rounded text-xs p-2">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-slate-400">{entry.mode}</span>
                   <Badge text={entry.passed ? 'pass' : 'fail'} variant={entry.passed ? 'green' : 'red'} />
@@ -675,7 +675,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               {secretStatus.map((s) => (
                 <div
                   key={s.secret_name}
-                  className="flex flex-wrap items-center justify-between gap-2 text-sm py-1.5 px-2 rounded bg-slate-950/60 border border-slate-800"
+                  className="flex flex-wrap items-center justify-between gap-2 text-sm glass-table-row rounded py-1.5 px-2"
                 >
                   <span className="text-slate-300">{s.secret_name}</span>
                   <div className="flex items-center gap-2">

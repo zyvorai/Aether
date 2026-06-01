@@ -14,7 +14,7 @@ import { Activity, BarChart3, Bell, BellRing, FileCheck, HeartPulse } from 'luci
 
 export default function ObservabilityPage() {
   return (
-    <div className="space-y-8">
+    <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
       <FleetRootCausePanel />
       <CapacityForecastPanel />
       <CapacityScalePanel />
@@ -64,6 +64,6 @@ export default function ObservabilityPage() {
           },
         ]}
       />
-    </div>
+    </section>
   );
 }

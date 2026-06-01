@@ -138,7 +138,7 @@ export default function EcosystemPlatformPanel() {
       }
     >
       {helmPreview ? (
-        <pre className="mb-4 max-h-24 overflow-auto rounded-lg border border-slate-800 bg-slate-950/50 p-2 text-xs text-slate-400">
+        <pre className="glass-code-block-body mb-4 max-h-24 text-xs text-slate-400">
           {helmPreview}
         </pre>
       ) : null}

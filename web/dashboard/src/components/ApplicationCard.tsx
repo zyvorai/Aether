@@ -31,7 +31,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
 
   return (
     <article
-      className={`rounded-2xl border bg-slate-900/60 p-4 shadow-lg transition-all hover:bg-slate-900/80 ${border}`}
+      className={`hub-link-card p-4 ${border}`}
       data-testid={`app-card-${applicationLabel(app)}`}
     >
       <button type="button" onClick={onOpen} className="w-full text-left">
@@ -67,7 +67,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
         <button
           type="button"
           onClick={onLogs}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+          className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-slate-300"
         >
           <FileText size={12} /> Logs
         </button>
@@ -75,7 +75,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
           <button
             type="button"
             onClick={onScale}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-slate-300"
           >
             <Layers size={12} /> Scale
           </button>
@@ -84,7 +84,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
           <button
             type="button"
             onClick={onRestart}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-slate-300"
           >
             <RefreshCw size={12} /> Restart
           </button>

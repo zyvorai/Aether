@@ -193,6 +193,8 @@ export default function PolicyPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
+
+      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
@@ -240,7 +242,7 @@ export default function PolicyPage() {
       {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
         <div
           data-testid="policy-opa-setup-banner"
-          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800/60/80 bg-[#11151C]/80/60 px-4 py-3 text-sm text-slate-300"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800/60/80 glass-panel-card/60 px-4 py-3 text-sm text-slate-300"
         >
           <span>OPA is not configured — built-in policy check works below; enable OPA admission on Platform &amp; HA.</span>
           <button
@@ -275,7 +277,7 @@ export default function PolicyPage() {
       ) : null}
 
       {opaConfigured && (
-        <div className="dash-card mb-6">
+        <div className="glass-panel-card mb-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
             <ShieldCheck size={20} className="text-aether" />
             OPA admission (live)
@@ -330,6 +332,7 @@ export default function PolicyPage() {
         result={policyResultPanel}
       />
       </div>
+      </section>
     </div>
   );
 }

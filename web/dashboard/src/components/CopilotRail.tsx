@@ -299,7 +299,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
           onChange={(e) => setInput(e.target.value)}
           placeholder={selectedAgent ? `Ask ${agents.find((a) => a.id === selectedAgent)?.label ?? 'Aether'}…` : 'Ask Aether…'}
           data-testid="copilot-rail-input"
-          className="min-w-0 flex-1 rounded-xl border border-slate-700/70 bg-[#11151C]/80 px-3 py-2.5 text-xs text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
+          className="glass-input min-w-0 flex-1 text-xs"
           disabled={loading}
         />
         <button

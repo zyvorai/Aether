@@ -105,7 +105,7 @@ export default function ExtensionsGraduationPanel() {
           </p>
           <ul className="space-y-2 text-sm">
             {overview.features.slice(0, 6).map((f) => (
-              <li key={f.phase} className="flex justify-between rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-3 py-2">
+              <li key={f.phase} className="flex justify-between rounded-xl border border-slate-800/60 glass-panel-card px-3 py-2">
                 <span className="text-slate-200">Phase {f.phase}: {f.name}</span>
                 <span className="text-xs text-emerald-400 uppercase">{f.status}</span>
               </li>

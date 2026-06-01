@@ -76,7 +76,7 @@ export default function IntentStudioPanel() {
           <input
             value={workloadName}
             onChange={(e) => setWorkloadName(e.target.value)}
-            className="w-full max-w-md rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-500/50"
+            className="glass-input max-w-md"
             placeholder="my-app"
           />
         </label>
@@ -94,7 +94,7 @@ export default function IntentStudioPanel() {
                   className={`rounded-full border px-4 py-2 text-sm transition ${
                     active
                       ? 'border-violet-500/50 bg-violet-500/15 text-violet-100'
-                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
+                      : 'border-slate-800 glass-panel-card text-slate-400 hover:border-slate-700'
                   }`}
                   data-testid={`intent-goal-${goal.id}`}
                 >
@@ -115,7 +115,7 @@ export default function IntentStudioPanel() {
         </button>
 
         {generatedYaml ? (
-          <pre className="mt-6 overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/80 p-4 text-xs text-slate-300" data-testid="intent-generated-yaml">
+          <pre className="glass-code-block-body mt-6 text-xs text-slate-300" data-testid="intent-generated-yaml">
             {generatedYaml}
           </pre>
         ) : null}

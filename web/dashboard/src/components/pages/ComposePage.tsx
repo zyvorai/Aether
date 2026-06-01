@@ -223,6 +223,8 @@ export default function ComposePage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
+
+      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
       <div>
         <h2 className="text-lg font-semibold text-slate-100">Compose import</h2>
         <p className="text-sm text-slate-500 mt-1">
@@ -327,6 +329,7 @@ export default function ComposePage() {
         }
       />
       </div>
+      </section>
     </div>
   );
 }

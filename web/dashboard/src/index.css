@@ -479,11 +479,27 @@
 .steel-theme .command-center-shell,
 .steel-theme .overview-section-shell,
 .steel-theme .glass-panel-card,
-.steel-theme .copilot-rail-glass {
+.steel-theme .copilot-rail-glass,
+.steel-theme .glass-table-shell,
+.steel-theme .glass-drawer,
+.steel-theme .glass-modal-panel,
+.steel-theme .glass-code-block,
+.steel-theme .glass-empty-state {
   border-color: rgba(140, 160, 190, 0.16);
   background:
     linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(14, 18, 26, 0.98) 100%);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.steel-theme .glass-input,
+.steel-theme .glass-select {
+  border-color: rgba(140, 160, 190, 0.22);
+  background: rgba(8, 12, 18, 0.82);
+}
+
+.steel-theme .glass-dropdown-surface {
+  border-color: rgba(140, 160, 190, 0.18);
+  background: rgba(11, 16, 23, 0.94);
 }
 
 .steel-theme .glass-metric-card {
@@ -510,12 +526,28 @@
 .aurora-theme .command-center-shell,
 .aurora-theme .overview-section-shell,
 .aurora-theme .glass-panel-card,
-.aurora-theme .copilot-rail-glass {
+.aurora-theme .copilot-rail-glass,
+.aurora-theme .glass-table-shell,
+.aurora-theme .glass-drawer,
+.aurora-theme .glass-modal-panel,
+.aurora-theme .glass-code-block,
+.aurora-theme .glass-empty-state {
   border-color: rgba(167, 139, 250, 0.2);
   background:
     linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%),
     radial-gradient(circle at top left, rgba(167, 139, 250, 0.1), transparent 40%);
   box-shadow: 0 18px 50px rgba(30, 10, 60, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.aurora-theme .glass-input,
+.aurora-theme .glass-select {
+  border-color: rgba(167, 139, 250, 0.22);
+  background: rgba(8, 12, 24, 0.78);
+}
+
+.aurora-theme .glass-dropdown-surface {
+  border-color: rgba(167, 139, 250, 0.2);
+  background: rgba(8, 12, 24, 0.94);
 }
 
 .aurora-theme .glass-metric-card {
@@ -956,6 +988,125 @@
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.08)) !important;
     color: #fff !important;
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.12);
+  }
+
+  .glass-input,
+  .glass-select {
+    @apply w-full rounded-xl border px-3 py-2.5 text-sm text-slate-100 outline-none transition;
+    border-color: rgba(148, 163, 184, 0.18);
+    background: rgba(10, 13, 18, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-input::placeholder {
+    color: #64748b;
+  }
+
+  .glass-input:focus,
+  .glass-select:focus {
+    border-color: rgba(59, 130, 246, 0.45);
+    background: rgba(10, 13, 18, 0.88);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+  }
+
+  .glass-table-shell {
+    @apply overflow-hidden rounded-2xl border;
+    border-color: rgba(148, 163, 184, 0.12);
+    background:
+      linear-gradient(165deg, rgba(22, 27, 36, 0.82) 0%, rgba(17, 21, 28, 0.78) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .glass-table-row {
+    @apply border-b transition-colors;
+    border-color: rgba(148, 163, 184, 0.08);
+  }
+
+  .glass-table-row:hover {
+    background: rgba(59, 130, 246, 0.06);
+  }
+
+  .glass-table-row:last-child {
+    border-bottom-width: 0;
+  }
+
+  .glass-split-pane {
+    @apply grid gap-4 lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)];
+  }
+
+  .glass-split-pane-sidebar {
+    @apply glass-panel-card min-h-[320px] overflow-hidden p-0;
+  }
+
+  .glass-split-pane-main {
+    @apply glass-panel-card min-h-[320px] overflow-hidden p-0;
+  }
+
+  .glass-drawer {
+    @apply rounded-2xl border p-4;
+    border-color: rgba(148, 163, 184, 0.14);
+    background:
+      linear-gradient(165deg, rgba(17, 21, 28, 0.94) 0%, rgba(14, 18, 26, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.32);
+  }
+
+  .glass-modal-panel {
+    @apply relative flex w-full flex-col overflow-hidden;
+    border-radius: 28px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background:
+      linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(17, 21, 28, 0.98) 100%);
+    box-shadow:
+      0 24px 64px rgba(2, 6, 23, 0.48),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .glass-modal-backdrop {
+    @apply absolute inset-0 backdrop-blur-md;
+    background: rgba(10, 13, 18, 0.82);
+  }
+
+  .glass-code-block {
+    @apply overflow-hidden rounded-xl border;
+    border-color: rgba(148, 163, 184, 0.12);
+    background:
+      linear-gradient(165deg, rgba(17, 21, 28, 0.92) 0%, rgba(11, 14, 20, 0.98) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-code-block-header {
+    @apply border-b px-4 py-2;
+    border-color: rgba(148, 163, 184, 0.10);
+    background: rgba(17, 21, 28, 0.72);
+  }
+
+  .glass-code-block-body {
+    @apply overflow-x-auto p-4 font-mono text-sm leading-relaxed text-slate-300;
+    background: rgba(8, 11, 16, 0.88);
+  }
+
+  .glass-empty-state {
+    @apply relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border px-6 py-16 text-center;
+    border-color: rgba(148, 163, 184, 0.12);
+    background:
+      linear-gradient(165deg, rgba(22, 27, 36, 0.72) 0%, rgba(17, 21, 28, 0.68) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .glass-dropdown-surface {
+    @apply rounded-xl border backdrop-blur-xl;
+    border-color: rgba(148, 163, 184, 0.16);
+    background: rgba(17, 21, 28, 0.92);
+    box-shadow: 0 16px 48px rgba(2, 6, 23, 0.36);
   }
 
 .fabric-edge-animate {

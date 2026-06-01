@@ -370,7 +370,7 @@ export default function MetricsPage() {
             · spot ${chargeback.totalSpotMonthlyUsd.toFixed(2)}/mo · 36-mo TCO ${chargeback.tco36MonthsUsd.toFixed(0)}
           </p>
           {chargeback.lines.length > 0 ? (
-            <div className="dash-card-flush overflow-x-auto">
+            <div className="glass-table-shell overflow-x-auto">
               <table className="w-full text-sm text-left text-slate-300">
                 <thead className="text-xs uppercase text-slate-500 border-b border-slate-800/60">
                   <tr>
@@ -446,7 +446,7 @@ export default function MetricsPage() {
               value={promQuery}
               onChange={(e) => setPromQuery(e.target.value)}
               placeholder="e.g. aether_workloads_running or up"
-              className="flex-1 min-w-[200px] rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm font-mono text-slate-100"
+              className="flex-1 min-w-[200px] glass-input font-mono text-slate-100"
             />
             <button
               type="submit"

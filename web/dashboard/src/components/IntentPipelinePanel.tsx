@@ -118,7 +118,7 @@ export default function IntentPipelinePanel() {
           value={nlText}
           onChange={(e) => setNlText(e.target.value)}
           rows={2}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200"
+          className="glass-input"
         />
         <button
           type="button"
@@ -141,7 +141,7 @@ export default function IntentPipelinePanel() {
           <input
             value={workloadName}
             onChange={(e) => setWorkloadName(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200"
+            className="glass-input"
           />
         </label>
         <div>
@@ -187,7 +187,7 @@ export default function IntentPipelinePanel() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Pipeline steps</p>
             <ol className="space-y-3">
               {report.steps.map((step) => (
-                <li key={step.phase} className="rounded-2xl border border-slate-800/70 bg-slate-950/40 px-4 py-3">
+                <li key={step.phase} className="glass-panel-card px-4 py-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-white">
                     <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] uppercase text-slate-400">{step.phase}</span>
                     {step.title}

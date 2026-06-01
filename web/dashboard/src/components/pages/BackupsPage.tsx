@@ -165,6 +165,8 @@ export default function BackupsPage() {
           </>
         ) : null}
       </SearchQueryContextBanner>
+
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
@@ -217,7 +219,7 @@ export default function BackupsPage() {
       {backups.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No backups" description="Create a backup to get started" />
       ) : (
-        <div className="dash-card overflow-hidden" data-testid="backups-list">
+        <div className="glass-panel-card overflow-hidden" data-testid="backups-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -259,6 +261,8 @@ export default function BackupsPage() {
           </div>
         </div>
       )}
+      </section>
+
 
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create backup">
         <div data-testid="backup-create-modal" className="space-y-4">

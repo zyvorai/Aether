@@ -122,7 +122,7 @@ export default function GraphPlatformPanel() {
             value={workload}
             onChange={(e) => setWorkload(e.target.value)}
             placeholder="workload"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white"
+            className="glass-input"
             data-testid="graph-workload-input"
           />
           <button type="button" onClick={() => void load()} className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300">
@@ -199,7 +199,7 @@ export default function GraphPlatformPanel() {
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
               placeholder="Search nodes…"
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+              className="glass-input flex-1"
               data-testid="graph-search-input"
             />
             <button

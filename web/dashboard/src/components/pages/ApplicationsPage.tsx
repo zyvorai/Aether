@@ -117,6 +117,7 @@ export default function ApplicationsPage() {
 
   return (
     <div data-testid="applications-page">
+      <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-100">Applications</h2>
@@ -217,7 +218,7 @@ export default function ApplicationsPage() {
           ))}
         </div>
       ) : (
-        <div className="dash-card overflow-hidden">
+        <div className="glass-panel-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-slate-500 border-b border-slate-800">
@@ -249,6 +250,8 @@ export default function ApplicationsPage() {
           </table>
         </div>
       )}
+
+      </section>
 
       {selected && (
         <WorkloadDetail

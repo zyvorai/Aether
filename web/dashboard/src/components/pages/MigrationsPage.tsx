@@ -11,7 +11,7 @@ import { Brain, GitCompare, Sparkles } from 'lucide-react';
 
 export default function MigrationsPage() {
   return (
-    <div className="space-y-8">
+    <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
       <AutonomousPlacementPanel />
       <MigrationPlannerPanel />
       <VolumeReplicationPanel />
@@ -40,6 +40,6 @@ export default function MigrationsPage() {
           },
         ]}
       />
-    </div>
+    </section>
   );
 }

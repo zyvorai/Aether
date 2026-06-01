@@ -176,7 +176,7 @@ function OverviewFleetSnapshot({
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-xl border border-slate-800/60 bg-[#11151C]/60 p-3"
+                className="rounded-xl border border-slate-800/60 glass-panel-card p-3"
               >
                 <div className={`text-lg font-semibold ${controlEmpty ? 'text-slate-500' : 'text-white'}`}>
                   {item.value}
@@ -817,7 +817,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
               {clusterSummary.clusters.length > 0 && (
                 <div className="space-y-2">
                   {clusterSummary.clusters.slice(0, 6).map((cluster) => (
-                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border border-slate-800/60 bg-[#11151C]/50 px-3 py-2 text-sm backdrop-blur-sm">
+                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border border-slate-800/60 glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
                       <div>
                         <div className="text-slate-200 font-medium">{cluster.name}</div>
                         <div className="text-slate-500 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
@@ -863,7 +863,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                 <div
                   key={i}
                   data-testid={`overview-recent-event-${i}`}
-                  className="flex items-start gap-3 rounded-xl border border-slate-800/50 bg-[#11151C]/50 p-3 backdrop-blur-sm"
+                  className="flex items-start gap-3 rounded-xl border border-slate-800/50 glass-panel-card p-3 backdrop-blur-sm"
                 >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">

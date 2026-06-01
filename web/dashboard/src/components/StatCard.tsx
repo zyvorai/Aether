@@ -37,7 +37,7 @@ export default function StatCard({ title, value, color, icon, isEmpty, compact }
 
   return (
     <div
-      className={`${colorMap[color]} ${borderMap[color]} interactive-lift group relative overflow-hidden rounded-2xl border card-glow transition-all duration-200 ${compact ? 'stat-card-compact p-4' : 'p-5'} ${empty ? 'stat-card-empty' : ''}`}
+      className={`${colorMap[color]} ${borderMap[color]} glass-metric-card interactive-lift group relative overflow-hidden transition-all duration-200 ${compact ? 'stat-card-compact p-4' : 'p-5'} ${empty ? 'stat-card-empty' : ''}`}
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-70" />
       <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-opacity group-hover:opacity-100" />

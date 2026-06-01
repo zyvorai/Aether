@@ -94,7 +94,7 @@ export default function SecurityCopilotPanel() {
           {report.suggestions.map((item) => (
             <li
               key={`${item.workload}-${item.title}`}
-              className="rounded-2xl border border-slate-800/70 bg-slate-950/40 p-4"
+              className="glass-panel-card p-4"
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">

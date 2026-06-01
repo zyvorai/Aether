@@ -115,7 +115,7 @@ export default function DashboardShell({
     <div className={shellClass}>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:border focus:border-aether/30 focus:bg-[#11151C]/90 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-aether focus:shadow-lg focus:backdrop-blur-xl"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:border focus:border-aether/30 focus:glass-dropdown-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-aether focus:shadow-lg"
       >
         Skip to content
       </a>
@@ -145,7 +145,7 @@ export default function DashboardShell({
         <div className="fixed inset-0 z-50 xl:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-[#11151C]/50 backdrop-blur-md"
+            className="glass-modal-backdrop absolute inset-0"
             aria-label="Close copilot"
             onClick={() => setMobileCopilotOpen(false)}
           />

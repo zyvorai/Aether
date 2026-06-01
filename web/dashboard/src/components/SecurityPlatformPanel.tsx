@@ -234,7 +234,7 @@ export default function SecurityPlatformPanel() {
             <input
               value={huntQuery}
               onChange={(e) => setHuntQuery(e.target.value)}
-              className="min-w-[180px] flex-1 rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-200"
+              className="glass-input min-w-[180px] flex-1"
               data-testid="security-hunt-input"
             />
             <button

@@ -282,7 +282,7 @@ export default function DepsPage() {
         </WorkloadContextBanner>
       ) : null}
 
-      <div className="dash-card mb-6">
+      <div className="glass-panel-card mb-6">
         <h2 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
           <Plus size={20} className="text-emerald-400" />
           Add dependency
@@ -340,7 +340,7 @@ export default function DepsPage() {
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="dash-card lg:col-span-2" data-testid="deps-graph-panel">
+            <div className="glass-panel-card lg:col-span-2" data-testid="deps-graph-panel">
               <h2 className="text-lg font-semibold text-slate-100 mb-4">Dependency graph</h2>
               {(graph.edges?.length ?? 0) > 0 && (graph.nodes?.length ?? 0) > 0 ? (
                 <DependencyGraphVisual
@@ -361,7 +361,7 @@ export default function DepsPage() {
               )}
             </div>
 
-            <div className="dash-card" data-testid="deps-issues-panel">
+            <div className="glass-panel-card" data-testid="deps-issues-panel">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="text-lg font-semibold text-slate-100">Issues</h2>
                 <button
