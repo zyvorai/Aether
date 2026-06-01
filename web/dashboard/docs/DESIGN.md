@@ -27,6 +27,7 @@ The dashboard uses a **Liquid Glass** visual language: layered gradients, backdr
 | `.glass-progress-track` | `bg-slate-800` troughs | Progress / attestation bars |
 | `.glass-row-hover` | Table row hover fills | `<tr>` hover in data tables |
 | `.glass-inset-hover` | Button/icon hover on inset surfaces | Secondary controls |
+| `.glass-status-dot-muted` | `bg-slate-500` status dots | Unknown/idle agent indicators |
 
 ### Migration examples
 
