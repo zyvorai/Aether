@@ -38,7 +38,7 @@ function toneClasses(tone: TileTone): { ring: string; dot: string; text: string 
     default:
       return {
         ring: 'glass-divider/30 glass-inset-surface',
-        dot: 'bg-slate-500',
+        dot: 'glass-status-dot-muted',
         text: 'text-slate-400',
       };
   }

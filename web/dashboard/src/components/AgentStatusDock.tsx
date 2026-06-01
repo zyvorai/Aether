@@ -35,7 +35,7 @@ function normalizeStatus(status: string): AgentCard['status'] {
 function agentStatusDot(status: AgentCard['status']): string {
   if (status === 'alert') return 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]';
   if (status === 'active') return 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]';
-  return 'bg-slate-500';
+  return 'glass-status-dot-muted';
 }
 
 export default function AgentStatusDock() {
