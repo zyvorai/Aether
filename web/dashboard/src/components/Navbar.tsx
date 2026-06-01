@@ -279,7 +279,7 @@ function Dropdown({
             ))}
             {setup.length > 0 ? (
               <>
-                <div className="mx-3 my-1 border-t border-slate-800/60/80" />
+                <div className="mx-3 my-1 glass-divider-t/60/80" />
                 <p className="px-4 py-1 text-[10px] uppercase tracking-wider text-slate-500">Setup required</p>
                 {setup.map((item) => (
                   <button
@@ -361,7 +361,7 @@ function AccountMenu({
           className={`absolute right-0 top-full z-50 mt-1.5 w-64 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
           role="menu"
         >
-          <div className="px-3 py-2 border-b border-slate-700/50">
+          <div className="px-3 py-2 glass-table-row">
             <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{authModeLabel}</div>
             <div className="mt-0.5 truncate font-mono text-sm text-slate-200" title={bearerPreview}>
               {bearerPreview}
@@ -695,7 +695,7 @@ export default function Navbar({
                     >
                       <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
                       Keyboard shortcuts
-                      <kbd className="ml-auto rounded bg-slate-800/80 px-1 py-0.5 font-mono text-[10px] text-slate-500">?</kbd>
+                      <kbd className="ml-auto rounded glass-inset-surface px-1 py-0.5 font-mono text-[10px] text-slate-500">?</kbd>
                     </button>
                     <button
                       type="button"
@@ -732,7 +732,7 @@ export default function Navbar({
                       <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
                       Contact support
                     </a>
-                    <div className="border-t border-slate-700/50 px-3 py-2 text-[11px]">
+                    <div className="glass-divider-t px-3 py-2 text-[11px]">
                       <a
                         href={ZYVOR_HELP.platform}
                         target="_blank"
@@ -800,15 +800,15 @@ export default function Navbar({
             onClick={() => setMobileOpen(false)}
           />
           <aside
-            className="copilot-rail-glass fixed inset-y-0 right-0 z-50 flex w-full max-w-sm animate-fade-in flex-col border-l border-slate-800/40 shadow-2xl lg:hidden"
+            className="copilot-rail-glass fixed inset-y-0 right-0 z-50 flex w-full max-w-sm animate-fade-in flex-col border-l glass-divider/40 shadow-2xl lg:hidden"
             aria-label="Navigation menu"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-slate-800/60 px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between glass-divider-b px-4 py-3">
               <span className="text-sm font-semibold text-slate-200">Menu</span>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-xl p-2 text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
+                className="rounded-xl p-2 text-slate-400 glass-nav-item hover:text-slate-100"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" />
@@ -870,7 +870,7 @@ export default function Navbar({
                       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                         currentView === item.view
                           ? 'text-aether bg-aether/10'
-                          : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                          : 'text-slate-400 hover:text-slate-100 glass-nav-item'
                       }`}
                     >
                       <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
@@ -895,7 +895,7 @@ export default function Navbar({
                       setMobileOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 glass-nav-item'
                     }`}
                   >
                     <Keyboard className="w-4 h-4" />
@@ -908,7 +908,7 @@ export default function Navbar({
                       setMobileOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 glass-nav-item'
                     }`}
                   >
                     <Info className="w-4 h-4" />
@@ -920,7 +920,7 @@ export default function Navbar({
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 glass-nav-item'
                     }`}
                   >
                     <BookOpen className="w-4 h-4" />
@@ -932,7 +932,7 @@ export default function Navbar({
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                      'text-slate-400 hover:text-slate-100 glass-nav-item'
                     }`}
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -957,7 +957,7 @@ export default function Navbar({
               </div>
             ) : null}
 
-            <div className="flex flex-wrap items-center gap-2 border-t border-slate-800/60 pt-2">
+            <div className="flex flex-wrap items-center gap-2 glass-divider-t/60 pt-2">
               <label className="flex items-center gap-2 flex-1 min-w-[8rem]">
                 <Palette className="w-4 h-4 text-slate-500 shrink-0" aria-hidden />
                 <select
@@ -980,7 +980,7 @@ export default function Navbar({
                   setMobileOpen(false);
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-colors ${
-                  'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 border border-slate-700/60'
+                  'text-slate-400 hover:text-slate-100 glass-nav-item border glass-divider'
                 }`}
               >
                 <LogOut className="w-4 h-4" />

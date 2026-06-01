@@ -37,7 +37,7 @@ function toneClasses(tone: TileTone): { ring: string; dot: string; text: string 
       };
     default:
       return {
-        ring: 'border-slate-600/30 bg-slate-800/40',
+        ring: 'glass-divider/30 glass-inset-surface',
         dot: 'bg-slate-500',
         text: 'text-slate-400',
       };
@@ -64,7 +64,7 @@ function StatusTile({
     >
       <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl transition-opacity group-hover:opacity-80" />
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#161B24]/60 text-aether">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 glass-inset-surface text-aether">
           {icon}
         </div>
         <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} title={value} />

@@ -22,7 +22,7 @@ export default function BarChart({ label, percent, detail }: BarChartProps) {
           <span className="text-sm font-medium text-slate-200">{clamped.toFixed(1)}%</span>
         </div>
       </div>
-      <div className="h-2.5 rounded-full overflow-hidden border border-slate-800/60 glass-panel-card">
+      <div className="h-2.5 rounded-full overflow-hidden border glass-divider glass-panel-card">
         <div
           className={`h-full rounded-full transition-all duration-500 ${getBarColor(clamped)}`}
           style={{ width: `${clamped}%` }}

@@ -22,7 +22,7 @@ function confidenceVariant(confidence: number): 'green' | 'yellow' | 'muted' {
 function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recommended: string }) {
   const isRecommended = score.runtime === recommended;
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'border-slate-800/80 glass-panel-card'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'glass-divider glass-panel-card'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended ? <Badge text="Recommended" variant="accent" /> : null}
@@ -70,7 +70,7 @@ export default function RuntimeAdvisorPanel() {
           placeholder="Paste workload YAML for runtime scoring…"
         />
         {result ? (
-          <div className="mt-6 space-y-4 border-t border-slate-800/60 pt-6">
+          <div className="mt-6 space-y-4 glass-divider-t/60 pt-6">
             <div className="flex flex-wrap items-center gap-2">
               <RuntimeBadge runtime={result.recommended} />
               <Badge

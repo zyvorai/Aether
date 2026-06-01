@@ -305,7 +305,7 @@ export default function EditorPage() {
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-800/60 rounded-xl hover:bg-slate-800/60/80 text-slate-300"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-slate-300"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? 'Hide' : 'Show'} YAML
@@ -314,7 +314,7 @@ export default function EditorPage() {
           <button
             type="button"
             onClick={() => (yamlEditMode ? disableYamlEdit() : enableYamlEdit())}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-800/60 rounded-xl hover:bg-slate-800/60/80 text-slate-300"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-slate-300"
           >
             <Pencil className="w-4 h-4" />
             {yamlEditMode ? 'Sync from form' : 'Edit YAML directly'}
@@ -426,7 +426,7 @@ export default function EditorPage() {
                 Advanced Kubernetes options
               </label>
               {form.showAdvancedK8s && (
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-slate-800 p-4">
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border glass-divider p-4">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Workload kind</label>
                     <select
@@ -663,7 +663,7 @@ export default function EditorPage() {
             <p className="text-xs text-slate-500 mt-2">Helm output: <code className="text-aether/90">{exportPath}</code></p>
           )}
 
-          <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-800">
+          <div className="flex flex-wrap gap-3 pt-4 glass-divider-t">
             <button
               type="button"
               data-testid="editor-validate-button"
@@ -691,7 +691,7 @@ export default function EditorPage() {
               data-testid="editor-export-helm"
               onClick={() => void handleHelmExport()}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-sm text-slate-300 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-slate-300 disabled:opacity-50"
             >
               {exporting ? 'Exporting…' : 'Export Helm chart'}
             </button>
@@ -703,7 +703,7 @@ export default function EditorPage() {
                 setResult(null);
                 setValidateResult(null);
               }}
-              className="px-5 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-sm text-slate-300"
+              className="px-5 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-slate-300"
             >
               Reset
             </button>

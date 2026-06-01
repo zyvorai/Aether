@@ -37,7 +37,7 @@ function TrustBar({ label, value }: { label: string; value: number }) {
         <span>{label}</span>
         <span>{pct}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+      <div className="h-1.5 glass-progress-track">
         <div
           className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
           style={{ width: `${pct}%` }}
@@ -313,7 +313,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         </div>
       )}
       {(meta || runtime) && (
-        <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
+        <div className="flex flex-wrap items-center gap-2 pb-2 glass-divider-b">
           <Badge text={runtimeLabel(meta?.runtime ?? runtime ?? 'unknown')} variant="muted" />
           {meta?.tee && <Badge text={meta.tee} variant="muted" />}
           {(status?.last_verdict || meta?.attestation_passed !== undefined) && (
@@ -325,7 +325,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       )}
 
       {analysis && (
-        <div className="border-b border-slate-800 pb-4">
+        <div className="glass-divider-b pb-4">
           <h4 className="text-sm font-medium text-slate-300 mb-2">AI confidential analysis</h4>
           <Badge
             text={`${analysis.risk_level} risk · ${Math.round(analysis.trust_composite * 100)}% trust`}
@@ -343,7 +343,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       )}
 
       {placement && placement.confidential_enabled && (
-        <div className="border-b border-slate-800 pb-4">
+        <div className="glass-divider-b pb-4">
           <h4 className="text-sm font-medium text-slate-300 mb-2">Trust-aware placement</h4>
           <div className="flex flex-wrap gap-2 mb-2">
             <Badge text={`runtime: ${placement.recommended_runtime}`} variant="muted" />
@@ -377,14 +377,14 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         </div>
       )}
 
-      <div className="border-b border-slate-800 pb-4">
+      <div className="glass-divider-b pb-4">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <h4 className="text-sm font-medium text-slate-300">Sovereign compliance</h4>
           <button
             type="button"
             disabled={sovereignBusy}
             onClick={() => void runSovereignCheck()}
-            className="rounded border border-slate-600 px-2.5 py-1 text-xs text-slate-300 hover:border-aether/50 disabled:opacity-50"
+            className="rounded border glass-divider px-2.5 py-1 text-xs text-slate-300 hover:border-aether/50 disabled:opacity-50"
           >
             {sovereignBusy ? 'Evaluating…' : 'Run sovereign check'}
           </button>
@@ -416,7 +416,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       </div>
 
       {migrationPlan && (
-        <div className="border-b border-slate-800 pb-4">
+        <div className="glass-divider-b pb-4">
           <h4 className="text-sm font-medium text-slate-300 mb-2">Encrypted migration plan</h4>
           <Badge
             text={migrationPlan.recommended_strategy.replace(/([A-Z])/g, '-$1').toLowerCase()}
@@ -444,7 +444,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       )}
 
       {network && (
-        <div className="border-b border-slate-800 pb-4">
+        <div className="glass-divider-b pb-4">
           <h4 className="text-sm font-medium text-slate-300 mb-2">Zero-trust network</h4>
           <div className="flex flex-wrap gap-2 mb-2">
             <Badge text={`${network.policy_count} policies`} variant="muted" />
@@ -491,7 +491,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       )}
 
       {status ? (
-        <div className="border-t border-slate-700 pt-4">
+        <div className="glass-divider-t pt-4">
           <h4 className="text-sm font-medium text-slate-300 mb-3">Attestation status</h4>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -530,7 +530,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
                 </ul>
               )}
               {explain.guestkit && (
-                <div className="mt-3 pt-3 border-t border-slate-800">
+                <div className="mt-3 pt-3 glass-divider-t">
                   <p className="text-xs text-slate-500 mb-1">GuestKit ({explain.guestkit.last_mode})</p>
                   <Badge text={explain.guestkit.passed ? 'passed' : 'failed'} variant={explain.guestkit.passed ? 'green' : 'red'} />
                   {explain.guestkit.repair_steps.length > 0 && (
@@ -546,12 +546,12 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           )}
         </div>
       ) : (
-        <p className="text-sm text-slate-500 border-t border-slate-700 pt-4">
+        <p className="text-sm text-slate-500 glass-divider-t pt-4">
           No attestation record yet. Submit a guest report below.
         </p>
       )}
 
-      <div className="border-t border-slate-700 pt-4 space-y-3">
+      <div className="glass-divider-t pt-4 space-y-3">
         <h4 className="text-sm font-medium text-slate-300">Submit attestation report</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -596,7 +596,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
         {attestVerifyMsg && <p className="text-xs text-slate-400">{attestVerifyMsg}</p>}
       </div>
 
-      <div className="border-t border-slate-700 pt-4">
+      <div className="glass-divider-t pt-4">
         <h4 className="text-sm font-medium text-slate-300 mb-2">GuestKit offline inspection</h4>
         <p className="text-xs text-slate-500 mb-3">
           Pre-launch digest check (uses spec launch digest). File paths require CLI on the Aether host.
@@ -607,7 +607,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             data-testid="guestkit-prelaunch"
             disabled={guestkitBusy}
             onClick={() => void runGuestkit('pre-launch')}
-            className="px-2.5 py-1 text-xs rounded border border-slate-600 text-slate-300 hover:border-aether/50 disabled:opacity-50"
+            className="px-2.5 py-1 text-xs rounded border glass-divider text-slate-300 hover:border-aether/50 disabled:opacity-50"
           >
             Pre-launch check
           </button>
@@ -616,7 +616,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             data-testid="guestkit-repair"
             disabled={guestkitBusy}
             onClick={() => void runGuestkit('attested-repair')}
-            className="px-2.5 py-1 text-xs rounded border border-slate-600 text-slate-300 hover:border-aether/50 disabled:opacity-50"
+            className="px-2.5 py-1 text-xs rounded border glass-divider text-slate-300 hover:border-aether/50 disabled:opacity-50"
           >
             Repair playbook
           </button>
@@ -647,7 +647,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       </div>
 
       {isolation && (
-        <div className="border-t border-slate-700 pt-4">
+        <div className="glass-divider-t pt-4">
           <h4 className="text-sm font-medium text-slate-300 mb-3">Tenant isolation</h4>
           <Badge text={isolation.compliant ? 'compliant' : 'violations'} variant={isolation.compliant ? 'green' : 'red'} />
           {isolation.violations.length > 0 && (
@@ -666,7 +666,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
       )}
 
       {!notConfidential && (
-        <div className="border-t border-slate-700 pt-4" data-testid="attest-secrets-panel">
+        <div className="glass-divider-t pt-4" data-testid="attest-secrets-panel">
           <h4 className="text-sm font-medium text-slate-300 mb-3">Attest-gated secrets</h4>
           {secretActionMsg && (
             <p className="mb-2 text-xs text-slate-400">{secretActionMsg}</p>
@@ -686,7 +686,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
                         type="button"
                         disabled={!canMutate || secretReleaseBusy === s.secret_name}
                         onClick={() => void releaseSecret(s.secret_name, s.provider)}
-                        className="rounded border border-slate-600 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-300 hover:border-aether/50 disabled:opacity-40"
+                        className="rounded border glass-divider px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-300 hover:border-aether/50 disabled:opacity-40"
                       >
                         {secretReleaseBusy === s.secret_name ? 'Releasing…' : 'Release'}
                       </button>

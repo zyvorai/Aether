@@ -103,7 +103,7 @@ export default function LiveActivityDock() {
             <span>{activity.percent}%</span>
             <span>ETA {formatEta(activity.etaSecs)}</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
+          <div className="h-1.5 glass-progress-track">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 activity.phase === 'failed'

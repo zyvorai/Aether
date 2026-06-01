@@ -74,7 +74,7 @@ export default function CostPage() {
             className={`rounded-xl border p-4 ${
               est.provider === cheapest
                 ? 'border-emerald-500/30 bg-emerald-500/5'
-                : 'border-slate-800/80 glass-panel-card'
+                : 'glass-divider glass-panel-card'
             }`}
           >
             <div className="flex items-center justify-between gap-2 mb-3">

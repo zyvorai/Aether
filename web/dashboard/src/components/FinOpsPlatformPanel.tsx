@@ -159,7 +159,7 @@ export default function FinOpsPlatformPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -169,7 +169,7 @@ export default function FinOpsPlatformPanel() {
     >
       {budget ? (
         <p
-          className={`mb-4 rounded-lg border px-3 py-2 text-xs ${budget.breached ? 'border-amber-500/40 text-amber-200' : 'border-slate-700 text-slate-400'}`}
+          className={`mb-4 rounded-lg border px-3 py-2 text-xs ${budget.breached ? 'border-amber-500/40 text-amber-200' : 'glass-divider text-slate-400'}`}
           data-testid="finops-budget-status"
         >
           {budget.message}
@@ -183,7 +183,7 @@ export default function FinOpsPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-slate-700 text-slate-400'
+              tab === t.id ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'glass-divider text-slate-400'
             }`}
           >
             {t.label}
@@ -232,7 +232,7 @@ export default function FinOpsPlatformPanel() {
           <p className="mb-2 text-sm text-emerald-300">{spot?.eligible_count ?? 0} spot-eligible workload(s)</p>
           <ul className="space-y-2 text-xs text-slate-400">
             {(spot?.entries ?? []).slice(0, 5).map((e) => (
-              <li key={e.workload} className="rounded border border-slate-800 px-2 py-1">
+              <li key={e.workload} className="rounded border glass-divider px-2 py-1">
                 <span className="font-mono text-slate-200">{e.workload}</span>
                 {e.eligible ? ` · save ${formatPercent(e.savings_pct, 0)}` : ' · not eligible'} — {e.reason}
               </li>

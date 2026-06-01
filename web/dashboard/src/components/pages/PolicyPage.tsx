@@ -242,7 +242,7 @@ export default function PolicyPage() {
       {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
         <div
           data-testid="policy-opa-setup-banner"
-          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800/60/80 glass-panel-card/60 px-4 py-3 text-sm text-slate-300"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border glass-divider/80 glass-panel-card/60 px-4 py-3 text-sm text-slate-300"
         >
           <span>OPA is not configured — built-in policy check works below; enable OPA admission on Platform &amp; HA.</span>
           <button

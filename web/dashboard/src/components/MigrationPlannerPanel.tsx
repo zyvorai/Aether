@@ -164,7 +164,7 @@ export default function MigrationPlannerPanel() {
                   className={`rounded-xl border px-3 py-2.5 text-sm font-medium capitalize transition ${
                     target === rt
                       ? 'border-aether/50 bg-aether/10 text-aether'
-                      : 'border-slate-800 glass-panel-card text-slate-300 hover:border-slate-700'
+                      : 'glass-divider glass-panel-card text-slate-300 hover:border-aether/30'
                   } disabled:opacity-40`}
                   data-testid={`migration-target-${rt}`}
                 >
@@ -217,7 +217,7 @@ export default function MigrationPlannerPanel() {
                 {riskRows.map((row) => (
                   <div
                     key={row.label}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-800/60 px-3 py-2"
+                    className="flex items-center justify-between gap-3 rounded-xl border glass-divider px-3 py-2"
                   >
                     <div>
                       <div className="text-sm text-slate-200">{row.label}</div>

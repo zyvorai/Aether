@@ -151,7 +151,7 @@ export default function SecurityPlatformPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether-ai/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether-ai/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -166,7 +166,7 @@ export default function SecurityPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-red-500/40 bg-red-500/10 text-red-200' : 'border-slate-700 text-slate-400'
+              tab === t.id ? 'border-red-500/40 bg-red-500/10 text-red-200' : 'glass-divider text-slate-400'
             }`}
           >
             {t.label}

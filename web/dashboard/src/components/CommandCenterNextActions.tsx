@@ -39,7 +39,7 @@ function actionTone(actionType: string): string {
     case 'capacity':
       return 'border-amber-500/20 bg-amber-500/[0.06]';
     default:
-      return 'border-slate-800/70 bg-[#161B24]/60';
+      return 'glass-divider glass-inset-surface';
   }
 }
 
@@ -117,10 +117,10 @@ export default function CommandCenterNextActions({
         className="command-center-shell mb-8 animate-pulse p-6 sm:p-8"
         data-testid="command-center-next-actions"
       >
-        <div className="h-6 w-40 rounded-lg bg-slate-800/80" />
+        <div className="h-6 w-40 rounded-lg glass-inset-surface" />
         <div className="mt-5 space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-2xl bg-slate-800/60" />
+            <div key={i} className="h-16 rounded-2xl glass-inset-surface" />
           ))}
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function CommandCenterNextActions({
       </div>
 
       {actions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700/60 bg-[#161B24]/40 px-6 py-10 text-center backdrop-blur-sm">
+        <div className="rounded-2xl border border-dashed glass-divider glass-inset-surface px-6 py-10 text-center backdrop-blur-sm">
           <Sparkles className="mx-auto mb-3 h-8 w-8 text-slate-600" />
           <p className="text-sm font-medium text-slate-300">Queue is clear</p>
           <p className="mt-1 text-xs text-slate-500">

@@ -35,7 +35,7 @@ export default function IntentGitOpsDiffPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -47,7 +47,7 @@ export default function IntentGitOpsDiffPanel() {
       ) : (
         <ul className="space-y-3">
           {report.entries.slice(0, 6).map((entry) => (
-            <li key={entry.workload} className="rounded-xl border border-slate-800 px-4 py-3">
+            <li key={entry.workload} className="rounded-xl border glass-divider px-4 py-3">
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="font-medium text-white">{entry.workload}</span>
                 {entry.has_drift ? <Badge text="drift" variant="yellow" /> : <Badge text="synced" variant="green" />}

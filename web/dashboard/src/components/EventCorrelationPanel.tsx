@@ -65,7 +65,7 @@ export default function EventCorrelationPanel({ events, resourceName }: Props) {
       <div className="glass-table-shell max-h-64 overflow-y-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-500">
+            <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
               <th className="px-3 py-2">Time</th>
               <th className="px-3 py-2">Type</th>
               <th className="px-3 py-2">Reason</th>
@@ -74,7 +74,7 @@ export default function EventCorrelationPanel({ events, resourceName }: Props) {
           </thead>
           <tbody>
             {events.slice(0, 50).map((e, i) => (
-              <tr key={`${e.timestamp}-${i}`} className="border-b border-slate-800/50">
+              <tr key={`${e.timestamp}-${i}`} className="glass-table-row">
                 <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-500">{formatTimestamp(e.timestamp)}</td>
                 <td className="px-3 py-2">
                   <span className={e.type_ === 'Warning' ? 'text-amber-400' : 'text-emerald-400'}>{e.type_}</span>

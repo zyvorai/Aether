@@ -32,7 +32,7 @@ export default function MigrationWavePanel() {
       subtitle="Multi-cluster coordinated migration waves"
       icon={<Layers className="h-5 w-5 text-emerald-400" />}
       actions={
-        <button type="button" onClick={() => void load()} className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300">
+        <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       }
@@ -46,7 +46,7 @@ export default function MigrationWavePanel() {
           </div>
           <ul className="space-y-2">
             {report.plan.items.slice(0, 8).map((item) => (
-              <li key={item.workload} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+              <li key={item.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
                 {item.workload}: {item.source_runtime} → {item.target_runtime} @ {item.target_cluster}
                 {item.volume_replication ? <Badge text="volume sync" variant="yellow" /> : null}
               </li>

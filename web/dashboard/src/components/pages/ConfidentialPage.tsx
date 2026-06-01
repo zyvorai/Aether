@@ -35,7 +35,7 @@ function TrustBar({ label, value }: { label: string; value: number }) {
         <span>{label}</span>
         <span>{pct}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-slate-800/60 overflow-hidden">
+      <div className="h-1.5 glass-progress-track">
         <div
           className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
           style={{ width: `${pct}%` }}
@@ -371,15 +371,15 @@ export default function ConfidentialPage() {
           <h2 className="text-lg font-semibold text-slate-100 mb-2">Sovereign mode</h2>
           <div className="flex flex-wrap gap-3 text-sm text-slate-400">
             {sovereign.offline_attestation && (
-              <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-800/60">Offline attestation</span>
+              <span className="px-2 py-1 rounded glass-inset-surface border glass-divider">Offline attestation</span>
             )}
             {sovereign.region_lock && (
-              <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-800/60">
+              <span className="px-2 py-1 rounded glass-inset-surface border glass-divider">
                 Region lock: {sovereign.region_lock}
               </span>
             )}
             {sovereign.byok_signing_key && (
-              <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-800/60">BYOK signing active</span>
+              <span className="px-2 py-1 rounded glass-inset-surface border glass-divider">BYOK signing active</span>
             )}
           </div>
           <p className="text-xs text-slate-600 mt-2">
@@ -429,7 +429,7 @@ export default function ConfidentialPage() {
                   )
                 }
                 className={`text-left rounded-lg border glass-panel-card p-3 hover:border-aether/40 transition-colors ${
-                  focused ? 'border-aether/50 ring-1 ring-aether/30' : 'border-slate-800/60'
+                  focused ? 'border-aether/50 ring-1 ring-aether/30' : 'glass-divider'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
@@ -456,7 +456,7 @@ export default function ConfidentialPage() {
           </p>
           <div className="space-y-2 max-h-48 overflow-auto">
             {intel.workloads.map((row) => (
-              <div key={row.workload} className="text-sm p-2 rounded border border-slate-800/60 glass-panel-card">
+              <div key={row.workload} className="text-sm p-2 rounded border glass-divider glass-panel-card">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
@@ -546,7 +546,7 @@ export default function ConfidentialPage() {
                   className={`w-full text-left p-3 rounded-lg border glass-panel-card transition-colors ${
                     workloadQuery.trim() === row.workload
                       ? 'border-aether/60 ring-1 ring-aether/30'
-                      : 'border-slate-800/60 hover:border-aether/40'
+                      : 'glass-divider hover:border-aether/40'
                   }`}
                   data-testid={workloadQuery.trim() === row.workload ? 'confidential-workload-highlight' : undefined}
                 >
@@ -604,7 +604,7 @@ export default function ConfidentialPage() {
               <div className="overflow-auto max-h-[14rem]">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-slate-500 border-b border-slate-800/60">
+                    <tr className="text-left text-slate-500 glass-divider-b">
                       <th className="pb-2 pr-3">Name</th>
                       <th className="pb-2 pr-3">Launch digest</th>
                       <th className="pb-2">Signed</th>
@@ -612,7 +612,7 @@ export default function ConfidentialPage() {
                   </thead>
                   <tbody>
                     {images.map((img) => (
-                      <tr key={img.name} className="border-b border-slate-800/60">
+                      <tr key={img.name} className="glass-divider-b">
                         <td className="py-2 pr-3 text-slate-200">{img.name}</td>
                         <td className="py-2 pr-3 font-mono text-xs text-slate-400 truncate max-w-[12rem]">
                           {img.launch_digest ?? img.image_hash}
@@ -626,7 +626,7 @@ export default function ConfidentialPage() {
             )}
           </div>
 
-          <div className="border-t border-slate-800/60 pt-4">
+          <div className="glass-divider-t/60 pt-4">
             <h3 className="text-sm font-medium text-slate-300 mb-2">Sign measured image</h3>
             <p className="text-xs text-slate-500 mb-3">
               Registers a qcow2 on the Aether host path into the measured image catalog.
@@ -638,14 +638,14 @@ export default function ConfidentialPage() {
                   value={signName}
                   onChange={(e) => setSignName(e.target.value)}
                   placeholder="Catalog name"
-                  className="rounded bg-[#0B0E14] border border-slate-800/60 px-3 py-1.5 text-sm text-slate-200"
+                  className="glass-input px-3 py-1.5 text-sm text-slate-200"
                 />
                 <input
                   type="text"
                   value={signPath}
                   onChange={(e) => setSignPath(e.target.value)}
                   placeholder="/path/on/host/disk.qcow2"
-                  className="rounded bg-[#0B0E14] border border-slate-800/60 px-3 py-1.5 text-sm font-mono text-slate-200"
+                  className="glass-input px-3 py-1.5 text-sm font-mono text-slate-200"
                 />
               </div>
               <input
@@ -653,7 +653,7 @@ export default function ConfidentialPage() {
                 value={signKey}
                 onChange={(e) => setSignKey(e.target.value)}
                 placeholder="Signing key id"
-                className="w-full rounded bg-[#0B0E14] border border-slate-800/60 px-3 py-1.5 text-sm font-mono text-slate-200"
+                className="w-full glass-input px-3 py-1.5 text-sm font-mono text-slate-200"
               />
               <button
                 type="submit"
@@ -666,7 +666,7 @@ export default function ConfidentialPage() {
             {signMessage && <p className="mt-2 text-xs text-slate-400">{signMessage}</p>}
           </div>
 
-          <div className="border-t border-slate-800/60 pt-4" data-testid="confidential-verify-form">
+          <div className="glass-divider-t/60 pt-4" data-testid="confidential-verify-form">
             <h3 className="text-sm font-medium text-slate-300 mb-2">Verify image file (host path)</h3>
             <form onSubmit={(e) => void handleVerifyFile(e)} className="space-y-2 mb-4">
               <input
@@ -674,14 +674,14 @@ export default function ConfidentialPage() {
                 value={verifyName}
                 onChange={(e) => setVerifyName(e.target.value)}
                 placeholder="Catalog image name"
-                className="w-full px-3 py-1.5 text-sm rounded bg-[#0B0E14] border border-slate-800/60 text-slate-200"
+                className="w-full px-3 py-1.5 text-sm glass-input text-slate-200"
               />
               <input
                 type="text"
                 value={verifyPath}
                 onChange={(e) => setVerifyPath(e.target.value)}
                 placeholder="/path/on/server/disk.qcow2"
-                className="w-full px-3 py-1.5 text-sm rounded bg-[#0B0E14] border border-slate-800/60 text-slate-200 font-mono"
+                className="w-full px-3 py-1.5 text-sm glass-input text-slate-200 font-mono"
               />
               <button
                 type="submit"
@@ -693,7 +693,7 @@ export default function ConfidentialPage() {
             </form>
           </div>
 
-          <div className="border-t border-slate-800/60 pt-4">
+          <div className="glass-divider-t/60 pt-4">
             <h3 className="text-sm font-medium text-slate-300 mb-2">Verify launch digest</h3>
             <p className="text-xs text-slate-500 mb-3">
               Dashboard equivalent of{' '}
@@ -705,7 +705,7 @@ export default function ConfidentialPage() {
                 value={verifyDigest}
                 onChange={(e) => setVerifyDigest(e.target.value)}
                 placeholder="sha256:… or launch digest"
-                className="flex-1 min-w-0 px-3 py-1.5 text-sm rounded bg-[#0B0E14] border border-slate-800/60 text-slate-200 font-mono"
+                className="flex-1 min-w-0 px-3 py-1.5 text-sm glass-input text-slate-200 font-mono"
               />
               <button
                 type="submit"
@@ -726,7 +726,7 @@ export default function ConfidentialPage() {
             )}
           </div>
 
-          <div className="border-t border-slate-800/60 pt-4">
+          <div className="glass-divider-t/60 pt-4">
             <h3 className="text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
               <Terminal className="w-4 h-4" />
               Image CLI (host paths)

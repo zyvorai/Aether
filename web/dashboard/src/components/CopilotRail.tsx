@@ -151,7 +151,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
       className="copilot-rail-glass relative hidden xl:flex w-[min(380px,30vw)] shrink-0 flex-col border-l"
       data-testid="copilot-rail"
     >
-      <div className="relative z-[1] flex items-center gap-3 border-b border-slate-800/50 px-4 py-4">
+      <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
           <Sparkles className="h-4 w-4 text-[#c084fc]" aria-hidden />
         </div>
@@ -165,7 +165,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
           <button
             type="button"
             onClick={clearChat}
-            className="rounded-lg border border-slate-700/80 px-2 py-1 text-[10px] text-slate-400 transition hover:border-slate-600 hover:text-slate-200"
+            className="rounded-lg border glass-divider px-2 py-1 text-[10px] text-slate-400 transition hover:border-aether/30 hover:text-slate-200"
           >
             Clear
           </button>
@@ -173,7 +173,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
         <button
           type="button"
           onClick={() => setCollapsed(true)}
-          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800/80 hover:text-slate-200"
+          className="rounded-lg p-1.5 text-slate-500 transition glass-inset-hover hover:text-slate-200"
           title="Collapse copilot"
           aria-label="Collapse copilot"
         >
@@ -182,7 +182,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
       </div>
 
       {agents.length > 0 ? (
-        <div className="relative z-[1] border-b border-slate-800/50 px-3 py-3">
+        <div className="relative z-[1] glass-table-row px-3 py-3">
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
             Agent focus
           </p>
@@ -218,7 +218,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
       <div className="relative z-[1] flex-1 space-y-2 overflow-y-auto p-3">
         {messages.length === 0 ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-aether-ai/15 bg-[#161B24]/50 px-3 py-3 backdrop-blur-sm">
+            <div className="rounded-2xl border border-aether-ai/15 glass-inset-surface px-3 py-3 backdrop-blur-sm">
               <p className="text-xs leading-relaxed text-slate-400">
                 Not a chatbot — an infrastructure co-pilot. Ask about health, cost, migrations, security, or
                 capacity.
@@ -251,7 +251,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
             className={`max-w-full rounded-2xl px-3 py-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
               msg.role === 'user'
                 ? 'ml-6 border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
-                : 'mr-2 border border-slate-800/60 bg-[#161B24]/80 text-slate-200'
+                : 'mr-2 border glass-divider glass-inset-surface text-slate-200'
             }`}
           >
             {msg.content}
@@ -288,7 +288,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
       </div>
 
       <form
-        className="relative z-[1] flex gap-2 border-t border-slate-800/50 p-3"
+        className="relative z-[1] flex gap-2 glass-divider-t/50 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           void send(input);

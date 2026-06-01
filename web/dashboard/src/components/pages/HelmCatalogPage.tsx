@@ -177,10 +177,10 @@ export default function HelmCatalogPage() {
               </div>
               <p className="text-sm text-slate-400 mt-3 line-clamp-2">{chart.description}</p>
               <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-slate-500">
-                {chart.storage_required && <span className="rounded bg-slate-800 px-2 py-0.5">Storage</span>}
-                {chart.ha_available && <span className="rounded bg-slate-800 px-2 py-0.5">HA</span>}
-                {chart.backup_supported && <span className="rounded bg-slate-800 px-2 py-0.5">Backup</span>}
-                {chart.monitoring_available && <span className="rounded bg-slate-800 px-2 py-0.5">Monitoring</span>}
+                {chart.storage_required && <span className="rounded glass-inset-surface px-2 py-0.5">Storage</span>}
+                {chart.ha_available && <span className="rounded glass-inset-surface px-2 py-0.5">HA</span>}
+                {chart.backup_supported && <span className="rounded glass-inset-surface px-2 py-0.5">Backup</span>}
+                {chart.monitoring_available && <span className="rounded glass-inset-surface px-2 py-0.5">Monitoring</span>}
               </div>
               <button
                 type="button"
@@ -300,7 +300,7 @@ export default function HelmCatalogPage() {
             )}
             {installMsg && <p className="text-sm text-slate-300">{installMsg}</p>}
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setSelected(null)} className="rounded-lg border border-slate-700 px-4 py-2 text-sm">
+              <button type="button" onClick={() => setSelected(null)} className="rounded-lg border glass-divider px-4 py-2 text-sm">
                 Cancel
               </button>
               <button

@@ -258,7 +258,7 @@ export default function SecretsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="glass-divider-b">
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Namespace</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Keys</th>
@@ -270,7 +270,7 @@ export default function SecretsPage() {
               <tbody>
                 {filtered.map((s) => (
                   <Fragment key={`${s.namespace}/${s.name}`}>
-                    <tr className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                    <tr className="glass-table-row glass-inset-hover transition-colors">
                       <td className="py-3 px-4">
                         <button
                           type="button"
@@ -308,15 +308,15 @@ export default function SecretsPage() {
                       </td>
                     </tr>
                     {expandedSecret === s.name && secretDetail && (
-                      <tr className="border-b border-slate-800/50">
+                      <tr className="glass-table-row">
                         <td colSpan={6} className="px-4 py-3">
-                          <div className="glass-panel-card p-4 space-y-3 border border-slate-800">
+                          <div className="glass-panel-card p-4 space-y-3 border glass-divider">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                               <div>
                                 <span className="text-slate-500">Keys: </span>
                                 <span className="text-slate-200 inline-flex flex-wrap gap-2">
                                   {secretDetail.keys.map((key) => (
-                                    <span key={key} className="inline-flex items-center gap-1 rounded border border-slate-800 px-2 py-0.5 font-mono text-xs">
+                                    <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-xs">
                                       {key}
                                       <button
                                         type="button"
@@ -391,7 +391,7 @@ export default function SecretsPage() {
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm">
+          <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 glass-inset-surface glass-inset-hover text-slate-200 rounded-lg text-sm">
             Cancel
           </button>
           <button
@@ -414,7 +414,7 @@ export default function SecretsPage() {
           <button
             type="button"
             onClick={() => setConfirmDelete(null)}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium"
+            className="px-4 py-2 glass-inset-surface glass-inset-hover text-slate-200 rounded-lg text-sm font-medium"
           >
             Cancel
           </button>

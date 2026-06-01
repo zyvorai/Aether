@@ -188,7 +188,7 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
       panelHint={
         <>
           Same token as{' '}
-          <code className="text-[11px] px-1 rounded bg-slate-800/80 text-cyan-300/90">
+          <code className="text-[11px] px-1 rounded glass-inset-surface text-cyan-300/90">
             Authorization: Bearer …
           </code>
           . Leave blank when the server has no API key and OIDC is off.
@@ -198,8 +198,8 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
     >
       {providersLoading ? (
         <div className="mb-6 space-y-3" aria-hidden>
-          <div className="h-11 rounded-xl bg-slate-800/60 animate-pulse" />
-          <div className="h-px bg-slate-700/50" />
+          <div className="h-11 rounded-xl glass-inset-surface animate-pulse" />
+          <div className="h-px glass-inset-surface" />
         </div>
       ) : (oidcEnabled || samlEnabled) ? (
         <div className="mb-2">

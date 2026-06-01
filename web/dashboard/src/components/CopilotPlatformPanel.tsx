@@ -144,7 +144,7 @@ export default function CopilotPlatformPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether-ai/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether-ai/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -158,7 +158,7 @@ export default function CopilotPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'border-slate-700 text-slate-400'
+              tab === t.id ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'glass-divider text-slate-400'
             }`}
           >
             {t.label}
@@ -176,7 +176,7 @@ export default function CopilotPlatformPanel() {
           ) : (
             <ul className="space-y-2">
               {memory.entries.map((e) => (
-                <li key={e.session_id} className="rounded-lg border border-slate-800 px-3 py-2 text-sm">
+                <li key={e.session_id} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                   <p className="font-mono text-xs text-violet-300">{e.session_id.slice(0, 8)}…</p>
                   <p className="mt-1 text-slate-300">{e.summary}</p>
                   <p className="text-xs text-slate-500">{e.updated_at}</p>
@@ -206,7 +206,7 @@ export default function CopilotPlatformPanel() {
             </button>
           </div>
           {route ? (
-            <div className="rounded-lg border border-slate-800 px-3 py-3 text-sm">
+            <div className="rounded-lg border glass-divider px-3 py-3 text-sm">
               <p className="font-medium text-white">
                 {route.label} <span className="text-slate-500">({route.agent})</span>
               </p>
@@ -284,7 +284,7 @@ export default function CopilotPlatformPanel() {
           <button
             type="button"
             onClick={() => void explainPolicy()}
-            className="mb-3 inline-flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-violet-500/40"
+            className="mb-3 inline-flex items-center gap-1 rounded-lg border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-violet-500/40"
             data-testid="copilot-policy-button"
           >
             <Shield className="h-3.5 w-3.5" />
@@ -316,7 +316,7 @@ export default function CopilotPlatformPanel() {
           ) : (
             <ul className="max-h-64 space-y-2 overflow-y-auto">
               {audit.entries.map((e, i) => (
-                <li key={`${e.timestamp}-${i}`} className="rounded-lg border border-slate-800 px-3 py-2 text-xs">
+                <li key={`${e.timestamp}-${i}`} className="rounded-lg border glass-divider px-3 py-2 text-xs">
                   <span className="text-violet-300">{e.action}</span>
                   {e.tool ? <span className="text-slate-500"> · {e.tool}</span> : null}
                   <p className="text-slate-400">{e.detail}</p>
@@ -335,7 +335,7 @@ export default function CopilotPlatformPanel() {
           </p>
           <ul className="max-h-64 space-y-1 overflow-y-auto text-xs">
             {(rbac?.tools ?? []).slice(0, 12).map((t) => (
-              <li key={t.name} className="flex justify-between gap-2 border-b border-slate-800/50 py-1 text-slate-400">
+              <li key={t.name} className="flex justify-between gap-2 glass-table-row py-1 text-slate-400">
                 <span className="font-mono text-slate-300">{t.name}</span>
                 <span>{t.risk}</span>
               </li>

@@ -10,7 +10,8 @@
     "validate:schema": "node ../../scripts/schema-validate-examples.mjs",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "check:hex-surfaces": "node scripts/check-no-hex-surfaces.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",

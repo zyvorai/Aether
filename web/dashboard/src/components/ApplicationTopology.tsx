@@ -21,7 +21,7 @@ function Node({ label, sub }: { label: string; sub?: string }) {
 function Arrow() {
   return (
     <div className="flex flex-col items-center text-slate-600 py-1">
-      <div className="h-6 w-px bg-slate-600" />
+      <div className="h-6 w-px bg-white/10" />
       <div className="text-xs">↓</div>
     </div>
   );

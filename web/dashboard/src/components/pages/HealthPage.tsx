@@ -274,7 +274,7 @@ export default function HealthPage() {
               type="button"
               data-testid="health-clear-filter"
               onClick={() => setStatusFilter('all')}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-aether"
+              className="rounded-lg border glass-divider px-3 py-2 text-xs text-slate-400 hover:text-aether"
             >
               Clear filter
             </button>
@@ -291,7 +291,7 @@ export default function HealthPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-800">
+                  <tr className="glass-divider-b">
                     <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workload</th>
                     <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Runtime</th>
                     <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Health</th>
@@ -304,8 +304,8 @@ export default function HealthPage() {
                     <tr
                       key={w.name}
                       onClick={() => void handleRowClick(w)}
-                      className={`border-b border-slate-800/50 cursor-pointer transition-colors ${
-                        selected?.workload.name === w.name ? 'bg-aether/10' : 'hover:bg-slate-800/30'
+                      className={`glass-table-row cursor-pointer transition-colors ${
+                        selected?.workload.name === w.name ? 'bg-aether/10' : 'glass-inset-hover'
                       }`}
                     >
                       <td className="py-3 px-4 font-medium text-slate-200">

@@ -1173,7 +1173,7 @@ export default function CommandPalette({
         className="glass-modal-panel relative w-full max-w-xl overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`flex items-center px-4 py-4 border-b ${'border-slate-800'}`}>
+        <div className={`flex items-center px-4 py-4 border-b ${'glass-divider'}`}>
           <span className="text-slate-500 mr-2 text-sm font-mono">{'>'}</span>
           <input
             ref={inputRef}
@@ -1186,7 +1186,7 @@ export default function CommandPalette({
             className={`flex-1 bg-transparent text-sm outline-none ${'text-white placeholder-slate-500'}`}
             autoComplete="off"
           />
-          <kbd className={`text-xs px-1.5 py-0.5 rounded border ${'text-slate-500 bg-slate-800/90 border-slate-700'}`}>ESC</kbd>
+          <kbd className={`text-xs px-1.5 py-0.5 rounded border ${'text-slate-500 glass-inset-surface/90 glass-divider'}`}>ESC</kbd>
         </div>
 
         <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">
@@ -1214,7 +1214,7 @@ export default function CommandPalette({
                     className={`w-full px-4 py-2 flex items-center gap-3 text-sm text-left transition-colors ${
                       i === selectedIndex
                         ? 'bg-aether/20 text-aether'
-                        : 'text-slate-300 hover:bg-slate-800/80'
+                        : 'text-slate-300 glass-inset-hover'
                     }`}
                   >
                     <span className="flex-1 truncate">{cmd.label}</span>
@@ -1227,7 +1227,7 @@ export default function CommandPalette({
           )}
         </div>
 
-        <div className={`px-4 py-3 border-t flex flex-wrap items-center gap-x-4 gap-y-1 text-xs ${'border-slate-800 text-slate-500'}`}>
+        <div className={`px-4 py-3 border-t flex flex-wrap items-center gap-x-4 gap-y-1 text-xs ${'glass-divider text-slate-500'}`}>
           <span>{isMac ? '⌘K' : 'Ctrl+K'} open</span>
           <span>↑↓ navigate</span>
           <span>Enter select</span>

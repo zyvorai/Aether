@@ -114,7 +114,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
         </ul>
       </div>
 
-      <p className={`text-center text-xs text-slate-500 pt-2 border-t ${'border-slate-700/50'}`}>
+      <p className={`text-center text-xs text-slate-500 pt-2 border-t ${'glass-divider/50'}`}>
         {ZYVOR_COPY} {ZYVOR_BRAND}. All rights reserved.
       </p>
     </div>

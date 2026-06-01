@@ -88,7 +88,7 @@ export default function IntentDebugger() {
 
   return (
     <div className="glass-panel-card overflow-hidden">
-      <div className="overview-section-header border-b border-slate-800/60 px-4 py-3 flex items-center justify-between">
+      <div className="overview-section-header glass-divider-b px-4 py-3 flex items-center justify-between">
         <h3 className="section-title text-lg">Intent Debugger</h3>
         <button onClick={analyze} className="text-xs text-aether hover:text-aether-light">
           Re-analyze
@@ -108,7 +108,7 @@ export default function IntentDebugger() {
           <div className="mb-3">
             <span className="text-slate-500 text-xs">CONFIDENCE</span>
             <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-full h-2 border border-slate-800/60 glass-panel-card">
+              <div className="flex-1 rounded-full h-2 border glass-divider glass-panel-card">
                 <div className="bg-aether h-2 rounded-full" style={{ width: `${confidence * 100}%` }} />
               </div>
               <span className="text-white text-sm">{(confidence * 100).toFixed(0)}%</span>
@@ -144,7 +144,7 @@ export default function IntentDebugger() {
         </div>
       </div>
 
-      <div className="px-4 pb-4 space-y-3 border-t border-slate-800/60 pt-4">
+      <div className="px-4 pb-4 space-y-3 glass-divider-t/60 pt-4">
         <span className="text-slate-500 text-xs">PER-RUNTIME REASONS</span>
         {scores.map((s) => (
           <div

@@ -418,7 +418,7 @@ export default function PlatformPage() {
               <dt className="text-slate-500 mb-2">Bootstrap policies</dt>
               <dd className="space-y-1">
                 {cilium.managed_policies.map((policy) => (
-                  <div key={policy.name} className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2">
+                  <div key={policy.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
                     <span className="font-mono text-xs text-slate-300">{policy.name}</span>
                     <Badge text={policy.exists ? 'applied' : 'missing'} variant={policy.exists ? 'green' : 'red'} />
                   </div>
@@ -463,7 +463,7 @@ export default function PlatformPage() {
                 href={integrations.grafana_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
               >
                 Grafana <ExternalLink size={14} />
               </a>
@@ -490,7 +490,7 @@ export default function PlatformPage() {
               href={integrations.prometheus_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
             >
               Prometheus <ExternalLink size={14} />
             </a>
@@ -498,7 +498,7 @@ export default function PlatformPage() {
             <a
               href="/metrics"
               data-testid="platform-metrics-link"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
             >
               In-app metrics <ExternalLink size={14} />
             </a>

@@ -836,7 +836,7 @@ export default function ClustersPage() {
       {ciliumStatus && (
         <div className="glass-context-banner mb-6 flex flex-wrap items-center gap-2 text-sm">
           <span className="text-slate-500">CNI</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'bg-slate-800 text-slate-300'}`}>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'glass-inset-surface text-slate-300'}`}>
             {ciliumStatus.cni}
           </span>
           <span className="text-slate-600">·</span>
@@ -1000,7 +1000,7 @@ export default function ClustersPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="glass-divider-b">
                   <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Name</th>
                   {pageTab === 'network' && (
                     <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Kind</th>
@@ -1013,7 +1013,7 @@ export default function ClustersPage() {
               </thead>
               <tbody>
                 {resources.map((resource) => (
-                  <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                  <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="glass-table-row glass-inset-hover transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <button onClick={() => openDetail(resource)} className="text-left font-medium text-slate-200 hover:text-aether transition-colors">
@@ -1165,7 +1165,7 @@ export default function ClustersPage() {
                 <button
                   onClick={() => handleResourceAction('restart')}
                   disabled={!!actionLoading || !canMutateCluster}
-                  className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg border glass-divider glass-inset-surface px-3 py-2 text-sm text-slate-200 glass-inset-hover disabled:opacity-50"
                 >
                   <RefreshCw size={14} />
                   {actionLoading === 'restart' ? 'Restarting...' : 'Restart'}
@@ -1391,7 +1391,7 @@ export default function ClustersPage() {
                     <button
                       onClick={() => handleRolloutAction('undo')}
                       disabled={!!actionLoading || !rolloutRevision}
-                      className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+                      className="rounded-lg border glass-divider glass-inset-surface px-3 py-1 text-sm text-slate-200 glass-inset-hover disabled:opacity-50"
                     >
                       {actionLoading === 'rollout-undo' ? 'Undoing...' : 'Undo'}
                     </button>
@@ -1460,7 +1460,7 @@ export default function ClustersPage() {
                   <button
                     onClick={() => handleHelmAction('rollback')}
                     disabled={!!actionLoading || !helmRevision}
-                    className="glass-select text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                    className="glass-select text-slate-200 glass-inset-hover disabled:opacity-50"
                   >
                     {actionLoading === 'helm-rollback' ? 'Rolling Back...' : 'Rollback'}
                   </button>
@@ -1532,13 +1532,13 @@ export default function ClustersPage() {
                     <button
                       onClick={disconnectExec}
                       disabled={!execConnected}
-                      className="flex-1 glass-select text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 glass-select text-slate-200 glass-inset-hover disabled:opacity-50"
                     >
                       Disconnect
                     </button>
                   </div>
                 </div>
-                <pre className={`mt-3 overflow-auto rounded-lg border border-slate-800 bg-black p-3 text-xs text-emerald-300 ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
+                <pre className={`mt-3 overflow-auto rounded-lg border glass-divider bg-black p-3 text-xs text-emerald-300 ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
                 <div className="mt-3 flex gap-2">
                   <input
                     value={execInput}
@@ -1597,7 +1597,7 @@ export default function ClustersPage() {
                     <button
                       onClick={handlePortForwardStop}
                       disabled={!portForwardSession}
-                      className="flex-1 glass-select text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 glass-select text-slate-200 glass-inset-hover disabled:opacity-50"
                     >
                       {actionLoading === 'port-forward-stop' ? 'Stopping...' : 'Stop'}
                     </button>

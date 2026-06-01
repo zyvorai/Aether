@@ -301,7 +301,7 @@ export default function EnvsPage() {
               type="submit"
               disabled={!canMutate || mutating}
               data-testid="envs-promote-submit"
-              className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover disabled:opacity-50"
             >
               Promote
             </button>
@@ -333,7 +333,7 @@ export default function EnvsPage() {
               type="submit"
               data-testid="envs-parity-check"
               disabled={mutating}
-              className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover disabled:opacity-50"
             >
               Check parity
             </button>
@@ -358,7 +358,7 @@ export default function EnvsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="glass-divider-b">
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Tier</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workloads</th>
@@ -369,7 +369,7 @@ export default function EnvsPage() {
               </thead>
               <tbody>
                 {filtered.map((env) => (
-                  <tr key={env.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                  <tr key={env.name} className="glass-table-row glass-inset-hover transition-colors">
                     <td className="py-3 px-4 font-medium text-slate-200">{env.name}</td>
                     <td className="py-3 px-4">
                       <Badge text={env.tier} variant={getTierVariant(env.tier)} />
@@ -381,7 +381,7 @@ export default function EnvsPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedEnvironment(env)}
-                        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800"
+                        className="rounded-lg border glass-divider px-3 py-1.5 text-xs font-medium text-slate-300 glass-inset-hover"
                       >
                         Inspect
                       </button>

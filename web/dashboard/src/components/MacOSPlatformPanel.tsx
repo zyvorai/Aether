@@ -86,7 +86,7 @@ export default function MacOSPlatformPanel() {
       icon={<Apple className="h-5 w-5 text-slate-200" />}
       actions={<div className="flex gap-2">
           <Badge text={inShell ? 'Tauri shell' : 'Web only'} variant={inShell ? 'green' : 'muted'} />
-          <button type="button" onClick={() => void load()} className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300">
+          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
         </div>}

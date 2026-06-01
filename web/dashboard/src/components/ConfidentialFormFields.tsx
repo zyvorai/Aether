@@ -65,7 +65,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
           type="checkbox"
           checked={state.confidentialEnabled ?? false}
           onChange={(e) => onChange('confidentialEnabled', e.target.checked)}
-          className="rounded border-slate-600"
+          className="rounded glass-divider"
         />
         Enable confidential workload (SEV-SNP / TDX)
       </label>
@@ -154,7 +154,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               type="checkbox"
               checked={state.attestationRequired !== false}
               onChange={(e) => onChange('attestationRequired', e.target.checked)}
-              className="rounded border-slate-600"
+              className="rounded glass-divider"
             />
             Require attestation before deploy
           </label>
@@ -163,7 +163,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               type="checkbox"
               checked={state.confidentialVtpm !== false}
               onChange={(e) => onChange('confidentialVtpm', e.target.checked)}
-              className="rounded border-slate-600"
+              className="rounded glass-divider"
             />
             vTPM
           </label>
@@ -172,7 +172,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               type="checkbox"
               checked={state.confidentialEncryptedState !== false}
               onChange={(e) => onChange('confidentialEncryptedState', e.target.checked)}
-              className="rounded border-slate-600"
+              className="rounded glass-divider"
             />
             Encrypted state
           </label>
@@ -181,7 +181,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               type="checkbox"
               checked={state.confidentialDebugAllowed === true}
               onChange={(e) => onChange('confidentialDebugAllowed', e.target.checked)}
-              className="rounded border-slate-600"
+              className="rounded glass-divider"
             />
             Allow debug
           </label>

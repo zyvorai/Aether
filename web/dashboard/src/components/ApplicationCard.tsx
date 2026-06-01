@@ -23,7 +23,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
       : tone === 'critical'
         ? 'border-red-500/40 hover:border-red-500/60'
         : tone === 'stopped'
-          ? 'border-slate-700 hover:border-slate-600'
+          ? 'glass-divider hover:border-aether/30'
           : 'border-amber-500/30 hover:border-amber-500/50';
 
   const statusVariant =

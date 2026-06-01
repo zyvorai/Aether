@@ -253,7 +253,7 @@ export default function TemplatesPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="glass-divider-b">
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Description</th>
                   <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">CPU</th>
@@ -263,7 +263,7 @@ export default function TemplatesPage() {
               </thead>
               <tbody>
                 {filtered.map((t) => (
-                  <tr key={t.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                  <tr key={t.name} className="glass-table-row glass-inset-hover transition-colors">
                     <td className="py-3 px-4 font-medium text-slate-200">{t.name}</td>
                     <td className="py-3 px-4 text-sm text-slate-400">{t.description}</td>
                     <td className="py-3 px-4 text-sm text-slate-300">{t.default_cpu}</td>
@@ -344,7 +344,7 @@ export default function TemplatesPage() {
                   const name = workloadNameFromSpec(generatedSpec);
                   navigate(pathWithQuery(viewToPath('editor'), name ? { workload: name } : {}));
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 shrink-0"
+                className="inline-flex items-center gap-2 rounded-lg border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover shrink-0"
               >
                 <FileCode2 size={14} />
                 Open in editor
@@ -392,7 +392,7 @@ export default function TemplatesPage() {
           ))}
         </div>
         <div className="mt-4 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfigureTemplate(null)} className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">
+          <button type="button" onClick={() => setConfigureTemplate(null)} className="px-4 py-2 rounded-lg text-sm text-slate-300 glass-inset-hover">
             Cancel
           </button>
           <button

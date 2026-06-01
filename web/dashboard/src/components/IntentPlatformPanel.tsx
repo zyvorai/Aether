@@ -71,7 +71,7 @@ export default function IntentPlatformPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -85,7 +85,7 @@ export default function IntentPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'border-slate-700 text-slate-400'
+              tab === t.id ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'glass-divider text-slate-400'
             }`}
           >
             {t.label}
@@ -103,7 +103,7 @@ export default function IntentPlatformPanel() {
           ) : (
             <ul className="space-y-2">
               {violations.violations.map((v) => (
-                <li key={`${v.workload}-${v.violation_type}`} className="rounded-lg border border-slate-800 px-3 py-2 text-sm">
+                <li key={`${v.workload}-${v.violation_type}`} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-white">{v.workload}</span>
                     <Badge text={v.violation_type} variant="muted" />
@@ -123,7 +123,7 @@ export default function IntentPlatformPanel() {
       {tab === 'templates' ? (
         <ul className="space-y-3" data-testid="intent-templates-panel">
           {(templates?.templates ?? []).map((tpl) => (
-            <li key={tpl.id} className="rounded-xl border border-slate-800 p-4">
+            <li key={tpl.id} className="rounded-xl border glass-divider p-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-violet-400" />
                 <span className="font-medium text-white">{tpl.title}</span>
@@ -147,7 +147,7 @@ export default function IntentPlatformPanel() {
           {bundle ? (
             <ul className="space-y-2">
               {bundle.workloads.map((w) => (
-                <li key={w.workload_name} className="rounded-lg border border-slate-800 px-3 py-2 text-sm">
+                <li key={w.workload_name} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                   <Badge text={w.role} variant="muted" /> {w.workload_name}
                 </li>
               ))}
@@ -168,7 +168,7 @@ export default function IntentPlatformPanel() {
             <button
               type="button"
               onClick={() => void loadVersions()}
-              className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-300"
+              className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300"
             >
               Load history
             </button>
@@ -178,7 +178,7 @@ export default function IntentPlatformPanel() {
           ) : (
             <ul className="space-y-2">
               {versions.versions.map((v) => (
-                <li key={v.version_id} className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+                <li key={v.version_id} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
                   {v.version_id} · {v.goal} · {v.recorded_at}
                 </li>
               ))}
