@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router';
 import {
   Bot,
   ChevronLeft,
@@ -16,6 +17,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
+import { isMacOSShell } from '../utils/macosBridge';
+import { useQueryParam } from '../utils/urlState';
 import { useCopilotChat } from '../hooks/useCopilotChat';
 import type { AgentStatusEntry } from '../types/api';
 
@@ -83,10 +86,12 @@ const DEFAULT_PROMPTS = [
 function agentStatusDot(status: string): string {
   if (status === 'alert') return 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]';
   if (status === 'active') return 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]';
-  return 'bg-slate-500';
+  return 'glass-status-dot-muted';
 }
 
 export default function CopilotRail({ collapsed: controlledCollapsed, onCollapsedChange }: CopilotRailProps) {
+  const location = useLocation();
+  const [workloadParam] = useQueryParam('workload', '');
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed = controlledCollapsed ?? internalCollapsed;
   const setCollapsed = onCollapsedChange ?? setInternalCollapsed;
@@ -102,7 +107,11 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
     send,
     confirmAction,
     clearChat,
-  } = useCopilotChat();
+  } = useCopilotChat({
+    route: location.pathname,
+    workload: workloadParam,
+    agentFocus: selectedAgent,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -127,10 +136,12 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  const railVisibility = isMacOSShell() ? 'flex' : 'hidden xl:flex';
+
   if (collapsed) {
     return (
       <aside
-        className="copilot-rail-glass relative hidden xl:flex w-12 shrink-0 flex-col items-center border-l py-4"
+        className={`copilot-rail-glass relative ${railVisibility} w-12 shrink-0 flex-col items-center border-l py-4`}
         data-testid="copilot-rail-collapsed"
       >
         <button
@@ -148,7 +159,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
 
   return (
     <aside
-      className="copilot-rail-glass relative hidden xl:flex w-[min(380px,30vw)] shrink-0 flex-col border-l"
+      className={`copilot-rail-glass relative ${railVisibility} w-[min(380px,30vw)] shrink-0 flex-col border-l`}
       data-testid="copilot-rail"
     >
       <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">

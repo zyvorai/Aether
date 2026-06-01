@@ -4,52 +4,26 @@
 
 import { useEffect, useState } from 'react';
 import { DollarSign, Server, Shield, TrendingUp, Boxes } from 'lucide-react';
-import { apiFetch } from '../utils/api';
 import { formatUSD } from '../utils/formatters';
-import type { AppView, CostOptimizeReport, PredictionReport, ThreatReport, WorkloadResponse } from '../types/api';
-import type { CommandCenterBriefingData } from './CommandCenterBriefing';
+import type { AppView } from '../types/api';
+import { useFleetIntelligence } from '../hooks/useFleetIntelligence';
 
 interface FleetIntelligenceBriefProps {
   onNavigate: (view: AppView) => void;
+  refreshKey?: number;
 }
 
-export default function FleetIntelligenceBrief({ onNavigate }: FleetIntelligenceBriefProps) {
-  const [loading, setLoading] = useState(true);
-  const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
-  const [briefing, setBriefing] = useState<CommandCenterBriefingData | null>(null);
-  const [predictions, setPredictions] = useState<PredictionReport | null>(null);
-  const [cost, setCost] = useState<CostOptimizeReport | null>(null);
-  const [threats, setThreats] = useState<ThreatReport | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    Promise.all([
-      apiFetch<WorkloadResponse[]>('/workloads'),
-      apiFetch<CommandCenterBriefingData>('/command-center/briefing'),
-      apiFetch<PredictionReport>('/intelligence/predictions'),
-      apiFetch<CostOptimizeReport>('/intelligence/cost-optimize'),
-      apiFetch<ThreatReport>('/intelligence/threats'),
-    ]).then(([w, b, p, c, t]) => {
-      if (cancelled) return;
-      setWorkloads(w ?? []);
-      setBriefing(b);
-      setPredictions(p);
-      setCost(c);
-      setThreats(t);
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const healthy = workloads.filter((w) => w.status.toLowerCase() === 'running').length;
-  const riskCount =
-    predictions?.predictions.filter((p) => p.risk_level === 'high' || p.risk_level === 'critical').length ?? 0;
-  const savings = cost?.recommendations.reduce((sum, r) => sum + r.savings_monthly_usd, 0) ?? 0;
-  const securityIssues = threats?.threats.length ?? 0;
-  const clusterCount = new Set(workloads.map((w) => w.cluster).filter(Boolean)).size;
+export default function FleetIntelligenceBrief({ onNavigate, refreshKey = 0 }: FleetIntelligenceBriefProps) {
+  const {
+    loading,
+    workloads,
+    briefing,
+    healthy,
+    riskCount,
+    savings,
+    securityIssues,
+    clusterCount,
+  } = useFleetIntelligence(refreshKey);
 
   if (loading) {
     return (

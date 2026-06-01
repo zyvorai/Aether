@@ -21,6 +21,12 @@ export interface CopilotToolResult {
   summary: string;
 }
 
+export interface CopilotChatContext {
+  route?: string;
+  workload?: string;
+  agentFocus?: string | null;
+}
+
 const QUICK_PROMPTS = [
   'Move frontend to cheapest runtime',
   'Find workloads wasting resources',
@@ -29,7 +35,16 @@ const QUICK_PROMPTS = [
   'Predict cost next month',
 ];
 
-export function useCopilotChat() {
+function buildContextualMessage(text: string, context?: CopilotChatContext): string {
+  const parts: string[] = [];
+  if (context?.route) parts.push(`[Route: ${context.route}]`);
+  if (context?.workload?.trim()) parts.push(`[Workload: ${context.workload.trim()}]`);
+  if (context?.agentFocus) parts.push(`[Agent: ${context.agentFocus}]`);
+  if (parts.length === 0) return text;
+  return `${parts.join(' ')}\n\n${text}`;
+}
+
+export function useCopilotChat(context?: CopilotChatContext) {
   const [messages, setMessages] = useState<CopilotChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,7 +67,7 @@ export function useCopilotChat() {
           tool_results: CopilotToolResult[];
           pending_actions: CopilotPendingAction[];
         }>('/copilot/chat', {
-          message: trimmed,
+          message: buildContextualMessage(trimmed, context),
           session_id: sessionId,
           confirm_action_id: confirmActionId,
         });
@@ -83,7 +98,7 @@ export function useCopilotChat() {
         setLoading(false);
       }
     },
-    [loading, sessionId],
+    [context, loading, sessionId],
   );
 
   const confirmAction = useCallback(

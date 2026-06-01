@@ -529,6 +529,16 @@
   background: rgba(14, 18, 26, 0.78);
 }
 
+.steel-theme .hub-link-card {
+  border-color: rgba(140, 160, 190, 0.14);
+  background: rgba(14, 18, 26, 0.72);
+}
+
+.steel-theme .hub-link-card:hover {
+  border-color: rgba(93, 144, 247, 0.28);
+  background: rgba(59, 130, 246, 0.08);
+}
+
 .steel-theme .glass-input,
 .steel-theme .glass-select {
   border-color: rgba(140, 160, 190, 0.22);
@@ -593,6 +603,16 @@
 
 .aurora-theme .glass-progress-track {
   background: rgba(8, 12, 24, 0.78);
+}
+
+.aurora-theme .hub-link-card {
+  border-color: rgba(167, 139, 250, 0.16);
+  background: rgba(8, 12, 24, 0.72);
+}
+
+.aurora-theme .hub-link-card:hover {
+  border-color: rgba(167, 139, 250, 0.28);
+  background: rgba(167, 139, 250, 0.08);
 }
 
 .aurora-theme .glass-input,
@@ -1012,6 +1032,11 @@
     background: rgba(16, 185, 129, 0.08);
   }
 
+  .glass-status-dot-muted {
+    @apply rounded-full;
+    background: rgba(148, 163, 184, 0.55);
+  }
+
   .hub-link-card {
     @apply rounded-2xl border p-5 transition-all duration-200;
     border-color: rgba(148, 163, 184, 0.12);
@@ -1227,6 +1252,22 @@
 .fabric-edge-animate {
   stroke-dasharray: 6 4;
   animation: fabric-flow 2.4s linear infinite;
+}
+
+.fabric-edge-pulse {
+  stroke-dasharray: none;
+  animation: fabric-pulse 0.8s ease-in-out 3;
+  filter: drop-shadow(0 0 6px rgba(99, 164, 255, 0.8));
+}
+
+@keyframes fabric-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes fabric-flow {

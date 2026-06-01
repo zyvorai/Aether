@@ -675,6 +675,142 @@ fn escape_cypher(s: &str) -> String {
     s.replace('\\', "\\\\").replace('\'', "\\'")
 }
 
+// ── Runtime Fabric topology (Command Center / Fabric graph) ─────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FabricTopologyNode {
+    pub id: String,
+    pub label: String,
+    pub kind: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sub: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workload: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FabricTopologyEdge {
+    pub from: String,
+    pub to: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FabricTopologyReport {
+    pub generated_at: String,
+    pub nodes: Vec<FabricTopologyNode>,
+    pub edges: Vec<FabricTopologyEdge>,
+}
+
+fn fabric_workload_pairs(store: &StateStore) -> Vec<(Workload, WorkloadState)> {
+    store
+        .list()
+        .iter()
+        .filter_map(|ws| {
+            Workload::from_file(&ws.spec_path)
+                .ok()
+                .map(|spec| (spec, (*ws).clone()))
+        })
+        .collect()
+}
+
+pub fn build_runtime_fabric_topology(state_path: &Path) -> anyhow::Result<FabricTopologyReport> {
+    let store = StateStore::load(state_path)?;
+    let pairs = fabric_workload_pairs(&store);
+    let mut nodes = Vec::new();
+    let mut edges = Vec::new();
+    let mut seen = HashSet::new();
+
+    let mut add_node = |node: FabricTopologyNode| {
+        if seen.insert(node.id.clone()) {
+            nodes.push(node);
+        }
+    };
+    let mut add_edge = |from: String, to: String| {
+        edges.push(FabricTopologyEdge { from, to });
+    };
+
+    for (spec, ws) in &pairs {
+        let name = ws.name.clone();
+        let runtime = ws.runtime.to_string();
+        let cluster = "local".to_string();
+
+        let app_id = format!("app:{name}");
+        add_node(FabricTopologyNode {
+            id: app_id.clone(),
+            label: name.clone(),
+            kind: "application".into(),
+            sub: Some(spec.kind.clone()),
+            workload: Some(name.clone()),
+        });
+
+        let rt_id = format!("rt:{name}:{runtime}");
+        add_node(FabricTopologyNode {
+            id: rt_id.clone(),
+            label: runtime.clone(),
+            kind: "runtime".into(),
+            sub: Some("Runtime".into()),
+            workload: Some(name.clone()),
+        });
+        add_edge(app_id, rt_id.clone());
+
+        let cluster_id = format!("cluster:{cluster}");
+        add_node(FabricTopologyNode {
+            id: cluster_id.clone(),
+            label: cluster.clone(),
+            kind: "cluster".into(),
+            sub: Some("Cluster".into()),
+            workload: None,
+        });
+        add_edge(rt_id.clone(), cluster_id.clone());
+
+        let node_id = format!("node:{cluster}:{name}");
+        add_node(FabricTopologyNode {
+            id: node_id.clone(),
+            label: name.clone(),
+            kind: "node".into(),
+            sub: Some("Node".into()),
+            workload: Some(name.clone()),
+        });
+        add_edge(cluster_id, node_id.clone());
+
+        for (res, icon) in [
+            ("CPU", "cpu"),
+            ("Memory", "mem"),
+            ("Network", "nic"),
+            ("Storage", "disk"),
+        ] {
+            let res_id = format!("res:{name}:{icon}");
+            add_node(FabricTopologyNode {
+                id: res_id.clone(),
+                label: res.into(),
+                kind: "resource".into(),
+                sub: Some(icon.to_uppercase()),
+                workload: Some(name.clone()),
+            });
+            add_edge(node_id.clone(), res_id);
+        }
+
+        let rt_lower = runtime.to_lowercase();
+        if rt_lower.contains("virt") || rt_lower.contains("metal") {
+            let gpu_id = format!("res:{name}:gpu");
+            add_node(FabricTopologyNode {
+                id: gpu_id.clone(),
+                label: "GPU".into(),
+                kind: "resource".into(),
+                sub: Some("Accelerator".into()),
+                workload: Some(name.clone()),
+            });
+            add_edge(node_id, gpu_id);
+        }
+    }
+
+    Ok(FabricTopologyReport {
+        generated_at: crate::resources::now_rfc3339(),
+        nodes,
+        edges,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

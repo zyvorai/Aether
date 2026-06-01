@@ -4,14 +4,16 @@
 
 import { FabricPageContent } from '../RuntimeFabricGraph';
 import DigitalTwinPanel from '../DigitalTwinPanel';
+import KnowledgeGraphPanel from '../KnowledgeGraphPanel';
 import UnifiedFabricPanel from '../UnifiedFabricPanel';
 
 export default function FabricPage() {
   return (
     <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
       <DigitalTwinPanel />
-      <UnifiedFabricPanel />
       <FabricPageContent />
+      <KnowledgeGraphPanel />
+      <UnifiedFabricPanel />
     </section>
   );
 }
