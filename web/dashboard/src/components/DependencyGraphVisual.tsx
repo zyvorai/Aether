@@ -35,7 +35,7 @@ export default function DependencyGraphVisual({ nodes, edges, onNodeClick, highl
   });
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-h-72 rounded-xl border border-slate-800 bg-slate-950/80">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-h-72 rounded-xl glass-code-block">
       <defs>
         <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" fill="rgb(251 146 60 / 0.8)" />

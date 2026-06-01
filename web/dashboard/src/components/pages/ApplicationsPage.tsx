@@ -167,7 +167,7 @@ export default function ApplicationsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search applications…"
-              className="pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-100 w-56"
+              className="glass-input pl-9 w-56"
             />
           </div>
           <button
@@ -231,7 +231,7 @@ export default function ApplicationsPage() {
             </thead>
             <tbody>
               {filtered.map((app) => (
-                <tr key={`${app.cluster}-${app.namespace}-${app.name}`} className="border-b border-slate-800/60 hover:bg-slate-900/50">
+                <tr key={`${app.cluster}-${app.namespace}-${app.name}`} className="border-b border-slate-800/60 hover:bg-slate-800/30">
                   <td className="p-3 font-medium text-slate-100">{app.name}</td>
                   <td className="p-3 text-slate-400">{workspaceLabel(app.namespace)}</td>
                   <td className="p-3 text-slate-300">{app.status}</td>

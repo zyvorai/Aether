@@ -171,7 +171,7 @@ export default function CommandCenterNextActions({
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="block text-sm font-medium text-white">{action.title}</span>
-                      <span className="rounded-full border border-slate-700/80 bg-slate-900/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                      <span className="rounded-full border quick-link-chip px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">
                         {actionTypeLabel(action.action_type)}
                       </span>
                     </span>

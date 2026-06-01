@@ -108,7 +108,7 @@ export default function IntentDebugger() {
           <div className="mb-3">
             <span className="text-slate-500 text-xs">CONFIDENCE</span>
             <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-full h-2 border border-slate-800/60 bg-slate-900/40">
+              <div className="flex-1 rounded-full h-2 border border-slate-800/60 glass-panel-card">
                 <div className="bg-aether h-2 rounded-full" style={{ width: `${confidence * 100}%` }} />
               </div>
               <span className="text-white text-sm">{(confidence * 100).toFixed(0)}%</span>
@@ -152,7 +152,7 @@ export default function IntentDebugger() {
             className={`rounded-xl border p-3 backdrop-blur-sm ${
               s.runtime === recommended
                 ? 'border-aether/40 bg-aether/5'
-                : 'border-slate-800/60 bg-[#11151C]/50'
+                : 'glass-panel-card'
             }`}
           >
             <p className="text-sm font-medium text-white mb-2">{s.runtime}</p>

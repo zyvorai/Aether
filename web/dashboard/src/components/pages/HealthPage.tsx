@@ -259,7 +259,7 @@ export default function HealthPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100"
+            className="glass-input"
             aria-label="Health status filter"
             data-testid="health-status-filter"
           >
@@ -394,7 +394,7 @@ export default function HealthPage() {
                       min={1}
                       value={rollingReplicas}
                       onChange={(e) => setRollingReplicas(e.target.value)}
-                      className="w-16 rounded-lg border border-slate-700 bg-slate-950/80 px-2 py-1 text-xs text-slate-100"
+                      className="glass-input w-16 text-xs"
                     />
                     <button
                       type="button"

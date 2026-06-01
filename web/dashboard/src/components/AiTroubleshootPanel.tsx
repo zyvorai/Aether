@@ -125,7 +125,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
 
       {report && (
         <div className="mt-4 space-y-3">
-          <div className="rounded-lg border border-violet-500/20 bg-slate-950/40 p-3">
+          <div className="glass-drawer border-violet-500/20 p-3">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="text-xs uppercase tracking-wide text-violet-300/80">{report.health_level}</span>
               <span className="text-sm text-slate-200">{report.summary}</span>

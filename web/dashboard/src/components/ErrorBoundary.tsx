@@ -40,7 +40,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-[300px] flex items-center justify-center p-8">
-          <div className="w-full max-w-lg bg-[#11151C]/80 border border-slate-800/60 rounded-xl p-8 text-center shadow-lg">
+          <div className="glass-modal-panel w-full max-w-lg p-8 text-center shadow-lg">
             <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-6 h-6 text-red-400" />
             </div>
@@ -53,7 +53,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={this.handleReset}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-slate-800/60 border border-slate-800/60 text-slate-300 hover:text-slate-100 hover:bg-slate-800/50 transition-colors"
+                className="quick-link-chip px-4 py-2 text-sm font-medium text-slate-300"
               >
                 Try Again
               </button>

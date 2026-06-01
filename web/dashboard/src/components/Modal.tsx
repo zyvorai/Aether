@@ -56,7 +56,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-slate-700/80 bg-[#11151C]/60 p-2 text-slate-400 transition-colors hover:bg-slate-800/80 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+            className="quick-link-chip p-2 text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
           >
             <X className="h-5 w-5" />
           </button>

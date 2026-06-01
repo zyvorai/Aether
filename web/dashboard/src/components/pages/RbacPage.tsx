@@ -182,12 +182,12 @@ export default function RbacPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Key name, e.g. ci-bot"
-            className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+            className="glass-input"
           />
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100"
+            className="glass-input"
           >
             <option value="admin">Admin</option>
             <option value="operator">Operator</option>
@@ -229,7 +229,7 @@ export default function RbacPage() {
               </thead>
               <tbody>
                 {filtered.map((entry) => (
-                  <tr key={entry.name} className="border-b border-slate-800/70 hover:bg-slate-900/40">
+                  <tr key={entry.name} className="border-b border-slate-800/70 hover:bg-slate-800/30">
                     <td className="py-3 px-4 text-sm font-medium text-slate-100">{entry.name}</td>
                     <td className="py-3 px-4">
                       <Badge
@@ -269,7 +269,7 @@ export default function RbacPage() {
         {created && (
           <div className="space-y-4" data-testid="rbac-created-key">
             <p className="text-sm text-slate-400">This plaintext key is only returned once. Store it before closing.</p>
-            <div className="rounded-xl border border-aether/20 bg-slate-950/80 px-4 py-3 font-mono text-sm text-aether break-all">
+            <div className="glass-code-block-body px-4 py-3 font-mono text-sm text-aether break-all">
               {created.key}
             </div>
             <button

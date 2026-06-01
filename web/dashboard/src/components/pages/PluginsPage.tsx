@@ -187,7 +187,7 @@ export default function PluginsPage() {
           <select
             value={runtimeFilter}
             onChange={(e) => setRuntimeFilter(e.target.value)}
-            className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-3 py-2 text-sm text-slate-200"
+            className="glass-select"
             aria-label="Runtime filter"
             data-testid="plugins-runtime-filter"
           >
@@ -245,7 +245,7 @@ export default function PluginsPage() {
               onChange={(e) => setRegisterJson(e.target.value)}
               rows={4}
               placeholder='{"name":"my-plugin","version":"1.0","runtime_kind":"podman","command":"..."}'
-              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs font-mono text-slate-200"
+              className="glass-input font-mono text-xs"
             />
             <button type="submit" className="btn-secondary">
               Register
@@ -319,15 +319,15 @@ export default function PluginsPage() {
         {selectedPlugin && (
           <div className="space-y-4" data-testid="plugins-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+              <div className="glass-panel-card px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-slate-500">Runtime</div>
                 <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.runtime_kind}</div>
               </div>
-              <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+              <div className="glass-panel-card px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-slate-500">Version</div>
                 <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.version}</div>
               </div>
-              <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+              <div className="glass-panel-card px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-slate-500">Capabilities</div>
                 <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.capabilities.length}</div>
               </div>
