@@ -4,6 +4,7 @@
 
 import AutonomousModePanel from '../AutonomousModePanel';
 import MacOSPlatformPanel from '../MacOSPlatformPanel';
+import NavPreferencesPanel from '../NavPreferencesPanel';
 import SectionHubPage from '../SectionHubPage';
 import {
   Archive,
@@ -18,6 +19,7 @@ import {
 export default function SettingsPage() {
   return (
     <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
+      <NavPreferencesPanel />
       <AutonomousModePanel />
       <MacOSPlatformPanel />
       <SectionHubPage

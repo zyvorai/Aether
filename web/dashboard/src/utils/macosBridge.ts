@@ -55,3 +55,13 @@ export async function syncMacOSLiveActivity(
 export function isMacOSShell(): boolean {
   return Boolean(tauriInvoke());
 }
+
+/** Listen for native shell navigation (tray menu, deep links). */
+export function subscribeMacOSNavigate(onNavigate: (path: string) => void): () => void {
+  const handler = (event: Event) => {
+    const detail = (event as CustomEvent<{ path?: string }>).detail;
+    if (detail?.path) onNavigate(detail.path);
+  };
+  window.addEventListener('aether-navigate', handler);
+  return () => window.removeEventListener('aether-navigate', handler);
+}

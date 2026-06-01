@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Cpu, HardDrive, Network, RefreshCw, Zap, ZoomIn, ZoomOut } from 'lucide-react';
 import { apiFetch } from '../utils/api';
+import { useEventStream } from '../hooks/useEventStream';
 import { pathWithQuery } from '../utils/urlState';
 import { viewToPath } from '../utils/dashboardRoutes';
 import type { WorkloadResponse } from '../types/api';
@@ -28,6 +29,17 @@ export interface FabricEdge {
 
 interface FabricGraph {
   nodes: FabricNode[];
+  edges: FabricEdge[];
+}
+
+interface FabricTopologyReport {
+  nodes: Array<{
+    id: string;
+    label: string;
+    kind: string;
+    sub?: string;
+    workload?: string;
+  }>;
   edges: FabricEdge[];
 }
 
@@ -114,16 +126,44 @@ function buildFabricGraph(workloads: WorkloadResponse[]): FabricGraph {
   return { nodes, edges };
 }
 
-interface RuntimeFabricGraphProps {
-  workloads: WorkloadResponse[];
-  onSelectWorkload?: (name: string) => void;
+function graphFromTopology(report: FabricTopologyReport): FabricGraph {
+  return {
+    nodes: report.nodes.map((node) => ({
+      id: node.id,
+      label: node.label,
+      kind: (['application', 'runtime', 'cluster', 'node', 'resource'].includes(node.kind)
+        ? node.kind
+        : 'resource') as FabricNode['kind'],
+      sub: node.sub,
+      workload: node.workload,
+    })),
+    edges: report.edges,
+  };
 }
 
-export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: RuntimeFabricGraphProps) {
-  const graph = useMemo(() => buildFabricGraph(workloads), [workloads]);
+interface RuntimeFabricGraphProps {
+  workloads: WorkloadResponse[];
+  topology?: FabricGraph | null;
+  pulseEdgeKey?: string | null;
+  onSelectWorkload?: (name: string) => void;
+  onQuickAction?: (action: 'copilot' | 'migrate' | 'cost', workload: string) => void;
+}
+
+export default function RuntimeFabricGraph({
+  workloads,
+  topology,
+  pulseEdgeKey,
+  onSelectWorkload,
+  onQuickAction,
+}: RuntimeFabricGraphProps) {
+  const graph = useMemo(
+    () => topology ?? buildFabricGraph(workloads),
+    [topology, workloads],
+  );
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [selected, setSelected] = useState<string | null>(null);
+  const selectedNode = graph.nodes.find((node) => node.id === selected) ?? null;
 
   const layout = useMemo(() => {
     const positions = new Map<string, { x: number; y: number }>();
@@ -233,16 +273,18 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
             const a = layout.positions.get(e.from);
             const b = layout.positions.get(e.to);
             if (!a || !b) return null;
+            const edgeKey = `${e.from}-${e.to}`;
+            const pulsing = pulseEdgeKey === edgeKey;
             return (
               <line
-                key={`${e.from}-${e.to}-${i}`}
+                key={`${edgeKey}-${i}`}
                 x1={a.x}
                 y1={a.y}
                 x2={b.x}
                 y2={b.y}
                 stroke="url(#fabric-edge)"
-                strokeWidth={1.5}
-                className="fabric-edge-animate"
+                strokeWidth={pulsing ? 3 : 1.5}
+                className={pulsing ? 'fabric-edge-pulse' : 'fabric-edge-animate'}
               />
             );
           })}
@@ -289,6 +331,35 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
         </svg>
       </div>
 
+      {selectedNode?.workload && onQuickAction ? (
+        <div className="flex flex-wrap gap-2 rounded-2xl border glass-divider glass-panel-card p-3" data-testid="fabric-node-actions">
+          <span className="w-full text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Quick actions · {selectedNode.workload}
+          </span>
+          <button
+            type="button"
+            className="copilot-prompt-chip"
+            onClick={() => onQuickAction('copilot', selectedNode.workload!)}
+          >
+            Ask Copilot
+          </button>
+          <button
+            type="button"
+            className="copilot-prompt-chip"
+            onClick={() => onQuickAction('migrate', selectedNode.workload!)}
+          >
+            Plan migration
+          </button>
+          <button
+            type="button"
+            className="copilot-prompt-chip"
+            onClick={() => onQuickAction('cost', selectedNode.workload!)}
+          >
+            Cost analysis
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.14em] text-slate-500">
         <span className="inline-flex items-center gap-1"><Cpu className="h-3 w-3 text-sky-400" /> Application</span>
         <span className="inline-flex items-center gap-1"><Network className="h-3 w-3 text-violet-400" /> Runtime</span>
@@ -302,18 +373,50 @@ export default function RuntimeFabricGraph({ workloads, onSelectWorkload }: Runt
 export function FabricPageContent() {
   const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
+  const [topology, setTopology] = useState<FabricGraph | null>(null);
+  const [pulseEdgeKey, setPulseEdgeKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await apiFetch<WorkloadResponse[]>('/workloads');
-    setWorkloads(data ?? []);
+    const [topologyRes, workloadsRes] = await Promise.all([
+      apiFetch<FabricTopologyReport>('/intelligence/fabric/topology'),
+      apiFetch<WorkloadResponse[]>('/workloads'),
+    ]);
+    setTopology(topologyRes ? graphFromTopology(topologyRes) : null);
+    setWorkloads(workloadsRes ?? []);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEventStream('', (event) => {
+    if (!event.workload) return;
+    const appId = `app:${event.workload}`;
+    const rtPrefix = `rt:${event.workload}:`;
+    const runtimeEdge = topology?.edges.find((edge) => edge.from === appId && edge.to.startsWith(rtPrefix));
+    if (runtimeEdge) {
+      setPulseEdgeKey(`${runtimeEdge.from}-${runtimeEdge.to}`);
+      window.setTimeout(() => setPulseEdgeKey(null), 2500);
+    }
+  });
+
+  const handleQuickAction = useCallback(
+    (action: 'copilot' | 'migrate' | 'cost', workload: string) => {
+      if (action === 'copilot') {
+        navigate(pathWithQuery(viewToPath('copilot'), { workload, q: `Analyze ${workload} on the fabric graph` }));
+        return;
+      }
+      if (action === 'migrate') {
+        navigate(pathWithQuery(viewToPath('migrations'), { workload }));
+        return;
+      }
+      navigate(pathWithQuery(viewToPath('cost'), { workload }));
+    },
+    [navigate],
+  );
 
   if (loading) return <PageLoading label="Loading runtime fabric…" />;
 
@@ -322,7 +425,7 @@ export function FabricPageContent() {
       accent="neutral"
       label="Runtime Fabric"
       title="Live infrastructure topology"
-      subtitle="Application → Runtime → Cluster → Node → CPU / GPU / Storage. Click a workload to drill down."
+      subtitle="Application → Runtime → Cluster → Node → CPU / GPU / Storage. Click a node for Copilot context and quick actions."
       className="!mb-0"
       actions={
         <button
@@ -337,7 +440,10 @@ export function FabricPageContent() {
     >
       <RuntimeFabricGraph
         workloads={workloads}
+        topology={topology}
+        pulseEdgeKey={pulseEdgeKey}
         onSelectWorkload={(name) => navigate(pathWithQuery(viewToPath('workloads'), { workload: name }))}
+        onQuickAction={handleQuickAction}
       />
     </GlassSection>
   );

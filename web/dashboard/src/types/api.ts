@@ -977,6 +977,12 @@ export interface EvolutionExecuteReport {
   skipped: string[];
 }
 
+export interface GitOpsPullRequestLink {
+  title: string;
+  url: string;
+  workload: string;
+}
+
 export interface GitOpsAgentSyncReport {
   generated_at: string;
   federation_enabled: boolean;
@@ -984,6 +990,7 @@ export interface GitOpsAgentSyncReport {
   drift_workloads: string[];
   planned_actions: string[];
   auto_safe_count: number;
+  pr_links?: GitOpsPullRequestLink[];
 }
 
 export interface GitOpsAgentExecuteReport {

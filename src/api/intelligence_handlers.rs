@@ -815,6 +815,16 @@ pub(crate) async fn api_intelligence_graph_interactive(
     }
 }
 
+/// GET /api/intelligence/fabric/topology — Application → Runtime → Cluster → Node → resources
+pub(crate) async fn api_intelligence_fabric_topology(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl axum::response::IntoResponse {
+    match crate::intelligence::graph_os::build_runtime_fabric_topology(&app_state.state_path) {
+        Ok(topology) => ok_json(topology).into_response(),
+        Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
+    }
+}
+
 /// GET /api/intelligence/graph/impact
 pub(crate) async fn api_intelligence_graph_impact(
     AxumState(app_state): AxumState<AppState>,

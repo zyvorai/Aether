@@ -12,6 +12,13 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GitOpsPullRequestLink {
+    pub title: String,
+    pub url: String,
+    pub workload: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitOpsAgentSyncReport {
     pub generated_at: String,
     pub federation_enabled: bool,
@@ -19,6 +26,8 @@ pub struct GitOpsAgentSyncReport {
     pub drift_workloads: Vec<String>,
     pub planned_actions: Vec<String>,
     pub auto_safe_count: u32,
+    #[serde(default)]
+    pub pr_links: Vec<GitOpsPullRequestLink>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,6 +89,14 @@ pub async fn build_gitops_agent_plan(state_path: &Path) -> anyhow::Result<GitOps
     }
 
     let auto_safe_count = drift_workloads.len() as u32;
+    let pr_links: Vec<GitOpsPullRequestLink> = drift_workloads
+        .iter()
+        .map(|name| GitOpsPullRequestLink {
+            title: format!("Reconcile drift for {name}"),
+            url: format!("https://github.com/aether-gitops/pulls/reconcile-{name}"),
+            workload: name.clone(),
+        })
+        .collect();
 
     Ok(GitOpsAgentSyncReport {
         generated_at: crate::resources::now_rfc3339(),
@@ -88,6 +105,7 @@ pub async fn build_gitops_agent_plan(state_path: &Path) -> anyhow::Result<GitOps
         drift_workloads,
         planned_actions,
         auto_safe_count,
+        pr_links,
     })
 }
 

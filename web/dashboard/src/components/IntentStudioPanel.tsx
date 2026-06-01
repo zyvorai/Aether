@@ -4,6 +4,7 @@
 
 import { useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import { apiPost } from '../utils/api';
 import GlassSection from './GlassSection';
 
 const GOALS = [
@@ -48,6 +49,8 @@ export default function IntentStudioPanel() {
   const [selected, setSelected] = useState<Set<string>>(new Set(['performance', 'availability']));
   const [workloadName, setWorkloadName] = useState('my-app');
   const [generatedYaml, setGeneratedYaml] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [pipelineSummary, setPipelineSummary] = useState<string | null>(null);
 
   const yaml = useMemo(
     () => buildIntentYaml(selected, workloadName.trim() || 'my-app'),
@@ -107,12 +110,36 @@ export default function IntentStudioPanel() {
 
         <button
           type="button"
-          onClick={() => setGeneratedYaml(yaml)}
-          className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500"
+          onClick={() => {
+            void (async () => {
+              setGenerating(true);
+              setPipelineSummary(null);
+              const goals = GOALS.filter((g) => selected.has(g.id)).map((g) => g.weight);
+              const res = await apiPost<{ steps?: Array<{ label: string; status: string }>; workload_name?: string }>(
+                '/intelligence/intent-pipeline',
+                { goals, workload_name: workloadName.trim() || 'my-app' },
+              );
+              setGeneratedYaml(yaml);
+              if (res.success && res.data?.steps?.length) {
+                setPipelineSummary(
+                  res.data.steps.map((step) => `${step.label}: ${step.status}`).join(' · '),
+                );
+              }
+              setGenerating(false);
+            })();
+          }}
+          disabled={generating}
+          className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-60"
           data-testid="intent-generate-button"
         >
-          Generate Intent
+          {generating ? 'Generating…' : 'Generate Intent'}
         </button>
+
+        {pipelineSummary ? (
+          <p className="mt-3 text-xs text-violet-200/90" data-testid="intent-pipeline-summary">
+            Pipeline: {pipelineSummary}
+          </p>
+        ) : null}
 
         {generatedYaml ? (
           <pre className="glass-code-block-body mt-6 text-xs text-slate-300" data-testid="intent-generated-yaml">

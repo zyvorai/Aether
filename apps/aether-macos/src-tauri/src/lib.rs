@@ -158,6 +158,16 @@ fn show_main_window(app: &tauri::AppHandle) {
     }
 }
 
+fn navigate_dashboard(app: &tauri::AppHandle, path: &str) {
+    show_main_window(app);
+    if let Some(window) = app.get_webview_window("main") {
+        let escaped = path.replace('\\', "\\\\").replace('\'', "\\'");
+        let _ = window.eval(&format!(
+            "window.dispatchEvent(new CustomEvent('aether-navigate', {{ detail: {{ path: '{escaped}' }} }}));"
+        ));
+    }
+}
+
 fn handle_deep_link(app: &tauri::AppHandle, url: String) {
     show_main_window(app);
     if let Some(window) = app.get_webview_window("main") {
@@ -198,6 +208,15 @@ pub fn run() {
         ])
         .setup(|app| {
             let open_item = MenuItem::with_id(app, "open", "Open Aether", true, None::<&str>)?;
+            let command_center_item = MenuItem::with_id(
+                app,
+                "command-center",
+                "Command Center",
+                true,
+                None::<&str>,
+            )?;
+            let fleet_item = MenuItem::with_id(app, "fleet", "Fleet Intelligence", true, None::<&str>)?;
+            let fabric_item = MenuItem::with_id(app, "fabric", "Runtime Fabric", true, None::<&str>)?;
             let palette_item =
                 MenuItem::with_id(app, "palette", "Command Palette (⌘K)", true, None::<&str>)?;
             let agents_item =
@@ -207,6 +226,9 @@ pub fn run() {
                 app,
                 &[
                     &open_item,
+                    &command_center_item,
+                    &fleet_item,
+                    &fabric_item,
                     &palette_item,
                     &agents_item,
                     &PredefinedMenuItem::separator(app)?,
@@ -220,6 +242,9 @@ pub fn run() {
                 .tooltip("Aether — AI Infrastructure OS")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open" => show_main_window(app),
+                    "command-center" => navigate_dashboard(app, "/"),
+                    "fleet" => navigate_dashboard(app, "/fleet"),
+                    "fabric" => navigate_dashboard(app, "/fabric"),
                     "palette" => open_command_palette(app),
                     "agents" => {
                         handle_deep_link(app, "aether://settings".into());

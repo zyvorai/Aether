@@ -770,6 +770,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/graph/interactive",
             get(api_intelligence_graph_interactive),
         )
+        .route(
+            "/api/intelligence/fabric/topology",
+            get(api_intelligence_fabric_topology),
+        )
         .route("/api/intelligence/graph/impact", get(api_intelligence_graph_impact))
         .route(
             "/api/intelligence/graph/blast-radius",
