@@ -164,7 +164,8 @@ impl Profiler {
         // Sort by priority
         recommendations.sort_by(|a, b| a.priority.cmp(&b.priority));
 
-        let optimization_score = self.calculate_optimization_score(&resource_analysis, &recommendations);
+        let optimization_score =
+            self.calculate_optimization_score(&resource_analysis, &recommendations);
 
         WorkloadProfile {
             name: spec.metadata.name.clone(),
@@ -213,7 +214,11 @@ impl Profiler {
     }
 
     /// Analyze resource allocation and estimate efficiency
-    fn analyze_resources(&self, spec: &Workload, classification: &WorkloadType) -> ResourceAnalysis {
+    fn analyze_resources(
+        &self,
+        spec: &Workload,
+        classification: &WorkloadType,
+    ) -> ResourceAnalysis {
         let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
         let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
         let storage_gi = crate::resources::parse_memory_gi(&spec.requirements.storage);
@@ -270,7 +275,10 @@ impl Profiler {
                     analysis.cpu_efficiency * 100.0,
                     analysis.cpu_requested
                 ),
-                estimated_savings_pct: ((1.0 - analysis.cpu_efficiency.max(analysis.memory_efficiency)) * 100.0).min(80.0),
+                estimated_savings_pct: ((1.0
+                    - analysis.cpu_efficiency.max(analysis.memory_efficiency))
+                    * 100.0)
+                    .min(80.0),
                 action: format!("Reduce CPU to {:.0} cores", suggested),
             });
         }
@@ -288,7 +296,10 @@ impl Profiler {
                     analysis.memory_efficiency * 100.0,
                     analysis.memory_requested_gi
                 ),
-                estimated_savings_pct: ((1.0 - analysis.cpu_efficiency.max(analysis.memory_efficiency)) * 100.0).min(80.0),
+                estimated_savings_pct: ((1.0
+                    - analysis.cpu_efficiency.max(analysis.memory_efficiency))
+                    * 100.0)
+                    .min(80.0),
                 action: format!("Reduce memory to {:.0}Gi", suggested),
             });
         }
@@ -305,7 +316,13 @@ impl Profiler {
                     analysis.storage_efficiency * 100.0,
                     analysis.storage_requested_gi
                 ),
-                estimated_savings_pct: ((1.0 - analysis.cpu_efficiency.max(analysis.memory_efficiency).max(analysis.storage_efficiency)) * 100.0).min(80.0),
+                estimated_savings_pct: ((1.0
+                    - analysis
+                        .cpu_efficiency
+                        .max(analysis.memory_efficiency)
+                        .max(analysis.storage_efficiency))
+                    * 100.0)
+                    .min(80.0),
                 action: format!(
                     "Reduce storage to {:.0}Gi",
                     (analysis.storage_estimated_usage_gi * 2.0).ceil()
@@ -327,7 +344,10 @@ impl Profiler {
                 action: {
                     let current_cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
                     if current_cpu > 0.0 {
-                        format!("Consider increasing CPU to {:.0} cores", (current_cpu * 1.5).ceil())
+                        format!(
+                            "Consider increasing CPU to {:.0} cores",
+                            (current_cpu * 1.5).ceil()
+                        )
                     } else {
                         "Consider setting a valid CPU resource value".to_string()
                     }
@@ -355,7 +375,8 @@ impl Profiler {
                 category: RecommendationCategory::RuntimeSelection,
                 priority: Priority::Medium,
                 title: "Development workload on Kubernetes".to_string(),
-                description: "Small workload without production features may be cheaper locally".to_string(),
+                description: "Small workload without production features may be cheaper locally"
+                    .to_string(),
                 estimated_savings_pct: 60.0,
                 action: "Consider migrating to Podman for development".to_string(),
             });
@@ -370,7 +391,8 @@ impl Profiler {
                 category: RecommendationCategory::Performance,
                 priority: Priority::High,
                 title: "GPU workload on non-optimal runtime".to_string(),
-                description: "GPU passthrough works best with VM isolation or bare metal".to_string(),
+                description: "GPU passthrough works best with VM isolation or bare metal"
+                    .to_string(),
                 estimated_savings_pct: 0.0,
                 action: "Consider migrating to KubeVirt for GPU passthrough".to_string(),
             });
@@ -382,9 +404,11 @@ impl Profiler {
                 category: RecommendationCategory::Reliability,
                 priority: Priority::High,
                 title: "Database running on local container".to_string(),
-                description: "Persistent workloads benefit from Kubernetes PVC and replication".to_string(),
+                description: "Persistent workloads benefit from Kubernetes PVC and replication"
+                    .to_string(),
                 estimated_savings_pct: 0.0,
-                action: "Consider migrating to Kubernetes for persistent volume support".to_string(),
+                action: "Consider migrating to Kubernetes for persistent volume support"
+                    .to_string(),
             });
         }
 
@@ -397,7 +421,8 @@ impl Profiler {
                 category: RecommendationCategory::CostOptimization,
                 priority: Priority::Low,
                 title: "Web service without auto-scaling".to_string(),
-                description: "Auto-scaling can optimize cost during low-traffic periods".to_string(),
+                description: "Auto-scaling can optimize cost during low-traffic periods"
+                    .to_string(),
                 estimated_savings_pct: 20.0,
                 action: "Add scaling configuration with HPA".to_string(),
             });
@@ -421,7 +446,8 @@ impl Profiler {
                     category: RecommendationCategory::Reliability,
                     priority: Priority::Medium,
                     title: "No readiness probe configured".to_string(),
-                    description: "Readiness probes prevent traffic to unhealthy instances".to_string(),
+                    description: "Readiness probes prevent traffic to unhealthy instances"
+                        .to_string(),
                     estimated_savings_pct: 0.0,
                     action: "Add a readiness probe to the health spec".to_string(),
                 });
@@ -487,7 +513,6 @@ impl Profiler {
 
         score.clamp(0.0, 100.0)
     }
-
 }
 
 /// Format workload profile as a report
@@ -497,7 +522,10 @@ pub fn format_profile_report(profile: &WorkloadProfile) -> String {
     output.push_str(&output::property_section(&[
         ("Workload", profile.name.clone()),
         ("Type", format!("{}", profile.classification)),
-        ("Optimization Score", format!("{:.0}/100", profile.optimization_score)),
+        (
+            "Optimization Score",
+            format!("{:.0}/100", profile.optimization_score),
+        ),
     ]));
 
     output.push_str("Resource Analysis:\n");
@@ -571,7 +599,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "4".to_string(),
@@ -594,7 +622,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
-        ..Default::default()
+                ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,
@@ -606,7 +634,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -779,9 +807,21 @@ mod tests {
         spec.persistence.enabled = true;
         // More than 2 ports should prevent Database classification
         spec.network.ports = vec![
-            PortMapping { container_port: 5432, service_port: 5432, protocol: "TCP".to_string() },
-            PortMapping { container_port: 9090, service_port: 9090, protocol: "TCP".to_string() },
-            PortMapping { container_port: 8080, service_port: 8080, protocol: "TCP".to_string() },
+            PortMapping {
+                container_port: 5432,
+                service_port: 5432,
+                protocol: "TCP".to_string(),
+            },
+            PortMapping {
+                container_port: 9090,
+                service_port: 9090,
+                protocol: "TCP".to_string(),
+            },
+            PortMapping {
+                container_port: 8080,
+                service_port: 8080,
+                protocol: "TCP".to_string(),
+            },
         ];
         let result = profiler.classify(&spec);
         assert_ne!(result, WorkloadType::Database);
@@ -798,7 +838,7 @@ mod tests {
         spec.ingress = Some(make_ingress(true));
         spec.health = None;
         spec.requirements.cpu = "4".to_string(); // > 1.0
-        // Falls through to the final WebService default
+                                                 // Falls through to the final WebService default
         assert_eq!(profiler.classify(&spec), WorkloadType::WebService);
     }
 
@@ -940,10 +980,26 @@ mod tests {
         ];
         for wtype in &types {
             let analysis = profiler.analyze_resources(&spec, wtype);
-            assert!(analysis.cpu_efficiency > 0.0, "cpu_efficiency > 0 for {:?}", wtype);
-            assert!(analysis.memory_efficiency > 0.0, "mem_efficiency > 0 for {:?}", wtype);
-            assert!(analysis.storage_efficiency > 0.0, "storage_efficiency > 0 for {:?}", wtype);
-            assert!(analysis.overall_efficiency > 0.0, "overall > 0 for {:?}", wtype);
+            assert!(
+                analysis.cpu_efficiency > 0.0,
+                "cpu_efficiency > 0 for {:?}",
+                wtype
+            );
+            assert!(
+                analysis.memory_efficiency > 0.0,
+                "mem_efficiency > 0 for {:?}",
+                wtype
+            );
+            assert!(
+                analysis.storage_efficiency > 0.0,
+                "storage_efficiency > 0 for {:?}",
+                wtype
+            );
+            assert!(
+                analysis.overall_efficiency > 0.0,
+                "overall > 0 for {:?}",
+                wtype
+            );
         }
     }
 
@@ -960,9 +1016,17 @@ mod tests {
         let mut recs = Vec::new();
         profiler.check_right_sizing(&spec, &analysis, &mut recs);
 
-        let cpu_rec = recs.iter().find(|r| r.title.contains("CPU over-provisioned"));
-        assert!(cpu_rec.is_some(), "Expected CPU over-provisioned recommendation");
-        assert_eq!(cpu_rec.unwrap().category, RecommendationCategory::RightSizing);
+        let cpu_rec = recs
+            .iter()
+            .find(|r| r.title.contains("CPU over-provisioned"));
+        assert!(
+            cpu_rec.is_some(),
+            "Expected CPU over-provisioned recommendation"
+        );
+        assert_eq!(
+            cpu_rec.unwrap().category,
+            RecommendationCategory::RightSizing
+        );
         assert_eq!(cpu_rec.unwrap().priority, Priority::High);
     }
 
@@ -977,8 +1041,13 @@ mod tests {
         let mut recs = Vec::new();
         profiler.check_right_sizing(&spec, &analysis, &mut recs);
 
-        let mem_rec = recs.iter().find(|r| r.title.contains("Memory over-provisioned"));
-        assert!(mem_rec.is_some(), "Expected Memory over-provisioned recommendation");
+        let mem_rec = recs
+            .iter()
+            .find(|r| r.title.contains("Memory over-provisioned"));
+        assert!(
+            mem_rec.is_some(),
+            "Expected Memory over-provisioned recommendation"
+        );
     }
 
     #[test]
@@ -992,8 +1061,13 @@ mod tests {
         let mut recs = Vec::new();
         profiler.check_right_sizing(&spec, &analysis, &mut recs);
 
-        let storage_rec = recs.iter().find(|r| r.title.contains("Storage over-provisioned"));
-        assert!(storage_rec.is_some(), "Expected Storage over-provisioned recommendation");
+        let storage_rec = recs
+            .iter()
+            .find(|r| r.title.contains("Storage over-provisioned"));
+        assert!(
+            storage_rec.is_some(),
+            "Expected Storage over-provisioned recommendation"
+        );
         assert_eq!(storage_rec.unwrap().priority, Priority::Medium);
     }
 
@@ -1020,7 +1094,10 @@ mod tests {
         profiler.check_right_sizing(&spec, &analysis, &mut recs);
 
         let under = recs.iter().find(|r| r.title.contains("under-provisioned"));
-        assert!(under.is_some(), "Expected CPU under-provisioned recommendation");
+        assert!(
+            under.is_some(),
+            "Expected CPU under-provisioned recommendation"
+        );
         assert_eq!(under.unwrap().category, RecommendationCategory::Performance);
     }
 
@@ -1033,11 +1110,11 @@ mod tests {
         let analysis = ResourceAnalysis {
             cpu_requested: 2.0,
             cpu_estimated_usage: 1.0,
-            cpu_efficiency: 0.50,   // not < 0.30 and not > 0.85
+            cpu_efficiency: 0.50, // not < 0.30 and not > 0.85
             memory_requested_gi: 4.0,
             memory_estimated_usage_gi: 2.0,
-            memory_efficiency: 0.50, // not < 0.40
-            storage_requested_gi: 5.0,  // not > 10.0
+            memory_efficiency: 0.50,   // not < 0.40
+            storage_requested_gi: 5.0, // not > 10.0
             storage_estimated_usage_gi: 1.5,
             storage_efficiency: 0.30,
             overall_efficiency: 0.43,
@@ -1131,7 +1208,9 @@ mod tests {
             &WorkloadType::Database,
             &mut recs,
         );
-        let db_rec = recs.iter().find(|r| r.title.contains("Database running on local"));
+        let db_rec = recs
+            .iter()
+            .find(|r| r.title.contains("Database running on local"));
         assert!(db_rec.is_some());
         assert_eq!(db_rec.unwrap().priority, Priority::High);
     }
@@ -1172,7 +1251,10 @@ mod tests {
             &mut recs,
         );
         let scaling_rec = recs.iter().find(|r| r.title.contains("auto-scaling"));
-        assert!(scaling_rec.is_none(), "Should not recommend scaling when already configured");
+        assert!(
+            scaling_rec.is_none(),
+            "Should not recommend scaling when already configured"
+        );
     }
 
     // ── Reliability recommendations ────────────────────────────────────
@@ -1275,7 +1357,10 @@ mod tests {
         spec.ingress = None;
         let mut recs = Vec::new();
         profiler.check_performance(&spec, &WorkloadType::Worker, &mut recs);
-        assert!(recs.is_empty(), "Worker should not get ingress recommendation");
+        assert!(
+            recs.is_empty(),
+            "Worker should not get ingress recommendation"
+        );
     }
 
     // ── Optimization score ─────────────────────────────────────────────
@@ -1307,7 +1392,10 @@ mod tests {
             })
             .collect();
         let score = profiler.calculate_optimization_score(&analysis, &critical_recs);
-        assert!((score - 0.0).abs() < f64::EPSILON, "Score should be clamped to 0");
+        assert!(
+            (score - 0.0).abs() < f64::EPSILON,
+            "Score should be clamped to 0"
+        );
     }
 
     #[test]
@@ -1415,7 +1503,10 @@ mod tests {
         let profile = profiler.profile(&spec, Some(RuntimeKind::Podman));
         assert_eq!(profile.classification, WorkloadType::GpuCompute);
         // Should recommend migrating away from Podman for GPU
-        let gpu_rec = profile.recommendations.iter().find(|r| r.title.contains("GPU"));
+        let gpu_rec = profile
+            .recommendations
+            .iter()
+            .find(|r| r.title.contains("GPU"));
         assert!(gpu_rec.is_some());
     }
 
@@ -1513,11 +1604,26 @@ mod tests {
 
     #[test]
     fn test_recommendation_category_display() {
-        assert_eq!(format!("{}", RecommendationCategory::RightSizing), "Right-Sizing");
-        assert_eq!(format!("{}", RecommendationCategory::RuntimeSelection), "Runtime");
-        assert_eq!(format!("{}", RecommendationCategory::CostOptimization), "Cost");
-        assert_eq!(format!("{}", RecommendationCategory::Performance), "Performance");
-        assert_eq!(format!("{}", RecommendationCategory::Reliability), "Reliability");
+        assert_eq!(
+            format!("{}", RecommendationCategory::RightSizing),
+            "Right-Sizing"
+        );
+        assert_eq!(
+            format!("{}", RecommendationCategory::RuntimeSelection),
+            "Runtime"
+        );
+        assert_eq!(
+            format!("{}", RecommendationCategory::CostOptimization),
+            "Cost"
+        );
+        assert_eq!(
+            format!("{}", RecommendationCategory::Performance),
+            "Performance"
+        );
+        assert_eq!(
+            format!("{}", RecommendationCategory::Reliability),
+            "Reliability"
+        );
         assert_eq!(format!("{}", RecommendationCategory::Security), "Security");
     }
 
@@ -1599,7 +1705,10 @@ mod tests {
         spec.scaling = None;
         let profile = profiler.profile(&spec, Some(RuntimeKind::Kubernetes));
         let report = format_profile_report(&profile);
-        let has_savings = profile.recommendations.iter().any(|r| r.estimated_savings_pct > 0.0);
+        let has_savings = profile
+            .recommendations
+            .iter()
+            .any(|r| r.estimated_savings_pct > 0.0);
         if has_savings {
             assert!(report.contains("Estimated savings:"));
         }

@@ -11,7 +11,10 @@ use chrono::Utc;
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
 use k8s_openapi::api::autoscaling::v2::HorizontalPodAutoscaler;
 use k8s_openapi::api::batch::v1::{CronJob, Job};
-use k8s_openapi::api::core::v1::{ConfigMap, Endpoints, Event as KubeEvent, LimitRange, Namespace, Node, PersistentVolume, PersistentVolumeClaim, Pod, ResourceQuota, Secret, Service, ServiceAccount};
+use k8s_openapi::api::core::v1::{
+    ConfigMap, Endpoints, Event as KubeEvent, LimitRange, Namespace, Node, PersistentVolume,
+    PersistentVolumeClaim, Pod, ResourceQuota, Secret, Service, ServiceAccount,
+};
 use k8s_openapi::api::discovery::v1::EndpointSlice;
 use k8s_openapi::api::networking::v1::{Ingress, NetworkPolicy};
 use k8s_openapi::api::storage::v1::StorageClass;
@@ -294,7 +297,10 @@ async fn cluster_summary_from_default_client() -> Option<ClusterSummaryResponse>
     let context_label = std::env::var("AETHER_CLUSTER_DISPLAY_NAME")
         .unwrap_or_else(|_| "active-client".to_string());
     let server = Some(cfg.cluster_url.to_string());
-    let workload_count = list_workloads().await.map(|workloads| workloads.len()).unwrap_or(0);
+    let workload_count = list_workloads()
+        .await
+        .map(|workloads| workloads.len())
+        .unwrap_or(0);
     Some(ClusterSummaryResponse {
         enabled: true,
         connected: true,
@@ -319,48 +325,62 @@ fn default_cluster_display_name() -> String {
 
 async fn list_workloads_for_client(client: &Client, cluster: &str) -> Result<Vec<ClusterWorkload>> {
     let mut workloads = Vec::new();
-    workloads.extend(list_kind::<Deployment>(
-        client,
-        cluster,
-        "Deployment",
-        workload_status_deployment,
-        "/spec/template/spec/containers/0/image",
-    )
-    .await?);
-    workloads.extend(list_kind::<StatefulSet>(
-        client,
-        cluster,
-        "StatefulSet",
-        workload_status_statefulset,
-        "/spec/template/spec/containers/0/image",
-    )
-    .await?);
-    workloads.extend(list_kind::<DaemonSet>(
-        client,
-        cluster,
-        "DaemonSet",
-        workload_status_daemonset,
-        "/spec/template/spec/containers/0/image",
-    )
-    .await?);
-    workloads.extend(list_kind::<Job>(
-        client,
-        cluster,
-        "Job",
-        workload_status_job,
-        "/spec/template/spec/containers/0/image",
-    )
-    .await?);
-    workloads.extend(list_kind::<CronJob>(
-        client,
-        cluster,
-        "CronJob",
-        workload_status_cronjob,
-        "/spec/jobTemplate/spec/template/spec/containers/0/image",
-    )
-    .await?);
+    workloads.extend(
+        list_kind::<Deployment>(
+            client,
+            cluster,
+            "Deployment",
+            workload_status_deployment,
+            "/spec/template/spec/containers/0/image",
+        )
+        .await?,
+    );
+    workloads.extend(
+        list_kind::<StatefulSet>(
+            client,
+            cluster,
+            "StatefulSet",
+            workload_status_statefulset,
+            "/spec/template/spec/containers/0/image",
+        )
+        .await?,
+    );
+    workloads.extend(
+        list_kind::<DaemonSet>(
+            client,
+            cluster,
+            "DaemonSet",
+            workload_status_daemonset,
+            "/spec/template/spec/containers/0/image",
+        )
+        .await?,
+    );
+    workloads.extend(
+        list_kind::<Job>(
+            client,
+            cluster,
+            "Job",
+            workload_status_job,
+            "/spec/template/spec/containers/0/image",
+        )
+        .await?,
+    );
+    workloads.extend(
+        list_kind::<CronJob>(
+            client,
+            cluster,
+            "CronJob",
+            workload_status_cronjob,
+            "/spec/jobTemplate/spec/template/spec/containers/0/image",
+        )
+        .await?,
+    );
     workloads.extend(list_standalone_pod_workloads(client, cluster).await?);
-    workloads.extend(list_kubevirt_vmis(client, cluster).await.unwrap_or_default());
+    workloads.extend(
+        list_kubevirt_vmis(client, cluster)
+            .await
+            .unwrap_or_default(),
+    );
     Ok(workloads)
 }
 
@@ -441,7 +461,9 @@ async fn list_standalone_pod_workloads(
 }
 
 async fn list_workloads_from_default_client() -> Result<Vec<ClusterWorkload>> {
-    let client = Client::try_default().await.context("no default kubernetes client")?;
+    let client = Client::try_default()
+        .await
+        .context("no default kubernetes client")?;
     list_workloads_for_client(&client, &default_cluster_display_name()).await
 }
 
@@ -598,7 +620,12 @@ pub async fn list_workloads() -> Result<Vec<ClusterWorkload>> {
     }
 
     workloads.sort_by(|a, b| {
-        (&a.cluster, &a.namespace, &a.kind, &a.name).cmp(&(&b.cluster, &b.namespace, &b.kind, &b.name))
+        (&a.cluster, &a.namespace, &a.kind, &a.name).cmp(&(
+            &b.cluster,
+            &b.namespace,
+            &b.kind,
+            &b.name,
+        ))
     });
     Ok(workloads)
 }
@@ -673,8 +700,14 @@ pub async fn workload_detail(req: &ClusterLogsRequest) -> Result<ClusterResource
                         .and_then(|value| value.as_str())
                         .unwrap_or("Unknown")
                         .to_string(),
-                    reason: item.get("reason").and_then(|value| value.as_str()).map(str::to_string),
-                    message: item.get("message").and_then(|value| value.as_str()).map(str::to_string),
+                    reason: item
+                        .get("reason")
+                        .and_then(|value| value.as_str())
+                        .map(str::to_string),
+                    message: item
+                        .get("message")
+                        .and_then(|value| value.as_str())
+                        .map(str::to_string),
                 })
                 .collect()
         })
@@ -697,9 +730,15 @@ pub async fn workload_detail(req: &ClusterLogsRequest) -> Result<ClusterResource
         .map(str::to_string);
     let owner_references = owner_references_from_manifest(&manifest);
     let owned_resources = if req.namespace != "all" {
-        list_owned_resources(&client, &req.namespace, uid.as_deref(), &req.kind, &req.name)
-            .await
-            .unwrap_or_default()
+        list_owned_resources(
+            &client,
+            &req.namespace,
+            uid.as_deref(),
+            &req.kind,
+            &req.name,
+        )
+        .await
+        .unwrap_or_default()
     } else {
         Vec::new()
     };
@@ -828,12 +867,25 @@ async fn list_owned_resources(
 
 pub async fn health_summary(req: &ClusterLogsRequest) -> Result<ClusterHealthSummary> {
     let detail = workload_detail(req).await?;
-    let events = related_events(&req.cluster, &req.namespace, &req.kind, &req.name).await.unwrap_or_default();
-    let ready_pods = detail.pods.iter().filter(|pod| pod.ready == pod.total_containers && pod.total_containers > 0).count();
+    let events = related_events(&req.cluster, &req.namespace, &req.kind, &req.name)
+        .await
+        .unwrap_or_default();
+    let ready_pods = detail
+        .pods
+        .iter()
+        .filter(|pod| pod.ready == pod.total_containers && pod.total_containers > 0)
+        .count();
     let total_pods = detail.pods.len();
-    let warning_events = events.iter().filter(|event| event.type_ == "Warning").count();
+    let warning_events = events
+        .iter()
+        .filter(|event| event.type_ == "Warning")
+        .count();
     let level = if total_pods == 0 {
-        if warning_events > 0 { "warning" } else { "unknown" }
+        if warning_events > 0 {
+            "warning"
+        } else {
+            "unknown"
+        }
     } else if ready_pods == total_pods && warning_events == 0 {
         "healthy"
     } else if ready_pods > 0 {
@@ -843,7 +895,9 @@ pub async fn health_summary(req: &ClusterLogsRequest) -> Result<ClusterHealthSum
     };
     let summary = match level {
         "healthy" => format!("{ready_pods}/{total_pods} pods ready"),
-        "degraded" => format!("{ready_pods}/{total_pods} pods ready with {warning_events} warnings"),
+        "degraded" => {
+            format!("{ready_pods}/{total_pods} pods ready with {warning_events} warnings")
+        }
         "failing" => format!("0/{total_pods} pods ready with {warning_events} warnings"),
         "warning" => format!("no pods but {warning_events} warning events"),
         _ => "health unavailable".to_string(),
@@ -905,7 +959,12 @@ pub async fn related_events(
             timestamp: event
                 .event_time
                 .map(|time| time.0.to_rfc3339())
-                .or_else(|| event.metadata.creation_timestamp.map(|time| time.0.to_rfc3339()))
+                .or_else(|| {
+                    event
+                        .metadata
+                        .creation_timestamp
+                        .map(|time| time.0.to_rfc3339())
+                })
                 .unwrap_or_default(),
         })
         .collect::<Vec<_>>();
@@ -917,10 +976,7 @@ pub async fn top_metrics(req: &ClusterLogsRequest) -> Result<Vec<ClusterTopMetri
     let client = client_for_context(&req.cluster).await?;
     let all = list_pod_metrics(&client, Some(&req.namespace)).await?;
     if req.kind == "Pod" {
-        return Ok(all
-            .into_iter()
-            .filter(|m| m.name == req.name)
-            .collect());
+        return Ok(all.into_iter().filter(|m| m.name == req.name).collect());
     }
     let selector = selector_for_workload(&client, req).await?;
     let pods: Api<Pod> = Api::namespaced(client, &req.namespace);
@@ -937,7 +993,10 @@ pub async fn top_metrics(req: &ClusterLogsRequest) -> Result<Vec<ClusterTopMetri
         .collect())
 }
 
-pub async fn metrics_summary(cluster: &str, namespace: Option<&str>) -> Result<ClusterMetricsSummary> {
+pub async fn metrics_summary(
+    cluster: &str,
+    namespace: Option<&str>,
+) -> Result<ClusterMetricsSummary> {
     let client = client_for_context(cluster).await?;
     let namespace = namespace.filter(|value| *value != "_cluster");
     let pods = if let Some(ns) = namespace.filter(|value| *value != "all") {
@@ -962,7 +1021,10 @@ pub async fn metrics_summary(cluster: &str, namespace: Option<&str>) -> Result<C
     })
 }
 
-async fn list_pod_metrics(client: &Client, namespace: Option<&str>) -> Result<Vec<ClusterTopMetric>> {
+async fn list_pod_metrics(
+    client: &Client,
+    namespace: Option<&str>,
+) -> Result<Vec<ClusterTopMetric>> {
     let api_resource = ApiResource {
         group: "metrics.k8s.io".into(),
         version: "v1beta1".into(),
@@ -1061,7 +1123,11 @@ pub async fn manifest_diff(
     Ok(diff)
 }
 
-pub async fn helm_history(cluster: &str, namespace: &str, release: &str) -> Result<Vec<HelmRevisionEntry>> {
+pub async fn helm_history(
+    cluster: &str,
+    namespace: &str,
+    release: &str,
+) -> Result<Vec<HelmRevisionEntry>> {
     let output = run_helm(vec![
         "history".to_string(),
         release.to_string(),
@@ -1071,16 +1137,20 @@ pub async fn helm_history(cluster: &str, namespace: &str, release: &str) -> Resu
         namespace.to_string(),
         "-o".to_string(),
         "json".to_string(),
-    ]).await?;
+    ])
+    .await?;
     let entries: Vec<HelmHistoryEntry> = serde_json::from_slice(&output)?;
-    Ok(entries.into_iter().map(|entry| HelmRevisionEntry {
-        revision: entry.revision.to_string(),
-        updated: entry.updated,
-        status: entry.status,
-        chart: entry.chart,
-        app_version: entry.app_version,
-        description: entry.description,
-    }).collect())
+    Ok(entries
+        .into_iter()
+        .map(|entry| HelmRevisionEntry {
+            revision: entry.revision.to_string(),
+            updated: entry.updated,
+            status: entry.status,
+            chart: entry.chart,
+            app_version: entry.app_version,
+            description: entry.description,
+        })
+        .collect())
 }
 
 pub async fn helm_action(
@@ -1103,15 +1173,27 @@ pub async fn helm_action(
                 cluster.to_string(),
                 "-n".to_string(),
                 namespace.to_string(),
-            ]).await?;
-            Ok(format!("rolled back Helm release {} to revision {}", release, rev))
+            ])
+            .await?;
+            Ok(format!(
+                "rolled back Helm release {} to revision {}",
+                release, rev
+            ))
         }
         "upgrade" | "install" => {
             let chart = chart.context("chart is required for helm install/upgrade")?;
             let mut args = if action == "install" {
-                vec!["install".to_string(), release.to_string(), chart.to_string()]
+                vec![
+                    "install".to_string(),
+                    release.to_string(),
+                    chart.to_string(),
+                ]
             } else {
-                vec!["upgrade".to_string(), release.to_string(), chart.to_string()]
+                vec![
+                    "upgrade".to_string(),
+                    release.to_string(),
+                    chart.to_string(),
+                ]
             };
             args.extend([
                 "--kube-context".to_string(),
@@ -1159,17 +1241,22 @@ pub async fn apply_manifest(
     let client = client_for_context(cluster).await?;
 
     match kind {
-        "CustomResource" => replace_custom_resource(
-            &client,
-            namespace,
-            manifest,
-            kind,
-            api_version.context("api_version is required for CustomResource apply")?,
-            plural.context("plural is required for CustomResource apply")?,
-            namespaced.unwrap_or(true),
-        ).await?,
+        "CustomResource" => {
+            replace_custom_resource(
+                &client,
+                namespace,
+                manifest,
+                kind,
+                api_version.context("api_version is required for CustomResource apply")?,
+                plural.context("plural is required for CustomResource apply")?,
+                namespaced.unwrap_or(true),
+            )
+            .await?
+        }
         "Node" => replace_cluster_resource::<Node>(&client, manifest).await?,
-        "PersistentVolume" => replace_cluster_resource::<PersistentVolume>(&client, manifest).await?,
+        "PersistentVolume" => {
+            replace_cluster_resource::<PersistentVolume>(&client, manifest).await?
+        }
         "StorageClass" => replace_cluster_resource::<StorageClass>(&client, manifest).await?,
         "Namespace" => replace_cluster_resource::<Namespace>(&client, manifest).await?,
         "Deployment" => replace_resource::<Deployment>(&client, namespace, manifest).await?,
@@ -1181,22 +1268,55 @@ pub async fn apply_manifest(
         "Ingress" => replace_resource::<Ingress>(&client, namespace, manifest).await?,
         "Service" => replace_resource::<Service>(&client, namespace, manifest).await?,
         "ConfigMap" => replace_resource::<ConfigMap>(&client, namespace, manifest).await?,
-        "ServiceAccount" => replace_resource::<ServiceAccount>(&client, namespace, manifest).await?,
+        "ServiceAccount" => {
+            replace_resource::<ServiceAccount>(&client, namespace, manifest).await?
+        }
         "Secret" => replace_resource::<Secret>(&client, namespace, manifest).await?,
-        "PersistentVolumeClaim" => replace_resource::<PersistentVolumeClaim>(&client, namespace, manifest).await?,
+        "PersistentVolumeClaim" => {
+            replace_resource::<PersistentVolumeClaim>(&client, namespace, manifest).await?
+        }
         "ResourceQuota" => replace_resource::<ResourceQuota>(&client, namespace, manifest).await?,
         "LimitRange" => replace_resource::<LimitRange>(&client, namespace, manifest).await?,
-        "HorizontalPodAutoscaler" => replace_resource::<HorizontalPodAutoscaler>(&client, namespace, manifest).await?,
+        "HorizontalPodAutoscaler" => {
+            replace_resource::<HorizontalPodAutoscaler>(&client, namespace, manifest).await?
+        }
         "NetworkPolicy" => replace_resource::<NetworkPolicy>(&client, namespace, manifest).await?,
         "EndpointSlice" => replace_resource::<EndpointSlice>(&client, namespace, manifest).await?,
-        "DataVolume" => replace_dynamic_resource(&client, namespace, manifest, cdi_api_resource("DataVolume", "datavolumes")).await?,
-        "VirtualMachine" => replace_dynamic_resource(&client, namespace, manifest, kubevirt_api_resource("VirtualMachine", "virtualmachines")).await?,
-        "VirtualMachineInstance" => replace_dynamic_resource(&client, namespace, manifest, kubevirt_api_resource("VirtualMachineInstance", "virtualmachineinstances")).await?,
+        "DataVolume" => {
+            replace_dynamic_resource(
+                &client,
+                namespace,
+                manifest,
+                cdi_api_resource("DataVolume", "datavolumes"),
+            )
+            .await?
+        }
+        "VirtualMachine" => {
+            replace_dynamic_resource(
+                &client,
+                namespace,
+                manifest,
+                kubevirt_api_resource("VirtualMachine", "virtualmachines"),
+            )
+            .await?
+        }
+        "VirtualMachineInstance" => {
+            replace_dynamic_resource(
+                &client,
+                namespace,
+                manifest,
+                kubevirt_api_resource("VirtualMachineInstance", "virtualmachineinstances"),
+            )
+            .await?
+        }
         "Event" => anyhow::bail!("apply is not supported for Event"),
         other => anyhow::bail!("apply is not supported for kind {}", other),
     }
 
-    Ok(format!("applied {} in namespace {} on cluster {}", kind, namespace, cluster))
+    Ok(format!(
+        "applied {} in namespace {} on cluster {}",
+        kind, namespace, cluster
+    ))
 }
 
 pub async fn list_namespaces(cluster: &str) -> Result<Vec<ClusterNamespaceSummary>> {
@@ -1235,41 +1355,132 @@ pub async fn browse_resources(req: &ClusterBrowseRequest) -> Result<Vec<ClusterR
         "Node" => list_node_resources(&client, &req.cluster).await?,
         "PersistentVolume" => list_pv_resources(&client, &req.cluster).await?,
         "StorageClass" => list_storage_class_resources(&client, &req.cluster).await?,
-        "CustomResource" => list_custom_resources(
-            &client,
-            &req.cluster,
-            namespace,
-            req.api_version.as_deref().context("api_version is required for CustomResource browse")?,
-            req.plural.as_deref().context("plural is required for CustomResource browse")?,
-            req.namespaced.unwrap_or(true),
-        ).await?,
+        "CustomResource" => {
+            list_custom_resources(
+                &client,
+                &req.cluster,
+                namespace,
+                req.api_version
+                    .as_deref()
+                    .context("api_version is required for CustomResource browse")?,
+                req.plural
+                    .as_deref()
+                    .context("plural is required for CustomResource browse")?,
+                req.namespaced.unwrap_or(true),
+            )
+            .await?
+        }
         "Event" => list_event_resources(&client, &req.cluster, namespace).await?,
-        "DataVolume" => list_dynamic_named_resources(&client, &req.cluster, namespace, "DataVolume", cdi_api_resource("DataVolume", "datavolumes")).await?,
-        "VirtualMachine" => list_kubevirt_resources(&client, &req.cluster, namespace, "VirtualMachine", "virtualmachines").await?,
-        "VirtualMachineInstance" => list_kubevirt_resources(&client, &req.cluster, namespace, "VirtualMachineInstance", "virtualmachineinstances").await?,
+        "DataVolume" => {
+            list_dynamic_named_resources(
+                &client,
+                &req.cluster,
+                namespace,
+                "DataVolume",
+                cdi_api_resource("DataVolume", "datavolumes"),
+            )
+            .await?
+        }
+        "VirtualMachine" => {
+            list_kubevirt_resources(
+                &client,
+                &req.cluster,
+                namespace,
+                "VirtualMachine",
+                "virtualmachines",
+            )
+            .await?
+        }
+        "VirtualMachineInstance" => {
+            list_kubevirt_resources(
+                &client,
+                &req.cluster,
+                namespace,
+                "VirtualMachineInstance",
+                "virtualmachineinstances",
+            )
+            .await?
+        }
         "Pod" => list_pod_resources(&client, &req.cluster, namespace).await?,
-        "ServiceAccount" => list_service_account_resources(&client, &req.cluster, namespace).await?,
+        "ServiceAccount" => {
+            list_service_account_resources(&client, &req.cluster, namespace).await?
+        }
         "Secret" => list_secret_resources(&client, &req.cluster, namespace).await?,
         "PersistentVolumeClaim" => list_pvc_resources(&client, &req.cluster, namespace).await?,
         "ResourceQuota" => list_resource_quota_resources(&client, &req.cluster, namespace).await?,
         "LimitRange" => list_limit_range_resources(&client, &req.cluster, namespace).await?,
         "HorizontalPodAutoscaler" => list_hpa_resources(&client, &req.cluster, namespace).await?,
         "NetworkPolicy" => list_network_policy_resources(&client, &req.cluster, namespace).await?,
-        "CiliumNetworkPolicy" => cilium::list_cilium_network_policies(&req.cluster, namespace.as_deref()).await?,
-        "CiliumClusterwideNetworkPolicy" => cilium::list_cilium_clusterwide_network_policies(&req.cluster).await?,
+        "CiliumNetworkPolicy" => {
+            cilium::list_cilium_network_policies(&req.cluster, namespace.as_deref()).await?
+        }
+        "CiliumClusterwideNetworkPolicy" => {
+            cilium::list_cilium_clusterwide_network_policies(&req.cluster).await?
+        }
         "EndpointSlice" => list_endpoint_slice_resources(&client, &req.cluster, namespace).await?,
-        "Job" => list_named_resources::<Job>(&client, &req.cluster, namespace, "Job", workload_status_job, job_detail).await?,
-        "CronJob" => list_named_resources::<CronJob>(&client, &req.cluster, namespace, "CronJob", workload_status_cronjob, cronjob_detail).await?,
-        "Deployment" => list_named_resources::<Deployment>(&client, &req.cluster, namespace, "Deployment", workload_status_deployment, deployment_detail).await?,
-        "StatefulSet" => list_named_resources::<StatefulSet>(&client, &req.cluster, namespace, "StatefulSet", workload_status_statefulset, statefulset_detail).await?,
-        "DaemonSet" => list_named_resources::<DaemonSet>(&client, &req.cluster, namespace, "DaemonSet", workload_status_daemonset, daemonset_detail).await?,
+        "Job" => {
+            list_named_resources::<Job>(
+                &client,
+                &req.cluster,
+                namespace,
+                "Job",
+                workload_status_job,
+                job_detail,
+            )
+            .await?
+        }
+        "CronJob" => {
+            list_named_resources::<CronJob>(
+                &client,
+                &req.cluster,
+                namespace,
+                "CronJob",
+                workload_status_cronjob,
+                cronjob_detail,
+            )
+            .await?
+        }
+        "Deployment" => {
+            list_named_resources::<Deployment>(
+                &client,
+                &req.cluster,
+                namespace,
+                "Deployment",
+                workload_status_deployment,
+                deployment_detail,
+            )
+            .await?
+        }
+        "StatefulSet" => {
+            list_named_resources::<StatefulSet>(
+                &client,
+                &req.cluster,
+                namespace,
+                "StatefulSet",
+                workload_status_statefulset,
+                statefulset_detail,
+            )
+            .await?
+        }
+        "DaemonSet" => {
+            list_named_resources::<DaemonSet>(
+                &client,
+                &req.cluster,
+                namespace,
+                "DaemonSet",
+                workload_status_daemonset,
+                daemonset_detail,
+            )
+            .await?
+        }
         "Ingress" => list_ingress_resources(&client, &req.cluster, namespace).await?,
         "Service" => list_service_resources(&client, &req.cluster, namespace).await?,
         "ConfigMap" => list_configmap_resources(&client, &req.cluster, namespace).await?,
         other => anyhow::bail!("unsupported Kubernetes browse kind: {}", other),
     };
 
-    resources.sort_by(|a, b| (&a.namespace, &a.kind, &a.name).cmp(&(&b.namespace, &b.kind, &b.name)));
+    resources
+        .sort_by(|a, b| (&a.namespace, &a.kind, &a.name).cmp(&(&b.namespace, &b.kind, &b.name)));
     Ok(resources)
 }
 
@@ -1446,7 +1657,10 @@ async fn list_pod_resources(
                 detail: Some(format!(
                     "{} ready · {} restarts",
                     statuses.iter().filter(|status| status.ready).count(),
-                    statuses.iter().map(|status| status.restart_count).sum::<i32>()
+                    statuses
+                        .iter()
+                        .map(|status| status.restart_count)
+                        .sum::<i32>()
                 )),
             }
         })
@@ -1476,7 +1690,11 @@ async fn list_secret_resources(
             detail: Some(format!(
                 "{} keys",
                 secret.data.as_ref().map(|data| data.len()).unwrap_or(0)
-                    + secret.string_data.as_ref().map(|data| data.len()).unwrap_or(0)
+                    + secret
+                        .string_data
+                        .as_ref()
+                        .map(|data| data.len())
+                        .unwrap_or(0)
             )),
         })
         .collect())
@@ -1504,7 +1722,11 @@ async fn list_service_account_resources(
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} secrets",
-                account.secrets.as_ref().map(|secrets| secrets.len()).unwrap_or(0)
+                account
+                    .secrets
+                    .as_ref()
+                    .map(|secrets| secrets.len())
+                    .unwrap_or(0)
             )),
         })
         .collect())
@@ -1535,10 +1757,13 @@ async fn list_hpa_resources(
                 .clone()
                 .map(|time| time.0.to_rfc3339())
                 .unwrap_or_default(),
-            detail: hpa
-                .spec
-                .as_ref()
-                .map(|spec| format!("min {} · max {}", spec.min_replicas.unwrap_or(1), spec.max_replicas)),
+            detail: hpa.spec.as_ref().map(|spec| {
+                format!(
+                    "min {} · max {}",
+                    spec.min_replicas.unwrap_or(1),
+                    spec.max_replicas
+                )
+            }),
         })
         .collect())
 }
@@ -1594,7 +1819,13 @@ async fn list_ingress_resources(
                 .as_ref()
                 .and_then(|status| status.load_balancer.as_ref())
                 .and_then(|lb| lb.ingress.as_ref())
-                .map(|entries| if entries.is_empty() { "Pending" } else { "Ready" })
+                .map(|entries| {
+                    if entries.is_empty() {
+                        "Pending"
+                    } else {
+                        "Ready"
+                    }
+                })
                 .unwrap_or("Pending")
                 .to_string(),
             created_at: ingress
@@ -1669,10 +1900,20 @@ async fn list_resource_quota_resources(
             kind: "ResourceQuota".to_string(),
             name: quota.name_any(),
             status: "active".to_string(),
-            created_at: quota.meta().creation_timestamp.clone().map(|time| time.0.to_rfc3339()).unwrap_or_default(),
+            created_at: quota
+                .meta()
+                .creation_timestamp
+                .clone()
+                .map(|time| time.0.to_rfc3339())
+                .unwrap_or_default(),
             detail: Some(format!(
                 "{} hard limits",
-                quota.status.as_ref().and_then(|status| status.hard.as_ref()).map(|hard| hard.len()).unwrap_or(0)
+                quota
+                    .status
+                    .as_ref()
+                    .and_then(|status| status.hard.as_ref())
+                    .map(|hard| hard.len())
+                    .unwrap_or(0)
             )),
         })
         .collect())
@@ -1688,14 +1929,25 @@ async fn list_limit_range_resources(
         .into_iter()
         .map(|limit_range| ClusterResourceSummary {
             cluster: cluster.to_string(),
-            namespace: limit_range.namespace().unwrap_or_else(|| "default".to_string()),
+            namespace: limit_range
+                .namespace()
+                .unwrap_or_else(|| "default".to_string()),
             kind: "LimitRange".to_string(),
             name: limit_range.name_any(),
             status: "active".to_string(),
-            created_at: limit_range.meta().creation_timestamp.clone().map(|time| time.0.to_rfc3339()).unwrap_or_default(),
+            created_at: limit_range
+                .meta()
+                .creation_timestamp
+                .clone()
+                .map(|time| time.0.to_rfc3339())
+                .unwrap_or_default(),
             detail: Some(format!(
                 "{} entries",
-                limit_range.spec.as_ref().map(|spec| spec.limits.len()).unwrap_or(0)
+                limit_range
+                    .spec
+                    .as_ref()
+                    .map(|spec| spec.limits.len())
+                    .unwrap_or(0)
             )),
         })
         .collect())
@@ -1715,11 +1967,13 @@ async fn list_endpoint_slice_resources(
             kind: "EndpointSlice".to_string(),
             name: slice.name_any(),
             status: slice.address_type.clone(),
-            created_at: slice.meta().creation_timestamp.clone().map(|time| time.0.to_rfc3339()).unwrap_or_default(),
-            detail: Some(format!(
-                "{} endpoints",
-                slice.endpoints.len()
-            )),
+            created_at: slice
+                .meta()
+                .creation_timestamp
+                .clone()
+                .map(|time| time.0.to_rfc3339())
+                .unwrap_or_default(),
+            detail: Some(format!("{} endpoints", slice.endpoints.len())),
         })
         .collect())
 }
@@ -1764,30 +2018,52 @@ async fn list_node_resources(
         .items
         .into_iter()
         .map(|node| {
-            let conditions = node.status.as_ref().and_then(|status| status.conditions.as_ref()).cloned().unwrap_or_default();
+            let conditions = node
+                .status
+                .as_ref()
+                .and_then(|status| status.conditions.as_ref())
+                .cloned()
+                .unwrap_or_default();
             let ready = conditions
                 .iter()
                 .find(|condition| condition.type_ == "Ready")
                 .map(|condition| condition.status.clone())
                 .unwrap_or_else(|| "Unknown".to_string());
-            let schedulable = !node.spec.as_ref().and_then(|spec| spec.unschedulable).unwrap_or(false);
+            let schedulable = !node
+                .spec
+                .as_ref()
+                .and_then(|spec| spec.unschedulable)
+                .unwrap_or(false);
             ClusterResourceSummary {
                 cluster: cluster.to_string(),
                 namespace: "_cluster".to_string(),
                 kind: "Node".to_string(),
                 name: node.name_any(),
                 status: if ready == "True" { "Ready" } else { "NotReady" }.to_string(),
-                created_at: node.meta().creation_timestamp.clone().map(|time| time.0.to_rfc3339()).unwrap_or_default(),
-                detail: Some(format!("{} · {}", if schedulable { "schedulable" } else { "cordoned" }, node.spec.as_ref().and_then(|spec| spec.provider_id.clone()).unwrap_or_else(|| "provider unknown".to_string()))),
+                created_at: node
+                    .meta()
+                    .creation_timestamp
+                    .clone()
+                    .map(|time| time.0.to_rfc3339())
+                    .unwrap_or_default(),
+                detail: Some(format!(
+                    "{} · {}",
+                    if schedulable {
+                        "schedulable"
+                    } else {
+                        "cordoned"
+                    },
+                    node.spec
+                        .as_ref()
+                        .and_then(|spec| spec.provider_id.clone())
+                        .unwrap_or_else(|| "provider unknown".to_string())
+                )),
             }
         })
         .collect())
 }
 
-async fn list_pv_resources(
-    client: &Client,
-    cluster: &str,
-) -> Result<Vec<ClusterResourceSummary>> {
+async fn list_pv_resources(client: &Client, cluster: &str) -> Result<Vec<ClusterResourceSummary>> {
     let api: Api<PersistentVolume> = Api::all(client.clone());
     let list = api.list(&ListParams::default()).await?;
     Ok(list
@@ -1798,12 +2074,29 @@ async fn list_pv_resources(
             namespace: "_cluster".to_string(),
             kind: "PersistentVolume".to_string(),
             name: pv.name_any(),
-            status: pv.status.as_ref().and_then(|status| status.phase.clone()).unwrap_or_else(|| "Unknown".to_string()),
-            created_at: pv.meta().creation_timestamp.clone().map(|time| time.0.to_rfc3339()).unwrap_or_default(),
+            status: pv
+                .status
+                .as_ref()
+                .and_then(|status| status.phase.clone())
+                .unwrap_or_else(|| "Unknown".to_string()),
+            created_at: pv
+                .meta()
+                .creation_timestamp
+                .clone()
+                .map(|time| time.0.to_rfc3339())
+                .unwrap_or_default(),
             detail: Some(format!(
                 "{} · {}",
-                pv.spec.as_ref().and_then(|spec| spec.storage_class_name.clone()).unwrap_or_else(|| "no storage class".to_string()),
-                pv.spec.as_ref().and_then(|spec| spec.capacity.as_ref()).and_then(|cap| cap.get("storage")).map(|qty| qty.0.clone()).unwrap_or_else(|| "unknown size".to_string())
+                pv.spec
+                    .as_ref()
+                    .and_then(|spec| spec.storage_class_name.clone())
+                    .unwrap_or_else(|| "no storage class".to_string()),
+                pv.spec
+                    .as_ref()
+                    .and_then(|spec| spec.capacity.as_ref())
+                    .and_then(|cap| cap.get("storage"))
+                    .map(|qty| qty.0.clone())
+                    .unwrap_or_else(|| "unknown size".to_string())
             )),
         })
         .collect())
@@ -1823,8 +2116,18 @@ async fn list_storage_class_resources(
             namespace: "_cluster".to_string(),
             kind: "StorageClass".to_string(),
             name: sc.name_any(),
-            status: if sc.allow_volume_expansion.unwrap_or(false) { "Expandable" } else { "Standard" }.to_string(),
-            created_at: sc.meta().creation_timestamp.clone().map(|time| time.0.to_rfc3339()).unwrap_or_default(),
+            status: if sc.allow_volume_expansion.unwrap_or(false) {
+                "Expandable"
+            } else {
+                "Standard"
+            }
+            .to_string(),
+            created_at: sc
+                .meta()
+                .creation_timestamp
+                .clone()
+                .map(|time| time.0.to_rfc3339())
+                .unwrap_or_default(),
             detail: Some(format!("provisioner {}", sc.provisioner)),
         })
         .collect())
@@ -1860,7 +2163,12 @@ async fn list_custom_resources(
                 .and_then(|value| value.as_str())
                 .unwrap_or("Unknown")
                 .to_string(),
-            created_at: item.metadata.creation_timestamp.clone().map(|time| time.0.to_rfc3339()).unwrap_or_default(),
+            created_at: item
+                .metadata
+                .creation_timestamp
+                .clone()
+                .map(|time| time.0.to_rfc3339())
+                .unwrap_or_default(),
             detail: Some(format!("{api_version} · {plural}")),
         })
         .collect())
@@ -1898,7 +2206,8 @@ async fn list_kubevirt_resources(
     kind: &str,
     plural: &str,
 ) -> Result<Vec<ClusterResourceSummary>> {
-    let list = list_dynamic_objects(client, namespace, kubevirt_api_resource(kind, plural), true).await?;
+    let list =
+        list_dynamic_objects(client, namespace, kubevirt_api_resource(kind, plural), true).await?;
     Ok(list
         .into_iter()
         .map(|item| {
@@ -2019,7 +2328,10 @@ async fn list_service_resources(
                 .clone()
                 .map(|time| time.0.to_rfc3339())
                 .unwrap_or_default(),
-            detail: service.spec.as_ref().and_then(|spec| spec.cluster_ip.clone()),
+            detail: service
+                .spec
+                .as_ref()
+                .and_then(|spec| spec.cluster_ip.clone()),
         })
         .collect())
 }
@@ -2034,7 +2346,9 @@ async fn list_configmap_resources(
         .into_iter()
         .map(|configmap| ClusterResourceSummary {
             cluster: cluster.to_string(),
-            namespace: configmap.namespace().unwrap_or_else(|| "default".to_string()),
+            namespace: configmap
+                .namespace()
+                .unwrap_or_else(|| "default".to_string()),
             kind: "ConfigMap".to_string(),
             name: configmap.name_any(),
             status: "active".to_string(),
@@ -2102,7 +2416,11 @@ async fn list_helm_releases(
             detail: Some(format!(
                 "chart {} · app {} · rev {}",
                 release.chart,
-                if release.app_version.is_empty() { "unknown" } else { &release.app_version },
+                if release.app_version.is_empty() {
+                    "unknown"
+                } else {
+                    &release.app_version
+                },
                 release.revision
             )),
         })
@@ -2117,7 +2435,8 @@ async fn list_dynamic_objects(
 ) -> Result<Vec<DynamicObject>> {
     let list = if namespaced {
         if let Some(namespace) = namespace {
-            let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
+            let api: Api<DynamicObject> =
+                Api::namespaced_with(client.clone(), namespace, &api_resource);
             api.list(&ListParams::default()).await?
         } else {
             let api: Api<DynamicObject> = Api::all_with(client.clone(), &api_resource);
@@ -2131,7 +2450,10 @@ async fn list_dynamic_objects(
 }
 
 async fn selector_for_workload(client: &Client, req: &ClusterLogsRequest) -> Result<String> {
-    if matches!(req.kind.as_str(), "VirtualMachine" | "VirtualMachineInstance") {
+    if matches!(
+        req.kind.as_str(),
+        "VirtualMachine" | "VirtualMachineInstance"
+    ) {
         return Ok(format!("kubevirt.io/vm={}", req.name));
     }
     if req.kind == "HelmRelease" {
@@ -2141,14 +2463,24 @@ async fn selector_for_workload(client: &Client, req: &ClusterLogsRequest) -> Res
     selector_for_value(&manifest).context("workload selector.matchLabels missing")
 }
 
-async fn manifest_for_workload(client: &Client, req: &ClusterLogsRequest) -> Result<serde_json::Value> {
+async fn manifest_for_workload(
+    client: &Client,
+    req: &ClusterLogsRequest,
+) -> Result<serde_json::Value> {
     match req.kind.as_str() {
         "CustomResource" => {
-            let api_version = req.api_version.as_deref().context("api_version is required for CustomResource detail")?;
-            let plural = req.plural.as_deref().context("plural is required for CustomResource detail")?;
+            let api_version = req
+                .api_version
+                .as_deref()
+                .context("api_version is required for CustomResource detail")?;
+            let plural = req
+                .plural
+                .as_deref()
+                .context("plural is required for CustomResource detail")?;
             let api_resource = custom_api_resource("CustomResource", api_version, plural);
             if req.namespaced.unwrap_or(true) {
-                let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), &req.namespace, &api_resource);
+                let api: Api<DynamicObject> =
+                    Api::namespaced_with(client.clone(), &req.namespace, &api_resource);
                 Ok(serde_json::to_value(api.get(&req.name).await?)?)
             } else {
                 let api: Api<DynamicObject> = Api::all_with(client.clone(), &api_resource);
@@ -2272,36 +2604,49 @@ async fn manifest_for_workload(client: &Client, req: &ClusterLogsRequest) -> Res
             Ok(serde_json::to_value(api.get(&req.name).await?)?)
         }
         "HelmRelease" => {
-            let status = String::from_utf8(run_helm(vec![
-                "status".to_string(),
-                req.name.clone(),
-                "--kube-context".to_string(),
-                req.cluster.clone(),
-                "-n".to_string(),
-                req.namespace.clone(),
-                "-o".to_string(),
-                "json".to_string(),
-            ]).await?)?;
-            let values = String::from_utf8(run_helm(vec![
-                "get".to_string(),
-                "values".to_string(),
-                req.name.clone(),
-                "--kube-context".to_string(),
-                req.cluster.clone(),
-                "-n".to_string(),
-                req.namespace.clone(),
-                "-o".to_string(),
-                "yaml".to_string(),
-            ]).await.unwrap_or_default()).unwrap_or_default();
-            let manifest = String::from_utf8(run_helm(vec![
-                "get".to_string(),
-                "manifest".to_string(),
-                req.name.clone(),
-                "--kube-context".to_string(),
-                req.cluster.clone(),
-                "-n".to_string(),
-                req.namespace.clone(),
-            ]).await.unwrap_or_default()).unwrap_or_default();
+            let status = String::from_utf8(
+                run_helm(vec![
+                    "status".to_string(),
+                    req.name.clone(),
+                    "--kube-context".to_string(),
+                    req.cluster.clone(),
+                    "-n".to_string(),
+                    req.namespace.clone(),
+                    "-o".to_string(),
+                    "json".to_string(),
+                ])
+                .await?,
+            )?;
+            let values = String::from_utf8(
+                run_helm(vec![
+                    "get".to_string(),
+                    "values".to_string(),
+                    req.name.clone(),
+                    "--kube-context".to_string(),
+                    req.cluster.clone(),
+                    "-n".to_string(),
+                    req.namespace.clone(),
+                    "-o".to_string(),
+                    "yaml".to_string(),
+                ])
+                .await
+                .unwrap_or_default(),
+            )
+            .unwrap_or_default();
+            let manifest = String::from_utf8(
+                run_helm(vec![
+                    "get".to_string(),
+                    "manifest".to_string(),
+                    req.name.clone(),
+                    "--kube-context".to_string(),
+                    req.cluster.clone(),
+                    "-n".to_string(),
+                    req.namespace.clone(),
+                ])
+                .await
+                .unwrap_or_default(),
+            )
+            .unwrap_or_default();
             Ok(serde_json::json!({
                 "apiVersion": "helm.sh/v1",
                 "kind": "HelmRelease",
@@ -2338,12 +2683,18 @@ fn selector_for_value(value: &serde_json::Value) -> Option<String> {
 }
 
 fn sanitize_secret_manifest(manifest: &mut serde_json::Value) {
-    if let Some(data) = manifest.get_mut("data").and_then(|value| value.as_object_mut()) {
+    if let Some(data) = manifest
+        .get_mut("data")
+        .and_then(|value| value.as_object_mut())
+    {
         for value in data.values_mut() {
             *value = serde_json::Value::String("<redacted>".to_string());
         }
     }
-    if let Some(data) = manifest.get_mut("stringData").and_then(|value| value.as_object_mut()) {
+    if let Some(data) = manifest
+        .get_mut("stringData")
+        .and_then(|value| value.as_object_mut())
+    {
         for value in data.values_mut() {
             *value = serde_json::Value::String("<redacted>".to_string());
         }
@@ -2383,11 +2734,18 @@ fn summarize_pod(pod: &Pod) -> ClusterPodSummary {
 async fn delete_workload(client: &Client, req: &ClusterActionRequest) -> Result<()> {
     match req.kind.as_str() {
         "CustomResource" => {
-            let api_version = req.api_version.as_deref().context("api_version is required for CustomResource delete")?;
-            let plural = req.plural.as_deref().context("plural is required for CustomResource delete")?;
+            let api_version = req
+                .api_version
+                .as_deref()
+                .context("api_version is required for CustomResource delete")?;
+            let plural = req
+                .plural
+                .as_deref()
+                .context("plural is required for CustomResource delete")?;
             let api_resource = custom_api_resource("CustomResource", api_version, plural);
             if req.namespaced.unwrap_or(true) {
-                let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), &req.namespace, &api_resource);
+                let api: Api<DynamicObject> =
+                    Api::namespaced_with(client.clone(), &req.namespace, &api_resource);
                 api.delete(&req.name, &DeleteParams::default()).await?;
             } else {
                 let api: Api<DynamicObject> = Api::all_with(client.clone(), &api_resource);
@@ -2506,7 +2864,8 @@ async fn delete_workload(client: &Client, req: &ClusterActionRequest) -> Result<
                 req.cluster.clone(),
                 "-n".to_string(),
                 req.namespace.clone(),
-            ]).await?;
+            ])
+            .await?;
         }
         other => anyhow::bail!("delete is not supported for kind {}", other),
     }
@@ -2546,15 +2905,18 @@ async fn restart_workload(client: &Client, req: &ClusterActionRequest) -> Result
     match req.kind.as_str() {
         "Deployment" => {
             let api: Api<Deployment> = Api::namespaced(client.clone(), &req.namespace);
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         "StatefulSet" => {
             let api: Api<StatefulSet> = Api::namespaced(client.clone(), &req.namespace);
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         "DaemonSet" => {
             let api: Api<DaemonSet> = Api::namespaced(client.clone(), &req.namespace);
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         "VirtualMachine" => {
             let api: Api<DynamicObject> = Api::namespaced_with(
@@ -2564,8 +2926,18 @@ async fn restart_workload(client: &Client, req: &ClusterActionRequest) -> Result
             );
             let stop_patch = serde_json::json!({ "spec": { "running": false } });
             let start_patch = serde_json::json!({ "spec": { "running": true } });
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&stop_patch)).await?;
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&start_patch)).await?;
+            api.patch(
+                &req.name,
+                &PatchParams::default(),
+                &Patch::Merge(&stop_patch),
+            )
+            .await?;
+            api.patch(
+                &req.name,
+                &PatchParams::default(),
+                &Patch::Merge(&start_patch),
+            )
+            .await?;
         }
         other => anyhow::bail!("restart is not supported for kind {}", other),
     }
@@ -2582,7 +2954,8 @@ async fn start_workload(client: &Client, req: &ClusterActionRequest) -> Result<(
                 &kubevirt_api_resource("VirtualMachine", "virtualmachines"),
             );
             let patch = serde_json::json!({ "spec": { "running": true } });
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         other => anyhow::bail!("start is not supported for kind {}", other),
     }
@@ -2598,7 +2971,8 @@ async fn stop_workload(client: &Client, req: &ClusterActionRequest) -> Result<()
                 &kubevirt_api_resource("VirtualMachine", "virtualmachines"),
             );
             let patch = serde_json::json!({ "spec": { "running": false } });
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         other => anyhow::bail!("stop is not supported for kind {}", other),
     }
@@ -2649,7 +3023,8 @@ async fn suspend_workload(client: &Client, req: &ClusterActionRequest) -> Result
         "CronJob" => {
             let api: Api<CronJob> = Api::namespaced(client.clone(), &req.namespace);
             let patch = serde_json::json!({ "spec": { "suspend": true } });
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         other => anyhow::bail!("suspend is not supported for kind {}", other),
     }
@@ -2661,7 +3036,8 @@ async fn resume_workload(client: &Client, req: &ClusterActionRequest) -> Result<
         "CronJob" => {
             let api: Api<CronJob> = Api::namespaced(client.clone(), &req.namespace);
             let patch = serde_json::json!({ "spec": { "suspend": false } });
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         other => anyhow::bail!("resume is not supported for kind {}", other),
     }
@@ -2685,11 +3061,13 @@ async fn scale_workload(client: &Client, req: &ClusterActionRequest) -> Result<(
     match req.kind.as_str() {
         "Deployment" => {
             let api: Api<Deployment> = Api::namespaced(client.clone(), &req.namespace);
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         "StatefulSet" => {
             let api: Api<StatefulSet> = Api::namespaced(client.clone(), &req.namespace);
-            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch)).await?;
+            api.patch(&req.name, &PatchParams::default(), &Patch::Merge(&patch))
+                .await?;
         }
         "DaemonSet" => anyhow::bail!("scale is not supported for DaemonSet"),
         other => anyhow::bail!("scale is not supported for kind {}", other),
@@ -2699,8 +3077,16 @@ async fn scale_workload(client: &Client, req: &ClusterActionRequest) -> Result<(
 }
 
 fn workload_status_deployment(item: &Deployment) -> String {
-    let desired = item.spec.as_ref().and_then(|spec| spec.replicas).unwrap_or(1);
-    let ready = item.status.as_ref().and_then(|status| status.ready_replicas).unwrap_or(0);
+    let desired = item
+        .spec
+        .as_ref()
+        .and_then(|spec| spec.replicas)
+        .unwrap_or(1);
+    let ready = item
+        .status
+        .as_ref()
+        .and_then(|status| status.ready_replicas)
+        .unwrap_or(0);
     match (ready, desired) {
         (r, d) if d > 0 && r >= d => "running".to_string(),
         (r, _) if r > 0 => "degraded".to_string(),
@@ -2709,8 +3095,16 @@ fn workload_status_deployment(item: &Deployment) -> String {
 }
 
 fn workload_status_statefulset(item: &StatefulSet) -> String {
-    let desired = item.spec.as_ref().and_then(|spec| spec.replicas).unwrap_or(1);
-    let ready = item.status.as_ref().and_then(|status| status.ready_replicas).unwrap_or(0);
+    let desired = item
+        .spec
+        .as_ref()
+        .and_then(|spec| spec.replicas)
+        .unwrap_or(1);
+    let ready = item
+        .status
+        .as_ref()
+        .and_then(|status| status.ready_replicas)
+        .unwrap_or(0);
     match (ready, desired) {
         (r, d) if d > 0 && r >= d => "running".to_string(),
         (r, _) if r > 0 => "degraded".to_string(),
@@ -2766,19 +3160,39 @@ fn workload_status_cronjob(item: &CronJob) -> String {
 }
 
 fn deployment_detail(item: &Deployment) -> Option<String> {
-    let ready = item.status.as_ref().and_then(|status| status.ready_replicas).unwrap_or(0);
-    let desired = item.spec.as_ref().and_then(|spec| spec.replicas).unwrap_or(1);
+    let ready = item
+        .status
+        .as_ref()
+        .and_then(|status| status.ready_replicas)
+        .unwrap_or(0);
+    let desired = item
+        .spec
+        .as_ref()
+        .and_then(|spec| spec.replicas)
+        .unwrap_or(1);
     Some(format!("{}/{} ready", ready, desired))
 }
 
 fn statefulset_detail(item: &StatefulSet) -> Option<String> {
-    let ready = item.status.as_ref().and_then(|status| status.ready_replicas).unwrap_or(0);
-    let desired = item.spec.as_ref().and_then(|spec| spec.replicas).unwrap_or(1);
+    let ready = item
+        .status
+        .as_ref()
+        .and_then(|status| status.ready_replicas)
+        .unwrap_or(0);
+    let desired = item
+        .spec
+        .as_ref()
+        .and_then(|spec| spec.replicas)
+        .unwrap_or(1);
     Some(format!("{}/{} ready", ready, desired))
 }
 
 fn daemonset_detail(item: &DaemonSet) -> Option<String> {
-    let ready = item.status.as_ref().map(|status| status.number_ready).unwrap_or(0);
+    let ready = item
+        .status
+        .as_ref()
+        .map(|status| status.number_ready)
+        .unwrap_or(0);
     let desired = item
         .status
         .as_ref()
@@ -2792,7 +3206,9 @@ fn job_detail(item: &Job) -> Option<String> {
     let succeeded = status.and_then(|status| status.succeeded).unwrap_or(0);
     let failed = status.and_then(|status| status.failed).unwrap_or(0);
     let active = status.and_then(|status| status.active).unwrap_or(0);
-    Some(format!("{active} active · {succeeded} succeeded · {failed} failed"))
+    Some(format!(
+        "{active} active · {succeeded} succeeded · {failed} failed"
+    ))
 }
 
 fn cronjob_detail(item: &CronJob) -> Option<String> {
@@ -2842,7 +3258,11 @@ fn custom_api_resource(kind: &str, api_version: &str, plural: &str) -> ApiResour
     }
 }
 
-async fn replace_resource<K>(client: &Client, namespace: &str, manifest: serde_json::Value) -> Result<()>
+async fn replace_resource<K>(
+    client: &Client,
+    namespace: &str,
+    manifest: serde_json::Value,
+) -> Result<()>
 where
     K: Clone
         + serde::de::DeserializeOwned
@@ -2855,7 +3275,8 @@ where
     let resource: K = serde_json::from_value(manifest)?;
     let api: Api<K> = Api::namespaced(client.clone(), namespace);
     let name = resource.name_any();
-    api.replace(&name, &PostParams::default(), &resource).await?;
+    api.replace(&name, &PostParams::default(), &resource)
+        .await?;
     Ok(())
 }
 
@@ -2872,7 +3293,8 @@ where
     let resource: K = serde_json::from_value(manifest)?;
     let api: Api<K> = Api::all(client.clone());
     let name = resource.name_any();
-    api.replace(&name, &PostParams::default(), &resource).await?;
+    api.replace(&name, &PostParams::default(), &resource)
+        .await?;
     Ok(())
 }
 
@@ -2885,7 +3307,8 @@ async fn replace_dynamic_resource(
     let resource: DynamicObject = serde_json::from_value(manifest)?;
     let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
     let name = resource.name_any();
-    api.replace(&name, &PostParams::default(), &resource).await?;
+    api.replace(&name, &PostParams::default(), &resource)
+        .await?;
     Ok(())
 }
 
@@ -2902,11 +3325,14 @@ async fn replace_custom_resource(
     let api_resource = custom_api_resource(kind, api_version, plural);
     let name = resource.name_any();
     if namespaced {
-        let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
-        api.replace(&name, &PostParams::default(), &resource).await?;
+        let api: Api<DynamicObject> =
+            Api::namespaced_with(client.clone(), namespace, &api_resource);
+        api.replace(&name, &PostParams::default(), &resource)
+            .await?;
     } else {
         let api: Api<DynamicObject> = Api::all_with(client.clone(), &api_resource);
-        api.replace(&name, &PostParams::default(), &resource).await?;
+        api.replace(&name, &PostParams::default(), &resource)
+            .await?;
     }
     Ok(())
 }
@@ -2939,11 +3365,15 @@ fn cpu_to_millicores(value: &str) -> i64 {
 
 fn memory_to_mib(value: &str) -> i64 {
     if let Some(raw) = value.strip_suffix("Ki") {
-        raw.parse::<f64>().map(|v| (v / 1024.0).round() as i64).unwrap_or(0)
+        raw.parse::<f64>()
+            .map(|v| (v / 1024.0).round() as i64)
+            .unwrap_or(0)
     } else if let Some(raw) = value.strip_suffix("Mi") {
         raw.parse::<i64>().unwrap_or(0)
     } else if let Some(raw) = value.strip_suffix("Gi") {
-        raw.parse::<f64>().map(|v| (v * 1024.0).round() as i64).unwrap_or(0)
+        raw.parse::<f64>()
+            .map(|v| (v * 1024.0).round() as i64)
+            .unwrap_or(0)
     } else {
         0
     }

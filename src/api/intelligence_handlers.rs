@@ -6,10 +6,6 @@
 
 use super::handlers::{err_internal, lookup_workload, ok_json};
 use super::types::{ApiResponse, AppState};
-use axum::extract::{Path, State as AxumState};
-use axum::http::StatusCode;
-use axum::response::IntoResponse;
-use axum::Json;
 use crate::config::Config;
 use crate::intelligence::briefing::build_command_center_briefing;
 use crate::intelligence::context::build_context_snapshot;
@@ -21,10 +17,12 @@ use crate::intelligence::predict::FailurePredictor;
 use crate::intelligence::security::SecurityEngine;
 use crate::intelligence::store::IntelligenceStore;
 use crate::spec::Workload;
+use axum::extract::{Path, State as AxumState};
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
+use axum::Json;
 
-async fn workload_pairs(
-    app_state: &AppState,
-) -> Vec<(Workload, crate::state::WorkloadState)> {
+async fn workload_pairs(app_state: &AppState) -> Vec<(Workload, crate::state::WorkloadState)> {
     let store = app_state.state.read().await;
     store
         .list()
@@ -104,7 +102,8 @@ pub(crate) async fn api_intelligence_evolution_status(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let pairs = workload_pairs(&app_state).await;
     ok_json(EvolutionEngine::status_for_fleet(&pairs, &policy))
 }
@@ -123,10 +122,8 @@ pub(crate) async fn api_intelligence_runtime_evolution(
         Err(e) => return err_internal::<serde_json::Value>(e.to_string()).into_response(),
     };
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(
-        config.reconciliation.auto_reconcile,
-        Some(&spec),
-    );
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, Some(&spec));
     let intel = IntelligenceStore::load(&IntelligenceStore::default_path()).unwrap_or_default();
     let engine = crate::ai::scoring::ScoringEngine::new(config.engine)
         .with_history(intel.runtime_history_map());
@@ -151,7 +148,9 @@ pub(crate) async fn api_intelligence_place(
             Err(e) => return err_internal::<serde_json::Value>(e.to_string()).into_response(),
         }
     };
-    let clusters = crate::kubecluster::list_clusters().await.unwrap_or_default();
+    let clusters = crate::kubecluster::list_clusters()
+        .await
+        .unwrap_or_default();
     ok_json(GlobalPlacementEngine::recommend(&spec, &clusters)).into_response()
 }
 
@@ -209,8 +208,7 @@ pub(crate) async fn api_intelligence_remediation_execute(
     let plan = crate::intelligence::remediation::build_remediation_plan(&store).await;
     let dry_run = body.dry_run.unwrap_or(true);
     let max_actions = body.max_actions.unwrap_or(10);
-    match crate::intelligence::remediation::execute_remediation(&plan, dry_run, max_actions).await
-    {
+    match crate::intelligence::remediation::execute_remediation(&plan, dry_run, max_actions).await {
         Ok(result) => ok_json(result).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
@@ -222,7 +220,10 @@ pub(crate) async fn api_intelligence_digital_twin_simulate(
     Json(req): Json<crate::intelligence::twin::TwinSimulateRequest>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::twin::DigitalTwinEngine::simulate(&pairs, &req)).into_response()
+    ok_json(crate::intelligence::twin::DigitalTwinEngine::simulate(
+        &pairs, &req,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/security/policies
@@ -259,9 +260,11 @@ pub(crate) async fn api_intelligence_healer_preview(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let store = app_state.state.read().await;
-    ok_json(crate::intelligence::healer::build_healer_preview(&store, &policy).await).into_response()
+    ok_json(crate::intelligence::healer::build_healer_preview(&store, &policy).await)
+        .into_response()
 }
 
 /// POST /api/intelligence/intent-pipeline
@@ -330,7 +333,8 @@ pub(crate) async fn api_intelligence_healer_execute(
     Json(body): Json<crate::intelligence::healer::HealerExecuteRequest>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let store = app_state.state.read().await;
     let report = crate::intelligence::healer::execute_healer(
         &store,
@@ -358,7 +362,8 @@ pub(crate) async fn api_intelligence_evolution_execute(
     Json(body): Json<crate::intelligence::evolution::EvolutionExecuteRequest>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let max = body.max_actions.unwrap_or(5);
     match crate::intelligence::evolution::execute_evolution(
         &app_state.state_path,
@@ -389,7 +394,8 @@ pub(crate) async fn api_intelligence_gitops_agent_sync(
     Json(body): Json<crate::intelligence::gitops_agent::GitOpsAgentExecuteRequest>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     match crate::intelligence::gitops_agent::execute_gitops_agent(
         &app_state.state_path,
         &policy,
@@ -408,7 +414,8 @@ pub(crate) async fn api_intelligence_cost_optimize_apply(
     Json(body): Json<crate::intelligence::finops::CostApplyRequest>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let pairs = workload_pairs(&app_state).await;
     let patches = FinOpsEngine::build_cost_patches(&pairs);
     let report = FinOpsEngine::apply_cost_patches(&patches, body.dry_run, &policy);
@@ -430,7 +437,10 @@ pub(crate) async fn api_intelligence_capacity_scale_suggestions(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::capacity::build_scale_suggestions(&pairs)).into_response()
+    ok_json(crate::intelligence::capacity::build_scale_suggestions(
+        &pairs,
+    ))
+    .into_response()
 }
 
 /// POST /api/intelligence/capacity/scale/execute
@@ -439,11 +449,15 @@ pub(crate) async fn api_intelligence_capacity_scale_execute(
     Json(body): Json<crate::intelligence::capacity::CapacityScaleExecuteRequest>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let pairs = workload_pairs(&app_state).await;
     let suggestions = crate::intelligence::capacity::build_scale_suggestions(&pairs);
-    let report =
-        crate::intelligence::capacity::execute_scale_suggestions(&suggestions, &policy, body.dry_run);
+    let report = crate::intelligence::capacity::execute_scale_suggestions(
+        &suggestions,
+        &policy,
+        body.dry_run,
+    );
     ok_json(report).into_response()
 }
 
@@ -492,7 +506,8 @@ pub(crate) async fn api_intelligence_intent_budget_enforce(
     AxumState(app_state): AxumState<AppState>,
     Json(body): Json<crate::intelligence::intent_os::BudgetEnforceRequest>,
 ) -> impl axum::response::IntoResponse {
-    match crate::intelligence::intent_os::enforce_intent_budget(&app_state.state_path, body.dry_run) {
+    match crate::intelligence::intent_os::enforce_intent_budget(&app_state.state_path, body.dry_run)
+    {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
@@ -510,8 +525,10 @@ pub(crate) async fn api_intelligence_intent_compliance_check(
             Err(e) => return err_internal::<serde_json::Value>(e.to_string()).into_response(),
         }
     } else {
-        return err_internal::<serde_json::Value>("expected workload JSON or yaml field".to_string())
-            .into_response();
+        return err_internal::<serde_json::Value>(
+            "expected workload JSON or yaml field".to_string(),
+        )
+        .into_response();
     };
     ok_json(crate::intelligence::intent_os::check_compliance_gate(&spec)).into_response()
 }
@@ -557,7 +574,11 @@ pub(crate) async fn api_intelligence_intent_version_rollback(
     Path(name): Path<String>,
     Json(body): Json<crate::intelligence::intent_os::IntentRollbackRequest>,
 ) -> impl axum::response::IntoResponse {
-    match crate::intelligence::intent_os::rollback_intent_version(&app_state.state_path, &name, &body) {
+    match crate::intelligence::intent_os::rollback_intent_version(
+        &app_state.state_path,
+        &name,
+        &body,
+    ) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
@@ -612,7 +633,8 @@ pub(crate) async fn api_intelligence_federation_unified_fabric(
 pub(crate) async fn api_intelligence_migration_volume_status(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    match crate::intelligence::federation_os::build_volume_replication_status(&app_state.state_path) {
+    match crate::intelligence::federation_os::build_volume_replication_status(&app_state.state_path)
+    {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
@@ -639,7 +661,8 @@ pub(crate) async fn api_intelligence_federation_geo_placement(
 }
 
 /// GET /api/intelligence/multicloud/cloud-accounts
-pub(crate) async fn api_intelligence_multicloud_cloud_accounts() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_multicloud_cloud_accounts() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::federation_os::build_cloud_account_vault()).into_response()
 }
 
@@ -704,10 +727,8 @@ pub(crate) async fn api_intelligence_sre_postmortem(
     axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl axum::response::IntoResponse {
     let workload = query.get("workload").map(|s| s.as_str());
-    ok_json(
-        crate::intelligence::sre_os::build_postmortem(&app_state.state_path, workload).await,
-    )
-    .into_response()
+    ok_json(crate::intelligence::sre_os::build_postmortem(&app_state.state_path, workload).await)
+        .into_response()
 }
 
 /// GET /api/intelligence/sre/error-budgets
@@ -734,8 +755,11 @@ pub(crate) async fn api_intelligence_sre_chaos_experiments(
 pub(crate) async fn api_intelligence_sre_chaos_run(
     Json(body): Json<crate::intelligence::sre_os::ChaosRunRequest>,
 ) -> impl axum::response::IntoResponse {
-    ok_json(crate::intelligence::sre_os::run_chaos_experiment(body.dry_run, &body.experiment_id))
-        .into_response()
+    ok_json(crate::intelligence::sre_os::run_chaos_experiment(
+        body.dry_run,
+        &body.experiment_id,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/sre/game-days
@@ -754,8 +778,10 @@ pub(crate) async fn api_intelligence_sre_runbook_execute(
     Json(body): Json<crate::intelligence::sre_os::RunbookExecuteRequest>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
-    match crate::intelligence::sre_os::execute_runbook(&app_state.state_path, &policy, body.dry_run).await
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    match crate::intelligence::sre_os::execute_runbook(&app_state.state_path, &policy, body.dry_run)
+        .await
     {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -830,7 +856,10 @@ pub(crate) async fn api_intelligence_graph_impact(
     AxumState(app_state): AxumState<AppState>,
     axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl axum::response::IntoResponse {
-    let workload = query.get("workload").cloned().unwrap_or_else(|| "api".into());
+    let workload = query
+        .get("workload")
+        .cloned()
+        .unwrap_or_else(|| "api".into());
     match crate::intelligence::graph_os::build_impact_analysis(&app_state.state_path, &workload) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -842,7 +871,10 @@ pub(crate) async fn api_intelligence_graph_blast_radius(
     AxumState(app_state): AxumState<AppState>,
     axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl axum::response::IntoResponse {
-    let workload = query.get("workload").cloned().unwrap_or_else(|| "api".into());
+    let workload = query
+        .get("workload")
+        .cloned()
+        .unwrap_or_else(|| "api".into());
     match crate::intelligence::graph_os::build_blast_radius(&app_state.state_path, &workload) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -931,7 +963,10 @@ pub(crate) async fn api_intelligence_graph_export(
     AxumState(app_state): AxumState<AppState>,
     axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl axum::response::IntoResponse {
-    let format = query.get("format").cloned().unwrap_or_else(|| "neo4j".into());
+    let format = query
+        .get("format")
+        .cloned()
+        .unwrap_or_else(|| "neo4j".into());
     match crate::intelligence::graph_os::export_graph(&app_state.state_path, &format) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -1004,7 +1039,8 @@ pub(crate) async fn api_intelligence_macos_menu_extras(
 }
 
 /// GET /api/intelligence/macos/offline-cache
-pub(crate) async fn api_intelligence_macos_offline_cache_get() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_macos_offline_cache_get() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::macos_os::read_offline_cache()).into_response()
 }
 
@@ -1027,7 +1063,10 @@ pub(crate) async fn api_intelligence_macos_universal_links() -> impl axum::respo
 pub(crate) async fn api_intelligence_macos_universal_links_resolve(
     axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl axum::response::IntoResponse {
-    let url = query.get("url").cloned().unwrap_or_else(|| "aether://command".into());
+    let url = query
+        .get("url")
+        .cloned()
+        .unwrap_or_else(|| "aether://command".into());
     ok_json(crate::intelligence::macos_os::resolve_universal_link(&url)).into_response()
 }
 
@@ -1050,7 +1089,8 @@ pub(crate) async fn api_intelligence_finops_chargeback(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let rows = finops_workload_refs(&app_state).await;
-    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    let refs: Vec<(&str, &std::path::PathBuf)> =
+        rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
     match crate::intelligence::finops_os::build_chargeback_automation(&refs) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -1078,7 +1118,8 @@ pub(crate) async fn api_intelligence_finops_anomalies(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let rows = finops_workload_refs(&app_state).await;
-    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    let refs: Vec<(&str, &std::path::PathBuf)> =
+        rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
     match crate::intelligence::finops_os::detect_cost_anomalies(&refs) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -1099,7 +1140,8 @@ pub(crate) async fn api_intelligence_finops_execute(
     Json(body): Json<crate::intelligence::finops_os::FinOpsExecuteRequest>,
 ) -> impl axum::response::IntoResponse {
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let pairs = workload_pairs(&app_state).await;
     ok_json(crate::intelligence::finops_os::execute_finops_agent(
         &pairs, &policy, &body,
@@ -1120,7 +1162,10 @@ pub(crate) async fn api_intelligence_finops_carbon(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::finops_os::build_carbon_footprint(&pairs)).into_response()
+    ok_json(crate::intelligence::finops_os::build_carbon_footprint(
+        &pairs,
+    ))
+    .into_response()
 }
 
 /// POST /api/intelligence/finops/budget-webhook
@@ -1129,7 +1174,8 @@ pub(crate) async fn api_intelligence_finops_budget_webhook(
     Json(body): Json<crate::intelligence::finops_os::BudgetWebhookRequest>,
 ) -> impl axum::response::IntoResponse {
     let rows = finops_workload_refs(&app_state).await;
-    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    let refs: Vec<(&str, &std::path::PathBuf)> =
+        rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
     match crate::intelligence::finops_os::dispatch_budget_webhook(&refs, &body) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -1141,7 +1187,8 @@ pub(crate) async fn api_intelligence_finops_trends(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let rows = finops_workload_refs(&app_state).await;
-    let refs: Vec<(&str, &std::path::PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
+    let refs: Vec<(&str, &std::path::PathBuf)> =
+        rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
     let pairs = workload_pairs(&app_state).await;
     match crate::intelligence::finops_os::build_finops_trends(&refs, &pairs) {
         Ok(report) => ok_json(report).into_response(),
@@ -1157,9 +1204,7 @@ fn security_state_dir(app_state: &AppState) -> std::path::PathBuf {
         .unwrap_or_else(|| crate::resources::aether_path(""))
 }
 
-async fn confidential_workload_triples(
-    app_state: &AppState,
-) -> Vec<(String, Workload, String)> {
+async fn confidential_workload_triples(app_state: &AppState) -> Vec<(String, Workload, String)> {
     let store = app_state.state.read().await;
     store
         .list()
@@ -1179,7 +1224,10 @@ pub(crate) async fn api_intelligence_security_policy_apply(
     Json(body): Json<crate::intelligence::security_os::PolicyAutoApplyRequest>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::security_os::apply_security_policies(&pairs, &body)).into_response()
+    ok_json(crate::intelligence::security_os::apply_security_policies(
+        &pairs, &body,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/security/sbom-drift
@@ -1198,9 +1246,9 @@ pub(crate) async fn api_intelligence_security_confidential_fleet(
         .iter()
         .map(|(n, s, r)| (n.as_str(), s, r.as_str()))
         .collect();
-    ok_json(crate::intelligence::security_os::build_confidential_fleet_dashboard(
-        &refs, &svc, &catalog,
-    ))
+    ok_json(
+        crate::intelligence::security_os::build_confidential_fleet_dashboard(&refs, &svc, &catalog),
+    )
     .into_response()
 }
 
@@ -1209,7 +1257,10 @@ pub(crate) async fn api_intelligence_security_zero_trust_wizard(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::security_os::build_zero_trust_wizard(&pairs)).into_response()
+    ok_json(crate::intelligence::security_os::build_zero_trust_wizard(
+        &pairs,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/security/compliance-report
@@ -1217,14 +1268,20 @@ pub(crate) async fn api_intelligence_security_compliance_report(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::security_os::build_compliance_report(&pairs)).into_response()
+    ok_json(crate::intelligence::security_os::build_compliance_report(
+        &pairs,
+    ))
+    .into_response()
 }
 
 /// POST /api/intelligence/security/rotation-agent
 pub(crate) async fn api_intelligence_security_rotation_agent(
     Json(body): Json<crate::intelligence::security_os::SecretRotationAgentRequest>,
 ) -> impl axum::response::IntoResponse {
-    ok_json(crate::intelligence::security_os::run_secret_rotation_agent(&body)).into_response()
+    ok_json(crate::intelligence::security_os::run_secret_rotation_agent(
+        &body,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/security/image-enforcement
@@ -1233,10 +1290,8 @@ pub(crate) async fn api_intelligence_security_image_enforcement(
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
     let catalog = crate::ragnarok::image::ImageCatalog::load(&security_state_dir(&app_state));
-    ok_json(crate::intelligence::security_os::build_image_signing_enforcement(
-        &pairs, &catalog,
-    ))
-    .into_response()
+    ok_json(crate::intelligence::security_os::build_image_signing_enforcement(&pairs, &catalog))
+        .into_response()
 }
 
 /// POST /api/intelligence/security/threat-hunt
@@ -1245,14 +1300,12 @@ pub(crate) async fn api_intelligence_security_threat_hunt(
     Json(body): Json<crate::intelligence::security_os::ThreatHuntRequest>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(
-        crate::intelligence::security_os::run_threat_hunt(&pairs, &body).await,
-    )
-    .into_response()
+    ok_json(crate::intelligence::security_os::run_threat_hunt(&pairs, &body).await).into_response()
 }
 
 /// GET /api/intelligence/security/sovereign-audit
-pub(crate) async fn api_intelligence_security_sovereign_audit_get() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_security_sovereign_audit_get(
+) -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::security_os::read_sovereign_audit(50)).into_response()
 }
 
@@ -1279,28 +1332,36 @@ pub(crate) async fn api_intelligence_security_score_trend(
 pub(crate) async fn api_v1_intelligence_briefing(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    api_command_center_briefing(AxumState(app_state)).await.into_response()
+    api_command_center_briefing(AxumState(app_state))
+        .await
+        .into_response()
 }
 
 /// GET /v1/intelligence/threats
 pub(crate) async fn api_v1_intelligence_threats(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    api_intelligence_threats(AxumState(app_state)).await.into_response()
+    api_intelligence_threats(AxumState(app_state))
+        .await
+        .into_response()
 }
 
 /// GET /v1/intelligence/cost-optimize
 pub(crate) async fn api_v1_intelligence_cost_optimize(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    api_intelligence_cost_optimize(AxumState(app_state)).await.into_response()
+    api_intelligence_cost_optimize(AxumState(app_state))
+        .await
+        .into_response()
 }
 
 /// GET /v1/intelligence/predictions
 pub(crate) async fn api_v1_intelligence_predictions(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    api_intelligence_predictions(AxumState(app_state)).await.into_response()
+    api_intelligence_predictions(AxumState(app_state))
+        .await
+        .into_response()
 }
 
 /// GET /v1/intelligence/autonomy
@@ -1324,7 +1385,8 @@ pub(crate) async fn api_intelligence_platform_saas_tenants(
 }
 
 /// GET /api/intelligence/platform/plugin-marketplace
-pub(crate) async fn api_intelligence_platform_plugin_marketplace() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_platform_plugin_marketplace(
+) -> impl axum::response::IntoResponse {
     match crate::intelligence::platform_os::build_plugin_marketplace() {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -1347,9 +1409,13 @@ pub(crate) async fn api_intelligence_platform_terraform_export(
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
     let Some((spec, _)) = pairs.into_iter().next() else {
-        return err_internal::<serde_json::Value>("no workloads in fleet".to_string()).into_response();
+        return err_internal::<serde_json::Value>("no workloads in fleet".to_string())
+            .into_response();
     };
-    ok_json(crate::intelligence::platform_os::build_terraform_export(&spec)).into_response()
+    ok_json(crate::intelligence::platform_os::build_terraform_export(
+        &spec,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/platform/pulumi-bridge
@@ -1358,7 +1424,8 @@ pub(crate) async fn api_intelligence_platform_pulumi_bridge(
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
     let Some((spec, _)) = pairs.into_iter().next() else {
-        return err_internal::<serde_json::Value>("no workloads in fleet".to_string()).into_response();
+        return err_internal::<serde_json::Value>("no workloads in fleet".to_string())
+            .into_response();
     };
     ok_json(crate::intelligence::platform_os::build_pulumi_bridge(&spec)).into_response()
 }
@@ -1369,17 +1436,20 @@ pub(crate) async fn api_intelligence_platform_public_api() -> impl axum::respons
 }
 
 /// GET /api/intelligence/platform/mobile-companion
-pub(crate) async fn api_intelligence_platform_mobile_companion() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_platform_mobile_companion() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::platform_os::build_mobile_companion_manifest()).into_response()
 }
 
 /// GET /api/intelligence/platform/ide-extensions
-pub(crate) async fn api_intelligence_platform_ide_extensions() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_platform_ide_extensions() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::platform_os::build_ide_extension_manifest()).into_response()
 }
 
 /// GET /api/intelligence/platform/community-intents
-pub(crate) async fn api_intelligence_platform_community_intents() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_platform_community_intents(
+) -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::platform_os::build_community_intent_library()).into_response()
 }
 
@@ -1461,7 +1531,9 @@ pub(crate) async fn api_intelligence_labs_community_intents_import(
 ) -> impl axum::response::IntoResponse {
     match crate::intelligence::labs_os::import_community_intent(&body) {
         Ok(report) => ok_json(report).into_response(),
-        Err(e) => super::handlers::err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
+        Err(e) => {
+            super::handlers::err_bad_request::<serde_json::Value>(&e.to_string()).into_response()
+        }
     }
 }
 
@@ -1470,7 +1542,10 @@ pub(crate) async fn api_intelligence_labs_carbon(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::labs_os::build_labs_carbon_report(&pairs)).into_response()
+    ok_json(crate::intelligence::labs_os::build_labs_carbon_report(
+        &pairs,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/labs/compliance-report
@@ -1478,7 +1553,10 @@ pub(crate) async fn api_intelligence_labs_compliance_report(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::labs_os::build_labs_compliance_report(&pairs)).into_response()
+    ok_json(crate::intelligence::labs_os::build_labs_compliance_report(
+        &pairs,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/labs/voice-copilot
@@ -1491,7 +1569,10 @@ pub(crate) async fn api_intelligence_labs_graph_export(
     AxumState(app_state): AxumState<AppState>,
     axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl axum::response::IntoResponse {
-    let format = query.get("format").cloned().unwrap_or_else(|| "neo4j".into());
+    let format = query
+        .get("format")
+        .cloned()
+        .unwrap_or_else(|| "neo4j".into());
     match crate::intelligence::labs_os::build_labs_graph_export(&app_state.state_path, &format) {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -1500,7 +1581,8 @@ pub(crate) async fn api_intelligence_labs_graph_export(
 
 /// GET /api/intelligence/extensions/overview
 pub(crate) async fn api_intelligence_extensions_overview() -> impl axum::response::IntoResponse {
-    ok_json(crate::intelligence::extensions_os::build_extensions_graduation_overview()).into_response()
+    ok_json(crate::intelligence::extensions_os::build_extensions_graduation_overview())
+        .into_response()
 }
 
 /// GET /api/intelligence/extensions/chaos/experiments
@@ -1539,11 +1621,16 @@ pub(crate) async fn api_intelligence_extensions_game_days_execute(
     AxumState(app_state): AxumState<AppState>,
     Json(body): Json<crate::intelligence::extensions_os::GameDayExecuteRequest>,
 ) -> impl axum::response::IntoResponse {
-    match crate::intelligence::extensions_os::execute_game_day_scenario(&app_state.state_path, &body)
-        .await
+    match crate::intelligence::extensions_os::execute_game_day_scenario(
+        &app_state.state_path,
+        &body,
+    )
+    .await
     {
         Ok(report) => ok_json(report).into_response(),
-        Err(e) => super::handlers::err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
+        Err(e) => {
+            super::handlers::err_bad_request::<serde_json::Value>(&e.to_string()).into_response()
+        }
     }
 }
 
@@ -1586,7 +1673,8 @@ pub(crate) async fn api_intelligence_extensions_menu_extras(
 pub(crate) async fn api_intelligence_extensions_native_bundle(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    match crate::intelligence::extensions_os::build_native_extensions_bundle(&app_state.state_path) {
+    match crate::intelligence::extensions_os::build_native_extensions_bundle(&app_state.state_path)
+    {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
     }
@@ -1596,7 +1684,8 @@ pub(crate) async fn api_intelligence_extensions_native_bundle(
 pub(crate) async fn api_intelligence_extensions_sre_bundle(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    match crate::intelligence::extensions_os::build_sre_extensions_bundle(&app_state.state_path).await
+    match crate::intelligence::extensions_os::build_sre_extensions_bundle(&app_state.state_path)
+        .await
     {
         Ok(report) => ok_json(report).into_response(),
         Err(e) => err_internal::<serde_json::Value>(e.to_string()).into_response(),
@@ -1652,16 +1741,21 @@ pub(crate) async fn api_intelligence_production_ha_plane(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let snap = production_runtime_snapshot(&app_state).await;
-    ok_json(crate::intelligence::production_os::build_ha_plane_report(&snap)).into_response()
+    ok_json(crate::intelligence::production_os::build_ha_plane_report(
+        &snap,
+    ))
+    .into_response()
 }
 
 /// GET /api/intelligence/production/durability-plane
-pub(crate) async fn api_intelligence_production_durability_plane() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_production_durability_plane(
+) -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::production_os::build_durability_plane_report()).into_response()
 }
 
 /// GET /api/intelligence/production/hosted-plane
-pub(crate) async fn api_intelligence_production_hosted_plane() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_production_hosted_plane() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::production_os::build_hosted_plane_report()).into_response()
 }
 
@@ -1671,12 +1765,14 @@ pub(crate) async fn api_intelligence_production_edge_fleet() -> impl axum::respo
 }
 
 /// GET /api/intelligence/production/post-deploy-manifest
-pub(crate) async fn api_intelligence_production_post_deploy_manifest() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_production_post_deploy_manifest(
+) -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::production_os::build_post_deploy_manifest()).into_response()
 }
 
 /// GET /api/intelligence/production/ci-smoke-manifest
-pub(crate) async fn api_intelligence_production_ci_smoke_manifest() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_production_ci_smoke_manifest(
+) -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::production_os::build_ci_smoke_manifest()).into_response()
 }
 
@@ -1686,7 +1782,8 @@ pub(crate) async fn api_intelligence_livelabs_overview() -> impl axum::response:
 }
 
 /// GET /api/intelligence/livelabs/reference-runner
-pub(crate) async fn api_intelligence_livelabs_reference_runner() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_livelabs_reference_runner() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::livelabs_os::build_reference_runner_report()).into_response()
 }
 
@@ -1701,17 +1798,20 @@ pub(crate) async fn api_intelligence_livelabs_live_smoke() -> impl axum::respons
 }
 
 /// GET /api/intelligence/livelabs/post-deploy-verify
-pub(crate) async fn api_intelligence_livelabs_post_deploy_verify() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_livelabs_post_deploy_verify(
+) -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::livelabs_os::build_post_deploy_verify_report()).into_response()
 }
 
 /// GET /api/intelligence/livelabs/kubernetes-lab
-pub(crate) async fn api_intelligence_livelabs_kubernetes_lab() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_livelabs_kubernetes_lab() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::livelabs_os::build_kubernetes_lab_report()).into_response()
 }
 
 /// GET /api/intelligence/livelabs/advanced-runtime-labs
-pub(crate) async fn api_intelligence_livelabs_advanced_runtime_labs() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_livelabs_advanced_runtime_labs(
+) -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::livelabs_os::build_advanced_runtime_labs_report()).into_response()
 }
 
@@ -1726,6 +1826,7 @@ pub(crate) async fn api_intelligence_livelabs_cluster_exec() -> impl axum::respo
 }
 
 /// GET /api/intelligence/livelabs/confidential-lab
-pub(crate) async fn api_intelligence_livelabs_confidential_lab() -> impl axum::response::IntoResponse {
+pub(crate) async fn api_intelligence_livelabs_confidential_lab() -> impl axum::response::IntoResponse
+{
     ok_json(crate::intelligence::livelabs_os::build_confidential_lab_report()).into_response()
 }

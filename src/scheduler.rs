@@ -69,7 +69,9 @@ impl std::fmt::Display for ScheduleConstraint {
             ScheduleConstraint::RequireNvme => write!(f, "require:nvme"),
             ScheduleConstraint::RequireTrusted => write!(f, "require:trusted"),
             ScheduleConstraint::RequireHardwareLabel(label) => write!(f, "require:{}", label),
-            ScheduleConstraint::RequireNetworkBandwidth(bw) => write!(f, "require:bandwidth:{}", bw),
+            ScheduleConstraint::RequireNetworkBandwidth(bw) => {
+                write!(f, "require:bandwidth:{}", bw)
+            }
         }
     }
 }
@@ -205,7 +207,11 @@ impl RuntimeCapacity {
                 max_workloads: 20,
                 healthy: true,
                 zones: vec!["dc-1".to_string()],
-                hardware_labels: vec!["nvme".to_string(), "gpu:nvidia-a100".to_string(), "10gbe".to_string()],
+                hardware_labels: vec![
+                    "nvme".to_string(),
+                    "gpu:nvidia-a100".to_string(),
+                    "10gbe".to_string(),
+                ],
                 trusted: true,
             },
         }
@@ -230,8 +236,10 @@ impl RuntimeCapacity {
 
     /// Resource utilization after placing workload (0.0-1.0)
     fn utilization_after(&self, request: &ScheduleRequest) -> f64 {
-        let cpu_util = (self.total_cpu - self.available_cpu + request.cpu_required) / self.total_cpu;
-        let mem_util = (self.total_memory_mb - self.available_memory_mb + request.memory_required_mb) as f64
+        let cpu_util =
+            (self.total_cpu - self.available_cpu + request.cpu_required) / self.total_cpu;
+        let mem_util = (self.total_memory_mb - self.available_memory_mb
+            + request.memory_required_mb) as f64
             / self.total_memory_mb as f64;
         (cpu_util + mem_util) / 2.0
     }
@@ -292,7 +300,10 @@ impl std::str::FromStr for ScheduleStrategy {
             "performance" | "performance-optimized" => Ok(ScheduleStrategy::PerformanceOptimized),
             "bin-packing" | "binpacking" => Ok(ScheduleStrategy::BinPacking),
             "balanced" => Ok(ScheduleStrategy::Balanced),
-            _ => Err(anyhow::anyhow!("Unknown schedule strategy: '{}'. Valid: balanced, cost, performance, bin-packing", s)),
+            _ => Err(anyhow::anyhow!(
+                "Unknown schedule strategy: '{}'. Valid: balanced, cost, performance, bin-packing",
+                s
+            )),
         }
     }
 }
@@ -386,7 +397,9 @@ impl Scheduler {
                         self.update_capacity(updated);
                         tracing::info!(
                             "Probed live capacity for {}: {:.1} CPU, {} MB memory",
-                            runtime_kind, cap.available_cpu, cap.available_memory_mb
+                            runtime_kind,
+                            cap.available_cpu,
+                            cap.available_memory_mb
                         );
                     }
                     Ok(None) => {
@@ -397,21 +410,28 @@ impl Scheduler {
                     }
                 },
                 Err(_) => {
-                    tracing::info!("{} runtime not available, using default capacity", runtime_kind);
+                    tracing::info!(
+                        "{} runtime not available, using default capacity",
+                        runtime_kind
+                    );
                 }
             }
         }
     }
 
     /// Schedule a workload
-    pub fn schedule(&mut self, request: &ScheduleRequest) -> Result<ScheduleDecision, ScheduleError> {
+    pub fn schedule(
+        &mut self,
+        request: &ScheduleRequest,
+    ) -> Result<ScheduleDecision, ScheduleError> {
         // Filter runtimes by constraints
         let candidates = self.filter_by_constraints(request);
 
         if candidates.is_empty() {
             return Err(ScheduleError::NoFeasibleRuntime {
                 workload: request.workload_name.clone(),
-                reason: "No runtime satisfies all constraints and has sufficient capacity".to_string(),
+                reason: "No runtime satisfies all constraints and has sufficient capacity"
+                    .to_string(),
             });
         }
 
@@ -495,8 +515,12 @@ impl Scheduler {
                 });
             }
             cap.available_cpu -= request.cpu_required;
-            cap.available_memory_mb = cap.available_memory_mb.saturating_sub(request.memory_required_mb);
-            cap.available_storage_mb = cap.available_storage_mb.saturating_sub(request.storage_required_mb);
+            cap.available_memory_mb = cap
+                .available_memory_mb
+                .saturating_sub(request.memory_required_mb);
+            cap.available_storage_mb = cap
+                .available_storage_mb
+                .saturating_sub(request.storage_required_mb);
             cap.current_workloads += 1;
         }
 
@@ -523,7 +547,11 @@ impl Scheduler {
 
     /// Remove a workload placement (when workload is deleted)
     pub fn release(&mut self, workload_name: &str) {
-        if let Some(idx) = self.placements.iter().position(|p| p.workload_name == workload_name) {
+        if let Some(idx) = self
+            .placements
+            .iter()
+            .position(|p| p.workload_name == workload_name)
+        {
             let placement = self.placements.remove(idx);
             if let Some(cap) = self.capacities.get_mut(&placement.runtime) {
                 cap.available_cpu += placement.cpu_reserved;
@@ -549,7 +577,8 @@ impl Scheduler {
                     0.0
                 };
                 let mem_util = if cap.total_memory_mb > 0 {
-                    (cap.total_memory_mb - cap.available_memory_mb) as f64 / cap.total_memory_mb as f64
+                    (cap.total_memory_mb - cap.available_memory_mb) as f64
+                        / cap.total_memory_mb as f64
                 } else {
                     0.0
                 };
@@ -572,7 +601,8 @@ impl Scheduler {
 
         // Check for unbalanced utilization
         let utils = self.utilization_summary();
-        let avg_cpu: f64 = utils.iter().map(|u| u.cpu_utilization).sum::<f64>() / utils.len().max(1) as f64;
+        let avg_cpu: f64 =
+            utils.iter().map(|u| u.cpu_utilization).sum::<f64>() / utils.len().max(1) as f64;
 
         for u in &utils {
             if u.cpu_utilization > 0.9 {
@@ -653,7 +683,9 @@ impl Scheduler {
                 }
                 ScheduleConstraint::RequireGpu => {
                     candidates.retain(|c| {
-                        self.capacities.get(c).is_some_and(|cap| cap.gpu_available > 0)
+                        self.capacities
+                            .get(c)
+                            .is_some_and(|cap| cap.gpu_available > 0)
                     });
                 }
                 ScheduleConstraint::RequireBareMetal => {
@@ -674,26 +706,28 @@ impl Scheduler {
                     });
                 }
                 ScheduleConstraint::CoLocate(name) => {
-                    if let Some(placement) = self.placements.iter().find(|p| p.workload_name == *name) {
+                    if let Some(placement) =
+                        self.placements.iter().find(|p| p.workload_name == *name)
+                    {
                         candidates.retain(|c| *c == placement.runtime);
                     }
                 }
                 ScheduleConstraint::AntiAffinity(name) => {
-                    if let Some(placement) = self.placements.iter().find(|p| p.workload_name == *name) {
+                    if let Some(placement) =
+                        self.placements.iter().find(|p| p.workload_name == *name)
+                    {
                         candidates.retain(|c| *c != placement.runtime);
                     }
                 }
                 ScheduleConstraint::RequireNvme => {
                     candidates.retain(|c| {
-                        self.capacities
-                            .get(c)
-                            .is_some_and(|cap| cap.hardware_labels.iter().any(|l| l.contains("nvme")))
+                        self.capacities.get(c).is_some_and(|cap| {
+                            cap.hardware_labels.iter().any(|l| l.contains("nvme"))
+                        })
                     });
                 }
                 ScheduleConstraint::RequireTrusted => {
-                    candidates.retain(|c| {
-                        self.capacities.get(c).is_some_and(|cap| cap.trusted)
-                    });
+                    candidates.retain(|c| self.capacities.get(c).is_some_and(|cap| cap.trusted));
                 }
                 ScheduleConstraint::RequireHardwareLabel(label) => {
                     let needle = label.to_lowercase();
@@ -709,9 +743,9 @@ impl Scheduler {
                 }
                 ScheduleConstraint::RequireNetworkBandwidth(bw) => {
                     candidates.retain(|c| {
-                        self.capacities
-                            .get(c)
-                            .is_some_and(|cap| cap.hardware_labels.iter().any(|l| l.contains(bw.as_str())))
+                        self.capacities.get(c).is_some_and(|cap| {
+                            cap.hardware_labels.iter().any(|l| l.contains(bw.as_str()))
+                        })
                     });
                 }
             }
@@ -720,7 +754,11 @@ impl Scheduler {
         candidates
     }
 
-    fn score_runtime(&self, runtime: &RuntimeKind, request: &ScheduleRequest) -> (f64, Vec<String>) {
+    fn score_runtime(
+        &self,
+        runtime: &RuntimeKind,
+        request: &ScheduleRequest,
+    ) -> (f64, Vec<String>) {
         let cap = &self.capacities[runtime];
         let mut score = 0.0;
         let mut reasons = Vec::new();
@@ -752,7 +790,11 @@ impl Scheduler {
                 let util = cap.utilization_after(request);
                 score += (1.0 - (cost / max_cost).min(1.0)) * 0.3;
                 score += (1.0 - util) * 0.3;
-                reasons.push(format!("Balanced: cost=${:.2}, util={:.0}%", cost, util * 100.0));
+                reasons.push(format!(
+                    "Balanced: cost=${:.2}, util={:.0}%",
+                    cost,
+                    util * 100.0
+                ));
             }
         }
 
@@ -782,26 +824,33 @@ impl Scheduler {
         // GPU match bonus — if workload needs GPU and runtime has it
         if request.gpu_required > 0 && cap.gpu_available >= request.gpu_required {
             score += 0.15;
-            reasons.push(format!("GPU: {} available (need {})", cap.gpu_available, request.gpu_required));
+            reasons.push(format!(
+                "GPU: {} available (need {})",
+                cap.gpu_available, request.gpu_required
+            ));
         }
 
         // Trust bonus — only applies when workload explicitly requires trust
-        if cap.trusted && request.constraints.iter().any(|c| matches!(c, ScheduleConstraint::RequireTrusted)) {
+        if cap.trusted
+            && request
+                .constraints
+                .iter()
+                .any(|c| matches!(c, ScheduleConstraint::RequireTrusted))
+        {
             score += 0.15;
             reasons.push("Trusted runtime (TPM/attested) — matches requirement".to_string());
         }
 
         // TEE / hardware label bonus
-        for label in request
-            .constraints
-            .iter()
-            .filter_map(|c| match c {
-                ScheduleConstraint::RequireHardwareLabel(l) => Some(l.as_str()),
-                _ => None,
-            })
-        {
+        for label in request.constraints.iter().filter_map(|c| match c {
+            ScheduleConstraint::RequireHardwareLabel(l) => Some(l.as_str()),
+            _ => None,
+        }) {
             let needle = label.to_lowercase();
-            if cap.hardware_labels.iter().any(|l| l.to_lowercase().contains(&needle))
+            if cap
+                .hardware_labels
+                .iter()
+                .any(|l| l.to_lowercase().contains(&needle))
                 || (cap.trusted && (needle.contains("sev") || needle.contains("tdx")))
             {
                 score += 0.12;
@@ -810,9 +859,17 @@ impl Scheduler {
         }
 
         // Hardware label match bonus — NVMe, high-bandwidth NIC, etc.
-        let hw_match_count = request.constraints.iter().filter(|c| {
-            matches!(c, ScheduleConstraint::RequireNvme | ScheduleConstraint::RequireNetworkBandwidth(_))
-        }).count();
+        let hw_match_count = request
+            .constraints
+            .iter()
+            .filter(|c| {
+                matches!(
+                    c,
+                    ScheduleConstraint::RequireNvme
+                        | ScheduleConstraint::RequireNetworkBandwidth(_)
+                )
+            })
+            .count();
         if hw_match_count > 0 {
             score += 0.05 * hw_match_count as f64;
             reasons.push(format!("Hardware match: {} constraint(s)", hw_match_count));
@@ -891,9 +948,18 @@ impl std::fmt::Display for OptCategory {
 pub fn format_schedule_decision(decision: &ScheduleDecision) -> String {
     let mut output = String::new();
     output.push_str(&output::property_section(&[
-        ("Schedule Decision", format!("{}  →  {}", decision.workload_name, decision.selected_runtime)),
+        (
+            "Schedule Decision",
+            format!(
+                "{}  →  {}",
+                decision.workload_name, decision.selected_runtime
+            ),
+        ),
         ("Score", format!("{:.0}%", decision.score * 100.0)),
-        ("Estimated Cost", format!("${:.2}/day", decision.estimated_cost_per_day)),
+        (
+            "Estimated Cost",
+            format!("${:.2}/day", decision.estimated_cost_per_day),
+        ),
     ]));
 
     if !decision.reasons.is_empty() {
@@ -984,7 +1050,9 @@ mod tests {
     fn test_schedule_with_runtime_constraint() {
         let mut scheduler = Scheduler::new();
         let mut request = basic_request("api-server");
-        request.constraints.push(ScheduleConstraint::RequireRuntime(RuntimeKind::Kubernetes));
+        request
+            .constraints
+            .push(ScheduleConstraint::RequireRuntime(RuntimeKind::Kubernetes));
 
         let decision = scheduler.schedule(&request).unwrap();
         assert_eq!(decision.selected_runtime, RuntimeKind::Kubernetes);
@@ -994,8 +1062,12 @@ mod tests {
     fn test_schedule_exclude_runtime() {
         let mut scheduler = Scheduler::new();
         let mut request = basic_request("worker");
-        request.constraints.push(ScheduleConstraint::ExcludeRuntime(RuntimeKind::Metal3));
-        request.constraints.push(ScheduleConstraint::ExcludeRuntime(RuntimeKind::KubeVirt));
+        request
+            .constraints
+            .push(ScheduleConstraint::ExcludeRuntime(RuntimeKind::Metal3));
+        request
+            .constraints
+            .push(ScheduleConstraint::ExcludeRuntime(RuntimeKind::KubeVirt));
 
         let decision = scheduler.schedule(&request).unwrap();
         assert!(decision.selected_runtime != RuntimeKind::Metal3);
@@ -1051,7 +1123,8 @@ mod tests {
         let decision1 = scheduler.schedule(&req1).unwrap();
 
         let mut req2 = basic_request("backend");
-        req2.constraints.push(ScheduleConstraint::CoLocate("frontend".to_string()));
+        req2.constraints
+            .push(ScheduleConstraint::CoLocate("frontend".to_string()));
         let decision2 = scheduler.schedule(&req2).unwrap();
 
         assert_eq!(decision1.selected_runtime, decision2.selected_runtime);
@@ -1077,11 +1150,26 @@ mod tests {
 
     #[test]
     fn test_schedule_strategy_from_str() {
-        assert_eq!("balanced".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::Balanced);
-        assert_eq!("cost".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::CostOptimized);
-        assert_eq!("cost-optimized".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::CostOptimized);
-        assert_eq!("performance".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::PerformanceOptimized);
-        assert_eq!("bin-packing".parse::<ScheduleStrategy>().unwrap(), ScheduleStrategy::BinPacking);
+        assert_eq!(
+            "balanced".parse::<ScheduleStrategy>().unwrap(),
+            ScheduleStrategy::Balanced
+        );
+        assert_eq!(
+            "cost".parse::<ScheduleStrategy>().unwrap(),
+            ScheduleStrategy::CostOptimized
+        );
+        assert_eq!(
+            "cost-optimized".parse::<ScheduleStrategy>().unwrap(),
+            ScheduleStrategy::CostOptimized
+        );
+        assert_eq!(
+            "performance".parse::<ScheduleStrategy>().unwrap(),
+            ScheduleStrategy::PerformanceOptimized
+        );
+        assert_eq!(
+            "bin-packing".parse::<ScheduleStrategy>().unwrap(),
+            ScheduleStrategy::BinPacking
+        );
         assert!("unknown".parse::<ScheduleStrategy>().is_err());
     }
 }

@@ -151,8 +151,7 @@ impl DependencyGraph {
         self.edges
             .iter()
             .flat_map(|(workload, deps)| {
-                deps.iter()
-                    .map(move |dep| (workload.clone(), dep.clone()))
+                deps.iter().map(move |dep| (workload.clone(), dep.clone()))
             })
             .collect()
     }
@@ -339,7 +338,14 @@ pub fn format_dependency_report(graph: &DependencyGraph) -> String {
         ("Workloads", format!("{}", stats.total_workloads)),
         ("Dependencies", format!("{}", stats.total_edges)),
         ("Max depth", format!("{}", stats.max_depth)),
-        ("Cycles", if stats.has_cycles { "YES".to_string() } else { "none".to_string() }),
+        (
+            "Cycles",
+            if stats.has_cycles {
+                "YES".to_string()
+            } else {
+                "none".to_string()
+            },
+        ),
     ]));
 
     if let Ok(order) = graph.startup_order() {

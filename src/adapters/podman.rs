@@ -37,9 +37,8 @@ pub struct PodmanRuntime;
 impl PodmanRuntime {
     pub fn new() -> anyhow::Result<Self> {
         // Check if podman is available
-        which::which("podman").map_err(|_| {
-            anyhow::anyhow!("Podman not found. Please install podman first.")
-        })?;
+        which::which("podman")
+            .map_err(|_| anyhow::anyhow!("Podman not found. Please install podman first."))?;
 
         Ok(Self)
     }
@@ -92,13 +91,12 @@ impl Runtime for PodmanRuntime {
 
         // Label containers for aether management (used by list filtering)
         cmd.arg("--label").arg("aether-managed=true");
-        cmd.arg("--label").arg(format!("app={}", spec.metadata.name));
+        cmd.arg("--label")
+            .arg(format!("app={}", spec.metadata.name));
 
         for port in &spec.network.ports {
-            cmd.arg("-p").arg(format!(
-                "{}:{}",
-                port.service_port, port.container_port
-            ));
+            cmd.arg("-p")
+                .arg(format!("{}:{}", port.service_port, port.container_port));
         }
 
         // Inject environment variables from config maps
@@ -125,7 +123,8 @@ impl Runtime for PodmanRuntime {
                         // to prevent any shell interpretation. Single quotes in POSIX sh
                         // prevent all expansion; embedded single quotes are handled by
                         // ending the quote, adding an escaped quote, and reopening.
-                        command.iter()
+                        command
+                            .iter()
                             .map(|arg| format!("'{}'", arg.replace('\'', "'\\''")))
                             .collect::<Vec<_>>()
                             .join(" ")
@@ -154,9 +153,13 @@ impl Runtime for PodmanRuntime {
         if !is_rootless {
             cmd.arg("--cpus").arg(&spec.requirements.cpu);
             // Convert K8s memory format (e.g. "256Mi", "4Gi") to Podman format ("256m", "4g")
-            let podman_memory = spec.requirements.memory
-                .replace("Gi", "g").replace("Mi", "m")
-                .replace("Ki", "k").replace("Ti", "t");
+            let podman_memory = spec
+                .requirements
+                .memory
+                .replace("Gi", "g")
+                .replace("Mi", "m")
+                .replace("Ki", "k")
+                .replace("Ti", "t");
             cmd.arg("--memory").arg(&podman_memory);
         } else {
             tracing::info!(
@@ -168,7 +171,12 @@ impl Runtime for PodmanRuntime {
         let output = exec_podman(cmd, "run").await?;
         let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-        Ok(Instance::new(container_id, spec.metadata.name.clone(), RuntimeKind::Podman, image.full_name()))
+        Ok(Instance::new(
+            container_id,
+            spec.metadata.name.clone(),
+            RuntimeKind::Podman,
+            image.full_name(),
+        ))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
@@ -260,7 +268,14 @@ impl Runtime for PodmanRuntime {
 
     async fn list(&self) -> crate::Result<Vec<Instance>> {
         let mut cmd = Command::new("podman");
-        cmd.args(["ps", "-a", "--filter", "label=aether-managed=true", "--format", "json"]);
+        cmd.args([
+            "ps",
+            "-a",
+            "--filter",
+            "label=aether-managed=true",
+            "--format",
+            "json",
+        ]);
         let output = exec_podman(cmd, "ps").await?;
 
         let json_str = String::from_utf8_lossy(&output.stdout);
@@ -281,7 +296,8 @@ impl Runtime for PodmanRuntime {
                 if id.is_empty() || name.is_empty() {
                     tracing::warn!(
                         "Skipping container with missing id or name (id='{}', name='{}')",
-                        id, name
+                        id,
+                        name
                     );
                     return None;
                 }
@@ -328,9 +344,8 @@ impl Runtime for PodmanRuntime {
 mod tests {
     use super::*;
     use crate::spec::{
-        BuildSpec, Metadata, NetworkSpec, PersistenceSpec, PortMapping,
-        ResourceRequirements, RuntimePreference, RuntimeSpec, RuntimeType,
-        ServiceType, Workload,
+        BuildSpec, Metadata, NetworkSpec, PersistenceSpec, PortMapping, ResourceRequirements,
+        RuntimePreference, RuntimeSpec, RuntimeType, ServiceType, Workload,
     };
     use std::path::PathBuf;
 
@@ -373,7 +388,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
-        ..Default::default()
+                ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,
@@ -385,7 +400,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 

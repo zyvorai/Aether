@@ -51,7 +51,10 @@ pub fn build_saas_tenant_dashboard(state_path: &Path) -> anyhow::Result<SaasTena
             SaasTenantLine {
                 id: t.tenant_id.clone(),
                 slug: t.tenant_slug.clone(),
-                name: meta.as_ref().map(|m| m.name.clone()).unwrap_or_else(|| t.tenant_slug.clone()),
+                name: meta
+                    .as_ref()
+                    .map(|m| m.name.clone())
+                    .unwrap_or_else(|| t.tenant_slug.clone()),
                 plan: t.plan.clone(),
                 active: meta.as_ref().map(|m| m.active).unwrap_or(true),
                 workload_count: t.workload_count,
@@ -116,7 +119,10 @@ pub fn build_plugin_marketplace() -> anyhow::Result<PluginMarketplaceReport> {
     Ok(PluginMarketplaceReport {
         generated_at: crate::resources::now_rfc3339(),
         entries,
-        discover_path: crate::resources::aether_dir().join("plugins").display().to_string(),
+        discover_path: crate::resources::aether_dir()
+            .join("plugins")
+            .display()
+            .to_string(),
     })
 }
 
@@ -441,7 +447,8 @@ pub struct AutonomousSreExecuteReport {
 pub fn build_autonomous_sre_status(state_path: &Path) -> anyhow::Result<AutonomousSreStatusReport> {
     let autonomy = build_autonomy_status(state_path)?;
     let config = crate::config::Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let human_gate = !policy.auto_restart
         || policy.auto_migrate == crate::intelligence::policy::AutonomyTier::Recommend
         || policy.auto_evolve == crate::intelligence::policy::AutonomyTier::Recommend;
@@ -473,7 +480,8 @@ pub async fn execute_autonomous_sre_loop(
     req: &AutonomousSreExecuteRequest,
 ) -> anyhow::Result<AutonomousSreExecuteReport> {
     let config = crate::config::Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let status = build_autonomous_sre_status(state_path)?;
     let mut skipped = Vec::new();
 

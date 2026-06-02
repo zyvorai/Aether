@@ -102,8 +102,7 @@ impl DigitalTwinEngine {
         let projected_cpu = (cpu_util * scale * runtime_multiplier).min(0.99);
         let projected_mem = (mem_util * scale * runtime_multiplier * 0.95).min(0.99);
         let projected_cost = monthly_cost * scale * runtime_multiplier;
-        let projected_risk =
-            (predictions.fleet_risk_score * scale * 0.12 * risk_boost).min(1.0);
+        let projected_risk = (predictions.fleet_risk_score * scale * 0.12 * risk_boost).min(1.0);
 
         let projected = TwinSnapshot {
             fleet_risk_score: projected_risk,
@@ -126,8 +125,7 @@ impl DigitalTwinEngine {
         }
         if finops.recommendations.first().is_some() && scale <= 1.2 {
             recommendations.push(
-                "FinOps suggests runtime shifts before scaling — check Cost Intelligence."
-                    .into(),
+                "FinOps suggests runtime shifts before scaling — check Cost Intelligence.".into(),
             );
         }
         if projected_risk > baseline.fleet_risk_score + 0.15 {

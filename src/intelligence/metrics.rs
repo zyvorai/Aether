@@ -29,12 +29,18 @@ pub fn query_allowed_extended(promql: &str) -> bool {
         || lower.starts_with("rate(node_")
 }
 
-pub async fn prometheus_range_query(query: &str, range_secs: u64, step_secs: u64) -> Result<serde_json::Value> {
+pub async fn prometheus_range_query(
+    query: &str,
+    range_secs: u64,
+    step_secs: u64,
+) -> Result<serde_json::Value> {
     if !query_allowed_extended(query) {
-        anyhow::bail!("query must use allowed metric prefixes (aether_, kube_, container_, node_, kubelet_)");
+        anyhow::bail!(
+            "query must use allowed metric prefixes (aether_, kube_, container_, node_, kubelet_)"
+        );
     }
-    let base = std::env::var("AETHER_PROMETHEUS_URL")
-        .context("AETHER_PROMETHEUS_URL is not set")?;
+    let base =
+        std::env::var("AETHER_PROMETHEUS_URL").context("AETHER_PROMETHEUS_URL is not set")?;
     let base = base.trim_end_matches('/');
     let end = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -61,10 +67,7 @@ pub async fn prometheus_range_query(query: &str, range_secs: u64, step_secs: u64
 
 pub fn time_series_from_range(json: &serde_json::Value, name: &str, unit: &str) -> TimeSeries {
     let mut series = TimeSeries::new(name, unit);
-    let Some(results) = json
-        .pointer("/data/result")
-        .and_then(|v| v.as_array())
-    else {
+    let Some(results) = json.pointer("/data/result").and_then(|v| v.as_array()) else {
         return series;
     };
     if let Some(first) = results.first() {
@@ -137,7 +140,10 @@ fn synthetic_series(cpu: &mut TimeSeries, mem: &mut TimeSeries) {
         - 3600.0;
     for i in 0..60 {
         let t = base_time + (i as f64 * 60.0);
-        cpu.add(t, 0.45 + (i as f64 * 0.005) + ((i as f64 * 0.1).sin() * 0.05));
+        cpu.add(
+            t,
+            0.45 + (i as f64 * 0.005) + ((i as f64 * 0.1).sin() * 0.05),
+        );
         mem.add(t, 0.55 + (i as f64 * 0.002));
     }
 }

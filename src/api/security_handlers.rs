@@ -5,11 +5,7 @@
 use super::handlers::{err_bad_request, ok_json};
 use crate::ragnarok::image::{ImageCatalog, ImageVerifyResult};
 use crate::sbom;
-use axum::{
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -20,9 +16,8 @@ fn state_dir() -> PathBuf {
 }
 
 pub(crate) async fn api_security_sbom() -> impl IntoResponse {
-    let bom = sbom::load_cached().unwrap_or_else(|| {
-        sbom::generate_cyclonedx(None).unwrap_or(serde_json::json!({}))
-    });
+    let bom = sbom::load_cached()
+        .unwrap_or_else(|| sbom::generate_cyclonedx(None).unwrap_or(serde_json::json!({})));
     let meta = sbom::sbom_metadata(&bom);
     ok_json(serde_json::json!({
         "metadata": meta,

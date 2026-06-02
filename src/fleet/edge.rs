@@ -146,10 +146,7 @@ impl EdgeStore {
 
     pub fn poll_queue(&self, site: &str) -> Vec<EdgeJob> {
         let mut g = self.inner.lock().unwrap();
-        let (keep, take): (Vec<_>, Vec<_>) = g
-            .jobs
-            .drain(..)
-            .partition(|j| j.site != site);
+        let (keep, take): (Vec<_>, Vec<_>) = g.jobs.drain(..).partition(|j| j.site != site);
         g.jobs = keep;
         let _ = self.persist(&g);
         let _ = self.persist_queue(&g.jobs);

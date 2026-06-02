@@ -55,11 +55,9 @@ impl Backup {
 
     /// Save backup to file with restricted permissions (0o600)
     pub fn save(&self, path: &Path) -> Result<()> {
-        let json = serde_json::to_string_pretty(self)
-            .context("Failed to serialize backup")?;
+        let json = serde_json::to_string_pretty(self).context("Failed to serialize backup")?;
 
-        fs::write(path, &json)
-            .context(format!("Failed to write backup to {}", path.display()))?;
+        fs::write(path, &json).context(format!("Failed to write backup to {}", path.display()))?;
 
         // Set restrictive permissions (owner read/write only)
         #[cfg(unix)]
@@ -78,8 +76,8 @@ impl Backup {
         let contents = fs::read_to_string(path)
             .context(format!("Failed to read backup from {}", path.display()))?;
 
-        let backup: Backup = serde_json::from_str(&contents)
-            .context("Failed to deserialize backup")?;
+        let backup: Backup =
+            serde_json::from_str(&contents).context("Failed to deserialize backup")?;
 
         tracing::info!("Backup loaded from {}", path.display());
         Ok(backup)
@@ -95,17 +93,17 @@ impl Backup {
 
         state.save(state_path)?;
 
-        tracing::info!(
-            "Restored {} workloads from backup",
-            self.workloads.len()
-        );
+        tracing::info!("Restored {} workloads from backup", self.workloads.len());
         Ok(())
     }
 
     /// Merge backup into existing state (don't overwrite)
     pub fn merge(&self, state_path: &Path) -> Result<()> {
         let mut state = StateStore::load(state_path).unwrap_or_else(|e| {
-            tracing::warn!("Failed to load existing state for merge (starting fresh): {}", e);
+            tracing::warn!(
+                "Failed to load existing state for merge (starting fresh): {}",
+                e
+            );
             StateStore::new()
         });
 
@@ -142,7 +140,9 @@ impl BackupManager {
     /// Get default backup directory
     pub fn default_dir() -> PathBuf {
         let mut path = dirs::home_dir().unwrap_or_else(|| {
-            tracing::warn!("Could not determine home directory, using current directory for backups");
+            tracing::warn!(
+                "Could not determine home directory, using current directory for backups"
+            );
             std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
         });
         path.push(".aether");
@@ -152,8 +152,7 @@ impl BackupManager {
 
     /// Ensure backup directory exists
     pub fn ensure_backup_dir(&self) -> Result<()> {
-        fs::create_dir_all(&self.backup_dir)
-            .context("Failed to create backup directory")?;
+        fs::create_dir_all(&self.backup_dir).context("Failed to create backup directory")?;
         Ok(())
     }
 
@@ -193,9 +192,7 @@ impl BackupManager {
 
         let mut backups = Vec::new();
 
-        for entry in fs::read_dir(&self.backup_dir)
-            .context("Failed to read backup directory")?
-        {
+        for entry in fs::read_dir(&self.backup_dir).context("Failed to read backup directory")? {
             let entry = entry?;
             let path = entry.path();
 
@@ -221,11 +218,9 @@ impl BackupManager {
             anyhow::bail!("Refusing to read symlink backup path: {}", path.display());
         }
 
-        let contents = fs::read_to_string(path)
-            .context("Failed to read backup file")?;
+        let contents = fs::read_to_string(path).context("Failed to read backup file")?;
 
-        let backup: Backup = serde_json::from_str(&contents)
-            .context("Failed to parse backup")?;
+        let backup: Backup = serde_json::from_str(&contents).context("Failed to parse backup")?;
 
         Ok(backup.metadata)
     }
@@ -237,8 +232,7 @@ impl BackupManager {
             anyhow::bail!("Refusing to delete symlink backup path: {}", path.display());
         }
 
-        fs::remove_file(path)
-            .context(format!("Failed to delete backup {}", path.display()))?;
+        fs::remove_file(path).context(format!("Failed to delete backup {}", path.display()))?;
 
         tracing::info!("Deleted backup: {}", path.display());
         Ok(())
@@ -290,7 +284,9 @@ impl SnapshotManager {
     /// Create a snapshot manager using the default directory.
     pub fn new() -> Self {
         let mut path = dirs::home_dir().unwrap_or_else(|| {
-            tracing::warn!("Could not determine home directory, using current directory for snapshots");
+            tracing::warn!(
+                "Could not determine home directory, using current directory for snapshots"
+            );
             std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
         });
         path.push(".aether");
@@ -306,8 +302,7 @@ impl SnapshotManager {
     /// Create a snapshot of a single workload state.
     /// Returns the path to the saved snapshot file.
     pub fn create_snapshot(&self, ws: &WorkloadState) -> Result<PathBuf> {
-        fs::create_dir_all(&self.snapshot_dir)
-            .context("Failed to create snapshot directory")?;
+        fs::create_dir_all(&self.snapshot_dir).context("Failed to create snapshot directory")?;
 
         let now = chrono::Utc::now();
         let timestamp = now.format("%Y%m%dT%H%M%S");
@@ -326,8 +321,7 @@ impl SnapshotManager {
             workloads: vec![ws.clone()],
         };
 
-        let json = serde_json::to_string_pretty(&backup)
-            .context("Failed to serialize snapshot")?;
+        let json = serde_json::to_string_pretty(&backup).context("Failed to serialize snapshot")?;
         fs::write(&path, &json)
             .context(format!("Failed to write snapshot to {}", path.display()))?;
 
@@ -359,8 +353,8 @@ impl SnapshotManager {
         let prefix = format!("{}-", name);
         let mut matches = Vec::new();
 
-        for entry in fs::read_dir(&self.snapshot_dir)
-            .context("Failed to read snapshot directory")?
+        for entry in
+            fs::read_dir(&self.snapshot_dir).context("Failed to read snapshot directory")?
         {
             let entry = entry?;
             let path = entry.path();

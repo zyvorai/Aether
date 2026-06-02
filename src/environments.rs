@@ -7,10 +7,10 @@
 //! Multi-environment (dev/staging/prod) management with promotion
 //! workflows and environment parity validation.
 
+use crate::output;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::output;
 
 /// Environment tier
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -202,11 +202,7 @@ impl EnvironmentManager {
     }
 
     /// Add a workload to an environment
-    pub fn add_workload(
-        &mut self,
-        env_name: &str,
-        workload: EnvWorkload,
-    ) -> anyhow::Result<()> {
+    pub fn add_workload(&mut self, env_name: &str, workload: EnvWorkload) -> anyhow::Result<()> {
         let env = self
             .environments
             .get_mut(env_name)
@@ -217,12 +213,7 @@ impl EnvironmentManager {
     }
 
     /// Set an environment variable
-    pub fn set_var(
-        &mut self,
-        env_name: &str,
-        key: &str,
-        value: &str,
-    ) -> anyhow::Result<()> {
+    pub fn set_var(&mut self, env_name: &str, key: &str, value: &str) -> anyhow::Result<()> {
         let env = self
             .environments
             .get_mut(env_name)
@@ -234,10 +225,9 @@ impl EnvironmentManager {
 
     /// Promote a workload from one environment to another
     pub fn promote(&mut self, request: &PromotionRequest) -> anyhow::Result<PromotionResult> {
-        let source = self
-            .environments
-            .get(&request.from_env)
-            .ok_or_else(|| anyhow::anyhow!("Source environment '{}' not found", request.from_env))?;
+        let source = self.environments.get(&request.from_env).ok_or_else(|| {
+            anyhow::anyhow!("Source environment '{}' not found", request.from_env)
+        })?;
 
         let source_workload = source
             .workloads
@@ -291,8 +281,12 @@ impl EnvironmentManager {
         }
 
         // Insert into target
-        let target = self.environments.get_mut(&request.to_env)
-            .ok_or_else(|| anyhow::anyhow!("Target environment '{}' disappeared during promotion", request.to_env))?;
+        let target = self.environments.get_mut(&request.to_env).ok_or_else(|| {
+            anyhow::anyhow!(
+                "Target environment '{}' disappeared during promotion",
+                request.to_env
+            )
+        })?;
         target.workloads.insert(request.workload.clone(), promoted);
         target.updated_at = crate::resources::now_rfc3339();
 
@@ -384,11 +378,8 @@ impl EnvironmentManager {
                 }
 
                 // Compare env vars
-                let all_keys: std::collections::HashSet<_> = a
-                    .env_vars
-                    .keys()
-                    .chain(b.env_vars.keys())
-                    .collect();
+                let all_keys: std::collections::HashSet<_> =
+                    a.env_vars.keys().chain(b.env_vars.keys()).collect();
                 for key in all_keys {
                     let val_a = a.env_vars.get(key).map(|s| s.as_str()).unwrap_or("");
                     let val_b = b.env_vars.get(key).map(|s| s.as_str()).unwrap_or("");
@@ -467,9 +458,7 @@ impl EnvironmentManager {
         }
 
         // Warn about production readiness
-        if *to_tier == EnvTier::Production
-            && workload.replicas.unwrap_or(0) < 2
-        {
+        if *to_tier == EnvTier::Production && workload.replicas.unwrap_or(0) < 2 {
             warnings.push("Production workload should have at least 2 replicas".to_string());
         }
     }
@@ -499,17 +488,22 @@ pub fn format_env_list(envs: &[&Environment]) -> String {
 
     let rows: Vec<Vec<String>> = envs
         .iter()
-        .map(|e| vec![
-            e.name.clone(),
-            format!("{}", e.tier),
-            e.workloads.len().to_string(),
-            e.variables.len().to_string(),
-            e.updated_at.get(..19).unwrap_or(&e.updated_at).to_string(),
-        ])
+        .map(|e| {
+            vec![
+                e.name.clone(),
+                format!("{}", e.tier),
+                e.workloads.len().to_string(),
+                e.variables.len().to_string(),
+                e.updated_at.get(..19).unwrap_or(&e.updated_at).to_string(),
+            ]
+        })
         .collect();
     out.push_str(&format!(
         "\n{}\n",
-        output::table(&["Environment", "Tier", "Workloads", "Variables", "Updated"], rows),
+        output::table(
+            &["Environment", "Tier", "Workloads", "Variables", "Updated"],
+            rows
+        ),
     ));
 
     out
@@ -611,7 +605,11 @@ mod tests {
             .unwrap();
 
         assert!(result.success);
-        assert!(mgr.get_env("staging").unwrap().workloads.contains_key("api"));
+        assert!(mgr
+            .get_env("staging")
+            .unwrap()
+            .workloads
+            .contains_key("api"));
     }
 
     #[test]
@@ -705,12 +703,21 @@ mod tests {
 
     #[test]
     fn test_env_tier_from_str() {
-        assert_eq!("development".parse::<EnvTier>().unwrap(), EnvTier::Development);
+        assert_eq!(
+            "development".parse::<EnvTier>().unwrap(),
+            EnvTier::Development
+        );
         assert_eq!("dev".parse::<EnvTier>().unwrap(), EnvTier::Development);
         assert_eq!("staging".parse::<EnvTier>().unwrap(), EnvTier::Staging);
         assert_eq!("stg".parse::<EnvTier>().unwrap(), EnvTier::Staging);
-        assert_eq!("production".parse::<EnvTier>().unwrap(), EnvTier::Production);
+        assert_eq!(
+            "production".parse::<EnvTier>().unwrap(),
+            EnvTier::Production
+        );
         assert_eq!("prod".parse::<EnvTier>().unwrap(), EnvTier::Production);
-        assert_eq!("custom-tier".parse::<EnvTier>().unwrap(), EnvTier::Custom("custom-tier".to_string()));
+        assert_eq!(
+            "custom-tier".parse::<EnvTier>().unwrap(),
+            EnvTier::Custom("custom-tier".to_string())
+        );
     }
 }

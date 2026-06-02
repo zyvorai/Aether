@@ -125,7 +125,8 @@ pub fn build_spot_advisor(workloads: &[(Workload, WorkloadState)]) -> SpotAdviso
         let intel = IntelligenceStore::load(&IntelligenceStore::default_path()).unwrap_or_default();
         let profile = intel.behavior_profiles.get(&profile_key);
 
-        let gpu = spec.requirements.gpu.is_some() || profile.map(|p| p.gpu_contention).unwrap_or(false);
+        let gpu =
+            spec.requirements.gpu.is_some() || profile.map(|p| p.gpu_contention).unwrap_or(false);
         let stateful = spec.persistence.enabled;
         let ha = spec
             .intent
@@ -136,13 +137,29 @@ pub fn build_spot_advisor(workloads: &[(Workload, WorkloadState)]) -> SpotAdviso
             .unwrap_or(false);
 
         let (eligible, risk, reason) = if gpu {
-            (false, "high".into(), "GPU workloads are poor spot candidates".into())
+            (
+                false,
+                "high".into(),
+                "GPU workloads are poor spot candidates".into(),
+            )
         } else if stateful {
-            (false, "medium".into(), "Persistent volumes require stable nodes".into())
+            (
+                false,
+                "medium".into(),
+                "Persistent volumes require stable nodes".into(),
+            )
         } else if ha {
-            (true, "medium".into(), "Eligible with interruption tolerance checks".into())
+            (
+                true,
+                "medium".into(),
+                "Eligible with interruption tolerance checks".into(),
+            )
         } else {
-            (true, "low".into(), "Stateless workload — good spot candidate".into())
+            (
+                true,
+                "low".into(),
+                "Stateless workload — good spot candidate".into(),
+            )
         };
 
         if eligible {
@@ -198,7 +215,9 @@ pub struct ReservedInstancePlannerReport {
     pub fleet_reserved_savings_usd: f64,
 }
 
-pub fn build_reserved_instance_planner(workloads: &[(Workload, WorkloadState)]) -> ReservedInstancePlannerReport {
+pub fn build_reserved_instance_planner(
+    workloads: &[(Workload, WorkloadState)],
+) -> ReservedInstancePlannerReport {
     let provider = cost::default_chargeback_provider();
     let mut recommendations = Vec::new();
     let mut fleet_savings = 0.0;
@@ -301,7 +320,10 @@ fn append_finops_snapshot(total: f64) -> anyhow::Result<()> {
     if let Some(parent) = finops_history_path().parent() {
         std::fs::create_dir_all(parent)?;
     }
-    std::fs::write(finops_history_path(), serde_json::to_string_pretty(&history)?)?;
+    std::fs::write(
+        finops_history_path(),
+        serde_json::to_string_pretty(&history)?,
+    )?;
     Ok(())
 }
 
@@ -499,12 +521,10 @@ pub struct MulticloudCostCompareReport {
     pub savings_vs_worst_pct: f64,
 }
 
-pub fn build_multicloud_cost_compare(workloads: &[(Workload, WorkloadState)]) -> MulticloudCostCompareReport {
-    let providers = [
-        CloudProvider::AWS,
-        CloudProvider::GCP,
-        CloudProvider::Azure,
-    ];
+pub fn build_multicloud_cost_compare(
+    workloads: &[(Workload, WorkloadState)],
+) -> MulticloudCostCompareReport {
+    let providers = [CloudProvider::AWS, CloudProvider::GCP, CloudProvider::Azure];
     let mut totals = HashMap::new();
     let mut cheapest_counts = HashMap::new();
 
@@ -547,7 +567,10 @@ pub fn build_multicloud_cost_compare(workloads: &[(Workload, WorkloadState)]) ->
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    let recommended = rows.first().map(|r| r.provider.clone()).unwrap_or_else(|| "AWS".into());
+    let recommended = rows
+        .first()
+        .map(|r| r.provider.clone())
+        .unwrap_or_else(|| "AWS".into());
     let worst = rows.last().map(|r| r.total_monthly_usd).unwrap_or(0.0);
     let best = rows.first().map(|r| r.total_monthly_usd).unwrap_or(0.0);
     let savings_pct = if worst > 0.0 {
@@ -690,8 +713,7 @@ pub fn dispatch_budget_webhook(
     };
 
     let webhook_dispatched = breached
-        && (req.webhook_url.is_some()
-            || std::env::var("AETHER_FINOPS_BUDGET_WEBHOOK").is_ok());
+        && (req.webhook_url.is_some() || std::env::var("AETHER_FINOPS_BUDGET_WEBHOOK").is_ok());
 
     if webhook_dispatched {
         if let Some(parent) = finops_budget_path().parent() {

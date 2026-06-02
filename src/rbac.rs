@@ -80,8 +80,7 @@ impl RbacStore {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("Failed to create directory {}", parent.display()))?;
         }
-        let data = serde_json::to_string_pretty(self)
-            .context("Failed to serialize RBAC store")?;
+        let data = serde_json::to_string_pretty(self).context("Failed to serialize RBAC store")?;
         std::fs::write(path, &data)
             .with_context(|| format!("Failed to write RBAC store to {}", path.display()))?;
 
@@ -215,9 +214,7 @@ pub fn check_permission(role: &Role, method: &str, path: &str) -> bool {
             }
             false
         }
-        Role::Viewer => {
-            method.to_uppercase() == "GET"
-        }
+        Role::Viewer => method.to_uppercase() == "GET",
     }
 }
 
@@ -354,7 +351,9 @@ mod tests {
     fn test_default_path() {
         let path = RbacStore::default_path();
         let path_str = path.to_string_lossy();
-        assert!(path_str.ends_with(".aether/rbac.json") || path_str.ends_with(".aether\\rbac.json"));
+        assert!(
+            path_str.ends_with(".aether/rbac.json") || path_str.ends_with(".aether\\rbac.json")
+        );
     }
 
     // --- Permission matrix tests ---
@@ -364,10 +363,18 @@ mod tests {
         assert!(check_permission(&Role::Admin, "GET", "/api/workloads"));
         assert!(check_permission(&Role::Admin, "POST", "/api/workloads"));
         assert!(check_permission(&Role::Admin, "PUT", "/api/workloads/foo"));
-        assert!(check_permission(&Role::Admin, "DELETE", "/api/workloads/foo"));
+        assert!(check_permission(
+            &Role::Admin,
+            "DELETE",
+            "/api/workloads/foo"
+        ));
         assert!(check_permission(&Role::Admin, "GET", "/api/rbac/keys"));
         assert!(check_permission(&Role::Admin, "POST", "/api/rbac/keys"));
-        assert!(check_permission(&Role::Admin, "DELETE", "/api/rbac/keys/foo"));
+        assert!(check_permission(
+            &Role::Admin,
+            "DELETE",
+            "/api/rbac/keys/foo"
+        ));
     }
 
     #[test]
@@ -382,18 +389,54 @@ mod tests {
 
         // Operators cannot POST to RBAC endpoints
         assert!(!check_permission(&Role::Operator, "POST", "/api/rbac/keys"));
-        assert!(!check_permission(&Role::Operator, "POST", "/api/rbac/revoke"));
+        assert!(!check_permission(
+            &Role::Operator,
+            "POST",
+            "/api/rbac/revoke"
+        ));
 
         // Operators can PUT/PATCH workload updates and DELETE workloads / secrets / backups / deps
-        assert!(check_permission(&Role::Operator, "PUT", "/api/workloads/foo"));
-        assert!(check_permission(&Role::Operator, "PATCH", "/api/workloads/foo"));
-        assert!(check_permission(&Role::Operator, "DELETE", "/api/workloads/foo"));
-        assert!(check_permission(&Role::Operator, "DELETE", "/api/secrets/foo"));
-        assert!(check_permission(&Role::Operator, "DELETE", "/api/backups/foo"));
-        assert!(check_permission(&Role::Operator, "DELETE", "/api/dependencies"));
+        assert!(check_permission(
+            &Role::Operator,
+            "PUT",
+            "/api/workloads/foo"
+        ));
+        assert!(check_permission(
+            &Role::Operator,
+            "PATCH",
+            "/api/workloads/foo"
+        ));
+        assert!(check_permission(
+            &Role::Operator,
+            "DELETE",
+            "/api/workloads/foo"
+        ));
+        assert!(check_permission(
+            &Role::Operator,
+            "DELETE",
+            "/api/secrets/foo"
+        ));
+        assert!(check_permission(
+            &Role::Operator,
+            "DELETE",
+            "/api/backups/foo"
+        ));
+        assert!(check_permission(
+            &Role::Operator,
+            "DELETE",
+            "/api/dependencies"
+        ));
         assert!(!check_permission(&Role::Operator, "PUT", "/api/other/foo"));
-        assert!(!check_permission(&Role::Operator, "DELETE", "/api/rbac/keys"));
-        assert!(!check_permission(&Role::Operator, "POST", "/api/audit/events"));
+        assert!(!check_permission(
+            &Role::Operator,
+            "DELETE",
+            "/api/rbac/keys"
+        ));
+        assert!(!check_permission(
+            &Role::Operator,
+            "POST",
+            "/api/audit/events"
+        ));
     }
 
     #[test]
@@ -404,8 +447,16 @@ mod tests {
 
         // Viewers cannot POST, PUT, DELETE
         assert!(!check_permission(&Role::Viewer, "POST", "/api/workloads"));
-        assert!(!check_permission(&Role::Viewer, "PUT", "/api/workloads/foo"));
-        assert!(!check_permission(&Role::Viewer, "DELETE", "/api/workloads/foo"));
+        assert!(!check_permission(
+            &Role::Viewer,
+            "PUT",
+            "/api/workloads/foo"
+        ));
+        assert!(!check_permission(
+            &Role::Viewer,
+            "DELETE",
+            "/api/workloads/foo"
+        ));
         assert!(!check_permission(&Role::Viewer, "POST", "/api/rbac/keys"));
     }
 

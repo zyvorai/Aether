@@ -6,20 +6,20 @@
 
 pub mod common;
 pub mod docker;
-pub mod podman;
 pub mod kube;
-pub mod kube_manifest;
 pub mod kube_extras;
+pub mod kube_manifest;
 pub mod kube_policy_extras;
 pub mod kube_reconcile;
 pub mod kubevirt;
 pub mod metal;
+pub mod podman;
 
 pub use docker::DockerRuntime;
-pub use podman::PodmanRuntime;
 pub use kube::KubernetesRuntime;
 pub use kubevirt::KubeVirtRuntime;
 pub use metal::Metal3Runtime;
+pub use podman::PodmanRuntime;
 
 /// Implement `new()`, `with_namespace()`, and `with_context()` for a kube-client-based adapter.
 ///
@@ -32,8 +32,8 @@ macro_rules! impl_kube_adapter_new {
             /// `AETHER_NAMESPACE` (falling back to the adapter default).
             pub async fn new() -> anyhow::Result<Self> {
                 let client = ::kube::Client::try_default().await?;
-                let namespace = std::env::var("AETHER_NAMESPACE")
-                    .unwrap_or_else(|_| $default_ns.to_string());
+                let namespace =
+                    std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| $default_ns.to_string());
                 Ok(Self { client, namespace })
             }
 
@@ -44,7 +44,10 @@ macro_rules! impl_kube_adapter_new {
             }
 
             /// Create a new runtime targeting a specific kubeconfig context (multi-cluster).
-            pub async fn with_context(context: &str, namespace: Option<String>) -> anyhow::Result<Self> {
+            pub async fn with_context(
+                context: &str,
+                namespace: Option<String>,
+            ) -> anyhow::Result<Self> {
                 let kubeconfig = ::kube::config::Kubeconfig::read()?;
                 let config = ::kube::Config::from_custom_kubeconfig(
                     kubeconfig,
@@ -52,11 +55,11 @@ macro_rules! impl_kube_adapter_new {
                         context: Some(context.to_string()),
                         ..Default::default()
                     },
-                ).await?;
+                )
+                .await?;
                 let client = ::kube::Client::try_from(config)?;
                 let namespace = namespace.unwrap_or_else(|| {
-                    std::env::var("AETHER_NAMESPACE")
-                        .unwrap_or_else(|_| $default_ns.to_string())
+                    std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| $default_ns.to_string())
                 });
                 Ok(Self { client, namespace })
             }
@@ -96,7 +99,9 @@ mod tests {
             None => std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string()),
         };
         assert_eq!(namespace, "default");
-        if let Some(v) = saved { std::env::set_var("AETHER_NAMESPACE", v); }
+        if let Some(v) = saved {
+            std::env::set_var("AETHER_NAMESPACE", v);
+        }
     }
 
     #[test]
@@ -110,9 +115,13 @@ mod tests {
         let _guard = ENV_MUTEX.lock().unwrap();
         let saved = std::env::var("AETHER_CONTEXT").ok();
         std::env::remove_var("AETHER_CONTEXT");
-        let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+        let context = std::env::var("AETHER_CONTEXT")
+            .ok()
+            .filter(|c| !c.is_empty());
         assert!(context.is_none());
-        if let Some(v) = saved { std::env::set_var("AETHER_CONTEXT", v); }
+        if let Some(v) = saved {
+            std::env::set_var("AETHER_CONTEXT", v);
+        }
     }
 
     #[test]
@@ -120,9 +129,15 @@ mod tests {
         let _guard = ENV_MUTEX.lock().unwrap();
         let saved = std::env::var("AETHER_CONTEXT").ok();
         std::env::set_var("AETHER_CONTEXT", "");
-        let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+        let context = std::env::var("AETHER_CONTEXT")
+            .ok()
+            .filter(|c| !c.is_empty());
         assert!(context.is_none());
-        if let Some(v) = saved { std::env::set_var("AETHER_CONTEXT", v); } else { std::env::remove_var("AETHER_CONTEXT"); }
+        if let Some(v) = saved {
+            std::env::set_var("AETHER_CONTEXT", v);
+        } else {
+            std::env::remove_var("AETHER_CONTEXT");
+        }
     }
 
     #[test]
@@ -130,8 +145,14 @@ mod tests {
         let _guard = ENV_MUTEX.lock().unwrap();
         let saved = std::env::var("AETHER_CONTEXT").ok();
         std::env::set_var("AETHER_CONTEXT", "staging-cluster");
-        let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+        let context = std::env::var("AETHER_CONTEXT")
+            .ok()
+            .filter(|c| !c.is_empty());
         assert_eq!(context, Some("staging-cluster".to_string()));
-        if let Some(v) = saved { std::env::set_var("AETHER_CONTEXT", v); } else { std::env::remove_var("AETHER_CONTEXT"); }
+        if let Some(v) = saved {
+            std::env::set_var("AETHER_CONTEXT", v);
+        } else {
+            std::env::remove_var("AETHER_CONTEXT");
+        }
     }
 }

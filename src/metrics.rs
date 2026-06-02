@@ -6,10 +6,10 @@
 //!
 //! Tracks workload deployments, runtime distribution, and migration operations.
 
-use std::sync::LazyLock;
 use prometheus::{
     Counter, CounterVec, GaugeVec, Histogram, HistogramOpts, HistogramVec, Opts, Registry,
 };
+use std::sync::LazyLock;
 
 /// Global metrics registry
 pub static REGISTRY: LazyLock<Registry> = LazyLock::new(Registry::new);
@@ -18,8 +18,11 @@ pub static REGISTRY: LazyLock<Registry> = LazyLock::new(Registry::new);
 /// Total number of workload build operations
 pub static WORKLOAD_BUILDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("aether_workload_builds_total", "Total number of workload builds")
-            .namespace("aether"),
+        Opts::new(
+            "aether_workload_builds_total",
+            "Total number of workload builds",
+        )
+        .namespace("aether"),
         &["runtime", "status"],
     )
     .expect("metric can be created")
@@ -41,8 +44,11 @@ pub static WORKLOAD_DEPLOYMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Currently running workloads
 pub static WORKLOAD_RUNNING: LazyLock<GaugeVec> = LazyLock::new(|| {
     GaugeVec::new(
-        Opts::new("aether_workload_running", "Number of currently running workloads")
-            .namespace("aether"),
+        Opts::new(
+            "aether_workload_running",
+            "Number of currently running workloads",
+        )
+        .namespace("aether"),
         &["runtime"],
     )
     .expect("metric can be created")
@@ -51,8 +57,7 @@ pub static WORKLOAD_RUNNING: LazyLock<GaugeVec> = LazyLock::new(|| {
 /// Workload state distribution
 pub static WORKLOAD_STATE: LazyLock<GaugeVec> = LazyLock::new(|| {
     GaugeVec::new(
-        Opts::new("aether_workload_state", "Workload state distribution")
-            .namespace("aether"),
+        Opts::new("aether_workload_state", "Workload state distribution").namespace("aether"),
         &["runtime", "state"],
     )
     .expect("metric can be created")
@@ -62,8 +67,7 @@ pub static WORKLOAD_STATE: LazyLock<GaugeVec> = LazyLock::new(|| {
 /// Total number of migrations
 pub static MIGRATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("aether_migrations_total", "Total number of migrations")
-            .namespace("aether"),
+        Opts::new("aether_migrations_total", "Total number of migrations").namespace("aether"),
         &["source_runtime", "target_runtime", "strategy", "status"],
     )
     .expect("metric can be created")
@@ -137,8 +141,7 @@ pub static AETHER_INFO: LazyLock<Counter> = LazyLock::new(|| {
 /// Total CLI commands executed
 pub static CLI_COMMANDS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("aether_cli_commands_total", "Total CLI commands executed")
-            .namespace("aether"),
+        Opts::new("aether_cli_commands_total", "Total CLI commands executed").namespace("aether"),
         &["command"],
     )
     .expect("metric can be created")
@@ -176,8 +179,7 @@ pub static SCHEDULER_PLACEMENTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Health check results
 pub static HEALTH_CHECKS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("aether_health_checks_total", "Total health check results")
-            .namespace("aether"),
+        Opts::new("aether_health_checks_total", "Total health check results").namespace("aether"),
         &["workload", "status"],
     )
     .expect("metric can be created")
@@ -213,8 +215,11 @@ pub static ORCHESTRATOR_RESTARTS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| 
 /// Secret operations
 pub static SECRET_OPERATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("aether_secret_operations_total", "Secret management operations")
-            .namespace("aether"),
+        Opts::new(
+            "aether_secret_operations_total",
+            "Secret management operations",
+        )
+        .namespace("aether"),
         &["operation"],
     )
     .expect("metric can be created")
@@ -224,8 +229,7 @@ pub static SECRET_OPERATIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Events emitted by category
 pub static EVENTS_EMITTED_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("aether_events_emitted_total", "Events emitted by category")
-            .namespace("aether"),
+        Opts::new("aether_events_emitted_total", "Events emitted by category").namespace("aether"),
         &["category", "severity"],
     )
     .expect("metric can be created")
@@ -235,8 +239,11 @@ pub static EVENTS_EMITTED_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
 /// Environment promotions
 pub static ENV_PROMOTIONS_TOTAL: LazyLock<CounterVec> = LazyLock::new(|| {
     CounterVec::new(
-        Opts::new("aether_env_promotions_total", "Environment promotion operations")
-            .namespace("aether"),
+        Opts::new(
+            "aether_env_promotions_total",
+            "Environment promotion operations",
+        )
+        .namespace("aether"),
         &["from_tier", "to_tier", "status"],
     )
     .expect("metric can be created")
@@ -352,9 +359,7 @@ pub fn update_workload_states(states: &[(String, String)]) {
 
     // Count states per runtime
     for (runtime, state) in states {
-        WORKLOAD_STATE
-            .with_label_values(&[runtime, state])
-            .inc();
+        WORKLOAD_STATE.with_label_values(&[runtime, state]).inc();
     }
 }
 
@@ -387,9 +392,7 @@ pub fn record_migration(
 /// Record runtime availability check
 pub fn record_runtime_availability(runtime: &str, available: bool) {
     let value = if available { 1.0 } else { 0.0 };
-    RUNTIME_AVAILABLE
-        .with_label_values(&[runtime])
-        .set(value);
+    RUNTIME_AVAILABLE.with_label_values(&[runtime]).set(value);
 }
 
 /// Record runtime decision time

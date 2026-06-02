@@ -36,18 +36,14 @@ impl IntelligenceStore {
 
     pub fn record_outcome(&mut self, outcome: DeploymentOutcome) {
         let runtime_key = format!("{}", outcome.runtime);
-        let hist = self
-            .runtime_history
-            .entry(runtime_key)
-            .or_default();
+        let hist = self.runtime_history.entry(runtime_key).or_default();
         hist.total_deployments += 1;
         if outcome.success {
             hist.successful_deployments += 1;
         }
         if let Some(uptime) = outcome.uptime_pct {
             let n = hist.total_deployments as f64;
-            hist.avg_uptime_pct =
-                ((hist.avg_uptime_pct * (n - 1.0)) + uptime) / n.max(1.0);
+            hist.avg_uptime_pct = ((hist.avg_uptime_pct * (n - 1.0)) + uptime) / n.max(1.0);
         }
 
         self.outcomes.push(outcome);

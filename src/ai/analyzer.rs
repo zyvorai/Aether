@@ -168,7 +168,8 @@ impl LogAnalyzer {
         // Classify each line
         let mut error_count = 0;
         let mut warning_count = 0;
-        let mut pattern_counts: HashMap<String, (usize, Severity, usize, usize, String)> = HashMap::new();
+        let mut pattern_counts: HashMap<String, (usize, Severity, usize, usize, String)> =
+            HashMap::new();
 
         for (idx, line) in lines.iter().enumerate() {
             let severity = self.classify_line(line);
@@ -181,9 +182,13 @@ impl LogAnalyzer {
 
             // Extract pattern (normalize numbers, paths, UUIDs)
             let pattern = self.extract_pattern(line);
-            let entry = pattern_counts
-                .entry(pattern.clone())
-                .or_insert((0, severity.clone(), idx, idx, line.to_string()));
+            let entry = pattern_counts.entry(pattern.clone()).or_insert((
+                0,
+                severity.clone(),
+                idx,
+                idx,
+                line.to_string(),
+            ));
             entry.0 += 1;
             entry.1 = severity;
             entry.3 = idx; // last_seen
@@ -198,18 +203,20 @@ impl LogAnalyzer {
         // Build pattern list (top patterns by count)
         let mut patterns: Vec<LogPattern> = pattern_counts
             .into_iter()
-            .map(|(pattern, (count, severity, first, last, example))| LogPattern {
-                pattern,
-                count,
-                severity,
-                first_seen: first,
-                last_seen: last,
-                example: if example.len() > 200 {
-                    format!("{}...", &example[..200])
-                } else {
-                    example
+            .map(
+                |(pattern, (count, severity, first, last, example))| LogPattern {
+                    pattern,
+                    count,
+                    severity,
+                    first_seen: first,
+                    last_seen: last,
+                    example: if example.len() > 200 {
+                        format!("{}...", &example[..200])
+                    } else {
+                        example
+                    },
                 },
-            })
+            )
             .collect();
 
         patterns.sort_by_key(|p| std::cmp::Reverse(p.count));
@@ -338,11 +345,7 @@ impl LogAnalyzer {
     }
 
     /// Detect anomalies using z-score analysis
-    fn detect_anomalies(
-        &self,
-        timeline: &[TimeWindow],
-        patterns: &[LogPattern],
-    ) -> Vec<Anomaly> {
+    fn detect_anomalies(&self, timeline: &[TimeWindow], patterns: &[LogPattern]) -> Vec<Anomaly> {
         let mut anomalies = Vec::new();
 
         if !self.config.enable_anomaly_detection || timeline.len() < 2 {
@@ -352,11 +355,8 @@ impl LogAnalyzer {
         // Calculate mean and stddev of error rates
         let error_rates: Vec<f64> = timeline.iter().map(|w| w.error_rate).collect();
         let mean = error_rates.iter().sum::<f64>() / error_rates.len() as f64;
-        let variance = error_rates
-            .iter()
-            .map(|r| (r - mean).powi(2))
-            .sum::<f64>()
-            / error_rates.len() as f64;
+        let variance =
+            error_rates.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / error_rates.len() as f64;
         let stddev = variance.sqrt();
 
         // Detect error rate spikes
@@ -408,11 +408,8 @@ impl LogAnalyzer {
         // Detect volume anomalies
         let volumes: Vec<f64> = timeline.iter().map(|w| w.total as f64).collect();
         let vol_mean = volumes.iter().sum::<f64>() / volumes.len() as f64;
-        let vol_variance = volumes
-            .iter()
-            .map(|v| (v - vol_mean).powi(2))
-            .sum::<f64>()
-            / volumes.len() as f64;
+        let vol_variance =
+            volumes.iter().map(|v| (v - vol_mean).powi(2)).sum::<f64>() / volumes.len() as f64;
         let vol_stddev = vol_variance.sqrt();
 
         for (idx, window) in timeline.iter().enumerate() {
@@ -436,7 +433,9 @@ impl LogAnalyzer {
         // Detect new error patterns appearing late
         for pattern in patterns {
             if pattern.severity == Severity::Error
-                && pattern.first_seen >= (timeline.len() * self.config.window_size).saturating_sub(self.config.window_size)
+                && pattern.first_seen
+                    >= (timeline.len() * self.config.window_size)
+                        .saturating_sub(self.config.window_size)
                 && pattern.count >= 3
             {
                 anomalies.push(Anomaly {
@@ -507,13 +506,29 @@ pub fn format_analysis_report(analysis: &LogAnalysis) -> String {
 
     output.push_str(&output::property_section(&[
         ("Log Analysis", format!("{} lines", analysis.total_lines)),
-        ("Health", format!("{} (score: {:.0}/100)", analysis.health_assessment.status, analysis.health_assessment.score)),
-        ("Errors", format!("{} ({:.1}%)", analysis.error_count, analysis.error_rate * 100.0)),
+        (
+            "Health",
+            format!(
+                "{} (score: {:.0}/100)",
+                analysis.health_assessment.status, analysis.health_assessment.score
+            ),
+        ),
+        (
+            "Errors",
+            format!(
+                "{} ({:.1}%)",
+                analysis.error_count,
+                analysis.error_rate * 100.0
+            ),
+        ),
         ("Warnings", format!("{}", analysis.warning_count)),
     ]));
 
     if !analysis.anomalies.is_empty() {
-        output.push_str(&format!("Anomalies Detected ({}):\n", analysis.anomalies.len()));
+        output.push_str(&format!(
+            "Anomalies Detected ({}):\n",
+            analysis.anomalies.len()
+        ));
         for anomaly in &analysis.anomalies {
             output.push_str(&format!(
                 "  [{}] {}: {}\n",

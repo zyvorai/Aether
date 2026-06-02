@@ -66,11 +66,21 @@ pub struct OidcRuntime {
 
 impl OidcRuntime {
     pub fn new(cache: SharedCache) -> anyhow::Result<Option<Arc<Self>>> {
-        let issuer = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty());
-        let client_id = std::env::var("AETHER_OIDC_CLIENT_ID").ok().filter(|s| !s.is_empty());
-        let redirect = std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty());
-        let session = std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty());
-        let Some(issuer_s) = issuer else { return Ok(None) };
+        let issuer = std::env::var("AETHER_OIDC_ISSUER")
+            .ok()
+            .filter(|s| !s.is_empty());
+        let client_id = std::env::var("AETHER_OIDC_CLIENT_ID")
+            .ok()
+            .filter(|s| !s.is_empty());
+        let redirect = std::env::var("AETHER_OIDC_REDIRECT_URI")
+            .ok()
+            .filter(|s| !s.is_empty());
+        let session = std::env::var("AETHER_SESSION_SECRET")
+            .ok()
+            .filter(|s| !s.is_empty());
+        let Some(issuer_s) = issuer else {
+            return Ok(None);
+        };
         let Some(cid) = client_id else {
             anyhow::bail!("AETHER_OIDC_ISSUER set but AETHER_OIDC_CLIENT_ID missing");
         };
@@ -89,7 +99,8 @@ impl OidcRuntime {
             .ok()
             .filter(|s| !s.is_empty())
             .map(ClientSecret::new);
-        let default_role = parse_role_env(std::env::var("AETHER_OIDC_DEFAULT_ROLE").ok().as_deref());
+        let default_role =
+            parse_role_env(std::env::var("AETHER_OIDC_DEFAULT_ROLE").ok().as_deref());
         let role_mapping = parse_role_mapping_from_env()?;
         if role_mapping.is_some() {
             tracing::info!("OIDC group → role mapping enabled");
@@ -162,9 +173,7 @@ impl OidcRuntime {
             pkce_verifier: pkce_verifier.secret().to_string(),
             exp_unix: unix_now() + 600,
         };
-        self.cache
-            .put_oidc_pending(csrf.secret(), &pending)
-            .await?;
+        self.cache.put_oidc_pending(csrf.secret(), &pending).await?;
         Ok(Redirect::temporary(auth_url.as_str()).into_response())
     }
 
@@ -225,7 +234,9 @@ impl OidcRuntime {
         if let Some(expected_access_token_hash) = claims.access_token_hash() {
             let actual_access_token_hash = AccessTokenHash::from_token(
                 token_response.access_token(),
-                id_token.signing_alg().map_err(|e| anyhow::anyhow!("{}", e))?,
+                id_token
+                    .signing_alg()
+                    .map_err(|e| anyhow::anyhow!("{}", e))?,
                 id_token
                     .signing_key(&id_token_verifier)
                     .map_err(|e| anyhow::anyhow!("{}", e))?,
@@ -373,7 +384,10 @@ impl OidcRuntime {
 }
 
 fn parse_role_mapping_from_env() -> anyhow::Result<Option<OidcRoleMapping>> {
-    let raw = match std::env::var("AETHER_OIDC_ROLE_MAP").ok().filter(|s| !s.is_empty()) {
+    let raw = match std::env::var("AETHER_OIDC_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         Some(v) => v,
         None => return Ok(None),
     };
@@ -390,9 +404,12 @@ fn parse_role_mapping_from_env() -> anyhow::Result<Option<OidcRoleMapping>> {
     }
     let mut rules = Vec::new();
     for segment in raw.split(';').map(str::trim).filter(|s| !s.is_empty()) {
-        let (role_s, groups_s) = segment
-            .split_once('=')
-            .ok_or_else(|| anyhow::anyhow!("invalid AETHER_OIDC_ROLE_MAP segment (expected role=group,group): {}", segment))?;
+        let (role_s, groups_s) = segment.split_once('=').ok_or_else(|| {
+            anyhow::anyhow!(
+                "invalid AETHER_OIDC_ROLE_MAP segment (expected role=group,group): {}",
+                segment
+            )
+        })?;
         let role = parse_role_str(role_s.trim())
             .ok_or_else(|| anyhow::anyhow!("unknown role in AETHER_OIDC_ROLE_MAP: {}", role_s))?;
         let groups = groups_s
@@ -411,7 +428,10 @@ fn parse_role_mapping_from_env() -> anyhow::Result<Option<OidcRoleMapping>> {
     Ok(Some(OidcRoleMapping { claim_path, rules }))
 }
 
-fn role_from_groups(member_groups: &std::collections::HashSet<String>, mapping: &OidcRoleMapping) -> Option<Role> {
+fn role_from_groups(
+    member_groups: &std::collections::HashSet<String>,
+    mapping: &OidcRoleMapping,
+) -> Option<Role> {
     let mut best: Option<Role> = None;
     for (role, mapped) in &mapping.rules {
         if mapped.iter().any(|g| member_groups.contains(g)) {
@@ -436,7 +456,10 @@ fn jwt_payload_json(jwt: &str) -> Option<serde_json::Value> {
     serde_json::from_slice(&bytes).ok()
 }
 
-fn claim_string_set(value: &serde_json::Value, path: &[String]) -> std::collections::HashSet<String> {
+fn claim_string_set(
+    value: &serde_json::Value,
+    path: &[String],
+) -> std::collections::HashSet<String> {
     let mut cur = value;
     for key in path {
         cur = match cur {

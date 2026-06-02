@@ -47,13 +47,37 @@ pub fn build_labs_graduation_overview() -> LabsGraduationOverview {
         era: "K".into(),
         graduated_count: 10,
         features: vec![
-            feature(105, "Terraform export v2", "/api/intelligence/labs/terraform-export"),
-            feature(106, "Pulumi bridge v2", "/api/intelligence/labs/pulumi-bridge"),
-            feature(107, "Mobile companion", "/api/intelligence/labs/mobile-companion"),
-            feature(108, "IDE extensions", "/api/intelligence/labs/ide-extensions"),
-            feature(109, "Community intents", "/api/intelligence/labs/community-intents"),
+            feature(
+                105,
+                "Terraform export v2",
+                "/api/intelligence/labs/terraform-export",
+            ),
+            feature(
+                106,
+                "Pulumi bridge v2",
+                "/api/intelligence/labs/pulumi-bridge",
+            ),
+            feature(
+                107,
+                "Mobile companion",
+                "/api/intelligence/labs/mobile-companion",
+            ),
+            feature(
+                108,
+                "IDE extensions",
+                "/api/intelligence/labs/ide-extensions",
+            ),
+            feature(
+                109,
+                "Community intents",
+                "/api/intelligence/labs/community-intents",
+            ),
             feature(110, "Carbon footprint", "/api/intelligence/labs/carbon"),
-            feature(111, "Compliance report", "/api/intelligence/labs/compliance-report"),
+            feature(
+                111,
+                "Compliance report",
+                "/api/intelligence/labs/compliance-report",
+            ),
             feature(112, "Voice copilot", "/api/intelligence/labs/voice-copilot"),
             feature(113, "Graph export", "/api/intelligence/labs/graph-export"),
             feature(114, "Lab graduation hub", "/api/intelligence/labs/overview"),
@@ -118,7 +142,8 @@ output "workload_name" {{
             "aether_intent".into(),
             "aether_runtime_binding".into(),
         ],
-        hint: "OpenTofu/Terraform Cloud ready — wire the aether provider or import as module.".into(),
+        hint: "OpenTofu/Terraform Cloud ready — wire the aether provider or import as module."
+            .into(),
     })
 }
 
@@ -210,7 +235,10 @@ async fn resolve_spec(
     }
     let pipeline = build_intent_pipeline(&IntentPipelineRequest {
         yaml: None,
-        goals: req.goals.clone().unwrap_or_else(|| vec!["cost-optimized".into()]),
+        goals: req
+            .goals
+            .clone()
+            .unwrap_or_else(|| vec!["cost-optimized".into()]),
         workload_name: workload_name.map(String::from),
     })
     .await?;
@@ -312,7 +340,9 @@ pub fn build_labs_community_intents() -> LabsCommunityIntentReport {
     }
 }
 
-pub fn import_community_intent(req: &LabsCommunityIntentImportRequest) -> anyhow::Result<LabsCommunityIntentReport> {
+pub fn import_community_intent(
+    req: &LabsCommunityIntentImportRequest,
+) -> anyhow::Result<LabsCommunityIntentReport> {
     if req.id.trim().is_empty() || req.title.trim().is_empty() {
         anyhow::bail!("id and title are required");
     }
@@ -332,7 +362,10 @@ pub fn import_community_intent(req: &LabsCommunityIntentImportRequest) -> anyhow
     if let Some(parent) = community_intents_path().parent() {
         std::fs::create_dir_all(parent)?;
     }
-    std::fs::write(community_intents_path(), serde_json::to_string_pretty(&entries)?)?;
+    std::fs::write(
+        community_intents_path(),
+        serde_json::to_string_pretty(&entries)?,
+    )?;
     Ok(build_labs_community_intents())
 }
 
@@ -367,8 +400,16 @@ pub struct LabsCarbonReport {
 
 pub fn build_labs_carbon_report(workloads: &[(Workload, WorkloadState)]) -> LabsCarbonReport {
     let base = build_carbon_footprint(workloads);
-    let fleet_kg = base.entries.first().map(|e| e.carbon_kg_monthly).unwrap_or(0.0);
-    let region = base.entries.first().map(|e| e.region.clone()).unwrap_or_default();
+    let fleet_kg = base
+        .entries
+        .first()
+        .map(|e| e.carbon_kg_monthly)
+        .unwrap_or(0.0);
+    let region = base
+        .entries
+        .first()
+        .map(|e| e.region.clone())
+        .unwrap_or_default();
     let per = if workloads.is_empty() {
         0.0
     } else {
@@ -403,7 +444,9 @@ pub struct LabsComplianceReport {
     pub export_hint: String,
 }
 
-pub fn build_labs_compliance_report(workloads: &[(Workload, WorkloadState)]) -> LabsComplianceReport {
+pub fn build_labs_compliance_report(
+    workloads: &[(Workload, WorkloadState)],
+) -> LabsComplianceReport {
     let base = build_compliance_report(workloads);
     LabsComplianceReport {
         status: "ship".into(),
@@ -454,7 +497,10 @@ pub struct LabsGraphExportReport {
     pub download_filename: String,
 }
 
-pub fn build_labs_graph_export(state_path: &Path, format: &str) -> anyhow::Result<LabsGraphExportReport> {
+pub fn build_labs_graph_export(
+    state_path: &Path,
+    format: &str,
+) -> anyhow::Result<LabsGraphExportReport> {
     let base = export_graph(state_path, format)?;
     let filename = if base.format == "jsonld" {
         "aether-graph.jsonld"

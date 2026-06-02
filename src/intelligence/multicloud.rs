@@ -35,7 +35,9 @@ pub struct MultiCloudPostureReport {
     pub recommended_actions: Vec<String>,
 }
 
-pub async fn build_multicloud_posture(state_path: &Path) -> anyhow::Result<MultiCloudPostureReport> {
+pub async fn build_multicloud_posture(
+    state_path: &Path,
+) -> anyhow::Result<MultiCloudPostureReport> {
     let store = StateStore::load(state_path)?;
     let policy = federation_policies();
     let all_clusters = list_clusters().await.unwrap_or_default();
@@ -49,10 +51,7 @@ pub async fn build_multicloud_posture(state_path: &Path) -> anyhow::Result<Multi
         let Ok(spec) = Workload::from_file(&ws.spec_path) else {
             continue;
         };
-        let cluster_key = ws
-            .runtime
-            .to_string()
-            .to_lowercase();
+        let cluster_key = ws.runtime.to_string().to_lowercase();
         let bucket = runtime_by_cluster.entry(cluster_key).or_default();
         *bucket.entry(format!("{}", ws.runtime)).or_insert(0) += 1;
     }
@@ -78,13 +77,16 @@ pub async fn build_multicloud_posture(state_path: &Path) -> anyhow::Result<Multi
             cluster: cluster.name.clone(),
             reachable: cluster.reachable,
             server: cluster.server.clone(),
-            workload_count: runtimes.iter().map(|r| {
-                runtime_by_cluster
-                    .get(&cluster.name.to_lowercase())
-                    .and_then(|m| m.get(r))
-                    .copied()
-                    .unwrap_or(0)
-            }).sum(),
+            workload_count: runtimes
+                .iter()
+                .map(|r| {
+                    runtime_by_cluster
+                        .get(&cluster.name.to_lowercase())
+                        .and_then(|m| m.get(r))
+                        .copied()
+                        .unwrap_or(0)
+                })
+                .sum(),
             runtimes,
             anomaly_count,
             score,
@@ -98,7 +100,8 @@ pub async fn build_multicloud_posture(state_path: &Path) -> anyhow::Result<Multi
     });
 
     let reachable_clusters = clusters.iter().filter(|c| c.reachable).count() as u32;
-    let recommended_actions = build_recommendations(&policy, &clusters, fleet_workloads, anomalies.configured);
+    let recommended_actions =
+        build_recommendations(&policy, &clusters, fleet_workloads, anomalies.configured);
 
     Ok(MultiCloudPostureReport {
         generated_at: crate::resources::now_rfc3339(),
@@ -128,10 +131,14 @@ fn build_recommendations(
         recs.push("Some clusters are unreachable — verify kubeconfig contexts and network.".into());
     }
     if anomalies_configured && clusters.iter().any(|c| c.anomaly_count > 0) {
-        recs.push("PacketWolf anomalies detected — review Fleet placement tab before migrations.".into());
+        recs.push(
+            "PacketWolf anomalies detected — review Fleet placement tab before migrations.".into(),
+        );
     }
     if recs.is_empty() {
-        recs.push("Multi-cloud posture healthy — placement engine can rank clusters autonomously.".into());
+        recs.push(
+            "Multi-cloud posture healthy — placement engine can rank clusters autonomously.".into(),
+        );
     }
     recs
 }

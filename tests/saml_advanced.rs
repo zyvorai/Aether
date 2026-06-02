@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-use aether::saml_c14n::{canonicalize, INCLUSIVE_C14N, EXC_C14N};
+use aether::saml_c14n::{canonicalize, EXC_C14N, INCLUSIVE_C14N};
 
 #[test]
 fn inclusive_c14n_strips_comments() {

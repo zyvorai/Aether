@@ -17,7 +17,11 @@ pub struct OpenAiCompatibleProvider {
 
 #[async_trait]
 impl LlmProvider for OpenAiCompatibleProvider {
-    async fn chat(&self, messages: &[ChatMessage], tools_json: &serde_json::Value) -> Result<LlmResponse> {
+    async fn chat(
+        &self,
+        messages: &[ChatMessage],
+        tools_json: &serde_json::Value,
+    ) -> Result<LlmResponse> {
         let client = reqwest::Client::new();
         let body = serde_json::json!({
             "model": self.model,
@@ -45,7 +49,11 @@ pub struct AnthropicProvider {
 
 #[async_trait]
 impl LlmProvider for AnthropicProvider {
-    async fn chat(&self, messages: &[ChatMessage], tools_json: &serde_json::Value) -> Result<LlmResponse> {
+    async fn chat(
+        &self,
+        messages: &[ChatMessage],
+        tools_json: &serde_json::Value,
+    ) -> Result<LlmResponse> {
         let client = reqwest::Client::new();
         let system = messages
             .iter()
@@ -122,7 +130,11 @@ pub struct GeminiProvider {
 
 #[async_trait]
 impl LlmProvider for GeminiProvider {
-    async fn chat(&self, messages: &[ChatMessage], _tools_json: &serde_json::Value) -> Result<LlmResponse> {
+    async fn chat(
+        &self,
+        messages: &[ChatMessage],
+        _tools_json: &serde_json::Value,
+    ) -> Result<LlmResponse> {
         let client = reqwest::Client::new();
         let contents: Vec<_> = messages
             .iter()
@@ -167,7 +179,11 @@ pub struct OllamaProvider {
 
 #[async_trait]
 impl LlmProvider for OllamaProvider {
-    async fn chat(&self, messages: &[ChatMessage], tools_json: &serde_json::Value) -> Result<LlmResponse> {
+    async fn chat(
+        &self,
+        messages: &[ChatMessage],
+        tools_json: &serde_json::Value,
+    ) -> Result<LlmResponse> {
         let client = reqwest::Client::new();
         let url = format!("{}/api/chat", self.base_url.trim_end_matches('/'));
         let body = serde_json::json!({

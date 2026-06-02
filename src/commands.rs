@@ -4,14 +4,8 @@
 
 //! Command handler implementations for Aether CLI
 
+use aether::{engine::Engine, output, runtime::RuntimeKind, spec::Workload, state::StateStore};
 use anyhow::{Context, Result};
-use aether::{
-    engine::Engine,
-    output,
-    runtime::RuntimeKind,
-    spec::Workload,
-    state::StateStore,
-};
 use std::path::{Path, PathBuf};
 
 use crate::cli::*;
@@ -64,7 +58,10 @@ fn get_namespace() -> Option<&'static str> {
 fn load_workload_state(name: &str) -> Result<(StateStore, String)> {
     let state = StateStore::load(&StateStore::default_path())?;
     if state.get(name).is_none() {
-        anyhow::bail!("Workload '{}' not found.\nHint: Run `aether list` to see deployed workloads.", name);
+        anyhow::bail!(
+            "Workload '{}' not found.\nHint: Run `aether list` to see deployed workloads.",
+            name
+        );
     }
     Ok((state, name.to_string()))
 }
@@ -72,7 +69,8 @@ fn load_workload_state(name: &str) -> Result<(StateStore, String)> {
 /// Convenience: load state and get a cloned WorkloadState, avoiding the
 /// `state.get(name).unwrap()` pattern after `load_workload_state`.
 fn get_workload_state(state: &StateStore, name: &str) -> Result<aether::state::WorkloadState> {
-    state.get(name)
+    state
+        .get(name)
         .cloned()
         .ok_or_else(|| anyhow::anyhow!("Workload '{}' disappeared from state", name))
 }
@@ -179,7 +177,10 @@ pub(crate) async fn build_command(spec_path: &PathBuf) -> Result<()> {
     }
 }
 
-pub(crate) async fn run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> Result<()> {
+pub(crate) async fn run_command(
+    spec_path: &PathBuf,
+    runtime_override: Option<String>,
+) -> Result<()> {
     let workload = Workload::from_file(spec_path)?;
     deploy_workload_interactive(&workload, spec_path, runtime_override.as_deref()).await
 }
@@ -238,10 +239,26 @@ async fn deploy_workload_inner(
         // Interactive selection: show menu
         let ai_recommended = engine.decide(workload)?;
         let selected = output::select_runtime(&[
-            ("🐳", "Podman", "Local container — fast, simple, single-host"),
-            ("☸️", "Kubernetes", "Cluster orchestration — HA, services, scaling"),
-            ("🖥️", "KubeVirt", "Virtual machines — GPU passthrough, isolation"),
-            ("🖧", "Metal3", "Bare metal — maximum performance, BMC provisioning"),
+            (
+                "🐳",
+                "Podman",
+                "Local container — fast, simple, single-host",
+            ),
+            (
+                "☸️",
+                "Kubernetes",
+                "Cluster orchestration — HA, services, scaling",
+            ),
+            (
+                "🖥️",
+                "KubeVirt",
+                "Virtual machines — GPU passthrough, isolation",
+            ),
+            (
+                "🖧",
+                "Metal3",
+                "Bare metal — maximum performance, BMC provisioning",
+            ),
         ]);
         match selected {
             Some(0) => RuntimeKind::Podman,
@@ -264,7 +281,10 @@ async fn deploy_workload_inner(
     let sp = output::spinner("Building and deploying workload...");
     let image = rt.build(workload).await?;
 
-    sp.set_message(format!("Image ready: {}. Starting instance...", image.full_name()));
+    sp.set_message(format!(
+        "Image ready: {}. Starting instance...",
+        image.full_name()
+    ));
 
     let instance = rt.run(&image, workload).await?;
     output::spinner_success(&sp, "Deployment completed");
@@ -304,17 +324,27 @@ async fn deploy_workload_inner(
     let cat = aether::events::EventCategory::Deployment;
     let msg = format!("Deployed on {} (instance: {})", runtime_kind, instance_name);
     if let Some(batch) = event_batch {
-        batch.emit(sev, cat, "cli", Some(&workload.metadata.name), "Workload deployed", &msg);
+        batch.emit(
+            sev,
+            cat,
+            "cli",
+            Some(&workload.metadata.name),
+            "Workload deployed",
+            &msg,
+        );
     } else {
-        emit_event(sev, cat, "cli", Some(&workload.metadata.name), "Workload deployed", &msg);
+        emit_event(
+            sev,
+            cat,
+            "cli",
+            Some(&workload.metadata.name),
+            "Workload deployed",
+            &msg,
+        );
     }
 
-    let _ = aether::intelligence::record::record_deployment_outcome(
-        workload,
-        runtime_kind,
-        true,
-        None,
-    );
+    let _ =
+        aether::intelligence::record::record_deployment_outcome(workload, runtime_kind, true, None);
 
     Ok(())
 }
@@ -324,14 +354,16 @@ pub(crate) async fn stop_command(name: &str, cascade: bool) -> Result<()> {
 
     let sp = output::spinner(&format!("Stopping workload '{}'...", name));
     if cascade && ws.runtime == aether::runtime::RuntimeKind::Kubernetes {
-        let ns = get_namespace()
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string()));
+        let ns = get_namespace().map(|s| s.to_string()).unwrap_or_else(|| {
+            std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
+        });
         let kube = aether::adapters::KubernetesRuntime::with_namespace(ns).await?;
         kube.stop_cascade(&ws.instance).await?;
     } else {
         if cascade && ws.runtime != aether::runtime::RuntimeKind::Kubernetes {
-            output::warning("--cascade is only supported for Kubernetes workloads; stopping controller only");
+            output::warning(
+                "--cascade is only supported for Kubernetes workloads; stopping controller only",
+            );
         }
         rt.stop(&ws.instance).await?;
     }
@@ -362,8 +394,7 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
     // Record health check (side-effect: status queries feed the health timeline)
     if !output::is_quiet() {
         let health_path = aether::health::HealthHistory::default_path();
-        let mut history = aether::health::HealthHistory::load(&health_path)
-            .unwrap_or_default();
+        let mut history = aether::health::HealthHistory::load(&health_path).unwrap_or_default();
         history.record(aether::health::HealthRecord {
             timestamp: aether::resources::now_rfc3339(),
             workload: name.to_string(),
@@ -430,8 +461,13 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
         if let Ok(history) = aether::health::HealthHistory::load(&health_path) {
             let summary = history.summary(name);
             if summary.total_checks > 1 {
-                pairs.push(("Uptime", format!("{:.1}% ({}/{} checks)",
-                    summary.uptime_percent, summary.ready_checks, summary.total_checks)));
+                pairs.push((
+                    "Uptime",
+                    format!(
+                        "{:.1}% ({}/{} checks)",
+                        summary.uptime_percent, summary.ready_checks, summary.total_checks
+                    ),
+                ));
             }
         }
     }
@@ -528,7 +564,11 @@ fn cascade_delete(name: &str) {
         history.records.retain(|r| r.workload != name);
         if history.records.len() < before {
             let _ = history.save(&health_path);
-            tracing::debug!("Cascade: pruned {} health records for '{}'", before - history.records.len(), name);
+            tracing::debug!(
+                "Cascade: pruned {} health records for '{}'",
+                before - history.records.len(),
+                name
+            );
         }
     }
 }
@@ -550,9 +590,15 @@ pub(crate) async fn update_command(name: &str, spec_path: &PathBuf) -> Result<()
     let new_instance = rt.update(&ws.instance, &image, &workload).await?;
     output::spinner_success(&sp, "Workload updated");
 
-    state.upsert(name.to_string(), aether::state::WorkloadState::new(
-        name.to_string(), ws.runtime, new_instance, spec_path.clone(),
-    ));
+    state.upsert(
+        name.to_string(),
+        aether::state::WorkloadState::new(
+            name.to_string(),
+            ws.runtime,
+            new_instance,
+            spec_path.clone(),
+        ),
+    );
     state.save(&StateStore::default_path())?;
 
     output::success(&format!("Workload '{}' updated successfully", name));
@@ -576,32 +622,38 @@ pub(crate) async fn list_command() -> Result<()> {
 
     // JSON output
     if output::is_json() {
-        let list: Vec<serde_json::Value> = workloads.iter().map(|w| {
-            serde_json::json!({
-                "name": w.name,
-                "runtime": w.runtime.to_string(),
-                "instance_id": w.instance.id,
-                "image": w.instance.image,
-                "spec_path": w.spec_path.display().to_string(),
-                "created_at": w.created_at,
-                "updated_at": w.updated_at,
+        let list: Vec<serde_json::Value> = workloads
+            .iter()
+            .map(|w| {
+                serde_json::json!({
+                    "name": w.name,
+                    "runtime": w.runtime.to_string(),
+                    "instance_id": w.instance.id,
+                    "image": w.instance.image,
+                    "spec_path": w.spec_path.display().to_string(),
+                    "created_at": w.created_at,
+                    "updated_at": w.updated_at,
+                })
             })
-        }).collect();
+            .collect();
         println!("{}", serde_json::to_string_pretty(&list)?);
         return Ok(());
     }
 
     // YAML output
     if output::is_yaml() {
-        let list: Vec<serde_json::Value> = workloads.iter().map(|w| {
-            serde_json::json!({
-                "name": w.name,
-                "runtime": w.runtime.to_string(),
-                "instance_id": w.instance.id,
-                "image": w.instance.image,
-                "created_at": w.created_at,
+        let list: Vec<serde_json::Value> = workloads
+            .iter()
+            .map(|w| {
+                serde_json::json!({
+                    "name": w.name,
+                    "runtime": w.runtime.to_string(),
+                    "instance_id": w.instance.id,
+                    "image": w.instance.image,
+                    "created_at": w.created_at,
+                })
             })
-        }).collect();
+            .collect();
         println!("{}", serde_yaml::to_string(&list)?);
         return Ok(());
     }
@@ -623,10 +675,13 @@ pub(crate) async fn list_command() -> Result<()> {
                 ]
             })
             .collect();
-        println!("{}", output::table(
-            &["Name", "Runtime", "Instance ID", "Image", "Spec", "Created"],
-            rows,
-        ));
+        println!(
+            "{}",
+            output::table(
+                &["Name", "Runtime", "Instance ID", "Image", "Spec", "Created"],
+                rows,
+            )
+        );
     } else {
         let rows: Vec<Vec<String>> = workloads
             .iter()
@@ -638,7 +693,10 @@ pub(crate) async fn list_command() -> Result<()> {
                 ]
             })
             .collect();
-        println!("{}", output::table(&["Name", "Runtime", "Instance ID"], rows));
+        println!(
+            "{}",
+            output::table(&["Name", "Runtime", "Instance ID"], rows)
+        );
     }
 
     Ok(())
@@ -797,11 +855,11 @@ pub(crate) async fn migrate_command(
 }
 
 pub(crate) async fn tui_command() -> Result<()> {
+    use aether::ui::App;
     use crossterm::{
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     };
-    use aether::ui::App;
     use ratatui::{backend::CrosstermBackend, Terminal};
     use std::io;
 
@@ -830,8 +888,8 @@ pub(crate) async fn tui_command() -> Result<()> {
 }
 
 pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<()> {
-    use aether::zeus::agent::{tool_context, ZeusAgent};
     use aether::rbac::Role;
+    use aether::zeus::agent::{tool_context, ZeusAgent};
     use std::io::{self, Write};
     use std::sync::Arc;
     use tokio::sync::RwLock;
@@ -843,7 +901,9 @@ pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<(
     let mut session_id: Option<String> = None;
 
     if let Some(msg) = initial_message.filter(|m| !m.trim().is_empty()) {
-        let resp = agent.chat(&msg, session_id.as_deref(), None, None, &ctx).await?;
+        let resp = agent
+            .chat(&msg, session_id.as_deref(), None, None, &ctx)
+            .await?;
         println!("{}", resp.reply);
         for a in &resp.pending_actions {
             println!(
@@ -980,7 +1040,11 @@ pub(crate) async fn backup_command(
 
     output::spinner_success(&sp, "Backup created");
     output::success(&format!("Backup created: {}", backup_path.display()));
-    output::kv_tree("Workloads", &workload_count.to_string(), description.is_none());
+    output::kv_tree(
+        "Workloads",
+        &workload_count.to_string(),
+        description.is_none(),
+    );
     if let Some(desc) = description {
         output::kv_tree("Description", &desc, true);
     }
@@ -1183,7 +1247,10 @@ pub(crate) async fn serve_command(
     };
 
     let scheme = if tls_enabled { "https" } else { "http" };
-    output::kv("Dashboard URL", &format!("{}://{}:{}", scheme, config.host, config.port));
+    output::kv(
+        "Dashboard URL",
+        &format!("{}://{}:{}", scheme, config.host, config.port),
+    );
     if std::env::var("AETHER_STATE_DATABASE_URL")
         .ok()
         .map(|s| !s.trim().is_empty())
@@ -1348,7 +1415,10 @@ pub(crate) async fn scaling_advice_command() -> Result<()> {
     // Simulate metrics from last hour
     for i in 0..60 {
         let t = base_time + (i as f64 * 60.0);
-        cpu_series.add(t, 0.45 + (i as f64 * 0.005) + ((i as f64 * 0.1).sin() * 0.05));
+        cpu_series.add(
+            t,
+            0.45 + (i as f64 * 0.005) + ((i as f64 * 0.1).sin() * 0.05),
+        );
         mem_series.add(t, 0.55 + (i as f64 * 0.002));
     }
 
@@ -1729,7 +1799,15 @@ pub(crate) async fn template_command(
             );
         }
         // Reject known system directories
-        for prefix in &["/etc", "/proc", "/sys", "/dev", "/boot", "/sbin", "/usr/sbin"] {
+        for prefix in &[
+            "/etc",
+            "/proc",
+            "/sys",
+            "/dev",
+            "/boot",
+            "/sbin",
+            "/usr/sbin",
+        ] {
             if check_path.starts_with(prefix) {
                 anyhow::bail!("Refusing to write to system path: {}", check_path.display());
             }
@@ -1788,7 +1866,11 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
                 ),
             };
             output::success(&format!("Added SLA target for '{}' ({})", workload, tier));
-            output::kv_tree("Uptime target", &format!("{:.2}%", target.uptime_target_pct), false);
+            output::kv_tree(
+                "Uptime target",
+                &format!("{:.2}%", target.uptime_target_pct),
+                false,
+            );
             if let Some(lat) = target.max_latency_ms {
                 output::kv_tree("Max latency", &format!("{:.0}ms", lat), false);
             }
@@ -1970,11 +2052,7 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
             let envs = manager.list_envs();
             print!("{}", format_env_list(&envs));
         }
-        EnvAction::Promote {
-            workload,
-            from,
-            to,
-        } => {
+        EnvAction::Promote { workload, from, to } => {
             let request = PromotionRequest {
                 workload: workload.clone(),
                 from_env: from.clone(),
@@ -2002,7 +2080,10 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
                 for change in &result.changes {
                     output::kv_tree(
                         &change.field,
-                        &format!("{} -> {} ({})", change.from_value, change.to_value, change.reason),
+                        &format!(
+                            "{} -> {} ({})",
+                            change.from_value, change.to_value, change.reason
+                        ),
                         false,
                     );
                 }
@@ -2030,10 +2111,7 @@ pub(crate) async fn env_command(action: EnvAction) -> Result<()> {
                 return Ok(());
             }
 
-            output::section_with_icon(
-                "🔍",
-                &format!("Environment Parity: {} vs {}", env1, env2),
-            );
+            output::section_with_icon("🔍", &format!("Environment Parity: {} vs {}", env1, env2));
             for wl_name in &workload_names {
                 match manager.check_parity(&env1, &env2, wl_name) {
                     Ok(report) => {
@@ -2097,7 +2175,9 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
                 scheduler.set_affinity_scores(affinity_map);
             }
 
-            let preferred_runtime = prefer.as_deref().and_then(|p| p.parse::<RuntimeKind>().ok());
+            let preferred_runtime = prefer
+                .as_deref()
+                .and_then(|p| p.parse::<RuntimeKind>().ok());
 
             let request = ScheduleRequest {
                 workload_name: name,
@@ -2142,7 +2222,11 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
                     } else {
                         String::new()
                     };
-                    output::kv_tree(&s.category.to_string(), &format!("{}{}", s.message, saving), false);
+                    output::kv_tree(
+                        &s.category.to_string(),
+                        &format!("{}{}", s.message, saving),
+                        false,
+                    );
                 }
             }
         }
@@ -2163,7 +2247,10 @@ pub(crate) async fn schedule_command(action: ScheduleAction) -> Result<()> {
                         ]
                     })
                     .collect();
-                println!("{}", output::table(&["Workload", "Runtime", "CPU", "Memory"], rows));
+                println!(
+                    "{}",
+                    output::table(&["Workload", "Runtime", "CPU", "Memory"], rows)
+                );
             }
         }
     }
@@ -2225,16 +2312,24 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
             {
                 use aether::orchestrator::HealthStatus as OrcHealthStatus;
                 let health_path = aether::health::HealthHistory::default_path();
-                let mut history = aether::health::HealthHistory::load(&health_path)
-                    .unwrap_or_default();
+                let mut history =
+                    aether::health::HealthHistory::load(&health_path).unwrap_or_default();
                 let now = aether::resources::now_rfc3339();
                 for (wl_name, hs) in &statuses {
                     if let Some(ws) = state_store.get(wl_name) {
                         let (inst_state, ready) = match hs {
-                            OrcHealthStatus::Healthy => (aether::runtime::InstanceState::Running, true),
-                            OrcHealthStatus::Degraded => (aether::runtime::InstanceState::Running, false),
-                            OrcHealthStatus::Unhealthy => (aether::runtime::InstanceState::Failed, false),
-                            OrcHealthStatus::Unknown => (aether::runtime::InstanceState::Unknown, false),
+                            OrcHealthStatus::Healthy => {
+                                (aether::runtime::InstanceState::Running, true)
+                            }
+                            OrcHealthStatus::Degraded => {
+                                (aether::runtime::InstanceState::Running, false)
+                            }
+                            OrcHealthStatus::Unhealthy => {
+                                (aether::runtime::InstanceState::Failed, false)
+                            }
+                            OrcHealthStatus::Unknown => {
+                                (aether::runtime::InstanceState::Unknown, false)
+                            }
                         };
                         history.record(aether::health::HealthRecord {
                             timestamp: now.clone(),
@@ -2292,11 +2387,13 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     orch.save(&path)?;
 
                     let recon = aether::config::Config::load().reconciliation;
-                    let policy = aether::intelligence::policy::AutonomyPolicy::from_config_and_workload(
-                        recon.auto_reconcile,
-                        None,
-                    );
-                    let state_arc = std::sync::Arc::new(tokio::sync::RwLock::new(state_store.clone()));
+                    let policy =
+                        aether::intelligence::policy::AutonomyPolicy::from_config_and_workload(
+                            recon.auto_reconcile,
+                            None,
+                        );
+                    let state_arc =
+                        std::sync::Arc::new(tokio::sync::RwLock::new(state_store.clone()));
                     let healer = aether::intelligence::healer::execute_orchestrator_actions(
                         &actions,
                         &policy,
@@ -2309,10 +2406,15 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     if actions.is_empty() {
                         output::success(&format!(
                             "[{}] Health OK ({} workloads)",
-                            now_str, statuses.len()
+                            now_str,
+                            statuses.len()
                         ));
                     } else {
-                        output::warning(&format!("[{}] {} health action(s):", now_str, actions.len()));
+                        output::warning(&format!(
+                            "[{}] {} health action(s):",
+                            now_str,
+                            actions.len()
+                        ));
                         for action in &actions {
                             output::detail(&format!("  - {:?}", action));
                         }
@@ -2327,10 +2429,11 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     drift_elapsed = 0;
                     let detector = aether::drift::DriftDetector::new();
                     let mut drift_count = 0usize;
-                    let policy = aether::intelligence::policy::AutonomyPolicy::from_config_and_workload(
-                        recon_config.auto_reconcile,
-                        None,
-                    );
+                    let policy =
+                        aether::intelligence::policy::AutonomyPolicy::from_config_and_workload(
+                            recon_config.auto_reconcile,
+                            None,
+                        );
                     for ws in state_store.list() {
                         if let Ok(spec) = Workload::from_file(&ws.spec_path) {
                             let report = detector.detect(&spec, ws);
@@ -2338,7 +2441,9 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                                 drift_count += 1;
                                 output::warning(&format!(
                                     "[{}] Drift detected on '{}': {} item(s)",
-                                    now_str, ws.name, report.drifts.len()
+                                    now_str,
+                                    ws.name,
+                                    report.drifts.len()
                                 ));
                                 emit_event(
                                     aether::events::EventSeverity::Warning,
@@ -2351,7 +2456,8 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                                 if policy.allows_drift_reconcile() {
                                     let mut store = StateStore::load(&StateStore::default_path())?;
                                     if let Ok(results) =
-                                        aether::drift::execute_reconciliation(&report, &mut store).await
+                                        aether::drift::execute_reconciliation(&report, &mut store)
+                                            .await
                                     {
                                         store.save(&StateStore::default_path())?;
                                         output::success(&format!(
@@ -2374,8 +2480,8 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                 if sla_elapsed >= recon_config.sla_interval_secs {
                     sla_elapsed = 0;
                     let health_path = aether::health::HealthHistory::default_path();
-                    let history = aether::health::HealthHistory::load(&health_path)
-                        .unwrap_or_default();
+                    let history =
+                        aether::health::HealthHistory::load(&health_path).unwrap_or_default();
                     let mut at_risk = 0usize;
                     for ws in state_store.list() {
                         let uptime = history.uptime_percent(&ws.name);
@@ -2405,8 +2511,8 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                 // SLA or budget conditions are violated by current state
                 {
                     let health_path = aether::health::HealthHistory::default_path();
-                    let history = aether::health::HealthHistory::load(&health_path)
-                        .unwrap_or_default();
+                    let history =
+                        aether::health::HealthHistory::load(&health_path).unwrap_or_default();
                     for ws in state_store.list() {
                         if let Ok(spec) = Workload::from_file(&ws.spec_path) {
                             if let Some(ref intent) = spec.intent {
@@ -2425,7 +2531,10 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                                                 "reconciliation-loop",
                                                 Some(&ws.name),
                                                 "Intent SLA violation",
-                                                &format!("Uptime {:.1}% below intent min {:.1}%", uptime, min_avail),
+                                                &format!(
+                                                    "Uptime {:.1}% below intent min {:.1}%",
+                                                    uptime, min_avail
+                                                ),
                                             );
                                         }
                                     }
@@ -2441,14 +2550,17 @@ pub(crate) async fn orchestrate_command(action: OrchestrateAction) -> Result<()>
                     if let Ok(mut bus) = aether::events::EventBus::load(&events_path) {
                         let alert_policy_config = aether::config::Config::load().policy;
                         let workloads: Vec<_> = state_store.list().into_iter().cloned().collect();
-                        let metrics =
-                            aether::events::SystemMetrics::collect(&workloads, &alert_policy_config);
+                        let metrics = aether::events::SystemMetrics::collect(
+                            &workloads,
+                            &alert_policy_config,
+                        );
 
                         let fired = bus.evaluate_rules(&metrics);
                         if !fired.is_empty() {
                             output::warning(&format!(
                                 "[{}] Alerts: {} rule(s) triggered",
-                                now_str, fired.len()
+                                now_str,
+                                fired.len()
                             ));
                             let _ = bus.save(&events_path);
                         }
@@ -2475,10 +2587,7 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
             let wl_class: WorkloadClass = class.parse()?;
             let scores = engine.recommend(&wl_class);
             if let Some(top) = scores.first() {
-                aether::metrics::record_affinity_recommendation(
-                    &class,
-                    &top.runtime.to_string(),
-                );
+                aether::metrics::record_affinity_recommendation(&class, &top.runtime.to_string());
             }
             print!("{}", format_affinity_report(&wl_class, &scores));
         }
@@ -2506,7 +2615,10 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
                 .collect();
             println!(
                 "{}",
-                output::table(&["Compat", "Class", "Runtime", "Score", "Deployments"], rows)
+                output::table(
+                    &["Compat", "Class", "Runtime", "Score", "Deployments"],
+                    rows
+                )
             );
         }
         AffinityAction::Stats => {
@@ -2800,11 +2912,7 @@ pub(crate) async fn diff_command(name: &str) -> Result<()> {
         output::section_with_icon("📝", "Changes");
         for row in &report.rows {
             if !row.matches {
-                output::change(
-                    &row.field,
-                    &row.spec_value,
-                    &row.live_value,
-                );
+                output::change(&row.field, &row.spec_value, &row.live_value);
             }
         }
     }
@@ -2903,9 +3011,8 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
             output::success(&format!("Test notification sent to channel '{}'", name));
         }
         WebhookAction::Queue => {
-            let queue = aether::events::WebhookQueue::load(
-                &aether::events::WebhookQueue::default_path(),
-            )?;
+            let queue =
+                aether::events::WebhookQueue::load(&aether::events::WebhookQueue::default_path())?;
             if queue.pending.is_empty() {
                 output::muted("No pending webhook deliveries.");
             } else {
@@ -2930,17 +3037,15 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
         }
         WebhookAction::Flush => {
             output::header("📤", "Flushing Webhook Queue");
-            let before = aether::events::WebhookQueue::load(
-                &aether::events::WebhookQueue::default_path(),
-            )
-            .map(|q| q.pending.len())
-            .unwrap_or(0);
+            let before =
+                aether::events::WebhookQueue::load(&aether::events::WebhookQueue::default_path())
+                    .map(|q| q.pending.len())
+                    .unwrap_or(0);
             aether::events::WebhookQueue::process_queue_once();
-            let after = aether::events::WebhookQueue::load(
-                &aether::events::WebhookQueue::default_path(),
-            )
-            .map(|q| q.pending.len())
-            .unwrap_or(0);
+            let after =
+                aether::events::WebhookQueue::load(&aether::events::WebhookQueue::default_path())
+                    .map(|q| q.pending.len())
+                    .unwrap_or(0);
             output::success(&format!(
                 "Processed queue: {} before, {} remaining",
                 before, after
@@ -2959,9 +3064,7 @@ fn discover_workloads(dir: &Path) -> Result<Vec<(PathBuf, Workload)>> {
     }
 
     let mut workloads = Vec::new();
-    let mut entries: Vec<_> = std::fs::read_dir(dir)?
-        .filter_map(|e| e.ok())
-        .collect();
+    let mut entries: Vec<_> = std::fs::read_dir(dir)?.filter_map(|e| e.ok()).collect();
     entries.sort_by_key(|e| e.file_name());
 
     for entry in entries {
@@ -3034,13 +3137,13 @@ pub(crate) async fn deploy_command(
 
     let ordered = order_workloads_by_deps(workloads, &graph);
 
-    output::spinner_success(
-        &sp,
-        &format!("Found {} workloads", ordered.len()),
-    );
+    output::spinner_success(&sp, &format!("Found {} workloads", ordered.len()));
 
     // Show plan as table
-    output::section_with_icon("📋", &format!("Deployment Plan ({} workloads)", ordered.len()));
+    output::section_with_icon(
+        "📋",
+        &format!("Deployment Plan ({} workloads)", ordered.len()),
+    );
     let rows: Vec<Vec<String>> = ordered
         .iter()
         .enumerate()
@@ -3074,7 +3177,14 @@ pub(crate) async fn deploy_command(
             workload.metadata.name
         ));
 
-        match deploy_single_workload(workload, path, runtime_override.as_deref(), Some(&mut event_batch)).await {
+        match deploy_single_workload(
+            workload,
+            path,
+            runtime_override.as_deref(),
+            Some(&mut event_batch),
+        )
+        .await
+        {
             Ok(()) => {
                 output::spinner_success(&sp, &format!("Deployed '{}'", workload.metadata.name));
                 succeeded += 1;
@@ -3084,9 +3194,12 @@ pub(crate) async fn deploy_command(
                 if !graph.dependents_of(&workload.metadata.name).is_empty() {
                     let state = StateStore::load(&StateStore::default_path())?;
                     if let Some(ws) = state.get(&workload.metadata.name) {
-                        if let Ok(rt) = aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await {
+                        if let Ok(rt) =
+                            aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await
+                        {
                             let mut ready = false;
-                            for _ in 0..12 { // 12 * 5s = 60s max wait
+                            for _ in 0..12 {
+                                // 12 * 5s = 60s max wait
                                 if let Ok(status) = rt.status(&ws.instance).await {
                                     if status.ready {
                                         ready = true;
@@ -3111,7 +3224,10 @@ pub(crate) async fn deploy_command(
                     &sp,
                     &format!("Failed to deploy '{}'", workload.metadata.name),
                 );
-                output::error(&format!("Failed to deploy '{}': {}", workload.metadata.name, msg));
+                output::error(&format!(
+                    "Failed to deploy '{}': {}",
+                    workload.metadata.name, msg
+                ));
                 failed.push((workload.metadata.name.clone(), msg));
                 if fail_fast {
                     output::error(&format!(
@@ -3129,10 +3245,13 @@ pub(crate) async fn deploy_command(
 
     // Summary
     if failed.is_empty() {
-        output::summary_success("Deploy Complete", &[
-            ("Succeeded", succeeded.to_string()),
-            ("Total", total.to_string()),
-        ]);
+        output::summary_success(
+            "Deploy Complete",
+            &[
+                ("Succeeded", succeeded.to_string()),
+                ("Total", total.to_string()),
+            ],
+        );
     } else {
         let mut items: Vec<(&str, String)> = vec![
             ("Succeeded", succeeded.to_string()),
@@ -3143,11 +3262,7 @@ pub(crate) async fn deploy_command(
             items.push((name.as_str(), err.clone()));
         }
         output::summary_error("Deploy Failed", &items);
-        anyhow::bail!(
-            "{} of {} workloads failed to deploy",
-            failed.len(),
-            total
-        );
+        anyhow::bail!("{} of {} workloads failed to deploy", failed.len(), total);
     }
 
     Ok(())
@@ -3202,7 +3317,8 @@ impl EventBatch {
         title: &str,
         message: &str,
     ) {
-        self.bus.emit_simple(severity, category, source, workload, title, message);
+        self.bus
+            .emit_simple(severity, category, source, workload, title, message);
     }
 }
 
@@ -3215,7 +3331,10 @@ impl Drop for EventBatch {
 }
 
 // ─── dry-run: show what would happen without executing ───────────────
-pub(crate) async fn dry_run_command(spec_path: &PathBuf, runtime_override: Option<String>) -> Result<()> {
+pub(crate) async fn dry_run_command(
+    spec_path: &PathBuf,
+    runtime_override: Option<String>,
+) -> Result<()> {
     let workload = Workload::from_file(spec_path)?;
     let engine = Engine::new();
 
@@ -3236,10 +3355,16 @@ pub(crate) async fn dry_run_command(spec_path: &PathBuf, runtime_override: Optio
             ("CPU", workload.requirements.cpu.clone()),
             ("Memory", workload.requirements.memory.clone()),
             ("Storage", workload.requirements.storage.clone()),
-            ("Ports", workload.network.ports.iter()
-                .map(|p| format!("{}:{}", p.service_port, p.container_port))
-                .collect::<Vec<_>>()
-                .join(", ")),
+            (
+                "Ports",
+                workload
+                    .network
+                    .ports
+                    .iter()
+                    .map(|p| format!("{}:{}", p.service_port, p.container_port))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
         ])
     );
 
@@ -3250,7 +3375,11 @@ pub(crate) async fn dry_run_command(spec_path: &PathBuf, runtime_override: Optio
 // ─── exec: run a shell inside a workload ─────────────────────────────
 /// Run a subprocess with optional timeout (0 = no timeout).
 /// Uses tokio::process::Command for proper async child management.
-async fn run_with_timeout(cmd: std::process::Command, label: &str, timeout_secs: u64) -> Result<()> {
+async fn run_with_timeout(
+    cmd: std::process::Command,
+    label: &str,
+    timeout_secs: u64,
+) -> Result<()> {
     // Convert std::process::Command to tokio::process::Command for async wait
     let mut tokio_cmd = tokio::process::Command::from(cmd);
     let mut child = tokio_cmd.spawn()?;
@@ -3265,10 +3394,7 @@ async fn run_with_timeout(cmd: std::process::Command, label: &str, timeout_secs:
     }
 
     // Await with timeout
-    match tokio::time::timeout(
-        std::time::Duration::from_secs(timeout_secs),
-        child.wait(),
-    ).await {
+    match tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), child.wait()).await {
         Ok(Ok(status)) => {
             if !status.success() {
                 anyhow::bail!("{} exited with status {}", label, status);
@@ -3283,14 +3409,23 @@ async fn run_with_timeout(cmd: std::process::Command, label: &str, timeout_secs:
     }
 }
 
-pub(crate) async fn exec_command(name: &str, command: &str, interactive: bool, timeout: u64) -> Result<()> {
+pub(crate) async fn exec_command(
+    name: &str,
+    command: &str,
+    interactive: bool,
+    timeout: u64,
+) -> Result<()> {
     let (_state, ws, _rt) = load_state_and_runtime(name).await?;
 
     output::header("🐚", &format!("Exec into {}", name));
 
     match ws.runtime {
         RuntimeKind::Podman | RuntimeKind::Docker => {
-            let bin = if ws.runtime == RuntimeKind::Docker { "docker" } else { "podman" };
+            let bin = if ws.runtime == RuntimeKind::Docker {
+                "docker"
+            } else {
+                "podman"
+            };
             let mut cmd = std::process::Command::new(bin);
             cmd.args(["exec"]);
             if interactive {
@@ -3305,9 +3440,7 @@ pub(crate) async fn exec_command(name: &str, command: &str, interactive: bool, t
             if interactive {
                 cmd.args(["-it"]);
             }
-            cmd.arg(&ws.instance.name)
-                .arg("--")
-                .arg(command);
+            cmd.arg(&ws.instance.name).arg("--").arg(command);
             run_with_timeout(cmd, "kubectl exec", timeout).await?;
         }
         RuntimeKind::KubeVirt => {
@@ -3340,13 +3473,19 @@ pub(crate) async fn port_forward_command(name: &str, ports: &str, timeout: u64) 
         );
     }
     let local_port: u16 = parts[0].parse().map_err(|_| {
-        anyhow::anyhow!("Invalid local port '{}'. Must be a number 1-65535", parts[0])
+        anyhow::anyhow!(
+            "Invalid local port '{}'. Must be a number 1-65535",
+            parts[0]
+        )
     })?;
     if local_port == 0 {
         anyhow::bail!("Local port cannot be 0 (reserved for OS-assigned ports)");
     }
     let remote_port: u16 = parts[1].parse().map_err(|_| {
-        anyhow::anyhow!("Invalid remote port '{}'. Must be a number 1-65535", parts[1])
+        anyhow::anyhow!(
+            "Invalid remote port '{}'. Must be a number 1-65535",
+            parts[1]
+        )
     })?;
     if remote_port == 0 {
         anyhow::bail!("Remote port cannot be 0");
@@ -3354,7 +3493,11 @@ pub(crate) async fn port_forward_command(name: &str, ports: &str, timeout: u64) 
 
     match ws.runtime {
         RuntimeKind::Podman | RuntimeKind::Docker => {
-            let rt_name = if ws.runtime == RuntimeKind::Docker { "Docker" } else { "Podman" };
+            let rt_name = if ws.runtime == RuntimeKind::Docker {
+                "Docker"
+            } else {
+                "Podman"
+            };
             output::info(&format!(
                 "{} containers use direct port mapping. Port {}:{} was configured at deploy time.",
                 rt_name, local_port, remote_port
@@ -3537,22 +3680,36 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
 
         let suitability = match runtime {
             RuntimeKind::Podman | RuntimeKind::Docker => {
-                if workload.requirements.gpu.is_some() { "Limited (no GPU)" }
-                else if cpu > 8.0 { "Adequate" }
-                else { "Excellent" }
+                if workload.requirements.gpu.is_some() {
+                    "Limited (no GPU)"
+                } else if cpu > 8.0 {
+                    "Adequate"
+                } else {
+                    "Excellent"
+                }
             }
             RuntimeKind::Kubernetes => {
-                if workload.network.service { "Excellent" }
-                else { "Good" }
+                if workload.network.service {
+                    "Excellent"
+                } else {
+                    "Good"
+                }
             }
             RuntimeKind::KubeVirt => {
-                if workload.requirements.gpu.is_some() { "Excellent (GPU passthrough)" }
-                else if mem_gi > 16.0 { "Good (VM isolation)" }
-                else { "Adequate" }
+                if workload.requirements.gpu.is_some() {
+                    "Excellent (GPU passthrough)"
+                } else if mem_gi > 16.0 {
+                    "Good (VM isolation)"
+                } else {
+                    "Adequate"
+                }
             }
             RuntimeKind::Metal3 => {
-                if cpu > 16.0 || mem_gi > 64.0 { "Excellent (bare-metal perf)" }
-                else { "Over-provisioned" }
+                if cpu > 16.0 || mem_gi > 64.0 {
+                    "Excellent (bare-metal perf)"
+                } else {
+                    "Over-provisioned"
+                }
             }
         };
 
@@ -3574,10 +3731,7 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
 
     println!(
         "{}",
-        output::table(
-            &["Runtime", "Suitability", "Limitations"],
-            rows,
-        )
+        output::table(&["Runtime", "Suitability", "Limitations"], rows,)
     );
 
     // Cost comparison
@@ -3594,10 +3748,7 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
 
     println!(
         "\n{}",
-        output::table(
-            &["Provider", "Monthly", "Hourly"],
-            cost_rows,
-        )
+        output::table(&["Provider", "Monthly", "Hourly"], cost_rows,)
     );
 
     output::muted("\n★ = AI-recommended runtime for this workload");
@@ -3649,9 +3800,7 @@ pub(crate) async fn intent_command(spec_path: &PathBuf) -> Result<()> {
 
     // Show intent summary
     let goal_str = format!("{:?}", intent.goal);
-    let mut intent_pairs: Vec<(&str, String)> = vec![
-        ("Goal", goal_str),
-    ];
+    let mut intent_pairs: Vec<(&str, String)> = vec![("Goal", goal_str)];
     if let Some(ref sla) = intent.sla {
         if let Some(latency) = sla.max_latency_ms {
             intent_pairs.push(("Max Latency", format!("{}ms", latency)));
@@ -3720,13 +3869,37 @@ pub(crate) async fn init_command() -> Result<()> {
     let mut capabilities = Vec::new();
 
     let podman_ok = which::which("podman").is_ok();
-    capabilities.push(("Podman", podman_ok, if podman_ok { "Ready" } else { "Not found — install with: sudo dnf install podman" }));
+    capabilities.push((
+        "Podman",
+        podman_ok,
+        if podman_ok {
+            "Ready"
+        } else {
+            "Not found — install with: sudo dnf install podman"
+        },
+    ));
 
     let kubectl_ok = which::which("kubectl").is_ok();
-    capabilities.push(("Kubernetes (kubectl)", kubectl_ok, if kubectl_ok { "Ready" } else { "Not found — install kubectl" }));
+    capabilities.push((
+        "Kubernetes (kubectl)",
+        kubectl_ok,
+        if kubectl_ok {
+            "Ready"
+        } else {
+            "Not found — install kubectl"
+        },
+    ));
 
     let virtctl_ok = which::which("virtctl").is_ok();
-    capabilities.push(("KubeVirt (virtctl)", virtctl_ok, if virtctl_ok { "Ready" } else { "Not found — install virtctl" }));
+    capabilities.push((
+        "KubeVirt (virtctl)",
+        virtctl_ok,
+        if virtctl_ok {
+            "Ready"
+        } else {
+            "Not found — install virtctl"
+        },
+    ));
 
     output::capabilities(&capabilities);
 
@@ -3835,7 +4008,11 @@ pub(crate) async fn compose_command(action: ComposeAction) -> Result<()> {
             }
             Ok(())
         }
-        ComposeAction::Up { file, runtime, dry_run } => {
+        ComposeAction::Up {
+            file,
+            runtime,
+            dry_run,
+        } => {
             output::header("🚀", "Compose Up");
             let spec = compose::load(&file)?;
             compose::validate(&spec)?;
@@ -3904,18 +4081,27 @@ pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
             output::header("🔌", "Registered Plugins");
             let reg = PluginRegistry::load(&path)?;
             if reg.plugins.is_empty() {
-                output::muted("No plugins registered. Run `aether plugin discover` to scan for plugins.");
+                output::muted(
+                    "No plugins registered. Run `aether plugin discover` to scan for plugins.",
+                );
                 return Ok(());
             }
-            let rows: Vec<Vec<String>> = reg.plugins.values().map(|p| {
-                vec![
-                    p.name.clone(),
-                    p.version.clone(),
-                    p.runtime_kind.clone(),
-                    p.capabilities.join(", "),
-                ]
-            }).collect();
-            println!("{}", output::table(&["Name", "Version", "Runtime", "Capabilities"], rows));
+            let rows: Vec<Vec<String>> = reg
+                .plugins
+                .values()
+                .map(|p| {
+                    vec![
+                        p.name.clone(),
+                        p.version.clone(),
+                        p.runtime_kind.clone(),
+                        p.capabilities.join(", "),
+                    ]
+                })
+                .collect();
+            println!(
+                "{}",
+                output::table(&["Name", "Version", "Runtime", "Capabilities"], rows)
+            );
             Ok(())
         }
         PluginAction::Discover => {
@@ -3927,9 +4113,11 @@ pub(crate) async fn plugin_command(action: PluginAction) -> Result<()> {
             output::spinner_success(&sp, &format!("Found {} plugin(s)", count));
 
             if count > 0 {
-                let rows: Vec<Vec<String>> = reg.plugins.values().map(|p| {
-                    vec![p.name.clone(), p.runtime_kind.clone(), p.command.clone()]
-                }).collect();
+                let rows: Vec<Vec<String>> = reg
+                    .plugins
+                    .values()
+                    .map(|p| vec![p.name.clone(), p.runtime_kind.clone(), p.command.clone()])
+                    .collect();
                 println!("{}", output::table(&["Name", "Runtime", "Command"], rows));
             }
             Ok(())
@@ -3986,18 +4174,28 @@ pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) 
             return Ok(());
         }
 
-        let uptime_color = if summary.uptime_percent >= 99.0 { "🟢" }
-            else if summary.uptime_percent >= 95.0 { "🟡" }
-            else { "🔴" };
+        let uptime_color = if summary.uptime_percent >= 99.0 {
+            "🟢"
+        } else if summary.uptime_percent >= 95.0 {
+            "🟡"
+        } else {
+            "🔴"
+        };
 
         println!(
             "{}",
             output::property_table(&[
                 ("Total Checks", format!("{}", summary.total_checks)),
                 ("Ready Checks", format!("{}", summary.ready_checks)),
-                ("Uptime", format!("{} {:.2}%", uptime_color, summary.uptime_percent)),
+                (
+                    "Uptime",
+                    format!("{} {:.2}%", uptime_color, summary.uptime_percent)
+                ),
                 ("Last State", summary.last_state.clone()),
-                ("Last Restart Count", format!("{}", summary.last_restart_count)),
+                (
+                    "Last Restart Count",
+                    format!("{}", summary.last_restart_count)
+                ),
             ])
         );
         return Ok(());
@@ -4025,7 +4223,8 @@ pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) 
         .iter()
         .map(|r| {
             let ready_icon = if r.ready { "●" } else { "○" };
-            let latency = r.latency_ms
+            let latency = r
+                .latency_ms
                 .map(|ms| format!("{:.0}ms", ms))
                 .unwrap_or_else(|| "-".to_string());
             vec![
@@ -4040,14 +4239,20 @@ pub(crate) async fn health_command(name: &str, last: usize, summary_only: bool) 
 
     println!(
         "{}",
-        output::table(&["Timestamp", "State", "Ready", "Restarts", "Latency"], rows)
+        output::table(
+            &["Timestamp", "State", "Ready", "Restarts", "Latency"],
+            rows
+        )
     );
 
     // Show summary at bottom
     let summary = history.summary(name);
     output::muted(&format!(
         "\n  Uptime: {:.2}%  |  {} / {} checks ready  |  {} restarts",
-        summary.uptime_percent, summary.ready_checks, summary.total_checks, summary.last_restart_count
+        summary.uptime_percent,
+        summary.ready_checks,
+        summary.total_checks,
+        summary.last_restart_count
     ));
 
     Ok(())
@@ -4070,22 +4275,16 @@ pub(crate) async fn health_collect_command() -> Result<()> {
 
     for ws in &workloads {
         match aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await {
-            Ok(rt) => {
-                match rt.status(&ws.instance).await {
-                    Ok(status) => {
-                        let record = aether::health::record_from_status(
-                            &ws.name,
-                            ws.runtime,
-                            &status,
-                        );
-                        history.record(record);
-                        collected += 1;
-                    }
-                    Err(e) => {
-                        tracing::debug!("Failed to get status for '{}': {}", ws.name, e);
-                    }
+            Ok(rt) => match rt.status(&ws.instance).await {
+                Ok(status) => {
+                    let record = aether::health::record_from_status(&ws.name, ws.runtime, &status);
+                    history.record(record);
+                    collected += 1;
                 }
-            }
+                Err(e) => {
+                    tracing::debug!("Failed to get status for '{}': {}", ws.name, e);
+                }
+            },
             Err(e) => {
                 tracing::debug!("Failed to create runtime for '{}': {}", ws.name, e);
             }
@@ -4093,7 +4292,10 @@ pub(crate) async fn health_collect_command() -> Result<()> {
     }
 
     history.save(&health_path)?;
-    output::success(&format!("Collected health data for {} workloads", collected));
+    output::success(&format!(
+        "Collected health data for {} workloads",
+        collected
+    ));
     Ok(())
 }
 
@@ -4186,12 +4388,15 @@ pub(crate) async fn helm_export_command(
     Ok(())
 }
 
-pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: &PathBuf) -> Result<()> {
+pub(crate) async fn confidential_command(
+    action: ConfidentialAction,
+    spec_path: &PathBuf,
+) -> Result<()> {
+    use crate::cli::GuestKitAction;
     use aether::ragnarok::client::RagnarokClient;
     use aether::ragnarok::guestkit::{GuestKitRequest, GuestKitService, InspectionMode};
     use aether::ragnarok::image::ImageCatalog;
     use aether::ragnarok::isolation::{self, IsolationPolicy};
-    use crate::cli::GuestKitAction;
 
     let data_dir = RagnarokClient::attestation_data_dir();
 
@@ -4220,7 +4425,10 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
                     output::success(&format!(
                         "Signed '{}' launch_digest={}",
                         manifest.name,
-                        manifest.launch_digest.as_deref().unwrap_or(&manifest.image_hash)
+                        manifest
+                            .launch_digest
+                            .as_deref()
+                            .unwrap_or(&manifest.image_hash)
                     ));
                 }
                 ConfidentialImageAction::Verify { name, path } => {
@@ -4259,11 +4467,7 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
                     };
                     let expected_digest = Workload::from_file(spec_path)
                         .ok()
-                        .and_then(|w| {
-                            w.confidential
-                                .as_ref()
-                                .and_then(|c| c.image_digest.clone())
-                        });
+                        .and_then(|w| w.confidential.as_ref().and_then(|c| c.image_digest.clone()));
                     let result = svc.inspect(
                         &GuestKitRequest {
                             vm_id: vm_id.clone(),
@@ -4389,10 +4593,10 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
             }
         }
         ConfidentialAction::Migration { action } => {
+            use crate::cli::ConfidentialMigrationAction;
             use aether::ragnarok::migration::{
                 plan_confidential_migration_tee, ConfidentialMigrationStore,
             };
-            use crate::cli::ConfidentialMigrationAction;
             let workload = Workload::from_file(spec_path)?;
             let host = aether::ragnarok::probe_host_tee();
             match action {
@@ -4429,8 +4633,7 @@ pub(crate) async fn confidential_command(action: ConfidentialAction, spec_path: 
                     let vm = name
                         .clone()
                         .unwrap_or_else(|| workload.metadata.name.clone());
-                    let store =
-                        ConfidentialMigrationStore::new(&data_dir);
+                    let store = ConfidentialMigrationStore::new(&data_dir);
                     match store.get(&vm) {
                         Some(rec) => {
                             println!(
@@ -4454,9 +4657,7 @@ pub(crate) async fn sbom_command(action: crate::cli::SbomAction) -> Result<()> {
     use crate::cli::SbomAction;
     match action {
         SbomAction::Export { output } => {
-            let bom = aether::sbom::generate_cyclonedx(
-                std::env::current_exe().ok().as_deref(),
-            )?;
+            let bom = aether::sbom::generate_cyclonedx(std::env::current_exe().ok().as_deref())?;
             let text = serde_json::to_string_pretty(&bom)?;
             if let Some(path) = output {
                 aether::sbom::export_to_path(&path, std::env::current_exe().ok().as_deref())?;
@@ -4486,7 +4687,7 @@ pub(crate) async fn edge_agent_command(
     interval_secs: u64,
 ) -> Result<()> {
     use aether::fleet::edge::{EdgeHeartbeatRequest, EdgeJob, EdgeRegisterRequest};
-    use aether::fleet::edge_executor::{EdgeLocalQueue, execute_edge_jobs};
+    use aether::fleet::edge_executor::{execute_edge_jobs, EdgeLocalQueue};
     use std::time::Duration;
 
     let base = control_plane.trim_end_matches('/');
@@ -4609,19 +4810,19 @@ pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
     if msg.contains("not found") && (msg.contains("Workload") || msg.contains("workload")) {
         return err.context(
             "Hint: Run `aether list` to see deployed workloads, \
-             or `aether run` to deploy one first."
+             or `aether run` to deploy one first.",
         );
     }
     if msg.contains("Podman not found") {
         return err.context(
             "Hint: Install podman with `sudo dnf install podman` (Fedora) \
-             or `sudo apt install podman` (Debian/Ubuntu)."
+             or `sudo apt install podman` (Debian/Ubuntu).",
         );
     }
     if msg.contains("error trying to connect") || msg.contains("connection refused") {
         return err.context(
             "Hint: Check your Kubernetes cluster with `kubectl cluster-info`, \
-             or set KUBECONFIG to point to a valid kubeconfig file."
+             or set KUBECONFIG to point to a valid kubeconfig file.",
         );
     }
     if msg.contains("Unknown runtime") {
@@ -4660,7 +4861,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -4685,7 +4886,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -4842,10 +5043,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_template_command_list() {
-        let result = template_command(
-            "list", None, "team", "default", "ghcr.io/org", None, true,
-        )
-        .await;
+        let result =
+            template_command("list", None, "team", "default", "ghcr.io/org", None, true).await;
         assert!(result.is_ok());
     }
 
@@ -4889,17 +5088,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_template_command_database() {
-        let result = template_command(
-            "database", None, "team", "demo", "ghcr.io/org", None, false,
-        )
-        .await;
+        let result =
+            template_command("database", None, "team", "demo", "ghcr.io/org", None, false).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_template_command_unknown() {
         let result = template_command(
-            "unknown-kind", None, "team", "demo", "ghcr.io/org", None, false,
+            "unknown-kind",
+            None,
+            "team",
+            "demo",
+            "ghcr.io/org",
+            None,
+            false,
         )
         .await;
         assert!(result.is_err());
@@ -5125,8 +5328,8 @@ mod tests {
                 spec_path: PathBuf::from("svc.yaml"),
                 created_at: "2025-01-01T00:00:00Z".to_string(),
                 updated_at: "2025-01-01T00:00:00Z".to_string(),
-            os_version: None,
-            node_labels: vec![],
+                os_version: None,
+                node_labels: vec![],
             },
         );
         store.save(&path).unwrap();

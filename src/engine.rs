@@ -95,7 +95,7 @@ impl Engine {
 
         // Large resources threshold — workloads exceeding these are candidates
         // for bare-metal provisioning via Metal3.
-        const BARE_METAL_CPU_THRESHOLD: f64 = 16.0;    // cores
+        const BARE_METAL_CPU_THRESHOLD: f64 = 16.0; // cores
         const BARE_METAL_MEM_THRESHOLD: f64 = 64.0 * 1024.0 * 1024.0 * 1024.0; // 64 GiB
         cpu > BARE_METAL_CPU_THRESHOLD || memory > BARE_METAL_MEM_THRESHOLD
     }
@@ -155,10 +155,10 @@ mod tests {
     #[test]
     fn test_auto_decide_container() {
         let engine = Engine::new();
-        let spec = create_test_workload(RuntimePreference::Auto, vec![
-            RuntimeType::Container,
-            RuntimeType::Kube,
-        ]);
+        let spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container, RuntimeType::Kube],
+        );
 
         let runtime = engine.decide(&spec).unwrap();
         assert_eq!(runtime, RuntimeKind::Podman);
@@ -167,10 +167,10 @@ mod tests {
     #[test]
     fn test_auto_decide_gpu() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(RuntimePreference::Auto, vec![
-            RuntimeType::Container,
-            RuntimeType::Kubevirt,
-        ]);
+        let mut spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container, RuntimeType::Kubevirt],
+        );
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
@@ -192,10 +192,7 @@ mod tests {
         assert_eq!(runtime, RuntimeKind::Kubernetes);
     }
 
-    fn create_test_workload(
-        preferred: RuntimePreference,
-        allow: Vec<RuntimeType>,
-    ) -> Workload {
+    fn create_test_workload(preferred: RuntimePreference, allow: Vec<RuntimeType>) -> Workload {
         Workload {
             api_version: "aether/v1".to_string(),
             kind: "Workload".to_string(),
@@ -211,7 +208,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -233,7 +230,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -244,40 +241,28 @@ mod tests {
     #[test]
     fn test_explicit_container_preference() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Container,
-            vec![RuntimeType::Container],
-        );
+        let spec = create_test_workload(RuntimePreference::Container, vec![RuntimeType::Container]);
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
     }
 
     #[test]
     fn test_explicit_kubevirt_preference() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Kubevirt,
-            vec![RuntimeType::Kubevirt],
-        );
+        let spec = create_test_workload(RuntimePreference::Kubevirt, vec![RuntimeType::Kubevirt]);
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
     }
 
     #[test]
     fn test_explicit_metal_preference() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Metal,
-            vec![RuntimeType::Metal],
-        );
+        let spec = create_test_workload(RuntimePreference::Metal, vec![RuntimeType::Metal]);
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Metal3);
     }
 
     #[test]
     fn test_explicit_kube_preference() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Kube,
-            vec![RuntimeType::Kube],
-        );
+        let spec = create_test_workload(RuntimePreference::Kube, vec![RuntimeType::Kube]);
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Kubernetes);
     }
 
@@ -525,10 +510,7 @@ mod tests {
     #[test]
     fn test_network_service_but_kube_not_allowed() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.network.service = true;
         // Kube not allowed, so should fall through to Container
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
@@ -563,10 +545,7 @@ mod tests {
     #[test]
     fn test_persistence_enabled_but_kube_not_allowed() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.persistence.enabled = true;
         // Kube not allowed, falls through to Container
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
@@ -581,7 +560,11 @@ mod tests {
         let engine = Engine::new();
         let mut spec = create_test_workload(
             RuntimePreference::Auto,
-            vec![RuntimeType::Kubevirt, RuntimeType::Metal, RuntimeType::Container],
+            vec![
+                RuntimeType::Kubevirt,
+                RuntimeType::Metal,
+                RuntimeType::Container,
+            ],
         );
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
@@ -598,7 +581,11 @@ mod tests {
         let engine = Engine::new();
         let mut spec = create_test_workload(
             RuntimePreference::Auto,
-            vec![RuntimeType::Kubevirt, RuntimeType::Kube, RuntimeType::Container],
+            vec![
+                RuntimeType::Kubevirt,
+                RuntimeType::Kube,
+                RuntimeType::Container,
+            ],
         );
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
@@ -613,7 +600,11 @@ mod tests {
         let engine = Engine::new();
         let mut spec = create_test_workload(
             RuntimePreference::Auto,
-            vec![RuntimeType::Metal, RuntimeType::Kube, RuntimeType::Container],
+            vec![
+                RuntimeType::Metal,
+                RuntimeType::Kube,
+                RuntimeType::Container,
+            ],
         );
         spec.requirements.cpu = "32".to_string();
         spec.network.service = true;
@@ -626,7 +617,11 @@ mod tests {
         let engine = Engine::new();
         let mut spec = create_test_workload(
             RuntimePreference::Auto,
-            vec![RuntimeType::Metal, RuntimeType::Kube, RuntimeType::Container],
+            vec![
+                RuntimeType::Metal,
+                RuntimeType::Kube,
+                RuntimeType::Container,
+            ],
         );
         spec.requirements.cpu = "32".to_string();
         spec.persistence.enabled = true;
@@ -653,14 +648,14 @@ mod tests {
     #[test]
     fn test_empty_allow_list_returns_error() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![]);
         let result = engine.decide(&spec);
         assert!(result.is_err());
         assert!(
-            result.unwrap_err().to_string().contains("No suitable runtime"),
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("No suitable runtime"),
             "Expected 'No suitable runtime' error"
         );
     }
@@ -668,20 +663,14 @@ mod tests {
     #[test]
     fn test_single_allowed_runtime_container() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
     }
 
     #[test]
     fn test_single_allowed_runtime_kube() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Kube],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Kube]);
         // No network service or persistence, Container not allowed,
         // fallback picks first allowed runtime
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Kubernetes);
@@ -690,10 +679,7 @@ mod tests {
     #[test]
     fn test_single_allowed_runtime_kubevirt() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Kubevirt],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Kubevirt]);
         // No GPU, no bare metal, no service, no persistence, Container not allowed
         // Fallback: first allowed = Kubevirt
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
@@ -702,10 +688,7 @@ mod tests {
     #[test]
     fn test_single_allowed_runtime_metal() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Metal],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Metal]);
         // Fallback: first allowed = Metal
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Metal3);
     }
@@ -878,20 +861,14 @@ mod tests {
     #[test]
     fn test_needs_bare_metal_false_for_small_workload() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         assert!(!engine.needs_bare_metal(&spec));
     }
 
     #[test]
     fn test_needs_bare_metal_true_for_high_cpu() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.requirements.cpu = "32".to_string();
         assert!(engine.needs_bare_metal(&spec));
     }
@@ -899,10 +876,7 @@ mod tests {
     #[test]
     fn test_needs_bare_metal_true_for_high_memory() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.requirements.memory = "128Gi".to_string();
         assert!(engine.needs_bare_metal(&spec));
     }
@@ -910,10 +884,7 @@ mod tests {
     #[test]
     fn test_needs_bare_metal_true_for_both_high() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.requirements.cpu = "64".to_string();
         spec.requirements.memory = "256Gi".to_string();
         assert!(engine.needs_bare_metal(&spec));
@@ -922,10 +893,7 @@ mod tests {
     #[test]
     fn test_needs_bare_metal_boundary_cpu_16() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.requirements.cpu = "16".to_string();
         spec.requirements.memory = "4Gi".to_string();
         // Exactly 16 is NOT > 16, so false
@@ -935,10 +903,7 @@ mod tests {
     #[test]
     fn test_needs_bare_metal_boundary_memory_64gi() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.requirements.cpu = "2".to_string();
         spec.requirements.memory = "64Gi".to_string();
         // Exactly 64Gi is NOT > 64Gi, so false
@@ -963,10 +928,7 @@ mod tests {
     #[test]
     fn test_is_allowed_with_non_matching_type() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         assert!(!engine.is_allowed(&spec, RuntimeType::Kube));
         assert!(!engine.is_allowed(&spec, RuntimeType::Kubevirt));
         assert!(!engine.is_allowed(&spec, RuntimeType::Metal));
@@ -975,10 +937,7 @@ mod tests {
     #[test]
     fn test_is_allowed_empty_allow_list() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![]);
         assert!(!engine.is_allowed(&spec, RuntimeType::Container));
         assert!(!engine.is_allowed(&spec, RuntimeType::Kube));
         assert!(!engine.is_allowed(&spec, RuntimeType::Kubevirt));
@@ -1032,10 +991,7 @@ mod tests {
     #[test]
     fn test_fallback_picks_first_allowed_when_container_not_in_list() {
         let engine = Engine::new();
-        let spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Metal],
-        );
+        let spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Metal]);
         // No rules matched (no GPU, no high resources, no service, no persistence)
         // Container not allowed, so fallback to first in allow list = Metal
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Metal3);
@@ -1203,10 +1159,7 @@ mod tests {
     #[test]
     fn test_cascade_all_rules_disallowed_falls_to_container() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
@@ -1221,10 +1174,7 @@ mod tests {
     #[test]
     fn test_cascade_only_persistence_path_available() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Kube],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Kube]);
         // No GPU, no high resources, no network service
         spec.persistence.enabled = true;
         // Persistence triggers Rule 4, Kube allowed
@@ -1304,14 +1254,18 @@ mod tests {
     // Intent compliance gate tests
     // ---------------------------------------------------------------
 
-    use crate::spec::{IntentSpec, IntentGoal, ComplianceSpec};
+    use crate::spec::{ComplianceSpec, IntentGoal, IntentSpec};
 
     #[test]
     fn test_isolation_required_selects_kubevirt() {
         let engine = Engine::new();
         let mut spec = create_test_workload(
             RuntimePreference::Auto,
-            vec![RuntimeType::Container, RuntimeType::Kube, RuntimeType::Kubevirt],
+            vec![
+                RuntimeType::Container,
+                RuntimeType::Kube,
+                RuntimeType::Kubevirt,
+            ],
         );
         spec.intent = Some(IntentSpec {
             goal: IntentGoal::Balanced,
@@ -1352,10 +1306,7 @@ mod tests {
     #[test]
     fn test_isolation_falls_through_when_neither_allowed() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Container],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Container]);
         spec.intent = Some(IntentSpec {
             goal: IntentGoal::Balanced,
             sla: None,

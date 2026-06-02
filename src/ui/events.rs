@@ -17,10 +17,9 @@ pub async fn handle_events(app: &mut App) -> anyhow::Result<()> {
 
     // Auto-refresh every 5 seconds, with a timeout to prevent UI freezes
     if app.should_refresh() {
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(10),
-            app.refresh_workloads(),
-        ).await {
+        match tokio::time::timeout(std::time::Duration::from_secs(10), app.refresh_workloads())
+            .await
+        {
             Ok(Ok(())) => {}
             Ok(Err(e)) => {
                 tracing::warn!("Failed to refresh workloads: {}", e);

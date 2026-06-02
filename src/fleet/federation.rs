@@ -91,15 +91,13 @@ pub async fn plan_placement(spec: &Workload) -> Result<FederationPlan> {
     };
 
     let intel_recs = GlobalPlacementEngine::recommend(spec, &candidates);
-    let mut clusters = score_clusters(
-        &candidates,
-        &policy,
-        &runtime_hint,
-        &anomalies,
-        &intel_recs,
-    );
+    let mut clusters = score_clusters(&candidates, &policy, &runtime_hint, &anomalies, &intel_recs);
 
-    clusters.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    clusters.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     let recommended_cluster = clusters.first().map(|c| c.cluster.clone());
 
@@ -141,7 +139,11 @@ fn score_clusters(
         if let Some(rec) = intel_recs
             .iter()
             .filter(|r| r.cluster.as_deref() == Some(c.name.as_str()))
-            .max_by(|a, b| a.score.partial_cmp(&b.score).unwrap_or(std::cmp::Ordering::Equal))
+            .max_by(|a, b| {
+                a.score
+                    .partial_cmp(&b.score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
         {
             score += rec.score * 40.0;
             reasons.push(format!("intelligence score {:.2}", rec.score));

@@ -13,12 +13,36 @@ use ratatui::{
 
 // ─── Colors derived from the shared palette in output.rs ─────────────
 
-pub const PRIMARY: Color = Color::Rgb(output::COLOR_PRIMARY.0, output::COLOR_PRIMARY.1, output::COLOR_PRIMARY.2);
-pub const INFO: Color = Color::Rgb(output::COLOR_INFO.0, output::COLOR_INFO.1, output::COLOR_INFO.2);
-pub const SUCCESS: Color = Color::Rgb(output::COLOR_SUCCESS.0, output::COLOR_SUCCESS.1, output::COLOR_SUCCESS.2);
-pub const WARNING: Color = Color::Rgb(output::COLOR_WARNING.0, output::COLOR_WARNING.1, output::COLOR_WARNING.2);
-pub const ERROR: Color = Color::Rgb(output::COLOR_ERROR.0, output::COLOR_ERROR.1, output::COLOR_ERROR.2);
-pub const MUTED: Color = Color::Rgb(output::COLOR_MUTED.0, output::COLOR_MUTED.1, output::COLOR_MUTED.2);
+pub const PRIMARY: Color = Color::Rgb(
+    output::COLOR_PRIMARY.0,
+    output::COLOR_PRIMARY.1,
+    output::COLOR_PRIMARY.2,
+);
+pub const INFO: Color = Color::Rgb(
+    output::COLOR_INFO.0,
+    output::COLOR_INFO.1,
+    output::COLOR_INFO.2,
+);
+pub const SUCCESS: Color = Color::Rgb(
+    output::COLOR_SUCCESS.0,
+    output::COLOR_SUCCESS.1,
+    output::COLOR_SUCCESS.2,
+);
+pub const WARNING: Color = Color::Rgb(
+    output::COLOR_WARNING.0,
+    output::COLOR_WARNING.1,
+    output::COLOR_WARNING.2,
+);
+pub const ERROR: Color = Color::Rgb(
+    output::COLOR_ERROR.0,
+    output::COLOR_ERROR.1,
+    output::COLOR_ERROR.2,
+);
+pub const MUTED: Color = Color::Rgb(
+    output::COLOR_MUTED.0,
+    output::COLOR_MUTED.1,
+    output::COLOR_MUTED.2,
+);
 
 /// Create a standard block with orange-themed borders
 pub fn bordered_block(title: &str) -> Block<'_> {
@@ -93,15 +117,30 @@ pub fn runtime_badge(runtime: &crate::runtime::RuntimeKind) -> Span<'static> {
 /// Create help text with orange-themed key highlights
 pub fn help_text() -> Line<'static> {
     Line::from(vec![
-        Span::styled("↑↓/jk", Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "↑↓/jk",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
         Span::raw(" Navigate  "),
-        Span::styled("Enter", Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "Enter",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
         Span::raw(" Logs  "),
-        Span::styled("g/G", Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "g/G",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
         Span::raw(" Top/Bottom  "),
-        Span::styled("r", Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "r",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
         Span::raw(" Refresh  "),
-        Span::styled("q", Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "q",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        ),
         Span::raw(" Quit"),
     ])
 }

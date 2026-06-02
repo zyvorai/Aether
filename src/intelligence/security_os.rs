@@ -90,9 +90,8 @@ pub struct SbomDriftReport {
 }
 
 pub fn detect_sbom_drift() -> SbomDriftReport {
-    let bom = crate::sbom::load_cached().unwrap_or_else(|| {
-        crate::sbom::generate_cyclonedx(None).unwrap_or(serde_json::json!({}))
-    });
+    let bom = crate::sbom::load_cached()
+        .unwrap_or_else(|| crate::sbom::generate_cyclonedx(None).unwrap_or(serde_json::json!({})));
     let meta = crate::sbom::sbom_metadata(&bom);
     let current_digest = meta
         .dashboard_sha256
@@ -214,7 +213,13 @@ pub fn build_zero_trust_wizard(workloads: &[(Workload, WorkloadState)]) -> ZeroT
         if policies == 0 {
             needs_ingress.push(spec.metadata.name.clone());
         }
-        if spec.network.network_policy.as_ref().is_some_and(|n| !n.allow_to.is_empty()) && policies < 1 {
+        if spec
+            .network
+            .network_policy
+            .as_ref()
+            .is_some_and(|n| !n.allow_to.is_empty())
+            && policies < 1
+        {
             needs_egress.push(spec.metadata.name.clone());
         }
     }
@@ -305,12 +310,7 @@ pub fn build_compliance_report(workloads: &[(Workload, WorkloadState)]) -> Compl
             },
             ComplianceReportSection {
                 control: "CC6.7 Confidential computing".into(),
-                status: if confidential > 0 {
-                    "pass"
-                } else {
-                    "n/a"
-                }
-                .into(),
+                status: if confidential > 0 { "pass" } else { "n/a" }.into(),
                 evidence: format!("{confidential} confidential workload(s) with attestation hooks"),
             },
         ],
@@ -375,7 +375,8 @@ pub fn run_secret_rotation_agent(req: &SecretRotationAgentRequest) -> SecretRota
             rotated.push(format!("dry-run: {line}"));
         } else {
             let placeholder = format!("rotated-{}", crate::resources::now_rfc3339());
-            match store.rotate_with_actor(&alert.secret, &alert.key, &placeholder, "security-agent") {
+            match store.rotate_with_actor(&alert.secret, &alert.key, &placeholder, "security-agent")
+            {
                 Ok(()) => rotated.push(line),
                 Err(e) => skipped.push(format!("{line}: {e}")),
             }
@@ -433,8 +434,8 @@ pub fn build_image_signing_enforcement(
             .as_deref()
             .map(|d| catalog.verify_digest(d))
             .unwrap_or(false);
-        let needs_signing = spec.confidential.as_ref().is_some_and(|c| c.enabled)
-            || digest.is_some();
+        let needs_signing =
+            spec.confidential.as_ref().is_some_and(|c| c.enabled) || digest.is_some();
         let blocked = enforce && needs_signing && !signed;
         if blocked {
             blocked_count += 1;
@@ -517,7 +518,10 @@ pub async fn run_threat_hunt(
     let configured = crate::ecosystem::packetwolf::config().configured;
     if configured {
         if let Ok(raw) = crate::ecosystem::packetwolf::anomalies(Some(req.limit)).await {
-            if let Some(arr) = raw.as_array().or_else(|| raw.get("items").and_then(|v| v.as_array())) {
+            if let Some(arr) = raw
+                .as_array()
+                .or_else(|| raw.get("items").and_then(|v| v.as_array()))
+            {
                 for item in arr.iter().take(req.limit as usize) {
                     let summary = item
                         .get("summary")
@@ -570,7 +574,9 @@ pub struct SovereignAuditReport {
     pub entries: Vec<SovereignAuditEntry>,
 }
 
-pub fn append_sovereign_audit(workloads: &[(Workload, WorkloadState)]) -> anyhow::Result<SovereignAuditReport> {
+pub fn append_sovereign_audit(
+    workloads: &[(Workload, WorkloadState)],
+) -> anyhow::Result<SovereignAuditReport> {
     let config = SovereignConfig::from_env();
     let mut entries = Vec::new();
 
@@ -660,7 +666,9 @@ fn fleet_security_score(workloads: &[(Workload, WorkloadState)]) -> (f64, u32) {
     ((1.0 - penalty) * 100.0, count)
 }
 
-pub fn build_security_score_trend(workloads: &[(Workload, WorkloadState)]) -> SecurityScoreTrendReport {
+pub fn build_security_score_trend(
+    workloads: &[(Workload, WorkloadState)],
+) -> SecurityScoreTrendReport {
     let (current, threat_count) = fleet_security_score(workloads);
 
     let mut history: SecurityScoreHistory = security_history_path()

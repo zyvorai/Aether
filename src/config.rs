@@ -56,13 +56,18 @@ impl Config {
                     tracing::error!(
                         "Failed to parse config {}: {}. Using defaults. \
                          Fix the config file to apply your settings.",
-                        path.display(), e
+                        path.display(),
+                        e
                     );
                     Self::default()
                 }
             },
             Err(e) => {
-                tracing::warn!("Failed to read config {}: {}, using defaults", path.display(), e);
+                tracing::warn!(
+                    "Failed to read config {}: {}, using defaults",
+                    path.display(),
+                    e
+                );
                 Self::default()
             }
         }
@@ -143,7 +148,10 @@ impl ScoringWeights {
     pub fn normalized(&self) -> Self {
         let total = self.cost + self.performance + self.reliability + self.availability;
         if total.abs() < 0.001 {
-            tracing::warn!("Scoring weights sum to near-zero ({:.6}); using defaults", total);
+            tracing::warn!(
+                "Scoring weights sum to near-zero ({:.6}); using defaults",
+                total
+            );
             return Self::default();
         }
         Self {
@@ -163,7 +171,11 @@ impl ScoringWeights {
             ("availability", self.availability),
         ] {
             if !(0.0..=1.0).contains(&val) {
-                anyhow::bail!("Scoring weight '{}' must be between 0.0 and 1.0, got {}", name, val);
+                anyhow::bail!(
+                    "Scoring weight '{}' must be between 0.0 and 1.0, got {}",
+                    name,
+                    val
+                );
             }
         }
         Ok(())
@@ -484,8 +496,10 @@ mod tests {
             availability: 2.0,
         };
         let normalized = weights.normalized();
-        let total = normalized.cost + normalized.performance
-            + normalized.reliability + normalized.availability;
+        let total = normalized.cost
+            + normalized.performance
+            + normalized.reliability
+            + normalized.availability;
         assert!((total - 1.0).abs() < 0.001);
     }
 
@@ -529,7 +543,10 @@ mod tests {
         };
         let yaml = serde_yaml::to_string(&config).unwrap();
         let parsed: NotificationsConfig = serde_yaml::from_str(&yaml).unwrap();
-        assert_eq!(parsed.slack_webhook_url.as_deref(), Some("https://hooks.slack.com/services/T00/B00/xxx"));
+        assert_eq!(
+            parsed.slack_webhook_url.as_deref(),
+            Some("https://hooks.slack.com/services/T00/B00/xxx")
+        );
         assert_eq!(parsed.slack_channel.as_deref(), Some("ops-alerts"));
         assert_eq!(parsed.min_severity, "error");
     }

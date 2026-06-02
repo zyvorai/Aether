@@ -11,7 +11,7 @@ use std::path::PathBuf;
 #[command(name = "aether")]
 #[command(
     about = "Universal runtime control plane - One spec, four runtimes",
-    long_about = "Aether deploys workloads across four runtimes (Podman, Kubernetes, KubeVirt, Metal3)\nfrom a single YAML specification with AI-powered runtime selection, zero-downtime\nmigration, and built-in observability.",
+    long_about = "Aether deploys workloads across four runtimes (Podman, Kubernetes, KubeVirt, Metal3)\nfrom a single YAML specification with AI-powered runtime selection, zero-downtime\nmigration, and built-in observability."
 )]
 #[command(version)]
 #[command(styles = get_styles())]

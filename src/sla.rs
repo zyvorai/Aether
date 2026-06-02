@@ -149,11 +149,7 @@ impl SlaEngine {
     }
 
     /// Evaluate SLA compliance
-    pub fn evaluate(
-        &self,
-        workload: &str,
-        observation: &SlaObservation,
-    ) -> Option<SlaReport> {
+    pub fn evaluate(&self, workload: &str, observation: &SlaObservation) -> Option<SlaReport> {
         let target = self.targets.get(workload)?;
         let mut checks = Vec::new();
         let mut all_passed = true;
@@ -313,7 +309,9 @@ impl SlaEngine {
             if !check.passed {
                 match check.metric.as_str() {
                     "Uptime" => {
-                        recs.push("Enable health probes and auto-restart for higher uptime".to_string());
+                        recs.push(
+                            "Enable health probes and auto-restart for higher uptime".to_string(),
+                        );
                         recs.push("Consider adding replica scaling for redundancy".to_string());
                     }
                     "Latency" => {
@@ -390,9 +388,13 @@ pub fn format_sla_report(report: &SlaReport) -> String {
     }
 
     if let Some(budget) = &report.remaining_error_budget {
-        let mut budget_pairs = vec![
-            ("Error Budget", format!("{:.1} min remaining of {:.1} min ({:.0}% consumed)", budget.remaining_minutes, budget.total_minutes, budget.consumed_pct)),
-        ];
+        let mut budget_pairs = vec![(
+            "Error Budget",
+            format!(
+                "{:.1} min remaining of {:.1} min ({:.0}% consumed)",
+                budget.remaining_minutes, budget.total_minutes, budget.consumed_pct
+            ),
+        )];
         if let Some(days) = budget.projected_exhaustion_days {
             if days <= 0.0 {
                 budget_pairs.push(("Projected exhaustion", "EXHAUSTED".to_string()));
@@ -423,10 +425,10 @@ mod tests {
         engine.add_target(SlaTarget::best_effort("web-app")); // 99.0% target
 
         let observation = SlaObservation {
-            uptime_pct: 99.5,       // 0.5% margin above 99.0% target
-            avg_latency_ms: 500.0,  // well under 2000ms limit
-            error_rate_pct: 1.0,    // well under 5.0% limit
-            restarts: 2,            // under 10 limit
+            uptime_pct: 99.5,      // 0.5% margin above 99.0% target
+            avg_latency_ms: 500.0, // well under 2000ms limit
+            error_rate_pct: 1.0,   // well under 5.0% limit
+            restarts: 2,           // under 10 limit
             observation_period: "24h".to_string(),
         };
 

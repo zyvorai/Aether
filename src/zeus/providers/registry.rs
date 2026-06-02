@@ -225,8 +225,7 @@ fn bootstrap_from_env() -> ZeusProviderRegistry {
             ),
             organization_id: None,
             deployment_name: None,
-            default_model: std::env::var("AETHER_LLM_MODEL")
-                .unwrap_or_else(|_| "llama3.2".into()),
+            default_model: std::env::var("AETHER_LLM_MODEL").unwrap_or_else(|_| "llama3.2".into()),
             enabled: true,
             priority: 5,
             api_key_configured: false,
@@ -292,9 +291,7 @@ fn resolve_api_key(config: &ZeusProviderConfig) -> Option<String> {
         }
     }
     match config.kind {
-        ZeusProviderKind::Openai | ZeusProviderKind::Azure => {
-            std::env::var("OPENAI_API_KEY").ok()
-        }
+        ZeusProviderKind::Openai | ZeusProviderKind::Azure => std::env::var("OPENAI_API_KEY").ok(),
         ZeusProviderKind::Anthropic => std::env::var("ANTHROPIC_API_KEY").ok(),
         ZeusProviderKind::Gemini => std::env::var("GEMINI_API_KEY")
             .or_else(|_| std::env::var("GOOGLE_API_KEY"))
@@ -372,7 +369,9 @@ pub fn provider_from_registry(preferred_kind: Option<ZeusProviderKind>) -> Box<d
             if reg.air_gapped {
                 matches!(
                     p.kind,
-                    ZeusProviderKind::Ollama | ZeusProviderKind::Vllm | ZeusProviderKind::OpenaiCompatible
+                    ZeusProviderKind::Ollama
+                        | ZeusProviderKind::Vllm
+                        | ZeusProviderKind::OpenaiCompatible
                 )
             } else {
                 true
@@ -415,7 +414,16 @@ pub fn build_provider_status() -> ZeusProviderStatusReport {
         .and_then(|id| reg.providers.iter().find(|p| &p.id == id))
         .or_else(|| reg.providers.iter().find(|p| p.enabled));
     let fallback = reg.providers.is_empty()
-        || reg.providers.iter().all(|p| !p.enabled || !p.api_key_configured && !matches!(p.kind, ZeusProviderKind::Ollama | ZeusProviderKind::Vllm | ZeusProviderKind::OpenaiCompatible));
+        || reg.providers.iter().all(|p| {
+            !p.enabled
+                || !p.api_key_configured
+                    && !matches!(
+                        p.kind,
+                        ZeusProviderKind::Ollama
+                            | ZeusProviderKind::Vllm
+                            | ZeusProviderKind::OpenaiCompatible
+                    )
+        });
     ZeusProviderStatusReport {
         active_provider: active
             .map(|p| p.display_name.clone())

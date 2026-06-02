@@ -7,26 +7,26 @@
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::{AccessMode, K8sWorkloadKind, Workload};
 use async_trait::async_trait;
-use k8s_openapi::api::autoscaling::v2::{
-    ExternalMetricSource, HorizontalPodAutoscaler, HorizontalPodAutoscalerBehavior,
-    HorizontalPodAutoscalerSpec, HPAScalingRules, MetricIdentifier, MetricSpec, MetricTarget,
-    ObjectMetricSource, PodsMetricSource, ResourceMetricSource,
-};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, StatefulSet};
+use k8s_openapi::api::autoscaling::v2::{
+    ExternalMetricSource, HPAScalingRules, HorizontalPodAutoscaler,
+    HorizontalPodAutoscalerBehavior, HorizontalPodAutoscalerSpec, MetricIdentifier, MetricSpec,
+    MetricTarget, ObjectMetricSource, PodsMetricSource, ResourceMetricSource,
+};
 use k8s_openapi::api::batch::v1::{CronJob, Job};
+use k8s_openapi::api::core::v1::ServiceAccount;
 use k8s_openapi::api::core::v1::{
     ConfigMap, LimitRange, PersistentVolumeClaim, PersistentVolumeClaimSpec, Pod, ResourceQuota,
-    Secret, Service, ResourceRequirements as K8sResourceRequirements, VolumeResourceRequirements,
+    ResourceRequirements as K8sResourceRequirements, Secret, Service, VolumeResourceRequirements,
+};
+use k8s_openapi::api::networking::v1::{
+    HTTPIngressPath, HTTPIngressRuleValue, IPBlock, Ingress, IngressBackend, IngressRule,
+    IngressServiceBackend, IngressSpec, IngressTLS, NetworkPolicy, NetworkPolicyEgressRule,
+    NetworkPolicyIngressRule, NetworkPolicyPeer, NetworkPolicyPort, NetworkPolicySpec,
+    ServiceBackendPort,
 };
 use k8s_openapi::api::policy::v1::PodDisruptionBudget;
-use k8s_openapi::api::networking::v1::{
-    HTTPIngressPath, HTTPIngressRuleValue, Ingress, IngressBackend, IngressRule,
-    IngressServiceBackend, IngressSpec, IngressTLS, IPBlock, NetworkPolicy,
-    NetworkPolicyEgressRule, NetworkPolicyIngressRule, NetworkPolicyPeer, NetworkPolicyPort,
-    NetworkPolicySpec, ServiceBackendPort,
-};
 use k8s_openapi::api::rbac::v1::{Role, RoleBinding};
-use k8s_openapi::api::core::v1::ServiceAccount;
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
@@ -61,7 +61,8 @@ impl KubernetesRuntime {
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "pvc" => {
-                    let api: Api<PersistentVolumeClaim> = Api::namespaced(self.client.clone(), &self.namespace);
+                    let api: Api<PersistentVolumeClaim> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "service" => {
@@ -73,7 +74,8 @@ impl KubernetesRuntime {
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "deployment" => {
-                    let api: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
+                    let api: Api<Deployment> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "cronjob" => {
@@ -81,7 +83,8 @@ impl KubernetesRuntime {
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "statefulset" => {
-                    let api: Api<StatefulSet> = Api::namespaced(self.client.clone(), &self.namespace);
+                    let api: Api<StatefulSet> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "daemonset" => {
@@ -128,15 +131,18 @@ impl KubernetesRuntime {
                     Ok(())
                 }
                 "networkpolicy" => {
-                    let api: Api<NetworkPolicy> = Api::namespaced(self.client.clone(), &self.namespace);
+                    let api: Api<NetworkPolicy> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "resourcequota" => {
-                    let api: Api<ResourceQuota> = Api::namespaced(self.client.clone(), &self.namespace);
+                    let api: Api<ResourceQuota> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "limitrange" => {
-                    let api: Api<LimitRange> = Api::namespaced(self.client.clone(), &self.namespace);
+                    let api: Api<LimitRange> =
+                        Api::namespaced(self.client.clone(), &self.namespace);
                     api.delete(name, &DeleteParams::default()).await.map(|_| ())
                 }
                 "cilium" => {
@@ -188,13 +194,19 @@ impl KubernetesRuntime {
 
         let services: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
         let service_name = format!("{}-service", instance.name);
-        if let Err(e) = services.delete(&service_name, &DeleteParams::default()).await {
+        if let Err(e) = services
+            .delete(&service_name, &DeleteParams::default())
+            .await
+        {
             tracing::debug!("Service deletion failed (may not exist): {}", e);
         }
 
         let ingresses: Api<Ingress> = Api::namespaced(self.client.clone(), &self.namespace);
         let ingress_name = format!("{}-ingress", instance.name);
-        if let Err(e) = ingresses.delete(&ingress_name, &DeleteParams::default()).await {
+        if let Err(e) = ingresses
+            .delete(&ingress_name, &DeleteParams::default())
+            .await
+        {
             tracing::debug!("Ingress deletion failed (may not exist): {}", e);
         }
 
@@ -233,9 +245,7 @@ impl KubernetesRuntime {
 
                     let ready = pod_status
                         .and_then(|s| s.conditions.as_ref())
-                        .and_then(|conditions| {
-                            conditions.iter().find(|c| c.type_ == "Ready")
-                        })
+                        .and_then(|conditions| conditions.iter().find(|c| c.type_ == "Ready"))
                         .map(|c| c.status == "True")
                         .unwrap_or(false);
 
@@ -320,11 +330,20 @@ fn build_resource_requirements(spec: &Workload) -> K8sResourceRequirements {
     let mut requests = BTreeMap::new();
 
     limits.insert("cpu".to_string(), Quantity(spec.requirements.cpu.clone()));
-    limits.insert("memory".to_string(), Quantity(spec.requirements.memory.clone()));
+    limits.insert(
+        "memory".to_string(),
+        Quantity(spec.requirements.memory.clone()),
+    );
 
-    let cpu_req = spec.requirements.cpu_request.as_deref()
+    let cpu_req = spec
+        .requirements
+        .cpu_request
+        .as_deref()
         .unwrap_or(&spec.requirements.cpu);
-    let mem_req = spec.requirements.memory_request.as_deref()
+    let mem_req = spec
+        .requirements
+        .memory_request
+        .as_deref()
         .unwrap_or(&spec.requirements.memory);
     requests.insert("cpu".to_string(), Quantity(cpu_req.to_string()));
     requests.insert("memory".to_string(), Quantity(mem_req.to_string()));
@@ -370,7 +389,11 @@ fn parse_label_peers(labels: &[String], direction: &str) -> Vec<NetworkPolicyPee
                     ..Default::default()
                 })
             } else {
-                tracing::warn!("Invalid {} label '{}', expected key=value", direction, label);
+                tracing::warn!(
+                    "Invalid {} label '{}', expected key=value",
+                    direction,
+                    label
+                );
                 None
             }
         })
@@ -433,7 +456,9 @@ fn parse_cidr_block_peers(blocks: &[crate::spec::NetworkPolicyCidrSpec]) -> Vec<
         .collect()
 }
 
-fn ports_from_specs(ports: &[crate::spec::NetworkPolicyPortSpec]) -> Option<Vec<NetworkPolicyPort>> {
+fn ports_from_specs(
+    ports: &[crate::spec::NetworkPolicyPortSpec],
+) -> Option<Vec<NetworkPolicyPort>> {
     if ports.is_empty() {
         return None;
     }
@@ -458,7 +483,10 @@ fn egress_policy_ports(np: &crate::spec::NetworkPolicyConfig) -> Option<Vec<Netw
 }
 
 /// Build a NetworkPolicy manifest from workload spec.
-pub(crate) fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> Option<NetworkPolicy> {
+pub(crate) fn build_networkpolicy_manifest(
+    namespace: &str,
+    spec: &Workload,
+) -> Option<NetworkPolicy> {
     let np_config = spec.network.network_policy.as_ref()?;
 
     let mut labels = BTreeMap::new();
@@ -544,7 +572,10 @@ pub(crate) fn build_networkpolicy_manifest(namespace: &str, spec: &Workload) -> 
 }
 
 /// Build a PersistentVolumeClaim manifest from workload spec.
-pub(crate) fn build_pvc_manifest(namespace: &str, spec: &Workload) -> Option<PersistentVolumeClaim> {
+pub(crate) fn build_pvc_manifest(
+    namespace: &str,
+    spec: &Workload,
+) -> Option<PersistentVolumeClaim> {
     if !spec.persistence.enabled {
         return None;
     }
@@ -560,7 +591,10 @@ pub(crate) fn build_pvc_manifest(namespace: &str, spec: &Workload) -> Option<Per
     };
 
     let mut requests = BTreeMap::new();
-    requests.insert("storage".to_string(), Quantity(spec.persistence.size.clone()));
+    requests.insert(
+        "storage".to_string(),
+        Quantity(spec.persistence.size.clone()),
+    );
 
     Some(PersistentVolumeClaim {
         metadata: ObjectMeta {
@@ -625,8 +659,7 @@ pub(crate) fn build_secret_manifests(namespace: &str, spec: &Workload) -> Vec<Se
         .iter()
         .map(|s| {
             // Convert string values to base64-encoded bytes for k8s secrets
-            let string_data: BTreeMap<String, String> =
-                s.data.clone().into_iter().collect();
+            let string_data: BTreeMap<String, String> = s.data.clone().into_iter().collect();
 
             Secret {
                 metadata: ObjectMeta {
@@ -716,7 +749,10 @@ pub(crate) fn build_ingress_manifest(namespace: &str, spec: &Workload) -> Option
 }
 
 /// Build a HorizontalPodAutoscaler manifest from workload spec.
-pub(crate) fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<HorizontalPodAutoscaler> {
+pub(crate) fn build_hpa_manifest(
+    namespace: &str,
+    spec: &Workload,
+) -> Option<HorizontalPodAutoscaler> {
     let scaling_spec = match &spec.scaling {
         Some(s) if s.enabled => s,
         _ => return None,
@@ -853,11 +889,12 @@ pub(crate) fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<Hor
                 Some(MetricSpec {
                     type_: "Object".to_string(),
                     object: Some(ObjectMetricSource {
-                        described_object: k8s_openapi::api::autoscaling::v2::CrossVersionObjectReference {
-                            api_version: m.object_api_version.clone(),
-                            kind: object_kind,
-                            name: object_name,
-                        },
+                        described_object:
+                            k8s_openapi::api::autoscaling::v2::CrossVersionObjectReference {
+                                api_version: m.object_api_version.clone(),
+                                kind: object_kind,
+                                name: object_name,
+                            },
                         metric: MetricIdentifier {
                             name: metric_name,
                             selector: None,
@@ -876,7 +913,10 @@ pub(crate) fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<Hor
 
     // Don't create an HPA with no valid metrics
     if metrics.is_empty() {
-        tracing::warn!("No valid HPA metrics for '{}', skipping HPA creation", spec.metadata.name);
+        tracing::warn!(
+            "No valid HPA metrics for '{}', skipping HPA creation",
+            spec.metadata.name
+        );
         return None;
     }
 
@@ -885,7 +925,9 @@ pub(crate) fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<Hor
         tracing::error!(
             "Invalid scaling spec for '{}': min_replicas ({}) > max_replicas ({}). \
              Fix the workload spec. Skipping HPA creation.",
-            spec.metadata.name, scaling_spec.min_replicas, scaling_spec.max_replicas
+            spec.metadata.name,
+            scaling_spec.min_replicas,
+            scaling_spec.max_replicas
         );
         return None;
     }
@@ -893,16 +935,19 @@ pub(crate) fn build_hpa_manifest(namespace: &str, spec: &Workload) -> Option<Hor
     let mut match_labels = BTreeMap::new();
     match_labels.insert("app".to_string(), spec.metadata.name.clone());
 
-    let behavior = scaling_spec.behavior.as_ref().map(|b| HorizontalPodAutoscalerBehavior {
-        scale_up: b.scale_up_stabilization_seconds.map(|s| HPAScalingRules {
-            stabilization_window_seconds: Some(s),
-            ..Default::default()
-        }),
-        scale_down: b.scale_down_stabilization_seconds.map(|s| HPAScalingRules {
-            stabilization_window_seconds: Some(s),
-            ..Default::default()
-        }),
-    });
+    let behavior = scaling_spec
+        .behavior
+        .as_ref()
+        .map(|b| HorizontalPodAutoscalerBehavior {
+            scale_up: b.scale_up_stabilization_seconds.map(|s| HPAScalingRules {
+                stabilization_window_seconds: Some(s),
+                ..Default::default()
+            }),
+            scale_down: b.scale_down_stabilization_seconds.map(|s| HPAScalingRules {
+                stabilization_window_seconds: Some(s),
+                ..Default::default()
+            }),
+        });
 
     Some(HorizontalPodAutoscaler {
         metadata: ObjectMeta {
@@ -980,7 +1025,10 @@ pub(crate) async fn create_dynamic_resource(
             tracing::info!("Created {}: {}", api_resource.kind, name);
             Ok(())
         }
-        Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+        Err(e)
+            if e.downcast_ref::<kube::Error>()
+                .is_some_and(is_already_exists) =>
+        {
             tracing::info!("{} already exists: {}", api_resource.kind, name);
             Ok(())
         }
@@ -996,7 +1044,11 @@ pub(crate) async fn delete_dynamic_resource(
 ) {
     let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
     if let Err(e) = api.delete(name, &DeleteParams::default()).await {
-        tracing::debug!("{} deletion failed (may not exist): {}", api_resource.kind, e);
+        tracing::debug!(
+            "{} deletion failed (may not exist): {}",
+            api_resource.kind,
+            e
+        );
     }
 }
 
@@ -1106,10 +1158,8 @@ impl Runtime for KubernetesRuntime {
         )
         .await?;
 
-        let mut new_resources: Vec<(&str, String)> = tracked
-            .iter()
-            .map(|r| (r.kind, r.name.clone()))
-            .collect();
+        let mut new_resources: Vec<(&str, String)> =
+            tracked.iter().map(|r| (r.kind, r.name.clone())).collect();
 
         // Create workload controller
         let (resource_name, resource_uid) = match workload_kind {
@@ -1147,8 +1197,11 @@ impl Runtime for KubernetesRuntime {
                 (name, uid)
             }
             K8sWorkloadKind::Job => {
-                let job =
-                    crate::adapters::kube_manifest::build_job_manifest(&self.namespace, image, spec);
+                let job = crate::adapters::kube_manifest::build_job_manifest(
+                    &self.namespace,
+                    image,
+                    spec,
+                );
                 let jobs: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
                 let created = match kube_with_timeout(
                     "Job create",
@@ -1251,7 +1304,10 @@ impl Runtime for KubernetesRuntime {
                 .await
                 {
                     Ok(d) => d,
-                    Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    Err(e)
+                        if e.downcast_ref::<kube::Error>()
+                            .is_some_and(is_already_exists) =>
+                    {
                         tracing::info!(
                             "Deployment already exists, applying update: {}",
                             spec.metadata.name
@@ -1336,7 +1392,11 @@ impl Runtime for KubernetesRuntime {
         let _ = jobs.delete(&instance.name, &DeleteParams::default()).await;
 
         let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
-        kube_with_timeout("CronJob delete", cronjobs.delete(&instance.name, &DeleteParams::default())).await?;
+        kube_with_timeout(
+            "CronJob delete",
+            cronjobs.delete(&instance.name, &DeleteParams::default()),
+        )
+        .await?;
 
         Ok(())
     }
@@ -1356,7 +1416,9 @@ impl Runtime for KubernetesRuntime {
         // Look up pods by label since Deployment pods have generated names
         let lp = ListParams::default().labels(&format!("app={},managed-by=aether", instance.name));
         let pod_list = pods.list(&lp).await?;
-        let pod_name = pod_list.items.first()
+        let pod_name = pod_list
+            .items
+            .first()
             .and_then(|p| p.metadata.name.clone())
             .ok_or_else(|| anyhow::anyhow!("No pods found for workload '{}'", instance.name))?;
 
@@ -1428,8 +1490,7 @@ impl Runtime for KubernetesRuntime {
         .await;
 
         // Delete PDB
-        let pdbs: Api<PodDisruptionBudget> =
-            Api::namespaced(self.client.clone(), &self.namespace);
+        let pdbs: Api<PodDisruptionBudget> = Api::namespaced(self.client.clone(), &self.namespace);
         let pdb_name = format!("{}-pdb", instance.name);
         match pdbs.delete(&pdb_name, &DeleteParams::default()).await {
             Ok(_) => tracing::info!("Deleted PDB: {}", pdb_name),
@@ -1452,21 +1513,30 @@ impl Runtime for KubernetesRuntime {
 
         // Delete DaemonSet
         let daemon: Api<DaemonSet> = Api::namespaced(self.client.clone(), &self.namespace);
-        match daemon.delete(&instance.name, &graceful_delete_params()).await {
+        match daemon
+            .delete(&instance.name, &graceful_delete_params())
+            .await
+        {
             Ok(_) => tracing::info!("Deleted DaemonSet: {}", instance.name),
             Err(e) => tracing::debug!("DaemonSet deletion failed (may not exist): {}", e),
         }
 
         // Delete Deployment (cascades to ReplicaSet and Pods)
         let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &self.namespace);
-        match deployments.delete(&instance.name, &graceful_delete_params()).await {
+        match deployments
+            .delete(&instance.name, &graceful_delete_params())
+            .await
+        {
             Ok(_) => tracing::info!("Deleted Deployment: {}", instance.name),
             Err(e) => tracing::debug!("Deployment deletion failed (may not exist): {}", e),
         }
 
         // Delete CronJob (may exist if workload was scheduled)
         let cronjobs: Api<CronJob> = Api::namespaced(self.client.clone(), &self.namespace);
-        match cronjobs.delete(&instance.name, &DeleteParams::default()).await {
+        match cronjobs
+            .delete(&instance.name, &DeleteParams::default())
+            .await
+        {
             Ok(_) => tracing::info!("Deleted CronJob: {}", instance.name),
             Err(e) => tracing::debug!("CronJob deletion failed (may not exist): {}", e),
         }
@@ -1507,7 +1577,10 @@ impl Runtime for KubernetesRuntime {
         // Delete Service
         let services: Api<Service> = Api::namespaced(self.client.clone(), &self.namespace);
         let service_name = format!("{}-service", instance.name);
-        match services.delete(&service_name, &DeleteParams::default()).await {
+        match services
+            .delete(&service_name, &DeleteParams::default())
+            .await
+        {
             Ok(_) => tracing::info!("Deleted Service: {}", service_name),
             Err(e) => tracing::debug!("Service deletion failed (may not exist): {}", e),
         }
@@ -1524,10 +1597,7 @@ impl Runtime for KubernetesRuntime {
         // Delete ConfigMaps and Secrets managed by aether
         // We'll use label selectors to find and delete them
         validate_kube_name(&instance.name)?;
-        let lp = ListParams::default().labels(&format!(
-            "app={},managed-by=aether",
-            instance.name
-        ));
+        let lp = ListParams::default().labels(&format!("app={},managed-by=aether", instance.name));
 
         let configmaps: Api<ConfigMap> = Api::namespaced(self.client.clone(), &self.namespace);
         match configmaps.list(&lp).await {
@@ -1561,7 +1631,10 @@ impl Runtime for KubernetesRuntime {
 
         // ServiceAccount + RBAC (best-effort conventional names)
         let accounts: Api<ServiceAccount> = Api::namespaced(self.client.clone(), &self.namespace);
-        if let Err(e) = accounts.delete(&instance.name, &DeleteParams::default()).await {
+        if let Err(e) = accounts
+            .delete(&instance.name, &DeleteParams::default())
+            .await
+        {
             tracing::debug!("ServiceAccount deletion failed (may not exist): {}", e);
         }
         let roles: Api<Role> = Api::namespaced(self.client.clone(), &self.namespace);
@@ -1571,7 +1644,10 @@ impl Runtime for KubernetesRuntime {
         }
         let bindings: Api<RoleBinding> = Api::namespaced(self.client.clone(), &self.namespace);
         let binding_name = format!("{}-rolebinding", instance.name);
-        if let Err(e) = bindings.delete(&binding_name, &DeleteParams::default()).await {
+        if let Err(e) = bindings
+            .delete(&binding_name, &DeleteParams::default())
+            .await
+        {
             tracing::debug!("RoleBinding deletion failed (may not exist): {}", e);
         }
 
@@ -1678,7 +1754,12 @@ impl Runtime for KubernetesRuntime {
         Ok(instances)
     }
 
-    async fn update(&self, instance: &Instance, image: &Image, spec: &Workload) -> crate::Result<Instance> {
+    async fn update(
+        &self,
+        instance: &Instance,
+        image: &Image,
+        spec: &Workload,
+    ) -> crate::Result<Instance> {
         validate_kube_name(&spec.metadata.name)?;
         let pp = kube::api::PatchParams::apply("aether").force();
 
@@ -1727,8 +1808,11 @@ impl Runtime for KubernetesRuntime {
             }
             K8sWorkloadKind::Job => {
                 tracing::info!("Updating Job: {}", instance.name);
-                let job =
-                    crate::adapters::kube_manifest::build_job_manifest(&self.namespace, image, spec);
+                let job = crate::adapters::kube_manifest::build_job_manifest(
+                    &self.namespace,
+                    image,
+                    spec,
+                );
                 let jobs: Api<Job> = Api::namespaced(self.client.clone(), &self.namespace);
                 let patched = kube_with_timeout(
                     "Job patch",
@@ -1794,7 +1878,12 @@ impl Runtime for KubernetesRuntime {
         }
 
         tracing::info!("Updated {} (rolling update triggered)", name);
-        Ok(Instance::new(uid, name, RuntimeKind::Kubernetes, image.reference()))
+        Ok(Instance::new(
+            uid,
+            name,
+            RuntimeKind::Kubernetes,
+            image.reference(),
+        ))
     }
 
     async fn capacity(&self) -> crate::Result<Option<crate::runtime::Capacity>> {
@@ -1889,7 +1978,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -1912,7 +2001,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
-        ..Default::default()
+                ..Default::default()
             },
             persistence: PersistenceSpec {
                 enabled: false,
@@ -1986,10 +2075,13 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_user_labels_merged() {
-
         let mut spec = create_test_workload();
-        spec.metadata.labels.insert("env".to_string(), "staging".to_string());
-        spec.metadata.labels.insert("team".to_string(), "backend".to_string());
+        spec.metadata
+            .labels
+            .insert("env".to_string(), "staging".to_string());
+        spec.metadata
+            .labels
+            .insert("team".to_string(), "backend".to_string());
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
@@ -2005,28 +2097,30 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_annotations() {
-
         let mut spec = create_test_workload();
-        spec.metadata.annotations.insert(
-            "prometheus.io/scrape".to_string(),
-            "true".to_string(),
-        );
-        spec.metadata.annotations.insert(
-            "prometheus.io/port".to_string(),
-            "9090".to_string(),
-        );
+        spec.metadata
+            .annotations
+            .insert("prometheus.io/scrape".to_string(), "true".to_string());
+        spec.metadata
+            .annotations
+            .insert("prometheus.io/port".to_string(), "9090".to_string());
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
         let annotations = deploy.metadata.annotations.as_ref().unwrap();
 
-        assert_eq!(annotations.get("prometheus.io/scrape"), Some(&"true".to_string()));
-        assert_eq!(annotations.get("prometheus.io/port"), Some(&"9090".to_string()));
+        assert_eq!(
+            annotations.get("prometheus.io/scrape"),
+            Some(&"true".to_string())
+        );
+        assert_eq!(
+            annotations.get("prometheus.io/port"),
+            Some(&"9090".to_string())
+        );
     }
 
     #[test]
     fn test_generate_deployment_container_ports() {
-
         let mut spec = create_test_workload();
         spec.network.ports = vec![
             PortMapping {
@@ -2048,7 +2142,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         let ports = container.ports.as_ref().unwrap();
 
         assert_eq!(ports.len(), 3);
@@ -2061,13 +2163,20 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_no_ports() {
-
         let mut spec = create_test_workload();
         spec.network.ports = vec![];
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         let ports = container.ports.as_ref().unwrap();
 
         assert!(ports.is_empty());
@@ -2075,14 +2184,21 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_resource_limits() {
-
         let mut spec = create_test_workload();
         spec.requirements.cpu = "500m".to_string();
         spec.requirements.memory = "256Mi".to_string();
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         let resources = container.resources.as_ref().unwrap();
 
         let limits = resources.limits.as_ref().unwrap();
@@ -2096,14 +2212,21 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_resource_limits_whole_cpu() {
-
         let mut spec = create_test_workload();
         spec.requirements.cpu = "4".to_string();
         spec.requirements.memory = "8Gi".to_string();
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         let resources = container.resources.as_ref().unwrap();
 
         let limits = resources.limits.as_ref().unwrap();
@@ -2113,7 +2236,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_image_with_digest() {
-
         let spec = create_test_workload();
         let image = Image {
             name: "myregistry.io/myapp".to_string(),
@@ -2123,9 +2245,20 @@ mod tests {
         };
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         // full_name() returns "name:tag"
-        assert_eq!(container.image, Some("myregistry.io/myapp:v1.2.3".to_string()));
+        assert_eq!(
+            container.image,
+            Some("myregistry.io/myapp:v1.2.3".to_string())
+        );
     }
 
     #[test]
@@ -2134,7 +2267,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
 
         assert!(container.liveness_probe.is_none());
         assert!(container.readiness_probe.is_none());
@@ -2146,7 +2287,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
 
         assert!(container.env_from.is_none());
     }
@@ -2157,7 +2306,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_liveness_http_probe() {
-
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
             liveness: Some(HealthProbe {
@@ -2174,7 +2322,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert_eq!(probe.initial_delay_seconds, Some(15));
@@ -2187,7 +2343,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_readiness_http_probe() {
-
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
             liveness: None,
@@ -2204,7 +2359,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
 
         assert!(container.liveness_probe.is_none());
 
@@ -2219,7 +2382,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_both_probes() {
-
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
             liveness: Some(HealthProbe {
@@ -2243,7 +2405,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
 
         assert!(container.liveness_probe.is_some());
         assert!(container.readiness_probe.is_some());
@@ -2265,7 +2435,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_tcp_probe_produces_no_http_get() {
-
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
             liveness: Some(HealthProbe {
@@ -2279,17 +2448,27 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.http_get.is_none());
         assert!(probe.tcp_socket.is_some());
-        assert_eq!(probe.tcp_socket.as_ref().unwrap().port, IntOrString::Int(3306));
+        assert_eq!(
+            probe.tcp_socket.as_ref().unwrap().port,
+            IntOrString::Int(3306)
+        );
     }
 
     #[test]
     fn test_generate_deployment_exec_probe_produces_no_http_get() {
-
         let mut spec = create_test_workload();
         spec.health = Some(HealthSpec {
             liveness: Some(HealthProbe {
@@ -2305,7 +2484,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.http_get.is_none());
@@ -2318,7 +2505,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_env_from_configmap() {
-
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
             config_maps: vec![],
@@ -2331,7 +2517,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 1);
@@ -2345,7 +2539,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_env_from_secret() {
-
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
             config_maps: vec![],
@@ -2358,7 +2551,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 1);
@@ -2372,7 +2573,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_env_from_multiple_sources() {
-
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
             config_maps: vec![],
@@ -2395,7 +2595,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 3);
@@ -2406,7 +2614,6 @@ mod tests {
 
     #[test]
     fn test_generate_deployment_env_from_empty_list() {
-
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
             config_maps: vec![],
@@ -2416,7 +2623,15 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap().containers[0];
+        let container = &deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap()
+            .containers[0];
         // Empty env_from vec results in None
         assert!(container.env_from.is_none());
     }
@@ -2427,7 +2642,6 @@ mod tests {
 
     #[test]
     fn test_generate_service_clusterip() {
-
         let spec = create_test_workload();
 
         let service = build_service_manifest("default", &spec).unwrap();
@@ -2444,7 +2658,6 @@ mod tests {
 
     #[test]
     fn test_generate_service_loadbalancer() {
-
         let mut spec = create_test_workload();
         spec.network.service_type = ServiceType::LoadBalancer;
 
@@ -2455,7 +2668,6 @@ mod tests {
 
     #[test]
     fn test_generate_service_nodeport() {
-
         let mut spec = create_test_workload();
         spec.network.service_type = ServiceType::NodePort;
 
@@ -2466,7 +2678,6 @@ mod tests {
 
     #[test]
     fn test_generate_service_disabled() {
-
         let mut spec = create_test_workload();
         spec.network.service = false;
 
@@ -2476,7 +2687,6 @@ mod tests {
 
     #[test]
     fn test_generate_service_ports() {
-
         let mut spec = create_test_workload();
         spec.network.ports = vec![
             PortMapping {
@@ -2518,7 +2728,6 @@ mod tests {
 
     #[test]
     fn test_generate_service_udp_protocol() {
-
         let mut spec = create_test_workload();
         spec.network.ports = vec![PortMapping {
             container_port: 5353,
@@ -2539,7 +2748,6 @@ mod tests {
 
     #[test]
     fn test_generate_pvc_disabled() {
-
         let spec = create_test_workload();
 
         let pvc = build_pvc_manifest("default", &spec);
@@ -2548,7 +2756,6 @@ mod tests {
 
     #[test]
     fn test_generate_pvc_readwriteonce() {
-
         let mut spec = create_test_workload();
         spec.persistence.enabled = true;
         spec.persistence.size = "10Gi".to_string();
@@ -2565,13 +2772,18 @@ mod tests {
             &vec!["ReadWriteOnce".to_string()]
         );
 
-        let requests = pvc_spec.resources.as_ref().unwrap().requests.as_ref().unwrap();
+        let requests = pvc_spec
+            .resources
+            .as_ref()
+            .unwrap()
+            .requests
+            .as_ref()
+            .unwrap();
         assert_eq!(requests.get("storage").unwrap().0, "10Gi");
     }
 
     #[test]
     fn test_generate_pvc_readonlymany() {
-
         let mut spec = create_test_workload();
         spec.persistence.enabled = true;
         spec.persistence.size = "5Gi".to_string();
@@ -2587,7 +2799,6 @@ mod tests {
 
     #[test]
     fn test_generate_pvc_readwritemany() {
-
         let mut spec = create_test_workload();
         spec.persistence.enabled = true;
         spec.persistence.size = "100Gi".to_string();
@@ -2599,13 +2810,18 @@ mod tests {
             pvc_spec.access_modes.as_ref().unwrap(),
             &vec!["ReadWriteMany".to_string()]
         );
-        let requests = pvc_spec.resources.as_ref().unwrap().requests.as_ref().unwrap();
+        let requests = pvc_spec
+            .resources
+            .as_ref()
+            .unwrap()
+            .requests
+            .as_ref()
+            .unwrap();
         assert_eq!(requests.get("storage").unwrap().0, "100Gi");
     }
 
     #[test]
     fn test_generate_pvc_with_storage_class() {
-
         let mut spec = create_test_workload();
         spec.persistence.enabled = true;
         spec.persistence.size = "50Gi".to_string();
@@ -2618,7 +2834,6 @@ mod tests {
 
     #[test]
     fn test_generate_pvc_without_storage_class() {
-
         let mut spec = create_test_workload();
         spec.persistence.enabled = true;
         spec.persistence.size = "10Gi".to_string();
@@ -2631,7 +2846,6 @@ mod tests {
 
     #[test]
     fn test_generate_pvc_labels() {
-
         let mut spec = create_test_workload();
         spec.persistence.enabled = true;
         spec.persistence.size = "1Gi".to_string();
@@ -2650,7 +2864,6 @@ mod tests {
 
     #[test]
     fn test_generate_configmaps_none() {
-
         let spec = create_test_workload();
 
         let cms = build_configmap_manifests("default", &spec);
@@ -2659,7 +2872,6 @@ mod tests {
 
     #[test]
     fn test_generate_configmaps_empty_list() {
-
         let mut spec = create_test_workload();
         spec.config = Some(ConfigSpec {
             config_maps: vec![],
@@ -2673,10 +2885,12 @@ mod tests {
 
     #[test]
     fn test_generate_configmaps_single() {
-
         let mut spec = create_test_workload();
         let mut data = HashMap::new();
-        data.insert("DATABASE_URL".to_string(), "postgres://localhost/db".to_string());
+        data.insert(
+            "DATABASE_URL".to_string(),
+            "postgres://localhost/db".to_string(),
+        );
         data.insert("LOG_LEVEL".to_string(), "info".to_string());
 
         spec.config = Some(ConfigSpec {
@@ -2710,7 +2924,6 @@ mod tests {
 
     #[test]
     fn test_generate_configmaps_multiple() {
-
         let mut spec = create_test_workload();
         let mut data1 = HashMap::new();
         data1.insert("key1".to_string(), "val1".to_string());
@@ -2746,7 +2959,6 @@ mod tests {
 
     #[test]
     fn test_generate_secrets_none() {
-
         let spec = create_test_workload();
 
         let secrets = build_secret_manifests("default", &spec);
@@ -2755,7 +2967,6 @@ mod tests {
 
     #[test]
     fn test_generate_secrets_single() {
-
         let mut spec = create_test_workload();
         let mut data = HashMap::new();
         data.insert("password".to_string(), "s3cret".to_string());
@@ -2789,7 +3000,6 @@ mod tests {
 
     #[test]
     fn test_generate_secrets_multiple() {
-
         let mut spec = create_test_workload();
         let mut data1 = HashMap::new();
         data1.insert("key".to_string(), "val".to_string());
@@ -2825,7 +3035,6 @@ mod tests {
 
     #[test]
     fn test_generate_ingress_disabled_none() {
-
         let spec = create_test_workload();
 
         let ingress = build_ingress_manifest("default", &spec);
@@ -2834,7 +3043,6 @@ mod tests {
 
     #[test]
     fn test_generate_ingress_disabled_explicit() {
-
         let mut spec = create_test_workload();
         spec.ingress = Some(SpecIngressSpec {
             enabled: false,
@@ -2851,7 +3059,6 @@ mod tests {
 
     #[test]
     fn test_generate_ingress_basic() {
-
         let mut spec = create_test_workload();
         spec.ingress = Some(SpecIngressSpec {
             enabled: true,
@@ -2891,7 +3098,6 @@ mod tests {
 
     #[test]
     fn test_generate_ingress_with_tls() {
-
         let mut spec = create_test_workload();
         spec.ingress = Some(SpecIngressSpec {
             enabled: true,
@@ -2920,7 +3126,6 @@ mod tests {
 
     #[test]
     fn test_generate_ingress_multiple_paths() {
-
         let mut spec = create_test_workload();
         spec.ingress = Some(SpecIngressSpec {
             enabled: true,
@@ -2955,7 +3160,15 @@ mod tests {
         assert_eq!(paths[0].path, Some("/api".to_string()));
         assert_eq!(paths[0].path_type, "Prefix");
         assert_eq!(
-            paths[0].backend.service.as_ref().unwrap().port.as_ref().unwrap().number,
+            paths[0]
+                .backend
+                .service
+                .as_ref()
+                .unwrap()
+                .port
+                .as_ref()
+                .unwrap()
+                .number,
             Some(8080)
         );
         assert_eq!(paths[1].path, Some("/health".to_string()));
@@ -2965,7 +3178,6 @@ mod tests {
 
     #[test]
     fn test_generate_ingress_annotations() {
-
         let mut spec = create_test_workload();
         let mut annotations = HashMap::new();
         annotations.insert(
@@ -3005,7 +3217,6 @@ mod tests {
 
     #[test]
     fn test_generate_ingress_labels() {
-
         let mut spec = create_test_workload();
         spec.ingress = Some(SpecIngressSpec {
             enabled: true,
@@ -3033,7 +3244,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_disabled_none() {
-
         let spec = create_test_workload();
 
         let hpa = build_hpa_manifest("default", &spec);
@@ -3042,7 +3252,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_disabled_explicit() {
-
         let mut spec = create_test_workload();
         spec.scaling = Some(ScalingSpec {
             enabled: false,
@@ -3058,7 +3267,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_cpu_metric() {
-
         let mut spec = create_test_workload();
         spec.scaling = Some(ScalingSpec {
             enabled: true,
@@ -3068,7 +3276,7 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "80%".to_string(),
                 metric_name: None,
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3085,7 +3293,10 @@ mod tests {
         // Verify scale target ref
         assert_eq!(hpa_spec.scale_target_ref.kind, "Deployment");
         assert_eq!(hpa_spec.scale_target_ref.name, "test-app");
-        assert_eq!(hpa_spec.scale_target_ref.api_version, Some("apps/v1".to_string()));
+        assert_eq!(
+            hpa_spec.scale_target_ref.api_version,
+            Some("apps/v1".to_string())
+        );
 
         let metrics = hpa_spec.metrics.as_ref().unwrap();
         assert_eq!(metrics.len(), 1);
@@ -3098,7 +3309,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_memory_metric() {
-
         let mut spec = create_test_workload();
         spec.scaling = Some(ScalingSpec {
             enabled: true,
@@ -3108,7 +3318,7 @@ mod tests {
                 metric_type: MetricType::Memory,
                 target_value: "70%".to_string(),
                 metric_name: None,
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3125,7 +3335,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_cpu_and_memory_metrics() {
-
         let mut spec = create_test_workload();
         spec.scaling = Some(ScalingSpec {
             enabled: true,
@@ -3168,7 +3377,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_custom_metric_filtered_out() {
-
         let mut spec = create_test_workload();
         spec.scaling = Some(ScalingSpec {
             enabled: true,
@@ -3200,7 +3408,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_labels() {
-
         let mut spec = create_test_workload();
         spec.scaling = Some(ScalingSpec {
             enabled: true,
@@ -3210,7 +3417,7 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "50".to_string(),
                 metric_name: None,
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3224,7 +3431,6 @@ mod tests {
 
     #[test]
     fn test_generate_hpa_target_value_without_percent() {
-
         let mut spec = create_test_workload();
         spec.scaling = Some(ScalingSpec {
             enabled: true,
@@ -3234,7 +3440,7 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "90".to_string(),
                 metric_name: None,
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3242,7 +3448,12 @@ mod tests {
         let hpa = build_hpa_manifest("default", &spec).unwrap();
         let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
         assert_eq!(
-            metrics[0].resource.as_ref().unwrap().target.average_utilization,
+            metrics[0]
+                .resource
+                .as_ref()
+                .unwrap()
+                .target
+                .average_utilization,
             Some(90)
         );
     }
@@ -3253,15 +3464,15 @@ mod tests {
 
     #[test]
     fn test_full_workload_deployment_with_all_features() {
-
         let mut spec = create_test_workload();
 
         // Set labels and annotations
-        spec.metadata.labels.insert("version".to_string(), "v2".to_string());
-        spec.metadata.annotations.insert(
-            "description".to_string(),
-            "Production workload".to_string(),
-        );
+        spec.metadata
+            .labels
+            .insert("version".to_string(), "v2".to_string());
+        spec.metadata
+            .annotations
+            .insert("description".to_string(), "Production workload".to_string());
 
         // Set resources
         spec.requirements.cpu = "1000m".to_string();
@@ -3361,8 +3572,14 @@ mod tests {
 
         // Verify resources
         let resources = container.resources.as_ref().unwrap();
-        assert_eq!(resources.limits.as_ref().unwrap().get("cpu").unwrap().0, "1000m");
-        assert_eq!(resources.limits.as_ref().unwrap().get("memory").unwrap().0, "2Gi");
+        assert_eq!(
+            resources.limits.as_ref().unwrap().get("cpu").unwrap().0,
+            "1000m"
+        );
+        assert_eq!(
+            resources.limits.as_ref().unwrap().get("memory").unwrap().0,
+            "2Gi"
+        );
 
         // Verify probes
         assert!(container.liveness_probe.is_some());
@@ -3379,7 +3596,6 @@ mod tests {
 
     #[test]
     fn test_full_workload_all_resources_generated() {
-
         let mut spec = create_test_workload();
 
         // Enable persistence
@@ -3413,7 +3629,7 @@ mod tests {
                 metric_type: MetricType::CPU,
                 target_value: "70%".to_string(),
                 metric_name: None,
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3454,13 +3670,25 @@ mod tests {
         let pvc = build_pvc_manifest("default", &spec);
         assert!(pvc.is_some());
         assert_eq!(
-            pvc.as_ref().unwrap().spec.as_ref().unwrap().storage_class_name,
+            pvc.as_ref()
+                .unwrap()
+                .spec
+                .as_ref()
+                .unwrap()
+                .storage_class_name,
             Some("gp2".to_string())
         );
 
         let ingress = build_ingress_manifest("default", &spec);
         assert!(ingress.is_some());
-        assert!(ingress.as_ref().unwrap().spec.as_ref().unwrap().tls.is_some());
+        assert!(ingress
+            .as_ref()
+            .unwrap()
+            .spec
+            .as_ref()
+            .unwrap()
+            .tls
+            .is_some());
 
         let hpa = build_hpa_manifest("default", &spec);
         assert!(hpa.is_some());
@@ -3474,7 +3702,6 @@ mod tests {
 
     #[test]
     fn test_minimal_workload_no_optional_resources() {
-
         let mut spec = create_test_workload();
         spec.network.service = false;
         spec.persistence.enabled = false;
@@ -3515,7 +3742,14 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap();
+        let pod_spec = deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert_eq!(volumes[0].name, "cm-app-config");
@@ -3542,7 +3776,14 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap();
+        let pod_spec = deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert!(volumes[0].persistent_volume_claim.is_some());
@@ -3559,7 +3800,9 @@ mod tests {
         spec.config = Some(ConfigSpec {
             config_maps: vec![ConfigMapSpec {
                 name: "app-config".to_string(),
-                data: [("key".to_string(), "val".to_string())].into_iter().collect(),
+                data: [("key".to_string(), "val".to_string())]
+                    .into_iter()
+                    .collect(),
                 mount_path: None, // No mount_path means env var injection only
             }],
             secrets: vec![],
@@ -3569,7 +3812,14 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = deploy.spec.as_ref().unwrap().template.spec.as_ref().unwrap();
+        let pod_spec = deploy
+            .spec
+            .as_ref()
+            .unwrap()
+            .template
+            .spec
+            .as_ref()
+            .unwrap();
         assert!(pod_spec.volumes.is_none());
     }
 
@@ -3588,7 +3838,7 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "30".to_string(),
                 metric_name: Some("http_requests_per_second".to_string()),
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3615,7 +3865,7 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "50".to_string(),
                 metric_name: None,
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3636,7 +3886,7 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "50".to_string(),
                 metric_name: Some(String::new()),
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3693,7 +3943,7 @@ mod tests {
                 metric_type: MetricType::Custom,
                 target_value: "abc".to_string(),
                 metric_name: Some("requests".to_string()),
-                    ..Default::default()
+                ..Default::default()
             }],
             ..Default::default()
         });
@@ -3709,7 +3959,7 @@ mod tests {
             metric_type: MetricType::Custom,
             target_value: "42".to_string(),
             metric_name: Some("rps".to_string()),
-                    ..Default::default()
+            ..Default::default()
         };
         let yaml = serde_yaml::to_string(&metric).unwrap();
         let parsed: ScalingMetric = serde_yaml::from_str(&yaml).unwrap();
@@ -3748,7 +3998,11 @@ mod tests {
         // Empty ingress vec = deny all ingress
         assert!(np_spec.ingress.as_ref().unwrap().is_empty());
         assert!(np_spec.egress.is_none());
-        assert!(np_spec.policy_types.as_ref().unwrap().contains(&"Ingress".to_string()));
+        assert!(np_spec
+            .policy_types
+            .as_ref()
+            .unwrap()
+            .contains(&"Ingress".to_string()));
     }
 
     #[test]
@@ -3770,7 +4024,13 @@ mod tests {
         let peers = ingress_rules[0].from.as_ref().unwrap();
         assert_eq!(peers.len(), 2);
 
-        let first_labels = peers[0].pod_selector.as_ref().unwrap().match_labels.as_ref().unwrap();
+        let first_labels = peers[0]
+            .pod_selector
+            .as_ref()
+            .unwrap()
+            .match_labels
+            .as_ref()
+            .unwrap();
         assert_eq!(first_labels.get("app"), Some(&"frontend".to_string()));
     }
 
@@ -3790,7 +4050,11 @@ mod tests {
 
         assert!(np_spec.ingress.is_none());
         assert!(np_spec.egress.as_ref().unwrap().is_empty());
-        assert!(np_spec.policy_types.as_ref().unwrap().contains(&"Egress".to_string()));
+        assert!(np_spec
+            .policy_types
+            .as_ref()
+            .unwrap()
+            .contains(&"Egress".to_string()));
     }
 
     #[test]
@@ -3812,7 +4076,13 @@ mod tests {
         let peers = egress_rules[0].to.as_ref().unwrap();
         assert_eq!(peers.len(), 1);
 
-        let labels = peers[0].pod_selector.as_ref().unwrap().match_labels.as_ref().unwrap();
+        let labels = peers[0]
+            .pod_selector
+            .as_ref()
+            .unwrap()
+            .match_labels
+            .as_ref()
+            .unwrap();
         assert_eq!(labels.get("app"), Some(&"database".to_string()));
     }
 
@@ -3873,7 +4143,10 @@ mod tests {
 
         let selector_labels = np_spec.pod_selector.match_labels.as_ref().unwrap();
         assert_eq!(selector_labels.get("app"), Some(&"test-app".to_string()));
-        assert_eq!(selector_labels.get("managed-by"), Some(&"aether".to_string()));
+        assert_eq!(
+            selector_labels.get("managed-by"),
+            Some(&"aether".to_string())
+        );
     }
 
     #[test]
@@ -3907,17 +4180,11 @@ mod tests {
         });
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
         let np = netpol.spec.as_ref().unwrap();
-        let ing_port = np.ingress.as_ref().unwrap()[0]
-            .ports
-            .as_ref()
-            .unwrap()[0]
+        let ing_port = np.ingress.as_ref().unwrap()[0].ports.as_ref().unwrap()[0]
             .port
             .as_ref()
             .unwrap();
-        let egr_port = np.egress.as_ref().unwrap()[0]
-            .ports
-            .as_ref()
-            .unwrap()[0]
+        let egr_port = np.egress.as_ref().unwrap()[0].ports.as_ref().unwrap()[0]
             .port
             .as_ref()
             .unwrap();
@@ -3942,7 +4209,10 @@ mod tests {
             .unwrap()[0];
         let block = peer.ip_block.as_ref().unwrap();
         assert_eq!(block.cidr, "10.0.0.0/8");
-        assert_eq!(block.except.as_ref().unwrap(), &vec!["10.0.0.0/24".to_string()]);
+        assert_eq!(
+            block.except.as_ref().unwrap(),
+            &vec!["10.0.0.0/24".to_string()]
+        );
     }
 
     #[test]
@@ -3990,16 +4260,17 @@ mod tests {
         spec.network.cilium_network_policy = Some(crate::spec::CiliumNetworkPolicySpec {
             enabled: true,
             ingress: vec![crate::spec::CiliumPolicyRuleSpec {
-                from_endpoints: vec![HashMap::from([("role".to_string(), "frontend".to_string())])],
+                from_endpoints: vec![HashMap::from([(
+                    "role".to_string(),
+                    "frontend".to_string(),
+                )])],
                 ..Default::default()
             }],
             egress: vec![],
         });
-        let cnp = crate::adapters::kube_policy_extras::build_cilium_network_policy_json(
-            "default",
-            &spec,
-        )
-        .unwrap();
+        let cnp =
+            crate::adapters::kube_policy_extras::build_cilium_network_policy_json("default", &spec)
+                .unwrap();
         assert_eq!(cnp["kind"], "CiliumNetworkPolicy");
         assert!(cnp["spec"]["ingress"].is_array());
     }
@@ -4020,11 +4291,9 @@ mod tests {
             }],
             egress: vec![],
         });
-        let calico = crate::adapters::kube_policy_extras::build_calico_network_policy_json(
-            "default",
-            &spec,
-        )
-        .unwrap();
+        let calico =
+            crate::adapters::kube_policy_extras::build_calico_network_policy_json("default", &spec)
+                .unwrap();
         assert_eq!(calico["apiVersion"], "projectcalico.org/v3");
         assert!(calico["spec"]["ingress"].is_array());
     }

@@ -54,7 +54,11 @@ fn parse_memory_to_mb(memory: &str) -> i64 {
 /// Delegates to the shared `resources::parse_memory_gi` (same suffix rules).
 fn parse_storage_to_gb(storage: &str) -> i64 {
     let gi = crate::resources::parse_memory_gi(storage);
-    if gi == 0.0 { 10 } else { (gi as i64).max(1) }
+    if gi == 0.0 {
+        10
+    } else {
+        (gi as i64).max(1)
+    }
 }
 
 /// Build BareMetalHost JSON (standalone, testable without kube::Client)
@@ -219,7 +223,6 @@ impl Metal3Runtime {
     }
 }
 
-
 #[async_trait]
 impl Runtime for Metal3Runtime {
     async fn build(&self, spec: &Workload) -> crate::Result<Image> {
@@ -242,7 +245,11 @@ impl Runtime for Metal3Runtime {
         common::validate_kube_name(&spec.metadata.name)?;
 
         // Validate required Metal3 annotations before proceeding
-        if !spec.metadata.annotations.contains_key("aether.io/boot-mac-address") {
+        if !spec
+            .metadata
+            .annotations
+            .contains_key("aether.io/boot-mac-address")
+        {
             anyhow::bail!(
                 "Required annotation 'aether.io/boot-mac-address' not set for '{}'. \
                  Metal3 provisioning requires a valid MAC address matching real hardware. \
@@ -250,7 +257,11 @@ impl Runtime for Metal3Runtime {
                 spec.metadata.name
             );
         }
-        if !spec.metadata.annotations.contains_key("aether.io/image-url") {
+        if !spec
+            .metadata
+            .annotations
+            .contains_key("aether.io/image-url")
+        {
             anyhow::bail!(
                 "Required annotation 'aether.io/image-url' not set for '{}'. \
                  Metal3 provisioning requires an explicit bootable disk image URL. \
@@ -291,10 +302,7 @@ impl Runtime for Metal3Runtime {
             let secrets: Api<Secret> = Api::namespaced(self.client.clone(), &self.namespace);
             match secrets.create(&PostParams::default(), &secret).await {
                 Ok(_) => tracing::info!("Created BMC credentials Secret: {}", secret_name),
-                Err(e) => tracing::warn!(
-                    "BMC Secret creation failed (may already exist): {}",
-                    e
-                ),
+                Err(e) => tracing::warn!("BMC Secret creation failed (may already exist): {}", e),
             }
         }
 
@@ -320,7 +328,12 @@ impl Runtime for Metal3Runtime {
             self.namespace
         );
 
-        Ok(Instance::new(uid, host_name, RuntimeKind::Metal3, image.full_name()))
+        Ok(Instance::new(
+            uid,
+            host_name,
+            RuntimeKind::Metal3,
+            image.full_name(),
+        ))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
@@ -537,7 +550,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/testorg".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: cpu.to_string(),
@@ -562,7 +575,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -752,8 +765,12 @@ mod tests {
     #[test]
     fn test_bmh_json_user_labels_propagated() {
         let mut spec = make_workload("my-host", "4", "32Gi", "200Gi");
-        spec.metadata.labels.insert("rack".to_string(), "rack-a".to_string());
-        spec.metadata.labels.insert("dc".to_string(), "us-east-1".to_string());
+        spec.metadata
+            .labels
+            .insert("rack".to_string(), "rack-a".to_string());
+        spec.metadata
+            .labels
+            .insert("dc".to_string(), "us-east-1".to_string());
 
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
@@ -780,10 +797,9 @@ mod tests {
     #[test]
     fn test_bmh_json_boot_mode_from_annotation() {
         let mut spec = make_workload("my-host", "4", "32Gi", "200Gi");
-        spec.metadata.annotations.insert(
-            "aether.io/boot-mode".to_string(),
-            "BIOS".to_string(),
-        );
+        spec.metadata
+            .annotations
+            .insert("aether.io/boot-mode".to_string(), "BIOS".to_string());
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
         assert_eq!(bmh["spec"]["bootMode"], "BIOS");
@@ -831,7 +847,10 @@ mod tests {
         );
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
-        assert_eq!(bmh["spec"]["image"]["url"], "https://images.example.com/coreos.img");
+        assert_eq!(
+            bmh["spec"]["image"]["url"],
+            "https://images.example.com/coreos.img"
+        );
     }
 
     #[test]
@@ -975,10 +994,7 @@ mod tests {
 
         let bmh = build_baremetalhost_json("metal3-system", &spec);
 
-        assert_eq!(
-            bmh["metadata"]["annotations"]["aether.io/gpu-count"],
-            "4"
-        );
+        assert_eq!(bmh["metadata"]["annotations"]["aether.io/gpu-count"], "4");
     }
 
     #[test]
@@ -995,10 +1011,7 @@ mod tests {
             bmh["metadata"]["annotations"]["aether.io/gpu-vendor"],
             "amd"
         );
-        assert_eq!(
-            bmh["metadata"]["annotations"]["aether.io/gpu-count"],
-            "1"
-        );
+        assert_eq!(bmh["metadata"]["annotations"]["aether.io/gpu-count"], "1");
     }
 
     #[test]
@@ -1015,10 +1028,7 @@ mod tests {
             bmh["metadata"]["annotations"]["aether.io/gpu-vendor"],
             "intel"
         );
-        assert_eq!(
-            bmh["metadata"]["annotations"]["aether.io/gpu-count"],
-            "3"
-        );
+        assert_eq!(bmh["metadata"]["annotations"]["aether.io/gpu-count"], "3");
     }
 
     // ---------------------------------------------------------------

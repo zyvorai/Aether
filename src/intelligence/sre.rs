@@ -45,7 +45,8 @@ pub async fn build_sre_runbook(state_path: &Path) -> anyhow::Result<SreRunbookRe
 
     let briefing = build_command_center_briefing(state_path)?;
     let config = crate::config::Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let healer = build_healer_preview(&store, &policy).await;
     let remediation = remediation::build_remediation_plan(&store).await;
     let predictions = FailurePredictor::predict_fleet(&pairs);
@@ -111,7 +112,12 @@ pub async fn build_sre_runbook(state_path: &Path) -> anyhow::Result<SreRunbookRe
                 .recommendations
                 .iter()
                 .take(4)
-                .map(|r| format!("{} — save ${:.0}/mo ({})", r.workload, r.savings_monthly_usd, r.reason))
+                .map(|r| {
+                    format!(
+                        "{} — save ${:.0}/mo ({})",
+                        r.workload, r.savings_monthly_usd, r.reason
+                    )
+                })
                 .collect(),
         });
     }
@@ -131,8 +137,7 @@ pub async fn build_sre_runbook(state_path: &Path) -> anyhow::Result<SreRunbookRe
         briefing.fleet_health_pct,
         briefing.issues.len(),
         healer.would_execute.len(),
-        cost
-            .recommendations
+        cost.recommendations
             .iter()
             .map(|r| r.savings_monthly_usd)
             .sum::<f64>()

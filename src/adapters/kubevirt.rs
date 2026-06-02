@@ -294,7 +294,8 @@ impl Runtime for KubeVirtRuntime {
                     Err(e) => {
                         tracing::warn!(
                             "DataVolume not ready after {:?}, proceeding anyway: {}",
-                            max_wait, e
+                            max_wait,
+                            e
                         );
                         break;
                     }
@@ -317,7 +318,12 @@ impl Runtime for KubeVirtRuntime {
 
         tracing::info!("Created VirtualMachine: {}", vm_name);
 
-        Ok(Instance::new(uid, vm_name, RuntimeKind::KubeVirt, image.full_name()))
+        Ok(Instance::new(
+            uid,
+            vm_name,
+            RuntimeKind::KubeVirt,
+            image.full_name(),
+        ))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
@@ -349,8 +355,7 @@ impl Runtime for KubeVirtRuntime {
     async fn logs(&self, instance: &Instance, follow: bool) -> crate::Result<String> {
         // Attempt to get real logs from the VM's launcher pod
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
-        let lp = ListParams::default()
-            .labels(&format!("vm.kubevirt.io/name={}", instance.name));
+        let lp = ListParams::default().labels(&format!("vm.kubevirt.io/name={}", instance.name));
 
         if let Ok(pod_list) = pods.list(&lp).await {
             if let Some(pod) = pod_list.items.first() {
@@ -422,7 +427,11 @@ impl Runtime for KubeVirtRuntime {
             .iter()
             .map(|vm| {
                 let name = vm.name_any();
-                let uid = vm.metadata.uid.clone().unwrap_or_else(|| "unknown".to_string());
+                let uid = vm
+                    .metadata
+                    .uid
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string());
 
                 // Get image from spec if available
                 let image = vm
@@ -524,7 +533,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/testorg".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: cpu.to_string(),
@@ -549,7 +558,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -603,8 +612,12 @@ mod tests {
     #[test]
     fn test_vm_json_user_labels_propagated() {
         let mut spec = make_workload("my-vm", "2", "4Gi", "20Gi");
-        spec.metadata.labels.insert("env".to_string(), "staging".to_string());
-        spec.metadata.labels.insert("team".to_string(), "infra".to_string());
+        spec.metadata
+            .labels
+            .insert("env".to_string(), "staging".to_string());
+        spec.metadata
+            .labels
+            .insert("team".to_string(), "infra".to_string());
 
         let vm = build_virtualmachine_json("default", &spec);
 
@@ -865,7 +878,10 @@ mod tests {
         let image = make_image("my-vm");
         let dv = build_datavolume_json("default", &image, &spec);
 
-        assert_eq!(dv["spec"]["storage"]["resources"]["requests"]["storage"], "50Gi");
+        assert_eq!(
+            dv["spec"]["storage"]["resources"]["requests"]["storage"],
+            "50Gi"
+        );
     }
 
     #[test]
@@ -982,7 +998,9 @@ mod tests {
     #[test]
     fn test_vm_json_template_labels_match_metadata_labels() {
         let mut spec = make_workload("label-vm", "2", "4Gi", "20Gi");
-        spec.metadata.labels.insert("tier".to_string(), "backend".to_string());
+        spec.metadata
+            .labels
+            .insert("tier".to_string(), "backend".to_string());
 
         let vm = build_virtualmachine_json("default", &spec);
 

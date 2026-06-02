@@ -55,12 +55,42 @@ fn save_installed(inst: &ZeusInstalledAgents) -> anyhow::Result<()> {
 
 fn catalog() -> Vec<ZeusMarketplaceAgent> {
     vec![
-        mp("aws-expert", "AWS Expert", "AWS architecture, EKS, and cost optimization.", "cloud"),
-        mp("azure-expert", "Azure Expert", "Azure AKS, networking, and compliance.", "cloud"),
-        mp("gcp-expert", "GCP Expert", "GKE, Anthos, and Google Cloud FinOps.", "cloud"),
-        mp("terraform-expert", "Terraform Expert", "Generate and review Terraform modules.", "iac"),
-        mp("linux-expert", "Linux Expert", "Host tuning, systemd, and bare-metal ops.", "platform"),
-        mp("finops-expert", "FinOps Expert", "Deep cloud cost analysis and chargeback.", "cost"),
+        mp(
+            "aws-expert",
+            "AWS Expert",
+            "AWS architecture, EKS, and cost optimization.",
+            "cloud",
+        ),
+        mp(
+            "azure-expert",
+            "Azure Expert",
+            "Azure AKS, networking, and compliance.",
+            "cloud",
+        ),
+        mp(
+            "gcp-expert",
+            "GCP Expert",
+            "GKE, Anthos, and Google Cloud FinOps.",
+            "cloud",
+        ),
+        mp(
+            "terraform-expert",
+            "Terraform Expert",
+            "Generate and review Terraform modules.",
+            "iac",
+        ),
+        mp(
+            "linux-expert",
+            "Linux Expert",
+            "Host tuning, systemd, and bare-metal ops.",
+            "platform",
+        ),
+        mp(
+            "finops-expert",
+            "FinOps Expert",
+            "Deep cloud cost analysis and chargeback.",
+            "cost",
+        ),
     ]
 }
 

@@ -39,7 +39,9 @@ pub struct IntentPipelineReport {
     pub steps: Vec<IntentPipelineStep>,
 }
 
-pub async fn build_intent_pipeline(req: &IntentPipelineRequest) -> anyhow::Result<IntentPipelineReport> {
+pub async fn build_intent_pipeline(
+    req: &IntentPipelineRequest,
+) -> anyhow::Result<IntentPipelineReport> {
     let spec = if let Some(ref yaml) = req.yaml {
         serde_yaml::from_str(yaml)?
     } else {
@@ -59,7 +61,9 @@ pub async fn build_intent_pipeline(req: &IntentPipelineRequest) -> anyhow::Resul
     let scoring = scoring_engine.score(&spec);
     let confidence = scoring.confidence;
 
-    let clusters = crate::kubecluster::list_clusters().await.unwrap_or_default();
+    let clusters = crate::kubecluster::list_clusters()
+        .await
+        .unwrap_or_default();
     let placement = GlobalPlacementEngine::recommend(&spec, &clusters);
     let intent_yaml = intent_block_yaml(&spec);
     let spec_yaml = serde_yaml::to_string(&spec)?;
@@ -70,7 +74,13 @@ pub async fn build_intent_pipeline(req: &IntentPipelineRequest) -> anyhow::Resul
             title: "Capture outcome".into(),
             detail: format!(
                 "Goal: {} · workload {}",
-                intent_goal_label(&spec.intent.as_ref().map(|i| i.goal.clone()).unwrap_or(IntentGoal::Balanced)),
+                intent_goal_label(
+                    &spec
+                        .intent
+                        .as_ref()
+                        .map(|i| i.goal.clone())
+                        .unwrap_or(IntentGoal::Balanced)
+                ),
                 spec.metadata.name
             ),
             action: "Review intent block in spec".into(),
@@ -183,14 +193,17 @@ fn intent_goal_label(goal: &IntentGoal) -> &'static str {
 
 pub fn intent_block_yaml(spec: &Workload) -> String {
     if let Some(intent) = &spec.intent {
-        serde_yaml::to_string(intent).unwrap_or_else(|_| format!("goal: {}", intent_goal_label(&intent.goal)))
+        serde_yaml::to_string(intent)
+            .unwrap_or_else(|_| format!("goal: {}", intent_goal_label(&intent.goal)))
     } else {
         "goal: balanced".into()
     }
 }
 
 /// Fleet-wide autonomous placement summary.
-pub fn build_autonomous_placement(state_path: &Path) -> anyhow::Result<crate::intelligence::evolution::EvolutionStatus> {
+pub fn build_autonomous_placement(
+    state_path: &Path,
+) -> anyhow::Result<crate::intelligence::evolution::EvolutionStatus> {
     let store = StateStore::load(state_path)?;
     let pairs: Vec<(Workload, WorkloadState)> = store
         .list()
@@ -206,9 +219,7 @@ pub fn build_autonomous_placement(state_path: &Path) -> anyhow::Result<crate::in
         config.reconciliation.auto_reconcile,
         None,
     );
-    Ok(crate::intelligence::evolution::EvolutionEngine::status_for_fleet(
-        &pairs, &policy,
-    ))
+    Ok(crate::intelligence::evolution::EvolutionEngine::status_for_fleet(&pairs, &policy))
 }
 
 #[cfg(test)]

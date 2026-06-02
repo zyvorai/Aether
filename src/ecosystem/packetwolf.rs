@@ -121,7 +121,11 @@ pub async fn anomalies(limit: Option<u32>) -> Result<Value> {
     proxy_get(&format!("{base}/api/v1/anomalies?limit={lim}")).await
 }
 
-pub fn deeplink(namespace: Option<&str>, pod: Option<&str>, workload: Option<&str>) -> PacketWolfDeeplink {
+pub fn deeplink(
+    namespace: Option<&str>,
+    pod: Option<&str>,
+    workload: Option<&str>,
+) -> PacketWolfDeeplink {
     let cfg = config();
     if !cfg.configured {
         return PacketWolfDeeplink {

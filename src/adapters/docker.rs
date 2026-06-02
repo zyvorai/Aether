@@ -37,9 +37,8 @@ pub struct DockerRuntime;
 impl DockerRuntime {
     pub fn new() -> anyhow::Result<Self> {
         // Check if docker is available
-        which::which("docker").map_err(|_| {
-            anyhow::anyhow!("Docker not found. Please install docker first.")
-        })?;
+        which::which("docker")
+            .map_err(|_| anyhow::anyhow!("Docker not found. Please install docker first."))?;
 
         Ok(Self)
     }
@@ -92,13 +91,12 @@ impl Runtime for DockerRuntime {
 
         // Label containers for aether management (used by list filtering)
         cmd.arg("--label").arg("aether-managed=true");
-        cmd.arg("--label").arg(format!("app={}", spec.metadata.name));
+        cmd.arg("--label")
+            .arg(format!("app={}", spec.metadata.name));
 
         for port in &spec.network.ports {
-            cmd.arg("-p").arg(format!(
-                "{}:{}",
-                port.service_port, port.container_port
-            ));
+            cmd.arg("-p")
+                .arg(format!("{}:{}", port.service_port, port.container_port));
         }
 
         // Inject environment variables from config maps
@@ -120,12 +118,11 @@ impl Runtime for DockerRuntime {
                     crate::spec::ProbeType::TcpSocket { port } => {
                         format!("bash -c '</dev/tcp/localhost/{}' || exit 1", port)
                     }
-                    crate::spec::ProbeType::Exec { command } => {
-                        command.iter()
-                            .map(|arg| format!("'{}'", arg.replace('\'', "'\\''")))
-                            .collect::<Vec<_>>()
-                            .join(" ")
-                    }
+                    crate::spec::ProbeType::Exec { command } => command
+                        .iter()
+                        .map(|arg| format!("'{}'", arg.replace('\'', "'\\''")))
+                        .collect::<Vec<_>>()
+                        .join(" "),
                     crate::spec::ProbeType::Grpc { port, service } => {
                         format!(
                             "grpc_health_probe -addr=localhost:{} -service={} || exit 1",
@@ -150,9 +147,13 @@ impl Runtime for DockerRuntime {
         if !is_rootless {
             cmd.arg("--cpus").arg(&spec.requirements.cpu);
             // Convert K8s memory format (e.g. "256Mi", "4Gi") to Docker format ("256m", "4g")
-            let docker_memory = spec.requirements.memory
-                .replace("Gi", "g").replace("Mi", "m")
-                .replace("Ki", "k").replace("Ti", "t");
+            let docker_memory = spec
+                .requirements
+                .memory
+                .replace("Gi", "g")
+                .replace("Mi", "m")
+                .replace("Ki", "k")
+                .replace("Ti", "t");
             cmd.arg("--memory").arg(&docker_memory);
         } else {
             tracing::info!(
@@ -164,7 +165,12 @@ impl Runtime for DockerRuntime {
         let output = exec_docker(cmd, "run").await?;
         let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-        Ok(Instance::new(container_id, spec.metadata.name.clone(), RuntimeKind::Docker, image.full_name()))
+        Ok(Instance::new(
+            container_id,
+            spec.metadata.name.clone(),
+            RuntimeKind::Docker,
+            image.full_name(),
+        ))
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
@@ -256,7 +262,14 @@ impl Runtime for DockerRuntime {
 
     async fn list(&self) -> crate::Result<Vec<Instance>> {
         let mut cmd = Command::new("docker");
-        cmd.args(["ps", "-a", "--filter", "label=aether-managed=true", "--format", "json"]);
+        cmd.args([
+            "ps",
+            "-a",
+            "--filter",
+            "label=aether-managed=true",
+            "--format",
+            "json",
+        ]);
         let output = exec_docker(cmd, "ps").await?;
 
         let json_str = String::from_utf8_lossy(&output.stdout);
@@ -277,7 +290,8 @@ impl Runtime for DockerRuntime {
                 if id.is_empty() || name.is_empty() {
                     tracing::warn!(
                         "Skipping container with missing id or name (id='{}', name='{}')",
-                        id, name
+                        id,
+                        name
                     );
                     continue;
                 }

@@ -7,10 +7,10 @@
 //! Encrypt, decrypt, and manage sensitive configuration values.
 //! Supports sealed secrets pattern with key rotation and access auditing.
 
+use crate::output;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use crate::output;
 
 /// A managed secret
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,7 +71,9 @@ pub struct AttestGatedSecret {
 impl AttestGatedSecret {
     pub fn from_workload_spec(spec: &crate::spec::Workload, secret_name: &str) -> Option<Self> {
         let conf = spec.confidential.as_ref()?;
-        if !conf.enabled || conf.secrets.release_policy != crate::spec::SecretReleasePolicy::AttestGated {
+        if !conf.enabled
+            || conf.secrets.release_policy != crate::spec::SecretReleasePolicy::AttestGated
+        {
             return None;
         }
         Some(Self {
@@ -205,7 +207,13 @@ impl SecretStore {
     }
 
     /// Set a key-value pair in a secret with a specific actor for audit logging
-    pub fn set_with_actor(&mut self, secret_name: &str, key: &str, value: &str, actor: &str) -> anyhow::Result<()> {
+    pub fn set_with_actor(
+        &mut self,
+        secret_name: &str,
+        key: &str,
+        value: &str,
+        actor: &str,
+    ) -> anyhow::Result<()> {
         let (encrypted, method) = self.encrypt(value)?;
         let now = crate::resources::now_rfc3339();
 
@@ -214,11 +222,7 @@ impl SecretStore {
             .get_mut(secret_name)
             .ok_or_else(|| anyhow::anyhow!("Secret '{}' not found", secret_name))?;
 
-        let version = secret
-            .data
-            .get(key)
-            .map(|v| v.version + 1)
-            .unwrap_or(1);
+        let version = secret.data.get(key).map(|v| v.version + 1).unwrap_or(1);
 
         secret.data.insert(
             key.to_string(),
@@ -247,10 +251,9 @@ impl SecretStore {
             .get(secret_name)
             .ok_or_else(|| anyhow::anyhow!("Secret '{}' not found", secret_name))?;
 
-        let sv = secret
-            .data
-            .get(key)
-            .ok_or_else(|| anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name))?;
+        let sv = secret.data.get(key).ok_or_else(|| {
+            anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name)
+        })?;
 
         self.decrypt(&sv.encrypted, &sv.method)
     }
@@ -261,17 +264,21 @@ impl SecretStore {
     }
 
     /// Get a decrypted value and log the access with a specific actor
-    pub fn get_and_log_with_actor(&mut self, secret_name: &str, key: &str, actor: &str) -> anyhow::Result<String> {
+    pub fn get_and_log_with_actor(
+        &mut self,
+        secret_name: &str,
+        key: &str,
+        actor: &str,
+    ) -> anyhow::Result<String> {
         let now = crate::resources::now_rfc3339();
         let secret = self
             .secrets
             .get_mut(secret_name)
             .ok_or_else(|| anyhow::anyhow!("Secret '{}' not found", secret_name))?;
 
-        let sv = secret
-            .data
-            .get(key)
-            .ok_or_else(|| anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name))?;
+        let sv = secret.data.get(key).ok_or_else(|| {
+            anyhow::anyhow!("Key '{}' not found in secret '{}'", key, secret_name)
+        })?;
         let encrypted = sv.encrypted.clone();
         let method = sv.method.clone();
 
@@ -291,7 +298,12 @@ impl SecretStore {
     }
 
     /// Delete a key from a secret with a specific actor for audit logging
-    pub fn delete_key_with_actor(&mut self, secret_name: &str, key: &str, actor: &str) -> anyhow::Result<()> {
+    pub fn delete_key_with_actor(
+        &mut self,
+        secret_name: &str,
+        key: &str,
+        actor: &str,
+    ) -> anyhow::Result<()> {
         let now = crate::resources::now_rfc3339();
         let secret = self
             .secrets
@@ -341,7 +353,13 @@ impl SecretStore {
     }
 
     /// Rotate a specific key in a secret with a specific actor for audit logging
-    pub fn rotate_with_actor(&mut self, secret_name: &str, key: &str, new_value: &str, actor: &str) -> anyhow::Result<()> {
+    pub fn rotate_with_actor(
+        &mut self,
+        secret_name: &str,
+        key: &str,
+        new_value: &str,
+        actor: &str,
+    ) -> anyhow::Result<()> {
         let (encrypted, method) = self.encrypt(new_value)?;
         let now = crate::resources::now_rfc3339();
 
@@ -350,11 +368,7 @@ impl SecretStore {
             .get_mut(secret_name)
             .ok_or_else(|| anyhow::anyhow!("Secret '{}' not found", secret_name))?;
 
-        let version = secret
-            .data
-            .get(key)
-            .map(|v| v.version + 1)
-            .unwrap_or(1);
+        let version = secret.data.get(key).map(|v| v.version + 1).unwrap_or(1);
 
         secret.data.insert(
             key.to_string(),
@@ -483,7 +497,9 @@ impl SecretStore {
                 )
             }
             EncryptionMethod::VaultRef => {
-                anyhow::bail!("VaultRef secrets are stored externally and cannot be decrypted locally")
+                anyhow::bail!(
+                    "VaultRef secrets are stored externally and cannot be decrypted locally"
+                )
             }
         }
     }
@@ -529,11 +545,12 @@ impl SecretStore {
         let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("32-byte key");
         let nonce = Nonce::from_slice(nonce_bytes);
 
-        let plaintext = cipher
-            .decrypt(nonce, encrypted)
-            .map_err(|_| anyhow::anyhow!("AES-256-GCM decryption failed (wrong key or corrupted data)"))?;
+        let plaintext = cipher.decrypt(nonce, encrypted).map_err(|_| {
+            anyhow::anyhow!("AES-256-GCM decryption failed (wrong key or corrupted data)")
+        })?;
 
-        String::from_utf8(plaintext).map_err(|e| anyhow::anyhow!("Decrypted data is not valid UTF-8: {}", e))
+        String::from_utf8(plaintext)
+            .map_err(|e| anyhow::anyhow!("Decrypted data is not valid UTF-8: {}", e))
     }
 
     pub fn needs_rotation(&self, secret: &Secret) -> bool {
@@ -550,9 +567,7 @@ impl SecretStore {
     fn age_in_days(&self, timestamp: &str) -> f64 {
         if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(timestamp) {
             let now = chrono::Utc::now();
-            (now - dt.with_timezone(&chrono::Utc))
-                .num_seconds() as f64
-                / 86400.0
+            (now - dt.with_timezone(&chrono::Utc)).num_seconds() as f64 / 86400.0
         } else {
             0.0
         }
@@ -670,13 +685,15 @@ pub fn format_secrets_list(summaries: &[SecretSummary]) -> String {
 
     let rows: Vec<Vec<String>> = summaries
         .iter()
-        .map(|s| vec![
-            s.name.clone(),
-            s.namespace.clone(),
-            s.key_count.to_string(),
-            s.updated_at.get(..19).unwrap_or(&s.updated_at).to_string(),
-            if s.needs_rotation { "⚠ Yes" } else { "OK" }.to_string(),
-        ])
+        .map(|s| {
+            vec![
+                s.name.clone(),
+                s.namespace.clone(),
+                s.key_count.to_string(),
+                s.updated_at.get(..19).unwrap_or(&s.updated_at).to_string(),
+                if s.needs_rotation { "⚠ Yes" } else { "OK" }.to_string(),
+            ]
+        })
         .collect();
     out.push_str(&format!(
         "\n{}\n",
@@ -715,7 +732,10 @@ mod tests {
         let store = SecretStore::new();
         let result = store.decrypt("dGVzdA==", &EncryptionMethod::Obfuscate);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("no longer supported"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("no longer supported"));
     }
 
     #[test]

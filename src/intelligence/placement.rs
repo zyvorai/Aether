@@ -45,10 +45,8 @@ impl GlobalPlacementEngine {
         };
 
         let mut out = Vec::new();
-        let reachable_clusters: Vec<&ClusterInfo> = clusters
-            .iter()
-            .filter(|c| c.reachable)
-            .collect();
+        let reachable_clusters: Vec<&ClusterInfo> =
+            clusters.iter().filter(|c| c.reachable).collect();
 
         if reachable_clusters.is_empty() {
             for rs in &scoring.scores {

@@ -5,7 +5,6 @@
 //! SRE & Reliability OS — runbook scheduler, incidents, on-call, postmortems, chaos, MTTR.
 
 use crate::audit::{ActionResult, AuditAction, AuditLog};
-use crate::zeus::diagnose::{diagnose_fleet, FleetRootCauseEntry};
 use crate::events::{ChannelType, EventBus};
 use crate::health::HealthHistory;
 use crate::intelligence::healer::{build_healer_preview, execute_healer, HealerExecuteReport};
@@ -14,6 +13,7 @@ use crate::intelligence::remediation;
 use crate::intelligence::sre::build_sre_runbook;
 use crate::sla::{observation_from_health, ErrorBudget, SlaEngine, SlaReport, SlaTarget};
 use crate::state::StateStore;
+use crate::zeus::diagnose::{diagnose_fleet, FleetRootCauseEntry};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -297,7 +297,14 @@ pub async fn build_postmortem(state_path: &Path, workload: Option<&str>) -> Post
             diagnoses
                 .iter()
                 .take(3)
-                .map(|d| format!("{} — {} ({:.0}% confidence)", d.workload, d.likely_cause, d.confidence * 100.0))
+                .map(|d| {
+                    format!(
+                        "{} — {} ({:.0}% confidence)",
+                        d.workload,
+                        d.likely_cause,
+                        d.confidence * 100.0
+                    )
+                })
                 .collect()
         },
     });
@@ -332,7 +339,10 @@ pub async fn build_postmortem(state_path: &Path, workload: Option<&str>) -> Post
         .map(|w| format!("Postmortem: {w}"))
         .unwrap_or_else(|| "Fleet incident postmortem".into());
 
-    let mut md = format!("# {title}\n\nGenerated {}\n\n", crate::resources::now_rfc3339());
+    let mut md = format!(
+        "# {title}\n\nGenerated {}\n\n",
+        crate::resources::now_rfc3339()
+    );
     for section in &sections {
         md.push_str(&format!("## {}\n\n", section.heading));
         for b in &section.bullets {
@@ -367,7 +377,9 @@ pub struct ErrorBudgetDashboardReport {
     pub entries: Vec<ErrorBudgetEntry>,
 }
 
-pub fn build_error_budget_dashboard(state_path: &Path) -> anyhow::Result<ErrorBudgetDashboardReport> {
+pub fn build_error_budget_dashboard(
+    state_path: &Path,
+) -> anyhow::Result<ErrorBudgetDashboardReport> {
     let store = StateStore::load(state_path)?;
     let engine = load_sla_engine();
     let history = HealthHistory::load(&HealthHistory::default_path()).unwrap_or_default();
@@ -398,14 +410,21 @@ pub fn build_error_budget_dashboard(state_path: &Path) -> anyhow::Result<ErrorBu
     })
 }
 
-fn entry_from_sla(target: &SlaTarget, report: &SlaReport, observation: &crate::sla::SlaObservation) -> ErrorBudgetEntry {
-    let budget = report.remaining_error_budget.clone().unwrap_or(ErrorBudget {
-        total_minutes: 43.2,
-        consumed_minutes: 0.0,
-        remaining_minutes: 43.2,
-        consumed_pct: 0.0,
-        projected_exhaustion_days: None,
-    });
+fn entry_from_sla(
+    target: &SlaTarget,
+    report: &SlaReport,
+    observation: &crate::sla::SlaObservation,
+) -> ErrorBudgetEntry {
+    let budget = report
+        .remaining_error_budget
+        .clone()
+        .unwrap_or(ErrorBudget {
+            total_minutes: 43.2,
+            consumed_minutes: 0.0,
+            remaining_minutes: 43.2,
+            consumed_pct: 0.0,
+            projected_exhaustion_days: None,
+        });
     let burn_rate = if budget.total_minutes > 0.0 {
         budget.consumed_pct / 30.0
     } else {
@@ -510,7 +529,9 @@ pub fn run_chaos_experiment(dry_run: bool, experiment_id: &str) -> ChaosRunRepor
     if dry_run {
         executed.push(format!("dry-run: {line}"));
     } else {
-        skipped.push(format!("{line}: live chaos requires AETHER_CHAOS_ENABLED=1"));
+        skipped.push(format!(
+            "{line}: live chaos requires AETHER_CHAOS_ENABLED=1"
+        ));
     }
     ChaosRunReport {
         dry_run,
@@ -562,7 +583,12 @@ pub async fn build_game_day_plan(state_path: &Path) -> anyhow::Result<GameDayPla
                 .sections
                 .first()
                 .map(|s| s.items.clone())
-                .unwrap_or_else(|| vec!["Run healer preview".into(), "Execute dry-run healing".into()]),
+                .unwrap_or_else(|| {
+                    vec![
+                        "Run healer preview".into(),
+                        "Execute dry-run healing".into(),
+                    ]
+                }),
             participants: vec!["SRE Healer agent".into(), "On-call".into()],
         },
     ];
@@ -617,7 +643,10 @@ pub async fn execute_runbook(
     let mut skipped = healer.skipped;
 
     for action in remediation.actions.iter().take(5) {
-        let line = format!("{} {} — {}", action.action_type, action.target, action.reason);
+        let line = format!(
+            "{} {} — {}",
+            action.action_type, action.target, action.reason
+        );
         if dry_run {
             if action.auto_safe {
                 executed.push(format!("dry-run: {line}"));
@@ -655,7 +684,9 @@ pub struct EscalationPolicyReport {
     pub policies: Vec<EscalationStep>,
 }
 
-pub async fn build_escalation_policies(state_path: &Path) -> anyhow::Result<EscalationPolicyReport> {
+pub async fn build_escalation_policies(
+    state_path: &Path,
+) -> anyhow::Result<EscalationPolicyReport> {
     let store = StateStore::load(state_path)?;
     let policy = AutonomyPolicy::from_config_and_workload(
         crate::config::Config::load().reconciliation.auto_reconcile,

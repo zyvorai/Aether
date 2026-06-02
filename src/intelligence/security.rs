@@ -111,18 +111,24 @@ impl SecurityEngine {
             });
         }
 
-        if spec.requirements.gpu.is_some() && ws.runtime == crate::runtime::RuntimeKind::Kubernetes {
+        if spec.requirements.gpu.is_some() && ws.runtime == crate::runtime::RuntimeKind::Kubernetes
+        {
             return Some(ThreatEntry {
                 workload: spec.metadata.name.clone(),
                 severity: "medium".into(),
                 category: "gpu_exposure".into(),
                 score: 0.55,
-                reason: "GPU workload on shared Kubernetes — consider KubeVirt/Metal3 isolation".into(),
+                reason: "GPU workload on shared Kubernetes — consider KubeVirt/Metal3 isolation"
+                    .into(),
                 detected_at: crate::resources::now_rfc3339(),
             });
         }
 
-        if spec.confidential.as_ref().is_some_and(|c| c.enabled && c.attestation.required) {
+        if spec
+            .confidential
+            .as_ref()
+            .is_some_and(|c| c.enabled && c.attestation.required)
+        {
             let dir = crate::ragnarok::client::RagnarokClient::attestation_data_dir();
             let att = crate::ragnarok::AttestationService::new(dir);
             if !att.passed(&spec.metadata.name) {
@@ -145,7 +151,9 @@ impl SecurityEngine {
                 severity: "medium".into(),
                 category: "network_exposure".into(),
                 score: 0.6,
-                reason: "Confidential workload lacks zero-trust network policies (Cilium/NetworkPolicy)".into(),
+                reason:
+                    "Confidential workload lacks zero-trust network policies (Cilium/NetworkPolicy)"
+                        .into(),
                 detected_at: crate::resources::now_rfc3339(),
             });
         }

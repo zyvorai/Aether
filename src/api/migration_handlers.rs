@@ -9,11 +9,7 @@ use crate::migration::volume::{
     execute_volume_replication, plan_volume_replication, VolumeReplicationRequest,
 };
 use crate::spec::Workload;
-use axum::{
-    extract::State as AxumState,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State as AxumState, response::IntoResponse, Json};
 
 pub(crate) async fn api_migration_volume_plan(
     AxumState(app_state): AxumState<AppState>,

@@ -40,7 +40,8 @@ pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::R
     } else {
         crate::saml_c14n::digest_canonical_bytes(&signed_element, &transforms)?
     };
-    let digest_actual = base64::engine::general_purpose::STANDARD.encode(Sha256::digest(&digest_bytes));
+    let digest_actual =
+        base64::engine::general_purpose::STANDARD.encode(Sha256::digest(&digest_bytes));
     if digest_actual != digest_expected.trim() {
         anyhow::bail!("SAML digest mismatch for #{target_id}");
     }
@@ -62,8 +63,7 @@ pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::R
 fn public_key_from_pem(pem: &str) -> anyhow::Result<RsaPublicKey> {
     let (_, cert) = parse_x509_pem(pem.as_bytes()).context("parse IdP certificate PEM")?;
     let parsed = cert.parse_x509().context("parse IdP X509 certificate")?;
-    RsaPublicKey::from_public_key_der(parsed.public_key().raw)
-        .context("IdP certificate is not RSA")
+    RsaPublicKey::from_public_key_der(parsed.public_key().raw).context("IdP certificate is not RSA")
 }
 
 fn extract_signature_block(xml: &str) -> Option<String> {
@@ -110,7 +110,9 @@ fn extract_element_xml(xml: &str, name: &str) -> Option<String> {
         format!("<saml2:{name}"),
         format!("<samlp:{name}"),
     ] {
-        let Some(start) = xml.find(&marker) else { continue };
+        let Some(start) = xml.find(&marker) else {
+            continue;
+        };
         for end_marker in [
             format!("</{name}>"),
             format!("</ds:{name}>"),
@@ -128,7 +130,9 @@ fn extract_element_xml(xml: &str, name: &str) -> Option<String> {
 
 fn extract_tag_text(xml: &str, tag: &str) -> Option<String> {
     for open in [format!("<{tag}"), format!("<ds:{tag}")] {
-        let Some(start) = xml.find(&open) else { continue };
+        let Some(start) = xml.find(&open) else {
+            continue;
+        };
         let rest = &xml[start..];
         let gt = rest.find('>')? + 1;
         for close in [format!("</{tag}>"), format!("</ds:{tag}>")] {
@@ -170,6 +174,7 @@ mod tests {
         );
         let signature = mock_idp::sign_saml_element_for_test(&assertion, assertion_id);
         let xml = format!("<Response>{signature}{assertion}</Response>");
-        verify_response_signature(&xml, mock_idp::idp_certificate_pem()).expect("signature roundtrip");
+        verify_response_signature(&xml, mock_idp::idp_certificate_pem())
+            .expect("signature roundtrip");
     }
 }

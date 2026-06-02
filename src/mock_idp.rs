@@ -64,7 +64,10 @@ pub fn enabled() -> bool {
 
 pub fn apply_env_defaults(base_url: &str) {
     set_if_empty("AETHER_SESSION_SECRET", MOCK_SESSION_SECRET);
-    set_if_empty("AETHER_OIDC_ISSUER", &format!("{base_url}/api/mock-idp/oidc"));
+    set_if_empty(
+        "AETHER_OIDC_ISSUER",
+        &format!("{base_url}/api/mock-idp/oidc"),
+    );
     set_if_empty("AETHER_OIDC_CLIENT_ID", MOCK_OIDC_CLIENT_ID);
     set_if_empty(
         "AETHER_OIDC_REDIRECT_URI",
@@ -196,8 +199,9 @@ fn sign_saml_element(element_xml: &str, element_id: &str) -> String {
         r#"</ds:DigestValue></ds:Reference></ds:SignedInfo>"#,
     ]
     .concat();
-    let signed_info_bytes = crate::saml_c14n::canonicalize(&signed_info, crate::saml_c14n::EXC_C14N)
-        .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
+    let signed_info_bytes =
+        crate::saml_c14n::canonicalize(&signed_info, crate::saml_c14n::EXC_C14N)
+            .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
     let signing_key = SigningKey::<Sha256>::new(keys().private_key.clone());
     let signature = signing_key.sign(&signed_info_bytes);
     let sig_b64 = base64::engine::general_purpose::STANDARD.encode(signature.to_bytes());
@@ -216,7 +220,9 @@ fn sign_saml_element(element_xml: &str, element_id: &str) -> String {
 pub async fn oidc_discovery() -> impl IntoResponse {
     let issuer = std::env::var("AETHER_OIDC_ISSUER")
         .unwrap_or_else(|_| "http://127.0.0.1:5090/api/mock-idp/oidc".into());
-    let base = issuer.trim_end_matches("/api/mock-idp/oidc").trim_end_matches('/');
+    let base = issuer
+        .trim_end_matches("/api/mock-idp/oidc")
+        .trim_end_matches('/');
     axum::Json(json!({
         "issuer": issuer,
         "authorization_endpoint": format!("{base}/api/mock-idp/oidc/authorize"),

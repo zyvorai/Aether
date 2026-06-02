@@ -133,9 +133,8 @@ impl MigrationAdvisor {
         let risk_level = self.assess_risk(spec, source, target, &mut warnings);
 
         // Recommend strategy based on workload characteristics
-        let recommended_strategy = self.recommend_strategy(
-            spec, source, target, &risk_level, &mut reasons,
-        );
+        let recommended_strategy =
+            self.recommend_strategy(spec, source, target, &risk_level, &mut reasons);
 
         // Estimate downtime
         let estimated_downtime_secs = self.estimate_downtime(&recommended_strategy, is_stateful);
@@ -151,7 +150,10 @@ impl MigrationAdvisor {
         }
 
         if !has_health {
-            warnings.push("No health probes defined: validation will use basic connectivity checks".to_string());
+            warnings.push(
+                "No health probes defined: validation will use basic connectivity checks"
+                    .to_string(),
+            );
         }
 
         MigrationAdvice {
@@ -173,8 +175,9 @@ impl MigrationAdvisor {
         target: RuntimeKind,
     ) -> MigrationPlanProposal {
         let advice = self.advise(spec, source, target);
-        let health = crate::health::HealthHistory::load(&crate::health::HealthHistory::default_path())
-            .unwrap_or_default();
+        let health =
+            crate::health::HealthHistory::load(&crate::health::HealthHistory::default_path())
+                .unwrap_or_default();
         let restarts = health.restart_count(&spec.metadata.name);
         let uptime = health.uptime_percent(&spec.metadata.name);
 
@@ -187,8 +190,12 @@ impl MigrationAdvisor {
 
         let rollback_probability = (blast_radius * 0.4
             + (restarts as f64 / 20.0).min(0.3)
-            + if uptime > 0.0 && uptime < 99.0 { 0.2 } else { 0.0 })
-            .min(0.95);
+            + if uptime > 0.0 && uptime < 99.0 {
+                0.2
+            } else {
+                0.0
+            })
+        .min(0.95);
 
         let eta_secs = advice.estimated_downtime_secs.saturating_add(
             advice.canary_config.steps.len() as u64 * advice.canary_config.step_interval_secs,
@@ -199,10 +206,8 @@ impl MigrationAdvisor {
             .and_then(|e| e.first().map(|x| x.total_monthly * 0.05))
             .unwrap_or(0.0);
 
-        let auto_eligible = matches!(
-            advice.risk_level,
-            RiskLevel::Low | RiskLevel::Medium
-        ) && rollback_probability < 0.4;
+        let auto_eligible = matches!(advice.risk_level, RiskLevel::Low | RiskLevel::Medium)
+            && rollback_probability < 0.4;
 
         MigrationPlanProposal {
             advice,
@@ -278,7 +283,9 @@ impl MigrationAdvisor {
 
         // Confidential workloads prefer KubeVirt with TEE-capable nodes
         if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-            reasons.push("Confidential workload: recommending ConfidentialBlueGreen migration".to_string());
+            reasons.push(
+                "Confidential workload: recommending ConfidentialBlueGreen migration".to_string(),
+            );
             return MigrationStrategy::ConfidentialBlueGreen;
         }
 
@@ -289,22 +296,33 @@ impl MigrationAdvisor {
             }
             RiskLevel::Medium => {
                 if has_health && has_ingress {
-                    reasons.push("Rolling migration with canary validation for medium-risk workload".to_string());
+                    reasons.push(
+                        "Rolling migration with canary validation for medium-risk workload"
+                            .to_string(),
+                    );
                     MigrationStrategy::Rolling
                 } else {
-                    reasons.push("Blue-green recommended: limited health observability".to_string());
+                    reasons
+                        .push("Blue-green recommended: limited health observability".to_string());
                     MigrationStrategy::BlueGreen
                 }
             }
             RiskLevel::Low => {
                 if is_stateful {
-                    reasons.push("Stateful but low risk: blue-green ensures data consistency".to_string());
+                    reasons.push(
+                        "Stateful but low risk: blue-green ensures data consistency".to_string(),
+                    );
                     MigrationStrategy::BlueGreen
                 } else if has_health {
-                    reasons.push("Low risk with health probes: rolling migration for zero downtime".to_string());
+                    reasons.push(
+                        "Low risk with health probes: rolling migration for zero downtime"
+                            .to_string(),
+                    );
                     MigrationStrategy::Rolling
                 } else {
-                    reasons.push("Low risk, simple workload: immediate migration is sufficient".to_string());
+                    reasons.push(
+                        "Low risk, simple workload: immediate migration is sufficient".to_string(),
+                    );
                     MigrationStrategy::Immediate
                 }
             }
@@ -347,7 +365,8 @@ impl MigrationAdvisor {
             }
         } else {
             TimingAdvice {
-                recommendation: "Internal service: can migrate during maintenance window".to_string(),
+                recommendation: "Internal service: can migrate during maintenance window"
+                    .to_string(),
                 preferred_window: "Any scheduled maintenance window".to_string(),
                 avoid_times: vec!["During dependent service deployments".to_string()],
             }
@@ -422,7 +441,11 @@ impl MigrationAdvisor {
     }
 
     /// Analyze canary observations and decide whether to proceed
-    pub fn analyze_canary(&self, observations: &[CanaryObservation], config: &CanaryConfig) -> CanaryAnalysis {
+    pub fn analyze_canary(
+        &self,
+        observations: &[CanaryObservation],
+        config: &CanaryConfig,
+    ) -> CanaryAnalysis {
         if observations.is_empty() {
             return CanaryAnalysis {
                 should_continue: true,
@@ -438,8 +461,8 @@ impl MigrationAdvisor {
         let should_rollback = error_rate > config.error_threshold;
         let should_continue = !should_rollback && latest.healthy;
 
-        let avg_error_rate: f64 = observations.iter().map(|o| o.error_rate).sum::<f64>()
-            / observations.len() as f64;
+        let avg_error_rate: f64 =
+            observations.iter().map(|o| o.error_rate).sum::<f64>() / observations.len() as f64;
 
         let summary = if should_rollback {
             format!(
@@ -474,7 +497,10 @@ pub fn format_migration_advice(advice: &MigrationAdvice) -> String {
     output.push_str(&output::property_section(&[
         ("Strategy", format!("{:?}", advice.recommended_strategy)),
         ("Risk Level", format!("{}", advice.risk_level)),
-        ("Estimated Downtime", format!("{}s", advice.estimated_downtime_secs)),
+        (
+            "Estimated Downtime",
+            format!("{}s", advice.estimated_downtime_secs),
+        ),
     ]));
 
     output.push_str("Reasons:\n");
@@ -489,8 +515,14 @@ pub fn format_migration_advice(advice: &MigrationAdvice) -> String {
         }
     }
 
-    output.push_str(&format!("\nTiming: {}\n", advice.suggested_timing.recommendation));
-    output.push_str(&format!("  Window: {}\n", advice.suggested_timing.preferred_window));
+    output.push_str(&format!(
+        "\nTiming: {}\n",
+        advice.suggested_timing.recommendation
+    ));
+    output.push_str(&format!(
+        "  Window: {}\n",
+        advice.suggested_timing.preferred_window
+    ));
 
     output.push_str(&format!(
         "\nCanary: {} steps, {}s intervals, {:.1}% error threshold\n",
@@ -525,7 +557,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -550,7 +582,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -571,7 +603,10 @@ mod tests {
         spec.persistence.enabled = true;
 
         let advice = advisor.advise(&spec, RuntimeKind::Podman, RuntimeKind::Kubernetes);
-        assert!(matches!(advice.risk_level, RiskLevel::Medium | RiskLevel::High));
+        assert!(matches!(
+            advice.risk_level,
+            RiskLevel::Medium | RiskLevel::High
+        ));
     }
 
     #[test]
@@ -580,7 +615,10 @@ mod tests {
         let spec = create_test_workload();
         let advice = advisor.advise(&spec, RuntimeKind::Podman, RuntimeKind::Metal3);
 
-        assert!(matches!(advice.risk_level, RiskLevel::Medium | RiskLevel::High));
+        assert!(matches!(
+            advice.risk_level,
+            RiskLevel::Medium | RiskLevel::High
+        ));
     }
 
     #[test]

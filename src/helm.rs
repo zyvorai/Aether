@@ -172,8 +172,12 @@ pub fn export_helm_chart(
 
     // Create directory structure
     let templates_dir = output_dir.join("templates");
-    fs::create_dir_all(&templates_dir)
-        .with_context(|| format!("Failed to create templates directory: {}", templates_dir.display()))?;
+    fs::create_dir_all(&templates_dir).with_context(|| {
+        format!(
+            "Failed to create templates directory: {}",
+            templates_dir.display()
+        )
+    })?;
 
     // --- Chart.yaml ---
     write_file(
@@ -182,16 +186,10 @@ pub fn export_helm_chart(
     )?;
 
     // --- values.yaml ---
-    write_file(
-        &output_dir.join("values.yaml"),
-        &generate_values_yaml(spec),
-    )?;
+    write_file(&output_dir.join("values.yaml"), &generate_values_yaml(spec))?;
 
     // --- templates/_helpers.tpl ---
-    write_file(
-        &templates_dir.join("_helpers.tpl"),
-        &generate_helpers_tpl(),
-    )?;
+    write_file(&templates_dir.join("_helpers.tpl"), &generate_helpers_tpl())?;
 
     // --- templates/deployment.yaml or templates/cronjob.yaml ---
     if spec.schedule.is_some() {
@@ -221,10 +219,7 @@ pub fn export_helm_chart(
     // --- templates/hpa.yaml (only if scaling is enabled) ---
     if let Some(ref scaling) = spec.scaling {
         if scaling.enabled {
-            write_file(
-                &templates_dir.join("hpa.yaml"),
-                &generate_hpa_yaml(),
-            )?;
+            write_file(&templates_dir.join("hpa.yaml"), &generate_hpa_yaml())?;
         }
     }
 
@@ -258,13 +253,16 @@ appVersion: "1.0.0"
 
 fn generate_values_yaml(spec: &Workload) -> String {
     let image_full = spec.image_name(); // e.g. "ghcr.io/org/my-app:latest"
-    // Split repo from tag, but only on the last ':' after the last '/'.
-    // This avoids breaking on registry ports (e.g. "registry.io:5000/org/app:v1").
+                                        // Split repo from tag, but only on the last ':' after the last '/'.
+                                        // This avoids breaking on registry ports (e.g. "registry.io:5000/org/app:v1").
     let (repo, tag) = if let Some(slash_pos) = image_full.rfind('/') {
         let after_slash = &image_full[slash_pos..];
         if let Some(colon_offset) = after_slash.rfind(':') {
             let split_pos = slash_pos + colon_offset;
-            (image_full[..split_pos].to_string(), image_full[split_pos + 1..].to_string())
+            (
+                image_full[..split_pos].to_string(),
+                image_full[split_pos + 1..].to_string(),
+            )
         } else {
             (image_full.clone(), "latest".to_string())
         }
@@ -289,11 +287,7 @@ fn generate_values_yaml(spec: &Workload) -> String {
         .as_deref()
         .unwrap_or(mem_limit);
 
-    let replica_count = spec
-        .scaling
-        .as_ref()
-        .map(|s| s.min_replicas)
-        .unwrap_or(1);
+    let replica_count = spec.scaling.as_ref().map(|s| s.min_replicas).unwrap_or(1);
 
     let mut out = String::new();
 
@@ -666,7 +660,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/myorg".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -689,7 +683,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
-        ..Default::default()
+                ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,
@@ -701,7 +695,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 

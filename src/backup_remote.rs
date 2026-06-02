@@ -52,4 +52,3 @@ pub async fn upload_backup_file_if_configured(path: &Path) {
         Err(e) => tracing::warn!(error = %e, url = %url, "backup remote upload error"),
     }
 }
-

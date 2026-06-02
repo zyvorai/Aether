@@ -41,7 +41,10 @@ pub fn scan_fleet(store: &StateStore) -> FleetDriftSummary {
     build_summary(&reports, &pairs)
 }
 
-fn build_summary(reports: &[DriftReport], pairs: &[(Workload, WorkloadState)]) -> FleetDriftSummary {
+fn build_summary(
+    reports: &[DriftReport],
+    pairs: &[(Workload, WorkloadState)],
+) -> FleetDriftSummary {
     let mut rows = Vec::new();
     let mut drifted = 0usize;
     let mut critical = 0usize;
@@ -107,7 +110,11 @@ mod tests {
         let mut store = StateStore::default();
         let dir = tempfile::tempdir().unwrap();
         let spec_path = dir.path().join("w.yaml");
-        std::fs::write(&spec_path, include_str!("../../examples/demo-webserver.yaml")).unwrap();
+        std::fs::write(
+            &spec_path,
+            include_str!("../../examples/demo-webserver.yaml"),
+        )
+        .unwrap();
         store.workloads.insert(
             "demo".into(),
             WorkloadState::new(
