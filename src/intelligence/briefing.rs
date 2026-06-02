@@ -80,7 +80,8 @@ pub fn build_command_center_briefing(state_path: &Path) -> anyhow::Result<Comman
     let predictions = FailurePredictor::predict_fleet(&pairs);
     let cost = FinOpsEngine::optimize_fleet(&pairs);
     let config = Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let evolution = EvolutionEngine::status_for_fleet(&pairs, &policy);
 
     let mut issues = Vec::new();
@@ -170,11 +171,9 @@ fn horizon_to_days(horizon: &str) -> u32 {
 }
 
 fn signal_is_capacity(signals: &[crate::intelligence::predict::FailureSignal]) -> bool {
-    signals.iter().any(|s| {
-        s.kind == "oom"
-            || s.kind == "workload_failure"
-            || s.probability >= 0.7
-    })
+    signals
+        .iter()
+        .any(|s| s.kind == "oom" || s.kind == "workload_failure" || s.probability >= 0.7)
 }
 
 #[cfg(test)]

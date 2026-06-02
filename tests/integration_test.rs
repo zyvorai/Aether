@@ -4,12 +4,7 @@
 
 //! Integration tests for Aether
 
-use aether::{
-    engine::Engine,
-    runtime::RuntimeKind,
-    spec::Workload,
-    state::StateStore,
-};
+use aether::{engine::Engine, runtime::RuntimeKind, spec::Workload, state::StateStore};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -122,8 +117,8 @@ fn test_state_store_operations() {
         spec_path: PathBuf::from("/tmp/test.yaml"),
         created_at: chrono::Utc::now().to_rfc3339(),
         updated_at: chrono::Utc::now().to_rfc3339(),
-            os_version: None,
-            node_labels: vec![],
+        os_version: None,
+        node_labels: vec![],
     };
 
     state.upsert("test-app".to_string(), workload_state);
@@ -364,7 +359,10 @@ fn test_backup_create_list_restore() {
     // Get backup info
     let info = manager.get_backup_info(&backups[0]).unwrap();
     assert_eq!(info.workload_count, 1);
-    assert_eq!(info.description, Some("Integration test backup".to_string()));
+    assert_eq!(
+        info.description,
+        Some("Integration test backup".to_string())
+    );
 
     // Restore to a new state path
     let restore_path = temp_dir.path().join("restored_state.json");
@@ -380,7 +378,7 @@ fn test_backup_create_list_restore() {
 
 #[test]
 fn test_cost_estimation_for_workload() {
-    use aether::cost::{estimate_cost, estimate_all_providers, CloudProvider, CostComparison};
+    use aether::cost::{estimate_all_providers, estimate_cost, CloudProvider, CostComparison};
 
     let temp_dir = TempDir::new().unwrap();
     let (workload, _) = create_test_workload("cost-test", &temp_dir);
@@ -571,7 +569,10 @@ fn test_events_emit_filter_acknowledge() {
 
     // Filter by category
     assert_eq!(bus.events_by_category(&EventCategory::Deployment).len(), 1);
-    assert_eq!(bus.events_by_category(&EventCategory::SlaViolation).len(), 1);
+    assert_eq!(
+        bus.events_by_category(&EventCategory::SlaViolation).len(),
+        1
+    );
 
     // Filter by severity
     assert_eq!(bus.events_by_severity(&EventSeverity::Critical).len(), 1);
@@ -853,7 +854,11 @@ fn test_environment_promotion_and_parity() {
         })
         .unwrap();
     assert!(result.success);
-    assert!(mgr.get_env("staging").unwrap().workloads.contains_key("web-app"));
+    assert!(mgr
+        .get_env("staging")
+        .unwrap()
+        .workloads
+        .contains_key("web-app"));
 
     // Promote web-app from staging to prod (tier-adjusted)
     let result = mgr
@@ -880,7 +885,8 @@ fn test_environment_promotion_and_parity() {
     assert!(!parity2.in_sync);
 
     // Set environment variables
-    mgr.set_var("dev", "DATABASE_URL", "localhost:5432").unwrap();
+    mgr.set_var("dev", "DATABASE_URL", "localhost:5432")
+        .unwrap();
     assert_eq!(
         mgr.get_env("dev").unwrap().variables["DATABASE_URL"],
         "localhost:5432"
@@ -890,7 +896,11 @@ fn test_environment_promotion_and_parity() {
     mgr.save(&env_path).unwrap();
     let loaded = EnvironmentManager::load(&env_path).unwrap();
     assert_eq!(loaded.list_envs().len(), 3);
-    assert!(loaded.get_env("prod").unwrap().workloads.contains_key("web-app"));
+    assert!(loaded
+        .get_env("prod")
+        .unwrap()
+        .workloads
+        .contains_key("web-app"));
 }
 
 // ========== Affinity module tests ==========
@@ -963,8 +973,14 @@ fn test_affinity_learning_and_recommendation() {
 
     // Recommendations: Kubernetes should rank above Podman for databases
     let db_recs = engine.recommend(&WorkloadClass::Database);
-    let k8s_pos = db_recs.iter().position(|r| r.runtime == RuntimeKind::Kubernetes).unwrap();
-    let podman_pos = db_recs.iter().position(|r| r.runtime == RuntimeKind::Podman).unwrap();
+    let k8s_pos = db_recs
+        .iter()
+        .position(|r| r.runtime == RuntimeKind::Kubernetes)
+        .unwrap();
+    let podman_pos = db_recs
+        .iter()
+        .position(|r| r.runtime == RuntimeKind::Podman)
+        .unwrap();
     assert!(k8s_pos < podman_pos);
 
     // Incompatibilities tracked
@@ -1069,7 +1085,11 @@ fn test_template_generation_and_validation() {
         };
         let spec = generate(&kind, &params);
         // Every generated spec must pass validation
-        assert!(spec.validate().is_ok(), "Template {:?} failed validation", kind);
+        assert!(
+            spec.validate().is_ok(),
+            "Template {:?} failed validation",
+            kind
+        );
         assert_eq!(spec.metadata.name, "test-gen");
     }
 }
@@ -1078,7 +1098,16 @@ fn test_template_generation_and_validation() {
 fn test_template_kind_from_str_roundtrip() {
     use aether::templates::TemplateKind;
 
-    for name in &["web-app", "rest-api", "database", "cache", "worker", "cron-job", "ml-training", "microservice"] {
+    for name in &[
+        "web-app",
+        "rest-api",
+        "database",
+        "cache",
+        "worker",
+        "cron-job",
+        "ml-training",
+        "microservice",
+    ] {
         let kind: TemplateKind = name.parse().expect(name);
         // Generate from parsed kind to verify it works end-to-end
         let params = aether::templates::TemplateParams::default();
@@ -1091,7 +1120,7 @@ fn test_template_kind_from_str_roundtrip() {
 
 #[test]
 fn test_drift_detection_full_cycle() {
-    use aether::drift::{DriftDetector, DriftCategory};
+    use aether::drift::{DriftCategory, DriftDetector};
     use aether::runtime::Instance;
     use aether::state::WorkloadState;
 
@@ -1112,8 +1141,8 @@ fn test_drift_detection_full_cycle() {
         spec_path: PathBuf::from("test.yaml"),
         created_at: chrono::Utc::now().to_rfc3339(),
         updated_at: chrono::Utc::now().to_rfc3339(),
-            os_version: None,
-            node_labels: vec![],
+        os_version: None,
+        node_labels: vec![],
     };
 
     let detector = DriftDetector::new();
@@ -1121,7 +1150,10 @@ fn test_drift_detection_full_cycle() {
 
     // Should detect health drift (service=true but no health probes in the spec)
     assert!(report.has_drift);
-    assert!(report.drifts.iter().any(|d| d.category == DriftCategory::Health));
+    assert!(report
+        .drifts
+        .iter()
+        .any(|d| d.category == DriftCategory::Health));
     assert!(!report.reconciliation_plan.is_empty());
 }
 
@@ -1269,7 +1301,7 @@ fn test_sla_engine_compliance_check() {
 
 #[test]
 fn test_resources_json_load_save_roundtrip() {
-    use aether::resources::{json_load, json_save, aether_path};
+    use aether::resources::{aether_path, json_load, json_save};
 
     // Verify aether_path is deterministic
     let p1 = aether_path("test.json");
@@ -1305,7 +1337,10 @@ fn test_resources_json_load_save_roundtrip() {
     json_save(&store, &path).unwrap();
     let loaded: StateStore = json_load(&path).unwrap();
     assert_eq!(loaded.list().len(), 1);
-    assert_eq!(loaded.get("rt-test").unwrap().runtime, RuntimeKind::Kubernetes);
+    assert_eq!(
+        loaded.get("rt-test").unwrap().runtime,
+        RuntimeKind::Kubernetes
+    );
 }
 
 // ── FromStr integration (cross-module) ──────────────────────────────
@@ -1322,7 +1357,10 @@ fn test_runtime_kind_from_str_used_in_engine_context() {
     // Verify engine decision still works
     let engine = Engine::new();
     let decided = engine.decide(&workload).unwrap();
-    assert!(matches!(decided, RuntimeKind::Kubernetes | RuntimeKind::Podman));
+    assert!(matches!(
+        decided,
+        RuntimeKind::Kubernetes | RuntimeKind::Podman
+    ));
 }
 
 #[test]
@@ -1444,7 +1482,11 @@ fn test_health_history_integration() {
             timestamp: format!("2026-01-01T00:{:02}:00Z", i),
             workload: "web-app".to_string(),
             runtime: RuntimeKind::Kubernetes,
-            state: if i < 8 { InstanceState::Running } else { InstanceState::Failed },
+            state: if i < 8 {
+                InstanceState::Running
+            } else {
+                InstanceState::Failed
+            },
             ready: i < 8,
             restart_count: if i >= 8 { 1 } else { 0 },
             latency_ms: Some(50.0 + i as f64),
@@ -1487,7 +1529,11 @@ async fn test_migration_rejects_same_runtime_integration() {
     let result = engine.migrate(plan).await;
     assert!(result.is_err());
     let err_msg = result.unwrap_err().to_string();
-    assert!(err_msg.contains("same"), "Error should mention same runtime: {}", err_msg);
+    assert!(
+        err_msg.contains("same"),
+        "Error should mention same runtime: {}",
+        err_msg
+    );
 }
 
 #[tokio::test]
@@ -1585,9 +1631,7 @@ fn test_output_set_and_check_wide() {
 fn test_select_runtime_returns_none_in_quiet_mode() {
     let _guard = OutputModeGuard;
     aether::output::set_quiet(true);
-    let result = aether::output::select_runtime(&[
-        ("🐳", "Podman", "test"),
-    ]);
+    let result = aether::output::select_runtime(&[("🐳", "Podman", "test")]);
     assert!(result.is_none());
 }
 
@@ -1696,7 +1740,10 @@ intent:
     let intent = workload.intent.as_ref().unwrap();
     assert_eq!(intent.goal, aether::spec::IntentGoal::LowLatency);
     assert_eq!(intent.sla.as_ref().unwrap().max_latency_ms, Some(50));
-    assert_eq!(intent.sla.as_ref().unwrap().min_availability_pct, Some(99.9));
+    assert_eq!(
+        intent.sla.as_ref().unwrap().min_availability_pct,
+        Some(99.9)
+    );
     assert_eq!(intent.budget.as_ref().unwrap().max_monthly_usd, 500.0);
     assert_eq!(intent.resilience, Some(aether::spec::ResilienceLevel::High));
     assert!(intent.compliance.as_ref().unwrap().isolation_required);

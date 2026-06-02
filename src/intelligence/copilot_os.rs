@@ -18,7 +18,9 @@ pub fn read_copilot_memory() -> super::zeus_os::ZeusMemoryReport {
     crate::zeus::memory::read_zeus_memory()
 }
 
-pub fn write_copilot_memory_entry(entry: CopilotMemoryEntry) -> anyhow::Result<CopilotMemoryReport> {
+pub fn write_copilot_memory_entry(
+    entry: CopilotMemoryEntry,
+) -> anyhow::Result<CopilotMemoryReport> {
     crate::zeus::memory::write_zeus_memory_entry(entry)
 }
 

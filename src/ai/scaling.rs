@@ -211,7 +211,8 @@ impl ScalingEngine {
 
         // Calculate standard deviation for bounds
         let mean = sum_y / n;
-        let variance: f64 = (points.iter().map(|p| (p.value - mean).powi(2)).sum::<f64>() / n).max(0.0);
+        let variance: f64 =
+            (points.iter().map(|p| (p.value - mean).powi(2)).sum::<f64>() / n).max(0.0);
         let stddev = variance.sqrt();
 
         // Determine trend
@@ -262,7 +263,11 @@ impl ScalingEngine {
             let target = ((current_replicas as f64 * headroom).ceil() as u32).min(max_replicas);
 
             if target > current_replicas {
-                let confidence = if forecast.trend == Trend::Rising { 0.85 } else { 0.65 };
+                let confidence = if forecast.trend == Trend::Rising {
+                    0.85
+                } else {
+                    0.65
+                };
                 return (
                     ScalingAction::ScaleUp,
                     target,
@@ -284,12 +289,15 @@ impl ScalingEngine {
             } else {
                 0.80 // safe default if misconfigured
             };
-            let target = ((current_replicas as f64 * predicted / threshold)
-                .ceil() as u32)
-                .max(min_replicas);
+            let target =
+                ((current_replicas as f64 * predicted / threshold).ceil() as u32).max(min_replicas);
 
             if target < current_replicas {
-                let confidence = if forecast.trend == Trend::Falling { 0.75 } else { 0.50 };
+                let confidence = if forecast.trend == Trend::Falling {
+                    0.75
+                } else {
+                    0.50
+                };
 
                 if self.config.cost_aware {
                     return (
@@ -307,7 +315,11 @@ impl ScalingEngine {
             }
         }
 
-        let confidence = if forecast.trend == Trend::Volatile { 0.50 } else { 0.90 };
+        let confidence = if forecast.trend == Trend::Volatile {
+            0.50
+        } else {
+            0.90
+        };
         (
             ScalingAction::NoChange,
             current_replicas,
@@ -327,16 +339,32 @@ pub fn format_scaling_report(rec: &ScalingRecommendation) -> String {
 
     output.push_str(&output::property_section(&[
         ("Action", format!("{}", rec.action)),
-        ("Replicas", format!("{} -> {}", rec.current_replicas, rec.recommended_replicas)),
+        (
+            "Replicas",
+            format!("{} -> {}", rec.current_replicas, rec.recommended_replicas),
+        ),
         ("Confidence", format!("{:.0}%", rec.confidence * 100.0)),
         ("Reason", rec.reason.clone()),
     ]));
 
     output.push_str(&output::property_section(&[
         ("Trend", format!("{}", rec.forecast.trend)),
-        ("Predicted", format!("{:.1}%", rec.forecast.predicted_value * 100.0)),
-        ("Range", format!("{:.1}% - {:.1}%", rec.forecast.lower_bound * 100.0, rec.forecast.upper_bound * 100.0)),
-        ("Horizon", format!("{} minutes", rec.forecast.horizon_minutes)),
+        (
+            "Predicted",
+            format!("{:.1}%", rec.forecast.predicted_value * 100.0),
+        ),
+        (
+            "Range",
+            format!(
+                "{:.1}% - {:.1}%",
+                rec.forecast.lower_bound * 100.0,
+                rec.forecast.upper_bound * 100.0
+            ),
+        ),
+        (
+            "Horizon",
+            format!("{} minutes", rec.forecast.horizon_minutes),
+        ),
     ]));
 
     if rec.action != ScalingAction::NoChange {

@@ -44,7 +44,13 @@ pub(crate) async fn api_hosted_tenants_create(
     if body.name.trim().is_empty() || body.slug.trim().is_empty() {
         return err_bad_request("name and slug are required");
     }
-    let plan = match body.plan.as_deref().unwrap_or("free").to_lowercase().as_str() {
+    let plan = match body
+        .plan
+        .as_deref()
+        .unwrap_or("free")
+        .to_lowercase()
+        .as_str()
+    {
         "team" => TenantPlan::Team,
         "enterprise" => TenantPlan::Enterprise,
         _ => TenantPlan::Free,

@@ -92,9 +92,9 @@ impl Default for BuildSpec {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ResourceRequirements {
-    pub cpu: String,       // e.g., "2" or "2000m" (used as limit)
-    pub memory: String,    // e.g., "4Gi" (used as limit)
-    pub storage: String,   // e.g., "20Gi"
+    pub cpu: String,     // e.g., "2" or "2000m" (used as limit)
+    pub memory: String,  // e.g., "4Gi" (used as limit)
+    pub storage: String, // e.g., "20Gi"
     #[serde(default)]
     pub gpu: Option<GpuRequirements>,
     /// CPU request (defaults to cpu limit if absent, enabling burstable QoS)
@@ -209,7 +209,6 @@ pub struct NetworkPolicyConfig {
     #[serde(default)]
     pub deny_all_egress: bool,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -413,14 +412,12 @@ impl Workload {
 
         // Validate optional resource requests
         if let Some(ref cpu_req) = self.requirements.cpu_request {
-            Self::validate_cpu(cpu_req).map_err(|e| {
-                anyhow::anyhow!("requirements.cpuRequest: {}", e)
-            })?;
+            Self::validate_cpu(cpu_req)
+                .map_err(|e| anyhow::anyhow!("requirements.cpuRequest: {}", e))?;
         }
         if let Some(ref mem_req) = self.requirements.memory_request {
-            Self::validate_memory(mem_req).map_err(|e| {
-                anyhow::anyhow!("requirements.memoryRequest: {}", e)
-            })?;
+            Self::validate_memory(mem_req)
+                .map_err(|e| anyhow::anyhow!("requirements.memoryRequest: {}", e))?;
         }
 
         // Validate GPU if present
@@ -545,13 +542,9 @@ impl Workload {
         // Validate runtime preference is in allowed list
         let preferred_in_allow = match self.runtime.preferred {
             RuntimePreference::Auto => true,
-            RuntimePreference::Container => {
-                self.runtime.allow.contains(&RuntimeType::Container)
-            }
+            RuntimePreference::Container => self.runtime.allow.contains(&RuntimeType::Container),
             RuntimePreference::Kube => self.runtime.allow.contains(&RuntimeType::Kube),
-            RuntimePreference::Kubevirt => {
-                self.runtime.allow.contains(&RuntimeType::Kubevirt)
-            }
+            RuntimePreference::Kubevirt => self.runtime.allow.contains(&RuntimeType::Kubevirt),
             RuntimePreference::Metal => self.runtime.allow.contains(&RuntimeType::Metal),
         };
 
@@ -604,7 +597,11 @@ impl Workload {
             anyhow::bail!("{} cannot be empty", field);
         }
         if name.len() > 63 {
-            anyhow::bail!("{} must be at most 63 characters, got {}", field, name.len());
+            anyhow::bail!(
+                "{} must be at most 63 characters, got {}",
+                field,
+                name.len()
+            );
         }
         if !name
             .chars()
@@ -632,9 +629,9 @@ impl Workload {
             anyhow::bail!("requirements.cpu cannot be empty");
         }
         if let Some(milli) = cpu.strip_suffix('m') {
-            let val = milli
-                .parse::<u64>()
-                .map_err(|_| anyhow::anyhow!("requirements.cpu: invalid millicore value '{}'", cpu))?;
+            let val = milli.parse::<u64>().map_err(|_| {
+                anyhow::anyhow!("requirements.cpu: invalid millicore value '{}'", cpu)
+            })?;
             if val == 0 {
                 anyhow::bail!("requirements.cpu must be > 0");
             }
@@ -704,7 +701,11 @@ impl Workload {
 
         for (i, (field, (min, max))) in fields.iter().zip(ranges.iter()).enumerate() {
             // Skip wildcards and complex expressions (*/N, ranges, lists)
-            if field.contains('*') || field.contains('/') || field.contains(',') || field.contains('-') {
+            if field.contains('*')
+                || field.contains('/')
+                || field.contains(',')
+                || field.contains('-')
+            {
                 continue;
             }
             // Validate plain numeric values
@@ -712,7 +713,10 @@ impl Workload {
                 if val < *min || val > *max {
                     anyhow::bail!(
                         "schedule.cron {} field value {} is out of range ({}-{})",
-                        names[i], val, min, max
+                        names[i],
+                        val,
+                        min,
+                        max
                     );
                 }
             }
@@ -750,7 +754,11 @@ impl Workload {
             secrets: vec![],
             env_from: vec![],
         });
-        if let Some(cm) = config.config_maps.iter_mut().find(|c| c.name == "compose-env") {
+        if let Some(cm) = config
+            .config_maps
+            .iter_mut()
+            .find(|c| c.name == "compose-env")
+        {
             cm.data.extend(env.clone());
         } else {
             config.config_maps.push(ConfigMapSpec {
@@ -868,7 +876,6 @@ pub struct IngressSpec {
     pub tls_secret_name: Option<String>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct IngressPath {
     pub path: String,
@@ -972,7 +979,9 @@ pub struct MeshConfig {
     pub annotations: std::collections::HashMap<String, String>,
 }
 
-fn default_true() -> bool { true }
+fn default_true() -> bool {
+    true
+}
 
 /// Kubernetes controller kind for `runtime.preferred: kube`.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]

@@ -4,8 +4,8 @@
 
 //! Local state store for tracking workload instances
 
-use anyhow::Context;
 use crate::runtime::{Instance, RuntimeKind};
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -81,8 +81,7 @@ impl StateStore {
     pub fn save(&self, path: &std::path::Path) -> anyhow::Result<()> {
         use std::fs::OpenOptions;
 
-        let content = serde_json::to_string_pretty(self)
-            .context("failed to serialize state")?;
+        let content = serde_json::to_string_pretty(self).context("failed to serialize state")?;
 
         // Ensure directory exists
         let dir = path.parent().unwrap_or(std::path::Path::new("."));
@@ -101,8 +100,9 @@ impl StateStore {
             .truncate(true)
             .open(&lock_path)
             .with_context(|| format!("failed to create lock file: {}", lock_path.display()))?;
-        Self::flock_exclusive(&lock_file)
-            .with_context(|| "failed to acquire state file lock (is another aether process running?)")?;
+        Self::flock_exclusive(&lock_file).with_context(|| {
+            "failed to acquire state file lock (is another aether process running?)"
+        })?;
 
         // Write to a temporary file in the same directory, then rename.
         // This ensures the state file is never left in a half-written state.
@@ -243,7 +243,11 @@ mod tests {
     #[test]
     fn test_default_path_is_absolute() {
         let path = StateStore::default_path();
-        assert!(path.is_absolute(), "state path should be absolute: {}", path.display());
+        assert!(
+            path.is_absolute(),
+            "state path should be absolute: {}",
+            path.display()
+        );
     }
 
     // ── WorkloadState construction ─────────────────────────────────────

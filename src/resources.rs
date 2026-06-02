@@ -53,7 +53,10 @@ pub fn parse_memory_gi(memory: &str) -> f64 {
         // Decimal MB (10^6 bytes) → GiB: divide by 1073.741824
         (stripped, 1073.741824)
     } else {
-        tracing::warn!("Invalid memory value '{}' (missing suffix like Gi, Mi, G, M), defaulting to 0.0", memory);
+        tracing::warn!(
+            "Invalid memory value '{}' (missing suffix like Gi, Mi, G, M), defaulting to 0.0",
+            memory
+        );
         return 0.0;
     };
 

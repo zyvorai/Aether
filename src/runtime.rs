@@ -47,7 +47,12 @@ pub trait Runtime: Send + Sync {
 
     /// Update a running workload with a new spec. Default implementation
     /// stops and re-deploys. Kubernetes overrides with Deployment patch.
-    async fn update(&self, instance: &Instance, _image: &Image, spec: &Workload) -> crate::Result<Instance> {
+    async fn update(
+        &self,
+        instance: &Instance,
+        _image: &Image,
+        spec: &Workload,
+    ) -> crate::Result<Instance> {
         self.stop(instance).await?;
         self.delete(instance).await?;
         let new_image = self.build(spec).await?;
@@ -181,7 +186,10 @@ impl std::str::FromStr for RuntimeKind {
             "kubernetes" | "kube" | "k8s" => Ok(RuntimeKind::Kubernetes),
             "kubevirt" | "vm" => Ok(RuntimeKind::KubeVirt),
             "metal3" | "metal" | "bare-metal" => Ok(RuntimeKind::Metal3),
-            _ => Err(anyhow::anyhow!("Unknown runtime: '{}'. Valid: podman, docker, kubernetes, kubevirt, metal3", s)),
+            _ => Err(anyhow::anyhow!(
+                "Unknown runtime: '{}'. Valid: podman, docker, kubernetes, kubevirt, metal3",
+                s
+            )),
         }
     }
 }
@@ -200,27 +208,43 @@ pub async fn create_runtime_ns(
     kind: &RuntimeKind,
     namespace: Option<&str>,
 ) -> crate::Result<Box<dyn Runtime>> {
-    use crate::adapters::{DockerRuntime, KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime};
+    use crate::adapters::{
+        DockerRuntime, KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime,
+    };
 
     // Check for multi-cluster context override
-    let context = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+    let context = std::env::var("AETHER_CONTEXT")
+        .ok()
+        .filter(|c| !c.is_empty());
 
     match kind {
         RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
         RuntimeKind::Docker => Ok(Box::new(DockerRuntime::new()?)),
         RuntimeKind::Kubernetes => match (&context, namespace) {
-            (Some(ctx), ns) => Ok(Box::new(KubernetesRuntime::with_context(ctx, ns.map(String::from)).await?)),
-            (None, Some(ns)) => Ok(Box::new(KubernetesRuntime::with_namespace(ns.to_string()).await?)),
+            (Some(ctx), ns) => Ok(Box::new(
+                KubernetesRuntime::with_context(ctx, ns.map(String::from)).await?,
+            )),
+            (None, Some(ns)) => Ok(Box::new(
+                KubernetesRuntime::with_namespace(ns.to_string()).await?,
+            )),
             (None, None) => Ok(Box::new(KubernetesRuntime::new().await?)),
         },
         RuntimeKind::KubeVirt => match (&context, namespace) {
-            (Some(ctx), ns) => Ok(Box::new(KubeVirtRuntime::with_context(ctx, ns.map(String::from)).await?)),
-            (None, Some(ns)) => Ok(Box::new(KubeVirtRuntime::with_namespace(ns.to_string()).await?)),
+            (Some(ctx), ns) => Ok(Box::new(
+                KubeVirtRuntime::with_context(ctx, ns.map(String::from)).await?,
+            )),
+            (None, Some(ns)) => Ok(Box::new(
+                KubeVirtRuntime::with_namespace(ns.to_string()).await?,
+            )),
             (None, None) => Ok(Box::new(KubeVirtRuntime::new().await?)),
         },
         RuntimeKind::Metal3 => match (&context, namespace) {
-            (Some(ctx), ns) => Ok(Box::new(Metal3Runtime::with_context(ctx, ns.map(String::from)).await?)),
-            (None, Some(ns)) => Ok(Box::new(Metal3Runtime::with_namespace(ns.to_string()).await?)),
+            (Some(ctx), ns) => Ok(Box::new(
+                Metal3Runtime::with_context(ctx, ns.map(String::from)).await?,
+            )),
+            (None, Some(ns)) => Ok(Box::new(
+                Metal3Runtime::with_namespace(ns.to_string()).await?,
+            )),
             (None, None) => Ok(Box::new(Metal3Runtime::new().await?)),
         },
     }
@@ -232,24 +256,60 @@ mod tests {
 
     #[test]
     fn test_runtime_kind_from_str_valid() {
-        assert_eq!("podman".parse::<RuntimeKind>().unwrap(), RuntimeKind::Podman);
-        assert_eq!("container".parse::<RuntimeKind>().unwrap(), RuntimeKind::Podman);
-        assert_eq!("docker".parse::<RuntimeKind>().unwrap(), RuntimeKind::Docker);
-        assert_eq!("kubernetes".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
-        assert_eq!("kube".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
-        assert_eq!("k8s".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
-        assert_eq!("kubevirt".parse::<RuntimeKind>().unwrap(), RuntimeKind::KubeVirt);
+        assert_eq!(
+            "podman".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Podman
+        );
+        assert_eq!(
+            "container".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Podman
+        );
+        assert_eq!(
+            "docker".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Docker
+        );
+        assert_eq!(
+            "kubernetes".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Kubernetes
+        );
+        assert_eq!(
+            "kube".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Kubernetes
+        );
+        assert_eq!(
+            "k8s".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Kubernetes
+        );
+        assert_eq!(
+            "kubevirt".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::KubeVirt
+        );
         assert_eq!("vm".parse::<RuntimeKind>().unwrap(), RuntimeKind::KubeVirt);
-        assert_eq!("metal3".parse::<RuntimeKind>().unwrap(), RuntimeKind::Metal3);
+        assert_eq!(
+            "metal3".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Metal3
+        );
         assert_eq!("metal".parse::<RuntimeKind>().unwrap(), RuntimeKind::Metal3);
-        assert_eq!("bare-metal".parse::<RuntimeKind>().unwrap(), RuntimeKind::Metal3);
+        assert_eq!(
+            "bare-metal".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Metal3
+        );
     }
 
     #[test]
     fn test_runtime_kind_from_str_case_insensitive() {
-        assert_eq!("PODMAN".parse::<RuntimeKind>().unwrap(), RuntimeKind::Podman);
-        assert_eq!("DOCKER".parse::<RuntimeKind>().unwrap(), RuntimeKind::Docker);
-        assert_eq!("Kubernetes".parse::<RuntimeKind>().unwrap(), RuntimeKind::Kubernetes);
+        assert_eq!(
+            "PODMAN".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Podman
+        );
+        assert_eq!(
+            "DOCKER".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Docker
+        );
+        assert_eq!(
+            "Kubernetes".parse::<RuntimeKind>().unwrap(),
+            RuntimeKind::Kubernetes
+        );
     }
 
     #[test]

@@ -82,7 +82,10 @@ pub struct GraphImpactReport {
     pub summary: String,
 }
 
-pub fn build_impact_analysis(state_path: &Path, workload: &str) -> anyhow::Result<GraphImpactReport> {
+pub fn build_impact_analysis(
+    state_path: &Path,
+    workload: &str,
+) -> anyhow::Result<GraphImpactReport> {
     let deps = DependencyGraph::load(&DependencyGraph::default_path()).unwrap_or_default();
     let impact = deps.impact_analysis(workload);
     let summary = format!(
@@ -193,7 +196,12 @@ pub fn import_k8s_services(state_path: &Path, dry_run: bool) -> anyhow::Result<K
         if !spec.network.service {
             continue;
         }
-        let port = spec.network.ports.first().map(|p| p.service_port).unwrap_or(80);
+        let port = spec
+            .network
+            .ports
+            .first()
+            .map(|p| p.service_port)
+            .unwrap_or(80);
         services.push(K8sServiceNode {
             service: format!("{}-svc", spec.metadata.name),
             workload: spec.metadata.name.clone(),
@@ -316,7 +324,10 @@ pub fn search_graph(state_path: &Path, query: &str) -> anyhow::Result<GraphSearc
                 return None;
             }
             let route = if n.id.starts_with("wl:") {
-                format!("/workloads?workload={}", n.id.strip_prefix("wl:").unwrap_or(""))
+                format!(
+                    "/workloads?workload={}",
+                    n.id.strip_prefix("wl:").unwrap_or("")
+                )
             } else {
                 "/labs".into()
             };
@@ -406,7 +417,10 @@ pub fn list_graph_snapshots() -> GraphSnapshotsReport {
     }
 }
 
-pub fn capture_graph_snapshot(state_path: &Path, label: Option<&str>) -> anyhow::Result<GraphSnapshotCaptureReport> {
+pub fn capture_graph_snapshot(
+    state_path: &Path,
+    label: Option<&str>,
+) -> anyhow::Result<GraphSnapshotCaptureReport> {
     let graph = build_knowledge_graph(state_path)?;
     let id = format!("snap-{}", uuid_simple());
     let captured_at = crate::resources::now_rfc3339();
@@ -432,8 +446,16 @@ pub fn capture_graph_snapshot(state_path: &Path, label: Option<&str>) -> anyhow:
             id,
             captured_at,
             label,
-            node_count: store.snapshots.last().map(|s| s.graph.nodes.len() as u32).unwrap_or(0),
-            edge_count: store.snapshots.last().map(|s| s.graph.edges.len() as u32).unwrap_or(0),
+            node_count: store
+                .snapshots
+                .last()
+                .map(|s| s.graph.nodes.len() as u32)
+                .unwrap_or(0),
+            edge_count: store
+                .snapshots
+                .last()
+                .map(|s| s.graph.edges.len() as u32)
+                .unwrap_or(0),
         },
     })
 }
@@ -556,9 +578,9 @@ pub struct GraphPlacementReport {
 pub async fn build_graph_placement(state_path: &Path) -> anyhow::Result<GraphPlacementReport> {
     let pairs = load_pairs(state_path)?;
     let deps = DependencyGraph::load(&DependencyGraph::default_path()).unwrap_or_default();
-    let order = deps.startup_order().unwrap_or_else(|_| {
-        pairs.iter().map(|(s, _)| s.metadata.name.clone()).collect()
-    });
+    let order = deps
+        .startup_order()
+        .unwrap_or_else(|_| pairs.iter().map(|(s, _)| s.metadata.name.clone()).collect());
     let clusters = list_clusters().await.unwrap_or_default();
     let default_cluster = clusters
         .iter()

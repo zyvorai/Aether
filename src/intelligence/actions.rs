@@ -34,7 +34,8 @@ pub async fn build_next_actions(state_path: &Path) -> anyhow::Result<NextActions
     let store = StateStore::load(state_path)?;
     let briefing = build_command_center_briefing(state_path)?;
     let config = crate::config::Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let healer = build_healer_preview(&store, &policy).await;
     let pairs: Vec<(Workload, WorkloadState)> = store
         .list()
@@ -87,7 +88,9 @@ pub async fn build_next_actions(state_path: &Path) -> anyhow::Result<NextActions
             title: "Capture FinOps savings".into(),
             detail: top
                 .map(|r| format!("{} — ${:.0}/mo", r.workload, r.savings_monthly_usd))
-                .unwrap_or_else(|| format!("${:.0}/mo fleet potential", briefing.potential_savings_usd)),
+                .unwrap_or_else(|| {
+                    format!("${:.0}/mo fleet potential", briefing.potential_savings_usd)
+                }),
             priority: 70,
             route: "cost".into(),
             action_type: "optimize".into(),
@@ -98,7 +101,10 @@ pub async fn build_next_actions(state_path: &Path) -> anyhow::Result<NextActions
         actions.push(NextAction {
             id: "migrate".into(),
             title: "Review migration opportunities".into(),
-            detail: format!("{} workload(s) with runtime evolution candidates", briefing.migration_opportunities),
+            detail: format!(
+                "{} workload(s) with runtime evolution candidates",
+                briefing.migration_opportunities
+            ),
             priority: 65,
             route: "migrations".into(),
             action_type: "migrate".into(),

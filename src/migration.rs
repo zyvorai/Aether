@@ -204,7 +204,10 @@ impl MigrationEngine {
     }
 
     /// Confidential blue-green: target deploy + re-attestation gate before cutover.
-    async fn migrate_confidential_blue_green(&self, plan: MigrationPlan) -> Result<MigrationResult> {
+    async fn migrate_confidential_blue_green(
+        &self,
+        plan: MigrationPlan,
+    ) -> Result<MigrationResult> {
         tracing::info!("Using confidential blue-green migration strategy");
         migration_trace(&plan, "strategy", "confidential-blue-green");
 
@@ -217,7 +220,8 @@ impl MigrationEngine {
                     .join(".aether")
             });
         let attestation = crate::ragnarok::AttestationService::new(attestation_dir.clone());
-        let mig_store = crate::ragnarok::migration::ConfidentialMigrationStore::new(&attestation_dir);
+        let mig_store =
+            crate::ragnarok::migration::ConfidentialMigrationStore::new(&attestation_dir);
 
         let mut state = StateStore::load(&self.state_path)?;
         let workload_state = state
@@ -517,7 +521,9 @@ impl MigrationEngine {
         // and the blue deployment is deleted, traffic naturally flows to green.
         // For explicit Service selector updates in complex scenarios, use `kubectl patch`.
         tracing::info!("Traffic switch: green deployment validated, proceeding to remove blue");
-        let drain_delay = plan.validation_delay.min(std::time::Duration::from_secs(30));
+        let drain_delay = plan
+            .validation_delay
+            .min(std::time::Duration::from_secs(30));
         tracing::info!("Connection draining ({:?})", drain_delay);
         migration_trace(&plan, "drain", &format!("{drain_delay:?} (capped at 30s)"));
         tokio::time::sleep(drain_delay).await;
@@ -595,7 +601,9 @@ impl MigrationEngine {
                     .min(Duration::from_secs(30));
                 tracing::info!(
                     "Target not ready, retrying ({}/{}) in {:?}",
-                    validation_attempts, max_attempts, backoff
+                    validation_attempts,
+                    max_attempts,
+                    backoff
                 );
                 tokio::time::sleep(backoff).await;
             }
@@ -685,12 +693,19 @@ impl MigrationEngine {
         }
         for (i, step) in canary_config.steps.iter().enumerate() {
             if *step > 100 {
-                anyhow::bail!("Canary step {} has value {}%, which exceeds 100%", i + 1, step);
+                anyhow::bail!(
+                    "Canary step {} has value {}%, which exceeds 100%",
+                    i + 1,
+                    step
+                );
             }
             if i > 0 && *step <= canary_config.steps[i - 1] {
                 anyhow::bail!(
                     "Canary steps must be strictly increasing: step {} ({}%) <= step {} ({}%)",
-                    i + 1, step, i, canary_config.steps[i - 1]
+                    i + 1,
+                    step,
+                    i,
+                    canary_config.steps[i - 1]
                 );
             }
         }
@@ -760,7 +775,9 @@ impl MigrationEngine {
                     failures += 1;
                     tracing::warn!(
                         "Canary health check {}/{} failed at {}% step",
-                        check + 1, canary_config.health_checks_per_step, step_pct
+                        check + 1,
+                        canary_config.health_checks_per_step,
+                        step_pct
                     );
                 }
             }
@@ -843,13 +860,7 @@ mod tests {
         strategy: MigrationStrategy,
         rollback: bool,
     ) -> MigrationPlan {
-        MigrationPlan::new(
-            name.to_string(),
-            source,
-            target,
-            strategy,
-            rollback,
-        )
+        MigrationPlan::new(name.to_string(), source, target, strategy, rollback)
     }
 
     // Helper: build a test Instance
@@ -1055,14 +1066,8 @@ mod tests {
 
     #[test]
     fn test_migration_strategies() {
-        assert_eq!(
-            MigrationStrategy::Immediate,
-            MigrationStrategy::Immediate
-        );
-        assert_ne!(
-            MigrationStrategy::Immediate,
-            MigrationStrategy::BlueGreen
-        );
+        assert_eq!(MigrationStrategy::Immediate, MigrationStrategy::Immediate);
+        assert_ne!(MigrationStrategy::Immediate, MigrationStrategy::BlueGreen);
     }
 
     #[test]
@@ -1247,13 +1252,7 @@ mod tests {
         assert!(!result.success);
         assert!(result.rollback_performed);
         assert!(result.error.is_some());
-        assert!(
-            result
-                .error
-                .as_ref()
-                .unwrap()
-                .contains("health check")
-        );
+        assert!(result.error.as_ref().unwrap().contains("health check"));
     }
 
     #[test]
@@ -1886,20 +1885,42 @@ mod tests {
 
     #[test]
     fn test_migration_strategy_from_str() {
-        assert_eq!("immediate".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Immediate);
-        assert_eq!("blue-green".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::BlueGreen);
-        assert_eq!("bluegreen".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::BlueGreen);
-        assert_eq!("rolling".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Rolling);
-        assert_eq!("canary".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Canary);
         assert_eq!(
-            "confidential-blue-green".parse::<MigrationStrategy>().unwrap(),
+            "immediate".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::Immediate
+        );
+        assert_eq!(
+            "blue-green".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::BlueGreen
+        );
+        assert_eq!(
+            "bluegreen".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::BlueGreen
+        );
+        assert_eq!(
+            "rolling".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::Rolling
+        );
+        assert_eq!(
+            "canary".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::Canary
+        );
+        assert_eq!(
+            "confidential-blue-green"
+                .parse::<MigrationStrategy>()
+                .unwrap(),
             MigrationStrategy::ConfidentialBlueGreen
         );
         assert_eq!(
-            "confidentialbluegreen".parse::<MigrationStrategy>().unwrap(),
+            "confidentialbluegreen"
+                .parse::<MigrationStrategy>()
+                .unwrap(),
             MigrationStrategy::ConfidentialBlueGreen
         );
-        assert_eq!("IMMEDIATE".parse::<MigrationStrategy>().unwrap(), MigrationStrategy::Immediate);
+        assert_eq!(
+            "IMMEDIATE".parse::<MigrationStrategy>().unwrap(),
+            MigrationStrategy::Immediate
+        );
         assert!("unknown".parse::<MigrationStrategy>().is_err());
     }
 

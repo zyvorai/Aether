@@ -7,7 +7,9 @@
 use crate::cost::{self, CloudProvider};
 use crate::drift::fleet::scan_fleet;
 use crate::health::HealthHistory;
-use crate::intelligence::pipeline::{build_intent_pipeline, build_spec_from_goals, intent_block_yaml, IntentPipelineRequest};
+use crate::intelligence::pipeline::{
+    build_intent_pipeline, build_spec_from_goals, intent_block_yaml, IntentPipelineRequest,
+};
 use crate::policy::PolicyEngine;
 use crate::spec::{ComplianceSpec, IntentGoal, IntentSpec, ResilienceLevel, Workload};
 use crate::state::StateStore;
@@ -119,7 +121,9 @@ pub fn parse_nl_intent(req: &NlIntentRequest) -> anyhow::Result<NlIntentReport> 
 
 fn extract_budget_usd(text: &str) -> Option<f64> {
     for word in text.split_whitespace() {
-        let cleaned = word.trim_start_matches('$').trim_end_matches(|c: char| !c.is_ascii_digit() && c != '.');
+        let cleaned = word
+            .trim_start_matches('$')
+            .trim_end_matches(|c: char| !c.is_ascii_digit() && c != '.');
         if let Ok(v) = cleaned.parse::<f64>() {
             if v > 0.0 {
                 return Some(v);
@@ -165,7 +169,9 @@ pub struct IntentDeployReport {
     pub steps: Vec<String>,
 }
 
-pub async fn deploy_intent_pipeline(req: &IntentDeployRequest) -> anyhow::Result<IntentDeployReport> {
+pub async fn deploy_intent_pipeline(
+    req: &IntentDeployRequest,
+) -> anyhow::Result<IntentDeployReport> {
     let report = build_intent_pipeline(&req.pipeline).await?;
     let spec: Workload = serde_yaml::from_str(&report.spec_yaml)?;
     spec.validate()?;
@@ -180,7 +186,11 @@ pub async fn deploy_intent_pipeline(req: &IntentDeployRequest) -> anyhow::Result
     if policy.passed {
         steps.push("policy check passed".into());
     } else {
-        let msgs: Vec<String> = policy.violations.iter().map(|v| v.message.clone()).collect();
+        let msgs: Vec<String> = policy
+            .violations
+            .iter()
+            .map(|v| v.message.clone())
+            .collect();
         steps.push(format!("policy blocked: {}", msgs.join("; ")));
     }
     if compliance.allowed {
@@ -392,7 +402,10 @@ pub struct BudgetEnforceReport {
     pub actions: Vec<BudgetEnforceAction>,
 }
 
-pub fn enforce_intent_budget(state_path: &Path, dry_run: bool) -> anyhow::Result<BudgetEnforceReport> {
+pub fn enforce_intent_budget(
+    state_path: &Path,
+    dry_run: bool,
+) -> anyhow::Result<BudgetEnforceReport> {
     let store = StateStore::load(state_path)?;
     let mut actions = Vec::new();
 
@@ -400,8 +413,12 @@ pub fn enforce_intent_budget(state_path: &Path, dry_run: bool) -> anyhow::Result
         let Ok(spec) = Workload::from_file(&ws.spec_path) else {
             continue;
         };
-        let Some(ref intent) = spec.intent else { continue };
-        let Some(ref budget) = intent.budget else { continue };
+        let Some(ref intent) = spec.intent else {
+            continue;
+        };
+        let Some(ref budget) = intent.budget else {
+            continue;
+        };
         let Ok(estimates) = cost::estimate_all_providers(&spec) else {
             continue;
         };
@@ -430,10 +447,7 @@ pub fn enforce_intent_budget(state_path: &Path, dry_run: bool) -> anyhow::Result
         });
     }
 
-    Ok(BudgetEnforceReport {
-        dry_run,
-        actions,
-    })
+    Ok(BudgetEnforceReport { dry_run, actions })
 }
 
 // ── Phase 20: Compliance gates ─────────────────────────────────────────────
@@ -451,7 +465,9 @@ pub fn check_compliance_gate(spec: &Workload) -> ComplianceGateReport {
 
     if let Some(ref intent) = spec.intent {
         if let Some(ref compliance) = intent.compliance {
-            if compliance.encryption_required && spec.confidential.as_ref().is_none_or(|c| !c.enabled) {
+            if compliance.encryption_required
+                && spec.confidential.as_ref().is_none_or(|c| !c.enabled)
+            {
                 violations.push("encryption_required but confidential block not enabled".into());
                 recommendations.push("Enable confidential.encryption or confidential block".into());
             }
@@ -499,10 +515,30 @@ pub struct IntentTemplateLibrary {
 
 pub fn list_intent_templates() -> IntentTemplateLibrary {
     let templates = vec![
-        template("cost-api", "cost-optimized", "Cost-optimized API", "Stateless API tuned for FinOps"),
-        template("latency-edge", "low-latency", "Low-latency edge", "Performance-first with tight SLA"),
-        template("ha-data", "balanced", "HA data tier", "Standard resilience with encryption"),
-        template("throughput-worker", "high-throughput", "Throughput worker", "Batch/queue worker profile"),
+        template(
+            "cost-api",
+            "cost-optimized",
+            "Cost-optimized API",
+            "Stateless API tuned for FinOps",
+        ),
+        template(
+            "latency-edge",
+            "low-latency",
+            "Low-latency edge",
+            "Performance-first with tight SLA",
+        ),
+        template(
+            "ha-data",
+            "balanced",
+            "HA data tier",
+            "Standard resilience with encryption",
+        ),
+        template(
+            "throughput-worker",
+            "high-throughput",
+            "Throughput worker",
+            "Batch/queue worker profile",
+        ),
     ];
     IntentTemplateLibrary {
         generated_at: crate::resources::now_rfc3339(),
@@ -573,9 +609,8 @@ pub fn build_intent_bundle(req: &IntentBundleRequest) -> anyhow::Result<IntentBu
     let base = req.bundle_name.trim();
     let name = if base.is_empty() { "stack" } else { base };
 
-    let shared_intent = format!(
-        "goal: {goal}\nsla:\n  minAvailabilityPct: 99.9\nbudget:\n  maxMonthlyUsd: 2000"
-    );
+    let shared_intent =
+        format!("goal: {goal}\nsla:\n  minAvailabilityPct: 99.9\nbudget:\n  maxMonthlyUsd: 2000");
 
     let roles = [
         ("app", format!("{name}-app"), "1", "1Gi"),
@@ -650,7 +685,10 @@ pub fn build_intent_gitops_diff(state_path: &Path) -> anyhow::Result<IntentGitOp
             continue;
         }
         let live = intent_block_yaml(&spec);
-        let drifted = fleet.rows.iter().any(|r| r.workload == ws.name && r.has_drift);
+        let drifted = fleet
+            .rows
+            .iter()
+            .any(|r| r.workload == ws.name && r.has_drift);
         let gitops_yaml = versions
             .get(&ws.name)
             .and_then(|hist| hist.first())

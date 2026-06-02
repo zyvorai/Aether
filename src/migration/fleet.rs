@@ -77,7 +77,10 @@ pub fn plan_fleet_migration(
         warnings.push("Volume replication steps run before workload cutover per item.".into());
     }
     if items.len() > 10 {
-        warnings.push(format!("Large fleet migration ({} workloads) — consider batching.", items.len()));
+        warnings.push(format!(
+            "Large fleet migration ({} workloads) — consider batching.",
+            items.len()
+        ));
     }
 
     Ok(FleetMigrationPlan {

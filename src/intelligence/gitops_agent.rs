@@ -81,7 +81,9 @@ pub async fn build_gitops_agent_plan(state_path: &Path) -> anyhow::Result<GitOps
     }
 
     for name in &drift_workloads {
-        planned_actions.push(format!("reconcile drift for {name} from GitOps source of truth"));
+        planned_actions.push(format!(
+            "reconcile drift for {name} from GitOps source of truth"
+        ));
     }
 
     if planned_actions.is_empty() {
@@ -120,7 +122,9 @@ pub async fn execute_gitops_agent(
 
     if !policy.allows_drift_reconcile() {
         for action in &plan.planned_actions {
-            skipped.push(format!("{action}: drift reconcile disabled by autonomy policy"));
+            skipped.push(format!(
+                "{action}: drift reconcile disabled by autonomy policy"
+            ));
         }
         return Ok(GitOpsAgentExecuteReport {
             dry_run,

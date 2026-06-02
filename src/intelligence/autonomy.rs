@@ -38,7 +38,8 @@ pub struct AutonomyStatusReport {
 pub fn build_autonomy_status(state_path: &Path) -> anyhow::Result<AutonomyStatusReport> {
     let store = StateStore::load(state_path)?;
     let config = crate::config::Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
 
     let env = AutonomyEnvFlags {
         aether_auto_restart: env_bool("AETHER_AUTO_RESTART", false),
@@ -73,7 +74,10 @@ pub fn build_autonomy_status(state_path: &Path) -> anyhow::Result<AutonomyStatus
     })
 }
 
-fn workload_override(ws: &WorkloadState, autonomy: &crate::spec::AutonomySpec) -> WorkloadAutonomyOverride {
+fn workload_override(
+    ws: &WorkloadState,
+    autonomy: &crate::spec::AutonomySpec,
+) -> WorkloadAutonomyOverride {
     WorkloadAutonomyOverride {
         workload: ws.name.clone(),
         migration: level_label(&autonomy.migration),
@@ -103,12 +107,16 @@ fn build_recommendations(
         );
     }
     if policy.auto_restart && !policy.auto_reconcile_drift {
-        recs.push("Restart healing enabled — enable AETHER_AUTO_RECONCILE for drift self-healing.".into());
+        recs.push(
+            "Restart healing enabled — enable AETHER_AUTO_RECONCILE for drift self-healing.".into(),
+        );
     }
     if workload_count > 0 && overrides.is_empty() {
         recs.push("No per-workload autonomy overrides — add an autonomy: block to specs for fine control.".into());
     }
-    if policy.auto_migrate == AutonomyTier::Recommend && policy.auto_evolve == AutonomyTier::Recommend {
+    if policy.auto_migrate == AutonomyTier::Recommend
+        && policy.auto_evolve == AutonomyTier::Recommend
+    {
         recs.push("Migration and evolution agents are recommend-only — set autonomy.migration/evolution for auto.".into());
     }
     if recs.is_empty() {

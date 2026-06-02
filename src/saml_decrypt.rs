@@ -50,8 +50,8 @@ fn encrypt_assertion_with_algorithm(
 
     let (_, cert) = parse_x509_pem(sp_cert_pem.as_bytes()).context("parse SP cert")?;
     let parsed = cert.parse_x509().context("parse SP X509")?;
-    let public_key = RsaPublicKey::from_public_key_der(parsed.public_key().raw)
-        .context("SP cert is not RSA")?;
+    let public_key =
+        RsaPublicKey::from_public_key_der(parsed.public_key().raw).context("SP cert is not RSA")?;
 
     let padding = Oaep::new::<Sha256>();
 
@@ -133,8 +133,10 @@ fn wrap_encrypted_assertion(
 }
 
 fn decrypt_encrypted_assertion(xml: &str, sp_key_pem: &str) -> Result<String> {
-    let private_key = RsaPrivateKey::from_pkcs8_pem(sp_key_pem).context("parse AETHER_SAML_SP_KEY")?;
-    let content_algorithm = extract_encryption_method(xml).unwrap_or_else(|| AES128_CBC.to_string());
+    let private_key =
+        RsaPrivateKey::from_pkcs8_pem(sp_key_pem).context("parse AETHER_SAML_SP_KEY")?;
+    let content_algorithm =
+        extract_encryption_method(xml).unwrap_or_else(|| AES128_CBC.to_string());
     let enc_key_b64 = extract_cipher_values(xml)
         .into_iter()
         .next()
@@ -257,7 +259,8 @@ mod tests {
     #[test]
     fn roundtrip_encrypted_assertion_gcm_with_mock_keys() {
         let assertion = r#"<saml2:Assertion ID="a2"><saml2:Subject><saml2:NameID>gcm@test</saml2:NameID></saml2:Subject></saml2:Assertion>"#;
-        let enc = encrypt_assertion_gcm_for_test(assertion, mock_idp::idp_certificate_pem()).unwrap();
+        let enc =
+            encrypt_assertion_gcm_for_test(assertion, mock_idp::idp_certificate_pem()).unwrap();
         assert!(enc.contains("aes256-gcm"));
         std::env::set_var("AETHER_SAML_SP_KEY", mock_idp::idp_private_key_pem());
         let plain = normalize_saml_response_xml(&enc).unwrap();

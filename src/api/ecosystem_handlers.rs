@@ -3,12 +3,7 @@
 //! PacketWolf ecosystem API handlers.
 
 use super::handlers::{err_bad_request, err_service_unavailable, ok_json};
-use axum::{
-    extract::Query,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -63,9 +58,7 @@ pub(crate) async fn api_packetwolf_verify_egress(
     }
 }
 
-pub(crate) async fn api_packetwolf_anomalies(
-    Query(q): Query<AnomaliesQuery>,
-) -> impl IntoResponse {
+pub(crate) async fn api_packetwolf_anomalies(Query(q): Query<AnomaliesQuery>) -> impl IntoResponse {
     if !crate::ecosystem::packetwolf::config().configured {
         return ok_json(serde_json::json!({"configured": false, "anomalies": []}));
     }

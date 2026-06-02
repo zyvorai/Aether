@@ -25,7 +25,9 @@ pub struct CriticalNotificationsReport {
     pub notify_tray: bool,
 }
 
-pub fn build_critical_notifications(state_path: &Path) -> anyhow::Result<CriticalNotificationsReport> {
+pub fn build_critical_notifications(
+    state_path: &Path,
+) -> anyhow::Result<CriticalNotificationsReport> {
     let briefing = build_command_center_briefing(state_path)?;
     let mut notifications = Vec::new();
 

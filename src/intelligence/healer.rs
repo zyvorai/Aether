@@ -43,7 +43,9 @@ pub fn preview_orchestrator_actions(
 
     for action in actions {
         match action {
-            OrchestratorAction::Restart { workload, reason, .. } => {
+            OrchestratorAction::Restart {
+                workload, reason, ..
+            } => {
                 if policy.allows_restart() {
                     would_execute.push(format!("restart {workload}: {reason}"));
                 } else {
@@ -150,7 +152,10 @@ pub async fn execute_healer(
     let mut actions = Vec::new();
     if let Ok(orch) = Orchestrator::load(&Orchestrator::default_path()) {
         for summary in orch.list_workloads() {
-            if matches!(summary.health, HealthStatus::Unhealthy | HealthStatus::Degraded) {
+            if matches!(
+                summary.health,
+                HealthStatus::Unhealthy | HealthStatus::Degraded
+            ) {
                 actions.push(OrchestratorAction::Restart {
                     workload: summary.name.clone(),
                     runtime: summary.runtime,
@@ -187,7 +192,9 @@ pub async fn execute_orchestrator_actions(
     let mut result = HealerResult::default();
     for action in actions {
         match action {
-            OrchestratorAction::Restart { workload, reason, .. } => {
+            OrchestratorAction::Restart {
+                workload, reason, ..
+            } => {
                 if !policy.allows_restart() {
                     result
                         .skipped
@@ -197,7 +204,9 @@ pub async fn execute_orchestrator_actions(
                 match restart_workload_internal(state, state_path, workload).await {
                     Ok(()) => {
                         audit_autonomous(source, workload, reason);
-                        result.executed.push(format!("restarted {workload}: {reason}"));
+                        result
+                            .executed
+                            .push(format!("restarted {workload}: {reason}"));
                         crate::metrics::record_orchestrator_restart(workload, "auto");
                     }
                     Err(e) => {
@@ -208,14 +217,10 @@ pub async fn execute_orchestrator_actions(
                 }
             }
             OrchestratorAction::Alert { workload, message } => {
-                result
-                    .executed
-                    .push(format!("alert {workload}: {message}"));
+                result.executed.push(format!("alert {workload}: {message}"));
             }
             other => {
-                result
-                    .skipped
-                    .push(format!("{other} (no auto executor)"));
+                result.skipped.push(format!("{other} (no auto executor)"));
             }
         }
     }

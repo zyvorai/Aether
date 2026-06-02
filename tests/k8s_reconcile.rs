@@ -26,7 +26,10 @@ fn advanced_k8s_example_has_gateway_and_autoscaling_ancillaries() {
     let spec = load_example("workload-k8s-advanced.yaml");
     let k8s = spec.kubernetes.as_ref().expect("kubernetes block");
     assert!(k8s.gateway.as_ref().is_some_and(|g| g.provision_gateway));
-    assert!(k8s.vertical_pod_autoscaler.as_ref().is_some_and(|v| v.enabled));
+    assert!(k8s
+        .vertical_pod_autoscaler
+        .as_ref()
+        .is_some_and(|v| v.enabled));
     assert!(k8s.keda.as_ref().is_some_and(|k| k.enabled));
     assert!(k8s.cert_manager.as_ref().is_some_and(|c| c.enabled));
 }

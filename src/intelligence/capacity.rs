@@ -82,7 +82,9 @@ pub fn build_scale_suggestions(workloads: &[(Workload, WorkloadState)]) -> Capac
             }
         }
 
-        if pred.risk_level == "critical" && suggestions.iter().all(|s| s.workload != spec.metadata.name) {
+        if pred.risk_level == "critical"
+            && suggestions.iter().all(|s| s.workload != spec.metadata.name)
+        {
             let replicas = spec.scaling.as_ref().map(|s| s.min_replicas).unwrap_or(1);
             suggestions.push(ScaleSuggestion {
                 workload: spec.metadata.name.clone(),
@@ -115,7 +117,11 @@ pub fn execute_scale_suggestions(
     for suggestion in &report.suggestions {
         let action = format!(
             "{} {} {} → {} ({})",
-            suggestion.workload, suggestion.kind, suggestion.current, suggestion.suggested, suggestion.resource
+            suggestion.workload,
+            suggestion.kind,
+            suggestion.current,
+            suggestion.suggested,
+            suggestion.resource
         );
         if !suggestion.auto_safe && !policy.allows_restart() {
             skipped.push(format!("{action}: requires autonomy.healing auto"));

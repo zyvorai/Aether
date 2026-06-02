@@ -70,7 +70,7 @@ pub fn parse_workload_yaml(yaml: &str) -> Result<Workload> {
 fn parse_legacy_workload_yaml(yaml: &str) -> Result<Workload> {
     let legacy: LegacyWorkloadYaml =
         serde_yaml::from_str(yaml).context("legacy workload YAML parse error")?;
-  if legacy.name.trim().is_empty() {
+    if legacy.name.trim().is_empty() {
         anyhow::bail!("name is required");
     }
 

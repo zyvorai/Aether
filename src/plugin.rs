@@ -60,10 +60,7 @@ impl PluginRegistry {
             let entry = entry?;
             let path = entry.path();
 
-            let is_json = path
-                .extension()
-                .map(|ext| ext == "json")
-                .unwrap_or(false);
+            let is_json = path.extension().map(|ext| ext == "json").unwrap_or(false);
             if !is_json {
                 continue;
             }
@@ -74,11 +71,7 @@ impl PluginRegistry {
                     count += 1;
                 }
                 Err(e) => {
-                    tracing::warn!(
-                        "Skipping invalid plugin manifest {}: {}",
-                        path.display(),
-                        e
-                    );
+                    tracing::warn!("Skipping invalid plugin manifest {}: {}", path.display(), e);
                 }
             }
         }
@@ -119,67 +112,40 @@ impl PluginRegistry {
 #[serde(tag = "type")]
 pub enum PluginProtocol {
     // ── Requests ──────────────────────────────────────────────────────
-
     /// Ask the plugin to build an image from the given spec.
-    BuildRequest {
-        spec_json: String,
-    },
+    BuildRequest { spec_json: String },
     /// Ask the plugin to run a workload.
     RunRequest {
         image_json: String,
         spec_json: String,
     },
     /// Ask the plugin to stop a running instance.
-    StopRequest {
-        instance_json: String,
-    },
+    StopRequest { instance_json: String },
     /// Ask the plugin for the status of an instance.
-    StatusRequest {
-        instance_json: String,
-    },
+    StatusRequest { instance_json: String },
     /// Ask the plugin to delete an instance.
-    DeleteRequest {
-        instance_json: String,
-    },
+    DeleteRequest { instance_json: String },
     /// Ask the plugin to list all instances it manages.
     ListRequest,
 
     // ── Responses ─────────────────────────────────────────────────────
-
     /// Response to a `BuildRequest`.
-    BuildResponse {
-        image_json: String,
-    },
+    BuildResponse { image_json: String },
     /// Response to a `RunRequest`.
-    RunResponse {
-        instance_json: String,
-    },
+    RunResponse { instance_json: String },
     /// Response to a `StopRequest`.
-    StopResponse {
-        success: bool,
-    },
+    StopResponse { success: bool },
     /// Response to a `StatusRequest`.
-    StatusResponse {
-        status_json: String,
-    },
+    StatusResponse { status_json: String },
     /// Response to a `DeleteRequest`.
-    DeleteResponse {
-        success: bool,
-    },
+    DeleteResponse { success: bool },
     /// Response to a `ListRequest`.
-    ListResponse {
-        instances_json: String,
-    },
+    ListResponse { instances_json: String },
 
     /// Ask the plugin to stream logs for an instance.
-    LogsRequest {
-        instance_json: String,
-        follow: bool,
-    },
+    LogsRequest { instance_json: String, follow: bool },
     /// Response to a `LogsRequest`.
-    LogsResponse {
-        logs: String,
-    },
+    LogsResponse { logs: String },
 }
 
 // ─── Plugin Runtime (IPC-based Runtime trait implementation) ──────────
@@ -234,7 +200,9 @@ impl PluginRuntime {
             .stderr(std::process::Stdio::piped())
             .kill_on_drop(true)
             .spawn()
-            .map_err(|e| anyhow::anyhow!("Failed to spawn plugin '{}': {}", self.manifest.name, e))?;
+            .map_err(|e| {
+                anyhow::anyhow!("Failed to spawn plugin '{}': {}", self.manifest.name, e)
+            })?;
 
         if let Some(mut stdin) = child.stdin.take() {
             stdin.write_all(request_json.as_bytes()).await?;
@@ -330,7 +298,9 @@ impl PluginRuntime {
         if !self.manifest.capabilities.iter().any(|c| c == cap) {
             anyhow::bail!(
                 "Plugin '{}' does not support '{}' (capabilities: {})",
-                self.manifest.name, cap, self.manifest.capabilities.join(", ")
+                self.manifest.name,
+                cap,
+                self.manifest.capabilities.join(", ")
             );
         }
         Ok(())
@@ -342,11 +312,11 @@ impl crate::Runtime for PluginRuntime {
     async fn build(&self, spec: &crate::spec::Workload) -> crate::Result<crate::runtime::Image> {
         self.require_capability("build")?;
         let spec_json = serde_json::to_string(spec)?;
-        let response = self.ipc_call(PluginProtocol::BuildRequest { spec_json }).await?;
+        let response = self
+            .ipc_call(PluginProtocol::BuildRequest { spec_json })
+            .await?;
         match response {
-            PluginProtocol::BuildResponse { image_json } => {
-                Ok(serde_json::from_str(&image_json)?)
-            }
+            PluginProtocol::BuildResponse { image_json } => Ok(serde_json::from_str(&image_json)?),
             other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
         }
     }
@@ -359,7 +329,12 @@ impl crate::Runtime for PluginRuntime {
         self.require_capability("run")?;
         let image_json = serde_json::to_string(image)?;
         let spec_json = serde_json::to_string(spec)?;
-        let response = self.ipc_call(PluginProtocol::RunRequest { image_json, spec_json }).await?;
+        let response = self
+            .ipc_call(PluginProtocol::RunRequest {
+                image_json,
+                spec_json,
+            })
+            .await?;
         match response {
             PluginProtocol::RunResponse { instance_json } => {
                 Ok(serde_json::from_str(&instance_json)?)
@@ -371,19 +346,30 @@ impl crate::Runtime for PluginRuntime {
     async fn stop(&self, instance: &crate::runtime::Instance) -> crate::Result<()> {
         self.require_capability("stop")?;
         let instance_json = serde_json::to_string(instance)?;
-        let response = self.ipc_call(PluginProtocol::StopRequest { instance_json }).await?;
+        let response = self
+            .ipc_call(PluginProtocol::StopRequest { instance_json })
+            .await?;
         match response {
             PluginProtocol::StopResponse { success } => {
-                if success { Ok(()) } else { anyhow::bail!("Plugin stop returned failure") }
+                if success {
+                    Ok(())
+                } else {
+                    anyhow::bail!("Plugin stop returned failure")
+                }
             }
             other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
         }
     }
 
-    async fn status(&self, instance: &crate::runtime::Instance) -> crate::Result<crate::runtime::Status> {
+    async fn status(
+        &self,
+        instance: &crate::runtime::Instance,
+    ) -> crate::Result<crate::runtime::Status> {
         self.require_capability("status")?;
         let instance_json = serde_json::to_string(instance)?;
-        let response = self.ipc_call(PluginProtocol::StatusRequest { instance_json }).await?;
+        let response = self
+            .ipc_call(PluginProtocol::StatusRequest { instance_json })
+            .await?;
         match response {
             PluginProtocol::StatusResponse { status_json } => {
                 Ok(serde_json::from_str(&status_json)?)
@@ -395,25 +381,37 @@ impl crate::Runtime for PluginRuntime {
     async fn delete(&self, instance: &crate::runtime::Instance) -> crate::Result<()> {
         self.require_capability("delete")?;
         let instance_json = serde_json::to_string(instance)?;
-        let response = self.ipc_call(PluginProtocol::DeleteRequest { instance_json }).await?;
+        let response = self
+            .ipc_call(PluginProtocol::DeleteRequest { instance_json })
+            .await?;
         match response {
             PluginProtocol::DeleteResponse { success } => {
-                if success { Ok(()) } else { anyhow::bail!("Plugin delete returned failure") }
+                if success {
+                    Ok(())
+                } else {
+                    anyhow::bail!("Plugin delete returned failure")
+                }
             }
             other => anyhow::bail!("Unexpected response from plugin: {:?}", other),
         }
     }
 
-    async fn logs(&self, instance: &crate::runtime::Instance, follow: bool) -> crate::Result<String> {
+    async fn logs(
+        &self,
+        instance: &crate::runtime::Instance,
+        follow: bool,
+    ) -> crate::Result<String> {
         if !self.manifest.capabilities.iter().any(|c| c == "logs") {
             return Ok("Plugin does not support log streaming".to_string());
         }
 
         let instance_json = serde_json::to_string(instance)?;
-        let response = self.ipc_call(PluginProtocol::LogsRequest {
-            instance_json,
-            follow,
-        }).await?;
+        let response = self
+            .ipc_call(PluginProtocol::LogsRequest {
+                instance_json,
+                follow,
+            })
+            .await?;
 
         match response {
             PluginProtocol::LogsResponse { logs } => Ok(logs),
@@ -823,5 +821,4 @@ mod tests {
         let no_logs = ["build".to_string(), "run".to_string()];
         assert!(!no_logs.iter().any(|c| c == &cap));
     }
-
 }

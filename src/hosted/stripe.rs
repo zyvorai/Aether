@@ -52,11 +52,11 @@ fn price_id_for_plan(plan: &str) -> Result<String> {
     std::env::var(key).with_context(|| format!("{key} not set"))
 }
 
-pub async fn create_checkout_session(req: &StripeCheckoutRequest) -> Result<StripeCheckoutResponse> {
+pub async fn create_checkout_session(
+    req: &StripeCheckoutRequest,
+) -> Result<StripeCheckoutResponse> {
     let tenants = TenantStore::load();
-    let tenant = tenants
-        .get(&req.tenant_id)
-        .context("tenant not found")?;
+    let tenant = tenants.get(&req.tenant_id).context("tenant not found")?;
     if !tenant.active {
         bail!("tenant is inactive");
     }

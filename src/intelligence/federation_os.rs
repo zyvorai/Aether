@@ -232,7 +232,8 @@ pub async fn build_cluster_health_mesh() -> anyhow::Result<ClusterHealthMeshRepo
             edges.push(ClusterMeshEdge {
                 from: names[i].clone(),
                 to: names[j].clone(),
-                kind: if policy.clusters.contains(&names[i]) && policy.clusters.contains(&names[j]) {
+                kind: if policy.clusters.contains(&names[i]) && policy.clusters.contains(&names[j])
+                {
                     "federation-peer".into()
                 } else {
                     "discovered".into()
@@ -295,7 +296,10 @@ pub async fn build_unified_fabric(state_path: &Path) -> anyhow::Result<UnifiedFa
             label: agent.site.clone(),
             kind: "edge".into(),
             online: agent.online,
-            detail: agent.kube_context.clone().unwrap_or_else(|| "edge agent".into()),
+            detail: agent
+                .kube_context
+                .clone()
+                .unwrap_or_else(|| "edge agent".into()),
         });
         if let Some(ctx) = &agent.kube_context {
             if clusters.iter().any(|c| c.name == *ctx) {
@@ -345,11 +349,21 @@ pub struct VolumeReplicationStatusReport {
     pub entries: Vec<VolumeReplicationStatusEntry>,
 }
 
-pub fn build_volume_replication_status(state_path: &Path) -> anyhow::Result<VolumeReplicationStatusReport> {
+pub fn build_volume_replication_status(
+    state_path: &Path,
+) -> anyhow::Result<VolumeReplicationStatusReport> {
     let store = StateStore::load(state_path)?;
     let policy = federation_policies();
-    let source = policy.clusters.first().cloned().unwrap_or_else(|| "source".into());
-    let target = policy.clusters.get(1).cloned().unwrap_or_else(|| "target".into());
+    let source = policy
+        .clusters
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "source".into());
+    let target = policy
+        .clusters
+        .get(1)
+        .cloned()
+        .unwrap_or_else(|| "target".into());
 
     let mut entries = Vec::new();
     for ws in store.list() {
@@ -410,10 +424,20 @@ pub async fn build_migration_wave(state_path: &Path) -> anyhow::Result<Migration
         .clusters
         .first()
         .cloned()
-        .or_else(|| clusters.iter().find(|c| c.reachable).map(|c| c.name.clone()))
+        .or_else(|| {
+            clusters
+                .iter()
+                .find(|c| c.reachable)
+                .map(|c| c.name.clone())
+        })
         .unwrap_or_else(|| "primary".into());
 
-    let names: Vec<String> = store.list().iter().map(|ws| ws.name.clone()).take(10).collect();
+    let names: Vec<String> = store
+        .list()
+        .iter()
+        .map(|ws| ws.name.clone())
+        .take(10)
+        .collect();
     let mut specs = Vec::new();
     for name in &names {
         if let Some(ws) = store.get(name) {

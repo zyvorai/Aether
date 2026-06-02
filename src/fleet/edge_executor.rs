@@ -22,7 +22,9 @@ pub struct EdgeJobResult {
 
 pub async fn execute_edge_job(job: &EdgeJob) -> Result<String> {
     match job.action.as_str() {
-        "gitops_sync" => gitops_sync().await.map(|n| format!("gitops sync: {n} change(s)")),
+        "gitops_sync" => gitops_sync()
+            .await
+            .map(|n| format!("gitops sync: {n} change(s)")),
         "stop" => {
             let name = workload_from_payload(&job.payload)?;
             let cascade = job
@@ -185,7 +187,10 @@ fn cluster_action_from_payload(payload: &serde_json::Value) -> Result<ClusterAct
         kind,
         name,
         action,
-        replicas: payload.get("replicas").and_then(|v| v.as_i64()).map(|v| v as i32),
+        replicas: payload
+            .get("replicas")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32),
         api_version: payload
             .get("api_version")
             .and_then(|v| v.as_str())
@@ -241,10 +246,7 @@ async fn delete_workload(name: &str) -> Result<()> {
 async fn restart_managed_workload(name: &str) -> Result<()> {
     let state_path = StateStore::default_path();
     let mut state = StateStore::load(&state_path)?;
-    let ws = state
-        .get(name)
-        .cloned()
-        .context("workload not found")?;
+    let ws = state.get(name).cloned().context("workload not found")?;
     let rt = create_runtime(&ws.runtime).await?;
     rt.stop(&ws.instance).await?;
     let spec = Workload::from_file(&ws.spec_path)?;

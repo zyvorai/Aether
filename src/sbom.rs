@@ -27,7 +27,9 @@ pub fn generate_cyclonedx(binary_path: Option<&Path>) -> Result<Value> {
     let components = parse_cargo_lock_components(CARGO_LOCK)?;
     let aether_version = env!("CARGO_PKG_VERSION").to_string();
     let binary_sha256 = binary_path.and_then(hash_file);
-    let dashboard_sha256 = hash_file(&PathBuf::from("web/dashboard/dist/assets/aether-dashboard.js"));
+    let dashboard_sha256 = hash_file(&PathBuf::from(
+        "web/dashboard/dist/assets/aether-dashboard.js",
+    ));
 
     let mut metadata_component = json!({
         "type": "application",
@@ -133,9 +135,19 @@ fn parse_cargo_lock_components(lock: &str) -> Result<Vec<Value>> {
     for line in lock.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with("name = ") {
-            current_name = Some(trimmed.trim_start_matches("name = ").trim_matches('"').to_string());
+            current_name = Some(
+                trimmed
+                    .trim_start_matches("name = ")
+                    .trim_matches('"')
+                    .to_string(),
+            );
         } else if trimmed.starts_with("version = ") {
-            current_version = Some(trimmed.trim_start_matches("version = ").trim_matches('"').to_string());
+            current_version = Some(
+                trimmed
+                    .trim_start_matches("version = ")
+                    .trim_matches('"')
+                    .to_string(),
+            );
         } else if trimmed == "[[package]]" || trimmed.is_empty() {
             if let (Some(name), Some(version)) = (current_name.take(), current_version.take()) {
                 if name != "aether" {

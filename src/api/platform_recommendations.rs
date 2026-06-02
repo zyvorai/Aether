@@ -53,7 +53,9 @@ pub async fn collect(app_state: &AppState) -> Vec<PlatformRecommendation> {
             category: "high-availability".into(),
             severity: "info".into(),
             title: "Shared OIDC session cache".into(),
-            detail: "PostgreSQL backs workload state; OIDC sessions are still per-pod without Redis.".into(),
+            detail:
+                "PostgreSQL backs workload state; OIDC sessions are still per-pod without Redis."
+                    .into(),
             action: "Set AETHER_REDIS_URL for shared SSE/OIDC sessions across API replicas.".into(),
         });
     }
@@ -88,14 +90,29 @@ pub async fn collect(app_state: &AppState) -> Vec<PlatformRecommendation> {
         });
     }
 
-    let oidc_ready = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_OIDC_CLIENT_ID").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
+    let oidc_ready = std::env::var("AETHER_OIDC_ISSUER")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some()
+        && std::env::var("AETHER_OIDC_CLIENT_ID")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_OIDC_REDIRECT_URI")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_SESSION_SECRET")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some();
     let mutation_confirm = std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
         .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
-    let api_key_set = std::env::var("AETHER_API_KEY").ok().filter(|s| !s.is_empty()).is_some();
+    let api_key_set = std::env::var("AETHER_API_KEY")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some();
 
     if !oidc_ready && !mutation_confirm && !api_key_set {
         items.push(PlatformRecommendation {
@@ -109,14 +126,22 @@ pub async fn collect(app_state: &AppState) -> Vec<PlatformRecommendation> {
         });
     }
 
-    if std::env::var("AETHER_BACKUP_REMOTE_URL").ok().filter(|s| !s.is_empty()).is_none() {
+    if std::env::var("AETHER_BACKUP_REMOTE_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_none()
+    {
         items.push(PlatformRecommendation {
             id: "backup-remote".into(),
             category: "durability".into(),
             severity: "info".into(),
             title: "Off-host backup target".into(),
-            detail: "Backups are stored locally under ~/.aether unless a remote target is configured.".into(),
-            action: "Set AETHER_BACKUP_REMOTE_URL and schedule POST /api/backups for disaster recovery.".into(),
+            detail:
+                "Backups are stored locally under ~/.aether unless a remote target is configured."
+                    .into(),
+            action:
+                "Set AETHER_BACKUP_REMOTE_URL and schedule POST /api/backups for disaster recovery."
+                    .into(),
         });
     }
 
@@ -174,7 +199,11 @@ pub async fn collect(app_state: &AppState) -> Vec<PlatformRecommendation> {
         }
     }
 
-    if std::env::var("AETHER_PROMETHEUS_URL").ok().filter(|s| !s.is_empty()).is_none() {
+    if std::env::var("AETHER_PROMETHEUS_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_none()
+    {
         items.push(PlatformRecommendation {
             id: "prometheus-not-linked".into(),
             category: "observability".into(),

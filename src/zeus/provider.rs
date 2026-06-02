@@ -30,7 +30,11 @@ pub struct ToolCallRequest {
 
 #[async_trait]
 pub trait LlmProvider: Send + Sync {
-    async fn chat(&self, messages: &[ChatMessage], tools_json: &serde_json::Value) -> Result<LlmResponse>;
+    async fn chat(
+        &self,
+        messages: &[ChatMessage],
+        tools_json: &serde_json::Value,
+    ) -> Result<LlmResponse>;
 }
 
 pub fn provider_from_env() -> Box<dyn LlmProvider> {
@@ -42,7 +46,11 @@ pub struct RuleBasedProvider;
 
 #[async_trait]
 impl LlmProvider for RuleBasedProvider {
-    async fn chat(&self, messages: &[ChatMessage], _tools_json: &serde_json::Value) -> Result<LlmResponse> {
+    async fn chat(
+        &self,
+        messages: &[ChatMessage],
+        _tools_json: &serde_json::Value,
+    ) -> Result<LlmResponse> {
         let last = messages
             .iter()
             .rev()
@@ -50,21 +58,22 @@ impl LlmProvider for RuleBasedProvider {
             .map(|m| m.content.to_lowercase())
             .unwrap_or_default();
 
-        let (name, args) = if last.contains("health") || last.contains("unhealthy") || last.contains("why") {
-            ("explain_health", serde_json::json!({}))
-        } else if last.contains("workload") || last.contains("list") {
-            ("list_workloads", serde_json::json!({}))
-        } else if last.contains("drift") {
-            ("check_drift", serde_json::json!({}))
-        } else if last.contains("cluster") {
-            ("cluster_summary", serde_json::json!({}))
-        } else if last.contains("cost") {
-            ("cost_summary", serde_json::json!({}))
-        } else if last.contains("runtime") || last.contains("recommend") {
-            ("recommend_runtime", serde_json::json!({}))
-        } else {
-            ("context_snapshot", serde_json::json!({}))
-        };
+        let (name, args) =
+            if last.contains("health") || last.contains("unhealthy") || last.contains("why") {
+                ("explain_health", serde_json::json!({}))
+            } else if last.contains("workload") || last.contains("list") {
+                ("list_workloads", serde_json::json!({}))
+            } else if last.contains("drift") {
+                ("check_drift", serde_json::json!({}))
+            } else if last.contains("cluster") {
+                ("cluster_summary", serde_json::json!({}))
+            } else if last.contains("cost") {
+                ("cost_summary", serde_json::json!({}))
+            } else if last.contains("runtime") || last.contains("recommend") {
+                ("recommend_runtime", serde_json::json!({}))
+            } else {
+                ("context_snapshot", serde_json::json!({}))
+            };
 
         Ok(LlmResponse {
             content: String::new(),

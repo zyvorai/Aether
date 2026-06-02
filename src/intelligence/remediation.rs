@@ -44,7 +44,9 @@ pub async fn build_remediation_plan(store: &StateStore) -> RemediationPlan {
     let mut sources = Vec::new();
     let mut warnings = Vec::new();
 
-    let clusters = crate::kubecluster::list_clusters().await.unwrap_or_default();
+    let clusters = crate::kubecluster::list_clusters()
+        .await
+        .unwrap_or_default();
     let anomalies = load_placement_signals(&clusters).await;
     if anomalies.configured {
         sources.push("packetwolf_anomalies".into());
@@ -100,9 +102,7 @@ pub async fn build_remediation_plan(store: &StateStore) -> RemediationPlan {
     if actions.is_empty() {
         warnings.push("No remediation actions recommended — fleet appears healthy.".into());
     } else {
-        warnings.push(
-            "Only auto_safe actions execute without explicit operator approval.".into(),
-        );
+        warnings.push("Only auto_safe actions execute without explicit operator approval.".into());
     }
 
     RemediationPlan {

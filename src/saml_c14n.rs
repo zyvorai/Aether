@@ -7,7 +7,8 @@ use anyhow::{bail, Result};
 pub const EXC_C14N: &str = "http://www.w3.org/2001/10/xml-exc-c14n#";
 pub const EXC_C14N_COMMENTS: &str = "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";
 pub const INCLUSIVE_C14N: &str = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
-pub const INCLUSIVE_C14N_COMMENTS: &str = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments";
+pub const INCLUSIVE_C14N_COMMENTS: &str =
+    "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments";
 
 /// Canonicalize XML per the algorithm URI declared in SignedInfo / Transform.
 pub fn canonicalize(xml: &str, algorithm: &str) -> Result<Vec<u8>> {
@@ -47,7 +48,9 @@ pub fn apply_enveloped_signature_transform(xml: &str) -> String {
         out.replace_range(start..end, "");
     }
     while let Some(start) = out.find("<Signature") {
-        if out[start..].starts_with("<SignatureValue") || out[start..].starts_with("<SignatureMethod") {
+        if out[start..].starts_with("<SignatureValue")
+            || out[start..].starts_with("<SignatureMethod")
+        {
             break;
         }
         let Some(end) = out[start..].find("</Signature>") else {
@@ -211,7 +214,9 @@ fn sort_attributes_in_tags(xml: &str) -> String {
 
 fn extract_algorithm_attr(fragment: &str, element: &str) -> Option<String> {
     for marker in [format!("<{element}"), format!("<ds:{element}")] {
-        let Some(start) = fragment.find(&marker) else { continue };
+        let Some(start) = fragment.find(&marker) else {
+            continue;
+        };
         let slice = &fragment[start..];
         let gt = slice.find('>')?;
         let open = &slice[..gt];

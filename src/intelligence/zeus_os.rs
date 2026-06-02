@@ -4,10 +4,10 @@
 
 //! Zeus & LLM platform — Era G (phases 65–74).
 
-use crate::zeus::policy::{role_allows_tool, tool_risk, ToolRisk};
-use crate::zeus::tools::tools_openai_schema;
 use crate::intelligence::intent_os::{scan_intent_violations, IntentViolationsReport};
 use crate::rbac::Role;
+use crate::zeus::policy::{role_allows_tool, tool_risk, ToolRisk};
+use crate::zeus::tools::tools_openai_schema;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -349,7 +349,10 @@ pub async fn build_zeus_insights(state_path: &Path) -> anyhow::Result<ZeusInsigh
         ));
     }
     if !threats.threats.is_empty() {
-        actions.push(format!("Review {} security threat(s)", threats.threats.len()));
+        actions.push(format!(
+            "Review {} security threat(s)",
+            threats.threats.len()
+        ));
     }
     if savings > 0.0 {
         actions.push(format!("Save ${savings:.0}/mo via FinOps recommendations"));

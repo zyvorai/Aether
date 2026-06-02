@@ -12,11 +12,14 @@
 //! constants via the `ratatui_color()` helper.
 
 use colored::Colorize;
-use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color as TableColor, ContentArrangement, Table};
+use comfy_table::{
+    modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color as TableColor,
+    ContentArrangement, Table,
+};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use serde_json;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
-use serde_json;
 
 // ─── Output Mode Control ─────────────────────────────────────────────
 
@@ -91,7 +94,9 @@ pub const COLOR_MUTED: (u8, u8, u8) = (107, 114, 128);
 
 /// Per-runtime display metadata: (icon, name, color).
 /// Used by both CLI `runtime_display()` and TUI `runtime_badge()`.
-pub fn runtime_meta(runtime: &crate::runtime::RuntimeKind) -> (&'static str, &'static str, (u8, u8, u8)) {
+pub fn runtime_meta(
+    runtime: &crate::runtime::RuntimeKind,
+) -> (&'static str, &'static str, (u8, u8, u8)) {
     match runtime {
         crate::runtime::RuntimeKind::Podman => ("🐳", "Podman", (52, 152, 219)),
         crate::runtime::RuntimeKind::Docker => ("🐋", "Docker", (36, 130, 206)),
@@ -153,8 +158,7 @@ pub fn banner(title: &str, subtitle: &str) {
     println!();
     println!(
         "{}",
-        format!("╔{}╗", border)
-            .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+        format!("╔{}╗", border).truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
     );
     println!(
         "{}",
@@ -164,18 +168,19 @@ pub fn banner(title: &str, subtitle: &str) {
     );
     println!(
         "{}",
-        format!("║{}║", pad(subtitle))
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
+        format!("║{}║", pad(subtitle)).truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
     println!(
         "{}",
-        format!("║{}║", pad(&format!("v{}", env!("CARGO_PKG_VERSION"))))
-            .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+        format!("║{}║", pad(&format!("v{}", env!("CARGO_PKG_VERSION")))).truecolor(
+            COLOR_PRIMARY.0,
+            COLOR_PRIMARY.1,
+            COLOR_PRIMARY.2
+        )
     );
     println!(
         "{}",
-        format!("╚{}╝", border)
-            .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+        format!("╚{}╝", border).truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
     );
     println!();
 }
@@ -188,12 +193,16 @@ pub fn header(icon: &str, title: &str) {
         title
             .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
             .bold(),
-        format!("v{}", env!("CARGO_PKG_VERSION"))
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2),
+        format!("v{}", env!("CARGO_PKG_VERSION")).truecolor(
+            COLOR_MUTED.0,
+            COLOR_MUTED.1,
+            COLOR_MUTED.2
+        ),
     );
     println!(
         "{}",
-        "─".repeat(display_width(title) + 8)
+        "─"
+            .repeat(display_width(title) + 8)
             .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
 }
@@ -332,7 +341,8 @@ pub fn section(title: &str) {
     );
     println!(
         "{}",
-        "─".repeat(display_width(title))
+        "─"
+            .repeat(display_width(title))
             .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
 }
@@ -351,7 +361,8 @@ pub fn section_with_icon(icon: &str, title: &str) {
     let underline_len = display_width(icon) + 1 + display_width(title);
     println!(
         "{}",
-        "─".repeat(underline_len)
+        "─"
+            .repeat(underline_len)
             .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
 }
@@ -374,8 +385,7 @@ pub fn kv_tree(key: &str, value: &str, last: bool) {
     let branch = if last { "└─" } else { "├─" };
     println!(
         "{} {}: {}",
-        branch
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2),
+        branch.truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2),
         key.truecolor(COLOR_INFO.0, COLOR_INFO.1, COLOR_INFO.2),
         value
             .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
@@ -475,8 +485,7 @@ pub fn boxed(title: &str, content: &str) {
     let border = "─".repeat(max_width);
     println!(
         "{}",
-        format!("┌─{}─┐", border)
-            .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+        format!("┌─{}─┐", border).truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
     );
     let title_pad = max_width.saturating_sub(display_width(title));
     println!(
@@ -490,8 +499,7 @@ pub fn boxed(title: &str, content: &str) {
     );
     println!(
         "{}",
-        format!("├─{}─┤", border)
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
+        format!("├─{}─┤", border).truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
     for line in &lines {
         let pad = max_width.saturating_sub(display_width(line));
@@ -505,8 +513,7 @@ pub fn boxed(title: &str, content: &str) {
     }
     println!(
         "{}",
-        format!("└─{}─┘", border)
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
+        format!("└─{}─┘", border).truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
 }
 
@@ -609,8 +616,7 @@ fn summary_box(title: &str, items: &[(&str, String)], color: (u8, u8, u8), icon:
     );
     println!(
         "{}",
-        format!("├─{}─┤", border)
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
+        format!("├─{}─┤", border).truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
     for (key, value) in items {
         let line = format!("{:>width$}: {}", key, value, width = max_key);
@@ -625,8 +631,7 @@ fn summary_box(title: &str, items: &[(&str, String)], color: (u8, u8, u8), icon:
     }
     println!(
         "{}",
-        format!("└─{}─┘", border)
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
+        format!("└─{}─┘", border).truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2)
     );
 }
 
@@ -713,8 +718,7 @@ pub fn confirm(message: &str) -> bool {
         "?".truecolor(COLOR_WARNING.0, COLOR_WARNING.1, COLOR_WARNING.2)
             .bold(),
         message.truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2),
-        "[y/N]"
-            .truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2),
+        "[y/N]".truecolor(COLOR_MUTED.0, COLOR_MUTED.1, COLOR_MUTED.2),
     );
     let mut input = String::new();
     if std::io::stdin().read_line(&mut input).is_ok() {
@@ -818,8 +822,11 @@ pub fn select_runtime(options: &[(&str, &str, &str)]) -> Option<usize> {
 
     eprint!(
         "\n  {} ",
-        format!("Choice (1-{}, or Enter for auto):", options.len())
-            .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
+        format!("Choice (1-{}, or Enter for auto):", options.len()).truecolor(
+            COLOR_PRIMARY.0,
+            COLOR_PRIMARY.1,
+            COLOR_PRIMARY.2
+        )
     );
 
     let mut input = String::new();
@@ -846,8 +853,7 @@ pub fn step(current: usize, total: usize, title: &str) {
         format!("Step {}/{}", current, total)
             .truecolor(COLOR_PRIMARY.0, COLOR_PRIMARY.1, COLOR_PRIMARY.2)
             .bold(),
-        title
-            .truecolor(COLOR_INFO.0, COLOR_INFO.1, COLOR_INFO.2),
+        title.truecolor(COLOR_INFO.0, COLOR_INFO.1, COLOR_INFO.2),
     );
     // Progress dots
     let filled = "●".repeat(current);

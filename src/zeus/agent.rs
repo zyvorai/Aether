@@ -5,16 +5,16 @@
 //! Zeus agent loop.
 
 use crate::intelligence::zeus_os::{append_zeus_audit, ZeusAuditEntry};
+use crate::rbac::Role;
+use crate::state::StateStore;
+use crate::zeus::agents::agent_system_prompt;
 use crate::zeus::memory::write_session_memory;
 use crate::zeus::policy::{role_allows_execute, tool_risk};
 use crate::zeus::provider::{ChatMessage, LlmProvider};
 use crate::zeus::providers::{load_registry, provider_from_registry};
 use crate::zeus::routing::{resolve_provider_for_routing, route_message, RoutingDecision};
-use crate::zeus::agents::agent_system_prompt;
 use crate::zeus::session::{PendingAction, ZeusSession, ZeusSessionStore};
 use crate::zeus::tools::{execute_tool, tools_openai_schema, ToolContext};
-use crate::rbac::Role;
-use crate::state::StateStore;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -80,7 +80,11 @@ impl ZeusAgent {
         });
 
         if let Some(action_id) = confirm_action_id {
-            if let Some(idx) = session.pending_actions.iter().position(|a| a.id == action_id) {
+            if let Some(idx) = session
+                .pending_actions
+                .iter()
+                .position(|a| a.id == action_id)
+            {
                 let action = session.pending_actions.remove(idx);
                 if role_allows_execute(&ctx.role, true) {
                     let result = execute_tool(ctx, &action.tool, &action.arguments).await?;
@@ -211,7 +215,11 @@ impl ZeusAgent {
         let mut errors = Vec::new();
 
         for action_id in action_ids {
-            if let Some(idx) = session.pending_actions.iter().position(|a| a.id == *action_id) {
+            if let Some(idx) = session
+                .pending_actions
+                .iter()
+                .position(|a| a.id == *action_id)
+            {
                 let action = session.pending_actions.remove(idx);
                 if role_allows_execute(&ctx.role, true) {
                     match execute_tool(ctx, &action.tool, &action.arguments).await {
@@ -264,16 +272,26 @@ impl Default for ZeusAgent {
 fn summarize_tool_result(name: &str, val: &serde_json::Value) -> String {
     match name {
         "list_workloads" => {
-            let n = val.pointer("/workloads").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
+            let n = val
+                .pointer("/workloads")
+                .and_then(|v| v.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
             format!("Found {n} workload(s).")
         }
         "context_snapshot" => {
-            let n = val.get("workload_count").and_then(|v| v.as_u64()).unwrap_or(0);
+            let n = val
+                .get("workload_count")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
             format!("Platform snapshot: {n} workloads.")
         }
         "explain_health" => val.to_string(),
         "predictions" => {
-            let risk = val.get("fleet_risk_score").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let risk = val
+                .get("fleet_risk_score")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             format!("Fleet risk score: {:.2}", risk)
         }
         "cost_summary" => {
@@ -284,13 +302,20 @@ fn summarize_tool_result(name: &str, val: &serde_json::Value) -> String {
             format!("Potential savings: {:.1}%", pct)
         }
         "diagnose_workload" => {
-            let level = val.get("health_level").and_then(|v| v.as_str()).unwrap_or("unknown");
+            let level = val
+                .get("health_level")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
             let summary = val.get("summary").and_then(|v| v.as_str()).unwrap_or("");
             format!("Diagnosis: {level} — {summary}")
         }
         "ai_insights" => "Combined AI insights ready (predictions, threats, cost).".into(),
         "policy_violations" => {
-            let n = val.pointer("/violations").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
+            let n = val
+                .pointer("/violations")
+                .and_then(|v| v.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
             format!("Found {n} workload(s) with policy violations.")
         }
         "gitops_status" => val.to_string(),

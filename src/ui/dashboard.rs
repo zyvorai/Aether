@@ -6,13 +6,16 @@
 
 use super::{
     app::App,
-    components::{bordered_block, help_text, runtime_badge, status_badge, state_color, PRIMARY, MUTED, SUCCESS, ERROR, WARNING, INFO},
+    components::{
+        bordered_block, help_text, runtime_badge, state_color, status_badge, ERROR, INFO, MUTED,
+        PRIMARY, SUCCESS, WARNING,
+    },
 };
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, BorderType, List, ListItem, Paragraph},
+    widgets::{Block, BorderType, Borders, List, ListItem, Paragraph},
     Frame,
 };
 
@@ -27,8 +30,8 @@ pub fn render_dashboard(f: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Header
-            Constraint::Length(3),  // Stats bar
+            Constraint::Length(3), // Header
+            Constraint::Length(3), // Stats bar
             Constraint::Min(1),    // Main content (list + detail)
             Constraint::Length(3), // Footer
         ])
@@ -55,9 +58,7 @@ fn render_header(f: &mut Frame, area: Rect, _app: &App) {
         ),
         Span::styled(
             format!(" v{} ", env!("CARGO_PKG_VERSION")),
-            Style::default()
-                .fg(Color::Black)
-                .bg(MUTED),
+            Style::default().fg(Color::Black).bg(MUTED),
         ),
     ])];
 
@@ -93,16 +94,12 @@ fn render_stats_bar(f: &mut Frame, area: Rect, app: &App) {
         Span::styled(" Total: ", Style::default().fg(MUTED)),
         Span::styled(
             format!("{}", total),
-            Style::default()
-                .fg(PRIMARY)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
         ),
         Span::styled("  │  Ready: ", Style::default().fg(MUTED)),
         Span::styled(
             format!("{}", running),
-            Style::default()
-                .fg(SUCCESS)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(SUCCESS).add_modifier(Modifier::BOLD),
         ),
         Span::styled("  │  Failed: ", Style::default().fg(MUTED)),
         Span::styled(
@@ -167,10 +164,7 @@ fn render_main_content(f: &mut Frame, area: Rect, app: &App) {
     if has_detail_space {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(50),
-                Constraint::Percentage(50),
-            ])
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(area);
 
         render_workload_list(f, chunks[0], app);
@@ -185,9 +179,7 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
         Line::from(""),
         Line::from(Span::styled(
             "No workloads running",
-            Style::default()
-                .fg(MUTED)
-                .add_modifier(Modifier::ITALIC),
+            Style::default().fg(MUTED).add_modifier(Modifier::ITALIC),
         )),
         Line::from(""),
         Line::from(Span::styled(
@@ -244,12 +236,8 @@ fn render_workload_list(f: &mut Frame, area: Rect, app: &App) {
                     .get(2)
                     .cloned()
                     .unwrap_or_else(|| Span::raw("unknown"));
-                let mut status_spans = vec![
-                    Span::raw("     "),
-                    badge_icon,
-                    Span::raw(" "),
-                    badge_text,
-                ];
+                let mut status_spans =
+                    vec![Span::raw("     "), badge_icon, Span::raw(" "), badge_text];
 
                 if status.restart_count > 0 {
                     status_spans.push(Span::styled(
@@ -295,70 +283,57 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
 
     let ws = &selected.state;
     let mut lines: Vec<Line> = vec![
-    // Name
-    Line::from(vec![
-        Span::styled("  Name:     ", Style::default().fg(INFO)),
-        Span::styled(
-            ws.name.clone(),
-            Style::default()
-                .fg(PRIMARY)
-                .add_modifier(Modifier::BOLD),
-        ),
-    ]),
-
-    // Runtime
-    Line::from(vec![
-        Span::styled("  Runtime:  ", Style::default().fg(INFO)),
-        runtime_badge(&ws.runtime),
-    ]),
-
-    // Instance ID
-    Line::from(vec![
-        Span::styled("  Instance: ", Style::default().fg(INFO)),
-        Span::styled(
-            ws.instance.id.chars().take(12).collect::<String>(),
-            Style::default().fg(Color::White),
-        ),
-    ]),
-
-    // Image
-    Line::from(vec![
-        Span::styled("  Image:    ", Style::default().fg(INFO)),
-        Span::styled(
-            ws.instance.image.clone(),
-            Style::default().fg(MUTED),
-        ),
-    ]),
-
-    // Created
-    Line::from(vec![
-        Span::styled("  Created:  ", Style::default().fg(INFO)),
-        Span::styled(
-            ws.created_at.chars().take(19).collect::<String>(),
-            Style::default().fg(MUTED),
-        ),
-    ]),
-
-    // Spec path
-    Line::from(vec![
-        Span::styled("  Spec:     ", Style::default().fg(INFO)),
-        Span::styled(
-            ws.spec_path.display().to_string(),
-            Style::default().fg(MUTED),
-        ),
-    ]),
-
-    Line::from(""),
+        // Name
+        Line::from(vec![
+            Span::styled("  Name:     ", Style::default().fg(INFO)),
+            Span::styled(
+                ws.name.clone(),
+                Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        // Runtime
+        Line::from(vec![
+            Span::styled("  Runtime:  ", Style::default().fg(INFO)),
+            runtime_badge(&ws.runtime),
+        ]),
+        // Instance ID
+        Line::from(vec![
+            Span::styled("  Instance: ", Style::default().fg(INFO)),
+            Span::styled(
+                ws.instance.id.chars().take(12).collect::<String>(),
+                Style::default().fg(Color::White),
+            ),
+        ]),
+        // Image
+        Line::from(vec![
+            Span::styled("  Image:    ", Style::default().fg(INFO)),
+            Span::styled(ws.instance.image.clone(), Style::default().fg(MUTED)),
+        ]),
+        // Created
+        Line::from(vec![
+            Span::styled("  Created:  ", Style::default().fg(INFO)),
+            Span::styled(
+                ws.created_at.chars().take(19).collect::<String>(),
+                Style::default().fg(MUTED),
+            ),
+        ]),
+        // Spec path
+        Line::from(vec![
+            Span::styled("  Spec:     ", Style::default().fg(INFO)),
+            Span::styled(
+                ws.spec_path.display().to_string(),
+                Style::default().fg(MUTED),
+            ),
+        ]),
+        Line::from(""),
     ];
 
     // Status details
     if let Some(ref status) = selected.status {
-        lines.push(Line::from(vec![
-            Span::styled(
-                "  ─── Status ───",
-                Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
-            ),
-        ]));
+        lines.push(Line::from(vec![Span::styled(
+            "  ─── Status ───",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        )]));
 
         lines.push(Line::from(vec![
             Span::styled("  State:    ", Style::default().fg(INFO)),
@@ -383,9 +358,7 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
                 Span::styled("  Restarts: ", Style::default().fg(INFO)),
                 Span::styled(
                     format!("{}", status.restart_count),
-                    Style::default()
-                        .fg(ERROR)
-                        .add_modifier(Modifier::BOLD),
+                    Style::default().fg(ERROR).add_modifier(Modifier::BOLD),
                 ),
             ]));
         }
@@ -400,31 +373,35 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
         // Resource requirements from spec (if loadable)
         if let Ok(spec) = crate::spec::Workload::from_file(&ws.spec_path) {
             lines.push(Line::from(""));
-            lines.push(Line::from(vec![
-                Span::styled(
-                    "  ─── Resources ───",
-                    Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
-                ),
-            ]));
+            lines.push(Line::from(vec![Span::styled(
+                "  ─── Resources ───",
+                Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+            )]));
             lines.push(Line::from(vec![
                 Span::styled("  CPU:      ", Style::default().fg(INFO)),
                 Span::styled(
                     spec.requirements.cpu.clone(),
-                    Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
                 ),
             ]));
             lines.push(Line::from(vec![
                 Span::styled("  Memory:   ", Style::default().fg(INFO)),
                 Span::styled(
                     spec.requirements.memory.clone(),
-                    Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
                 ),
             ]));
             lines.push(Line::from(vec![
                 Span::styled("  Storage:  ", Style::default().fg(INFO)),
                 Span::styled(
                     spec.requirements.storage.clone(),
-                    Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
                 ),
             ]));
             if let Some(ref gpu) = spec.requirements.gpu {
@@ -443,9 +420,11 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
         let health_pct: usize = match status.state {
             crate::runtime::InstanceState::Running if status.ready => {
                 // Deduct 10% per restart, floor at 50%
-                100usize.saturating_sub(status.restart_count as usize * 10).max(50)
+                100usize
+                    .saturating_sub(status.restart_count as usize * 10)
+                    .max(50)
             }
-            crate::runtime::InstanceState::Running => 40,  // running but not ready
+            crate::runtime::InstanceState::Running => 40, // running but not ready
             crate::runtime::InstanceState::Pending => 20,
             crate::runtime::InstanceState::Failed => 0,
             _ => 10,
@@ -453,7 +432,13 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
         let bar_width: usize = 20;
         let filled = bar_width * health_pct / 100;
         let empty = bar_width - filled;
-        let bar_color = if health_pct >= 80 { SUCCESS } else if health_pct >= 40 { WARNING } else { ERROR };
+        let bar_color = if health_pct >= 80 {
+            SUCCESS
+        } else if health_pct >= 40 {
+            WARNING
+        } else {
+            ERROR
+        };
         lines.push(Line::from(vec![
             Span::styled("  Health:   ", Style::default().fg(INFO)),
             Span::styled("█".repeat(filled), Style::default().fg(bar_color)),
@@ -482,20 +467,32 @@ fn render_detail_panel(f: &mut Frame, area: Rect, app: &App) {
 fn render_footer(f: &mut Frame, app: &App, area: Rect) {
     let content = if app.search_active {
         Line::from(vec![
-            Span::styled(" Search: ", Style::default().fg(WARNING).add_modifier(Modifier::BOLD)),
-            Span::styled(app.search_filter.clone(), Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                " Search: ",
+                Style::default().fg(WARNING).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                app.search_filter.clone(),
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::styled("▌", Style::default().fg(WARNING)),
-            Span::styled("  [Enter] confirm  [Esc] cancel", Style::default().fg(MUTED)),
+            Span::styled(
+                "  [Enter] confirm  [Esc] cancel",
+                Style::default().fg(MUTED),
+            ),
         ])
     } else if !app.search_filter.is_empty() {
         Line::from(vec![
-            Span::styled(format!(" Filter: {} ", app.search_filter), Style::default().fg(WARNING)),
+            Span::styled(
+                format!(" Filter: {} ", app.search_filter),
+                Style::default().fg(WARNING),
+            ),
             Span::styled("│ [Esc] clear  ", Style::default().fg(MUTED)),
         ])
     } else {
-        let mut spans = vec![
-            Span::styled("[/] search  ", Style::default().fg(MUTED)),
-        ];
+        let mut spans = vec![Span::styled("[/] search  ", Style::default().fg(MUTED))];
         spans.extend(help_text().spans);
         Line::from(spans)
     };

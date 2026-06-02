@@ -91,7 +91,10 @@ pub fn is_aether_managed_policy(name: &str) -> bool {
     MANAGED_CNP_NAMES.contains(&name) || MANAGED_CCNP_NAMES.contains(&name)
 }
 
-pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Result<CiliumStatusResponse> {
+pub async fn cilium_status(
+    cluster: Option<&str>,
+    namespace: Option<&str>,
+) -> Result<CiliumStatusResponse> {
     let cluster = super::resolve_reachable_cluster(cluster).await?;
     let client = super::client_for_cluster(&cluster).await?;
     let namespace = namespace
@@ -142,7 +145,8 @@ pub async fn cilium_status(cluster: Option<&str>, namespace: Option<&str>) -> Re
     let metrics_server = metrics_server_available(&cluster).await?;
     let cilium_daemonset_ready = cilium_daemonset_ready(&client).await.unwrap_or(false);
     let connectivity_check = read_connectivity_check(&client, &namespace).await;
-    let (last_checked_at, connectivity_detail) = read_connectivity_metadata(&client, &namespace).await;
+    let (last_checked_at, connectivity_detail) =
+        read_connectivity_metadata(&client, &namespace).await;
 
     Ok(CiliumStatusResponse {
         cluster,
@@ -218,15 +222,15 @@ async fn cilium_daemonset_ready(client: &Client) -> Result<bool> {
     }
 }
 
-async fn read_connectivity_metadata(client: &Client, namespace: &str) -> (Option<String>, Option<String>) {
+async fn read_connectivity_metadata(
+    client: &Client,
+    namespace: &str,
+) -> (Option<String>, Option<String>) {
     let api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace);
     match api.get("aether-cilium-connectivity").await {
         Ok(cm) => {
             let data = cm.data.unwrap_or_default();
-            (
-                data.get("checked_at").cloned(),
-                data.get("detail").cloned(),
-            )
+            (data.get("checked_at").cloned(), data.get("detail").cloned())
         }
         Err(kube::Error::Api(e)) if e.code == 404 => (None, None),
         Err(_) => (None, None),
@@ -346,8 +350,15 @@ pub async fn discover_hubble_ui(cluster: Option<&str>) -> Result<HubbleDiscovery
             if let Some(spec) = svc.spec {
                 if let Some(t) = spec.type_ {
                     if t == "LoadBalancer" {
-                        if let Some(ingress) = svc.status.and_then(|s| s.load_balancer).and_then(|lb| lb.ingress) {
-                            if let Some(host) = ingress.first().and_then(|i| i.hostname.clone().or(i.ip.clone())) {
+                        if let Some(ingress) = svc
+                            .status
+                            .and_then(|s| s.load_balancer)
+                            .and_then(|lb| lb.ingress)
+                        {
+                            if let Some(host) = ingress
+                                .first()
+                                .and_then(|i| i.hostname.clone().or(i.ip.clone()))
+                            {
                                 let port = spec
                                     .ports
                                     .as_ref()

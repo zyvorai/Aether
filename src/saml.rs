@@ -90,7 +90,8 @@ impl SamlRuntime {
             .ok()
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| acs_url.trim_end_matches('/').to_string());
-        let default_role = parse_role_env(std::env::var("AETHER_SAML_DEFAULT_ROLE").ok().as_deref());
+        let default_role =
+            parse_role_env(std::env::var("AETHER_SAML_DEFAULT_ROLE").ok().as_deref());
         let role_mapping = parse_saml_role_mapping_from_env()?;
         let idp_cert_pem = std::env::var("AETHER_SAML_IDP_CERT")
             .ok()
@@ -147,7 +148,8 @@ impl SamlRuntime {
                 },
             )
             .await?;
-        let mut login_url = url::Url::parse(&self.idp_sso_url).context("invalid AETHER_SAML_IDP_SSO_URL")?;
+        let mut login_url =
+            url::Url::parse(&self.idp_sso_url).context("invalid AETHER_SAML_IDP_SSO_URL")?;
         login_url
             .query_pairs_mut()
             .append_pair("SAMLRequest", &saml_request)
@@ -166,9 +168,8 @@ impl SamlRuntime {
             crate::saml_verify::verify_response_signature(&xml, cert)
                 .context("SAML signature verification failed")?;
         }
-        let in_response_to = extract_xml_attr(&xml, "InResponseTo").or_else(|| {
-            extract_between(&xml, "InResponseTo=\"", "\"")
-        });
+        let in_response_to = extract_xml_attr(&xml, "InResponseTo")
+            .or_else(|| extract_between(&xml, "InResponseTo=\"", "\""));
         if let Some(ref id) = in_response_to {
             let pending = self.cache.take_saml_pending(id).await?;
             if pending.is_none() {
@@ -324,15 +325,11 @@ fn extract_attribute_values(xml: &str, names: &[&str]) -> Vec<String> {
         while let Some(idx) = xml[search_from..].find(&needle) {
             let start = search_from + idx;
             let slice = &xml[start..];
-            if let Some(val) = extract_between(slice, "<saml:AttributeValue", "</saml:AttributeValue>")
-                .or_else(|| extract_between(slice, "<AttributeValue", "</AttributeValue>"))
+            if let Some(val) =
+                extract_between(slice, "<saml:AttributeValue", "</saml:AttributeValue>")
+                    .or_else(|| extract_between(slice, "<AttributeValue", "</AttributeValue>"))
             {
-                let cleaned = val
-                    .rsplit('>')
-                    .next()
-                    .unwrap_or(&val)
-                    .trim()
-                    .to_string();
+                let cleaned = val.rsplit('>').next().unwrap_or(&val).trim().to_string();
                 if !cleaned.is_empty() {
                     out.push(cleaned);
                 }
@@ -375,14 +372,20 @@ fn parse_role_str(s: &str) -> Option<Role> {
 }
 
 fn parse_saml_role_mapping_from_env() -> anyhow::Result<Option<SamlRoleMapping>> {
-    let raw = match std::env::var("AETHER_SAML_ROLE_MAP").ok().filter(|s| !s.is_empty()) {
+    let raw = match std::env::var("AETHER_SAML_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         Some(v) => v,
         None => return Ok(None),
     };
     let mut rules = Vec::new();
     for segment in raw.split(';').map(str::trim).filter(|s| !s.is_empty()) {
         let (role_s, groups_s) = segment.split_once('=').ok_or_else(|| {
-            anyhow::anyhow!("invalid AETHER_SAML_ROLE_MAP segment (expected role=group,group): {}", segment)
+            anyhow::anyhow!(
+                "invalid AETHER_SAML_ROLE_MAP segment (expected role=group,group): {}",
+                segment
+            )
         })?;
         let role = parse_role_str(role_s.trim())
             .ok_or_else(|| anyhow::anyhow!("unknown role in AETHER_SAML_ROLE_MAP: {}", role_s))?;
@@ -464,8 +467,14 @@ mod tests {
           </Assertion>
         </Response>"#;
         assert_eq!(extract_name_id(xml).as_deref(), Some("user@example.com"));
-        assert_eq!(extract_attribute(xml, &["email"]).as_deref(), Some("user@example.com"));
-        assert_eq!(extract_attribute_values(xml, &["groups"]), vec!["admins".to_string()]);
+        assert_eq!(
+            extract_attribute(xml, &["email"]).as_deref(),
+            Some("user@example.com")
+        );
+        assert_eq!(
+            extract_attribute_values(xml, &["groups"]),
+            vec!["admins".to_string()]
+        );
     }
 
     #[test]

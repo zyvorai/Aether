@@ -312,9 +312,7 @@ workloads:
 
     #[test]
     fn test_resolve_order_single_workload() {
-        let spec = make_compose(vec![
-            ("solo", make_workload("solo.yaml", vec![])),
-        ]);
+        let spec = make_compose(vec![("solo", make_workload("solo.yaml", vec![]))]);
         let order = resolve_order(&spec).unwrap();
         assert_eq!(order, vec!["solo"]);
     }
@@ -362,9 +360,7 @@ workloads:
 
     #[test]
     fn test_validate_missing_dependency() {
-        let spec = make_compose(vec![
-            ("api", make_workload("api.yaml", vec!["database"])),
-        ]);
+        let spec = make_compose(vec![("api", make_workload("api.yaml", vec!["database"]))]);
         let err = validate(&spec).unwrap_err();
         assert!(
             err.to_string().contains("database"),

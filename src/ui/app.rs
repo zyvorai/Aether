@@ -62,13 +62,8 @@ impl App {
     }
 
     pub async fn refresh_workloads(&mut self) -> anyhow::Result<()> {
-        let workload_states: Vec<WorkloadState> = self
-            .state
-            .state_store
-            .list()
-            .into_iter()
-            .cloned()
-            .collect();
+        let workload_states: Vec<WorkloadState> =
+            self.state.state_store.list().into_iter().cloned().collect();
 
         // Group workloads by runtime to reuse clients
         let mut by_runtime: std::collections::HashMap<RuntimeKind, Vec<WorkloadState>> =
@@ -107,7 +102,11 @@ impl App {
     }
 
     pub async fn load_logs(&mut self, workload_name: &str) -> anyhow::Result<()> {
-        if let Some(workload) = self.workloads.iter().find(|w| w.state.name == workload_name) {
+        if let Some(workload) = self
+            .workloads
+            .iter()
+            .find(|w| w.state.name == workload_name)
+        {
             let rt = runtime::create_runtime(&workload.state.runtime).await?;
             let logs = rt.logs(&workload.state.instance, false).await?;
             self.logs_buffer = logs.lines().map(|s| s.to_string()).collect();
@@ -136,8 +135,7 @@ impl App {
 
     pub fn selected_workload(&self) -> Option<&WorkloadInfo> {
         let filtered = self.filtered_workloads();
-        filtered.get(self.selected_index)
-            .copied()
+        filtered.get(self.selected_index).copied()
     }
 
     /// Return workloads matching the current search filter

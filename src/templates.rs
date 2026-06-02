@@ -7,11 +7,11 @@
 //! Pre-built templates for common workload patterns with customizable
 //! parameters. Generates production-ready workload specs.
 
+use crate::output;
 use crate::spec::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::output;
 
 /// Template identifier
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -110,57 +110,91 @@ pub fn list_templates() -> Vec<TemplateInfo> {
         TemplateInfo {
             kind: TemplateKind::WebApp,
             name: "web-app".to_string(),
-            description: "Production web application with ingress, TLS, auto-scaling, and health probes".to_string(),
-            tags: vec!["web".to_string(), "http".to_string(), "production".to_string()],
+            description:
+                "Production web application with ingress, TLS, auto-scaling, and health probes"
+                    .to_string(),
+            tags: vec![
+                "web".to_string(),
+                "http".to_string(),
+                "production".to_string(),
+            ],
             default_runtime: RuntimePreference::Kube,
         },
         TemplateInfo {
             kind: TemplateKind::RestApi,
             name: "rest-api".to_string(),
             description: "REST API service with health checks and horizontal scaling".to_string(),
-            tags: vec!["api".to_string(), "rest".to_string(), "microservice".to_string()],
+            tags: vec![
+                "api".to_string(),
+                "rest".to_string(),
+                "microservice".to_string(),
+            ],
             default_runtime: RuntimePreference::Kube,
         },
         TemplateInfo {
             kind: TemplateKind::Database,
             name: "database".to_string(),
-            description: "Stateful database with persistent storage and backup configuration".to_string(),
-            tags: vec!["database".to_string(), "stateful".to_string(), "persistence".to_string()],
+            description: "Stateful database with persistent storage and backup configuration"
+                .to_string(),
+            tags: vec![
+                "database".to_string(),
+                "stateful".to_string(),
+                "persistence".to_string(),
+            ],
             default_runtime: RuntimePreference::Kube,
         },
         TemplateInfo {
             kind: TemplateKind::Cache,
             name: "cache".to_string(),
             description: "In-memory cache (Redis-style) with eviction and monitoring".to_string(),
-            tags: vec!["cache".to_string(), "redis".to_string(), "memory".to_string()],
+            tags: vec![
+                "cache".to_string(),
+                "redis".to_string(),
+                "memory".to_string(),
+            ],
             default_runtime: RuntimePreference::Kube,
         },
         TemplateInfo {
             kind: TemplateKind::Worker,
             name: "worker".to_string(),
             description: "Background worker for queue processing with retry logic".to_string(),
-            tags: vec!["worker".to_string(), "queue".to_string(), "async".to_string()],
+            tags: vec![
+                "worker".to_string(),
+                "queue".to_string(),
+                "async".to_string(),
+            ],
             default_runtime: RuntimePreference::Kube,
         },
         TemplateInfo {
             kind: TemplateKind::CronJob,
             name: "cron-job".to_string(),
-            description: "Scheduled CronJob with configurable cron timing and retry policy".to_string(),
-            tags: vec!["cron".to_string(), "batch".to_string(), "scheduled".to_string()],
+            description: "Scheduled CronJob with configurable cron timing and retry policy"
+                .to_string(),
+            tags: vec![
+                "cron".to_string(),
+                "batch".to_string(),
+                "scheduled".to_string(),
+            ],
             default_runtime: RuntimePreference::Kube,
         },
         TemplateInfo {
             kind: TemplateKind::MlTraining,
             name: "ml-training".to_string(),
-            description: "GPU-accelerated ML training job with large resource allocation".to_string(),
+            description: "GPU-accelerated ML training job with large resource allocation"
+                .to_string(),
             tags: vec!["ml".to_string(), "gpu".to_string(), "training".to_string()],
             default_runtime: RuntimePreference::Kubevirt,
         },
         TemplateInfo {
             kind: TemplateKind::Microservice,
             name: "microservice".to_string(),
-            description: "Lightweight microservice with service discovery and health probes".to_string(),
-            tags: vec!["microservice".to_string(), "lightweight".to_string(), "service-mesh".to_string()],
+            description: "Lightweight microservice with service discovery and health probes"
+                .to_string(),
+            tags: vec![
+                "microservice".to_string(),
+                "lightweight".to_string(),
+                "service-mesh".to_string(),
+            ],
             default_runtime: RuntimePreference::Kube,
         },
     ]
@@ -180,7 +214,11 @@ pub fn generate(kind: &TemplateKind, params: &TemplateParams) -> Workload {
     }
 }
 
-fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<RuntimeType>) -> Workload {
+fn base_workload(
+    params: &TemplateParams,
+    pref: RuntimePreference,
+    allow: Vec<RuntimeType>,
+) -> Workload {
     Workload {
         api_version: "aether/v1".to_string(),
         kind: "Workload".to_string(),
@@ -221,13 +259,17 @@ fn base_workload(params: &TemplateParams, pref: RuntimePreference, allow: Vec<Ru
         autonomy: None,
         confidential: None,
         schedule: None,
-    kubernetes: None,
+        kubernetes: None,
     }
 }
 
 fn generate_web_app(params: &TemplateParams) -> Workload {
     let port = params.port.unwrap_or(80);
-    let mut w = base_workload(params, RuntimePreference::Kube, vec![RuntimeType::Kube, RuntimeType::Container]);
+    let mut w = base_workload(
+        params,
+        RuntimePreference::Kube,
+        vec![RuntimeType::Kube, RuntimeType::Container],
+    );
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "2".to_string());
     w.requirements.memory = params.memory.clone().unwrap_or_else(|| "2Gi".to_string());
@@ -269,7 +311,8 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
         tracing::warn!(
             "No host specified for web-app template '{}'; using fallback '{}'.  \
              Set a proper hostname via the --host flag or template params.",
-            params.name, fallback
+            params.name,
+            fallback
         );
         fallback
     });
@@ -305,7 +348,11 @@ fn generate_web_app(params: &TemplateParams) -> Workload {
 
 fn generate_rest_api(params: &TemplateParams) -> Workload {
     let port = params.port.unwrap_or(8080);
-    let mut w = base_workload(params, RuntimePreference::Kube, vec![RuntimeType::Kube, RuntimeType::Container]);
+    let mut w = base_workload(
+        params,
+        RuntimePreference::Kube,
+        vec![RuntimeType::Kube, RuntimeType::Container],
+    );
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "1".to_string());
     w.requirements.memory = params.memory.clone().unwrap_or_else(|| "1Gi".to_string());
@@ -397,7 +444,7 @@ fn generate_database(params: &TemplateParams) -> Workload {
             initial_delay_seconds: 15,
             period_seconds: 5,
         }),
-    startup: None,
+        startup: None,
     });
 
     w
@@ -405,7 +452,11 @@ fn generate_database(params: &TemplateParams) -> Workload {
 
 fn generate_cache(params: &TemplateParams) -> Workload {
     let port = params.port.unwrap_or(6379);
-    let mut w = base_workload(params, RuntimePreference::Kube, vec![RuntimeType::Kube, RuntimeType::Container]);
+    let mut w = base_workload(
+        params,
+        RuntimePreference::Kube,
+        vec![RuntimeType::Kube, RuntimeType::Container],
+    );
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "1".to_string());
     w.requirements.memory = params.memory.clone().unwrap_or_else(|| "2Gi".to_string());
@@ -434,14 +485,18 @@ fn generate_cache(params: &TemplateParams) -> Workload {
             initial_delay_seconds: 5,
             period_seconds: 5,
         }),
-    startup: None,
+        startup: None,
     });
 
     w
 }
 
 fn generate_worker(params: &TemplateParams) -> Workload {
-    let mut w = base_workload(params, RuntimePreference::Kube, vec![RuntimeType::Kube, RuntimeType::Container]);
+    let mut w = base_workload(
+        params,
+        RuntimePreference::Kube,
+        vec![RuntimeType::Kube, RuntimeType::Container],
+    );
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "1".to_string());
     w.requirements.memory = params.memory.clone().unwrap_or_else(|| "1Gi".to_string());
@@ -499,7 +554,10 @@ fn generate_ml_training(params: &TemplateParams) -> Workload {
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "8".to_string());
     w.requirements.memory = params.memory.clone().unwrap_or_else(|| "32Gi".to_string());
-    w.requirements.storage = params.storage.clone().unwrap_or_else(|| "200Gi".to_string());
+    w.requirements.storage = params
+        .storage
+        .clone()
+        .unwrap_or_else(|| "200Gi".to_string());
     w.requirements.gpu = Some(GpuRequirements {
         count: 1,
         vendor: "nvidia".to_string(),
@@ -512,7 +570,11 @@ fn generate_ml_training(params: &TemplateParams) -> Workload {
 
 fn generate_microservice(params: &TemplateParams) -> Workload {
     let port = params.port.unwrap_or(8080);
-    let mut w = base_workload(params, RuntimePreference::Kube, vec![RuntimeType::Kube, RuntimeType::Container]);
+    let mut w = base_workload(
+        params,
+        RuntimePreference::Kube,
+        vec![RuntimeType::Kube, RuntimeType::Container],
+    );
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "500m".to_string());
     w.requirements.memory = params.memory.clone().unwrap_or_else(|| "512Mi".to_string());
@@ -559,12 +621,14 @@ pub fn format_template_list() -> String {
 
     let rows: Vec<Vec<String>> = list_templates()
         .iter()
-        .map(|t| vec![
-            t.name.clone(),
-            t.description.clone(),
-            t.tags.join(", "),
-            format!("{:?}", t.default_runtime),
-        ])
+        .map(|t| {
+            vec![
+                t.name.clone(),
+                t.description.clone(),
+                t.tags.join(", "),
+                format!("{:?}", t.default_runtime),
+            ]
+        })
         .collect();
 
     out.push_str(&format!(
@@ -647,16 +711,46 @@ mod tests {
 
     #[test]
     fn test_template_kind_from_str() {
-        assert_eq!("web-app".parse::<TemplateKind>().unwrap(), TemplateKind::WebApp);
-        assert_eq!("rest-api".parse::<TemplateKind>().unwrap(), TemplateKind::RestApi);
-        assert_eq!("api".parse::<TemplateKind>().unwrap(), TemplateKind::RestApi);
-        assert_eq!("database".parse::<TemplateKind>().unwrap(), TemplateKind::Database);
-        assert_eq!("db".parse::<TemplateKind>().unwrap(), TemplateKind::Database);
-        assert_eq!("cache".parse::<TemplateKind>().unwrap(), TemplateKind::Cache);
-        assert_eq!("worker".parse::<TemplateKind>().unwrap(), TemplateKind::Worker);
-        assert_eq!("cron-job".parse::<TemplateKind>().unwrap(), TemplateKind::CronJob);
-        assert_eq!("ml-training".parse::<TemplateKind>().unwrap(), TemplateKind::MlTraining);
-        assert_eq!("microservice".parse::<TemplateKind>().unwrap(), TemplateKind::Microservice);
+        assert_eq!(
+            "web-app".parse::<TemplateKind>().unwrap(),
+            TemplateKind::WebApp
+        );
+        assert_eq!(
+            "rest-api".parse::<TemplateKind>().unwrap(),
+            TemplateKind::RestApi
+        );
+        assert_eq!(
+            "api".parse::<TemplateKind>().unwrap(),
+            TemplateKind::RestApi
+        );
+        assert_eq!(
+            "database".parse::<TemplateKind>().unwrap(),
+            TemplateKind::Database
+        );
+        assert_eq!(
+            "db".parse::<TemplateKind>().unwrap(),
+            TemplateKind::Database
+        );
+        assert_eq!(
+            "cache".parse::<TemplateKind>().unwrap(),
+            TemplateKind::Cache
+        );
+        assert_eq!(
+            "worker".parse::<TemplateKind>().unwrap(),
+            TemplateKind::Worker
+        );
+        assert_eq!(
+            "cron-job".parse::<TemplateKind>().unwrap(),
+            TemplateKind::CronJob
+        );
+        assert_eq!(
+            "ml-training".parse::<TemplateKind>().unwrap(),
+            TemplateKind::MlTraining
+        );
+        assert_eq!(
+            "microservice".parse::<TemplateKind>().unwrap(),
+            TemplateKind::Microservice
+        );
         assert!("nonexistent".parse::<TemplateKind>().is_err());
     }
 }

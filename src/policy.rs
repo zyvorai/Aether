@@ -114,20 +114,35 @@ pub struct ResourceQuota {
 }
 
 impl ResourceQuota {
-    pub fn remaining_cpu(&self) -> f64 { self.max_cpu - self.used_cpu }
-    pub fn remaining_memory_gi(&self) -> f64 { self.max_memory_gi - self.used_memory_gi }
-    pub fn remaining_storage_gi(&self) -> f64 { self.max_storage_gi - self.used_storage_gi }
+    pub fn remaining_cpu(&self) -> f64 {
+        self.max_cpu - self.used_cpu
+    }
+    pub fn remaining_memory_gi(&self) -> f64 {
+        self.max_memory_gi - self.used_memory_gi
+    }
+    pub fn remaining_storage_gi(&self) -> f64 {
+        self.max_storage_gi - self.used_storage_gi
+    }
 
     pub fn would_exceed(&self, cpu: f64, memory_gi: f64, storage_gi: f64) -> Vec<String> {
         let mut violations = Vec::new();
         if self.used_cpu + cpu > self.max_cpu {
-            violations.push(format!("CPU quota exceeded: {:.1}/{:.1} cores used, requesting {:.1}", self.used_cpu, self.max_cpu, cpu));
+            violations.push(format!(
+                "CPU quota exceeded: {:.1}/{:.1} cores used, requesting {:.1}",
+                self.used_cpu, self.max_cpu, cpu
+            ));
         }
         if self.used_memory_gi + memory_gi > self.max_memory_gi {
-            violations.push(format!("Memory quota exceeded: {:.1}/{:.1} Gi used, requesting {:.1}", self.used_memory_gi, self.max_memory_gi, memory_gi));
+            violations.push(format!(
+                "Memory quota exceeded: {:.1}/{:.1} Gi used, requesting {:.1}",
+                self.used_memory_gi, self.max_memory_gi, memory_gi
+            ));
         }
         if self.used_storage_gi + storage_gi > self.max_storage_gi {
-            violations.push(format!("Storage quota exceeded: {:.1}/{:.1} Gi used, requesting {:.1}", self.used_storage_gi, self.max_storage_gi, storage_gi));
+            violations.push(format!(
+                "Storage quota exceeded: {:.1}/{:.1} Gi used, requesting {:.1}",
+                self.used_storage_gi, self.max_storage_gi, storage_gi
+            ));
         }
         violations
     }
@@ -140,20 +155,43 @@ pub struct QuotaStore {
 }
 
 impl QuotaStore {
-    pub fn new() -> Self { Self { quotas: std::collections::HashMap::new() } }
+    pub fn new() -> Self {
+        Self {
+            quotas: std::collections::HashMap::new(),
+        }
+    }
 
-    pub fn set_quota(&mut self, project: &str, max_cpu: f64, max_memory_gi: f64, max_storage_gi: f64) {
-        let quota = self.quotas.entry(project.to_string()).or_insert_with(|| ResourceQuota {
-            project: project.to_string(),
-            max_cpu, max_memory_gi, max_storage_gi,
-            used_cpu: 0.0, used_memory_gi: 0.0, used_storage_gi: 0.0,
-        });
+    pub fn set_quota(
+        &mut self,
+        project: &str,
+        max_cpu: f64,
+        max_memory_gi: f64,
+        max_storage_gi: f64,
+    ) {
+        let quota = self
+            .quotas
+            .entry(project.to_string())
+            .or_insert_with(|| ResourceQuota {
+                project: project.to_string(),
+                max_cpu,
+                max_memory_gi,
+                max_storage_gi,
+                used_cpu: 0.0,
+                used_memory_gi: 0.0,
+                used_storage_gi: 0.0,
+            });
         quota.max_cpu = max_cpu;
         quota.max_memory_gi = max_memory_gi;
         quota.max_storage_gi = max_storage_gi;
     }
 
-    pub fn check_quota(&self, project: &str, cpu: f64, memory_gi: f64, storage_gi: f64) -> Vec<String> {
+    pub fn check_quota(
+        &self,
+        project: &str,
+        cpu: f64,
+        memory_gi: f64,
+        storage_gi: f64,
+    ) -> Vec<String> {
         match self.quotas.get(project) {
             Some(quota) => quota.would_exceed(cpu, memory_gi, storage_gi),
             None => vec![], // No quota set = no limit
@@ -255,19 +293,28 @@ impl PolicyEngine {
             RuleCheck::MaxCpu(max) => {
                 let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
                 if cpu > *max {
-                    violate(format!("CPU {:.1} cores exceeds maximum {:.1}", cpu, max), "requirements.cpu");
+                    violate(
+                        format!("CPU {:.1} cores exceeds maximum {:.1}", cpu, max),
+                        "requirements.cpu",
+                    );
                 }
             }
             RuleCheck::MaxMemoryGi(max) => {
                 let mem = crate::resources::parse_memory_gi(&spec.requirements.memory);
                 if mem > *max {
-                    violate(format!("Memory {:.1}Gi exceeds maximum {:.1}Gi", mem, max), "requirements.memory");
+                    violate(
+                        format!("Memory {:.1}Gi exceeds maximum {:.1}Gi", mem, max),
+                        "requirements.memory",
+                    );
                 }
             }
             RuleCheck::MaxStorageGi(max) => {
                 let storage = crate::resources::parse_memory_gi(&spec.requirements.storage);
                 if storage > *max {
-                    violate(format!("Storage {:.1}Gi exceeds maximum {:.1}Gi", storage, max), "requirements.storage");
+                    violate(
+                        format!("Storage {:.1}Gi exceeds maximum {:.1}Gi", storage, max),
+                        "requirements.storage",
+                    );
                 }
             }
             RuleCheck::RequireHealthProbes => {
@@ -290,10 +337,7 @@ impl PolicyEngine {
                             "Name '{}' does not start with '{}'",
                             spec.metadata.name, prefix
                         ),
-                        suggestion: format!(
-                            "Rename to '{}-{}'",
-                            prefix, spec.metadata.name
-                        ),
+                        suggestion: format!("Rename to '{}-{}'", prefix, spec.metadata.name),
                     });
                 }
             }
@@ -306,7 +350,10 @@ impl PolicyEngine {
                 let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
                 let mem = crate::resources::parse_memory_gi(&spec.requirements.memory);
                 if cpu < f64::EPSILON || mem < f64::EPSILON {
-                    violate("CPU and memory limits must be set".to_string(), "requirements");
+                    violate(
+                        "CPU and memory limits must be set".to_string(),
+                        "requirements",
+                    );
                 }
             }
             RuleCheck::DisallowRuntime(runtime_name) => {
@@ -320,27 +367,38 @@ impl PolicyEngine {
                         RuntimeKind::Metal3 => RuntimeType::Metal,
                     };
                     if spec.runtime.allow.contains(&rt) {
-                        violate(format!("Runtime '{}' is not allowed by policy", runtime_name), "runtime.allow");
+                        violate(
+                            format!("Runtime '{}' is not allowed by policy", runtime_name),
+                            "runtime.allow",
+                        );
                     }
                 }
             }
             RuleCheck::MinReplicas(min) => {
                 if let Some(scaling) = &spec.scaling {
                     if scaling.enabled && scaling.min_replicas < *min {
-                        violate(format!("Minimum replicas {} is below required {}", scaling.min_replicas, min), "scaling.minReplicas");
+                        violate(
+                            format!(
+                                "Minimum replicas {} is below required {}",
+                                scaling.min_replicas, min
+                            ),
+                            "scaling.minReplicas",
+                        );
                     }
                 }
             }
             RuleCheck::MaxGpu(max) => {
                 if let Some(gpu) = &spec.requirements.gpu {
                     if gpu.count > *max {
-                        violate(format!("GPU count {} exceeds maximum {}", gpu.count, max), "requirements.gpu.count");
+                        violate(
+                            format!("GPU count {} exceeds maximum {}", gpu.count, max),
+                            "requirements.gpu.count",
+                        );
                     }
                 }
             }
         }
     }
-
 }
 
 /// Default production policies
@@ -494,8 +552,18 @@ pub fn format_policy_report(result: &PolicyResult) -> String {
     let mut output = String::new();
 
     output.push_str(&output::property_section(&[
-        ("Policy Evaluation", if result.passed { "PASSED".to_string() } else { "FAILED".to_string() }),
-        ("Policies evaluated", format!("{}", result.policies_evaluated)),
+        (
+            "Policy Evaluation",
+            if result.passed {
+                "PASSED".to_string()
+            } else {
+                "FAILED".to_string()
+            },
+        ),
+        (
+            "Policies evaluated",
+            format!("{}", result.policies_evaluated),
+        ),
     ]));
 
     if !result.violations.is_empty() {
@@ -513,7 +581,10 @@ pub fn format_policy_report(result: &PolicyResult) -> String {
     if !result.warnings.is_empty() {
         output.push_str(&format!("Warnings ({}):\n", result.warnings.len()));
         for w in &result.warnings {
-            output.push_str(&output::tree_bullet("⚠", &format!("[{}] {}", w.policy, w.message)));
+            output.push_str(&output::tree_bullet(
+                "⚠",
+                &format!("[{}] {}", w.policy, w.message),
+            ));
             output.push_str(&format!("    Suggestion: {}\n", w.suggestion));
         }
     }
@@ -548,7 +619,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -573,7 +644,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 

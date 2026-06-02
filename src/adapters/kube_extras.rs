@@ -83,13 +83,7 @@ pub(crate) fn build_role(spec: &Workload, namespace: &str) -> Option<Role> {
             labels: Some(workload_labels(spec)),
             ..Default::default()
         },
-        rules: Some(
-            sa_spec
-                .rules
-                .iter()
-                .map(rbac_rule_from_spec)
-                .collect(),
-        ),
+        rules: Some(sa_spec.rules.iter().map(rbac_rule_from_spec).collect()),
     })
 }
 
@@ -137,10 +131,7 @@ pub(crate) fn build_role_binding(spec: &Workload, namespace: &str) -> Option<Rol
     })
 }
 
-pub(crate) fn build_docker_registry_secret(
-    namespace: &str,
-    spec: &Workload,
-) -> Option<Secret> {
+pub(crate) fn build_docker_registry_secret(namespace: &str, spec: &Workload) -> Option<Secret> {
     let reg = spec.kubernetes.as_ref()?.docker_registry_secret.as_ref()?;
     Some(build_docker_config_secret(namespace, spec, reg))
 }
@@ -260,10 +251,17 @@ pub(crate) fn service_monitor_api_resource() -> kube::api::ApiResource {
     }
 }
 
-fn quantity_map(values: &std::collections::HashMap<String, String>) -> BTreeMap<String, k8s_openapi::apimachinery::pkg::api::resource::Quantity> {
+fn quantity_map(
+    values: &std::collections::HashMap<String, String>,
+) -> BTreeMap<String, k8s_openapi::apimachinery::pkg::api::resource::Quantity> {
     values
         .iter()
-        .map(|(k, v)| (k.clone(), k8s_openapi::apimachinery::pkg::api::resource::Quantity(v.clone())))
+        .map(|(k, v)| {
+            (
+                k.clone(),
+                k8s_openapi::apimachinery::pkg::api::resource::Quantity(v.clone()),
+            )
+        })
         .collect()
 }
 

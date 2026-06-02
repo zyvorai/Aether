@@ -5,7 +5,6 @@
 //! API handler functions
 
 use super::types::*;
-use anyhow::Context;
 use crate::config::Config;
 use crate::engine::Engine;
 use crate::kubecluster::ClusterLogsRequest;
@@ -13,21 +12,22 @@ use crate::runtime::{self, RuntimeKind};
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use crate::{backup, cost, Runtime};
+use anyhow::Context;
 
+use axum::http::header;
 use axum::{
+    body::Body,
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         Form, Path, Query, RawQuery, State as AxumState,
     },
-    body::Body,
     http::HeaderMap,
     http::HeaderValue,
     http::StatusCode,
     http::{Method, Uri},
     response::{Html, IntoResponse, Json, Response},
 };
-use axum::http::header;
-use futures::{SinkExt, stream::StreamExt};
+use futures::{stream::StreamExt, SinkExt};
 use serde::Deserialize;
 use serde_json::json;
 use std::path::PathBuf;
@@ -39,7 +39,12 @@ use tokio::{
     time::{sleep, Duration},
 };
 
-fn clamp_page(limit: Option<usize>, offset: Option<usize>, default_limit: usize, max_limit: usize) -> (usize, usize) {
+fn clamp_page(
+    limit: Option<usize>,
+    offset: Option<usize>,
+    default_limit: usize,
+    max_limit: usize,
+) -> (usize, usize) {
     let lim = limit.unwrap_or(default_limit).min(max_limit).max(1);
     let off = offset.unwrap_or(0).min(100_000);
     (lim, off)
@@ -105,25 +110,42 @@ fn parse_action_result_from_str(s: &str) -> crate::audit::ActionResult {
 /// Validate a workload name from API input.
 /// Accepts only DNS-1123 compatible names: lowercase alphanumeric, hyphens, dots,
 /// up to 253 characters. Rejects empty names, path traversal, and special characters.
-fn validate_api_name<T: serde::Serialize>(name: &str) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
+fn validate_api_name<T: serde::Serialize>(
+    name: &str,
+) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
     if name.is_empty() || name.len() > 253 {
-        return Err(err_bad_request(format!("Invalid workload name: '{}' (must be 1-253 characters)", name)));
+        return Err(err_bad_request(format!(
+            "Invalid workload name: '{}' (must be 1-253 characters)",
+            name
+        )));
     }
     // Only allow lowercase alphanumeric, hyphens, and dots (DNS-1123 compatible)
-    let valid = name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '.');
-    if !valid || name.starts_with('-') || name.starts_with('.') || name.ends_with('-') || name.ends_with('.') {
+    let valid = name
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '.');
+    if !valid
+        || name.starts_with('-')
+        || name.starts_with('.')
+        || name.ends_with('-')
+        || name.ends_with('.')
+    {
         return Err(err_bad_request(format!(
-            "Invalid workload name: '{}'. Must match [a-z0-9][a-z0-9.-]*[a-z0-9]", name
+            "Invalid workload name: '{}'. Must match [a-z0-9][a-z0-9.-]*[a-z0-9]",
+            name
         )));
     }
     Ok(())
 }
 
 /// Validate that a spec_path does not contain path traversal sequences or absolute paths.
-fn validate_spec_path<T: serde::Serialize>(path: &std::path::Path) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
+fn validate_spec_path<T: serde::Serialize>(
+    path: &std::path::Path,
+) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
     let path_str = path.to_string_lossy();
     if path_str.contains("..") {
-        return Err(err_bad_request("spec_path contains path traversal sequence"));
+        return Err(err_bad_request(
+            "spec_path contains path traversal sequence",
+        ));
     }
     if path.is_absolute() {
         return Err(err_bad_request("spec_path must be a relative path"));
@@ -132,9 +154,12 @@ fn validate_spec_path<T: serde::Serialize>(path: &std::path::Path) -> Result<(),
 }
 
 /// Load a workload spec from a validated path, or return an HTTP error.
-fn load_spec_safe<T: serde::Serialize>(path: &PathBuf) -> Result<Workload, (StatusCode, Json<ApiResponse<T>>)> {
+fn load_spec_safe<T: serde::Serialize>(
+    path: &PathBuf,
+) -> Result<Workload, (StatusCode, Json<ApiResponse<T>>)> {
     validate_spec_path(path)?;
-    Workload::from_file(path).map_err(|e| err_internal(format!("Failed to load workload spec: {}", e)))
+    Workload::from_file(path)
+        .map_err(|e| err_internal(format!("Failed to load workload spec: {}", e)))
 }
 
 fn parse_workload_payload<T: serde::Serialize>(
@@ -155,7 +180,9 @@ fn parse_workload_payload<T: serde::Serialize>(
             .map_err(|e| err_bad_request(format!("Invalid YAML: {}", e)));
     }
 
-    Err(err_bad_request("Request body must be a workload object, { spec: ... }, or { yaml: ... }"))
+    Err(err_bad_request(
+        "Request body must be a workload object, { spec: ... }, or { yaml: ... }",
+    ))
 }
 
 fn parse_create_workload_payload<T: serde::Serialize>(
@@ -202,7 +229,9 @@ pub(crate) async fn lookup_workload<T: serde::Serialize>(
 async fn make_runtime<T: serde::Serialize>(
     kind: &RuntimeKind,
 ) -> Result<Box<dyn Runtime>, (StatusCode, Json<ApiResponse<T>>)> {
-    runtime::create_runtime(kind).await.map_err(|e| err_internal(e))
+    runtime::create_runtime(kind)
+        .await
+        .map_err(|e| err_internal(e))
 }
 
 /// Emit a server-sent event for real-time dashboard updates.
@@ -223,7 +252,9 @@ fn created_json<T: serde::Serialize>(data: T) -> (StatusCode, Json<ApiResponse<T
 }
 
 /// Shorthand for an internal-server-error JSON response.
-pub(crate) fn err_internal<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
+pub(crate) fn err_internal<T: serde::Serialize>(
+    e: impl std::fmt::Display,
+) -> (StatusCode, Json<ApiResponse<T>>) {
     (
         StatusCode::INTERNAL_SERVER_ERROR,
         Json(ApiResponse::error(e.to_string())),
@@ -231,7 +262,9 @@ pub(crate) fn err_internal<T: serde::Serialize>(e: impl std::fmt::Display) -> (S
 }
 
 /// Shorthand for a bad-request JSON response.
-pub(crate) fn err_bad_request<T: serde::Serialize>(e: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<T>>) {
+pub(crate) fn err_bad_request<T: serde::Serialize>(
+    e: impl std::fmt::Display,
+) -> (StatusCode, Json<ApiResponse<T>>) {
     (
         StatusCode::BAD_REQUEST,
         Json(ApiResponse::error(e.to_string())),
@@ -239,19 +272,17 @@ pub(crate) fn err_bad_request<T: serde::Serialize>(e: impl std::fmt::Display) ->
 }
 
 /// Shorthand for a not-found JSON response.
-pub(crate) fn err_not_found<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
-    (
-        StatusCode::NOT_FOUND,
-        Json(ApiResponse::error(msg.into())),
-    )
+pub(crate) fn err_not_found<T: serde::Serialize>(
+    msg: impl Into<String>,
+) -> (StatusCode, Json<ApiResponse<T>>) {
+    (StatusCode::NOT_FOUND, Json(ApiResponse::error(msg.into())))
 }
 
 /// Shorthand for a forbidden JSON response.
-pub(crate) fn err_forbidden<T: serde::Serialize>(msg: impl Into<String>) -> (StatusCode, Json<ApiResponse<T>>) {
-    (
-        StatusCode::FORBIDDEN,
-        Json(ApiResponse::error(msg.into())),
-    )
+pub(crate) fn err_forbidden<T: serde::Serialize>(
+    msg: impl Into<String>,
+) -> (StatusCode, Json<ApiResponse<T>>) {
+    (StatusCode::FORBIDDEN, Json(ApiResponse::error(msg.into())))
 }
 
 /// Shorthand for a service-unavailable JSON response.
@@ -353,10 +384,8 @@ fn build_kubectl_command(context: &str) -> Command {
     command
 }
 
-async fn read_child_stream_to_channel<T>(
-    stream: T,
-    tx: mpsc::UnboundedSender<String>,
-) where
+async fn read_child_stream_to_channel<T>(stream: T, tx: mpsc::UnboundedSender<String>)
+where
     T: tokio::io::AsyncRead + Unpin + Send + 'static,
 {
     let mut reader = BufReader::new(stream);
@@ -459,7 +488,8 @@ pub(crate) async fn serve_dashboard_spa_fallback(method: Method, uri: Uri) -> im
             (header::PRAGMA, "no-cache"),
         ],
         Html(DASHBOARD_HTML),
-    ).into_response()
+    )
+        .into_response()
 }
 
 /// GET /health - Health check endpoint
@@ -477,7 +507,9 @@ pub(crate) async fn api_auth_me(
     headers: HeaderMap,
 ) -> impl IntoResponse {
     let token = extract_bearer_token(&headers);
-    let legacy_key = std::env::var("AETHER_API_KEY").ok().filter(|value| !value.is_empty());
+    let legacy_key = std::env::var("AETHER_API_KEY")
+        .ok()
+        .filter(|value| !value.is_empty());
 
     {
         let rbac_store = app_state.rbac.read().await;
@@ -563,7 +595,9 @@ pub(crate) async fn api_oidc_callback(
 }
 
 /// GET /api/auth/oidc/logout — clear OIDC session cookie and redirect to `/`.
-pub(crate) async fn api_oidc_logout(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
+pub(crate) async fn api_oidc_logout(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
     let mut res = axum::response::Redirect::to("/").into_response();
     if app_state.oidc.is_some() {
         res.headers_mut().insert(
@@ -625,7 +659,9 @@ pub(crate) async fn api_saml_acs(
 }
 
 /// GET /api/auth/saml/logout — clear SAML session cookie and redirect to `/`.
-pub(crate) async fn api_saml_logout(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
+pub(crate) async fn api_saml_logout(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
     let mut res = axum::response::Redirect::to("/").into_response();
     if app_state.saml.is_some() {
         res.headers_mut().insert(
@@ -637,7 +673,9 @@ pub(crate) async fn api_saml_logout(AxumState(app_state): AxumState<AppState>) -
 }
 
 /// GET /api/system/ready — combined readiness (Postgres workload state + Redis OIDC cache when configured).
-pub(crate) async fn api_system_ready(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
+pub(crate) async fn api_system_ready(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
     let ha_redis = app_state.shared_cache.uses_redis();
     let redis_ok = app_state.shared_cache.redis_ping_ok().await;
     let postgres_required = app_state.workload_state_pg.is_some();
@@ -716,7 +754,10 @@ pub(crate) async fn list_workloads(
             if !seen.insert(dedup) {
                 continue;
             }
-            let full_name = format!("{}/{}/{}", workload.cluster, workload.namespace, workload.name);
+            let full_name = format!(
+                "{}/{}/{}",
+                workload.cluster, workload.namespace, workload.name
+            );
             let runtime = if workload.kind == "VirtualMachineInstance" {
                 "KubeVirt".to_string()
             } else {
@@ -776,7 +817,9 @@ async fn deploy_workload_spec(
     app_state: &AppState,
     request: CreateWorkloadRequest,
 ) -> Result<String, (StatusCode, Json<ApiResponse<String>>)> {
-    if let Some(resp) = opa_enforce_workload::<String>(&request.spec, &request.spec.metadata.name).await {
+    if let Some(resp) =
+        opa_enforce_workload::<String>(&request.spec, &request.spec.metadata.name).await
+    {
         return Err(resp);
     }
 
@@ -795,7 +838,12 @@ async fn deploy_workload_spec(
 
     let name = request.spec.metadata.name.clone();
 
-    if request.spec.confidential.as_ref().is_some_and(|c| c.enabled) {
+    if request
+        .spec
+        .confidential
+        .as_ref()
+        .is_some_and(|c| c.enabled)
+    {
         crate::ragnarok::image::deploy_image_gate(
             &request.spec,
             &crate::ragnarok::image::ImageCatalog::load(
@@ -807,18 +855,23 @@ async fn deploy_workload_spec(
             .map_err(err_bad_request)?;
         crate::ragnarok::sovereign::deploy_sovereign_gate(&request.spec)
             .map_err(err_bad_request)?;
-        crate::ragnarok::kata::deploy_kata_gate(&request.spec)
-            .map_err(err_bad_request)?;
+        crate::ragnarok::kata::deploy_kata_gate(&request.spec).map_err(err_bad_request)?;
     }
 
     let runtime = make_runtime::<String>(&runtime_kind).await?;
     let image = runtime.build(&request.spec).await.map_err(err_internal)?;
-    let instance = runtime.run(&image, &request.spec).await.map_err(err_internal)?;
+    let instance = runtime
+        .run(&image, &request.spec)
+        .await
+        .map_err(err_internal)?;
 
-    if request.spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-        if let Err(e) =
-            crate::ragnarok::attestation_gate_for_workload(&request.spec, &name).await
-        {
+    if request
+        .spec
+        .confidential
+        .as_ref()
+        .is_some_and(|c| c.enabled)
+    {
+        if let Err(e) = crate::ragnarok::attestation_gate_for_workload(&request.spec, &name).await {
             return Err(err_bad_request(e));
         }
         let broker = crate::ragnarok::secrets::SecretBroker::new(
@@ -839,7 +892,12 @@ async fn deploy_workload_spec(
     let mut state = app_state.state.write().await;
     state.upsert(
         name.clone(),
-        WorkloadState::new(name.clone(), runtime_kind, instance, PathBuf::from("api_created")),
+        WorkloadState::new(
+            name.clone(),
+            runtime_kind,
+            instance,
+            PathBuf::from("api_created"),
+        ),
     );
 
     if let Err(e) = persist_workload_api(app_state, &state).await {
@@ -964,15 +1022,11 @@ pub(crate) async fn start_workload(
     };
     let image = match runtime.build(&spec).await {
         Ok(img) => img,
-        Err(e) => {
-            return err_internal::<String>(e)
-        }
+        Err(e) => return err_internal::<String>(e),
     };
     let instance = match runtime.run(&image, &spec).await {
         Ok(inst) => inst,
-        Err(e) => {
-            return err_internal::<String>(e)
-        }
+        Err(e) => return err_internal::<String>(e),
     };
 
     // Re-check workload still exists before updating state (guard against concurrent delete)
@@ -1009,10 +1063,13 @@ pub(crate) async fn start_workload(
         return err_internal::<String>(e);
     }
 
-    emit_sse(&app_state, &ServerEvent::WorkloadChanged {
-        name: name.clone(),
-        action: "started".to_string(),
-    });
+    emit_sse(
+        &app_state,
+        &ServerEvent::WorkloadChanged {
+            name: name.clone(),
+            action: "started".to_string(),
+        },
+    );
 
     (
         StatusCode::OK,
@@ -1064,10 +1121,13 @@ pub(crate) async fn stop_workload(
 
     match rt.stop(&workload.instance).await {
         Ok(_) => {
-            emit_sse(&app_state, &ServerEvent::WorkloadChanged {
-                name: name.clone(),
-                action: "stopped".to_string(),
-            });
+            emit_sse(
+                &app_state,
+                &ServerEvent::WorkloadChanged {
+                    name: name.clone(),
+                    action: "stopped".to_string(),
+                },
+            );
 
             (
                 StatusCode::OK,
@@ -1109,7 +1169,9 @@ pub(crate) async fn update_workload(
     };
 
     let mut spec_path = workload_state.spec_path.clone();
-    if spec_path.as_path() == std::path::Path::new("api_created") || Workload::from_file(&spec_path).is_err() {
+    if spec_path.as_path() == std::path::Path::new("api_created")
+        || Workload::from_file(&spec_path).is_err()
+    {
         spec_path = workload_spec_file(&name);
         if let Some(parent) = spec_path.parent() {
             if let Err(e) = std::fs::create_dir_all(parent) {
@@ -1163,10 +1225,13 @@ pub(crate) async fn update_workload(
         return err_internal::<String>(e);
     }
 
-    emit_sse(&app_state, &ServerEvent::WorkloadChanged {
-        name: name.clone(),
-        action: "updated".to_string(),
-    });
+    emit_sse(
+        &app_state,
+        &ServerEvent::WorkloadChanged {
+            name: name.clone(),
+            action: "updated".to_string(),
+        },
+    );
 
     record_audit_event(
         crate::audit::AuditAction::ConfigChange,
@@ -1188,11 +1253,15 @@ pub(crate) async fn restart_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let stop_resp = stop_workload(AxumState(app_state.clone()), Path(name.clone())).await.into_response();
+    let stop_resp = stop_workload(AxumState(app_state.clone()), Path(name.clone()))
+        .await
+        .into_response();
     if !stop_resp.status().is_success() {
         return stop_resp;
     }
-    start_workload(AxumState(app_state), Path(name)).await.into_response()
+    start_workload(AxumState(app_state), Path(name))
+        .await
+        .into_response()
 }
 
 /// POST /api/cost - Estimate costs for a workload
@@ -1232,10 +1301,7 @@ pub(crate) async fn api_cost_chargeback(
             .map(|ws| (ws.name.clone(), ws.spec_path.clone()))
             .collect()
     };
-    let refs: Vec<(&str, &PathBuf)> = rows
-        .iter()
-        .map(|(n, p)| (n.as_str(), p))
-        .collect();
+    let refs: Vec<(&str, &PathBuf)> = rows.iter().map(|(n, p)| (n.as_str(), p)).collect();
     match cost::chargeback_report(&refs, provider) {
         Ok(report) => ok_json(report),
         Err(e) => err_internal::<cost::ChargebackReport>(e),
@@ -1380,13 +1446,12 @@ pub(crate) async fn ai_profile(
 
     let value = match serde_json::to_value(profile) {
         Ok(v) => v,
-        Err(e) => return err_internal::<serde_json::Value>(format!("Failed to serialize profile: {}", e)),
+        Err(e) => {
+            return err_internal::<serde_json::Value>(format!("Failed to serialize profile: {}", e))
+        }
     };
 
-    (
-        StatusCode::OK,
-        Json(ApiResponse::success(value)),
-    )
+    (StatusCode::OK, Json(ApiResponse::success(value)))
 }
 
 /// GET /api/ai/analyze/:name - Analyze workload logs
@@ -1408,9 +1473,7 @@ pub(crate) async fn ai_analyze_logs(
 
     let logs = match rt.logs(&workload.instance, false).await {
         Ok(l) => l,
-        Err(e) => {
-            return err_internal::<serde_json::Value>(e)
-        }
+        Err(e) => return err_internal::<serde_json::Value>(e),
     };
 
     let config = Config::load();
@@ -1437,9 +1500,7 @@ pub(crate) async fn ai_migration_advice(
 
     let target_runtime = match target.parse::<RuntimeKind>() {
         Ok(rt) => rt,
-        Err(e) => {
-            return err_bad_request::<MigrationAdviceResponse>(e)
-        }
+        Err(e) => return err_bad_request::<MigrationAdviceResponse>(e),
     };
 
     let spec = match load_spec_safe::<MigrationAdviceResponse>(&workload_state.spec_path) {
@@ -1582,11 +1643,7 @@ pub(crate) async fn ai_intent_optimize(
             }
         }
         let result = engine.score(&trial);
-        let top = result
-            .scores
-            .first()
-            .map(|s| s.total_score)
-            .unwrap_or(0.0);
+        let top = result.scores.first().map(|s| s.total_score).unwrap_or(0.0);
         scores_by_goal.push(json!({
             "goal": intent_goal_label(&goal),
             "top_runtime_score": top,
@@ -1716,7 +1773,9 @@ pub(crate) async fn ai_tradeoff(
     let best = sorted.first();
     let runner_up = sorted.get(1);
     let best_runtime = best.map(|s| format!("{}", s.runtime)).unwrap_or_default();
-    let score = best.map(|s| (s.total_score * 100.0).round() as u32).unwrap_or(0);
+    let score = best
+        .map(|s| (s.total_score * 100.0).round() as u32)
+        .unwrap_or(0);
 
     let summary = match (best, runner_up) {
         (Some(a), Some(b)) => {
@@ -1732,7 +1791,11 @@ pub(crate) async fn ai_tradeoff(
                 b.runtime
             )
         }
-        (Some(a), None) => format!("{} is the only viable runtime ({:.0}% score).", a.runtime, a.total_score * 100.0),
+        (Some(a), None) => format!(
+            "{} is the only viable runtime ({:.0}% score).",
+            a.runtime,
+            a.total_score * 100.0
+        ),
         _ => "No runtime candidates scored.".to_string(),
     };
 
@@ -1773,12 +1836,12 @@ pub(crate) async fn api_drift_check(
 
     (
         StatusCode::OK,
-        Json(ApiResponse::success(
-            match serde_json::to_value(report) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-        )),
+        Json(ApiResponse::success(match serde_json::to_value(report) {
+            Ok(v) => v,
+            Err(e) => {
+                return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e))
+            }
+        })),
     )
 }
 
@@ -1898,7 +1961,9 @@ pub(crate) async fn api_alerts_status(
             }
             let needle = focus.to_lowercase();
             rule.name.to_lowercase().contains(&needle)
-                || format!("{}", rule.condition).to_lowercase().contains(&needle)
+                || format!("{}", rule.condition)
+                    .to_lowercase()
+                    .contains(&needle)
                 || rule.message_template.to_lowercase().contains(&needle)
         })
         .map(|rule| {
@@ -1963,12 +2028,12 @@ pub(crate) async fn api_policy_check(Json(payload): Json<serde_json::Value>) -> 
 
     (
         StatusCode::OK,
-        Json(ApiResponse::success(
-            match serde_json::to_value(result) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-        )),
+        Json(ApiResponse::success(match serde_json::to_value(result) {
+            Ok(v) => v,
+            Err(e) => {
+                return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e))
+            }
+        })),
     )
 }
 
@@ -2024,7 +2089,9 @@ pub(crate) async fn api_deps_add(Json(request): Json<AddDependencyRequest>) -> i
 }
 
 /// DELETE /api/dependencies — Remove a dependency edge (same JSON body as POST add).
-pub(crate) async fn api_deps_remove(Json(request): Json<AddDependencyRequest>) -> impl IntoResponse {
+pub(crate) async fn api_deps_remove(
+    Json(request): Json<AddDependencyRequest>,
+) -> impl IntoResponse {
     use crate::dependencies::DependencyGraph;
 
     let graph_path = DependencyGraph::default_path();
@@ -2112,7 +2179,12 @@ pub(crate) async fn api_template_list() -> impl IntoResponse {
         Json(ApiResponse::success(
             match serde_json::to_value(templates) {
                 Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+                Err(e) => {
+                    return err_internal::<serde_json::Value>(format!(
+                        "Serialization failed: {}",
+                        e
+                    ))
+                }
             },
         )),
     )
@@ -2127,9 +2199,7 @@ pub(crate) async fn api_template_generate(
 
     let kind = match name.parse::<TemplateKind>() {
         Ok(k) => k,
-        Err(e) => {
-            return err_bad_request::<serde_json::Value>(e)
-        }
+        Err(e) => return err_bad_request::<serde_json::Value>(e),
     };
 
     let params = TemplateParams {
@@ -2153,12 +2223,12 @@ pub(crate) async fn api_template_generate(
 
     (
         StatusCode::OK,
-        Json(ApiResponse::success(
-            match serde_json::to_value(spec) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-        )),
+        Json(ApiResponse::success(match serde_json::to_value(spec) {
+            Ok(v) => v,
+            Err(e) => {
+                return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e))
+            }
+        })),
     )
 }
 
@@ -2179,16 +2249,12 @@ pub(crate) async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResp
 
     let content = match std::fs::read_to_string(&sla_path) {
         Ok(c) => c,
-        Err(e) => {
-            return err_internal::<serde_json::Value>(e)
-        }
+        Err(e) => return err_internal::<serde_json::Value>(e),
     };
 
     let targets: Vec<SlaTarget> = match serde_json::from_str(&content) {
         Ok(t) => t,
-        Err(e) => {
-            return err_internal::<serde_json::Value>(e)
-        }
+        Err(e) => return err_internal::<serde_json::Value>(e),
     };
 
     let mut engine = SlaEngine::new();
@@ -2199,12 +2265,15 @@ pub(crate) async fn api_sla_check(Path(workload): Path<String>) -> impl IntoResp
     match engine.get_target(&workload) {
         Some(target) => (
             StatusCode::OK,
-            Json(ApiResponse::success(
-                match serde_json::to_value(target) {
+            Json(ApiResponse::success(match serde_json::to_value(target) {
                 Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-            )),
+                Err(e) => {
+                    return err_internal::<serde_json::Value>(format!(
+                        "Serialization failed: {}",
+                        e
+                    ))
+                }
+            })),
         ),
         None => (
             StatusCode::NOT_FOUND,
@@ -2228,9 +2297,14 @@ pub(crate) async fn api_secrets_list() -> impl IntoResponse {
                 StatusCode::OK,
                 Json(ApiResponse::success(
                     match serde_json::to_value(summaries) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
+                        Ok(v) => v,
+                        Err(e) => {
+                            return err_internal::<serde_json::Value>(format!(
+                                "Serialization failed: {}",
+                                e
+                            ))
+                        }
+                    },
                 )),
             )
         }
@@ -2358,18 +2432,16 @@ pub(crate) async fn api_events_list(Query(query): Query<EventsListQuery>) -> imp
             } else {
                 (
                     StatusCode::OK,
-                    Json(ApiResponse::success(
-                        match serde_json::to_value(events) {
-                            Ok(v) => v,
-                            Err(e) => {
-                                return err_internal::<serde_json::Value>(format!(
-                                    "Serialization failed: {}",
-                                    e
-                                ))
-                                .into_response();
-                            }
-                        },
-                    )),
+                    Json(ApiResponse::success(match serde_json::to_value(events) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            return err_internal::<serde_json::Value>(format!(
+                                "Serialization failed: {}",
+                                e
+                            ))
+                            .into_response();
+                        }
+                    })),
                 )
                     .into_response()
             }
@@ -2388,12 +2460,15 @@ pub(crate) async fn api_events_summary() -> impl IntoResponse {
             let summary = bus.summary();
             (
                 StatusCode::OK,
-                Json(ApiResponse::success(
-                    match serde_json::to_value(summary) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-                )),
+                Json(ApiResponse::success(match serde_json::to_value(summary) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return err_internal::<serde_json::Value>(format!(
+                            "Serialization failed: {}",
+                            e
+                        ))
+                    }
+                })),
             )
         }
         Err(e) => err_internal::<serde_json::Value>(e),
@@ -2414,9 +2489,7 @@ pub(crate) async fn api_platform_recommendations(
 }
 
 /// GET /api/cluster/logs - Get logs for a kubeconfig-backed Kubernetes workload
-pub(crate) async fn api_cluster_logs(
-    Query(query): Query<ClusterLogsQuery>,
-) -> impl IntoResponse {
+pub(crate) async fn api_cluster_logs(Query(query): Query<ClusterLogsQuery>) -> impl IntoResponse {
     match crate::kubecluster::workload_logs(&ClusterLogsRequest {
         cluster: query.cluster,
         namespace: query.namespace,
@@ -2465,7 +2538,9 @@ pub(crate) async fn api_cluster_health(
         api_version: query.api_version,
         plural: query.plural,
         namespaced: query.namespaced,
-    }).await {
+    })
+    .await
+    {
         Ok(summary) => ok_json(summary),
         Err(error) => err_internal::<crate::kubecluster::ClusterHealthSummary>(error),
     }
@@ -2492,7 +2567,10 @@ pub(crate) async fn api_cluster_events(
 pub(crate) async fn api_cluster_action(
     Json(request): Json<ClusterActionRequestBody>,
 ) -> impl IntoResponse {
-    let workload_ref = format!("{}:{}/{}:{}", request.cluster, request.namespace, request.kind, request.name);
+    let workload_ref = format!(
+        "{}:{}/{}:{}",
+        request.cluster, request.namespace, request.kind, request.name
+    );
     let audit_action = match request.action.as_str() {
         "start" | "resume" | "uncordon" => crate::audit::AuditAction::Start,
         "stop" | "suspend" | "cordon" | "drain" => crate::audit::AuditAction::Stop,
@@ -2510,14 +2588,30 @@ pub(crate) async fn api_cluster_action(
         api_version: request.api_version,
         plural: request.plural,
         namespaced: request.namespaced,
-    }).await {
+    })
+    .await
+    {
         Ok(message) => {
-            record_audit_event(audit_action, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Success, &message, None);
+            record_audit_event(
+                audit_action,
+                &workload_ref,
+                Some("kubernetes"),
+                crate::audit::ActionResult::Success,
+                &message,
+                None,
+            );
             ok_json(message)
         }
         Err(error) => {
             let error_message = error.to_string();
-            record_audit_event(audit_action, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Failure, &error_message, None);
+            record_audit_event(
+                audit_action,
+                &workload_ref,
+                Some("kubernetes"),
+                crate::audit::ActionResult::Failure,
+                &error_message,
+                None,
+            );
             err_internal::<String>(error_message)
         }
     }
@@ -2544,7 +2638,9 @@ pub(crate) async fn api_cluster_browse(
         api_version: query.api_version,
         plural: query.plural,
         namespaced: query.namespaced,
-    }).await {
+    })
+    .await
+    {
         Ok(resources) => ok_json(resources),
         Err(error) => err_internal::<Vec<crate::kubecluster::ClusterResourceSummary>>(error),
     }
@@ -2554,7 +2650,18 @@ pub(crate) async fn api_cluster_browse(
 pub(crate) async fn api_cluster_apply(
     Json(request): Json<ClusterApplyRequestBody>,
 ) -> impl IntoResponse {
-    let workload_ref = format!("{}:{}/{}:{}", request.cluster, request.namespace, request.kind, request.manifest.get("metadata").and_then(|m| m.get("name")).and_then(|n| n.as_str()).unwrap_or("unknown"));
+    let workload_ref = format!(
+        "{}:{}/{}:{}",
+        request.cluster,
+        request.namespace,
+        request.kind,
+        request
+            .manifest
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(|n| n.as_str())
+            .unwrap_or("unknown")
+    );
     if crate::opa::enforce_enabled() {
         match crate::opa::evaluate_manifest_optional(&request.manifest).await {
             Ok(ev) if !ev.allowed => {
@@ -2594,12 +2701,26 @@ pub(crate) async fn api_cluster_apply(
     .await
     {
         Ok(message) => {
-            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Success, &message, None);
+            record_audit_event(
+                crate::audit::AuditAction::ConfigChange,
+                &workload_ref,
+                Some("kubernetes"),
+                crate::audit::ActionResult::Success,
+                &message,
+                None,
+            );
             ok_json(message)
         }
         Err(error) => {
             let error_message = error.to_string();
-            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Failure, &error_message, None);
+            record_audit_event(
+                crate::audit::AuditAction::ConfigChange,
+                &workload_ref,
+                Some("kubernetes"),
+                crate::audit::ActionResult::Failure,
+                &error_message,
+                None,
+            );
             err_internal::<String>(error_message)
         }
     }
@@ -2743,7 +2864,9 @@ async fn handle_cluster_watch_socket(
 
     let mut command = build_kubectl_command(&query.cluster);
     command.arg("get").arg(&resource_name);
-    if query.kind == "Namespace" || (query.kind == "CustomResource" && !query.namespaced.unwrap_or(true)) {
+    if query.kind == "Namespace"
+        || (query.kind == "CustomResource" && !query.namespaced.unwrap_or(true))
+    {
         command.arg("--watch-only").arg("-o").arg("name");
     } else if let Some(namespace) = query.namespace.as_deref().filter(|value| *value != "all") {
         command
@@ -2753,11 +2876,7 @@ async fn handle_cluster_watch_socket(
             .arg("-o")
             .arg("name");
     } else {
-        command
-            .arg("-A")
-            .arg("--watch-only")
-            .arg("-o")
-            .arg("name");
+        command.arg("-A").arg("--watch-only").arg("-o").arg("name");
     }
 
     command
@@ -2766,7 +2885,10 @@ async fn handle_cluster_watch_socket(
         .kill_on_drop(true);
 
     let mut child = command.spawn()?;
-    let stdout = child.stdout.take().context("watch session missing stdout")?;
+    let stdout = child
+        .stdout
+        .take()
+        .context("watch session missing stdout")?;
     let mut lines = BufReader::new(stdout).lines();
 
     while let Some(_line) = lines.next_line().await? {
@@ -2794,10 +2916,7 @@ pub(crate) async fn api_cluster_port_forward_start(
         .clone()
         .or_else(|| request.pod.as_ref().map(|_| "Pod".to_string()))
         .unwrap_or_else(|| "Pod".to_string());
-    let target_name = request
-        .target_name
-        .clone()
-        .or_else(|| request.pod.clone());
+    let target_name = request.target_name.clone().or_else(|| request.pod.clone());
     let Some(target_name) = target_name else {
         return err_bad_request::<ClusterPortForwardResponse>("target_name or pod is required");
     };
@@ -2827,7 +2946,9 @@ pub(crate) async fn api_cluster_port_forward_start(
     sleep(Duration::from_millis(700)).await;
     match child.try_wait() {
         Ok(Some(_)) => {
-            return err_internal::<ClusterPortForwardResponse>("port-forward process exited immediately");
+            return err_internal::<ClusterPortForwardResponse>(
+                "port-forward process exited immediately",
+            );
         }
         Ok(None) => {}
         Err(error) => return err_internal::<ClusterPortForwardResponse>(error),
@@ -2870,9 +2991,19 @@ pub(crate) async fn api_cluster_port_forward_stop(
     AxumState(app_state): AxumState<AppState>,
     Json(request): Json<ClusterPortForwardStopRequestBody>,
 ) -> impl IntoResponse {
-    let mut session = match app_state.port_forwards.lock().await.remove(&request.session_id) {
+    let mut session = match app_state
+        .port_forwards
+        .lock()
+        .await
+        .remove(&request.session_id)
+    {
         Some(session) => session,
-        None => return err_not_found::<String>(format!("port-forward session {} not found", request.session_id)),
+        None => {
+            return err_not_found::<String>(format!(
+                "port-forward session {} not found",
+                request.session_id
+            ))
+        }
     };
 
     let summary = format!(
@@ -2889,9 +3020,7 @@ pub(crate) async fn api_cluster_port_forward_stop(
 }
 
 /// GET /api/cluster/top - Pod/container metrics via kubectl top.
-pub(crate) async fn api_cluster_top(
-    Query(query): Query<ClusterTopQuery>,
-) -> impl IntoResponse {
+pub(crate) async fn api_cluster_top(Query(query): Query<ClusterTopQuery>) -> impl IntoResponse {
     match crate::kubecluster::top_metrics(&ClusterLogsRequest {
         cluster: query.cluster,
         namespace: query.namespace,
@@ -2900,7 +3029,9 @@ pub(crate) async fn api_cluster_top(
         api_version: None,
         plural: None,
         namespaced: None,
-    }).await {
+    })
+    .await
+    {
         Ok(metrics) => ok_json(metrics),
         Err(error) => err_internal::<Vec<crate::kubecluster::ClusterTopMetric>>(error),
     }
@@ -2926,7 +3057,12 @@ pub(crate) async fn api_cluster_metrics_summary(
 pub(crate) async fn api_cluster_cilium_status(
     Query(query): Query<ClusterCiliumStatusQuery>,
 ) -> impl IntoResponse {
-    match crate::kubecluster::cilium::cilium_status(query.cluster.as_deref(), query.namespace.as_deref()).await {
+    match crate::kubecluster::cilium::cilium_status(
+        query.cluster.as_deref(),
+        query.namespace.as_deref(),
+    )
+    .await
+    {
         Ok(status) => ok_json(status),
         Err(error) => err_internal::<crate::kubecluster::cilium::CiliumStatusResponse>(error),
     }
@@ -2943,9 +3079,7 @@ pub(crate) async fn api_cluster_cilium_connectivity_probe(
     .await
     {
         Ok(result) => ok_json(result),
-        Err(error) => {
-            err_internal::<crate::kubecluster::cilium::ConnectivityProbeResult>(error)
-        }
+        Err(error) => err_internal::<crate::kubecluster::cilium::ConnectivityProbeResult>(error),
     }
 }
 
@@ -2966,7 +3100,9 @@ pub(crate) async fn api_observability_summary(
     let cluster_ref = query.cluster.as_deref();
     let namespace_ref = query.namespace.as_deref();
     let cluster_metrics = if let Some(cluster) = cluster_ref.filter(|c| !c.is_empty()) {
-        crate::kubecluster::metrics_summary(cluster, namespace_ref).await.ok()
+        crate::kubecluster::metrics_summary(cluster, namespace_ref)
+            .await
+            .ok()
     } else {
         None
     };
@@ -3017,7 +3153,10 @@ pub(crate) async fn api_cluster_rollout(
     Query(query): Query<ClusterRolloutQuery>,
 ) -> impl IntoResponse {
     let Some(resource) = rollout_resource(&query.kind) else {
-        return err_bad_request::<ClusterRolloutResponse>(format!("rollout is not supported for {}", query.kind));
+        return err_bad_request::<ClusterRolloutResponse>(format!(
+            "rollout is not supported for {}",
+            query.kind
+        ));
     };
 
     let status = match run_kubectl(vec![
@@ -3113,7 +3252,11 @@ pub(crate) async fn api_cluster_rollout_action(
                 "undo".to_string(),
                 format!("{}/{}", resource, request.name),
             ]);
-            if let Some(revision) = request.revision.as_deref().filter(|value| !value.is_empty()) {
+            if let Some(revision) = request
+                .revision
+                .as_deref()
+                .filter(|value| !value.is_empty())
+            {
                 args.push(format!("--to-revision={revision}"));
             }
         }
@@ -3127,16 +3270,33 @@ pub(crate) async fn api_cluster_rollout_action(
         other => return err_bad_request::<String>(format!("unsupported rollout action {}", other)),
     }
 
-    let workload_ref = format!("{}:{}/{}:{}", request.cluster, request.namespace, request.kind, request.name);
+    let workload_ref = format!(
+        "{}:{}/{}:{}",
+        request.cluster, request.namespace, request.kind, request.name
+    );
     match run_kubectl(args).await {
         Ok(output) => {
             let message = output.trim().to_string();
-            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Success, &message, None);
+            record_audit_event(
+                crate::audit::AuditAction::ConfigChange,
+                &workload_ref,
+                Some("kubernetes"),
+                crate::audit::ActionResult::Success,
+                &message,
+                None,
+            );
             ok_json(message)
         }
         Err(error) => {
             let error_message = error.to_string();
-            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("kubernetes"), crate::audit::ActionResult::Failure, &error_message, None);
+            record_audit_event(
+                crate::audit::AuditAction::ConfigChange,
+                &workload_ref,
+                Some("kubernetes"),
+                crate::audit::ActionResult::Failure,
+                &error_message,
+                None,
+            );
             err_internal::<String>(error_message)
         }
     }
@@ -3156,7 +3316,10 @@ pub(crate) async fn api_cluster_helm_history(
 pub(crate) async fn api_cluster_helm_action(
     Json(request): Json<ClusterHelmActionRequestBody>,
 ) -> impl IntoResponse {
-    let workload_ref = format!("{}:{}/HelmRelease:{}", request.cluster, request.namespace, request.release);
+    let workload_ref = format!(
+        "{}:{}/HelmRelease:{}",
+        request.cluster, request.namespace, request.release
+    );
     match crate::kubecluster::helm_action(
         &request.cluster,
         &request.namespace,
@@ -3165,14 +3328,30 @@ pub(crate) async fn api_cluster_helm_action(
         request.chart.as_deref(),
         request.values_yaml.as_deref(),
         request.revision.as_deref(),
-    ).await {
+    )
+    .await
+    {
         Ok(message) => {
-            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("helm"), crate::audit::ActionResult::Success, &message, None);
+            record_audit_event(
+                crate::audit::AuditAction::ConfigChange,
+                &workload_ref,
+                Some("helm"),
+                crate::audit::ActionResult::Success,
+                &message,
+                None,
+            );
             ok_json(message)
         }
         Err(error) => {
             let error_message = error.to_string();
-            record_audit_event(crate::audit::AuditAction::ConfigChange, &workload_ref, Some("helm"), crate::audit::ActionResult::Failure, &error_message, None);
+            record_audit_event(
+                crate::audit::AuditAction::ConfigChange,
+                &workload_ref,
+                Some("helm"),
+                crate::audit::ActionResult::Failure,
+                &error_message,
+                None,
+            );
             err_internal::<String>(error_message)
         }
     }
@@ -3188,12 +3367,15 @@ pub(crate) async fn api_env_list() -> impl IntoResponse {
             let envs = manager.list_envs();
             (
                 StatusCode::OK,
-                Json(ApiResponse::success(
-                    match serde_json::to_value(envs) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-                )),
+                Json(ApiResponse::success(match serde_json::to_value(envs) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return err_internal::<serde_json::Value>(format!(
+                            "Serialization failed: {}",
+                            e
+                        ))
+                    }
+                })),
             )
         }
         Err(e) => err_internal::<serde_json::Value>(e),
@@ -3210,12 +3392,15 @@ pub(crate) async fn api_scheduler_utilization() -> impl IntoResponse {
             let utils = scheduler.utilization_summary();
             (
                 StatusCode::OK,
-                Json(ApiResponse::success(
-                    match serde_json::to_value(utils) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-                )),
+                Json(ApiResponse::success(match serde_json::to_value(utils) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return err_internal::<serde_json::Value>(format!(
+                            "Serialization failed: {}",
+                            e
+                        ))
+                    }
+                })),
             )
         }
         Err(e) => err_internal::<serde_json::Value>(e),
@@ -3244,9 +3429,14 @@ pub(crate) async fn api_scheduler_optimize() -> impl IntoResponse {
                 StatusCode::OK,
                 Json(ApiResponse::success(
                     match serde_json::to_value(suggestions) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
+                        Ok(v) => v,
+                        Err(e) => {
+                            return err_internal::<serde_json::Value>(format!(
+                                "Serialization failed: {}",
+                                e
+                            ))
+                        }
+                    },
                 )),
             )
         }
@@ -3264,12 +3454,15 @@ pub(crate) async fn api_orchestrator_status() -> impl IntoResponse {
             let list = orch.list_workloads();
             (
                 StatusCode::OK,
-                Json(ApiResponse::success(
-                    match serde_json::to_value(list) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-                )),
+                Json(ApiResponse::success(match serde_json::to_value(list) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return err_internal::<serde_json::Value>(format!(
+                            "Serialization failed: {}",
+                            e
+                        ))
+                    }
+                })),
             )
         }
         Err(e) => err_internal::<serde_json::Value>(e),
@@ -3286,12 +3479,15 @@ pub(crate) async fn api_orchestrator_summary() -> impl IntoResponse {
             let summary = orch.health_summary();
             (
                 StatusCode::OK,
-                Json(ApiResponse::success(
-                    match serde_json::to_value(summary) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-                )),
+                Json(ApiResponse::success(match serde_json::to_value(summary) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return err_internal::<serde_json::Value>(format!(
+                            "Serialization failed: {}",
+                            e
+                        ))
+                    }
+                })),
             )
         }
         Err(e) => err_internal::<serde_json::Value>(e),
@@ -3304,9 +3500,7 @@ pub(crate) async fn api_affinity_recommend(Path(class): Path<String>) -> impl In
 
     let wl_class = match class.parse::<WorkloadClass>() {
         Ok(c) => c,
-        Err(e) => {
-            return err_bad_request::<serde_json::Value>(e)
-        }
+        Err(e) => return err_bad_request::<serde_json::Value>(e),
     };
 
     let path = AffinityEngine::default_path();
@@ -3366,12 +3560,15 @@ pub(crate) async fn api_health_summary(Path(workload): Path<String>) -> impl Int
             let summary = history.summary(&workload);
             (
                 StatusCode::OK,
-                Json(ApiResponse::success(
-                    match serde_json::to_value(summary) {
-                Ok(v) => v,
-                Err(e) => return err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
-            },
-                )),
+                Json(ApiResponse::success(match serde_json::to_value(summary) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return err_internal::<serde_json::Value>(format!(
+                            "Serialization failed: {}",
+                            e
+                        ))
+                    }
+                })),
             )
         }
         Err(e) => err_internal::<serde_json::Value>(e),
@@ -3379,9 +3576,7 @@ pub(crate) async fn api_health_summary(Path(workload): Path<String>) -> impl Int
 }
 
 // POST /api/compose/validate - Validate a compose spec
-pub(crate) async fn api_compose_validate(
-    body: String,
-) -> impl IntoResponse {
+pub(crate) async fn api_compose_validate(body: String) -> impl IntoResponse {
     use crate::compose;
 
     match serde_yaml::from_str::<compose::ComposeSpec>(&body) {
@@ -3484,9 +3679,7 @@ pub(crate) async fn migrate_workload(
 
     let target_runtime = match request.target_runtime.parse::<RuntimeKind>() {
         Ok(rt) => rt,
-        Err(e) => {
-            return err_bad_request::<String>(e)
-        }
+        Err(e) => return err_bad_request::<String>(e),
     };
 
     let spec = match load_spec_safe::<String>(&workload_state.spec_path) {
@@ -3502,20 +3695,12 @@ pub(crate) async fn migrate_workload(
     } else {
         match request.strategy.parse::<MigrationStrategy>() {
             Ok(s) => s,
-            Err(e) => {
-                return err_bad_request::<String>(e)
-            }
+            Err(e) => return err_bad_request::<String>(e),
         }
     };
 
     let strategy_str = format!("{:?}", strategy);
-    let plan = MigrationPlan::new(
-        name.clone(),
-        source_runtime,
-        target_runtime,
-        strategy,
-        true,
-    );
+    let plan = MigrationPlan::new(name.clone(), source_runtime, target_runtime, strategy, true);
 
     let migration_start = std::time::Instant::now();
     let config = Config::load();
@@ -3604,10 +3789,13 @@ pub(crate) async fn migrate_workload(
             ));
         }
 
-        emit_sse(&app_state, &ServerEvent::WorkloadChanged {
-            name: name.clone(),
-            action: "migrated".to_string(),
-        });
+        emit_sse(
+            &app_state,
+            &ServerEvent::WorkloadChanged {
+                name: name.clone(),
+                action: "migrated".to_string(),
+            },
+        );
 
         emit_sse(
             &app_state,
@@ -3639,9 +3827,7 @@ pub(crate) async fn migrate_workload(
             ))),
         )
     } else {
-        let error_msg = result
-            .error
-            .unwrap_or_else(|| "Unknown error".to_string());
+        let error_msg = result.error.unwrap_or_else(|| "Unknown error".to_string());
         emit_sse(
             &app_state,
             &ServerEvent::MigrationProgress {
@@ -3692,10 +3878,13 @@ pub(crate) async fn build_workload(
 
     match image {
         Ok(img) => {
-            emit_sse(&app_state, &ServerEvent::WorkloadChanged {
-                name: name.clone(),
-                action: "built".to_string(),
-            });
+            emit_sse(
+                &app_state,
+                &ServerEvent::WorkloadChanged {
+                    name: name.clone(),
+                    action: "built".to_string(),
+                },
+            );
 
             let response = BuildResponse {
                 image_name: img.name.clone(),
@@ -3710,9 +3899,7 @@ pub(crate) async fn build_workload(
 }
 
 /// POST /api/validate - Validate a workload YAML specification
-pub(crate) async fn validate_workload(
-    Json(request): Json<ValidateRequest>,
-) -> impl IntoResponse {
+pub(crate) async fn validate_workload(Json(request): Json<ValidateRequest>) -> impl IntoResponse {
     // Try to parse the YAML as a Workload spec (v1 or legacy dashboard format)
     let workload_result = crate::legacy_workload_yaml::parse_workload_yaml(&request.yaml);
 
@@ -3731,10 +3918,12 @@ pub(crate) async fn validate_workload(
                         ) {
                             errors.push(e.to_string());
                         }
-                        if let Err(e) = crate::ragnarok::isolation::deploy_isolation_gate(&workload) {
+                        if let Err(e) = crate::ragnarok::isolation::deploy_isolation_gate(&workload)
+                        {
                             errors.push(e.to_string());
                         }
-                        if let Err(e) = crate::ragnarok::sovereign::deploy_sovereign_gate(&workload) {
+                        if let Err(e) = crate::ragnarok::sovereign::deploy_sovereign_gate(&workload)
+                        {
                             errors.push(e.to_string());
                         }
                         if let Err(e) = crate::ragnarok::kata::deploy_kata_gate(&workload) {
@@ -3770,56 +3959,50 @@ pub(crate) async fn validate_workload(
 }
 
 /// GET /api/secrets/:name - Get a specific secret's metadata (not raw values)
-pub(crate) async fn get_secret(
-    Path(name): Path<String>,
-) -> impl IntoResponse {
+pub(crate) async fn get_secret(Path(name): Path<String>) -> impl IntoResponse {
     use crate::secrets::SecretStore;
 
     let path = SecretStore::default_path();
     match SecretStore::load(&path) {
-        Ok(store) => {
-            match store.get_secret(&name) {
-                Some(secret) => {
-                    let rotation_info = secret.rotation_policy.as_ref().map(|p| {
-                        SecretRotationInfo {
-                            interval_days: p.interval_days,
-                            max_age_days: p.max_age_days,
-                            notify_before_days: p.notify_before_days,
-                        }
-                    });
-                    let keys: Vec<String> = secret.data.keys().cloned().collect();
-                    let response = SecretMetadataResponse {
-                        name: secret.name.clone(),
-                        namespace: secret.namespace.clone(),
-                        key_count: secret.data.len(),
-                        keys,
-                        created_at: secret.created_at.clone(),
-                        updated_at: secret.updated_at.clone(),
-                        needs_rotation: store.needs_rotation(secret),
-                        rotation_policy: rotation_info,
-                    };
-                    match serde_json::to_value(response) {
-                        Ok(v) => (StatusCode::OK, Json(ApiResponse::success(v))),
-                        Err(e) => err_internal::<serde_json::Value>(format!("Serialization failed: {}", e)),
+        Ok(store) => match store.get_secret(&name) {
+            Some(secret) => {
+                let rotation_info = secret.rotation_policy.as_ref().map(|p| SecretRotationInfo {
+                    interval_days: p.interval_days,
+                    max_age_days: p.max_age_days,
+                    notify_before_days: p.notify_before_days,
+                });
+                let keys: Vec<String> = secret.data.keys().cloned().collect();
+                let response = SecretMetadataResponse {
+                    name: secret.name.clone(),
+                    namespace: secret.namespace.clone(),
+                    key_count: secret.data.len(),
+                    keys,
+                    created_at: secret.created_at.clone(),
+                    updated_at: secret.updated_at.clone(),
+                    needs_rotation: store.needs_rotation(secret),
+                    rotation_policy: rotation_info,
+                };
+                match serde_json::to_value(response) {
+                    Ok(v) => (StatusCode::OK, Json(ApiResponse::success(v))),
+                    Err(e) => {
+                        err_internal::<serde_json::Value>(format!("Serialization failed: {}", e))
                     }
                 }
-                None => (
-                    StatusCode::NOT_FOUND,
-                    Json(ApiResponse::<serde_json::Value>::error(format!(
-                        "Secret '{}' not found",
-                        name
-                    ))),
-                ),
             }
-        }
+            None => (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::<serde_json::Value>::error(format!(
+                    "Secret '{}' not found",
+                    name
+                ))),
+            ),
+        },
         Err(e) => err_internal::<serde_json::Value>(e),
     }
 }
 
 /// DELETE /api/secrets/:name - Delete a specific secret
-pub(crate) async fn delete_secret(
-    Path(name): Path<String>,
-) -> impl IntoResponse {
+pub(crate) async fn delete_secret(Path(name): Path<String>) -> impl IntoResponse {
     use crate::secrets::SecretStore;
 
     let path = SecretStore::default_path();
@@ -3829,7 +4012,10 @@ pub(crate) async fn delete_secret(
                 Some(_) => {
                     // Save the updated store
                     if let Err(e) = store.save(&path) {
-                        return err_internal::<String>(format!("Failed to save secret store: {}", e));
+                        return err_internal::<String>(format!(
+                            "Failed to save secret store: {}",
+                            e
+                        ));
                     }
                     (
                         StatusCode::OK,
@@ -3862,17 +4048,17 @@ pub(crate) async fn get_metrics() -> impl IntoResponse {
 /// GET /api/events/stream - Server-Sent Events for real-time dashboard updates
 pub(crate) async fn sse_events(
     AxumState(state): AxumState<AppState>,
-) -> axum::response::Sse<impl futures::stream::Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>>> {
+) -> axum::response::Sse<
+    impl futures::stream::Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>>,
+> {
     let rx = state.event_tx.subscribe();
-    let stream = tokio_stream::wrappers::BroadcastStream::new(rx)
-        .filter_map(|msg| async move {
-            match msg {
-                Ok(data) => Some(Ok(axum::response::sse::Event::default().data(data))),
-                Err(_) => None,
-            }
-        });
-    axum::response::Sse::new(stream)
-        .keep_alive(axum::response::sse::KeepAlive::default())
+    let stream = tokio_stream::wrappers::BroadcastStream::new(rx).filter_map(|msg| async move {
+        match msg {
+            Ok(data) => Some(Ok(axum::response::sse::Event::default().data(data))),
+            Err(_) => None,
+        }
+    });
+    axum::response::Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default())
 }
 
 /// GET /api/audit/verify — Verify integrity of all audit events
@@ -3910,9 +4096,10 @@ pub(crate) async fn api_audit_verify() -> impl IntoResponse {
 
             Json(ApiResponse::success(result))
         }
-        Err(e) => {
-            Json(ApiResponse::error(format!("Failed to load audit log: {}", e)))
-        }
+        Err(e) => Json(ApiResponse::error(format!(
+            "Failed to load audit log: {}",
+            e
+        ))),
     }
 }
 
@@ -3921,9 +4108,7 @@ pub(crate) async fn api_audit_verify() -> impl IntoResponse {
 // -----------------------------------------------------------------------
 
 /// List all registered API keys (without exposing raw keys)
-pub(crate) async fn rbac_list_keys(
-    AxumState(app_state): AxumState<AppState>,
-) -> impl IntoResponse {
+pub(crate) async fn rbac_list_keys(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
     let store = app_state.rbac.read().await;
     let keys: Vec<ApiKeySummary> = store
         .list_keys()
@@ -4183,12 +4368,28 @@ pub(crate) async fn api_webhook_test(Json(req): Json<WebhookTestRequest>) -> imp
 }
 
 /// GET /api/server — Process capabilities (auth modes, persistence).
-pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -> impl IntoResponse {
-    let oidc_issuer = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty());
-    let oidc_ready = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_OIDC_CLIENT_ID").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
+pub(crate) async fn api_server_info(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let oidc_issuer = std::env::var("AETHER_OIDC_ISSUER")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let oidc_ready = std::env::var("AETHER_OIDC_ISSUER")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some()
+        && std::env::var("AETHER_OIDC_CLIENT_ID")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_OIDC_REDIRECT_URI")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_SESSION_SECRET")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some();
     let redis_configured = app_state.shared_cache.uses_redis();
     let postgres_configured = app_state.workload_state_pg.is_some();
     let state_poll_secs = std::env::var("AETHER_STATE_POLL_SECS")
@@ -4221,9 +4422,7 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
     let hubble_ui_url = std::env::var("AETHER_HUBBLE_UI_URL")
         .ok()
         .filter(|s| !s.is_empty())
-        .or_else(|| {
-            None
-        });
+        .or_else(|| None);
     let hubble_ui_url = if hubble_ui_url.is_some() {
         hubble_ui_url
     } else {
@@ -4310,18 +4509,44 @@ pub(crate) async fn api_server_info(AxumState(app_state): AxumState<AppState>) -
 
 /// GET /api/auth/providers — Advertised authentication mechanisms.
 pub(crate) async fn api_auth_providers() -> impl IntoResponse {
-    let issuer = std::env::var("AETHER_OIDC_ISSUER").ok().filter(|s| !s.is_empty());
+    let issuer = std::env::var("AETHER_OIDC_ISSUER")
+        .ok()
+        .filter(|s| !s.is_empty());
     let oidc_ready = issuer.is_some()
-        && std::env::var("AETHER_OIDC_CLIENT_ID").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_OIDC_REDIRECT_URI").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
-    let role_map = std::env::var("AETHER_OIDC_ROLE_MAP").ok().filter(|s| !s.is_empty());
-    let saml_idp = std::env::var("AETHER_SAML_IDP_SSO_URL").ok().filter(|s| !s.is_empty());
+        && std::env::var("AETHER_OIDC_CLIENT_ID")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_OIDC_REDIRECT_URI")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_SESSION_SECRET")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some();
+    let role_map = std::env::var("AETHER_OIDC_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let saml_idp = std::env::var("AETHER_SAML_IDP_SSO_URL")
+        .ok()
+        .filter(|s| !s.is_empty());
     let saml_ready = saml_idp.is_some()
-        && std::env::var("AETHER_SAML_IDP_ENTITY_ID").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_SAML_ACS_URL").ok().filter(|s| !s.is_empty()).is_some()
-        && std::env::var("AETHER_SESSION_SECRET").ok().filter(|s| !s.is_empty()).is_some();
-    let saml_role_map = std::env::var("AETHER_SAML_ROLE_MAP").ok().filter(|s| !s.is_empty());
+        && std::env::var("AETHER_SAML_IDP_ENTITY_ID")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_SAML_ACS_URL")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_SESSION_SECRET")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some();
+    let saml_role_map = std::env::var("AETHER_SAML_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty());
     let mut methods = vec!["bearer", "legacy_env"];
     if oidc_ready || saml_ready {
         methods.push("oidc_session_cookie");
@@ -4440,7 +4665,10 @@ pub(crate) async fn restore_backup(
     let new_state = match StateStore::load(&state_path) {
         Ok(s) => s,
         Err(e) => {
-            return err_internal::<String>(format!("Restored file but failed to reload state: {}", e));
+            return err_internal::<String>(format!(
+                "Restored file but failed to reload state: {}",
+                e
+            ));
         }
     };
     *app_state.state.write().await = new_state.clone();

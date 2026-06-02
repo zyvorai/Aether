@@ -177,10 +177,7 @@ impl AuditLog {
 
     /// Get events by action type
     pub fn events_by_action(&self, action: &AuditAction) -> Vec<&AuditEvent> {
-        self.events
-            .iter()
-            .filter(|e| e.action == *action)
-            .collect()
+        self.events.iter().filter(|e| e.action == *action).collect()
     }
 
     /// Get last N events
@@ -216,8 +213,7 @@ impl AuditLog {
             *by_action.entry(format!("{}", event.action)).or_insert(0) += 1;
         }
 
-        let mut workloads: std::collections::HashSet<String> =
-            std::collections::HashSet::new();
+        let mut workloads: std::collections::HashSet<String> = std::collections::HashSet::new();
         for event in &self.events {
             workloads.insert(event.workload.clone());
         }
@@ -242,13 +238,15 @@ impl AuditLog {
                 Ok(dt) => dt.with_timezone(&chrono::Utc) >= cutoff,
                 Err(_) => {
                     // Keep events with unparseable timestamps (don't silently drop data)
-                    tracing::warn!("Could not parse event timestamp '{}', keeping event", e.timestamp);
+                    tracing::warn!(
+                        "Could not parse event timestamp '{}', keeping event",
+                        e.timestamp
+                    );
                     true
                 }
             }
         });
     }
-
 }
 
 /// POST audit events to `AETHER_AUDIT_WEBHOOK_URL` when set (best-effort, non-blocking).
@@ -356,9 +354,30 @@ mod tests {
     #[test]
     fn test_events_for_workload() {
         let mut log = AuditLog::new();
-        log.record(AuditAction::Deploy, "web", None, ActionResult::Success, "ok", None);
-        log.record(AuditAction::Deploy, "api", None, ActionResult::Success, "ok", None);
-        log.record(AuditAction::Stop, "web", None, ActionResult::Success, "ok", None);
+        log.record(
+            AuditAction::Deploy,
+            "web",
+            None,
+            ActionResult::Success,
+            "ok",
+            None,
+        );
+        log.record(
+            AuditAction::Deploy,
+            "api",
+            None,
+            ActionResult::Success,
+            "ok",
+            None,
+        );
+        log.record(
+            AuditAction::Stop,
+            "web",
+            None,
+            ActionResult::Success,
+            "ok",
+            None,
+        );
 
         assert_eq!(log.events_for("web").len(), 2);
         assert_eq!(log.events_for("api").len(), 1);
@@ -367,8 +386,22 @@ mod tests {
     #[test]
     fn test_failures() {
         let mut log = AuditLog::new();
-        log.record(AuditAction::Deploy, "web", None, ActionResult::Success, "ok", None);
-        log.record(AuditAction::Deploy, "api", None, ActionResult::Failure, "timeout", None);
+        log.record(
+            AuditAction::Deploy,
+            "web",
+            None,
+            ActionResult::Success,
+            "ok",
+            None,
+        );
+        log.record(
+            AuditAction::Deploy,
+            "api",
+            None,
+            ActionResult::Failure,
+            "timeout",
+            None,
+        );
 
         assert_eq!(log.failures().len(), 1);
         assert_eq!(log.failures()[0].workload, "api");
@@ -377,9 +410,30 @@ mod tests {
     #[test]
     fn test_summary() {
         let mut log = AuditLog::new();
-        log.record(AuditAction::Deploy, "web", None, ActionResult::Success, "ok", None);
-        log.record(AuditAction::Deploy, "api", None, ActionResult::Success, "ok", None);
-        log.record(AuditAction::Stop, "web", None, ActionResult::Failure, "err", None);
+        log.record(
+            AuditAction::Deploy,
+            "web",
+            None,
+            ActionResult::Success,
+            "ok",
+            None,
+        );
+        log.record(
+            AuditAction::Deploy,
+            "api",
+            None,
+            ActionResult::Success,
+            "ok",
+            None,
+        );
+        log.record(
+            AuditAction::Stop,
+            "web",
+            None,
+            ActionResult::Failure,
+            "err",
+            None,
+        );
 
         let summary = log.summary();
         assert_eq!(summary.total_events, 3);
@@ -409,7 +463,14 @@ mod tests {
     #[test]
     fn test_format_report() {
         let mut log = AuditLog::new();
-        log.record(AuditAction::Deploy, "web", None, ActionResult::Success, "deployed", None);
+        log.record(
+            AuditAction::Deploy,
+            "web",
+            None,
+            ActionResult::Success,
+            "deployed",
+            None,
+        );
         let report = format_audit_report(&log, 10);
         assert!(report.contains("Audit Trail"));
         assert!(report.contains("DEPLOY"));
