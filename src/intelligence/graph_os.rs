@@ -83,7 +83,7 @@ pub struct GraphImpactReport {
 }
 
 pub fn build_impact_analysis(
-    state_path: &Path,
+    _state_path: &Path,
     workload: &str,
 ) -> anyhow::Result<GraphImpactReport> {
     let deps = DependencyGraph::load(&DependencyGraph::default_path()).unwrap_or_default();
@@ -313,16 +313,15 @@ pub fn search_graph(state_path: &Path, query: &str) -> anyhow::Result<GraphSearc
             let label = n.label.to_lowercase();
             let id = n.id.to_lowercase();
             let kind = n.kind.to_lowercase();
-            let mut score = 0.0;
-            if label == q || id == q {
-                score = 1.0;
+            let score = if label == q || id == q {
+                1.0
             } else if label.contains(&q) || id.contains(&q) {
-                score = 0.75;
+                0.75
             } else if kind.contains(&q) {
-                score = 0.5;
+                0.5
             } else {
                 return None;
-            }
+            };
             let route = if n.id.starts_with("wl:") {
                 format!(
                     "/workloads?workload={}",

@@ -123,7 +123,7 @@ impl DigitalTwinEngine {
             recommendations
                 .push("Memory pressure rising — review OOM-prone workloads and limits.".into());
         }
-        if finops.recommendations.first().is_some() && scale <= 1.2 {
+        if !finops.recommendations.is_empty() && scale <= 1.2 {
             recommendations.push(
                 "FinOps suggests runtime shifts before scaling — check Cost Intelligence.".into(),
             );

@@ -180,7 +180,6 @@ fn signal_is_capacity(signals: &[crate::intelligence::predict::FailureSignal]) -
 mod tests {
     use super::*;
     use crate::runtime::{Instance, RuntimeKind};
-    use std::path::PathBuf;
 
     #[test]
     fn briefing_empty_fleet_has_greeting() {

@@ -204,7 +204,7 @@ impl SamlRuntime {
             &validation,
         )
         .ok()?;
-        let role = parse_role_str(&data.claims.role).unwrap_or_else(|| self.default_role.clone());
+        let role = parse_role_str(&data.claims.role).unwrap_or(self.default_role);
         let username = data
             .claims
             .name
@@ -224,14 +224,14 @@ impl SamlRuntime {
 
     fn resolve_role(&self, groups: &[String]) -> Role {
         let Some(mapping) = self.role_mapping.as_ref() else {
-            return self.default_role.clone();
+            return self.default_role;
         };
         if groups.is_empty() {
-            return self.default_role.clone();
+            return self.default_role;
         }
         let set: std::collections::HashSet<String> =
             groups.iter().map(|g| g.to_ascii_lowercase()).collect();
-        role_from_groups(&set, mapping).unwrap_or_else(|| self.default_role.clone())
+        role_from_groups(&set, mapping).unwrap_or(self.default_role)
     }
 
     fn issue_session_jwt(
@@ -410,10 +410,10 @@ fn role_from_groups(
     for (role, mapped) in &mapping.rules {
         if mapped.iter().any(|g| member_groups.contains(g)) {
             best = Some(match (&best, role) {
-                (None, r) => r.clone(),
-                (Some(Role::Viewer), r) => r.clone(),
+                (None, r) => *r,
+                (Some(Role::Viewer), r) => *r,
                 (Some(Role::Operator), Role::Admin) => Role::Admin,
-                (Some(Role::Operator), r) => r.clone(),
+                (Some(Role::Operator), r) => *r,
                 (Some(Role::Admin), _) => Role::Admin,
             });
         }

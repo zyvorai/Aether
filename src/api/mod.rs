@@ -245,7 +245,7 @@ async fn auth_middleware(
             .and_then(|t| rbac_store.verify_key(t))
             .map(|entry| {
                 (
-                    entry.role.clone(),
+                    entry.role,
                     crate::rbac::check_permission(&entry.role, &http_method, path),
                 )
             });

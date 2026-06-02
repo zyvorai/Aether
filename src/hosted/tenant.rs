@@ -7,17 +7,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum TenantPlan {
+    #[default]
     Free,
     Team,
     Enterprise,
-}
-
-impl Default for TenantPlan {
-    fn default() -> Self {
-        Self::Free
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

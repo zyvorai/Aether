@@ -187,6 +187,7 @@ pub async fn build_labs_pulumi_bridge(
         .as_deref()
         .unwrap_or("typescript")
         .to_lowercase();
+    let runtime = format!("{:?}", spec.runtime.preferred);
     let program = if lang == "python" {
         format!(
             r#"import pulumi
@@ -202,7 +203,7 @@ pulumi.export("workloadName", workload.name)
             name = spec.metadata.name,
             cpu = spec.requirements.cpu,
             mem = spec.requirements.memory,
-            runtime = format!("{:?}", spec.runtime.preferred),
+            runtime = runtime,
         )
     } else {
         base.program

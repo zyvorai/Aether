@@ -53,7 +53,7 @@ pub fn build_autonomy_status(state_path: &Path) -> anyhow::Result<AutonomyStatus
             continue;
         };
         if let Some(autonomy) = &spec.autonomy {
-            overrides.push(workload_override(&ws, autonomy));
+            overrides.push(workload_override(ws, autonomy));
         }
     }
 

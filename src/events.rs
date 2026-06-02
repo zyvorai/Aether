@@ -1713,8 +1713,10 @@ mod tests {
     #[test]
     fn test_evaluate_rules_cost_exceeds_fleet() {
         let mut bus = make_bus_with_rule(AlertCondition::CostExceeds(100.0), 0);
-        let mut metrics = SystemMetrics::default();
-        metrics.fleet_monthly_cost_usd = 250.0;
+        let metrics = SystemMetrics {
+            fleet_monthly_cost_usd: 250.0,
+            ..Default::default()
+        };
 
         let fired = bus.evaluate_rules(&metrics);
         assert_eq!(fired.len(), 1);

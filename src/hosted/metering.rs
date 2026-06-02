@@ -32,6 +32,10 @@ pub struct UsageMeter {
 impl UsageMeter {
     pub fn load() -> Self {
         let path = crate::resources::aether_path("tenant-usage.json");
+        Self::load_from_path(path)
+    }
+
+    fn load_from_path(path: PathBuf) -> Self {
         let data = if path.exists() {
             std::fs::read_to_string(&path)
                 .ok()
@@ -57,9 +61,14 @@ impl UsageMeter {
 
     pub fn record(tenant_id: &str, path: &str) {
         let mut meter = Self::global();
-        meter.roll_period_if_needed();
-        let period = meter.data.period.clone();
-        let entry = meter
+        meter.record_into(tenant_id, path);
+        let _ = meter.persist();
+    }
+
+    fn record_into(&mut self, tenant_id: &str, path: &str) {
+        self.roll_period_if_needed();
+        let period = self.data.period.clone();
+        let entry = self
             .data
             .counters
             .entry(tenant_id.to_string())
@@ -71,7 +80,6 @@ impl UsageMeter {
             });
         entry.requests += 1;
         entry.last_path = Some(path.to_string());
-        let _ = meter.persist();
     }
 
     pub fn snapshot(&self) -> Vec<TenantUsageCounter> {
@@ -118,6 +126,12 @@ impl UsageMeter {
         std::fs::rename(&tmp, &self.path)?;
         Ok(())
     }
+
+    #[cfg(test)]
+    fn isolated(dir: &std::path::Path) -> Self {
+        let path = dir.join("tenant-usage.json");
+        Self::load_from_path(path)
+    }
 }
 
 pub fn plan_quota(plan: &TenantPlan) -> u64 {
@@ -135,9 +149,11 @@ mod tests {
     #[test]
     fn record_increments_counter() {
         let dir = tempfile::tempdir().unwrap();
-        std::env::set_var("HOME", dir.path());
-        UsageMeter::record("tenant-a", "/api/workloads");
-        let meter = UsageMeter::load();
-        assert!(meter.requests_for("tenant-a") >= 1);
+        let mut meter = UsageMeter::isolated(dir.path());
+        meter.record_into("tenant-a", "/api/workloads");
+        assert_eq!(meter.requests_for("tenant-a"), 1);
+        meter.persist().unwrap();
+        let reloaded = UsageMeter::load_from_path(dir.path().join("tenant-usage.json"));
+        assert_eq!(reloaded.requests_for("tenant-a"), 1);
     }
 }
