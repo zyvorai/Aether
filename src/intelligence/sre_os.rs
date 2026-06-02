@@ -790,7 +790,7 @@ pub fn build_mttr_report(state_path: &Path) -> anyhow::Result<MttrReport> {
         });
     }
 
-    entries.sort_by(|a, b| b.incidents.cmp(&a.incidents));
+    entries.sort_by_key(|b| std::cmp::Reverse(b.incidents));
 
     Ok(MttrReport {
         generated_at: crate::resources::now_rfc3339(),

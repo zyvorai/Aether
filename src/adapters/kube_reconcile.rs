@@ -554,6 +554,7 @@ async fn reconcile_hpa(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn reconcile_optional<T>(
     client: &Client,
     namespace: &str,
@@ -653,6 +654,7 @@ where
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn reconcile_dynamic_optional(
     client: &Client,
     namespace: &str,

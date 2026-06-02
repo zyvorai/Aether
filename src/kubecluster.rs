@@ -1412,7 +1412,7 @@ pub async fn browse_resources(req: &ClusterBrowseRequest) -> Result<Vec<ClusterR
         "HorizontalPodAutoscaler" => list_hpa_resources(&client, &req.cluster, namespace).await?,
         "NetworkPolicy" => list_network_policy_resources(&client, &req.cluster, namespace).await?,
         "CiliumNetworkPolicy" => {
-            cilium::list_cilium_network_policies(&req.cluster, namespace.as_deref()).await?
+            cilium::list_cilium_network_policies(&req.cluster, namespace).await?
         }
         "CiliumClusterwideNetworkPolicy" => {
             cilium::list_cilium_clusterwide_network_policies(&req.cluster).await?

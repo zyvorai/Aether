@@ -63,11 +63,11 @@ pub fn evaluate(spec: &Workload, config: &SovereignConfig) -> SovereignVerdict {
         violations.push(e.to_string());
     }
 
-    if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-        if config.region_lock.is_some() && spec.confidential.as_ref().unwrap().region_lock.is_none()
-        {
-            hints.push("Set confidential.regionLock to pin workload to sovereign region".into());
-        }
+    if spec.confidential.as_ref().is_some_and(|c| c.enabled)
+        && config.region_lock.is_some()
+        && spec.confidential.as_ref().unwrap().region_lock.is_none()
+    {
+        hints.push("Set confidential.regionLock to pin workload to sovereign region".into());
     }
 
     SovereignVerdict {
@@ -116,10 +116,6 @@ pub fn offline_mode_active() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::spec::{
-        ConfidentialAttestationSpec, ConfidentialIsolationSpec, ConfidentialSecretsSpec,
-        ConfidentialSpec, ConfidentialTee, Metadata, Workload,
-    };
 
     #[test]
     fn region_lock_violation() {

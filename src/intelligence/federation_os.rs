@@ -6,16 +6,15 @@
 
 use crate::cost::{self, CloudProvider};
 use crate::fleet::edge::EdgeStore;
-use crate::fleet::federation::{federation_policies, plan_placement, FederationPolicy};
+use crate::fleet::federation::{federation_policies, plan_placement};
 use crate::intelligence::anomaly::load_placement_signals;
-use crate::kubecluster::{list_clusters, ClusterInfo};
+use crate::kubecluster::list_clusters;
 use crate::migration::fleet::{plan_fleet_migration, FleetMigrationRequest};
 use crate::migration::volume::{plan_volume_replication, VolumeReplicationRequest};
 use crate::ragnarok::sovereign::{evaluate, SovereignConfig};
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::Path;
 
 // ── Phase 25: Live federation execute ────────────────────────────────────────

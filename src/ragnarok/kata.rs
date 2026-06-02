@@ -189,7 +189,7 @@ pub fn confidential_pod_patch(spec: &Workload) -> Option<Value> {
         "metadata": {
             "labels": {
                 "ragnarok.zyvor.dev/confidential": "true",
-                "ragnarok.zyvor.dev/tee": serde_json::to_value(&conf.tee).ok(),
+                "ragnarok.zyvor.dev/tee": serde_json::to_value(conf.tee).ok(),
                 "ragnarok.zyvor.dev/kata-hypervisor": match hypervisor {
                     KataHypervisor::CloudHypervisor => "clh",
                     KataHypervisor::Qemu => "qemu",

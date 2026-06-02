@@ -126,6 +126,6 @@ mod tests {
     #[test]
     fn test_probe_host_tee_runs() {
         let s = probe_host_tee();
-        assert!(s.notes.len() >= 1 || s.sev_device || s.tdx);
+        assert!(!s.notes.is_empty() || s.sev_device || s.tdx);
     }
 }

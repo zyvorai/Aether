@@ -3648,7 +3648,7 @@ pub(crate) async fn api_compose_up(
                     status,
                     Json(ApiResponse {
                         success: json.0.success,
-                        data: json.0.data.map(|s| serde_json::Value::String(s)),
+                        data: json.0.data.map(serde_json::Value::String),
                         error: json.0.error,
                     }),
                 );
@@ -4142,7 +4142,7 @@ pub(crate) async fn rbac_create_key(
     };
 
     let mut store = app_state.rbac.write().await;
-    let plaintext_key = store.create_key(&request.name, role.clone());
+    let plaintext_key = store.create_key(&request.name, role);
 
     // Save to disk
     if let Err(e) = store.save(&crate::rbac::RbacStore::default_path()) {
@@ -4422,7 +4422,7 @@ pub(crate) async fn api_server_info(
     let hubble_ui_url = std::env::var("AETHER_HUBBLE_UI_URL")
         .ok()
         .filter(|s| !s.is_empty())
-        .or_else(|| None);
+        .or(None);
     let hubble_ui_url = if hubble_ui_url.is_some() {
         hubble_ui_url
     } else {

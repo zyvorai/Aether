@@ -57,7 +57,7 @@ fn tenant_usage_line(t: &Tenant, store: &StateStore, total: usize, n: usize) -> 
         .values()
         .filter(|w| w.name.starts_with(&format!("{}:", t.slug)) || w.name.contains(&t.slug))
         .count();
-    let share = if n > 0 { total / n } else { 0 };
+    let share = total.checked_div(n).unwrap_or(0);
     TenantUsageLine {
         tenant_id: t.id.clone(),
         tenant_slug: t.slug.clone(),

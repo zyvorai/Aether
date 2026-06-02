@@ -488,12 +488,13 @@ impl Workload {
                     );
                 }
             }
-            if conf.enabled && conf.attestation.policy == crate::spec::AttestationPolicy::Strict {
-                if conf.image_digest.is_none() {
-                    anyhow::bail!(
+            if conf.enabled
+                && conf.attestation.policy == crate::spec::AttestationPolicy::Strict
+                && conf.image_digest.is_none()
+            {
+                anyhow::bail!(
                         "strict confidential policy requires confidential.imageDigest (signed launch digest)"
                     );
-                }
             }
         }
 
@@ -560,11 +561,7 @@ impl Workload {
 
     /// Resolve the Kubernetes controller kind for this workload.
     pub fn resolved_k8s_workload_kind(&self) -> K8sWorkloadKind {
-        if let Some(kind) = self
-            .kubernetes
-            .as_ref()
-            .and_then(|k| k.workload_kind.clone())
-        {
+        if let Some(kind) = self.kubernetes.as_ref().and_then(|k| k.workload_kind) {
             return kind;
         }
         if self.schedule.is_some() {

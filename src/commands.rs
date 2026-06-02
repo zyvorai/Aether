@@ -4729,7 +4729,7 @@ pub(crate) async fn edge_agent_command(
     output::success(&format!("Edge agent '{site}' registered with {base}"));
 
     let mut local_queue = EdgeLocalQueue::for_site(site);
-    let mut last_error: Option<String> = None;
+    let mut last_error: Option<String>;
 
     loop {
         let (replay_ok, replay_fail) = local_queue.replay_all().await;

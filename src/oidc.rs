@@ -299,7 +299,7 @@ impl OidcRuntime {
             &validation,
         )
         .ok()?;
-        let role = parse_role_str(&data.claims.role).unwrap_or_else(|| self.default_role.clone());
+        let role = parse_role_str(&data.claims.role).unwrap_or(self.default_role);
         let username = data
             .claims
             .name
@@ -368,18 +368,18 @@ fn parse_role_str(s: &str) -> Option<Role> {
 impl OidcRuntime {
     fn resolve_role_for_id_token(&self, raw_jwt: &str) -> Role {
         let Some(mapping) = self.role_mapping.as_ref() else {
-            return self.default_role.clone();
+            return self.default_role;
         };
         let Some(payload) = jwt_payload_json(raw_jwt) else {
             tracing::warn!("OIDC: could not parse id_token payload for group mapping");
-            return self.default_role.clone();
+            return self.default_role;
         };
         let groups = claim_string_set(&payload, &mapping.claim_path);
         if groups.is_empty() {
             tracing::debug!("OIDC: no groups in claim path {:?}", mapping.claim_path);
-            return self.default_role.clone();
+            return self.default_role;
         }
-        role_from_groups(&groups, mapping).unwrap_or_else(|| self.default_role.clone())
+        role_from_groups(&groups, mapping).unwrap_or(self.default_role)
     }
 }
 
@@ -436,10 +436,10 @@ fn role_from_groups(
     for (role, mapped) in &mapping.rules {
         if mapped.iter().any(|g| member_groups.contains(g)) {
             best = Some(match (&best, role) {
-                (None, r) => r.clone(),
-                (Some(Role::Viewer), r) => r.clone(),
+                (None, r) => *r,
+                (Some(Role::Viewer), r) => *r,
                 (Some(Role::Operator), Role::Admin) => Role::Admin,
-                (Some(Role::Operator), r) => r.clone(),
+                (Some(Role::Operator), r) => *r,
                 (Some(Role::Admin), _) => Role::Admin,
             });
         }

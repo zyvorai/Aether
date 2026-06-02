@@ -37,8 +37,7 @@ pub fn confidential_fleet_rows(
                 .map(|d| catalog.verify_digest(d))
                 .unwrap_or(false);
             let tee = conf
-                .map(|c| serde_json::to_value(&c.tee).ok())
-                .flatten()
+                .and_then(|c| serde_json::to_value(c.tee).ok())
                 .and_then(|v| v.as_str().map(String::from))
                 .unwrap_or_else(|| "—".into());
             let trust = compute_trust_score(

@@ -131,7 +131,7 @@ pub struct ProductionRuntimeSnapshot {
 }
 
 pub fn build_production_scorecard(snap: &ProductionRuntimeSnapshot) -> ProductionScorecard {
-    let mut checks = vec![
+    let checks = vec![
         check(
             "api-key-or-oidc",
             "API authentication",

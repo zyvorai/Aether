@@ -178,8 +178,7 @@ pub fn placement_advice(spec: &Workload) -> ConfidentialPlacementAdvice {
         .confidential
         .as_ref()
         .filter(|c| c.enabled)
-        .map(|c| serde_json::to_value(&c.tee).ok())
-        .flatten()
+        .and_then(|c| serde_json::to_value(c.tee).ok())
         .and_then(|v| v.as_str().map(String::from));
 
     let recommended = recommended_runtime(spec);
