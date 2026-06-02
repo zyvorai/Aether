@@ -67,6 +67,15 @@ deploy_stack() {
   info "Namespace ready: ${NAMESPACE}"
 
   step "Applying manifests"
+  if [ -f "${REPO_ROOT}/grafana/dashboard.json" ]; then
+    ${KUBECTL} create configmap aether-dashboard \
+      --from-file=aether-dashboard.json="${REPO_ROOT}/grafana/dashboard.json" \
+      -n "${NAMESPACE}" \
+      --dry-run=client -o yaml | ${KUBECTL} apply -f -
+    info "Grafana dashboard ConfigMap ready"
+  else
+    warn "Missing grafana/dashboard.json — Grafana will start without pre-provisioned dashboards"
+  fi
   ${KUBECTL} apply -n "${NAMESPACE}" -f "${EXAMPLES_DIR}/prometheus.yaml"
   ${KUBECTL} apply -n "${NAMESPACE}" -f "${EXAMPLES_DIR}/alertmanager.yaml"
   ${KUBECTL} apply -n "${NAMESPACE}" -f "${EXAMPLES_DIR}/grafana.yaml"

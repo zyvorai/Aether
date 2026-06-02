@@ -87,6 +87,7 @@ data:
         - role: pod
           namespaces:
             names:
+            - aether-system
             - aether-production
             - aether-staging
         relabel_configs:
@@ -326,8 +327,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Gi
-  storageClassName: standard
+      storage: 20Gi
 
 ---
 apiVersion: apps/v1
@@ -361,8 +361,8 @@ spec:
         args:
           - '--config.file=/etc/prometheus/prometheus.yml'
           - '--storage.tsdb.path=/prometheus'
-          - '--storage.tsdb.retention.time=30d'
-          - '--storage.tsdb.retention.size=90GB'
+          - '--storage.tsdb.retention.time=15d'
+          - '--storage.tsdb.retention.size=15GB'
           - '--web.enable-lifecycle'
           - '--web.enable-admin-api'
           - '--web.console.libraries=/etc/prometheus/console_libraries'
@@ -372,11 +372,11 @@ spec:
           containerPort: 9090
         resources:
           requests:
-            cpu: 500m
-            memory: 2Gi
+            cpu: 250m
+            memory: 768Mi
           limits:
-            cpu: 2
-            memory: 4Gi
+            cpu: 1
+            memory: 2560Mi
         livenessProbe:
           httpGet:
             path: /-/healthy
