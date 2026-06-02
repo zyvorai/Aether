@@ -210,7 +210,6 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: standard
 
 ---
 apiVersion: apps/v1

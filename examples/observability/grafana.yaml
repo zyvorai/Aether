@@ -106,8 +106,7 @@ data:
     enabled = false
 
     [alerting]
-    enabled = true
-    execute_alerts = true
+    enabled = false
 
     [unified_alerting]
     enabled = true
@@ -124,7 +123,6 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: standard
 
 ---
 apiVersion: apps/v1
