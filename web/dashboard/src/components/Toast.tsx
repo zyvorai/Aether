@@ -44,7 +44,7 @@ export function useToast() {
 
   function ToastContainer() {
     return (
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
           <ToastCard key={t.id} item={t} onDismiss={dismiss} />
         ))}
@@ -77,7 +77,9 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
       <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} />
       <p className="flex-1 text-sm text-slate-100">{item.message}</p>
       <button
+        type="button"
         onClick={() => onDismiss(item.id)}
+        aria-label="Dismiss notification"
         className="shrink-0 rounded p-0.5 text-slate-500 transition-colors hover:text-slate-300"
       >
         <X className="h-4 w-4" />

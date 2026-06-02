@@ -2,8 +2,14 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
+import { useEffect, useState } from 'react';
 import { CheckCircle2, Circle, ClipboardCheck, Rocket, HeartPulse } from 'lucide-react';
 import type { AppView } from '../types/api';
+import {
+  dismissOnboarding,
+  isOnboardingComplete,
+  isOnboardingDismissed,
+} from '../utils/onboardingState';
 
 interface OnboardingStep {
   id: string;
@@ -30,6 +36,7 @@ export default function OnboardingStrip({
   onDeploy,
   onValidate,
 }: OnboardingStripProps) {
+  const [dismissed, setDismissed] = useState(isOnboardingDismissed);
 
   const steps: OnboardingStep[] = [
     {
@@ -56,15 +63,37 @@ export default function OnboardingStrip({
   ];
 
   const completed = steps.filter((s) => s.done).length;
+  const allComplete = isOnboardingComplete(hasWorkloads, hasValidated, hasHealthChecks);
+
+  useEffect(() => {
+    if (allComplete && !isOnboardingDismissed()) {
+      dismissOnboarding();
+      setDismissed(true);
+    }
+  }, [allComplete]);
+
+  useEffect(() => {
+    const onDismiss = () => setDismissed(true);
+    window.addEventListener('aether:onboarding-dismissed', onDismiss);
+    return () => window.removeEventListener('aether:onboarding-dismissed', onDismiss);
+  }, []);
+
+  if (dismissed && allComplete) {
+    return (
+      <div
+        className="mb-6 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-2 text-sm text-emerald-300"
+        data-testid="onboarding-complete-chip"
+      >
+        <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+        Setup complete — all onboarding steps finished.
+      </div>
+    );
+  }
+
+  if (dismissed) return null;
 
   return (
-    <section
-      className="overview-section-shell mb-6 p-5 sm:p-6"
-      style={{
-        background:
-          'linear-gradient(165deg, rgba(59, 130, 246, 0.08) 0%, rgba(168, 85, 247, 0.06) 48%, rgba(17, 21, 28, 0.88) 100%)',
-      }}
-    >
+    <section className="overview-section-shell onboarding-strip-gradient mb-6 p-5 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="section-label">Onboarding</p>
@@ -89,30 +118,30 @@ export default function OnboardingStrip({
                   : ''
               }`}
             >
-              <span className={`mt-0.5 shrink-0 text-xs font-mono ${'text-slate-500'}`}>
+              <span className="mt-0.5 shrink-0 text-xs font-mono text-slate-500">
                 {index + 1}
               </span>
               {step.done ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" aria-hidden />
               ) : (
-                <Circle className={`h-4 w-4 shrink-0 mt-0.5 ${'text-slate-500'}`} aria-hidden />
+                <Circle className="h-4 w-4 shrink-0 mt-0.5 text-slate-500" aria-hidden />
               )}
               <span className="min-w-0 flex-1">
-                <span className={`block text-sm font-medium ${'text-slate-200'}`}>
+                <span className="block text-sm font-medium text-slate-200">
                   {step.label}
                 </span>
-                <span className={`block text-xs mt-1 ${'text-slate-500'}`}>
+                <span className="block text-xs mt-1 text-slate-500">
                   {step.description}
                 </span>
               </span>
               {step.id === 'validate' ? (
-                <ClipboardCheck className={`hidden sm:block h-4 w-4 shrink-0 ${'text-slate-600'}`} aria-hidden />
+                <ClipboardCheck className="hidden sm:block h-4 w-4 shrink-0 text-slate-600" aria-hidden />
               ) : null}
               {step.id === 'deploy' ? (
-                <Rocket className={`hidden sm:block h-4 w-4 shrink-0 ${'text-slate-600'}`} aria-hidden />
+                <Rocket className="hidden sm:block h-4 w-4 shrink-0 text-slate-600" aria-hidden />
               ) : null}
               {step.id === 'health' ? (
-                <HeartPulse className={`hidden sm:block h-4 w-4 shrink-0 ${'text-slate-600'}`} aria-hidden />
+                <HeartPulse className="hidden sm:block h-4 w-4 shrink-0 text-slate-600" aria-hidden />
               ) : null}
             </button>
           </li>

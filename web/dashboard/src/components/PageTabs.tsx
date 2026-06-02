@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import type { ReactNode } from 'react';
+import { useCallback, type ReactNode, type KeyboardEvent } from 'react';
 
 export interface PageTab<T extends string> {
   id: T;
@@ -23,16 +23,37 @@ export default function PageTabs<T extends string>({
   onChange,
   className = '',
 }: PageTabsProps<T>) {
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      const idx = tabs.findIndex((t) => t.id === active);
+      if (idx < 0) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const delta = e.key === 'ArrowRight' ? 1 : -1;
+        const next = tabs[(idx + delta + tabs.length) % tabs.length];
+        onChange(next.id);
+      }
+    },
+    [active, onChange, tabs],
+  );
+
   return (
-    <div className={`mb-6 flex flex-wrap gap-2 ${className}`}>
+    <div
+      role="tablist"
+      aria-label="Page sections"
+      className={`mb-6 flex flex-wrap gap-2 ${className}`}
+      onKeyDown={onKeyDown}
+    >
       {tabs.map((tab) => {
         const isActive = active === tab.id;
         return (
           <button
             key={tab.id}
             type="button"
+            role="tab"
             onClick={() => onChange(tab.id)}
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             className={`glass-tab tab-chip flex items-center gap-2 ${isActive ? 'glass-tab-active tab-chip-active glass-tab-active' : ''}`}
           >
             {tab.icon}

@@ -19,6 +19,7 @@ import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import ValidateResultPanel from '../ValidateResultPanel';
 import YamlCodeEditor from '../YamlCodeEditor';
+import PageLoading from '../PageLoading';
 import type { ValidateResponse, PolicyResult, WorkloadResponse } from '../../types/api';
 
 interface EditorForm extends ConfidentialFormState {
@@ -101,19 +102,24 @@ export default function EditorPage() {
   const [showPreview, setShowPreview] = useState(true);
   const [yamlEditMode, setYamlEditMode] = useState(false);
   const [yamlDraft, setYamlDraft] = useState('');
+  const [preloadLoading, setPreloadLoading] = useState(false);
 
   useEffect(() => {
     if (!workloadQuery.trim()) return;
+    setPreloadLoading(true);
     void apiFetchSettled<WorkloadResponse[]>('/workloads').then((res) => {
-      if (!res.ok) return;
-      const match = res.data.find((w) => w.name === workloadQuery.trim());
-      if (!match) return;
-      setForm((prev) => ({
-        ...prev,
-        name: match.name,
-        image: match.image || prev.image,
-        runtime: match.runtime || prev.runtime,
-      }));
+      if (res.ok) {
+        const match = res.data.find((w) => w.name === workloadQuery.trim());
+        if (match) {
+          setForm((prev) => ({
+            ...prev,
+            name: match.name,
+            image: match.image || prev.image,
+            runtime: match.runtime || prev.runtime,
+          }));
+        }
+      }
+      setPreloadLoading(false);
     });
   }, [workloadQuery]);
 
@@ -226,6 +232,10 @@ export default function EditorPage() {
       );
     }
   };
+
+  if (preloadLoading) {
+    return <PageLoading label="Loading workload…" variant="spinner" />;
+  }
 
   return (
     <div>

@@ -18,6 +18,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import EmptyState from '../EmptyState';
 import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
+import { WorkloadContextBanner } from '../QueryContextBanner';
 import { useAuth } from '../../contexts/AuthContext';
 
 type ViewMode = 'grid' | 'list';
@@ -117,6 +118,13 @@ export default function ApplicationsPage() {
 
   return (
     <div data-testid="applications-page">
+      {workloadParam.trim() ? (
+        <WorkloadContextBanner
+          testId="applications-workload-context"
+          workload={workloadParam.trim()}
+          description="Application context"
+        />
+      ) : null}
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>

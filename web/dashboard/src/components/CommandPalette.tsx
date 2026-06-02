@@ -46,7 +46,7 @@ const NAV_ITEMS: CommandAction[] = DASHBOARD_VIEWS.map((v) => ({
   id: `nav-${v.view}`,
   label: v.view === 'overview' ? 'Command Center' : `Go to ${v.label}`,
   category: 'navigation' as const,
-  searchText: `${v.label} ${v.subtitle} ${v.view}`,
+  searchText: `${v.label} ${v.paletteLabel ?? ''} ${v.subtitle} ${v.view}`,
   view: v.view,
 }));
 

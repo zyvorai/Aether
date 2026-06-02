@@ -2,16 +2,19 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { useApiPage } from '../../hooks/useApiPage';
 import CostIntelligencePanel from '../CostIntelligencePanel';
 import FinOpsPlatformPanel from '../FinOpsPlatformPanel';
 import EmptyState from '../EmptyState';
+import InlineActionError from '../InlineActionError';
+import PanelLoadError from '../PanelLoadError';
 import SpecWorkbench from '../SpecWorkbench';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { CostEstimate } from '../../types/api';
@@ -29,18 +32,18 @@ export default function CostPage() {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload');
   const [estimates, setEstimates] = useState<CostEstimate[]>([]);
-  const [chargeback, setChargeback] = useState<ChargebackReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadChargeback = useCallback(async () => {
-    const res = await apiFetchSettled<ChargebackReport>('/cost/chargeback?provider=aws');
-    setChargeback(res.ok ? res.data : null);
-  }, []);
-
-  useEffect(() => {
-    void loadChargeback();
-  }, [loadChargeback]);
+  const {
+    data: chargeback,
+    loading: chargebackLoading,
+    error: chargebackError,
+    reload: reloadChargeback,
+  } = useApiPage<ChargebackReport>(
+    () => apiFetchSettled<ChargebackReport>('/cost/chargeback?provider=aws'),
+    [],
+  );
 
   async function handleEstimate(yaml: string) {
     setLoading(true);
@@ -62,7 +65,7 @@ export default function CostPage() {
   const resultContent =
     estimates.length === 0 ? (
       error ? (
-        <p className="text-sm text-red-400">{error}</p>
+        <InlineActionError message={error} />
       ) : (
         <EmptyState icon={<Inbox size={48} />} title="No estimates" description="Submit a workload YAML to see cost estimates" />
       )
@@ -178,7 +181,13 @@ export default function CostPage() {
       ) : null}
 
       <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
-      {chargeback ? (
+      {chargebackLoading ? null : chargebackError ? (
+        <PanelLoadError
+          title="Fleet chargeback unavailable"
+          description="Could not load chargeback data from the API."
+          onRetry={() => void reloadChargeback()}
+        />
+      ) : chargeback ? (
         <div className="glass-panel-card" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <h2 className="text-lg font-semibold text-slate-100">Fleet chargeback</h2>
@@ -240,7 +249,7 @@ export default function CostPage() {
       <SpecWorkbench
         title="Cost estimation"
         description="Paste workload YAML to compare provider pricing."
-        buttonText="Estimate Costs"
+        buttonText={loading ? 'Estimating…' : 'Estimate Costs'}
         onSubmit={handleEstimate}
         loading={loading}
         placeholder="Paste workload YAML to estimate costs..."

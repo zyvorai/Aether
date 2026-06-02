@@ -217,7 +217,7 @@ export default function ZeusPage() {
       <div className="zeus-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
         <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
-            <Bot className="h-4 w-4 text-[#c084fc]" aria-hidden />
+            <Bot className="h-4 w-4 text-aether-ai" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-white">AI Ops Zeus</h2>
@@ -287,10 +287,10 @@ export default function ZeusPage() {
           ) : null}
         </div>
 
-        <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite" aria-relevant="additions">
           {messages.length === 0 && (
             <div className="rounded-2xl border border-aether-ai/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-sm">
-              <Sparkles className="mx-auto mb-3 h-8 w-8 text-[#c084fc]/80" aria-hidden />
+              <Sparkles className="mx-auto mb-3 h-8 w-8 text-aether-ai/80" aria-hidden />
               <p className="text-sm text-slate-400">
                 Ask about health, drift, costs, migrations, or cluster state.
               </p>
@@ -367,7 +367,7 @@ export default function ZeusPage() {
         </div>
 
         <form
-          className="relative z-[1] flex gap-2 glass-divider-t/50 p-3"
+          className="zeus-chat-input-bar relative z-[1] flex gap-2 glass-divider-t/50 p-3"
           onSubmit={(e) => {
             e.preventDefault();
             void send(input);
@@ -380,6 +380,7 @@ export default function ZeusPage() {
               setQParam(e.target.value);
             }}
             placeholder="Ask Aether anything…"
+            aria-label="Message Zeus"
             data-testid="zeus-input"
             className="glass-input min-w-0 flex-1 text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
