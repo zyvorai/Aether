@@ -55,17 +55,12 @@ pub async fn build_next_actions(state_path: &Path) -> anyhow::Result<NextActions
         if issue.severity == "info" {
             continue;
         }
-        let route = if issue.workload.is_some() {
-            "observability"
-        } else {
-            "observability"
-        };
         actions.push(NextAction {
             id: format!("issue-{}", actions.len()),
             title: issue.title.clone(),
             detail: issue.detail.clone(),
             priority: severity_priority(&issue.severity),
-            route: route.into(),
+            route: "observability".into(),
             action_type: "investigate".into(),
         });
     }
@@ -152,7 +147,7 @@ pub async fn build_next_actions(state_path: &Path) -> anyhow::Result<NextActions
         });
     }
 
-    actions.sort_by(|a, b| b.priority.cmp(&a.priority));
+    actions.sort_by_key(|b| std::cmp::Reverse(b.priority));
     actions.truncate(8);
 
     Ok(NextActionsReport {

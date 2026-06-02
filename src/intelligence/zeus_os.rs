@@ -15,6 +15,7 @@ fn zeus_audit_path() -> PathBuf {
     crate::resources::aether_path("zeus-audit.jsonl")
 }
 
+#[allow(dead_code)]
 fn zeus_memory_path() -> PathBuf {
     crate::resources::aether_path("zeus-memory.json")
 }

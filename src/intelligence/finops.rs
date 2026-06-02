@@ -172,9 +172,7 @@ impl FinOpsEngine {
             RuntimeKind::Metal3
         } else if profile.map(|p| p.cpu_bursty).unwrap_or(false) {
             RuntimeKind::KubeVirt
-        } else if ws.runtime == RuntimeKind::KubeVirt {
-            RuntimeKind::Kubernetes
-        } else if ws.runtime == RuntimeKind::Metal3 {
+        } else if ws.runtime == RuntimeKind::KubeVirt || ws.runtime == RuntimeKind::Metal3 {
             RuntimeKind::Kubernetes
         } else {
             return None;

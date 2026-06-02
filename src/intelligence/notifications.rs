@@ -36,18 +36,13 @@ pub fn build_critical_notifications(
         if sev != "critical" && sev != "high" {
             continue;
         }
-        let route = if issue.workload.is_some() {
-            "observability"
-        } else {
-            "observability"
-        };
         notifications.push(CriticalNotification {
             id: format!("crit-{idx}"),
             severity: issue.severity.clone(),
             title: issue.title.clone(),
             detail: issue.detail.clone(),
             workload: issue.workload.clone(),
-            route: route.into(),
+            route: "observability".into(),
         });
     }
 
@@ -69,7 +64,7 @@ pub fn build_critical_notifications(
         });
     }
 
-    notifications.sort_by(|a, b| severity_rank(&b.severity).cmp(&severity_rank(&a.severity)));
+    notifications.sort_by_key(|b| std::cmp::Reverse(severity_rank(&b.severity)));
     notifications.truncate(6);
 
     Ok(CriticalNotificationsReport {

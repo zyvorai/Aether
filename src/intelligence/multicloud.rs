@@ -48,7 +48,7 @@ pub async fn build_multicloud_posture(
 
     for ws in store.list() {
         fleet_workloads += 1;
-        let Ok(spec) = Workload::from_file(&ws.spec_path) else {
+        let Ok(_spec) = Workload::from_file(&ws.spec_path) else {
             continue;
         };
         let cluster_key = ws.runtime.to_string().to_lowercase();

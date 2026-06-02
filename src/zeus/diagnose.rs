@@ -220,15 +220,15 @@ pub async fn diagnose_workload(
         }
 
         for event in &events {
-            if event.reason.contains("Failed") || event.type_ == "Warning" {
-                if event.message.to_lowercase().contains("secret") {
-                    recommendations.push(DiagnoseRecommendation {
-                        title: "Secret change may have caused failure".into(),
-                        summary: event.message.clone(),
-                        action: "rollback_secret".into(),
-                        applyable: target.state.is_some(),
-                    });
-                }
+            if (event.reason.contains("Failed") || event.type_ == "Warning")
+                && event.message.to_lowercase().contains("secret")
+            {
+                recommendations.push(DiagnoseRecommendation {
+                    title: "Secret change may have caused failure".into(),
+                    summary: event.message.clone(),
+                    action: "rollback_secret".into(),
+                    applyable: target.state.is_some(),
+                });
             }
         }
 

@@ -7,7 +7,7 @@
 use crate::drift::fleet::scan_fleet;
 use crate::intelligence::policy::AutonomyPolicy;
 use crate::spec::Workload;
-use crate::state::{StateStore, WorkloadState};
+use crate::state::StateStore;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

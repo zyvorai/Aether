@@ -158,7 +158,7 @@ fn workload_labels(spec: &Workload) -> BTreeMap<String, String> {
     if let Some(conf) = spec.confidential.as_ref() {
         if conf.enabled {
             labels.insert("ragnarok.zyvor.dev/confidential".into(), "true".into());
-            if let Ok(v) = serde_json::to_value(&conf.tee) {
+            if let Ok(v) = serde_json::to_value(conf.tee) {
                 if let Some(tee) = v.as_str() {
                     labels.insert("ragnarok.zyvor.dev/tee".into(), tee.into());
                 }

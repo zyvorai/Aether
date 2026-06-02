@@ -95,8 +95,6 @@ fn k8s_meta(_spec: &Workload) -> (Option<String>, Option<String>) {
 mod tests {
     use super::*;
     use crate::runtime::{Instance, RuntimeKind};
-    use std::collections::HashMap;
-    use std::path::PathBuf;
 
     #[test]
     fn empty_store_summary() {

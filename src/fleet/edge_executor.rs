@@ -97,11 +97,18 @@ pub struct EdgeLocalQueue {
 
 impl EdgeLocalQueue {
     pub fn for_site(site: &str) -> Self {
+        Self::load_from_path(Self::site_queue_path(site))
+    }
+
+    fn site_queue_path(site: &str) -> PathBuf {
         let safe = site
             .chars()
             .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
             .collect::<String>();
-        let path = crate::resources::aether_path(&format!("edge-{safe}-offline.json"));
+        crate::resources::aether_path(&format!("edge-{safe}-offline.json"))
+    }
+
+    fn load_from_path(path: PathBuf) -> Self {
         let inner = if path.exists() {
             std::fs::read_to_string(&path)
                 .ok()
@@ -113,8 +120,21 @@ impl EdgeLocalQueue {
         Self { path, inner }
     }
 
+    #[cfg(test)]
+    fn for_site_in(base: &Path, site: &str) -> Self {
+        let safe = site
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+            .collect::<String>();
+        Self::load_from_path(base.join(format!("edge-{safe}-offline.json")))
+    }
+
     pub fn len(&self) -> usize {
         self.inner.jobs.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.jobs.is_empty()
     }
 
     pub fn push(&mut self, job: EdgeJob) -> Result<()> {
@@ -329,8 +349,7 @@ mod tests {
     #[test]
     fn local_queue_push_and_persist() {
         let dir = tempfile::tempdir().unwrap();
-        std::env::set_var("HOME", dir.path());
-        let mut q = EdgeLocalQueue::for_site("dc1");
+        let mut q = EdgeLocalQueue::for_site_in(dir.path(), "dc1");
         q.push(EdgeJob {
             id: "j1".into(),
             site: "dc1".into(),
@@ -339,6 +358,7 @@ mod tests {
             created_at: "now".into(),
         })
         .unwrap();
-        assert_eq!(EdgeLocalQueue::for_site("dc1").len(), 1);
+        assert_eq!(q.len(), 1);
+        assert_eq!(EdgeLocalQueue::for_site_in(dir.path(), "dc1").len(), 1);
     }
 }
