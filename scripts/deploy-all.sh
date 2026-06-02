@@ -52,6 +52,34 @@ run_remote_health_checks() {
     "cd ~/.deployment/aether && ./scripts/health-check-all.sh"
 }
 
+remote_ssh_target() {
+  if [ -n "${REMOTE_USER}" ]; then
+    printf '%s@%s' "${REMOTE_USER}" "${REMOTE_HOST}"
+  else
+    printf '%s' "${REMOTE_HOST}"
+  fi
+}
+
+run_remote_observability() {
+  local remote_target
+  remote_target="$(remote_ssh_target)"
+  aether_subtle "  🛰️  Opening SSH channel to ${remote_target} for observability stack…"
+  ssh -o StrictHostKeyChecking=no "${remote_target}" \
+    "cd ~/.deployment/aether && \
+     AETHER_OBSERVABILITY_EXPOSE=nodeport \
+     AETHER_OBSERVABILITY_HOST='${REMOTE_HOST}' \
+     AETHER_OPEN_FIREWALL='${AETHER_OPEN_FIREWALL:-0}' \
+     AETHER_SKIP_OBSERVABILITY_HEALTH='${AETHER_SKIP_OBSERVABILITY_HEALTH:-0}' \
+     ./scripts/deploy-observability.sh deploy"
+}
+
+run_remote_observability_delete() {
+  local remote_target
+  remote_target="$(remote_ssh_target)"
+  ssh -o StrictHostKeyChecking=no "${remote_target}" \
+    "cd ~/.deployment/aether && ./scripts/deploy-observability.sh delete"
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --remote)
@@ -125,7 +153,11 @@ if [ "${UNINSTALL}" = "1" ]; then
 
   if [ "${WITH_OBSERVABILITY}" = "1" ]; then
     step "Removing observability stack"
-    "${SCRIPT_DIR}/deploy-observability.sh" delete
+    if [ -n "${REMOTE_HOST}" ]; then
+      run_remote_observability_delete
+    else
+      "${SCRIPT_DIR}/deploy-observability.sh" delete
+    fi
   fi
 
   info "Uninstall completed"
@@ -154,7 +186,11 @@ fi
 
 if [ "${WITH_OBSERVABILITY}" = "1" ]; then
   step "Deploying observability stack (🔭 charts incoming)"
-  "${SCRIPT_DIR}/deploy-observability.sh" deploy
+  if [ -n "${REMOTE_HOST}" ]; then
+    run_remote_observability
+  else
+    "${SCRIPT_DIR}/deploy-observability.sh" deploy
+  fi
 fi
 
 if [ "${SKIP_HEALTH}" = "0" ]; then
