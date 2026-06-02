@@ -15,12 +15,17 @@ interface BreadcrumbProps {
   workloadName?: string;
 }
 
+const PARENT_CRUMBS: Partial<Record<AppView, { view: AppView; label: string }>> = {
+  'ai-providers': { view: 'settings', label: 'Settings' },
+};
+
 export default function Breadcrumb({ currentView, onNavigate, workloadName }: BreadcrumbProps) {
   const navigate = useNavigate();
   if (currentView === 'overview') return null;
 
   const label = VIEW_LABELS[currentView];
   const workload = workloadName?.trim();
+  const parent = PARENT_CRUMBS[currentView];
 
   return (
     <nav className="dash-breadcrumb mb-6" aria-label="Breadcrumb">
@@ -33,6 +38,19 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
           <Home className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
           <span className="hidden sm:inline">Home</span>
         </button>
+        {parent ? (
+          <>
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-600" aria-hidden />
+            <button
+              type="button"
+              data-testid="breadcrumb-parent"
+              onClick={() => onNavigate(parent.view)}
+              className="truncate rounded-lg px-2 py-1.5 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-slate-100"
+            >
+              {parent.label}
+            </button>
+          </>
+        ) : null}
         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-600" aria-hidden />
         <span className="truncate px-1 py-1.5 text-sm font-medium text-slate-100">{label}</span>
         {workload ? (

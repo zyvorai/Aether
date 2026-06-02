@@ -207,6 +207,8 @@ export default function EventsPage() {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search message or workload…"
+        searchTestId="events-search"
+        refreshTestId="events-refresh"
         onRefresh={() => void load()}
         refreshing={loading}
         filters={

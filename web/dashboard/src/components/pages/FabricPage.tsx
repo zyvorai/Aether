@@ -6,14 +6,23 @@ import { FabricPageContent } from '../RuntimeFabricGraph';
 import DigitalTwinPanel from '../DigitalTwinPanel';
 import KnowledgeGraphPanel from '../KnowledgeGraphPanel';
 import UnifiedFabricPanel from '../UnifiedFabricPanel';
+import HubPageToc from '../HubPageToc';
+
+const TOC = [
+  { id: 'fabric-twin', label: 'Digital twin' },
+  { id: 'fabric-topology', label: 'Topology' },
+  { id: 'fabric-graph', label: 'Knowledge graph' },
+  { id: 'fabric-unified', label: 'Unified fabric' },
+];
 
 export default function FabricPage() {
   return (
-    <section className="overview-section-shell mb-6 space-y-8 p-6 sm:p-8">
-      <DigitalTwinPanel />
-      <FabricPageContent />
-      <KnowledgeGraphPanel />
-      <UnifiedFabricPanel />
+    <section className="hub-page-shell">
+      <HubPageToc items={TOC} />
+      <div id="fabric-twin"><DigitalTwinPanel /></div>
+      <div id="fabric-topology"><FabricPageContent /></div>
+      <div id="fabric-graph"><KnowledgeGraphPanel /></div>
+      <div id="fabric-unified"><UnifiedFabricPanel /></div>
     </section>
   );
 }

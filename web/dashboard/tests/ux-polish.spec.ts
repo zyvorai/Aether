@@ -149,4 +149,86 @@ test.describe('Dashboard UX polish', () => {
     await expect(page.getByTestId('workloads-deploy-button')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Deploy YAML', exact: true })).toHaveCount(0);
   });
+
+  test('Metrics page shows retry UI when API fails', async ({ page }) => {
+    await page.route('**/api/metrics', (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'text/plain',
+        body: 'unavailable',
+      }),
+    );
+    await page.goto('/metrics');
+    await expect(page.getByText(/Metrics unavailable|Data unavailable/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: 'Retry' }).first()).toBeVisible();
+  });
+
+  test('Templates page shows retry UI when API fails', async ({ page }) => {
+    await page.route('**/api/templates**', (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, error: 'unavailable' }),
+      }),
+    );
+    await page.goto('/templates');
+    await expect(page.getByText(/Templates unavailable|Data unavailable/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: 'Retry' }).first()).toBeVisible();
+  });
+
+  test('nested breadcrumb on AI providers settings route', async ({ page }) => {
+    await page.goto('/settings/ai-providers');
+    await expect(page.getByTestId('breadcrumb-parent')).toHaveText('Settings');
+    await expect(page.getByText('AI Providers').first()).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('onboarding shows complete chip when all steps done in localStorage', async ({ page }) => {
+    await page.route('**/api/workloads', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      }),
+    );
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('aether_onboarding_validated', '1');
+      localStorage.setItem('aether_onboarding_deployed', '1');
+      localStorage.setItem('aether_onboarding_health', '1');
+      localStorage.setItem('aether_onboarding_dismissed', '1');
+    });
+    await page.reload();
+    await expect(page.getByTestId('onboarding-complete-chip')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Getting started' })).toHaveCount(0);
+  });
+
+  test('workloads page fits mobile viewport without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/workloads');
+    await expect(page.locator('.page-frame').first()).toBeVisible({ timeout: 15_000 });
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+    expect(overflow).toBe(false);
+  });
+
+  test('clusters page fits mobile viewport without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/clusters');
+    await expect(page.locator('.page-frame').first()).toBeVisible({ timeout: 15_000 });
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+    expect(overflow).toBe(false);
+  });
+
+  test('steel theme empty state on workloads page', async ({ page }) => {
+    await page.route('**/api/workloads', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      }),
+    );
+    await page.getByLabel('Theme').selectOption('steel');
+    await page.goto('/workloads');
+    await expect(page.locator('.overview-section-shell').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('.glass-empty-state').first()).toBeVisible({ timeout: 15_000 });
+  });
 });

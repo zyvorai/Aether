@@ -63,3 +63,22 @@ export function syncHealthFromSummary(healthy: number, degraded: number, unhealt
     markHealthReviewed();
   }
 }
+
+const DISMISSED_KEY = 'aether_onboarding_dismissed';
+
+export function dismissOnboarding(): void {
+  setKey(DISMISSED_KEY);
+  window.dispatchEvent(new Event('aether:onboarding-dismissed'));
+}
+
+export function isOnboardingDismissed(): boolean {
+  return hasKey(DISMISSED_KEY);
+}
+
+export function isOnboardingComplete(
+  hasWorkloads: boolean,
+  hasValidated?: boolean,
+  hasHealthChecks?: boolean,
+): boolean {
+  return Boolean(hasValidated && hasWorkloads && hasHealthChecks);
+}

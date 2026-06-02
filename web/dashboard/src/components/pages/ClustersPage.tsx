@@ -14,6 +14,7 @@ import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import ResponsiveTable from '../ResponsiveTable';
 import PageTabs from '../PageTabs';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
@@ -741,7 +742,12 @@ export default function ClustersPage() {
       <EmptyState
         icon={<Container size={48} />}
         title="No Kubernetes contexts"
-        description="Aether could not find any kubeconfig contexts to browse."
+        description="Aether could not find any kubeconfig contexts to browse. Configure cluster access on Platform & HA."
+        action={
+          <Link to={viewToPath('platform')} className="btn-primary inline-flex items-center gap-2">
+            Open Platform setup
+          </Link>
+        }
       />
     );
   }
@@ -997,18 +1003,18 @@ export default function ClustersPage() {
         />
       ) : (
         <div className={`glass-table-shell ${panelClass}`} data-testid="clusters-resource-table">
-          <div className="overflow-x-auto">
+          <ResponsiveTable stickyFirstColumn>
             <table className="w-full">
               <thead>
                 <tr className="glass-divider-b">
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Name</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Name</th>
                   {pageTab === 'network' && (
-                    <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Kind</th>
+                    <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Kind</th>
                   )}
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Namespace</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Status</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Detail</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Created</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Namespace</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Status</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Detail</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Created</th>
                 </tr>
               </thead>
               <tbody>
@@ -1041,7 +1047,7 @@ export default function ClustersPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ResponsiveTable>
         </div>
       )}
 

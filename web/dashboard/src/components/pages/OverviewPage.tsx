@@ -517,7 +517,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
                 <button
                   type="button"
                   onClick={() => goFiltered('workloads', { deploy: '1' })}
-                  className="rounded-xl bg-gradient-to-r from-aether to-[#2563EB] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
+                  className="btn-primary inline-flex items-center gap-2"
                 >
                   Deploy YAML
                 </button>
