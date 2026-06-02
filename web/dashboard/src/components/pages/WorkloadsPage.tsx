@@ -34,6 +34,7 @@ import PageToolbar from '../PageToolbar';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import ResponsiveTable from '../ResponsiveTable';
 import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
 
 interface WorkloadsPageProps {
@@ -553,6 +554,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search name, image, cluster, namespace..."
+        searchTestId="workloads-search"
+        refreshTestId="workloads-refresh"
         onRefresh={load}
         refreshing={loading}
         filters={
@@ -801,6 +804,15 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 </button>
                 <button
                   type="button"
+                  onClick={() => setValidateModal(true)}
+                  className="btn-secondary inline-flex items-center gap-2"
+                  data-testid="workloads-empty-validate-button"
+                >
+                  <ClipboardCheck className="h-4 w-4" />
+                  Validate YAML
+                </button>
+                <button
+                  type="button"
                   onClick={() => navigate(viewToPath('compose'))}
                   className="btn-secondary inline-flex items-center gap-2"
                 >
@@ -816,11 +828,11 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         )
       ) : (
         <div className="glass-table-shell" data-testid="workloads-table">
-          <div className="overflow-x-auto min-w-0">
+          <ResponsiveTable stickyFirstColumn>
             <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="glass-divider-b">
-                  <th className="w-10 py-3 px-2">
+                  <th scope="col" className="w-10 py-3 px-2">
                     <input
                       type="checkbox"
                       aria-label="Select all"
@@ -834,12 +846,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                       }}
                     />
                   </th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[18%] min-w-0">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[12%] min-w-0">Runtime</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[36%] min-w-0">Image</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Status</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[14%] min-w-0">Created</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Actions</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[18%] min-w-0">Name</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[12%] min-w-0">Runtime</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[36%] min-w-0">Image</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Status</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[14%] min-w-0">Created</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -920,7 +932,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 ))}
               </tbody>
             </table>
-          </div>
+          </ResponsiveTable>
         </div>
       )}
 

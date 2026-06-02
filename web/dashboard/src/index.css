@@ -306,6 +306,33 @@
   .toast-enter { animation: toast-slide-in 0.3s ease-out forwards; }
   .toast-exit { animation: toast-slide-out 0.3s ease-in forwards; }
 
+  .onboarding-strip-gradient {
+    background: linear-gradient(
+      165deg,
+      rgba(59, 130, 246, 0.08) 0%,
+      rgba(168, 85, 247, 0.06) 48%,
+      rgba(17, 21, 28, 0.88) 100%
+    );
+  }
+
+  .hub-page-shell {
+    @apply overview-section-shell mb-6 space-y-6 p-4 sm:p-6 md:p-8;
+  }
+
+  .responsive-table-sticky-first thead th:first-child,
+  .responsive-table-sticky-first tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: rgba(17, 21, 28, 0.96);
+  }
+
+  .zeus-chat-input-bar {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
   .skeleton {
     background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
     background-size: 200% 100%;

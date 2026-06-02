@@ -46,6 +46,7 @@ import {
   Sparkles,
   Globe,
   Boxes,
+  Clock,
 } from 'lucide-react';
 import { ZYVOR_HELP } from '../config/zyvorHelp';
 import type { HelpTab } from './HelpDialog';
@@ -58,6 +59,8 @@ import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import { filterNavViews, partitionNavViews, type AnnotatedNavItem } from '../utils/navCapabilities';
 import { AI_OS_NAV, isAiOsNavActive } from '../utils/aiOsNav';
 import { getClusterContext } from '../utils/clusterContext';
+import { getRecentViews } from '../utils/recentViews';
+import { getViewMeta } from '../utils/dashboardNav';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
 import { isMacOSShell } from '../utils/macosBridge';
 import PlatformHealthChip from './PlatformHealthChip';
@@ -481,6 +484,20 @@ export default function Navbar({
     [platform, navExtras],
   );
 
+  const recentNavItems = useMemo(() => {
+    return getRecentViews()
+      .filter((view) => view !== currentView && view !== 'overview')
+      .slice(0, 5)
+      .map((view) => {
+        try {
+          return { view, label: getViewMeta(view).label };
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is { view: AppView; label: string } => item !== null);
+  }, [currentView, mobileOpen]);
+
   const filteredMobileNavGroups = useMemo(() => {
     if (proView) {
       return [
@@ -835,6 +852,27 @@ export default function Navbar({
                 Command palette
                 <kbd className="ml-auto text-[10px] opacity-70">⌘K</kbd>
               </button>
+            ) : null}
+
+            {recentNavItems.length > 0 ? (
+              <div>
+                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Recently visited
+                </div>
+                <div className="space-y-0.5">
+                  {recentNavItems.map((item) => (
+                    <button
+                      key={item.view}
+                      type="button"
+                      onClick={() => handleMobileNavigate(item.view)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 transition-colors hover:text-slate-100 glass-nav-item"
+                    >
+                      <Clock className="w-4 h-4 text-slate-500" />
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : null}
 
             <div className="glass-panel-card rounded-2xl px-4 py-3">

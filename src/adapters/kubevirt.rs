@@ -856,7 +856,7 @@ mod tests {
         let dv = build_datavolume_json("default", &image, &spec);
 
         let url = dv["spec"]["source"]["registry"]["url"].as_str().unwrap();
-        assert_eq!(url, "docker://my-vm:latest");
+        assert_eq!(url, "docker://ghcr.io/testorg/my-vm:latest");
     }
 
     #[test]

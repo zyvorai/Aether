@@ -46,6 +46,7 @@ const ALL_DASHBOARD_PATHS = [
   '/gitops',
   '/metrics',
   '/openapi',
+  '/settings/ai-providers',
 ] as const;
 
 const GLASS_SHELL = '.command-center-shell, .overview-section-shell';
