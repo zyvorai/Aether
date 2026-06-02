@@ -97,21 +97,13 @@ impl TenantStore {
     }
 
     pub fn deactivate(&mut self, id: &str) -> Result<()> {
-        let t = self
-            .inner
-            .tenants
-            .get_mut(id)
-            .context("tenant not found")?;
+        let t = self.inner.tenants.get_mut(id).context("tenant not found")?;
         t.active = false;
         self.persist()
     }
 
     pub fn upgrade_plan(&mut self, id: &str, plan: TenantPlan) -> Result<()> {
-        let t = self
-            .inner
-            .tenants
-            .get_mut(id)
-            .context("tenant not found")?;
+        let t = self.inner.tenants.get_mut(id).context("tenant not found")?;
         t.plan = plan;
         self.persist()
     }
@@ -183,9 +175,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         std::env::set_var("HOME", dir.path());
         let mut store = TenantStore::load();
-        let t = store
-            .create("Acme", "acme-corp", TenantPlan::Team)
-            .unwrap();
+        let t = store.create("Acme", "acme-corp", TenantPlan::Team).unwrap();
         assert_eq!(store.get(&t.id).unwrap().slug, "acme-corp");
     }
 }

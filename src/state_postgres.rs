@@ -50,7 +50,11 @@ impl WorkloadStatePool {
     }
 
     async fn ensure_schema(&self) -> anyhow::Result<()> {
-        let c = self.pool.get().await.context("postgres pool get (schema)")?;
+        let c = self
+            .pool
+            .get()
+            .await
+            .context("postgres pool get (schema)")?;
         c.batch_execute(SCHEMA_SQL)
             .await
             .context("create aether_workload_state table")?;
@@ -59,7 +63,11 @@ impl WorkloadStatePool {
 
     /// If Postgres has only an empty document, copy from the local state file once.
     pub async fn bootstrap_from_file_if_empty(&self, path: &Path) -> anyhow::Result<()> {
-        let c = self.pool.get().await.context("postgres pool get (bootstrap)")?;
+        let c = self
+            .pool
+            .get()
+            .await
+            .context("postgres pool get (bootstrap)")?;
         let row = c
             .query_opt(
                 "SELECT body FROM aether_workload_state WHERE id = 'global'",
@@ -98,7 +106,10 @@ impl WorkloadStatePool {
     pub async fn load(&self) -> anyhow::Result<StateStore> {
         let c = self.pool.get().await.context("postgres pool get (load)")?;
         let row = c
-            .query_opt("SELECT body FROM aether_workload_state WHERE id = 'global'", &[])
+            .query_opt(
+                "SELECT body FROM aether_workload_state WHERE id = 'global'",
+                &[],
+            )
             .await
             .context("select workload state body")?;
         match row {

@@ -59,13 +59,11 @@ pub fn probe_host_tee() -> HostTeeStatus {
 
     if sev_path.exists() || sev_guest_path.exists() {
         status.sev_device = true;
-        status.dev_sev_path = Some(
-            if sev_guest_path.exists() {
-                "/dev/sev-guest".into()
-            } else {
-                "/dev/sev".into()
-            },
-        );
+        status.dev_sev_path = Some(if sev_guest_path.exists() {
+            "/dev/sev-guest".into()
+        } else {
+            "/dev/sev".into()
+        });
     }
 
     if std::env::var("AETHER_TEE_SNP")
@@ -87,9 +85,9 @@ pub fn probe_host_tee() -> HostTeeStatus {
     }
 
     if !status.sev_device && !status.tdx {
-        status.notes.push(
-            "No TEE devices detected — use AETHER_TEE_SNP=1 for dev simulation".into(),
-        );
+        status
+            .notes
+            .push("No TEE devices detected — use AETHER_TEE_SNP=1 for dev simulation".into());
     }
 
     status
@@ -101,7 +99,9 @@ fn probe_snp_from_proc() -> bool {
         .unwrap_or(false)
 }
 
-pub fn tee_node_selector(tee: &crate::spec::ConfidentialTee) -> Option<std::collections::HashMap<String, String>> {
+pub fn tee_node_selector(
+    tee: &crate::spec::ConfidentialTee,
+) -> Option<std::collections::HashMap<String, String>> {
     use crate::spec::ConfidentialTee;
     use std::collections::HashMap;
     let mut sel = HashMap::new();

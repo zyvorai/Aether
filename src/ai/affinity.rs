@@ -8,10 +8,10 @@
 //! different workload profiles. Builds a compatibility matrix
 //! and reputation scores over time.
 
+use crate::output;
 use crate::runtime::RuntimeKind;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::output;
 
 /// A deployment outcome record for learning
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -160,12 +160,18 @@ impl AffinityEngine {
             .map(|rt| self.compute_affinity(class, rt))
             .collect();
 
-        scores.sort_by(|a, b| b.composite_score.partial_cmp(&a.composite_score).unwrap_or(std::cmp::Ordering::Equal));
+        scores.sort_by(|a, b| {
+            b.composite_score
+                .partial_cmp(&a.composite_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         scores
     }
 
     /// Get the full compatibility matrix
-    pub fn compatibility_matrix(&self) -> HashMap<(WorkloadClass, RuntimeKind), CompatibilityEntry> {
+    pub fn compatibility_matrix(
+        &self,
+    ) -> HashMap<(WorkloadClass, RuntimeKind), CompatibilityEntry> {
         let classes = [
             WorkloadClass::WebService,
             WorkloadClass::ApiBackend,
@@ -223,8 +229,12 @@ impl AffinityEngine {
         let mut by_class: HashMap<String, usize> = HashMap::new();
 
         for outcome in &self.outcomes {
-            *by_runtime.entry(format!("{}", outcome.runtime)).or_insert(0) += 1;
-            *by_class.entry(format!("{}", outcome.workload_class)).or_insert(0) += 1;
+            *by_runtime
+                .entry(format!("{}", outcome.runtime))
+                .or_insert(0) += 1;
+            *by_class
+                .entry(format!("{}", outcome.workload_class))
+                .or_insert(0) += 1;
         }
 
         LearningStats {
@@ -274,25 +284,40 @@ impl AffinityEngine {
             0.0 // No data — return 0 instead of heuristic value
         };
 
-        let latency_count = relevant.iter().filter(|o| o.avg_latency_ms.is_some()).count();
-        let avg_latency = if latency_count > 0 {
-            relevant.iter().filter_map(|o| o.avg_latency_ms).sum::<f64>() / latency_count as f64
-        } else {
-            0.0
-        };
-
-        let error_count = relevant.iter().filter(|o| o.error_rate_pct.is_some()).count();
-        let avg_error = if error_count > 0 {
-            relevant.iter().filter_map(|o| o.error_rate_pct).sum::<f64>() / error_count as f64
-        } else {
-            0.0
-        };
-
-        let avg_cost = relevant
+        let latency_count = relevant
             .iter()
-            .filter_map(|o| o.cost_per_day)
-            .sum::<f64>()
-            / relevant.iter().filter(|o| o.cost_per_day.is_some()).count().max(1) as f64;
+            .filter(|o| o.avg_latency_ms.is_some())
+            .count();
+        let avg_latency = if latency_count > 0 {
+            relevant
+                .iter()
+                .filter_map(|o| o.avg_latency_ms)
+                .sum::<f64>()
+                / latency_count as f64
+        } else {
+            0.0
+        };
+
+        let error_count = relevant
+            .iter()
+            .filter(|o| o.error_rate_pct.is_some())
+            .count();
+        let avg_error = if error_count > 0 {
+            relevant
+                .iter()
+                .filter_map(|o| o.error_rate_pct)
+                .sum::<f64>()
+                / error_count as f64
+        } else {
+            0.0
+        };
+
+        let avg_cost = relevant.iter().filter_map(|o| o.cost_per_day).sum::<f64>()
+            / relevant
+                .iter()
+                .filter(|o| o.cost_per_day.is_some())
+                .count()
+                .max(1) as f64;
 
         // Composite score: weighted combination
         let composite = success_rate * 0.4
@@ -529,8 +554,18 @@ mod tests {
     #[test]
     fn test_learning_stats() {
         let mut engine = AffinityEngine::new();
-        engine.record(make_outcome(WorkloadClass::WebService, RuntimeKind::Kubernetes, true, 99.9));
-        engine.record(make_outcome(WorkloadClass::Database, RuntimeKind::Podman, false, 0.0));
+        engine.record(make_outcome(
+            WorkloadClass::WebService,
+            RuntimeKind::Kubernetes,
+            true,
+            99.9,
+        ));
+        engine.record(make_outcome(
+            WorkloadClass::Database,
+            RuntimeKind::Podman,
+            false,
+            0.0,
+        ));
 
         let stats = engine.stats();
         assert_eq!(stats.total_outcomes, 2);
@@ -548,15 +583,42 @@ mod tests {
 
     #[test]
     fn test_workload_class_from_str() {
-        assert_eq!("web-service".parse::<WorkloadClass>().unwrap(), WorkloadClass::WebService);
-        assert_eq!("api-backend".parse::<WorkloadClass>().unwrap(), WorkloadClass::ApiBackend);
-        assert_eq!("database".parse::<WorkloadClass>().unwrap(), WorkloadClass::Database);
-        assert_eq!("db".parse::<WorkloadClass>().unwrap(), WorkloadClass::Database);
-        assert_eq!("cache".parse::<WorkloadClass>().unwrap(), WorkloadClass::Cache);
-        assert_eq!("batch-job".parse::<WorkloadClass>().unwrap(), WorkloadClass::BatchJob);
-        assert_eq!("ml-training".parse::<WorkloadClass>().unwrap(), WorkloadClass::MlTraining);
-        assert_eq!("worker".parse::<WorkloadClass>().unwrap(), WorkloadClass::Worker);
-        assert_eq!("microservice".parse::<WorkloadClass>().unwrap(), WorkloadClass::Microservice);
+        assert_eq!(
+            "web-service".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::WebService
+        );
+        assert_eq!(
+            "api-backend".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::ApiBackend
+        );
+        assert_eq!(
+            "database".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::Database
+        );
+        assert_eq!(
+            "db".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::Database
+        );
+        assert_eq!(
+            "cache".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::Cache
+        );
+        assert_eq!(
+            "batch-job".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::BatchJob
+        );
+        assert_eq!(
+            "ml-training".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::MlTraining
+        );
+        assert_eq!(
+            "worker".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::Worker
+        );
+        assert_eq!(
+            "microservice".parse::<WorkloadClass>().unwrap(),
+            WorkloadClass::Microservice
+        );
         assert!("unknown-class".parse::<WorkloadClass>().is_err());
     }
 }

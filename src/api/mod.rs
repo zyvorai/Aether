@@ -8,32 +8,21 @@
 //! Supports optional API key authentication via AETHER_API_KEY environment variable.
 //! Supports optional HTTPS via --tls-cert and --tls-key flags.
 
-mod types;
-mod handlers;
-mod platform_recommendations;
-mod intelligence_handlers;
-mod zeus_handlers;
 mod confidential_handlers;
-mod ops_handlers;
-mod security_handlers;
 mod ecosystem_handlers;
 mod fleet_handlers;
-mod migration_handlers;
+mod handlers;
 mod hosted_handlers;
+mod intelligence_handlers;
+mod migration_handlers;
+mod ops_handlers;
+mod platform_recommendations;
+mod security_handlers;
+mod types;
+mod zeus_handlers;
 
 pub use types::ApiConfig;
 
-use types::AppState;
-use handlers::*;
-use intelligence_handlers::*;
-use zeus_handlers::*;
-use confidential_handlers::*;
-use ops_handlers::*;
-use security_handlers::*;
-use ecosystem_handlers::*;
-use fleet_handlers::*;
-use migration_handlers::*;
-use hosted_handlers::*;
 use crate::state::StateStore;
 use axum::{
     body::Body,
@@ -44,12 +33,23 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
+use confidential_handlers::*;
+use ecosystem_handlers::*;
+use fleet_handlers::*;
+use handlers::*;
+use hosted_handlers::*;
+use intelligence_handlers::*;
+use migration_handlers::*;
+use ops_handlers::*;
+use security_handlers::*;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex, RwLock};
 use tower::ServiceBuilder;
-use tower_http::cors::{CorsLayer, Any};
+use tower_http::cors::{Any, CorsLayer};
+use types::AppState;
+use zeus_handlers::*;
 
 /// Monotonic id generator for `x-request-id` when the client does not supply one.
 static HTTP_REQUEST_SEQ: AtomicU64 = AtomicU64::new(1);
@@ -86,7 +86,11 @@ fn mutation_confirm_header_ok(headers: &HeaderMap) -> bool {
         .unwrap_or(false)
 }
 
-fn ensure_mutation_confirm(method: &Method, path: &str, headers: &HeaderMap) -> Result<(), StatusCode> {
+fn ensure_mutation_confirm(
+    method: &Method,
+    path: &str,
+    headers: &HeaderMap,
+) -> Result<(), StatusCode> {
     if !mutation_confirm_env_enabled() {
         return Ok(());
     }
@@ -207,7 +211,9 @@ async fn auth_middleware(
         return Ok(next.run(req).await);
     }
 
-    let legacy_key = std::env::var("AETHER_API_KEY").ok().filter(|k| !k.is_empty());
+    let legacy_key = std::env::var("AETHER_API_KEY")
+        .ok()
+        .filter(|k| !k.is_empty());
     let oidc_enabled = app_state.oidc.is_some();
     let saml_enabled = app_state.saml.is_some();
     let session_auth_enabled = oidc_enabled || saml_enabled;
@@ -234,9 +240,15 @@ async fn auth_middleware(
     let rbac_result = {
         let rbac_store = app_state.rbac.read().await;
         let has_rbac_keys = !rbac_store.list_keys().is_empty();
-        let verified = token.as_deref()
+        let verified = token
+            .as_deref()
             .and_then(|t| rbac_store.verify_key(t))
-            .map(|entry| (entry.role.clone(), crate::rbac::check_permission(&entry.role, &http_method, path)));
+            .map(|entry| {
+                (
+                    entry.role.clone(),
+                    crate::rbac::check_permission(&entry.role, &http_method, path),
+                )
+            });
         (has_rbac_keys, verified)
     };
 
@@ -351,28 +363,27 @@ async fn run_background_health_check(state: &Arc<RwLock<StateStore>>) -> anyhow:
     for mw in orch.list_workloads() {
         if let Some(ws) = state_store.get(&mw.name) {
             match crate::runtime::create_runtime(&ws.runtime).await {
-                Ok(rt) => {
-                    match rt.status(&ws.instance).await {
-                        Ok(status) => {
-                            let hs = match status.state {
-                                crate::runtime::InstanceState::Running if status.ready => {
-                                    crate::orchestrator::HealthStatus::Healthy
-                                }
-                                crate::runtime::InstanceState::Running => {
-                                    crate::orchestrator::HealthStatus::Degraded
-                                }
-                                crate::runtime::InstanceState::Failed => {
-                                    crate::orchestrator::HealthStatus::Unhealthy
-                                }
-                                _ => crate::orchestrator::HealthStatus::Unknown,
-                            };
-                            statuses.insert(mw.name.clone(), hs);
-                        }
-                        Err(_) => {
-                            statuses.insert(mw.name.clone(), crate::orchestrator::HealthStatus::Unknown);
-                        }
+                Ok(rt) => match rt.status(&ws.instance).await {
+                    Ok(status) => {
+                        let hs = match status.state {
+                            crate::runtime::InstanceState::Running if status.ready => {
+                                crate::orchestrator::HealthStatus::Healthy
+                            }
+                            crate::runtime::InstanceState::Running => {
+                                crate::orchestrator::HealthStatus::Degraded
+                            }
+                            crate::runtime::InstanceState::Failed => {
+                                crate::orchestrator::HealthStatus::Unhealthy
+                            }
+                            _ => crate::orchestrator::HealthStatus::Unknown,
+                        };
+                        statuses.insert(mw.name.clone(), hs);
                     }
-                }
+                    Err(_) => {
+                        statuses
+                            .insert(mw.name.clone(), crate::orchestrator::HealthStatus::Unknown);
+                    }
+                },
                 Err(_) => {
                     statuses.insert(mw.name.clone(), crate::orchestrator::HealthStatus::Unknown);
                 }
@@ -399,10 +410,7 @@ async fn run_background_health_check(state: &Arc<RwLock<StateStore>>) -> anyhow:
         )
         .await;
         if !healer_result.executed.is_empty() {
-            tracing::info!(
-                "Autonomous healing: {:?}",
-                healer_result.executed
-            );
+            tracing::info!("Autonomous healing: {:?}", healer_result.executed);
         }
     }
 
@@ -447,7 +455,9 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             Some(url) => {
                 let pool = crate::state_postgres::WorkloadStatePool::connect(&url).await?;
                 pool.bootstrap_from_file_if_empty(&state_path).await?;
-                tracing::info!("workload state: PostgreSQL backend enabled (AETHER_STATE_DATABASE_URL)");
+                tracing::info!(
+                    "workload state: PostgreSQL backend enabled (AETHER_STATE_DATABASE_URL)"
+                );
                 Some(std::sync::Arc::new(pool))
             }
             None => None,
@@ -462,8 +472,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let (event_tx, _) = broadcast::channel::<String>(256);
 
     // Load RBAC store (create empty if not found)
-    let rbac_store = crate::rbac::RbacStore::load(&crate::rbac::RbacStore::default_path())
-        .unwrap_or_default();
+    let rbac_store =
+        crate::rbac::RbacStore::load(&crate::rbac::RbacStore::default_path()).unwrap_or_default();
 
     let tls_enabled = config.tls_cert.is_some() && config.tls_key.is_some();
     let scheme = if tls_enabled { "https" } else { "http" };
@@ -553,7 +563,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/workloads/:name/start", post(start_workload))
         .route("/api/workloads/:name/stop", post(stop_workload))
         .route("/api/workloads/:name/restart", post(restart_workload))
-        .route("/api/workloads/:name/snapshots", get(api_workload_snapshots))
+        .route(
+            "/api/workloads/:name/snapshots",
+            get(api_workload_snapshots),
+        )
         .route("/api/workloads/:name/rollback", post(api_workload_rollback))
         .route("/api/workloads/:name/migrate", post(migrate_workload))
         .route("/api/workloads/:name/build", post(build_workload))
@@ -563,7 +576,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/secrets/:name", delete(delete_secret))
         .route("/api/metrics", get(get_metrics))
         .route("/api/observability/summary", get(api_observability_summary))
-        .route("/api/observability/prometheus/query", get(api_observability_prometheus_query))
+        .route(
+            "/api/observability/prometheus/query",
+            get(api_observability_prometheus_query),
+        )
         .route("/api/cost", post(estimate_cost))
         .route("/api/cost/pricing", get(api_cost_pricing))
         .route("/api/cost/chargeback", get(api_cost_chargeback))
@@ -577,22 +593,43 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/recommend", post(ai_recommend))
         .route("/api/ai/profile/:name", get(ai_profile))
         .route("/api/ai/analyze/:name", get(ai_analyze_logs))
-        .route("/api/ai/migration-advice/:name/:target", get(ai_migration_advice))
+        .route(
+            "/api/ai/migration-advice/:name/:target",
+            get(ai_migration_advice),
+        )
         .route("/api/ai/scaling-advice", get(ai_scaling_advice))
         .route("/api/ai/intent-optimize", post(ai_intent_optimize))
         .route("/api/ai/right-size", post(ai_right_size))
         .route("/api/ai/tradeoff", post(ai_tradeoff))
-        .route("/api/ai/migration-plan/:name/:target", get(api_ai_migration_plan))
-        .route("/api/command-center/briefing", get(api_command_center_briefing))
-        .route("/api/command-center/next-actions", get(api_command_center_next_actions))
+        .route(
+            "/api/ai/migration-plan/:name/:target",
+            get(api_ai_migration_plan),
+        )
+        .route(
+            "/api/command-center/briefing",
+            get(api_command_center_briefing),
+        )
+        .route(
+            "/api/command-center/next-actions",
+            get(api_command_center_next_actions),
+        )
         .route(
             "/api/command-center/notifications",
             get(api_command_center_notifications),
         )
         .route("/api/context/snapshot", get(api_context_snapshot))
-        .route("/api/intelligence/predictions", get(api_intelligence_predictions))
-        .route("/api/intelligence/predictions/:name", get(api_intelligence_prediction_workload))
-        .route("/api/intelligence/cost-optimize", get(api_intelligence_cost_optimize))
+        .route(
+            "/api/intelligence/predictions",
+            get(api_intelligence_predictions),
+        )
+        .route(
+            "/api/intelligence/predictions/:name",
+            get(api_intelligence_prediction_workload),
+        )
+        .route(
+            "/api/intelligence/cost-optimize",
+            get(api_intelligence_cost_optimize),
+        )
         .route("/api/intelligence/threats", get(api_intelligence_threats))
         .route(
             "/api/intelligence/security/policies",
@@ -602,14 +639,26 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/digital-twin/simulate",
             post(api_intelligence_digital_twin_simulate),
         )
-        .route("/api/intelligence/autonomy/status", get(api_intelligence_autonomy_status))
-        .route("/api/intelligence/knowledge-graph", get(api_intelligence_knowledge_graph))
-        .route("/api/intelligence/healer/preview", get(api_intelligence_healer_preview))
+        .route(
+            "/api/intelligence/autonomy/status",
+            get(api_intelligence_autonomy_status),
+        )
+        .route(
+            "/api/intelligence/knowledge-graph",
+            get(api_intelligence_knowledge_graph),
+        )
+        .route(
+            "/api/intelligence/healer/preview",
+            get(api_intelligence_healer_preview),
+        )
         .route(
             "/api/intelligence/intent-pipeline",
             post(api_intelligence_intent_pipeline),
         )
-        .route("/api/intelligence/sre/runbook", get(api_intelligence_sre_runbook))
+        .route(
+            "/api/intelligence/sre/runbook",
+            get(api_intelligence_sre_runbook),
+        )
         .route(
             "/api/intelligence/multicloud/posture",
             get(api_intelligence_multicloud_posture),
@@ -618,7 +667,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/autonomous/placement",
             get(api_intelligence_autonomous_placement),
         )
-        .route("/api/intelligence/agents/status", get(api_intelligence_agents_status))
+        .route(
+            "/api/intelligence/agents/status",
+            get(api_intelligence_agents_status),
+        )
         .route(
             "/api/intelligence/healer/execute",
             post(api_intelligence_healer_execute),
@@ -739,17 +791,26 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/federation/packetwolf-guard/apply",
             post(api_intelligence_federation_packetwolf_guard_apply),
         )
-        .route("/api/intelligence/sre/schedule", get(api_intelligence_sre_schedule))
+        .route(
+            "/api/intelligence/sre/schedule",
+            get(api_intelligence_sre_schedule),
+        )
         .route(
             "/api/intelligence/sre/incident-timeline",
             get(api_intelligence_sre_incident_timeline),
         )
-        .route("/api/intelligence/sre/on-call", get(api_intelligence_sre_on_call))
+        .route(
+            "/api/intelligence/sre/on-call",
+            get(api_intelligence_sre_on_call),
+        )
         .route(
             "/api/intelligence/sre/on-call/test",
             post(api_intelligence_sre_on_call_test),
         )
-        .route("/api/intelligence/sre/postmortem", get(api_intelligence_sre_postmortem))
+        .route(
+            "/api/intelligence/sre/postmortem",
+            get(api_intelligence_sre_postmortem),
+        )
         .route(
             "/api/intelligence/sre/error-budgets",
             get(api_intelligence_sre_error_budgets),
@@ -758,13 +819,22 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/sre/chaos/experiments",
             get(api_intelligence_sre_chaos_experiments),
         )
-        .route("/api/intelligence/sre/chaos/run", post(api_intelligence_sre_chaos_run))
-        .route("/api/intelligence/sre/game-days", get(api_intelligence_sre_game_days))
+        .route(
+            "/api/intelligence/sre/chaos/run",
+            post(api_intelligence_sre_chaos_run),
+        )
+        .route(
+            "/api/intelligence/sre/game-days",
+            get(api_intelligence_sre_game_days),
+        )
         .route(
             "/api/intelligence/sre/runbook/execute",
             post(api_intelligence_sre_runbook_execute),
         )
-        .route("/api/intelligence/sre/escalation", get(api_intelligence_sre_escalation))
+        .route(
+            "/api/intelligence/sre/escalation",
+            get(api_intelligence_sre_escalation),
+        )
         .route("/api/intelligence/sre/mttr", get(api_intelligence_sre_mttr))
         .route(
             "/api/intelligence/graph/interactive",
@@ -774,7 +844,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/fabric/topology",
             get(api_intelligence_fabric_topology),
         )
-        .route("/api/intelligence/graph/impact", get(api_intelligence_graph_impact))
+        .route(
+            "/api/intelligence/graph/impact",
+            get(api_intelligence_graph_impact),
+        )
         .route(
             "/api/intelligence/graph/blast-radius",
             get(api_intelligence_graph_blast_radius),
@@ -787,13 +860,22 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/graph/threat-paths",
             get(api_intelligence_graph_threat_paths),
         )
-        .route("/api/intelligence/graph/search", get(api_intelligence_graph_search))
-        .route("/api/intelligence/graph/snapshots", get(api_intelligence_graph_snapshots))
+        .route(
+            "/api/intelligence/graph/search",
+            get(api_intelligence_graph_search),
+        )
+        .route(
+            "/api/intelligence/graph/snapshots",
+            get(api_intelligence_graph_snapshots),
+        )
         .route(
             "/api/intelligence/graph/snapshots/capture",
             post(api_intelligence_graph_snapshots_capture),
         )
-        .route("/api/intelligence/graph/cmdb", get(api_intelligence_graph_cmdb))
+        .route(
+            "/api/intelligence/graph/cmdb",
+            get(api_intelligence_graph_cmdb),
+        )
         .route(
             "/api/intelligence/graph/cmdb/sync",
             post(api_intelligence_graph_cmdb_sync),
@@ -802,7 +884,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/graph/placement",
             get(api_intelligence_graph_placement),
         )
-        .route("/api/intelligence/graph/export", get(api_intelligence_graph_export))
+        .route(
+            "/api/intelligence/graph/export",
+            get(api_intelligence_graph_export),
+        )
         .route(
             "/api/intelligence/macos/tray-sparkline",
             get(api_intelligence_macos_tray_sparkline),
@@ -811,20 +896,30 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/macos/live-activity",
             get(api_intelligence_macos_live_activity),
         )
-        .route("/api/intelligence/macos/dock-badge", get(api_intelligence_macos_dock_badge))
+        .route(
+            "/api/intelligence/macos/dock-badge",
+            get(api_intelligence_macos_dock_badge),
+        )
         .route(
             "/api/intelligence/macos/notifications",
             get(api_intelligence_macos_notifications),
         )
-        .route("/api/intelligence/macos/spotlight", get(api_intelligence_macos_spotlight))
-        .route("/api/intelligence/macos/shortcuts", get(api_intelligence_macos_shortcuts))
+        .route(
+            "/api/intelligence/macos/spotlight",
+            get(api_intelligence_macos_spotlight),
+        )
+        .route(
+            "/api/intelligence/macos/shortcuts",
+            get(api_intelligence_macos_shortcuts),
+        )
         .route(
             "/api/intelligence/macos/menu-extras",
             get(api_intelligence_macos_menu_extras),
         )
         .route(
             "/api/intelligence/macos/offline-cache",
-            get(api_intelligence_macos_offline_cache_get).post(api_intelligence_macos_offline_cache_write),
+            get(api_intelligence_macos_offline_cache_get)
+                .post(api_intelligence_macos_offline_cache_write),
         )
         .route(
             "/api/intelligence/macos/universal-links",
@@ -838,66 +933,150 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/macos/release-pipeline",
             get(api_intelligence_macos_release_pipeline),
         )
-        .route("/api/intelligence/evolution/status", get(api_intelligence_evolution_status))
-        .route("/api/intelligence/runtime-evolution/:name", get(api_intelligence_runtime_evolution))
+        .route(
+            "/api/intelligence/evolution/status",
+            get(api_intelligence_evolution_status),
+        )
+        .route(
+            "/api/intelligence/runtime-evolution/:name",
+            get(api_intelligence_runtime_evolution),
+        )
         .route("/api/intelligence/place", post(api_intelligence_place))
-        .route("/api/intelligence/remediation/plan", get(api_intelligence_remediation_plan))
+        .route(
+            "/api/intelligence/remediation/plan",
+            get(api_intelligence_remediation_plan),
+        )
         .route(
             "/api/intelligence/remediation/execute",
             post(api_intelligence_remediation_execute),
         )
         .route("/api/zeus/chat", post(api_zeus_chat))
         .route("/api/zeus/troubleshoot", post(api_zeus_troubleshoot))
-        .route("/api/zeus/troubleshoot/fleet", get(api_zeus_troubleshoot_fleet))
+        .route(
+            "/api/zeus/troubleshoot/fleet",
+            get(api_zeus_troubleshoot_fleet),
+        )
         .route("/api/zeus/sessions/:id", get(api_zeus_session))
         .route("/api/zeus/confirm/:action_id", post(api_zeus_confirm))
         .route("/api/zeus/confirm-batch", post(api_zeus_confirm_batch))
         .route("/api/zeus/insights", get(api_zeus_insights))
-        .route("/api/zeus/providers", get(api_zeus_providers_list).post(api_zeus_providers_upsert))
+        .route(
+            "/api/zeus/providers",
+            get(api_zeus_providers_list).post(api_zeus_providers_upsert),
+        )
         .route("/api/zeus/providers/status", get(api_zeus_providers_status))
-        .route("/api/zeus/providers/registry", post(api_zeus_providers_save_registry))
-        .route("/api/zeus/providers/:id", axum::routing::delete(api_zeus_providers_delete))
-        .route("/api/zeus/providers/:id/test", post(api_zeus_providers_test))
-        .route("/api/zeus/prompts", get(api_zeus_prompts_list).post(api_zeus_prompts_upsert))
+        .route(
+            "/api/zeus/providers/registry",
+            post(api_zeus_providers_save_registry),
+        )
+        .route(
+            "/api/zeus/providers/:id",
+            axum::routing::delete(api_zeus_providers_delete),
+        )
+        .route(
+            "/api/zeus/providers/:id/test",
+            post(api_zeus_providers_test),
+        )
+        .route(
+            "/api/zeus/prompts",
+            get(api_zeus_prompts_list).post(api_zeus_prompts_upsert),
+        )
         .route("/api/zeus/prompts/export", get(api_zeus_prompts_export))
         .route("/api/zeus/prompts/import", post(api_zeus_prompts_import))
-        .route("/api/zeus/prompts/:id", axum::routing::delete(api_zeus_prompts_delete))
+        .route(
+            "/api/zeus/prompts/:id",
+            axum::routing::delete(api_zeus_prompts_delete),
+        )
         .route("/api/zeus/marketplace", get(api_zeus_marketplace))
-        .route("/api/zeus/marketplace/install", post(api_zeus_marketplace_install))
-        .route("/api/zeus/marketplace/uninstall", post(api_zeus_marketplace_uninstall))
+        .route(
+            "/api/zeus/marketplace/install",
+            post(api_zeus_marketplace_install),
+        )
+        .route(
+            "/api/zeus/marketplace/uninstall",
+            post(api_zeus_marketplace_uninstall),
+        )
         .route("/api/zeus/agents", get(api_zeus_agents_list))
-        .route("/api/intelligence/zeus/memory", get(api_intelligence_zeus_memory))
-        .route("/api/intelligence/zeus/memory/settings", post(api_intelligence_zeus_memory_settings))
-        .route("/api/intelligence/zeus/memory/purge", post(api_intelligence_zeus_memory_purge))
-        .route("/api/intelligence/zeus/route", post(api_intelligence_zeus_route))
-        .route("/api/intelligence/zeus/llm-status", get(api_intelligence_zeus_llm_status))
-        .route("/api/intelligence/zeus/voice-lab", get(api_intelligence_zeus_voice_lab))
-        .route("/api/intelligence/zeus/runbook", post(api_intelligence_zeus_runbook))
+        .route(
+            "/api/intelligence/zeus/memory",
+            get(api_intelligence_zeus_memory),
+        )
+        .route(
+            "/api/intelligence/zeus/memory/settings",
+            post(api_intelligence_zeus_memory_settings),
+        )
+        .route(
+            "/api/intelligence/zeus/memory/purge",
+            post(api_intelligence_zeus_memory_purge),
+        )
+        .route(
+            "/api/intelligence/zeus/route",
+            post(api_intelligence_zeus_route),
+        )
+        .route(
+            "/api/intelligence/zeus/llm-status",
+            get(api_intelligence_zeus_llm_status),
+        )
+        .route(
+            "/api/intelligence/zeus/voice-lab",
+            get(api_intelligence_zeus_voice_lab),
+        )
+        .route(
+            "/api/intelligence/zeus/runbook",
+            post(api_intelligence_zeus_runbook),
+        )
         .route(
             "/api/intelligence/zeus/policy-explain",
             post(api_intelligence_zeus_policy_explain),
         )
-        .route("/api/intelligence/zeus/audit", get(api_intelligence_zeus_audit))
+        .route(
+            "/api/intelligence/zeus/audit",
+            get(api_intelligence_zeus_audit),
+        )
         .route(
             "/api/intelligence/zeus/rbac-scopes",
             get(api_intelligence_zeus_rbac_scopes),
         )
         .route("/api/copilot/chat", post(api_copilot_chat))
         .route("/api/copilot/troubleshoot", post(api_copilot_troubleshoot))
-        .route("/api/copilot/troubleshoot/fleet", get(api_copilot_troubleshoot_fleet))
+        .route(
+            "/api/copilot/troubleshoot/fleet",
+            get(api_copilot_troubleshoot_fleet),
+        )
         .route("/api/copilot/sessions/:id", get(api_copilot_session))
         .route("/api/copilot/confirm/:action_id", post(api_copilot_confirm))
-        .route("/api/copilot/confirm-batch", post(api_copilot_confirm_batch))
-        .route("/api/intelligence/copilot/memory", get(api_intelligence_copilot_memory))
-        .route("/api/intelligence/copilot/route", post(api_intelligence_copilot_route))
-        .route("/api/intelligence/copilot/llm-status", get(api_intelligence_copilot_llm_status))
-        .route("/api/intelligence/copilot/voice-lab", get(api_intelligence_copilot_voice_lab))
-        .route("/api/intelligence/copilot/runbook", post(api_intelligence_copilot_runbook))
+        .route(
+            "/api/copilot/confirm-batch",
+            post(api_copilot_confirm_batch),
+        )
+        .route(
+            "/api/intelligence/copilot/memory",
+            get(api_intelligence_copilot_memory),
+        )
+        .route(
+            "/api/intelligence/copilot/route",
+            post(api_intelligence_copilot_route),
+        )
+        .route(
+            "/api/intelligence/copilot/llm-status",
+            get(api_intelligence_copilot_llm_status),
+        )
+        .route(
+            "/api/intelligence/copilot/voice-lab",
+            get(api_intelligence_copilot_voice_lab),
+        )
+        .route(
+            "/api/intelligence/copilot/runbook",
+            post(api_intelligence_copilot_runbook),
+        )
         .route(
             "/api/intelligence/copilot/policy-explain",
             post(api_intelligence_copilot_policy_explain),
         )
-        .route("/api/intelligence/copilot/audit", get(api_intelligence_copilot_audit))
+        .route(
+            "/api/intelligence/copilot/audit",
+            get(api_intelligence_copilot_audit),
+        )
         .route(
             "/api/intelligence/copilot/rbac-scopes",
             get(api_intelligence_copilot_rbac_scopes),
@@ -930,12 +1109,18 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/finops/multicloud-compare",
             get(api_intelligence_finops_multicloud_compare),
         )
-        .route("/api/intelligence/finops/carbon", get(api_intelligence_finops_carbon))
+        .route(
+            "/api/intelligence/finops/carbon",
+            get(api_intelligence_finops_carbon),
+        )
         .route(
             "/api/intelligence/finops/budget-webhook",
             post(api_intelligence_finops_budget_webhook),
         )
-        .route("/api/intelligence/finops/trends", get(api_intelligence_finops_trends))
+        .route(
+            "/api/intelligence/finops/trends",
+            get(api_intelligence_finops_trends),
+        )
         .route(
             "/api/intelligence/security/policy-apply",
             post(api_intelligence_security_policy_apply),
@@ -970,17 +1155,30 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         )
         .route(
             "/api/intelligence/security/sovereign-audit",
-            get(api_intelligence_security_sovereign_audit_get).post(api_intelligence_security_sovereign_audit_append),
+            get(api_intelligence_security_sovereign_audit_get)
+                .post(api_intelligence_security_sovereign_audit_append),
         )
         .route(
             "/api/intelligence/security/score-trend",
             get(api_intelligence_security_score_trend),
         )
-        .route("/v1/intelligence/briefing", get(api_v1_intelligence_briefing))
+        .route(
+            "/v1/intelligence/briefing",
+            get(api_v1_intelligence_briefing),
+        )
         .route("/v1/intelligence/threats", get(api_v1_intelligence_threats))
-        .route("/v1/intelligence/cost-optimize", get(api_v1_intelligence_cost_optimize))
-        .route("/v1/intelligence/predictions", get(api_v1_intelligence_predictions))
-        .route("/v1/intelligence/autonomy", get(api_v1_intelligence_autonomy))
+        .route(
+            "/v1/intelligence/cost-optimize",
+            get(api_v1_intelligence_cost_optimize),
+        )
+        .route(
+            "/v1/intelligence/predictions",
+            get(api_v1_intelligence_predictions),
+        )
+        .route(
+            "/v1/intelligence/autonomy",
+            get(api_v1_intelligence_autonomy),
+        )
         .route(
             "/api/intelligence/platform/saas-tenants",
             get(api_intelligence_platform_saas_tenants),
@@ -1025,7 +1223,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/platform/autonomous-sre/execute",
             post(api_intelligence_platform_autonomous_sre_execute),
         )
-        .route("/api/intelligence/labs/overview", get(api_intelligence_labs_overview))
+        .route(
+            "/api/intelligence/labs/overview",
+            get(api_intelligence_labs_overview),
+        )
         .route(
             "/api/intelligence/labs/terraform-export",
             post(api_intelligence_labs_terraform_export),
@@ -1050,7 +1251,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/labs/community-intents/import",
             post(api_intelligence_labs_community_intents_import),
         )
-        .route("/api/intelligence/labs/carbon", get(api_intelligence_labs_carbon))
+        .route(
+            "/api/intelligence/labs/carbon",
+            get(api_intelligence_labs_carbon),
+        )
         .route(
             "/api/intelligence/labs/compliance-report",
             get(api_intelligence_labs_compliance_report),
@@ -1187,12 +1391,18 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/livelabs/confidential-lab",
             get(api_intelligence_livelabs_confidential_lab),
         )
-        .route("/api/confidential/capabilities", get(api_confidential_capabilities))
+        .route(
+            "/api/confidential/capabilities",
+            get(api_confidential_capabilities),
+        )
         .route(
             "/api/confidential/security-profiles",
             get(api_confidential_security_profiles),
         )
-        .route("/api/confidential/attestation/verify", post(api_attestation_verify))
+        .route(
+            "/api/confidential/attestation/verify",
+            post(api_attestation_verify),
+        )
         .route(
             "/api/confidential/attestation/:vm_id/status",
             get(api_attestation_status),
@@ -1230,7 +1440,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/confidential/migration/:workload/status",
             get(api_confidential_migration_status),
         )
-        .route("/api/confidential/guestkit/inspect", post(api_guestkit_inspect))
+        .route(
+            "/api/confidential/guestkit/inspect",
+            post(api_guestkit_inspect),
+        )
         .route(
             "/api/confidential/guestkit/:vm_id/history",
             get(api_guestkit_history),
@@ -1243,7 +1456,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/confidential/sovereign/evaluate/:workload",
             get(api_confidential_sovereign_evaluate),
         )
-        .route("/api/confidential/kata/status", get(api_confidential_kata_status))
+        .route(
+            "/api/confidential/kata/status",
+            get(api_confidential_kata_status),
+        )
         .route(
             "/api/confidential/network/:workload",
             get(api_confidential_network_status),
@@ -1283,7 +1499,9 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/policy/opa", post(api_policy_opa))
         .route(
             "/api/dependencies",
-            get(api_deps_show).post(api_deps_add).delete(api_deps_remove),
+            get(api_deps_show)
+                .post(api_deps_add)
+                .delete(api_deps_remove),
         )
         .route("/api/audit", get(api_audit_list))
         .route("/api/audit/events", post(api_audit_append))
@@ -1293,7 +1511,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/sla/:workload", get(api_sla_check))
         .route("/api/events", get(api_events_list))
         .route("/api/events/summary", get(api_events_summary))
-        .route("/api/platform/recommendations", get(api_platform_recommendations))
+        .route(
+            "/api/platform/recommendations",
+            get(api_platform_recommendations),
+        )
         .route("/api/cluster/summary", get(api_cluster_summary))
         .route("/api/cluster/namespaces", get(api_cluster_namespaces))
         .route("/api/cluster/browse", get(api_cluster_browse))
@@ -1305,10 +1526,19 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/cluster/action", post(api_cluster_action))
         .route("/api/cluster/ws/exec", get(api_cluster_exec_ws))
         .route("/api/cluster/ws/watch", get(api_cluster_watch_ws))
-        .route("/api/cluster/port-forward", post(api_cluster_port_forward_start))
-        .route("/api/cluster/port-forward/stop", post(api_cluster_port_forward_stop))
+        .route(
+            "/api/cluster/port-forward",
+            post(api_cluster_port_forward_start),
+        )
+        .route(
+            "/api/cluster/port-forward/stop",
+            post(api_cluster_port_forward_stop),
+        )
         .route("/api/cluster/top", get(api_cluster_top))
-        .route("/api/cluster/metrics/summary", get(api_cluster_metrics_summary))
+        .route(
+            "/api/cluster/metrics/summary",
+            get(api_cluster_metrics_summary),
+        )
         .route("/api/cluster/cilium/status", get(api_cluster_cilium_status))
         .route(
             "/api/cluster/cilium/connectivity/probe",
@@ -1317,7 +1547,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/cluster/cilium/hubble", get(api_cluster_cilium_hubble))
         .route("/api/cluster/diff", post(api_cluster_diff))
         .route("/api/cluster/rollout", get(api_cluster_rollout))
-        .route("/api/cluster/rollout/action", post(api_cluster_rollout_action))
+        .route(
+            "/api/cluster/rollout/action",
+            post(api_cluster_rollout_action),
+        )
         .route("/api/cluster/helm/history", get(api_cluster_helm_history))
         .route("/api/cluster/helm/action", post(api_cluster_helm_action))
         .route("/api/environments", get(api_env_list).post(api_env_create))
@@ -1328,10 +1561,22 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/scheduler/placements", get(api_scheduler_placements))
         .route("/api/orchestrator/status", get(api_orchestrator_status))
         .route("/api/orchestrator/summary", get(api_orchestrator_summary))
-        .route("/api/orchestrator/register", post(api_orchestrator_register))
-        .route("/api/orchestrator/health-check", post(api_orchestrator_health_check))
-        .route("/api/orchestrator/reset-circuit", post(api_orchestrator_reset_circuit))
-        .route("/api/orchestrator/rolling-update", post(api_orchestrator_rolling_update))
+        .route(
+            "/api/orchestrator/register",
+            post(api_orchestrator_register),
+        )
+        .route(
+            "/api/orchestrator/health-check",
+            post(api_orchestrator_health_check),
+        )
+        .route(
+            "/api/orchestrator/reset-circuit",
+            post(api_orchestrator_reset_circuit),
+        )
+        .route(
+            "/api/orchestrator/rolling-update",
+            post(api_orchestrator_rolling_update),
+        )
         .route("/api/affinity/matrix", get(api_affinity_matrix))
         .route("/api/affinity/stats", get(api_affinity_stats))
         .route("/api/affinity/:class", get(api_affinity_recommend))
@@ -1354,7 +1599,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/webhooks/queue", get(api_webhooks_queue))
         .route("/api/webhooks/flush", post(api_webhooks_flush))
         .route("/api/webhooks/channels", post(api_webhook_channel_create))
-        .route("/api/webhooks/channels/:name", delete(api_webhook_channel_delete))
+        .route(
+            "/api/webhooks/channels/:name",
+            delete(api_webhook_channel_delete),
+        )
         .route("/api/dashboard/version", get(api_dashboard_version))
         .route("/api/server", get(api_server_info))
         .route("/api/openapi.json", get(serve_openapi))
@@ -1363,33 +1611,78 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/rbac/keys/revoke", post(rbac_revoke_key))
         .route("/api/security/sbom", get(api_security_sbom))
         .route("/api/security/images", get(api_security_images))
-        .route("/api/security/images/verify", post(api_security_images_verify))
-        .route("/api/ecosystem/packetwolf/status", get(api_packetwolf_status))
-        .route("/api/ecosystem/packetwolf/flows/stats", get(api_packetwolf_flow_stats))
+        .route(
+            "/api/security/images/verify",
+            post(api_security_images_verify),
+        )
+        .route(
+            "/api/ecosystem/packetwolf/status",
+            get(api_packetwolf_status),
+        )
+        .route(
+            "/api/ecosystem/packetwolf/flows/stats",
+            get(api_packetwolf_flow_stats),
+        )
         .route(
             "/api/ecosystem/packetwolf/verify-egress",
             post(api_packetwolf_verify_egress),
         )
-        .route("/api/ecosystem/packetwolf/anomalies", get(api_packetwolf_anomalies))
-        .route("/api/ecosystem/packetwolf/deeplink", get(api_packetwolf_deeplink))
+        .route(
+            "/api/ecosystem/packetwolf/anomalies",
+            get(api_packetwolf_anomalies),
+        )
+        .route(
+            "/api/ecosystem/packetwolf/deeplink",
+            get(api_packetwolf_deeplink),
+        )
         .route("/api/fleet/edge/register", post(api_fleet_edge_register))
         .route("/api/fleet/edge/heartbeat", post(api_fleet_edge_heartbeat))
         .route("/api/fleet/edge/agents", get(api_fleet_edge_agents))
         .route("/api/fleet/edge/enqueue", post(api_fleet_edge_enqueue))
         .route("/api/fleet/edge/queue", get(api_fleet_edge_queue))
-        .route("/api/fleet/federation/policies", get(api_fleet_federation_policies))
-        .route("/api/fleet/federation/plan", post(api_fleet_federation_plan))
+        .route(
+            "/api/fleet/federation/policies",
+            get(api_fleet_federation_policies),
+        )
+        .route(
+            "/api/fleet/federation/plan",
+            post(api_fleet_federation_plan),
+        )
         .route("/api/fleet/drift", get(api_fleet_drift))
-        .route("/api/gitops/resolve-target", post(api_gitops_resolve_target))
-        .route("/api/migration/volume/plan", post(api_migration_volume_plan))
-        .route("/api/migration/volume/execute", post(api_migration_volume_execute))
+        .route(
+            "/api/gitops/resolve-target",
+            post(api_gitops_resolve_target),
+        )
+        .route(
+            "/api/migration/volume/plan",
+            post(api_migration_volume_plan),
+        )
+        .route(
+            "/api/migration/volume/execute",
+            post(api_migration_volume_execute),
+        )
         .route("/api/migration/fleet/plan", post(api_migration_fleet_plan))
-        .route("/api/hosted/tenants", get(api_hosted_tenants_list).post(api_hosted_tenants_create))
-        .route("/api/hosted/tenants/:id/deactivate", post(api_hosted_tenants_deactivate))
-        .route("/api/hosted/tenants/:id/keys", get(api_hosted_tenant_keys_list).post(api_hosted_tenant_keys_issue))
-        .route("/api/hosted/tenants/:id/keys/:name/revoke", post(api_hosted_tenant_keys_revoke))
+        .route(
+            "/api/hosted/tenants",
+            get(api_hosted_tenants_list).post(api_hosted_tenants_create),
+        )
+        .route(
+            "/api/hosted/tenants/:id/deactivate",
+            post(api_hosted_tenants_deactivate),
+        )
+        .route(
+            "/api/hosted/tenants/:id/keys",
+            get(api_hosted_tenant_keys_list).post(api_hosted_tenant_keys_issue),
+        )
+        .route(
+            "/api/hosted/tenants/:id/keys/:name/revoke",
+            post(api_hosted_tenant_keys_revoke),
+        )
         .route("/api/hosted/billing/usage", get(api_hosted_billing_usage))
-        .route("/api/hosted/billing/metering", get(api_hosted_metering_usage))
+        .route(
+            "/api/hosted/billing/metering",
+            get(api_hosted_metering_usage),
+        )
         .route(
             "/api/hosted/billing/stripe/checkout",
             post(api_hosted_billing_stripe_checkout),
@@ -1406,8 +1699,14 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
                 "/api/mock-idp/oidc/.well-known/openid-configuration",
                 get(crate::mock_idp::oidc_discovery),
             )
-            .route("/api/mock-idp/oidc/authorize", get(crate::mock_idp::oidc_authorize))
-            .route("/api/mock-idp/oidc/token", post(crate::mock_idp::oidc_token))
+            .route(
+                "/api/mock-idp/oidc/authorize",
+                get(crate::mock_idp::oidc_authorize),
+            )
+            .route(
+                "/api/mock-idp/oidc/token",
+                post(crate::mock_idp::oidc_token),
+            )
             .route("/api/mock-idp/oidc/jwks", get(crate::mock_idp::oidc_jwks));
     }
 
@@ -1418,15 +1717,17 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
                 .layer(DefaultBodyLimit::max(2 * 1024 * 1024)) // 2 MB max request body
                 .layer(tower::limit::ConcurrencyLimitLayer::new(200))
                 .layer(cors)
-                .layer(middleware::from_fn_with_state(app_state.clone(), auth_middleware))
+                .layer(middleware::from_fn_with_state(
+                    app_state.clone(),
+                    auth_middleware,
+                ))
                 .layer(middleware::from_fn(observability_middleware))
-                .layer(middleware::from_fn(security_headers_middleware))
+                .layer(middleware::from_fn(security_headers_middleware)),
         )
         .with_state(app_state);
 
     // Start server
-    let addr = format!("{}:{}", config.host, config.port)
-        .parse::<SocketAddr>()?;
+    let addr = format!("{}:{}", config.host, config.port).parse::<SocketAddr>()?;
 
     let has_api_key = std::env::var("AETHER_API_KEY")
         .map(|k| !k.is_empty())
@@ -1475,12 +1776,9 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             anyhow::bail!("TLS key file not found: {}", key_path.display());
         }
 
-        let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file(
-            cert_path,
-            key_path,
-        )
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to load TLS certificate/key: {e}"))?;
+        let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file(cert_path, key_path)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to load TLS certificate/key: {e}"))?;
 
         let handle = axum_server::Handle::new();
         let shutdown_handle = handle.clone();

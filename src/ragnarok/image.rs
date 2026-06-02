@@ -54,9 +54,15 @@ impl ImageCatalog {
         let bytes = std::fs::read(image_path)
             .with_context(|| format!("read image {}", image_path.display()))?;
         let image_hash = format!("{:x}", Sha256::digest(&bytes));
-        let signature = format!("{:x}", Sha256::digest(format!("{image_hash}:{key_id}").as_bytes()));
-        let sbom_digest = crate::sbom::load_cached()
-            .and_then(|b| b.get("serialNumber").and_then(|v| v.as_str()).map(str::to_string));
+        let signature = format!(
+            "{:x}",
+            Sha256::digest(format!("{image_hash}:{key_id}").as_bytes())
+        );
+        let sbom_digest = crate::sbom::load_cached().and_then(|b| {
+            b.get("serialNumber")
+                .and_then(|v| v.as_str())
+                .map(str::to_string)
+        });
         let manifest = ImageManifest {
             name: name.to_string(),
             image_hash: image_hash.clone(),
@@ -138,14 +144,15 @@ pub fn deploy_image_gate(spec: &crate::spec::Workload, catalog: &ImageCatalog) -
 }
 
 /// Validate attestation report launch digest against the measured-image catalog.
-pub fn attestation_digest_gate(report: &crate::ragnarok::attestation::AttestationReport, catalog: &ImageCatalog) -> Result<()> {
+pub fn attestation_digest_gate(
+    report: &crate::ragnarok::attestation::AttestationReport,
+    catalog: &ImageCatalog,
+) -> Result<()> {
     let Some(ref digest) = report.launch_digest else {
         return Ok(());
     };
     if !catalog.verify_digest(digest) {
-        bail!(
-            "attestation launch digest '{digest}' does not match any signed image in catalog"
-        );
+        bail!("attestation launch digest '{digest}' does not match any signed image in catalog");
     }
     Ok(())
 }

@@ -27,10 +27,7 @@ impl KbsClient {
         resource_id: &str,
         attestation_token: &str,
     ) -> Result<String> {
-        let url = format!(
-            "{}/kbs/v0/resource/{resource_id}",
-            self.base
-        );
+        let url = format!("{}/kbs/v0/resource/{resource_id}", self.base);
         let resp = reqwest::Client::new()
             .get(&url)
             .header("Authorization", format!("Bearer {attestation_token}"))

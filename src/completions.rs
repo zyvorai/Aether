@@ -35,15 +35,47 @@ pub fn show_help() {
         output::table(
             &["📋 Core Operations", "Description", "Example"],
             vec![
-                vec!["validate".into(), "Validate workload spec".into(), "aether validate".into()],
-                vec!["build".into(), "Build workload image".into(), "aether build".into()],
+                vec![
+                    "validate".into(),
+                    "Validate workload spec".into(),
+                    "aether validate".into()
+                ],
+                vec![
+                    "build".into(),
+                    "Build workload image".into(),
+                    "aether build".into()
+                ],
                 vec!["run".into(), "Deploy workload".into(), "aether run".into()],
-                vec!["stop <name>".into(), "Stop running instance".into(), "aether stop my-app".into()],
-                vec!["status <name>".into(), "Get instance status".into(), "aether status my-app".into()],
-                vec!["logs <name>".into(), "View instance logs".into(), "aether logs my-app -f".into()],
-                vec!["delete <name>".into(), "Delete instance".into(), "aether delete my-app".into()],
-                vec!["list".into(), "List all instances".into(), "aether list".into()],
-                vec!["deploy <dir>".into(), "Deploy all specs in dir".into(), "aether deploy ./specs".into()],
+                vec![
+                    "stop <name>".into(),
+                    "Stop running instance".into(),
+                    "aether stop my-app".into()
+                ],
+                vec![
+                    "status <name>".into(),
+                    "Get instance status".into(),
+                    "aether status my-app".into()
+                ],
+                vec![
+                    "logs <name>".into(),
+                    "View instance logs".into(),
+                    "aether logs my-app -f".into()
+                ],
+                vec![
+                    "delete <name>".into(),
+                    "Delete instance".into(),
+                    "aether delete my-app".into()
+                ],
+                vec![
+                    "list".into(),
+                    "List all instances".into(),
+                    "aether list".into()
+                ],
+                vec![
+                    "deploy <dir>".into(),
+                    "Deploy all specs in dir".into(),
+                    "aether deploy ./specs".into()
+                ],
             ],
         )
     );
@@ -54,10 +86,26 @@ pub fn show_help() {
         output::table(
             &["🔄 Migration & Rollback", "Description", "Example"],
             vec![
-                vec!["migrate <name>".into(), "Migrate to new runtime".into(), "aether migrate app -t kube".into()],
-                vec!["rollback <name>".into(), "Rollback to snapshot".into(), "aether rollback my-app".into()],
-                vec!["diff <name>".into(), "Compare spec vs live".into(), "aether diff my-app".into()],
-                vec!["drift <name>".into(), "Detect config drift".into(), "aether drift my-app".into()],
+                vec![
+                    "migrate <name>".into(),
+                    "Migrate to new runtime".into(),
+                    "aether migrate app -t kube".into()
+                ],
+                vec![
+                    "rollback <name>".into(),
+                    "Rollback to snapshot".into(),
+                    "aether rollback my-app".into()
+                ],
+                vec![
+                    "diff <name>".into(),
+                    "Compare spec vs live".into(),
+                    "aether diff my-app".into()
+                ],
+                vec![
+                    "drift <name>".into(),
+                    "Detect config drift".into(),
+                    "aether drift my-app".into()
+                ],
             ],
         )
     );
@@ -68,12 +116,36 @@ pub fn show_help() {
         output::table(
             &["🤖 AI Intelligence", "Description", "Example"],
             vec![
-                vec!["recommend".into(), "AI runtime recommendation".into(), "aether recommend".into()],
-                vec!["profile".into(), "Workload profiling".into(), "aether profile".into()],
-                vec!["analyze-logs <name>".into(), "Log anomaly detection".into(), "aether analyze-logs app".into()],
-                vec!["migration-advice".into(), "Migration risk analysis".into(), "aether migration-advice app kube".into()],
-                vec!["scaling-advice".into(), "Predictive scaling".into(), "aether scaling-advice".into()],
-                vec!["affinity".into(), "Runtime affinity learning".into(), "aether affinity recommend web-service".into()],
+                vec![
+                    "recommend".into(),
+                    "AI runtime recommendation".into(),
+                    "aether recommend".into()
+                ],
+                vec![
+                    "profile".into(),
+                    "Workload profiling".into(),
+                    "aether profile".into()
+                ],
+                vec![
+                    "analyze-logs <name>".into(),
+                    "Log anomaly detection".into(),
+                    "aether analyze-logs app".into()
+                ],
+                vec![
+                    "migration-advice".into(),
+                    "Migration risk analysis".into(),
+                    "aether migration-advice app kube".into()
+                ],
+                vec![
+                    "scaling-advice".into(),
+                    "Predictive scaling".into(),
+                    "aether scaling-advice".into()
+                ],
+                vec![
+                    "affinity".into(),
+                    "Runtime affinity learning".into(),
+                    "aether affinity recommend web-service".into()
+                ],
             ],
         )
     );
@@ -84,13 +156,41 @@ pub fn show_help() {
         output::table(
             &["📊 Operations & Monitoring", "Description", "Example"],
             vec![
-                vec!["tui".into(), "Interactive dashboard".into(), "aether tui".into()],
-                vec!["metrics".into(), "Prometheus metrics".into(), "aether metrics".into()],
-                vec!["audit".into(), "Audit trail".into(), "aether audit --summary".into()],
-                vec!["events".into(), "Event log".into(), "aether events --last 10".into()],
-                vec!["orchestrate".into(), "Health monitoring".into(), "aether orchestrate watch".into()],
-                vec!["schedule".into(), "Workload scheduling".into(), "aether schedule place app".into()],
-                vec!["sla".into(), "SLA compliance".into(), "aether sla check app --uptime 99.9".into()],
+                vec![
+                    "tui".into(),
+                    "Interactive dashboard".into(),
+                    "aether tui".into()
+                ],
+                vec![
+                    "metrics".into(),
+                    "Prometheus metrics".into(),
+                    "aether metrics".into()
+                ],
+                vec![
+                    "audit".into(),
+                    "Audit trail".into(),
+                    "aether audit --summary".into()
+                ],
+                vec![
+                    "events".into(),
+                    "Event log".into(),
+                    "aether events --last 10".into()
+                ],
+                vec![
+                    "orchestrate".into(),
+                    "Health monitoring".into(),
+                    "aether orchestrate watch".into()
+                ],
+                vec![
+                    "schedule".into(),
+                    "Workload scheduling".into(),
+                    "aether schedule place app".into()
+                ],
+                vec![
+                    "sla".into(),
+                    "SLA compliance".into(),
+                    "aether sla check app --uptime 99.9".into()
+                ],
             ],
         )
     );
@@ -101,12 +201,36 @@ pub fn show_help() {
         output::table(
             &["⚙️  Configuration", "Description", "Example"],
             vec![
-                vec!["config".into(), "Show/init configuration".into(), "aether config --init".into()],
-                vec!["template".into(), "Generate from template".into(), "aether template web-app".into()],
-                vec!["policy-check".into(), "Policy compliance".into(), "aether policy-check -p production".into()],
-                vec!["deps".into(), "Dependency management".into(), "aether deps show".into()],
-                vec!["secrets".into(), "Secret management".into(), "aether secrets list".into()],
-                vec!["env".into(), "Environment management".into(), "aether env list".into()],
+                vec![
+                    "config".into(),
+                    "Show/init configuration".into(),
+                    "aether config --init".into()
+                ],
+                vec![
+                    "template".into(),
+                    "Generate from template".into(),
+                    "aether template web-app".into()
+                ],
+                vec![
+                    "policy-check".into(),
+                    "Policy compliance".into(),
+                    "aether policy-check -p production".into()
+                ],
+                vec![
+                    "deps".into(),
+                    "Dependency management".into(),
+                    "aether deps show".into()
+                ],
+                vec![
+                    "secrets".into(),
+                    "Secret management".into(),
+                    "aether secrets list".into()
+                ],
+                vec![
+                    "env".into(),
+                    "Environment management".into(),
+                    "aether env list".into()
+                ],
             ],
         )
     );
@@ -117,14 +241,46 @@ pub fn show_help() {
         output::table(
             &["🔧 Infrastructure", "Description", "Example"],
             vec![
-                vec!["serve".into(), "Start API server".into(), "aether serve --port 8080".into()],
-                vec!["backup".into(), "Backup state".into(), "aether backup -n pre-deploy".into()],
-                vec!["restore".into(), "Restore from backup".into(), "aether restore backup.tar.gz".into()],
-                vec!["cost".into(), "Cost estimation".into(), "aether cost -p all".into()],
-                vec!["webhook".into(), "Webhook notifications".into(), "aether webhook list".into()],
-                vec!["completions".into(), "Shell completions".into(), "aether completions bash".into()],
-                vec!["list-backups".into(), "List available backups".into(), "aether list-backups".into()],
-                vec!["help-all".into(), "This command reference".into(), "aether help-all".into()],
+                vec![
+                    "serve".into(),
+                    "Start API server".into(),
+                    "aether serve --port 8080".into()
+                ],
+                vec![
+                    "backup".into(),
+                    "Backup state".into(),
+                    "aether backup -n pre-deploy".into()
+                ],
+                vec![
+                    "restore".into(),
+                    "Restore from backup".into(),
+                    "aether restore backup.tar.gz".into()
+                ],
+                vec![
+                    "cost".into(),
+                    "Cost estimation".into(),
+                    "aether cost -p all".into()
+                ],
+                vec![
+                    "webhook".into(),
+                    "Webhook notifications".into(),
+                    "aether webhook list".into()
+                ],
+                vec![
+                    "completions".into(),
+                    "Shell completions".into(),
+                    "aether completions bash".into()
+                ],
+                vec![
+                    "list-backups".into(),
+                    "List available backups".into(),
+                    "aether list-backups".into()
+                ],
+                vec![
+                    "help-all".into(),
+                    "This command reference".into(),
+                    "aether help-all".into()
+                ],
             ],
         )
     );
@@ -135,16 +291,56 @@ pub fn show_help() {
         output::table(
             &["🚀 Developer Workflow", "Description", "Example"],
             vec![
-                vec!["exec <name>".into(), "Shell into workload".into(), "aether exec my-app".into()],
-                vec!["port-forward <name>".into(), "Forward local ports".into(), "aether port-forward my-app 8080:80".into()],
-                vec!["watch".into(), "Auto-redeploy on changes".into(), "aether watch".into()],
-                vec!["compare".into(), "Cross-runtime comparison".into(), "aether compare".into()],
-                vec!["init".into(), "First-time setup wizard".into(), "aether init".into()],
-                vec!["compose up".into(), "Deploy from compose file".into(), "aether compose up".into()],
-                vec!["compose down".into(), "Stop compose workloads".into(), "aether compose down".into()],
-                vec!["plugin list".into(), "List runtime plugins".into(), "aether plugin list".into()],
-                vec!["plugin discover".into(), "Scan for plugins".into(), "aether plugin discover".into()],
-                vec!["health <name>".into(), "Health timeline & uptime".into(), "aether health my-app".into()],
+                vec![
+                    "exec <name>".into(),
+                    "Shell into workload".into(),
+                    "aether exec my-app".into()
+                ],
+                vec![
+                    "port-forward <name>".into(),
+                    "Forward local ports".into(),
+                    "aether port-forward my-app 8080:80".into()
+                ],
+                vec![
+                    "watch".into(),
+                    "Auto-redeploy on changes".into(),
+                    "aether watch".into()
+                ],
+                vec![
+                    "compare".into(),
+                    "Cross-runtime comparison".into(),
+                    "aether compare".into()
+                ],
+                vec![
+                    "init".into(),
+                    "First-time setup wizard".into(),
+                    "aether init".into()
+                ],
+                vec![
+                    "compose up".into(),
+                    "Deploy from compose file".into(),
+                    "aether compose up".into()
+                ],
+                vec![
+                    "compose down".into(),
+                    "Stop compose workloads".into(),
+                    "aether compose down".into()
+                ],
+                vec![
+                    "plugin list".into(),
+                    "List runtime plugins".into(),
+                    "aether plugin list".into()
+                ],
+                vec![
+                    "plugin discover".into(),
+                    "Scan for plugins".into(),
+                    "aether plugin discover".into()
+                ],
+                vec![
+                    "health <name>".into(),
+                    "Health timeline & uptime".into(),
+                    "aether health my-app".into()
+                ],
             ],
         )
     );
@@ -164,7 +360,8 @@ pub fn show_help() {
     println!();
     output::section("Supported Runtimes");
     use crate::runtime::RuntimeKind;
-    println!("  {} {} {} {}",
+    println!(
+        "  {} {} {} {}",
         output::runtime_display(&RuntimeKind::Podman),
         output::runtime_display(&RuntimeKind::Kubernetes),
         output::runtime_display(&RuntimeKind::KubeVirt),
@@ -185,9 +382,8 @@ mod tests {
 
     #[test]
     fn test_generate_completions_bash() {
-        use clap::{Command, Arg};
-        let mut cmd = Command::new("test-app")
-            .arg(Arg::new("verbose").short('v'));
+        use clap::{Arg, Command};
+        let mut cmd = Command::new("test-app").arg(Arg::new("verbose").short('v'));
         generate_completions(Shell::Bash, &mut cmd);
     }
 }

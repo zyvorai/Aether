@@ -42,7 +42,10 @@ impl std::str::FromStr for CloudProvider {
             "gcp" => Ok(CloudProvider::GCP),
             "digitalocean" | "do" => Ok(CloudProvider::DigitalOcean),
             "linode" => Ok(CloudProvider::Linode),
-            _ => Err(anyhow::anyhow!("Unknown provider: '{}'. Valid: aws, azure, gcp, digitalocean, linode", s)),
+            _ => Err(anyhow::anyhow!(
+                "Unknown provider: '{}'. Valid: aws, azure, gcp, digitalocean, linode",
+                s
+            )),
         }
     }
 }
@@ -78,12 +81,12 @@ impl CostEstimate {
 /// Resource pricing for a cloud provider
 #[derive(Debug, Clone, Copy)]
 struct ProviderPricing {
-    cpu_per_core_monthly: f64,      // $ per vCPU per month
-    memory_per_gb_monthly: f64,     // $ per GB RAM per month
-    storage_per_gb_monthly: f64,    // $ per GB storage per month
-    gpu_per_unit_monthly: f64,      // $ per GPU per month
-    egress_per_gb: f64,             // $ per GB network egress
-    load_balancer_monthly: f64,     // $ per load balancer per month
+    cpu_per_core_monthly: f64,   // $ per vCPU per month
+    memory_per_gb_monthly: f64,  // $ per GB RAM per month
+    storage_per_gb_monthly: f64, // $ per GB storage per month
+    gpu_per_unit_monthly: f64,   // $ per GPU per month
+    egress_per_gb: f64,          // $ per GB network egress
+    load_balancer_monthly: f64,  // $ per load balancer per month
 }
 
 impl ProviderPricing {
@@ -94,7 +97,7 @@ impl ProviderPricing {
                 cpu_per_core_monthly: 15.0,
                 memory_per_gb_monthly: 4.0,
                 storage_per_gb_monthly: 0.10,
-                gpu_per_unit_monthly: 350.0,  // p3.2xlarge equivalent
+                gpu_per_unit_monthly: 350.0, // p3.2xlarge equivalent
                 egress_per_gb: 0.09,
                 load_balancer_monthly: 22.50, // ALB
             },
@@ -102,7 +105,7 @@ impl ProviderPricing {
                 cpu_per_core_monthly: 14.0,
                 memory_per_gb_monthly: 3.5,
                 storage_per_gb_monthly: 0.12,
-                gpu_per_unit_monthly: 320.0,  // NC-series equivalent
+                gpu_per_unit_monthly: 320.0, // NC-series equivalent
                 egress_per_gb: 0.087,
                 load_balancer_monthly: 25.00,
             },
@@ -110,7 +113,7 @@ impl ProviderPricing {
                 cpu_per_core_monthly: 13.0,
                 memory_per_gb_monthly: 3.75,
                 storage_per_gb_monthly: 0.17,
-                gpu_per_unit_monthly: 300.0,  // T4 equivalent
+                gpu_per_unit_monthly: 300.0, // T4 equivalent
                 egress_per_gb: 0.12,
                 load_balancer_monthly: 18.00,
             },
@@ -118,7 +121,7 @@ impl ProviderPricing {
                 cpu_per_core_monthly: 6.0,
                 memory_per_gb_monthly: 6.0,
                 storage_per_gb_monthly: 0.15,
-                gpu_per_unit_monthly: 500.0,  // GPU droplet
+                gpu_per_unit_monthly: 500.0, // GPU droplet
                 egress_per_gb: 0.01,
                 load_balancer_monthly: 12.00,
             },
@@ -126,7 +129,7 @@ impl ProviderPricing {
                 cpu_per_core_monthly: 5.0,
                 memory_per_gb_monthly: 5.0,
                 storage_per_gb_monthly: 0.10,
-                gpu_per_unit_monthly: 450.0,  // GPU instance
+                gpu_per_unit_monthly: 450.0, // GPU instance
                 egress_per_gb: 0.01,
                 load_balancer_monthly: 10.00,
             },
@@ -188,9 +191,8 @@ pub fn estimate_extended_cost(
     let total_hourly = total_monthly / 730.0;
 
     // Generate recommendations
-    let recommendations = generate_cost_recommendations(
-        workload, &base, gpu_cost, network_cost, lb_cost, &pricing,
-    );
+    let recommendations =
+        generate_cost_recommendations(workload, &base, gpu_cost, network_cost, lb_cost, &pricing);
 
     Ok(ExtendedCostEstimate {
         base,
@@ -230,7 +232,8 @@ fn generate_cost_recommendations(
         recs.push(CostRecommendation {
             category: "GPU".to_string(),
             title: "GPU spot instances".to_string(),
-            description: "Use preemptible/spot GPU instances for non-critical workloads".to_string(),
+            description: "Use preemptible/spot GPU instances for non-critical workloads"
+                .to_string(),
             estimated_savings_monthly: gpu_cost * 0.60,
             estimated_savings_pct: 60.0,
         });
@@ -242,7 +245,8 @@ fn generate_cost_recommendations(
         Err(e) => {
             tracing::warn!(
                 "Failed to parse CPU '{}' for cost recommendation: {}; skipping right-sizing check",
-                workload.requirements.cpu, e
+                workload.requirements.cpu,
+                e
             );
             0.0
         }
@@ -324,11 +328,16 @@ pub fn estimate_all_providers(workload: &Workload) -> Result<Vec<CostEstimate>> 
 
     // Sort by total monthly cost
     estimates.sort_by(|a, b| {
-        a.total_monthly.partial_cmp(&b.total_monthly).unwrap_or_else(|| {
-            // Push NaN values to the end
-            if a.total_monthly.is_nan() { std::cmp::Ordering::Greater }
-            else { std::cmp::Ordering::Less }
-        })
+        a.total_monthly
+            .partial_cmp(&b.total_monthly)
+            .unwrap_or_else(|| {
+                // Push NaN values to the end
+                if a.total_monthly.is_nan() {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Less
+                }
+            })
     });
 
     Ok(estimates)
@@ -352,8 +361,14 @@ impl CostComparison {
     pub fn for_workload(workload: &Workload) -> Result<Self> {
         let estimates = estimate_all_providers(workload)?;
 
-        let cheapest = estimates.first().map(|e| e.provider).unwrap_or(CloudProvider::AWS);
-        let most_expensive = estimates.last().map(|e| e.provider).unwrap_or(CloudProvider::AWS);
+        let cheapest = estimates
+            .first()
+            .map(|e| e.provider)
+            .unwrap_or(CloudProvider::AWS);
+        let most_expensive = estimates
+            .last()
+            .map(|e| e.provider)
+            .unwrap_or(CloudProvider::AWS);
 
         let cheapest_cost = estimates.first().map(|e| e.total_monthly).unwrap_or(0.0);
         let expensive_cost = estimates.last().map(|e| e.total_monthly).unwrap_or(0.0);
@@ -465,8 +480,9 @@ struct LivePricingDoc {
     gpu_per_unit_monthly: Option<f64>,
 }
 
-static LIVE_PRICING_CACHE: std::sync::OnceLock<std::sync::Mutex<Option<(std::time::Instant, ProviderPricing)>>> =
-    std::sync::OnceLock::new();
+static LIVE_PRICING_CACHE: std::sync::OnceLock<
+    std::sync::Mutex<Option<(std::time::Instant, ProviderPricing)>>,
+> = std::sync::OnceLock::new();
 
 /// Default provider for chargeback (`AETHER_COST_PROVIDER` or AWS).
 pub fn default_chargeback_provider() -> CloudProvider {
@@ -561,7 +577,10 @@ fn resolve_pricing(provider: CloudProvider) -> (ProviderPricing, String) {
             return (live, "live".to_string());
         }
     }
-    (ProviderPricing::for_provider(provider), "baseline".to_string())
+    (
+        ProviderPricing::for_provider(provider),
+        "baseline".to_string(),
+    )
 }
 
 /// Current pricing configuration for `/api/cost/pricing`.
@@ -642,7 +661,9 @@ pub fn chargeback_report(
         total_spot += spot;
         total_reserved += reserved;
         *by_owner.entry(spec.metadata.owner.clone()).or_insert(0.0) += est.total_monthly;
-        *by_project.entry(spec.metadata.project.clone()).or_insert(0.0) += est.total_monthly;
+        *by_project
+            .entry(spec.metadata.project.clone())
+            .or_insert(0.0) += est.total_monthly;
         lines.push(ChargebackLine {
             workload: (*name).to_string(),
             owner: spec.metadata.owner.clone(),
@@ -696,7 +717,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -721,7 +742,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -793,11 +814,23 @@ mod tests {
     fn test_cloud_provider_from_str() {
         assert_eq!("aws".parse::<CloudProvider>().unwrap(), CloudProvider::AWS);
         assert_eq!("AWS".parse::<CloudProvider>().unwrap(), CloudProvider::AWS);
-        assert_eq!("azure".parse::<CloudProvider>().unwrap(), CloudProvider::Azure);
+        assert_eq!(
+            "azure".parse::<CloudProvider>().unwrap(),
+            CloudProvider::Azure
+        );
         assert_eq!("gcp".parse::<CloudProvider>().unwrap(), CloudProvider::GCP);
-        assert_eq!("digitalocean".parse::<CloudProvider>().unwrap(), CloudProvider::DigitalOcean);
-        assert_eq!("do".parse::<CloudProvider>().unwrap(), CloudProvider::DigitalOcean);
-        assert_eq!("linode".parse::<CloudProvider>().unwrap(), CloudProvider::Linode);
+        assert_eq!(
+            "digitalocean".parse::<CloudProvider>().unwrap(),
+            CloudProvider::DigitalOcean
+        );
+        assert_eq!(
+            "do".parse::<CloudProvider>().unwrap(),
+            CloudProvider::DigitalOcean
+        );
+        assert_eq!(
+            "linode".parse::<CloudProvider>().unwrap(),
+            CloudProvider::Linode
+        );
         assert!("hetzner".parse::<CloudProvider>().is_err());
     }
 }

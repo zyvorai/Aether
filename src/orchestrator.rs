@@ -256,7 +256,10 @@ impl Orchestrator {
         // SAFETY: we just inserted this key on the line above and hold &mut self,
         // so no concurrent removal is possible.
         self.workloads.get(name).unwrap_or_else(|| {
-            unreachable!("workload '{}' was just inserted but not found in HashMap", name)
+            unreachable!(
+                "workload '{}' was just inserted but not found in HashMap",
+                name
+            )
         })
     }
 
@@ -304,7 +307,10 @@ impl Orchestrator {
                 workload.history.push(HealthEvent {
                     timestamp: now.clone(),
                     event_type: HealthEventType::HealthCheckPassed,
-                    message: format!("Health check passed ({} consecutive)", workload.consecutive_successes),
+                    message: format!(
+                        "Health check passed ({} consecutive)",
+                        workload.consecutive_successes
+                    ),
                 });
             }
             HealthStatus::Degraded => {
@@ -359,7 +365,8 @@ impl Orchestrator {
                                     actions.push(OrchestratorAction::Restart {
                                         workload: check.workload.clone(),
                                         runtime: workload.runtime,
-                                        reason: "Health check failures exceeded threshold".to_string(),
+                                        reason: "Health check failures exceeded threshold"
+                                            .to_string(),
                                     });
                                 } else if workload.health_config.circuit_breaker {
                                     // Open circuit
@@ -390,7 +397,8 @@ impl Orchestrator {
                             if let Some(opened_at) = &workload.circuit_opened_at {
                                 match chrono::DateTime::parse_from_rfc3339(opened_at) {
                                     Ok(opened) => {
-                                        let elapsed = chrono::Utc::now() - opened.with_timezone(&chrono::Utc);
+                                        let elapsed =
+                                            chrono::Utc::now() - opened.with_timezone(&chrono::Utc);
                                         if elapsed.num_seconds()
                                             >= workload.health_config.cooldown_seconds as i64
                                         {
@@ -408,7 +416,8 @@ impl Orchestrator {
                                             actions.push(OrchestratorAction::Restart {
                                                 workload: check.workload.clone(),
                                                 runtime: workload.runtime,
-                                                reason: "Circuit half-open recovery attempt".to_string(),
+                                                reason: "Circuit half-open recovery attempt"
+                                                    .to_string(),
                                             });
                                         }
                                     }
@@ -419,7 +428,8 @@ impl Orchestrator {
                                         tracing::error!(
                                             "Failed to parse circuit_opened_at '{}': {}; \
                                              forcing transition to HalfOpen for recovery",
-                                            opened_at, e
+                                            opened_at,
+                                            e
                                         );
                                         workload.circuit = CircuitState::HalfOpen;
                                         workload.restart_count = 0;
@@ -437,7 +447,9 @@ impl Orchestrator {
                                         actions.push(OrchestratorAction::Restart {
                                             workload: check.workload.clone(),
                                             runtime: workload.runtime,
-                                            reason: "Circuit forced HalfOpen after corrupted timestamp".to_string(),
+                                            reason:
+                                                "Circuit forced HalfOpen after corrupted timestamp"
+                                                    .to_string(),
                                         });
                                     }
                                 }
@@ -456,7 +468,8 @@ impl Orchestrator {
 
                             actions.push(OrchestratorAction::CircuitOpened {
                                 workload: check.workload.clone(),
-                                reason: "Recovery attempt failed during half-open state".to_string(),
+                                reason: "Recovery attempt failed during half-open state"
+                                    .to_string(),
                             });
                         }
                     }
@@ -530,11 +543,31 @@ impl Orchestrator {
     /// Get overall health summary
     pub fn health_summary(&self) -> HealthSummary {
         let total = self.workloads.len();
-        let healthy = self.workloads.values().filter(|w| w.current_health == HealthStatus::Healthy).count();
-        let degraded = self.workloads.values().filter(|w| w.current_health == HealthStatus::Degraded).count();
-        let unhealthy = self.workloads.values().filter(|w| w.current_health == HealthStatus::Unhealthy).count();
-        let unknown = self.workloads.values().filter(|w| w.current_health == HealthStatus::Unknown).count();
-        let circuits_open = self.workloads.values().filter(|w| w.circuit == CircuitState::Open).count();
+        let healthy = self
+            .workloads
+            .values()
+            .filter(|w| w.current_health == HealthStatus::Healthy)
+            .count();
+        let degraded = self
+            .workloads
+            .values()
+            .filter(|w| w.current_health == HealthStatus::Degraded)
+            .count();
+        let unhealthy = self
+            .workloads
+            .values()
+            .filter(|w| w.current_health == HealthStatus::Unhealthy)
+            .count();
+        let unknown = self
+            .workloads
+            .values()
+            .filter(|w| w.current_health == HealthStatus::Unknown)
+            .count();
+        let circuits_open = self
+            .workloads
+            .values()
+            .filter(|w| w.circuit == CircuitState::Open)
+            .count();
 
         HealthSummary {
             total_workloads: total,
@@ -625,7 +658,6 @@ impl Orchestrator {
 
         all_actions
     }
-
 }
 
 crate::impl_json_store!(Orchestrator, "orchestrator.json");
@@ -659,7 +691,9 @@ pub enum OrchestratorAction {
 impl std::fmt::Display for OrchestratorAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            OrchestratorAction::Restart { workload, reason, .. } => {
+            OrchestratorAction::Restart {
+                workload, reason, ..
+            } => {
                 write!(f, "RESTART '{}': {}", workload, reason)
             }
             OrchestratorAction::Alert { workload, message } => {
@@ -824,7 +858,10 @@ mod tests {
         let mut restart_issued = false;
         for _ in 0..3 {
             let actions = orch.process_health_check(make_check("app", HealthStatus::Unhealthy));
-            if actions.iter().any(|a| matches!(a, OrchestratorAction::Restart { .. })) {
+            if actions
+                .iter()
+                .any(|a| matches!(a, OrchestratorAction::Restart { .. }))
+            {
                 restart_issued = true;
             }
         }
@@ -848,7 +885,10 @@ mod tests {
         // Keep failing until circuit opens
         for _ in 0..10 {
             let actions = orch.process_health_check(make_check("app", HealthStatus::Unhealthy));
-            if actions.iter().any(|a| matches!(a, OrchestratorAction::CircuitOpened { .. })) {
+            if actions
+                .iter()
+                .any(|a| matches!(a, OrchestratorAction::CircuitOpened { .. }))
+            {
                 circuit_opened = true;
                 break;
             }
@@ -914,7 +954,9 @@ mod tests {
         let actions = orch.process_health_check(make_check("app", HealthStatus::Degraded));
         let w = orch.get_workload("app").unwrap();
         assert_eq!(w.current_health, HealthStatus::Degraded);
-        assert!(actions.iter().any(|a| matches!(a, OrchestratorAction::Alert { .. })));
+        assert!(actions
+            .iter()
+            .any(|a| matches!(a, OrchestratorAction::Alert { .. })));
     }
 
     #[test]

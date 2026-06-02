@@ -175,8 +175,7 @@ pub fn plan_confidential_migration_tee(
 
     let base_uri = format!(
         "qemu+tcp://migrate/{}/{}",
-        spec.metadata.name,
-        spec.metadata.name
+        spec.metadata.name, spec.metadata.name
     );
     let migration_uri = migration_uri_wrapper(&base_uri, false);
     let encrypted_migration_uri = migration_uri_wrapper(&base_uri, confidential);
@@ -254,8 +253,14 @@ pub fn hyper2kvm_command_hints(spec: &Workload, encrypted_uri: &str) -> Vec<Stri
             "Install hyper2kvm or set HYPER2KVM_BIN for live encrypted memory migration".into(),
         );
     }
-    if let Some(ref d) = spec.confidential.as_ref().and_then(|c| c.image_digest.as_ref()) {
-        hints.push(format!("Verify target attestation reports digest {d} before cutover"));
+    if let Some(ref d) = spec
+        .confidential
+        .as_ref()
+        .and_then(|c| c.image_digest.as_ref())
+    {
+        hints.push(format!(
+            "Verify target attestation reports digest {d} before cutover"
+        ));
     }
     hints.push("Set RAGNAROK_MIGRATION_ENCRYPTED=1 on both hosts".into());
     hints
@@ -355,10 +360,9 @@ pub fn record_migration_complete(
 mod tests {
     use super::*;
     use crate::spec::{
-        BuildSpec, ConfidentialAttestationSpec, ConfidentialIsolationSpec,
-        ConfidentialSecretsSpec, ConfidentialSpec, ConfidentialTee, Metadata, NetworkSpec,
-        PersistenceSpec, ResourceRequirements, RuntimePreference, RuntimeSpec, RuntimeType,
-        Workload,
+        BuildSpec, ConfidentialAttestationSpec, ConfidentialIsolationSpec, ConfidentialSecretsSpec,
+        ConfidentialSpec, ConfidentialTee, Metadata, NetworkSpec, PersistenceSpec,
+        ResourceRequirements, RuntimePreference, RuntimeSpec, RuntimeType, Workload,
     };
 
     fn conf_spec() -> Workload {
@@ -423,7 +427,10 @@ mod tests {
     fn plan_recommends_confidential_blue_green() {
         let spec = conf_spec();
         let plan = plan_confidential_migration_tee(&spec, true, true, false, false);
-        assert_eq!(plan.recommended_strategy, MigrationStrategy::ConfidentialBlueGreen);
+        assert_eq!(
+            plan.recommended_strategy,
+            MigrationStrategy::ConfidentialBlueGreen
+        );
         assert!(plan.encrypted_channel_required);
     }
 

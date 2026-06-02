@@ -51,10 +51,7 @@ impl TrustPolicy {
         if violations.is_empty() {
             Ok(())
         } else {
-            anyhow::bail!(
-                "Trust policy violation: {}",
-                violations.join("; ")
-            )
+            anyhow::bail!("Trust policy violation: {}", violations.join("; "))
         }
     }
 }

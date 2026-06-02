@@ -4,7 +4,6 @@
 
 //! Copilot tool registry — maps tool names to intelligence/API operations.
 
-use crate::zeus::policy::{role_allows_tool, tool_risk};
 use crate::intelligence::context::build_context_snapshot;
 use crate::intelligence::finops::FinOpsEngine;
 use crate::intelligence::predict::FailurePredictor;
@@ -12,6 +11,7 @@ use crate::intelligence::security::SecurityEngine;
 use crate::rbac::Role;
 use crate::spec::Workload;
 use crate::state::StateStore;
+use crate::zeus::policy::{role_allows_tool, tool_risk};
 use serde_json::json;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -77,16 +77,14 @@ pub async fn execute_tool(
             Ok(serde_json::to_value(snap)?)
         }
         "explain_health" => {
-            let workload = args
-                .get("workload")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let workload = args.get("workload").and_then(|v| v.as_str()).unwrap_or("");
             let store = ctx.state.read().await;
             let ws = store
                 .get(workload)
                 .ok_or_else(|| anyhow::anyhow!("workload not found"))?;
-            let health = crate::health::HealthHistory::load(&crate::health::HealthHistory::default_path())
-                .unwrap_or_default();
+            let health =
+                crate::health::HealthHistory::load(&crate::health::HealthHistory::default_path())
+                    .unwrap_or_default();
             Ok(json!({
                 "workload": workload,
                 "runtime": format!("{}", ws.runtime),
@@ -117,10 +115,7 @@ pub async fn execute_tool(
             Ok(json!({"drifted": drifted}))
         }
         "recommend_runtime" => {
-            let yaml = args
-                .get("yaml")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let yaml = args.get("yaml").and_then(|v| v.as_str()).unwrap_or("");
             let spec: Workload = serde_yaml::from_str(yaml)?;
             let config = crate::config::Config::load();
             let intel = crate::intelligence::store::IntelligenceStore::load(
@@ -133,7 +128,9 @@ pub async fn execute_tool(
             Ok(serde_json::to_value(result)?)
         }
         "cluster_summary" => {
-            let clusters = crate::kubecluster::list_clusters().await.unwrap_or_default();
+            let clusters = crate::kubecluster::list_clusters()
+                .await
+                .unwrap_or_default();
             Ok(json!({"clusters": clusters}))
         }
         "predictions" => {
@@ -160,21 +157,19 @@ pub async fn execute_tool(
             Ok(result)
         }
         "explain_attestation_failure" => {
-            let vm_id = args
-                .get("vm_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let dir = ctx.state_path.parent().unwrap_or(&ctx.state_path).to_path_buf();
+            let vm_id = args.get("vm_id").and_then(|v| v.as_str()).unwrap_or("");
+            let dir = ctx
+                .state_path
+                .parent()
+                .unwrap_or(&ctx.state_path)
+                .to_path_buf();
             let svc = crate::ragnarok::AttestationService::new(dir.clone());
             let gk = crate::ragnarok::guestkit::GuestKitService::new(dir).summary(vm_id);
             let explain = svc.explain_with_guestkit(vm_id, gk)?;
             Ok(serde_json::to_value(explain)?)
         }
         "confidential_migrate_plan" => {
-            let name = args
-                .get("workload")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let name = args.get("workload").and_then(|v| v.as_str()).unwrap_or("");
             let store = ctx.state.read().await;
             let ws = store
                 .get(name)
@@ -191,7 +186,11 @@ pub async fn execute_tool(
             Ok(serde_json::to_value(plan)?)
         }
         "trust_score_fleet" => {
-            let dir = ctx.state_path.parent().unwrap_or(&ctx.state_path).to_path_buf();
+            let dir = ctx
+                .state_path
+                .parent()
+                .unwrap_or(&ctx.state_path)
+                .to_path_buf();
             let pairs = workload_pairs(&ctx.state).await;
             let confidential: Vec<_> = pairs
                 .iter()
@@ -202,26 +201,29 @@ pub async fn execute_tool(
                 .iter()
                 .map(|(n, s, r)| (*n, *s, r.as_str()))
                 .collect();
-            Ok(serde_json::to_value(crate::ragnarok::intelligence::analyze_fleet(
-                &refs, &dir,
-            ))?)
+            Ok(serde_json::to_value(
+                crate::ragnarok::intelligence::analyze_fleet(&refs, &dir),
+            )?)
         }
         "confidential_analyze" => {
-            let name = args
-                .get("workload")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let name = args.get("workload").and_then(|v| v.as_str()).unwrap_or("");
             let store = ctx.state.read().await;
             let ws = store
                 .get(name)
                 .ok_or_else(|| anyhow::anyhow!("workload not found"))?;
             let spec = Workload::from_file(&ws.spec_path)?;
-            let dir = ctx.state_path.parent().unwrap_or(&ctx.state_path).to_path_buf();
-            Ok(serde_json::to_value(crate::ragnarok::intelligence::analyze_workload(
-                &spec,
-                &ws.runtime.to_string(),
-                &dir,
-            ))?)
+            let dir = ctx
+                .state_path
+                .parent()
+                .unwrap_or(&ctx.state_path)
+                .to_path_buf();
+            Ok(serde_json::to_value(
+                crate::ragnarok::intelligence::analyze_workload(
+                    &spec,
+                    &ws.runtime.to_string(),
+                    &dir,
+                ),
+            )?)
         }
         "intelligence_place" => {
             let yaml = args
@@ -229,7 +231,9 @@ pub async fn execute_tool(
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| anyhow::anyhow!("yaml required"))?;
             let spec: Workload = serde_yaml::from_str(yaml)?;
-            let clusters = crate::kubecluster::list_clusters().await.unwrap_or_default();
+            let clusters = crate::kubecluster::list_clusters()
+                .await
+                .unwrap_or_default();
             Ok(serde_json::to_value(
                 crate::intelligence::placement::GlobalPlacementEngine::recommend(&spec, &clusters),
             )?)
@@ -239,10 +243,14 @@ pub async fn execute_tool(
             use crate::intelligence::evolution::EvolutionEngine;
             use crate::intelligence::policy::AutonomyPolicy;
             let config = Config::load();
-            let policy =
-                AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+            let policy = AutonomyPolicy::from_config_and_workload(
+                config.reconciliation.auto_reconcile,
+                None,
+            );
             let pairs = workload_pairs(&ctx.state).await;
-            Ok(serde_json::to_value(EvolutionEngine::status_for_fleet(&pairs, &policy))?)
+            Ok(serde_json::to_value(EvolutionEngine::status_for_fleet(
+                &pairs, &policy,
+            ))?)
         }
         "diagnose_workload" => {
             let workload = args
@@ -252,9 +260,18 @@ pub async fn execute_tool(
             let store = ctx.state.read().await;
             let req = crate::zeus::diagnose::DiagnoseRequest {
                 workload: workload.into(),
-                cluster: args.get("cluster").and_then(|v| v.as_str()).map(str::to_string),
-                namespace: args.get("namespace").and_then(|v| v.as_str()).map(str::to_string),
-                kind: args.get("kind").and_then(|v| v.as_str()).map(str::to_string),
+                cluster: args
+                    .get("cluster")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
+                namespace: args
+                    .get("namespace")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
+                kind: args
+                    .get("kind")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
             };
             let report = crate::zeus::diagnose::diagnose_workload(&req, &store).await?;
             Ok(serde_json::to_value(report)?)
@@ -314,7 +331,10 @@ pub async fn execute_tool(
             }))
         }
         "generate_artifact" => {
-            let kind = args.get("kind").and_then(|v| v.as_str()).unwrap_or("kubernetes");
+            let kind = args
+                .get("kind")
+                .and_then(|v| v.as_str())
+                .unwrap_or("kubernetes");
             let prompt = args.get("prompt").and_then(|v| v.as_str()).unwrap_or("");
             Ok(serde_json::json!({
                 "kind": kind,
@@ -330,7 +350,10 @@ pub async fn execute_tool(
             }))
         }
         "create_ticket" => {
-            let title = args.get("title").and_then(|v| v.as_str()).unwrap_or("Zeus incident");
+            let title = args
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Zeus incident");
             Ok(serde_json::json!({
                 "status": "pending_approval",
                 "ticket": title,
@@ -349,7 +372,9 @@ pub async fn execute_tool(
     }
 }
 
-async fn workload_pairs(state: &Arc<RwLock<StateStore>>) -> Vec<(Workload, crate::state::WorkloadState)> {
+async fn workload_pairs(
+    state: &Arc<RwLock<StateStore>>,
+) -> Vec<(Workload, crate::state::WorkloadState)> {
     let store = state.read().await;
     store
         .list()

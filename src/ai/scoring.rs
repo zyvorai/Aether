@@ -117,7 +117,11 @@ impl ScoringEngine {
             .collect();
 
         // Sort by total score descending
-        scores.sort_by(|a, b| b.total_score.partial_cmp(&a.total_score).unwrap_or(std::cmp::Ordering::Equal));
+        scores.sort_by(|a, b| {
+            b.total_score
+                .partial_cmp(&a.total_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         let recommended = match scores.first() {
             Some(s) => s.runtime,
@@ -161,7 +165,9 @@ impl ScoringEngine {
         // High-resource bare metal
         let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
         let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
-        if cpu > self.config.metal3_cpu_threshold || memory_gi > self.config.metal3_memory_threshold_gi {
+        if cpu > self.config.metal3_cpu_threshold
+            || memory_gi > self.config.metal3_memory_threshold_gi
+        {
             return WorkloadClass::BareMetal;
         }
 
@@ -193,7 +199,8 @@ impl ScoringEngine {
         let cost_score = self.score_cost(runtime, spec, &mut reasons);
 
         // Performance score (0.0 - 1.0, higher = better fit)
-        let performance_score = self.score_performance(runtime, spec, class, &mut reasons, &mut warnings);
+        let performance_score =
+            self.score_performance(runtime, spec, class, &mut reasons, &mut warnings);
 
         // Reliability score (0.0 - 1.0, higher = more reliable)
         let reliability_score = self.score_reliability(runtime, &mut reasons);
@@ -238,7 +245,8 @@ impl ScoringEngine {
             }
             RuntimeKind::Kubernetes => {
                 if cpu <= 8.0 && memory_gi <= 32.0 {
-                    reasons.push("K8s efficient for medium workloads with shared infra".to_string());
+                    reasons
+                        .push("K8s efficient for medium workloads with shared infra".to_string());
                     0.75
                 } else {
                     reasons.push("K8s overhead increases with large resource requests".to_string());
@@ -358,8 +366,8 @@ impl ScoringEngine {
         // Use historical data if available
         if let Some(history) = self.history.get(&runtime) {
             if history.total_deployments > 0 {
-                let success_rate = history.successful_deployments as f64
-                    / history.total_deployments as f64;
+                let success_rate =
+                    history.successful_deployments as f64 / history.total_deployments as f64;
                 reasons.push(format!(
                     "Historical success rate: {:.1}% ({} deployments)",
                     success_rate * 100.0,
@@ -391,7 +399,12 @@ impl ScoringEngine {
     }
 
     /// Score runtime on availability characteristics
-    fn score_availability(&self, runtime: RuntimeKind, spec: &Workload, reasons: &mut Vec<String>) -> f64 {
+    fn score_availability(
+        &self,
+        runtime: RuntimeKind,
+        spec: &Workload,
+        reasons: &mut Vec<String>,
+    ) -> f64 {
         let has_scaling = spec.scaling.as_ref().is_some_and(|s| s.enabled);
         let has_health = spec.health.is_some();
 
@@ -525,7 +538,9 @@ impl ScoringEngine {
                 if estimated > budget.max_monthly_usd {
                     tracing::info!(
                         "Intent filter: {} excluded (est ${:.0}/mo > budget ${:.0})",
-                        rt, estimated, budget.max_monthly_usd
+                        rt,
+                        estimated,
+                        budget.max_monthly_usd
                     );
                     false
                 } else {
@@ -595,7 +610,8 @@ impl ScoringEngine {
             match runtime {
                 RuntimeKind::Metal3 => {
                     multiplier *= 1.4;
-                    reasons.push("Intent: strict trust bonus (dedicated hardware, TPM)".to_string());
+                    reasons
+                        .push("Intent: strict trust bonus (dedicated hardware, TPM)".to_string());
                 }
                 RuntimeKind::KubeVirt => {
                     multiplier *= 1.3;
@@ -618,7 +634,9 @@ impl ScoringEngine {
             let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
             if matches!(runtime, RuntimeKind::Podman | RuntimeKind::Docker) && cpu <= 4.0 {
                 multiplier *= 1.1;
-                reasons.push("Intent: low-latency bonus (local container, small workload)".to_string());
+                reasons.push(
+                    "Intent: low-latency bonus (local container, small workload)".to_string(),
+                );
             }
         }
 
@@ -644,8 +662,18 @@ pub fn format_scoring_report_with_options(result: &ScoringResult, explain: bool)
     let mut output = String::new();
 
     output.push_str(&output::property_section(&[
-        ("Workload Classification", format!("{}", result.workload_class)),
-        ("Recommended Runtime", format!("{} (confidence: {:.0}%)", result.recommended, result.confidence * 100.0)),
+        (
+            "Workload Classification",
+            format!("{}", result.workload_class),
+        ),
+        (
+            "Recommended Runtime",
+            format!(
+                "{} (confidence: {:.0}%)",
+                result.recommended,
+                result.confidence * 100.0
+            ),
+        ),
     ]));
 
     output.push_str("Runtime Scores:\n");
@@ -737,7 +765,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -762,7 +790,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -821,7 +849,9 @@ mod tests {
         let result = engine.score(&spec);
         let report = format_scoring_report_with_options(&result, true);
         assert!(report.contains("Per-Runtime Analysis"));
-        assert!(report.contains("podman") || report.contains("Podman") || report.contains("kubernetes"));
+        assert!(
+            report.contains("podman") || report.contains("Podman") || report.contains("kubernetes")
+        );
     }
 
     #[test]
@@ -844,7 +874,11 @@ mod tests {
         let result = engine.score(&spec);
 
         // Podman should score high reliability with 99% success rate
-        let podman_score = result.scores.iter().find(|s| s.runtime == RuntimeKind::Podman).unwrap();
+        let podman_score = result
+            .scores
+            .iter()
+            .find(|s| s.runtime == RuntimeKind::Podman)
+            .unwrap();
         assert!(podman_score.reliability_score > 0.90);
     }
 
@@ -870,7 +904,7 @@ mod tests {
     // Intent-aware scoring tests
     // ---------------------------------------------------------------
 
-    use crate::spec::{IntentSpec, IntentGoal, ResilienceLevel, ComplianceSpec};
+    use crate::spec::{ComplianceSpec, IntentGoal, IntentSpec, ResilienceLevel};
 
     fn make_intent(goal: IntentGoal) -> IntentSpec {
         IntentSpec {
@@ -890,8 +924,14 @@ mod tests {
         spec.intent = Some(make_intent(IntentGoal::LowLatency));
         let base_weights = engine.config.scoring_weights.normalized();
         let adjusted = engine.adjust_weights_for_intent(&spec, base_weights);
-        assert!(adjusted.performance > 0.40, "performance weight should be high for low-latency");
-        assert!(adjusted.cost < 0.20, "cost weight should be low for low-latency");
+        assert!(
+            adjusted.performance > 0.40,
+            "performance weight should be high for low-latency"
+        );
+        assert!(
+            adjusted.cost < 0.20,
+            "cost weight should be low for low-latency"
+        );
     }
 
     #[test]
@@ -901,7 +941,10 @@ mod tests {
         spec.intent = Some(make_intent(IntentGoal::CostOptimized));
         let base_weights = engine.config.scoring_weights.normalized();
         let adjusted = engine.adjust_weights_for_intent(&spec, base_weights);
-        assert!(adjusted.cost > 0.45, "cost weight should be high for cost-optimized");
+        assert!(
+            adjusted.cost > 0.45,
+            "cost weight should be high for cost-optimized"
+        );
     }
 
     #[test]
@@ -952,10 +995,7 @@ mod tests {
     #[test]
     fn test_filter_removes_podman_when_high_resilience() {
         let engine = ScoringEngine::with_defaults();
-        let mut spec = create_test_workload(vec![
-            RuntimeType::Container,
-            RuntimeType::Kube,
-        ]);
+        let mut spec = create_test_workload(vec![RuntimeType::Container, RuntimeType::Kube]);
         spec.intent = Some(IntentSpec {
             goal: IntentGoal::Balanced,
             sla: None,
@@ -1018,11 +1058,15 @@ mod tests {
         let result_with_intent = engine.score(&spec);
 
         // Cost-optimized should favor cheaper runtimes
-        let no_intent_cost = result_no_intent.scores.iter()
+        let no_intent_cost = result_no_intent
+            .scores
+            .iter()
             .find(|s| s.runtime == RuntimeKind::Podman)
             .map(|s| s.total_score)
             .unwrap_or(0.0);
-        let intent_cost = result_with_intent.scores.iter()
+        let intent_cost = result_with_intent
+            .scores
+            .iter()
             .find(|s| s.runtime == RuntimeKind::Podman)
             .map(|s| s.total_score)
             .unwrap_or(0.0);
@@ -1036,10 +1080,7 @@ mod tests {
     #[test]
     fn test_intent_isolation_bonus_applied() {
         let engine = ScoringEngine::with_defaults();
-        let mut spec = create_test_workload(vec![
-            RuntimeType::Kube,
-            RuntimeType::Kubevirt,
-        ]);
+        let mut spec = create_test_workload(vec![RuntimeType::Kube, RuntimeType::Kubevirt]);
         spec.intent = Some(IntentSpec {
             goal: IntentGoal::Balanced,
             sla: None,
@@ -1053,11 +1094,17 @@ mod tests {
         });
         let result = engine.score(&spec);
         // KubeVirt should get isolation bonus
-        let kv_score = result.scores.iter()
+        let kv_score = result
+            .scores
+            .iter()
             .find(|s| s.runtime == RuntimeKind::KubeVirt);
         assert!(kv_score.is_some());
         assert!(
-            kv_score.unwrap().reasons.iter().any(|r| r.contains("isolation bonus")),
+            kv_score
+                .unwrap()
+                .reasons
+                .iter()
+                .any(|r| r.contains("isolation bonus")),
             "KubeVirt should have isolation bonus reason"
         );
     }

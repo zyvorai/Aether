@@ -48,16 +48,56 @@ pub fn build_extensions_graduation_overview() -> ExtensionsGraduationOverview {
         graduated_count: 10,
         chaos_live_enabled: chaos_live_enabled(),
         features: vec![
-            ext(115, "Chaos experiments", "/api/intelligence/extensions/chaos/experiments"),
-            ext(116, "Game days planner", "/api/intelligence/extensions/game-days"),
-            ext(117, "Live Activity migrations", "/api/intelligence/extensions/live-activity"),
-            ext(118, "Spotlight index", "/api/intelligence/extensions/spotlight"),
-            ext(119, "Shortcuts manifest", "/api/intelligence/extensions/shortcuts"),
-            ext(120, "Menu extras toggles", "/api/intelligence/extensions/menu-extras"),
-            ext(121, "Chaos live execute", "/api/intelligence/extensions/chaos/run"),
-            ext(122, "Game day execute", "/api/intelligence/extensions/game-days/execute"),
-            ext(123, "Native extensions bundle", "/api/intelligence/extensions/native-bundle"),
-            ext(124, "SRE extensions bundle", "/api/intelligence/extensions/sre-bundle"),
+            ext(
+                115,
+                "Chaos experiments",
+                "/api/intelligence/extensions/chaos/experiments",
+            ),
+            ext(
+                116,
+                "Game days planner",
+                "/api/intelligence/extensions/game-days",
+            ),
+            ext(
+                117,
+                "Live Activity migrations",
+                "/api/intelligence/extensions/live-activity",
+            ),
+            ext(
+                118,
+                "Spotlight index",
+                "/api/intelligence/extensions/spotlight",
+            ),
+            ext(
+                119,
+                "Shortcuts manifest",
+                "/api/intelligence/extensions/shortcuts",
+            ),
+            ext(
+                120,
+                "Menu extras toggles",
+                "/api/intelligence/extensions/menu-extras",
+            ),
+            ext(
+                121,
+                "Chaos live execute",
+                "/api/intelligence/extensions/chaos/run",
+            ),
+            ext(
+                122,
+                "Game day execute",
+                "/api/intelligence/extensions/game-days/execute",
+            ),
+            ext(
+                123,
+                "Native extensions bundle",
+                "/api/intelligence/extensions/native-bundle",
+            ),
+            ext(
+                124,
+                "SRE extensions bundle",
+                "/api/intelligence/extensions/sre-bundle",
+            ),
         ],
     }
 }
@@ -169,7 +209,10 @@ pub async fn execute_game_day_scenario(
         }
     } else {
         skipped.push("Live game-day requires operator confirmation in dashboard or CLI".into());
-        executed.push(format!("scheduled: {} ({} min)", scenario.title, scenario.duration_minutes));
+        executed.push(format!(
+            "scheduled: {} ({} min)",
+            scenario.title, scenario.duration_minutes
+        ));
     }
 
     Ok(GameDayExecuteReport {

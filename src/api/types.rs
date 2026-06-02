@@ -44,20 +44,11 @@ impl Default for ApiConfig {
 #[allow(dead_code)]
 pub enum ServerEvent {
     /// Workload state changed
-    WorkloadChanged {
-        name: String,
-        action: String,
-    },
+    WorkloadChanged { name: String, action: String },
     /// New event emitted
-    EventEmitted {
-        message: String,
-        severity: String,
-    },
+    EventEmitted { message: String, severity: String },
     /// Health status update
-    HealthUpdate {
-        workload: String,
-        status: String,
-    },
+    HealthUpdate { workload: String, status: String },
     /// Migration progress for live activity cards
     MigrationProgress {
         workload: String,
@@ -1230,7 +1221,10 @@ mod tests {
 
         let request: CreateBackupRequest = serde_json::from_value(json).unwrap();
         assert_eq!(request.name, Some("my-backup".to_string()));
-        assert_eq!(request.description, Some("Pre-migration backup".to_string()));
+        assert_eq!(
+            request.description,
+            Some("Pre-migration backup".to_string())
+        );
     }
 
     #[test]
@@ -1740,7 +1734,10 @@ mod tests {
         let response = TimingAdviceResponse {
             recommendation: "Off-peak hours recommended".to_string(),
             preferred_window: "02:00-06:00 UTC".to_string(),
-            avoid_times: vec!["Monday 09:00-12:00".to_string(), "Friday 15:00-18:00".to_string()],
+            avoid_times: vec![
+                "Monday 09:00-12:00".to_string(),
+                "Friday 15:00-18:00".to_string(),
+            ],
         };
         let value = serde_json::to_value(&response).unwrap();
 
@@ -2016,7 +2013,13 @@ mod tests {
         assert_eq!(json["success"], true);
         assert_eq!(json["data"]["workload_name"], "api-svc");
         assert_eq!(json["data"]["timing"]["recommendation"], "Anytime");
-        assert_eq!(json["data"]["canary_config"]["steps"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            json["data"]["canary_config"]["steps"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
     }
 
     // ---------------------------------------------------------------

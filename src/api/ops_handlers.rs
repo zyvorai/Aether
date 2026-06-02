@@ -4,7 +4,9 @@
 
 //! REST wrappers for CLI-only operations (GitOps init, env/SLA mutations, orchestrator actions, etc.).
 
-use super::handlers::{err_bad_request, err_internal, err_not_found, ok_json, persist_workload_api};
+use super::handlers::{
+    err_bad_request, err_internal, err_not_found, ok_json, persist_workload_api,
+};
 use super::types::*;
 use crate::backup::{Backup, SnapshotManager};
 use crate::orchestrator::{HealthStatus as OrcHealthStatus, Orchestrator};
@@ -280,7 +282,10 @@ pub(crate) async fn api_env_parity(Query(q): Query<EnvParityQuery>) -> impl Into
     let env = match manager.get_env(&q.env1) {
         Some(e) => e,
         None => {
-            return err_not_found::<serde_json::Value>(format!("Environment '{}' not found", q.env1))
+            return err_not_found::<serde_json::Value>(format!(
+                "Environment '{}' not found",
+                q.env1
+            ))
         }
     };
 
@@ -419,7 +424,10 @@ pub(crate) async fn api_orchestrator_reset_circuit(
         }
         ok_json(json!({ "reset": req.name }))
     } else {
-        err_not_found::<serde_json::Value>(format!("Workload '{}' not found in orchestrator", req.name))
+        err_not_found::<serde_json::Value>(format!(
+            "Workload '{}' not found in orchestrator",
+            req.name
+        ))
     }
 }
 
@@ -679,11 +687,8 @@ pub(crate) async fn api_helm_export(Json(req): Json<HelmExportRequest>) -> impl 
     if let Err(e) = std::fs::create_dir_all(&output_dir) {
         return err_internal::<serde_json::Value>(e);
     }
-    if let Err(e) = crate::helm::export_helm_chart(
-        &spec,
-        &output_dir,
-        req.chart_version.as_deref(),
-    ) {
+    if let Err(e) = crate::helm::export_helm_chart(&spec, &output_dir, req.chart_version.as_deref())
+    {
         return err_internal::<serde_json::Value>(e);
     }
 

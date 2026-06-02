@@ -33,13 +33,15 @@ pub fn default_profiles() -> Vec<SecurityProfileEntry> {
         SecurityProfileEntry {
             id: "standard-confidential".into(),
             label: "standard-confidential".into(),
-            description: "Standard confidential Kata pool (SEV-SNP / TDX runtime class from env)".into(),
+            description: "Standard confidential Kata pool (SEV-SNP / TDX runtime class from env)"
+                .into(),
             kata_runtime_class: Some("kata-clh-snp".into()),
         },
         SecurityProfileEntry {
             id: "sovereign-high".into(),
             label: "sovereign-high".into(),
-            description: "High-assurance sovereign pool with strict attestation expectations".into(),
+            description: "High-assurance sovereign pool with strict attestation expectations"
+                .into(),
             kata_runtime_class: Some("kata-clh-snp".into()),
         },
     ]

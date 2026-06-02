@@ -130,10 +130,10 @@ impl SecretBroker {
             &token.expires_at,
         )?;
 
-        self.issued.lock().unwrap().insert(
-            format!("{}:{}", req.vm_id, req.secret_name),
-            token.clone(),
-        );
+        self.issued
+            .lock()
+            .unwrap()
+            .insert(format!("{}:{}", req.vm_id, req.secret_name), token.clone());
 
         Ok(token)
     }
@@ -188,8 +188,7 @@ impl SecretBroker {
 
     pub fn mark_injected(&self, vm_id: &str, secret_name: &str) -> Result<()> {
         let k8s_name = kubevirt_attest_secret_name(vm_id, secret_name);
-        self.envelopes
-            .mark_injected(vm_id, secret_name, &k8s_name)
+        self.envelopes.mark_injected(vm_id, secret_name, &k8s_name)
     }
 
     async fn fetch_secret_material(&self, req: &BrokerRequest) -> Result<String> {

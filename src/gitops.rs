@@ -87,9 +87,7 @@ impl GitOpsConfig {
         if let Some(ctx) = self.resolve_kube_context(environment) {
             return Ok(DeployTarget {
                 kube_context: ctx.to_string(),
-                kube_namespace: self
-                    .resolve_kube_namespace(environment)
-                    .map(str::to_string),
+                kube_namespace: self.resolve_kube_namespace(environment).map(str::to_string),
                 source: if environment.is_some() {
                     "environment".into()
                 } else {
@@ -479,8 +477,7 @@ fn parse_diff_output(output: &str, commit: &str) -> Vec<GitOpsChange> {
             }
 
             // git diff --name-status uses tab separation
-            let (status, file_path) = line.split_once('\t')
-                .or_else(|| line.split_once(' '))?;
+            let (status, file_path) = line.split_once('\t').or_else(|| line.split_once(' '))?;
             let file_path = file_path.to_string();
 
             if file_path.is_empty() {
@@ -531,17 +528,12 @@ pub fn audit_confidential_changes(
     changes
         .iter()
         .filter(|c| c.change_type != ChangeType::Deleted)
-        .filter(|c| {
-            c.file_path.ends_with(".yaml") || c.file_path.ends_with(".yml")
-        })
+        .filter(|c| c.file_path.ends_with(".yaml") || c.file_path.ends_with(".yml"))
         .filter_map(|c| {
             let path = repo_dir.join(&c.file_path);
             let content = std::fs::read_to_string(&path).ok()?;
             let spec: Workload = serde_yaml::from_str(&content).ok()?;
-            let enabled = spec
-                .confidential
-                .as_ref()
-                .is_some_and(|conf| conf.enabled);
+            let enabled = spec.confidential.as_ref().is_some_and(|conf| conf.enabled);
             if !enabled {
                 return Some(GitOpsConfidentialAudit {
                     file_path: c.file_path.clone(),
@@ -632,8 +624,14 @@ mod tests {
             }],
             ..Default::default()
         };
-        assert_eq!(config.resolve_kube_context(Some("prod")), Some("prod-context"));
-        assert_eq!(config.resolve_kube_namespace(Some("prod")), Some("production"));
+        assert_eq!(
+            config.resolve_kube_context(Some("prod")),
+            Some("prod-context")
+        );
+        assert_eq!(
+            config.resolve_kube_namespace(Some("prod")),
+            Some("production")
+        );
         assert_eq!(config.resolve_kube_context(None), Some("dev-context"));
     }
 
@@ -787,18 +785,9 @@ mod tests {
 
     #[test]
     fn test_extract_repo_name_various() {
-        assert_eq!(
-            extract_repo_name("https://github.com/org/repo.git"),
-            "repo"
-        );
-        assert_eq!(
-            extract_repo_name("https://github.com/org/repo"),
-            "repo"
-        );
-        assert_eq!(
-            extract_repo_name("git@github.com:org/infra.git"),
-            "infra"
-        );
+        assert_eq!(extract_repo_name("https://github.com/org/repo.git"), "repo");
+        assert_eq!(extract_repo_name("https://github.com/org/repo"), "repo");
+        assert_eq!(extract_repo_name("git@github.com:org/infra.git"), "infra");
         assert_eq!(
             extract_repo_name("https://gitlab.com/team/project/"),
             "project"

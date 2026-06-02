@@ -50,9 +50,8 @@ pub fn evaluate(spec: &Workload, config: &SovereignConfig) -> SovereignVerdict {
     if config.offline_attestation {
         hints.push("Offline attestation mode — CRL checks use embedded cert bundle".into());
         if config.embedded_cert_bundle.is_none() {
-            violations.push(
-                "RAGNAROK_OFFLINE_ATTESTATION=1 requires RAGNAROK_CERT_BUNDLE path".into(),
-            );
+            violations
+                .push("RAGNAROK_OFFLINE_ATTESTATION=1 requires RAGNAROK_CERT_BUNDLE path".into());
         }
     }
 
@@ -65,7 +64,8 @@ pub fn evaluate(spec: &Workload, config: &SovereignConfig) -> SovereignVerdict {
     }
 
     if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-        if config.region_lock.is_some() && spec.confidential.as_ref().unwrap().region_lock.is_none() {
+        if config.region_lock.is_some() && spec.confidential.as_ref().unwrap().region_lock.is_none()
+        {
             hints.push("Set confidential.regionLock to pin workload to sovereign region".into());
         }
     }

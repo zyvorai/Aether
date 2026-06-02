@@ -126,15 +126,9 @@ pub fn apply_to_kubevirt_annotations(spec: &Workload) -> HashMap<String, String>
         ann.insert(k, v);
     }
     if conf.isolation.encrypted_state {
-        ann.insert(
-            "ragnarok.zyvor.dev/encrypted-pvc".into(),
-            "required".into(),
-        );
+        ann.insert("ragnarok.zyvor.dev/encrypted-pvc".into(), "required".into());
     }
-    ann.insert(
-        "ragnarok.zyvor.dev/confidential".into(),
-        "true".into(),
-    );
+    ann.insert("ragnarok.zyvor.dev/confidential".into(), "true".into());
     ann
 }
 
@@ -169,10 +163,7 @@ pub fn datavolume_encryption_annotations(spec: &Workload) -> HashMap<String, Str
         return ann;
     };
     if conf.enabled && conf.isolation.encrypted_state {
-        ann.insert(
-            "ragnarok.zyvor.dev/encrypted-pvc".into(),
-            "required".into(),
-        );
+        ann.insert("ragnarok.zyvor.dev/encrypted-pvc".into(), "required".into());
         if let Ok(sc) = std::env::var("RAGNAROK_ENCRYPTED_STORAGE_CLASS") {
             if !sc.trim().is_empty() {
                 ann.insert(

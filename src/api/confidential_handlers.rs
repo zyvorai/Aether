@@ -11,18 +11,18 @@ use crate::ragnarok::{
     guestkit::{GuestKitRequest, GuestKitService, InspectionMode},
     image::{attestation_digest_gate, ImageCatalog, ImageManifest, ImageVerifyResult},
     intelligence::{self, ConfidentialAnalysis},
+    isolation::{self, IsolationPolicy, IsolationVerdict},
     kata,
     migration::{
         plan_confidential_migration_tee, ConfidentialMigrationPlan, ConfidentialMigrationRecord,
         ConfidentialMigrationStore,
     },
     network::{self, ConfidentialNetworkStatus},
+    scheduling::{self, ConfidentialPlacementAdvice},
     secrets::{BrokerRequest, SecretBroker, SecretBrokerProvider},
     sovereign::{self, SovereignConfig, SovereignVerdict},
     tee::{probe_host_tee, TeeCapabilities},
     trust::{confidential_fleet_rows, fleet_trust_scores, ConfidentialFleetRow},
-    isolation::{self, IsolationPolicy, IsolationVerdict},
-    scheduling::{self, ConfidentialPlacementAdvice},
 };
 use crate::spec::Workload;
 use axum::{
@@ -265,11 +265,7 @@ pub(crate) async fn api_confidential_workload_row(
         .into_response();
     }
     let runtime = ws.runtime.to_string();
-    let rows = confidential_fleet_rows(
-        &[(&workload, &spec, runtime.as_str())],
-        &svc,
-        &catalog,
-    );
+    let rows = confidential_fleet_rows(&[(&workload, &spec, runtime.as_str())], &svc, &catalog);
     match rows.into_iter().next() {
         Some(row) => ok_json(row).into_response(),
         None => err_internal::<ConfidentialFleetRow>("fleet row missing").into_response(),
@@ -337,8 +333,10 @@ pub(crate) async fn api_confidential_migration_plan(
     let ws = match store.get(&name) {
         Some(w) => w,
         None => {
-            return err_not_found::<ConfidentialMigrationPlan>(format!("workload {name} not found"))
-                .into_response();
+            return err_not_found::<ConfidentialMigrationPlan>(format!(
+                "workload {name} not found"
+            ))
+            .into_response();
         }
     };
     let spec = match Workload::from_file(&ws.spec_path) {
@@ -352,13 +350,8 @@ pub(crate) async fn api_confidential_migration_plan(
     let target_tdx = std::env::var("AETHER_MIGRATION_TARGET_TDX")
         .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
         .unwrap_or(host.tdx);
-    let mut plan = plan_confidential_migration_tee(
-        &spec,
-        host.sev_snp,
-        target_snp,
-        host.tdx,
-        target_tdx,
-    );
+    let mut plan =
+        plan_confidential_migration_tee(&spec, host.sev_snp, target_snp, host.tdx, target_tdx);
     if !target.is_empty() && target != "_" {
         plan.phases.push(format!("target-runtime: {target}"));
     }
@@ -453,8 +446,10 @@ pub(crate) async fn api_confidential_network_status(
     Path(workload): Path<String>,
 ) -> impl IntoResponse {
     let Some(spec) = try_workload_spec(&app_state, &workload).await else {
-        return err_not_found::<ConfidentialNetworkStatus>(format!("workload {workload} not found"))
-            .into_response();
+        return err_not_found::<ConfidentialNetworkStatus>(format!(
+            "workload {workload} not found"
+        ))
+        .into_response();
     };
     ok_json(network::network_status(&spec)).into_response()
 }
@@ -491,11 +486,7 @@ pub(crate) async fn api_confidential_intelligence_fleet(
         .iter()
         .map(|(n, s, r)| (n.as_str(), s, r.as_str()))
         .collect();
-    ok_json(intelligence::analyze_fleet(
-        &refs,
-        &state_dir(&app_state),
-    ))
-    .into_response()
+    ok_json(intelligence::analyze_fleet(&refs, &state_dir(&app_state))).into_response()
 }
 
 pub(crate) async fn api_confidential_image_catalog(
@@ -521,7 +512,11 @@ pub(crate) async fn api_confidential_image_sign(
     Json(req): Json<ImageSignRequest>,
 ) -> impl IntoResponse {
     let catalog = image_catalog(&app_state);
-    match catalog.sign(&req.name, std::path::Path::new(&req.path), &req.signing_key_id) {
+    match catalog.sign(
+        &req.name,
+        std::path::Path::new(&req.path),
+        &req.signing_key_id,
+    ) {
         Ok(m) => ok_json(m).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(e).into_response(),
     }
@@ -602,18 +597,16 @@ pub(crate) async fn api_confidential_placement(
     Path(workload): Path<String>,
 ) -> impl IntoResponse {
     let Some(spec) = try_workload_spec(&app_state, &workload).await else {
-        return err_not_found::<ConfidentialPlacementAdvice>(format!("workload {workload} not found"))
-            .into_response();
+        return err_not_found::<ConfidentialPlacementAdvice>(format!(
+            "workload {workload} not found"
+        ))
+        .into_response();
     };
     ok_json(scheduling::placement_advice(&spec)).into_response()
 }
 
 /// Record attestation failure event for audit consumers.
-pub fn emit_attestation_event(
-    app_state: &AppState,
-    vm_id: &str,
-    verdict: AttestationVerdict,
-) {
+pub fn emit_attestation_event(app_state: &AppState, vm_id: &str, verdict: AttestationVerdict) {
     if verdict == AttestationVerdict::Fail {
         let payload = serde_json::json!({
             "type": "attestation.failed",

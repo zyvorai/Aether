@@ -40,7 +40,10 @@ impl std::str::FromStr for EventSeverity {
             "warning" | "warn" => Ok(EventSeverity::Warning),
             "error" => Ok(EventSeverity::Error),
             "critical" => Ok(EventSeverity::Critical),
-            _ => Err(anyhow::anyhow!("Unknown severity: '{}'. Valid: info, warning, error, critical", s)),
+            _ => Err(anyhow::anyhow!(
+                "Unknown severity: '{}'. Valid: info, warning, error, critical",
+                s
+            )),
         }
     }
 }
@@ -459,9 +462,7 @@ impl EventBus {
             if event.severity < channel.min_severity {
                 continue;
             }
-            if !channel.categories.is_empty()
-                && !channel.categories.contains(&event.category)
-            {
+            if !channel.categories.is_empty() && !channel.categories.contains(&event.category) {
                 continue;
             }
 
@@ -546,11 +547,19 @@ impl EventBus {
                     "POST",
                 );
             }
-            ChannelType::Email { smtp_host, smtp_port, from, to } => {
-                use lettre::{Message, SmtpTransport, Transport};
+            ChannelType::Email {
+                smtp_host,
+                smtp_port,
+                from,
+                to,
+            } => {
                 use lettre::message::header::ContentType;
+                use lettre::{Message, SmtpTransport, Transport};
 
-                let subject = format!("[Aether] [{}] {}", notification.severity, notification.title);
+                let subject = format!(
+                    "[Aether] [{}] {}",
+                    notification.severity, notification.title
+                );
                 let body = format!(
                     "Aether Notification\n\
                      ====================\n\n\
@@ -619,10 +628,7 @@ fn format_slack_payload(notification: &NotificationPayload) -> String {
         EventSeverity::Info => "#28a745",
     };
 
-    let workload_display = notification
-        .workload
-        .as_deref()
-        .unwrap_or("(none)");
+    let workload_display = notification.workload.as_deref().unwrap_or("(none)");
 
     serde_json::json!({
         "attachments": [{
@@ -807,7 +813,10 @@ pub fn format_event_summary(summary: &EventSummary) -> String {
         ("Event Summary", String::new()),
         ("Total", format!("{}", summary.total_events)),
         ("Unacknowledged", format!("{}", summary.unacknowledged)),
-        ("Critical (unacked)", format!("{}", summary.critical_unacked)),
+        (
+            "Critical (unacked)",
+            format!("{}", summary.critical_unacked),
+        ),
     ]));
 
     if !summary.by_severity.is_empty() {
@@ -922,7 +931,11 @@ impl SystemMetrics {
 }
 
 impl EventBus {
-    fn rule_condition_met(condition: &AlertCondition, metrics: &SystemMetrics, workload: Option<&str>) -> bool {
+    fn rule_condition_met(
+        condition: &AlertCondition,
+        metrics: &SystemMetrics,
+        workload: Option<&str>,
+    ) -> bool {
         match condition {
             AlertCondition::SlaUptimeBelow(threshold) => match workload {
                 Some(wl) => metrics
@@ -967,7 +980,9 @@ impl EventBus {
             },
             AlertCondition::DriftDetected => metrics.drift_detected,
             AlertCondition::PolicyViolation => metrics.policy_violations,
-            AlertCondition::SecretExpiring(days) => metrics.secrets_expiring_days.values().any(|d| *d <= *days),
+            AlertCondition::SecretExpiring(days) => {
+                metrics.secrets_expiring_days.values().any(|d| *d <= *days)
+            }
         }
     }
 
@@ -997,8 +1012,11 @@ impl EventBus {
             }
 
             let workload_name = self.rules[i].workload.clone();
-            let triggered =
-                Self::rule_condition_met(&self.rules[i].condition, metrics, workload_name.as_deref());
+            let triggered = Self::rule_condition_met(
+                &self.rules[i].condition,
+                metrics,
+                workload_name.as_deref(),
+            );
 
             if triggered {
                 let msg = self.rules[i].message_template.clone();
@@ -1135,7 +1153,11 @@ impl WebhookQueue {
             entry.attempts += 1;
 
             if Self::try_deliver(&entry.payload_json, &entry.url, &entry.method) {
-                tracing::info!("Webhook delivered to {} on retry #{}", entry.url, entry.attempts);
+                tracing::info!(
+                    "Webhook delivered to {} on retry #{}",
+                    entry.url,
+                    entry.attempts
+                );
                 changed = true;
                 return false; // remove from queue
             }
@@ -1143,7 +1165,8 @@ impl WebhookQueue {
             if entry.attempts >= entry.max_attempts {
                 tracing::warn!(
                     "Webhook to {} exhausted {} attempts, discarding",
-                    entry.url, entry.max_attempts
+                    entry.url,
+                    entry.max_attempts
                 );
                 changed = true;
                 return false; // discard
@@ -1247,7 +1270,10 @@ mod tests {
             "Found drift",
         );
 
-        assert_eq!(bus.events_by_category(&EventCategory::DriftDetected).len(), 1);
+        assert_eq!(
+            bus.events_by_category(&EventCategory::DriftDetected).len(),
+            1
+        );
         assert_eq!(bus.events_by_category(&EventCategory::Deployment).len(), 1);
     }
 
@@ -1271,9 +1297,30 @@ mod tests {
     #[test]
     fn test_summary() {
         let mut bus = EventBus::new();
-        bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, "Deploy", "ok");
-        bus.emit_simple(EventSeverity::Warning, EventCategory::DriftDetected, "test", None, "Drift", "found");
-        bus.emit_simple(EventSeverity::Critical, EventCategory::SlaViolation, "test", None, "SLA", "violated");
+        bus.emit_simple(
+            EventSeverity::Info,
+            EventCategory::Deployment,
+            "test",
+            None,
+            "Deploy",
+            "ok",
+        );
+        bus.emit_simple(
+            EventSeverity::Warning,
+            EventCategory::DriftDetected,
+            "test",
+            None,
+            "Drift",
+            "found",
+        );
+        bus.emit_simple(
+            EventSeverity::Critical,
+            EventCategory::SlaViolation,
+            "test",
+            None,
+            "SLA",
+            "violated",
+        );
 
         let summary = bus.summary();
         assert_eq!(summary.total_events, 3);
@@ -1284,7 +1331,14 @@ mod tests {
     fn test_prune() {
         let mut bus = EventBus::new();
         for i in 0..100 {
-            bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, &format!("Event {}", i), "msg");
+            bus.emit_simple(
+                EventSeverity::Info,
+                EventCategory::Deployment,
+                "test",
+                None,
+                &format!("Event {}", i),
+                "msg",
+            );
         }
         assert_eq!(bus.events().len(), 100);
         bus.prune(50);
@@ -1294,7 +1348,14 @@ mod tests {
     #[test]
     fn test_format_event_list() {
         let mut bus = EventBus::new();
-        bus.emit_simple(EventSeverity::Warning, EventCategory::DriftDetected, "test", Some("app"), "Drift", "found");
+        bus.emit_simple(
+            EventSeverity::Warning,
+            EventCategory::DriftDetected,
+            "test",
+            Some("app"),
+            "Drift",
+            "found",
+        );
         let events: Vec<&Event> = bus.events().iter().collect();
         let output = format_event_list(&events, 10);
         assert!(output.contains("Drift"));
@@ -1304,7 +1365,14 @@ mod tests {
     #[test]
     fn test_format_summary() {
         let mut bus = EventBus::new();
-        bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, "Deploy", "ok");
+        bus.emit_simple(
+            EventSeverity::Info,
+            EventCategory::Deployment,
+            "test",
+            None,
+            "Deploy",
+            "ok",
+        );
         let summary = bus.summary();
         let output = format_event_summary(&summary);
         assert!(output.contains("Event Summary"));
@@ -1361,13 +1429,41 @@ mod tests {
         });
 
         // Info event should not match
-        bus.emit_simple(EventSeverity::Info, EventCategory::Deployment, "test", None, "Info", "ok");
+        bus.emit_simple(
+            EventSeverity::Info,
+            EventCategory::Deployment,
+            "test",
+            None,
+            "Info",
+            "ok",
+        );
         // Warning event should not match
-        bus.emit_simple(EventSeverity::Warning, EventCategory::DriftDetected, "test", None, "Warn", "drift");
+        bus.emit_simple(
+            EventSeverity::Warning,
+            EventCategory::DriftDetected,
+            "test",
+            None,
+            "Warn",
+            "drift",
+        );
         // Error event should match
-        bus.emit_simple(EventSeverity::Error, EventCategory::Deployment, "test", None, "Error", "fail");
+        bus.emit_simple(
+            EventSeverity::Error,
+            EventCategory::Deployment,
+            "test",
+            None,
+            "Error",
+            "fail",
+        );
         // Critical event should match
-        bus.emit_simple(EventSeverity::Critical, EventCategory::SlaViolation, "test", None, "Critical", "bad");
+        bus.emit_simple(
+            EventSeverity::Critical,
+            EventCategory::SlaViolation,
+            "test",
+            None,
+            "Critical",
+            "bad",
+        );
 
         assert_eq!(bus.events().len(), 4);
     }
@@ -1470,7 +1566,9 @@ mod tests {
     fn test_evaluate_rules_secret_expiring() {
         let mut bus = make_bus_with_rule(AlertCondition::SecretExpiring(14), 0);
         let mut metrics = SystemMetrics::default();
-        metrics.secrets_expiring_days.insert("db-creds".to_string(), 10);
+        metrics
+            .secrets_expiring_days
+            .insert("db-creds".to_string(), 10);
 
         let fired = bus.evaluate_rules(&metrics);
         assert_eq!(fired.len(), 1);
@@ -1624,12 +1722,30 @@ mod tests {
 
     #[test]
     fn test_event_severity_from_str() {
-        assert_eq!("info".parse::<EventSeverity>().unwrap(), EventSeverity::Info);
-        assert_eq!("warning".parse::<EventSeverity>().unwrap(), EventSeverity::Warning);
-        assert_eq!("warn".parse::<EventSeverity>().unwrap(), EventSeverity::Warning);
-        assert_eq!("error".parse::<EventSeverity>().unwrap(), EventSeverity::Error);
-        assert_eq!("critical".parse::<EventSeverity>().unwrap(), EventSeverity::Critical);
-        assert_eq!("CRITICAL".parse::<EventSeverity>().unwrap(), EventSeverity::Critical);
+        assert_eq!(
+            "info".parse::<EventSeverity>().unwrap(),
+            EventSeverity::Info
+        );
+        assert_eq!(
+            "warning".parse::<EventSeverity>().unwrap(),
+            EventSeverity::Warning
+        );
+        assert_eq!(
+            "warn".parse::<EventSeverity>().unwrap(),
+            EventSeverity::Warning
+        );
+        assert_eq!(
+            "error".parse::<EventSeverity>().unwrap(),
+            EventSeverity::Error
+        );
+        assert_eq!(
+            "critical".parse::<EventSeverity>().unwrap(),
+            EventSeverity::Critical
+        );
+        assert_eq!(
+            "CRITICAL".parse::<EventSeverity>().unwrap(),
+            EventSeverity::Critical
+        );
         assert!("debug".parse::<EventSeverity>().is_err());
     }
 
@@ -1660,7 +1776,11 @@ mod tests {
         let parsed: NotificationChannel = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed.name, "slack-ops");
         assert!(matches!(parsed.channel_type, ChannelType::Slack { .. }));
-        if let ChannelType::Slack { webhook_url, channel } = &parsed.channel_type {
+        if let ChannelType::Slack {
+            webhook_url,
+            channel,
+        } = &parsed.channel_type
+        {
             assert_eq!(webhook_url, "https://hooks.slack.com/services/T00/B00/xxx");
             assert_eq!(channel, "ops-alerts");
         }
@@ -1709,7 +1829,10 @@ mod tests {
 
         // Message section
         assert_eq!(blocks[2]["type"], "section");
-        assert!(blocks[2]["text"]["text"].as_str().unwrap().contains("Uptime dropped"));
+        assert!(blocks[2]["text"]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Uptime dropped"));
     }
 
     #[test]
@@ -1858,7 +1981,10 @@ mod tests {
         assert_eq!(parsed["routing_key"], "R_KEY");
         assert_eq!(parsed["event_action"], "trigger");
         assert_eq!(parsed["payload"]["severity"], "critical");
-        assert!(parsed["payload"]["summary"].as_str().unwrap().contains("High CPU"));
+        assert!(parsed["payload"]["summary"]
+            .as_str()
+            .unwrap()
+            .contains("High CPU"));
     }
 
     #[test]
@@ -1877,7 +2003,9 @@ mod tests {
         let parsed: serde_json::Value = serde_json::from_str(&payload).unwrap();
         assert_eq!(parsed["type"], "message");
         assert!(parsed["attachments"][0]["content"]["body"][0]["text"]
-            .as_str().unwrap().contains("Drift Detected"));
+            .as_str()
+            .unwrap()
+            .contains("Drift Detected"));
     }
 
     #[test]

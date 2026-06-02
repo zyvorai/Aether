@@ -86,7 +86,11 @@ impl SharedCache {
         }
     }
 
-    pub async fn put_oidc_pending(&self, csrf: &str, pending: &PendingOidcJson) -> anyhow::Result<()> {
+    pub async fn put_oidc_pending(
+        &self,
+        csrf: &str,
+        pending: &PendingOidcJson,
+    ) -> anyhow::Result<()> {
         let key = format!("{OIDC_PENDING_PREFIX}{csrf}");
         let payload = serde_json::to_string(pending)?;
         match self.inner.as_ref() {
@@ -134,7 +138,11 @@ impl SharedCache {
         matches!(self.inner.as_ref(), Inner::Redis(_))
     }
 
-    pub async fn put_saml_pending(&self, request_id: &str, pending: &PendingSamlJson) -> anyhow::Result<()> {
+    pub async fn put_saml_pending(
+        &self,
+        request_id: &str,
+        pending: &PendingSamlJson,
+    ) -> anyhow::Result<()> {
         let key = format!("{SAML_PENDING_PREFIX}{request_id}");
         let payload = serde_json::to_string(pending)?;
         match self.inner.as_ref() {
@@ -153,7 +161,10 @@ impl SharedCache {
         Ok(())
     }
 
-    pub async fn take_saml_pending(&self, request_id: &str) -> anyhow::Result<Option<PendingSamlJson>> {
+    pub async fn take_saml_pending(
+        &self,
+        request_id: &str,
+    ) -> anyhow::Result<Option<PendingSamlJson>> {
         let key = format!("{SAML_PENDING_PREFIX}{request_id}");
         match self.inner.as_ref() {
             Inner::Redis(m) => {

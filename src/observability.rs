@@ -58,7 +58,10 @@ fn gauge_values_by_label(text: &str, metric_name: &str, label: &str) -> HashMap<
         if !line.starts_with(metric_name) {
             continue;
         }
-        let value = line.split_whitespace().last().and_then(|v| v.parse::<f64>().ok());
+        let value = line
+            .split_whitespace()
+            .last()
+            .and_then(|v| v.parse::<f64>().ok());
         let Some(value) = value else { continue };
         if let Some(start) = line.find(&format!("{label}=\"")) {
             let rest = &line[start + label.len() + 2..];
@@ -93,8 +96,8 @@ pub async fn prometheus_instant_query(query: &str) -> Result<serde_json::Value> 
     if !query_allowed(query) {
         anyhow::bail!("query must use aether_ or kube_ metric prefixes");
     }
-    let base = std::env::var("AETHER_PROMETHEUS_URL")
-        .context("AETHER_PROMETHEUS_URL is not set")?;
+    let base =
+        std::env::var("AETHER_PROMETHEUS_URL").context("AETHER_PROMETHEUS_URL is not set")?;
     let base = base.trim_end_matches('/');
     let url = format!("{base}/api/v1/query");
     let client = reqwest::Client::builder()

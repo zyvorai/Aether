@@ -120,7 +120,11 @@ impl EvolutionEngine {
     }
 }
 
-fn build_trajectory(classification: &str, current: RuntimeKind, recommended: RuntimeKind) -> Vec<String> {
+fn build_trajectory(
+    classification: &str,
+    current: RuntimeKind,
+    recommended: RuntimeKind,
+) -> Vec<String> {
     let ideal = ideal_path(classification);
     let mut path = vec![format!("{current}")];
     if !ideal.is_empty() && ideal[0] != format!("{current}") {

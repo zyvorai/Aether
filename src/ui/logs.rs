@@ -6,13 +6,13 @@
 
 use super::{
     app::App,
-    components::{bordered_block, PRIMARY, MUTED, WARNING},
+    components::{bordered_block, MUTED, PRIMARY, WARNING},
 };
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, BorderType, Paragraph},
+    widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
 };
 
@@ -34,27 +34,19 @@ pub fn render_logs(f: &mut Frame, app: &App, workload_name: &str) {
 fn render_logs_header(f: &mut Frame, area: Rect, workload_name: &str, app: &App) {
     let line_count = app.logs_buffer.len();
     let header = Paragraph::new(vec![Line::from(vec![
-        Span::styled(
-            " Dashboard ",
-            Style::default().fg(MUTED),
-        ),
+        Span::styled(" Dashboard ", Style::default().fg(MUTED)),
         Span::styled(
             "›",
             Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
         ),
-        Span::styled(
-            " Logs ",
-            Style::default().fg(MUTED),
-        ),
+        Span::styled(" Logs ", Style::default().fg(MUTED)),
         Span::styled(
             "›",
             Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             format!(" {} ", workload_name),
-            Style::default()
-                .fg(PRIMARY)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             format!("  ({} lines)", line_count),
@@ -77,9 +69,7 @@ fn render_logs_content(f: &mut Frame, area: Rect, app: &App) {
             Line::from(""),
             Line::from(Span::styled(
                 "No logs available",
-                Style::default()
-                    .fg(MUTED)
-                    .add_modifier(Modifier::ITALIC),
+                Style::default().fg(MUTED).add_modifier(Modifier::ITALIC),
             )),
             Line::from(""),
             Line::from(Span::styled(
@@ -104,10 +94,8 @@ fn render_logs_content(f: &mut Frame, area: Rect, app: &App) {
         .map(|(i, line)| {
             // Line number prefix
             let line_num = start_idx + i + 1;
-            let line_num_span = Span::styled(
-                format!("{:>4} │ ", line_num),
-                Style::default().fg(MUTED),
-            );
+            let line_num_span =
+                Span::styled(format!("{:>4} │ ", line_num), Style::default().fg(MUTED));
 
             // Log level coloring — shared classification with output::colorize_log_line
             let (r, g, b) = crate::output::log_level_color(line);

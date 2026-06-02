@@ -91,7 +91,11 @@ pub fn build_live_activity(state_path: &Path) -> anyhow::Result<LiveActivityRepo
         active.push(LiveActivityEntry {
             workload: ev.workload.clone(),
             phase: format!("{}", ev.result),
-            progress_pct: if ev.message.contains("complete") { 100 } else { 55 },
+            progress_pct: if ev.message.contains("complete") {
+                100
+            } else {
+                55
+            },
             detail: ev.message.clone(),
         });
         if active.len() >= 3 {
@@ -397,7 +401,9 @@ pub fn resolve_universal_link(url: &str) -> UniversalLinkResolveReport {
         .strip_prefix("aether://")
         .or_else(|| trimmed.strip_prefix("aether:"))
         .unwrap_or(trimmed);
-    let (path, qs) = without_scheme.split_once('?').unwrap_or((without_scheme, ""));
+    let (path, qs) = without_scheme
+        .split_once('?')
+        .unwrap_or((without_scheme, ""));
     for pair in qs.split('&').filter(|s| !s.is_empty()) {
         if let Some((k, v)) = pair.split_once('=') {
             query.insert(k.into(), v.into());

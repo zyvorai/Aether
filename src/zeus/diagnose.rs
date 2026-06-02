@@ -77,7 +77,10 @@ struct ResolvedTarget {
     state: Option<WorkloadState>,
 }
 
-pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Result<DiagnoseResponse> {
+pub async fn diagnose_workload(
+    req: &DiagnoseRequest,
+    store: &StateStore,
+) -> Result<DiagnoseResponse> {
     let target = resolve_target(req, store).await?;
     let mut evidence = Vec::new();
     let mut recommendations = Vec::new();
@@ -106,19 +109,23 @@ pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Res
                 warning_events: 0,
             }
         });
-        evidence.push(format!("Cluster health: {} — {}", health.level, health.summary));
+        evidence.push(format!(
+            "Cluster health: {} — {}",
+            health.level, health.summary
+        ));
 
-        let events: Vec<DiagnoseEvent> = related_events(cluster, namespace, kind, &target.resource_name)
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .map(|e| DiagnoseEvent {
-                type_: e.type_,
-                reason: e.reason,
-                message: e.message,
-                timestamp: e.timestamp,
-            })
-            .collect();
+        let events: Vec<DiagnoseEvent> =
+            related_events(cluster, namespace, kind, &target.resource_name)
+                .await
+                .unwrap_or_default()
+                .into_iter()
+                .map(|e| DiagnoseEvent {
+                    type_: e.type_,
+                    reason: e.reason,
+                    message: e.message,
+                    timestamp: e.timestamp,
+                })
+                .collect();
         if !events.is_empty() {
             evidence.push(format!(
                 "Latest event: [{}] {} — {}",
@@ -178,13 +185,15 @@ pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Res
 
         if let Some(ref logs) = log_excerpt {
             let lower = logs.to_lowercase();
-            if lower.contains("crashloop") || lower.contains("error") || lower.contains("exception") {
+            if lower.contains("crashloop") || lower.contains("error") || lower.contains("exception")
+            {
                 evidence.push("Logs contain error patterns".into());
                 if lower.contains("crashloop") {
                     recommendations.push(DiagnoseRecommendation {
                         title: "CrashLoopBackOff detected".into(),
-                        summary: "Restart the workload after fixing config, or restart now to retry."
-                            .into(),
+                        summary:
+                            "Restart the workload after fixing config, or restart now to retry."
+                                .into(),
                         action: "restart".into(),
                         applyable: true,
                     });
@@ -193,7 +202,8 @@ pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Res
             if lower.contains("connection refused") || lower.contains("timeout") {
                 recommendations.push(DiagnoseRecommendation {
                     title: "Connectivity issue detected in logs".into(),
-                    summary: "The app may not reach its database, service, or ingress backend.".into(),
+                    summary: "The app may not reach its database, service, or ingress backend."
+                        .into(),
                     action: "check_network".into(),
                     applyable: false,
                 });
@@ -201,7 +211,8 @@ pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Res
             if lower.contains("imagepull") || lower.contains("errimagepull") {
                 recommendations.push(DiagnoseRecommendation {
                     title: "Image pull failure".into(),
-                    summary: "Verify image name, registry credentials, and network reachability.".into(),
+                    summary: "Verify image name, registry credentials, and network reachability."
+                        .into(),
                     action: "fix_image".into(),
                     applyable: false,
                 });
@@ -249,8 +260,9 @@ pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Res
 
     // Aether-managed workload (no live cluster coordinates)
     if let Some(ws) = target.state.as_ref() {
-        let health = crate::health::HealthHistory::load(&crate::health::HealthHistory::default_path())
-            .unwrap_or_default();
+        let health =
+            crate::health::HealthHistory::load(&crate::health::HealthHistory::default_path())
+                .unwrap_or_default();
         let uptime = health.uptime_percent(&ws.name);
         let restarts = health.restart_count(&ws.name);
         evidence.push(format!("Uptime {:.1}%, restarts {restarts}", uptime));
@@ -324,13 +336,20 @@ pub struct FleetRootCauseReport {
 /// Infer root cause label, confidence, and recommendation from a diagnosis report.
 pub fn infer_root_cause(report: &DiagnoseResponse) -> (String, f64, String) {
     let log = report.log_excerpt.as_deref().unwrap_or("");
-    let combined = format!("{} {} {}", report.summary, log, report.evidence.join(" ")).to_lowercase();
+    let combined =
+        format!("{} {} {}", report.summary, log, report.evidence.join(" ")).to_lowercase();
 
-    if combined.contains("oom") || combined.contains("out of memory") || combined.contains("memory limit") {
+    if combined.contains("oom")
+        || combined.contains("out of memory")
+        || combined.contains("memory limit")
+    {
         let rec = report
             .recommendations
             .iter()
-            .find(|r| r.title.to_lowercase().contains("memory") || r.summary.to_lowercase().contains("memory"))
+            .find(|r| {
+                r.title.to_lowercase().contains("memory")
+                    || r.summary.to_lowercase().contains("memory")
+            })
             .map(|r| r.summary.clone())
             .unwrap_or_else(|| "Increase memory limits or reduce workload memory footprint".into());
         return ("OOM".into(), 0.91, rec);
@@ -365,7 +384,11 @@ pub fn infer_root_cause(report: &DiagnoseResponse) -> (String, f64, String) {
         return (rec.title.clone(), 0.72, rec.summary.clone());
     }
 
-    (report.summary.clone(), 0.55, "Review logs, events, and recent changes".into())
+    (
+        report.summary.clone(),
+        0.55,
+        "Review logs, events, and recent changes".into(),
+    )
 }
 
 /// Batch-diagnose unhealthy workloads across the fleet (state-managed workloads).
@@ -467,7 +490,9 @@ async fn resolve_target(req: &DiagnoseRequest, store: &StateStore) -> Result<Res
         });
     }
 
-    let discovered = crate::kubecluster::list_workloads().await.unwrap_or_default();
+    let discovered = crate::kubecluster::list_workloads()
+        .await
+        .unwrap_or_default();
     let needle = req.workload.to_lowercase();
     if let Some(w) = discovered.iter().find(|w| {
         w.name.to_lowercase() == needle
@@ -493,7 +518,11 @@ async fn resolve_target(req: &DiagnoseRequest, store: &StateStore) -> Result<Res
 }
 
 fn short_name(workload: &str) -> String {
-    workload.split('/').next_back().unwrap_or(workload).to_string()
+    workload
+        .split('/')
+        .next_back()
+        .unwrap_or(workload)
+        .to_string()
 }
 
 #[cfg(test)]

@@ -4,10 +4,7 @@
 
 //! Cilium and Calico network policy CR builders.
 
-use crate::spec::{
-    CalicoPolicyRuleSpec, CiliumPolicyRuleSpec,
-    Workload,
-};
+use crate::spec::{CalicoPolicyRuleSpec, CiliumPolicyRuleSpec, Workload};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 
@@ -34,20 +31,18 @@ fn calico_selector(spec: &Workload) -> String {
 fn cilium_rule(rule: &CiliumPolicyRuleSpec) -> Value {
     let mut obj = json!({});
     if !rule.from_endpoints.is_empty() {
-        obj["fromEndpoints"] = json!(
-            rule.from_endpoints
-                .iter()
-                .map(|labels| json!({ "matchLabels": labels }))
-                .collect::<Vec<_>>()
-        );
+        obj["fromEndpoints"] = json!(rule
+            .from_endpoints
+            .iter()
+            .map(|labels| json!({ "matchLabels": labels }))
+            .collect::<Vec<_>>());
     }
     if !rule.to_endpoints.is_empty() {
-        obj["toEndpoints"] = json!(
-            rule.to_endpoints
-                .iter()
-                .map(|labels| json!({ "matchLabels": labels }))
-                .collect::<Vec<_>>()
-        );
+        obj["toEndpoints"] = json!(rule
+            .to_endpoints
+            .iter()
+            .map(|labels| json!({ "matchLabels": labels }))
+            .collect::<Vec<_>>());
     }
     if !rule.from_cidr.is_empty() {
         obj["fromCIDR"] = json!(rule.from_cidr);
@@ -56,16 +51,15 @@ fn cilium_rule(rule: &CiliumPolicyRuleSpec) -> Value {
         obj["toCIDR"] = json!(rule.to_cidr);
     }
     if !rule.to_ports.is_empty() {
-        obj["toPorts"] = json!(
-            rule.to_ports
-                .iter()
-                .map(|p| {
-                    json!([{
-                        "ports": [{ "port": p.port.to_string(), "protocol": p.protocol.to_uppercase() }]
-                    }])
-                })
-                .collect::<Vec<_>>()
-        );
+        obj["toPorts"] = json!(rule
+            .to_ports
+            .iter()
+            .map(|p| {
+                json!([{
+                    "ports": [{ "port": p.port.to_string(), "protocol": p.protocol.to_uppercase() }]
+                }])
+            })
+            .collect::<Vec<_>>());
     }
     obj
 }
@@ -84,12 +78,11 @@ fn calico_rule(rule: &CalicoPolicyRuleSpec) -> Value {
     }
     if !rule.destination_ports.is_empty() {
         let proto = rule.protocol.as_deref().unwrap_or("TCP");
-        dest["ports"] = json!(
-            rule.destination_ports
-                .iter()
-                .map(|p| json!({ "protocol": proto, "port": p }))
-                .collect::<Vec<_>>()
-        );
+        dest["ports"] = json!(rule
+            .destination_ports
+            .iter()
+            .map(|p| json!({ "protocol": proto, "port": p }))
+            .collect::<Vec<_>>());
     } else if rule.protocol.is_some() {
         dest["protocol"] = json!(rule.protocol);
     }
@@ -99,10 +92,7 @@ fn calico_rule(rule: &CalicoPolicyRuleSpec) -> Value {
     obj
 }
 
-pub(crate) fn build_cilium_network_policy_json(
-    namespace: &str,
-    spec: &Workload,
-) -> Option<Value> {
+pub(crate) fn build_cilium_network_policy_json(namespace: &str, spec: &Workload) -> Option<Value> {
     if let Some(cnp) = spec.network.cilium_network_policy.as_ref() {
         if cnp.enabled {
             return build_cilium_from_spec(namespace, spec, cnp);
@@ -141,10 +131,7 @@ fn build_cilium_from_spec(
     }))
 }
 
-pub(crate) fn build_calico_network_policy_json(
-    namespace: &str,
-    spec: &Workload,
-) -> Option<Value> {
+pub(crate) fn build_calico_network_policy_json(namespace: &str, spec: &Workload) -> Option<Value> {
     let calico = spec.network.calico_network_policy.as_ref()?;
     if !calico.enabled {
         return None;

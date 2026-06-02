@@ -169,9 +169,7 @@ impl AttestationService {
                         .or_insert_with(|| ld.clone());
                 }
             }
-            store
-                .records
-                .insert(report.vm_id.clone(), response.clone());
+            store.records.insert(report.vm_id.clone(), response.clone());
         }
 
         tracing::info!(
@@ -275,16 +273,18 @@ impl AttestationService {
 
 fn failure_message(code: &str) -> String {
     match code {
-        "LAUNCH_DIGEST_MISMATCH" => {
-            "Launch digest does not match tenant policy allowlist".into()
-        }
+        "LAUNCH_DIGEST_MISMATCH" => "Launch digest does not match tenant policy allowlist".into(),
         "REPORT_TOO_SHORT" => "SNP/TDX report payload failed minimum length check".into(),
         other => format!("Attestation failure: {other}"),
     }
 }
 
 /// Pre-deploy gate: block Running until attestation passes when required.
-pub fn pre_deploy_gate(spec: &crate::spec::Workload, vm_id: &str, service: &AttestationService) -> Result<()> {
+pub fn pre_deploy_gate(
+    spec: &crate::spec::Workload,
+    vm_id: &str,
+    service: &AttestationService,
+) -> Result<()> {
     let Some(conf) = spec.confidential.as_ref() else {
         return Ok(());
     };

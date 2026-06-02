@@ -50,18 +50,28 @@ impl AnomalyPlacementSignals {
 }
 
 /// Load anomaly signals from PacketWolf when configured.
-pub async fn load_placement_signals(clusters: &[crate::kubecluster::ClusterInfo]) -> AnomalyPlacementSignals {
+pub async fn load_placement_signals(
+    clusters: &[crate::kubecluster::ClusterInfo],
+) -> AnomalyPlacementSignals {
     if !crate::ecosystem::packetwolf::config().configured {
         return AnomalyPlacementSignals::default();
     }
     let raw = match crate::ecosystem::packetwolf::anomalies(Some(100)).await {
         Ok(v) => v,
-        Err(_) => return AnomalyPlacementSignals { configured: true, ..Default::default() },
+        Err(_) => {
+            return AnomalyPlacementSignals {
+                configured: true,
+                ..Default::default()
+            }
+        }
     };
     parse_anomaly_signals(&raw, clusters)
 }
 
-pub fn parse_anomaly_signals(raw: &Value, clusters: &[crate::kubecluster::ClusterInfo]) -> AnomalyPlacementSignals {
+pub fn parse_anomaly_signals(
+    raw: &Value,
+    clusters: &[crate::kubecluster::ClusterInfo],
+) -> AnomalyPlacementSignals {
     let items = extract_anomaly_items(raw);
     let cluster_names: Vec<String> = clusters.iter().map(|c| c.name.clone()).collect();
     let mut by_cluster: HashMap<String, ClusterAnomalySummary> = HashMap::new();
@@ -79,12 +89,14 @@ pub fn parse_anomaly_signals(raw: &Value, clusters: &[crate::kubecluster::Cluste
             .and_then(|v| v.as_str())
             .unwrap_or("default")
             .to_string();
-        let entry = by_cluster.entry(cluster.clone()).or_insert(ClusterAnomalySummary {
-            cluster: cluster.clone(),
-            count: 0,
-            max_severity: 0.0,
-            namespaces: Vec::new(),
-        });
+        let entry = by_cluster
+            .entry(cluster.clone())
+            .or_insert(ClusterAnomalySummary {
+                cluster: cluster.clone(),
+                count: 0,
+                max_severity: 0.0,
+                namespaces: Vec::new(),
+            });
         entry.count += 1;
         entry.max_severity = entry.max_severity.max(sev);
         if !entry.namespaces.contains(&ns) {
@@ -121,7 +133,10 @@ fn infer_cluster(item: &Value, cluster_names: &[String]) -> Option<String> {
             if cluster_names.iter().any(|n| n == c) {
                 return Some(c.to_string());
             }
-            if let Some(m) = cluster_names.iter().find(|n| n.contains(c) || c.contains(n.as_str())) {
+            if let Some(m) = cluster_names
+                .iter()
+                .find(|n| n.contains(c) || c.contains(n.as_str()))
+            {
                 return Some(m.clone());
             }
         }

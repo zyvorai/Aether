@@ -169,10 +169,7 @@ impl DriftDetector {
     }
 
     /// Detect drift across all workloads
-    pub fn detect_all(
-        &self,
-        workloads: &[(Workload, WorkloadState)],
-    ) -> Vec<DriftReport> {
+    pub fn detect_all(&self, workloads: &[(Workload, WorkloadState)]) -> Vec<DriftReport> {
         workloads
             .iter()
             .map(|(spec, state)| self.detect(spec, state))
@@ -215,10 +212,7 @@ impl DriftDetector {
         state: &WorkloadState,
         drifts: &mut Vec<DriftItem>,
     ) {
-        let expected_image = format!(
-            "{}/{}:latest",
-            spec.build.registry, spec.metadata.name
-        );
+        let expected_image = format!("{}/{}:latest", spec.build.registry, spec.metadata.name);
 
         if !state.instance.image.is_empty() && state.instance.image != expected_image {
             drifts.push(DriftItem {
@@ -299,11 +293,7 @@ impl DriftDetector {
         }
     }
 
-    fn check_network_drift(
-        &self,
-        spec: &Workload,
-        drifts: &mut Vec<DriftItem>,
-    ) {
+    fn check_network_drift(&self, spec: &Workload, drifts: &mut Vec<DriftItem>) {
         // Check for service without ports
         if spec.network.service && spec.network.ports.is_empty() {
             drifts.push(DriftItem {
@@ -329,11 +319,7 @@ impl DriftDetector {
         }
     }
 
-    fn check_health_drift(
-        &self,
-        spec: &Workload,
-        drifts: &mut Vec<DriftItem>,
-    ) {
+    fn check_health_drift(&self, spec: &Workload, drifts: &mut Vec<DriftItem>) {
         if spec.health.is_none() && spec.network.service {
             drifts.push(DriftItem {
                 field: "health".to_string(),
@@ -345,20 +331,13 @@ impl DriftDetector {
         }
     }
 
-    fn check_scaling_drift(
-        &self,
-        spec: &Workload,
-        drifts: &mut Vec<DriftItem>,
-    ) {
+    fn check_scaling_drift(&self, spec: &Workload, drifts: &mut Vec<DriftItem>) {
         if let Some(scaling) = &spec.scaling {
             if scaling.enabled && scaling.min_replicas >= scaling.max_replicas {
                 drifts.push(DriftItem {
                     field: "scaling".to_string(),
                     expected: "minReplicas < maxReplicas".to_string(),
-                    actual: format!(
-                        "min={} max={}",
-                        scaling.min_replicas, scaling.max_replicas
-                    ),
+                    actual: format!("min={} max={}", scaling.min_replicas, scaling.max_replicas),
                     severity: DriftSeverity::Warning,
                     category: DriftCategory::Scaling,
                 });
@@ -432,7 +411,9 @@ impl DriftDetector {
         }
 
         // Recalculate overall severity
-        report.severity = report.drifts.iter()
+        report.severity = report
+            .drifts
+            .iter()
             .map(|d| match d.severity {
                 DriftSeverity::Critical => 2,
                 DriftSeverity::Warning => 1,
@@ -456,10 +437,7 @@ impl DriftDetector {
             let action = match drift.category {
                 DriftCategory::Runtime => ReconcileAction {
                     action_type: ReconcileType::Redeploy,
-                    description: format!(
-                        "Migrate from {} to {}",
-                        drift.actual, drift.expected
-                    ),
+                    description: format!("Migrate from {} to {}", drift.actual, drift.expected),
                     requires_restart: true,
                     risk: DriftSeverity::Warning,
                 },
@@ -496,7 +474,6 @@ impl DriftDetector {
 
         actions
     }
-
 }
 
 /// Format drift report as a readable string
@@ -505,11 +482,14 @@ pub fn format_drift_report(report: &DriftReport) -> String {
 
     output.push_str(&output::property_section(&[
         ("Drift Report", report.workload_name.clone()),
-        ("Status", if report.has_drift {
-            format!("DRIFT DETECTED ({})", report.severity)
-        } else {
-            "IN SYNC".to_string()
-        }),
+        (
+            "Status",
+            if report.has_drift {
+                format!("DRIFT DETECTED ({})", report.severity)
+            } else {
+                "IN SYNC".to_string()
+            },
+        ),
     ]));
 
     if report.drifts.is_empty() {
@@ -696,7 +676,7 @@ mod tests {
                 dockerfile: PathBuf::from("Dockerfile"),
                 registry: "ghcr.io/test".to_string(),
                 build_args: HashMap::new(),
-            ..Default::default()
+                ..Default::default()
             },
             requirements: ResourceRequirements {
                 cpu: "2".to_string(),
@@ -719,7 +699,7 @@ mod tests {
                     protocol: "TCP".to_string(),
                 }],
                 network_policy: None,
-        ..Default::default()
+                ..Default::default()
             },
             persistence: PersistenceSpec::default(),
             health: None,
@@ -731,7 +711,7 @@ mod tests {
             autonomy: None,
             confidential: None,
             schedule: None,
-        kubernetes: None,
+            kubernetes: None,
         }
     }
 
@@ -826,15 +806,13 @@ mod tests {
     fn test_format_live_diff_no_differences() {
         let report = LiveDiffReport {
             workload_name: "my-app".to_string(),
-            rows: vec![
-                DiffRow {
-                    field: "runtime".to_string(),
-                    spec_value: "podman".to_string(),
-                    stored_value: "podman".to_string(),
-                    live_value: "podman".to_string(),
-                    matches: true,
-                },
-            ],
+            rows: vec![DiffRow {
+                field: "runtime".to_string(),
+                spec_value: "podman".to_string(),
+                stored_value: "podman".to_string(),
+                live_value: "podman".to_string(),
+                matches: true,
+            }],
             has_differences: false,
         };
         let output = format_live_diff(&report);
@@ -852,18 +830,37 @@ mod tests {
 
     #[async_trait]
     impl crate::Runtime for MockRuntime {
-        async fn build(&self, _: &crate::spec::Workload) -> crate::Result<crate::runtime::Image> { unimplemented!() }
-        async fn run(&self, _: &crate::runtime::Image, _: &crate::spec::Workload) -> crate::Result<crate::runtime::Instance> { unimplemented!() }
-        async fn stop(&self, _: &crate::runtime::Instance) -> crate::Result<()> { unimplemented!() }
-        async fn status(&self, _: &crate::runtime::Instance) -> crate::Result<crate::runtime::Status> {
+        async fn build(&self, _: &crate::spec::Workload) -> crate::Result<crate::runtime::Image> {
+            unimplemented!()
+        }
+        async fn run(
+            &self,
+            _: &crate::runtime::Image,
+            _: &crate::spec::Workload,
+        ) -> crate::Result<crate::runtime::Instance> {
+            unimplemented!()
+        }
+        async fn stop(&self, _: &crate::runtime::Instance) -> crate::Result<()> {
+            unimplemented!()
+        }
+        async fn status(
+            &self,
+            _: &crate::runtime::Instance,
+        ) -> crate::Result<crate::runtime::Status> {
             match &self.status_result {
                 Ok(s) => Ok(s.clone()),
                 Err(e) => Err(anyhow::anyhow!("{}", e)),
             }
         }
-        async fn logs(&self, _: &crate::runtime::Instance, _: bool) -> crate::Result<String> { unimplemented!() }
-        async fn delete(&self, _: &crate::runtime::Instance) -> crate::Result<()> { unimplemented!() }
-        async fn list(&self) -> crate::Result<Vec<crate::runtime::Instance>> { unimplemented!() }
+        async fn logs(&self, _: &crate::runtime::Instance, _: bool) -> crate::Result<String> {
+            unimplemented!()
+        }
+        async fn delete(&self, _: &crate::runtime::Instance) -> crate::Result<()> {
+            unimplemented!()
+        }
+        async fn list(&self) -> crate::Result<Vec<crate::runtime::Instance>> {
+            unimplemented!()
+        }
     }
 
     #[tokio::test]
@@ -881,7 +878,10 @@ mod tests {
         };
         let report = detector.check_live_drift(&spec, &state, &mock).await;
         assert!(report.has_drift);
-        assert!(report.drifts.iter().any(|d| d.field == "live.state" && d.severity == DriftSeverity::Critical));
+        assert!(report
+            .drifts
+            .iter()
+            .any(|d| d.field == "live.state" && d.severity == DriftSeverity::Critical));
     }
 
     #[tokio::test]
@@ -899,7 +899,10 @@ mod tests {
         };
         let report = detector.check_live_drift(&spec, &state, &mock).await;
         assert!(report.has_drift);
-        assert!(report.drifts.iter().any(|d| d.field == "live.ready" && d.severity == DriftSeverity::Warning));
+        assert!(report
+            .drifts
+            .iter()
+            .any(|d| d.field == "live.ready" && d.severity == DriftSeverity::Warning));
     }
 
     #[tokio::test]
@@ -917,7 +920,10 @@ mod tests {
         };
         let report = detector.check_live_drift(&spec, &state, &mock).await;
         assert!(report.has_drift);
-        assert!(report.drifts.iter().any(|d| d.field == "live.restart_count" && d.severity == DriftSeverity::Critical));
+        assert!(report
+            .drifts
+            .iter()
+            .any(|d| d.field == "live.restart_count" && d.severity == DriftSeverity::Critical));
     }
 
     #[tokio::test]
@@ -948,8 +954,14 @@ mod tests {
         };
         let report = detector.check_live_drift(&spec, &state, &mock).await;
         assert!(report.has_drift);
-        assert!(report.drifts.iter().any(|d| d.field == "live.status" && d.severity == DriftSeverity::Critical));
-        assert!(report.drifts.iter().any(|d| d.actual.contains("unreachable")));
+        assert!(report
+            .drifts
+            .iter()
+            .any(|d| d.field == "live.status" && d.severity == DriftSeverity::Critical));
+        assert!(report
+            .drifts
+            .iter()
+            .any(|d| d.actual.contains("unreachable")));
     }
 
     #[test]

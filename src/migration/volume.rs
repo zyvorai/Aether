@@ -34,7 +34,10 @@ pub struct VolumeReplicationPlan {
     pub warnings: Vec<String>,
 }
 
-pub fn plan_volume_replication(req: &VolumeReplicationRequest, spec: Option<&Workload>) -> Result<VolumeReplicationPlan> {
+pub fn plan_volume_replication(
+    req: &VolumeReplicationRequest,
+    spec: Option<&Workload>,
+) -> Result<VolumeReplicationPlan> {
     if req.source_cluster.trim().is_empty() || req.target_cluster.trim().is_empty() {
         bail!("source_cluster and target_cluster are required");
     }
@@ -85,11 +88,14 @@ pub fn plan_volume_replication(req: &VolumeReplicationRequest, spec: Option<&Wor
     ];
 
     let mut warnings = vec![
-        "Volume replication copies block data — ensure application quiesce or offline snapshot.".into(),
+        "Volume replication copies block data — ensure application quiesce or offline snapshot."
+            .into(),
         "RWO volumes require detach from source before target attach.".into(),
     ];
     if storage_class.is_none() {
-        warnings.push("No storageClass in workload persistence — verify target cluster storage class.".into());
+        warnings.push(
+            "No storageClass in workload persistence — verify target cluster storage class.".into(),
+        );
     }
 
     Ok(VolumeReplicationPlan {
@@ -133,13 +139,7 @@ pub async fn execute_volume_replication(
             "snapshot_source" => {
                 run_kubectl(
                     &req.source_cluster,
-                    &[
-                        "get",
-                        "pvc",
-                        &req.pvc_name,
-                        "-n",
-                        &req.namespace,
-                    ],
+                    &["get", "pvc", &req.pvc_name, "-n", &req.namespace],
                     dry_run,
                 )
                 .await?
@@ -158,10 +158,18 @@ pub async fn execute_volume_replication(
                     .storage_class_hint
                     .clone()
                     .unwrap_or_else(|| "standard".into());
-                let pvc_manifest =
-                    restored_pvc_manifest(&req.namespace, &req.pvc_name, &snapshot_name, &size, &sc);
+                let pvc_manifest = restored_pvc_manifest(
+                    &req.namespace,
+                    &req.pvc_name,
+                    &snapshot_name,
+                    &size,
+                    &sc,
+                );
                 if dry_run {
-                    format!("dry-run apply restored PVC {} on {}", req.pvc_name, req.target_cluster)
+                    format!(
+                        "dry-run apply restored PVC {} on {}",
+                        req.pvc_name, req.target_cluster
+                    )
                 } else {
                     apply_manifest(&req.target_cluster, &pvc_manifest).await?
                 }
@@ -203,7 +211,10 @@ pub async fn execute_volume_replication(
 
 async fn run_kubectl(cluster: &str, args: &[&str], dry_run: bool) -> Result<String> {
     if dry_run {
-        return Ok(format!("dry-run kubectl --context {cluster} {}", args.join(" ")));
+        return Ok(format!(
+            "dry-run kubectl --context {cluster} {}",
+            args.join(" ")
+        ));
     }
     let output = tokio::process::Command::new("kubectl")
         .arg("--context")
@@ -254,7 +265,13 @@ spec:
     )
 }
 
-fn restored_pvc_manifest(namespace: &str, pvc: &str, snapshot: &str, size: &str, sc: &str) -> String {
+fn restored_pvc_manifest(
+    namespace: &str,
+    pvc: &str,
+    snapshot: &str,
+    size: &str,
+    sc: &str,
+) -> String {
     format!(
         r#"apiVersion: v1
 kind: PersistentVolumeClaim

@@ -65,10 +65,7 @@ impl OpaConfig {
             .await
             .with_context(|| format!("OPA POST {}", url))?;
         let status = resp.status();
-        let payload: Value = resp
-            .json()
-            .await
-            .context("opa response json")?;
+        let payload: Value = resp.json().await.context("opa response json")?;
         if !status.is_success() {
             anyhow::bail!("OPA returned {}: {}", status, payload);
         }
@@ -81,8 +78,7 @@ impl OpaConfig {
     }
 
     pub async fn evaluate_workload(&self, spec: &Value) -> Result<OpaEvaluation> {
-        self.evaluate(serde_json::json!({ "workload": spec }))
-            .await
+        self.evaluate(serde_json::json!({ "workload": spec })).await
     }
 }
 

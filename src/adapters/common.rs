@@ -130,7 +130,11 @@ where
                 let backoff = initial_backoff_ms * 2u64.pow(attempt - 1);
                 tracing::warn!(
                     "{} failed (attempt {}/{}), retrying in {}ms: {}",
-                    op_name, attempt, max_retries, backoff, e
+                    op_name,
+                    attempt,
+                    max_retries,
+                    backoff,
+                    e
                 );
                 tokio::time::sleep(std::time::Duration::from_millis(backoff)).await;
             }

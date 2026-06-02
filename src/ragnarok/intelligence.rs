@@ -56,9 +56,7 @@ pub fn analyze_workload(
     let conf = spec.confidential.as_ref().filter(|c| c.enabled);
     let digest = conf.and_then(|c| c.image_digest.as_deref());
     let att_passed = att_svc.passed(&name);
-    let image_in_catalog = digest
-        .map(|d| catalog.verify_digest(d))
-        .unwrap_or(false);
+    let image_in_catalog = digest.map(|d| catalog.verify_digest(d)).unwrap_or(false);
     let sovereign = sovereign::evaluate(spec, &SovereignConfig::from_env());
     let isolation = isolation::evaluate(spec, &IsolationPolicy::from_env());
     let net_count = policy_count(spec);
@@ -78,7 +76,8 @@ pub fn analyze_workload(
     }
     if !att_passed && conf.is_some_and(|c| c.attestation.required) {
         findings.push("Attestation required but not passed".into());
-        recommendations.push("Submit guest attestation report or run GuestKit repair playbook".into());
+        recommendations
+            .push("Submit guest attestation report or run GuestKit repair playbook".into());
     }
     if !image_in_catalog && digest.is_some() {
         findings.push("Launch digest not in measured catalog".into());
@@ -107,7 +106,8 @@ pub fn analyze_workload(
 
     let kata_score = kata::placement_score(spec, &host);
     let migration_strategy = conf.map(|_| {
-        let plan = plan_confidential_migration_tee(spec, host.sev_snp, host.sev_snp, host.tdx, host.tdx);
+        let plan =
+            plan_confidential_migration_tee(spec, host.sev_snp, host.sev_snp, host.tdx, host.tdx);
         plan.recommended_strategy.to_string()
     });
 
@@ -158,10 +158,7 @@ pub fn analyze_fleet(
     } else {
         analyses.iter().map(|a| a.trust_composite).sum::<f64>() / analyses.len() as f64
     };
-    let critical_count = analyses
-        .iter()
-        .filter(|a| a.risk_level == "high")
-        .count() as u32;
+    let critical_count = analyses.iter().filter(|a| a.risk_level == "high").count() as u32;
     ConfidentialFleetAnalysis {
         generated_at: chrono::Utc::now().to_rfc3339(),
         workloads: analyses,

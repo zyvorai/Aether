@@ -84,11 +84,9 @@ pub fn is_kubernetes_confidential(spec: &Workload) -> bool {
 fn runtime_class_for_security_profile(profile: &str, tee: &ConfidentialTee) -> Option<String> {
     match profile {
         "sandbox" => None,
-        "sovereign-high" | "standard-confidential" => Some(
-            KataHypervisor::from_env()
-                .runtime_class(tee)
-                .to_string(),
-        ),
+        "sovereign-high" | "standard-confidential" => {
+            Some(KataHypervisor::from_env().runtime_class(tee).to_string())
+        }
         _ => None,
     }
 }
@@ -139,9 +137,13 @@ pub fn kata_status() -> KataStatus {
     let placement_ready = host.sev_snp || host.tdx || host.sev_device;
     let mut notes = Vec::new();
     if !placement_ready {
-        notes.push("No host TEE detected — Kata confidential pods need SNP/TDX-capable nodes".into());
+        notes.push(
+            "No host TEE detected — Kata confidential pods need SNP/TDX-capable nodes".into(),
+        );
     }
-    notes.push("Install RuntimeClasses from deploy/confidential/kata-clh/runtime-classes.yaml".into());
+    notes.push(
+        "Install RuntimeClasses from deploy/confidential/kata-clh/runtime-classes.yaml".into(),
+    );
     KataStatus {
         supported_runtime_classes: supported_runtime_classes()
             .into_iter()
@@ -211,10 +213,9 @@ pub fn operator_requirements() -> Vec<&'static str> {
 mod tests {
     use super::*;
     use crate::spec::{
-        BuildSpec, ConfidentialAttestationSpec, ConfidentialIsolationSpec,
-        ConfidentialSecretsSpec, ConfidentialSpec, ConfidentialTee, Metadata, NetworkSpec,
-        PersistenceSpec, ResourceRequirements, RuntimePreference, RuntimeSpec, RuntimeType,
-        Workload,
+        BuildSpec, ConfidentialAttestationSpec, ConfidentialIsolationSpec, ConfidentialSecretsSpec,
+        ConfidentialSpec, ConfidentialTee, Metadata, NetworkSpec, PersistenceSpec,
+        ResourceRequirements, RuntimePreference, RuntimeSpec, RuntimeType, Workload,
     };
 
     fn kube_confidential_spec(class: Option<&str>) -> Workload {

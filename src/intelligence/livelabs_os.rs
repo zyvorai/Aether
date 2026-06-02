@@ -83,19 +83,51 @@ pub fn build_livelabs_overview() -> LiveLabsOverview {
         labs_live_enabled: labs_live_enabled(),
         kubeconfig_available: kubeconfig_available(),
         features: vec![
-            feat(135, "Reference cluster runner", "/api/intelligence/livelabs/reference-runner"),
-            feat(136, "Kind Playwright fixture", "/api/intelligence/livelabs/kind-fixture"),
-            feat(137, "Labs live smoke", "/api/intelligence/livelabs/live-smoke"),
-            feat(138, "Post-deploy verify", "/api/intelligence/livelabs/post-deploy-verify"),
-            feat(139, "Kubernetes live lab", "/api/intelligence/livelabs/kubernetes-lab"),
+            feat(
+                135,
+                "Reference cluster runner",
+                "/api/intelligence/livelabs/reference-runner",
+            ),
+            feat(
+                136,
+                "Kind Playwright fixture",
+                "/api/intelligence/livelabs/kind-fixture",
+            ),
+            feat(
+                137,
+                "Labs live smoke",
+                "/api/intelligence/livelabs/live-smoke",
+            ),
+            feat(
+                138,
+                "Post-deploy verify",
+                "/api/intelligence/livelabs/post-deploy-verify",
+            ),
+            feat(
+                139,
+                "Kubernetes live lab",
+                "/api/intelligence/livelabs/kubernetes-lab",
+            ),
             feat(
                 140,
                 "Advanced runtime labs",
                 "/api/intelligence/livelabs/advanced-runtime-labs",
             ),
-            feat(141, "CI pipeline jobs", "/api/intelligence/livelabs/ci-pipeline"),
-            feat(142, "Cluster exec E2E", "/api/intelligence/livelabs/cluster-exec"),
-            feat(143, "Confidential lab", "/api/intelligence/livelabs/confidential-lab"),
+            feat(
+                141,
+                "CI pipeline jobs",
+                "/api/intelligence/livelabs/ci-pipeline",
+            ),
+            feat(
+                142,
+                "Cluster exec E2E",
+                "/api/intelligence/livelabs/cluster-exec",
+            ),
+            feat(
+                143,
+                "Confidential lab",
+                "/api/intelligence/livelabs/confidential-lab",
+            ),
             feat(144, "Live labs hub", "/api/intelligence/livelabs/overview"),
         ],
     }
@@ -134,7 +166,8 @@ pub fn build_reference_runner_report() -> ReferenceRunnerReport {
         script: "scripts/labs-live-smoke.sh".into(),
         hint: if ready {
             if labs_live_enabled() {
-                "Live mode active — run `make reference-cluster-live` against your kubeconfig.".into()
+                "Live mode active — run `make reference-cluster-live` against your kubeconfig."
+                    .into()
             } else {
                 "Set AETHER_LABS_LIVE=1 to enable live Metal3/KubeVirt deploy smoke.".into()
             }
@@ -333,7 +366,11 @@ pub fn build_advanced_runtime_labs_report() -> AdvancedRuntimeLabReport {
         kubeconfig_available: kubeconfig_available(),
         specs: vec![
             lab_spec("metal3", "examples/labs/metal3/workload.yaml", "metal"),
-            lab_spec("kubevirt", "examples/labs/kubevirt/workload.yaml", "kubevirt"),
+            lab_spec(
+                "kubevirt",
+                "examples/labs/kubevirt/workload.yaml",
+                "kubevirt",
+            ),
         ],
     }
 }

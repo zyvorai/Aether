@@ -39,16 +39,56 @@ pub fn build_production_overview() -> ProductionOverview {
         era: "M".into(),
         feature_count: 10,
         features: vec![
-            feat(125, "Production scorecard", "/api/intelligence/production/scorecard"),
-            feat(126, "Auth plane status", "/api/intelligence/production/auth-plane"),
-            feat(127, "OPA enforcement plane", "/api/intelligence/production/opa-plane"),
-            feat(128, "HA backends plane", "/api/intelligence/production/ha-plane"),
-            feat(129, "Durability plane", "/api/intelligence/production/durability-plane"),
-            feat(130, "Hosted SaaS plane", "/api/intelligence/production/hosted-plane"),
-            feat(131, "Edge fleet plane", "/api/intelligence/production/edge-fleet"),
-            feat(132, "Post-deploy verify manifest", "/api/intelligence/production/post-deploy-manifest"),
-            feat(133, "CI smoke manifest", "/api/intelligence/production/ci-smoke-manifest"),
-            feat(134, "Production trust hub", "/api/intelligence/production/overview"),
+            feat(
+                125,
+                "Production scorecard",
+                "/api/intelligence/production/scorecard",
+            ),
+            feat(
+                126,
+                "Auth plane status",
+                "/api/intelligence/production/auth-plane",
+            ),
+            feat(
+                127,
+                "OPA enforcement plane",
+                "/api/intelligence/production/opa-plane",
+            ),
+            feat(
+                128,
+                "HA backends plane",
+                "/api/intelligence/production/ha-plane",
+            ),
+            feat(
+                129,
+                "Durability plane",
+                "/api/intelligence/production/durability-plane",
+            ),
+            feat(
+                130,
+                "Hosted SaaS plane",
+                "/api/intelligence/production/hosted-plane",
+            ),
+            feat(
+                131,
+                "Edge fleet plane",
+                "/api/intelligence/production/edge-fleet",
+            ),
+            feat(
+                132,
+                "Post-deploy verify manifest",
+                "/api/intelligence/production/post-deploy-manifest",
+            ),
+            feat(
+                133,
+                "CI smoke manifest",
+                "/api/intelligence/production/ci-smoke-manifest",
+            ),
+            feat(
+                134,
+                "Production trust hub",
+                "/api/intelligence/production/overview",
+            ),
         ],
     }
 }
@@ -153,9 +193,7 @@ pub fn build_production_scorecard(snap: &ProductionRuntimeSnapshot) -> Productio
 
     let passed = checks.iter().filter(|c| c.ok).count();
     let readiness_pct = (passed as f64 / checks.len() as f64) * 100.0;
-    let production_ready = checks
-        .iter()
-        .all(|c| c.ok || c.severity != "critical");
+    let production_ready = checks.iter().all(|c| c.ok || c.severity != "critical");
 
     ProductionScorecard {
         status: "ship".into(),
@@ -209,7 +247,9 @@ pub fn build_auth_plane_report(saml_enabled: bool) -> AuthPlaneReport {
         oidc_configured: env_set("AETHER_OIDC_ISSUER") && env_set("AETHER_OIDC_CLIENT_ID"),
         saml_available: saml_enabled,
         mock_idp: env_set("AETHER_MOCK_IDP"),
-        rbac_keys_path: crate::resources::aether_path("rbac-keys.json").display().to_string(),
+        rbac_keys_path: crate::resources::aether_path("rbac-keys.json")
+            .display()
+            .to_string(),
         mutation_confirm_required: std::env::var("AETHER_REQUIRE_MUTATION_CONFIRM")
             .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
             .unwrap_or(false),
@@ -259,8 +299,8 @@ pub struct HaPlaneReport {
 }
 
 pub fn build_ha_plane_report(snap: &ProductionRuntimeSnapshot) -> HaPlaneReport {
-    let ha_ready = (!snap.postgres_required || snap.postgres_ok)
-        && (!snap.redis_required || snap.redis_ok);
+    let ha_ready =
+        (!snap.postgres_required || snap.postgres_ok) && (!snap.redis_required || snap.redis_ok);
     HaPlaneReport {
         status: "ship".into(),
         generated_at: crate::resources::now_rfc3339(),
@@ -295,7 +335,9 @@ pub fn build_durability_plane_report() -> DurabilityPlaneReport {
         generated_at: crate::resources::now_rfc3339(),
         backup_remote_configured: env_set("AETHER_BACKUP_REMOTE_URL"),
         audit_webhook_configured: env_set("AETHER_AUDIT_WEBHOOK_URL"),
-        state_file: crate::resources::aether_path("state.json").display().to_string(),
+        state_file: crate::resources::aether_path("state.json")
+            .display()
+            .to_string(),
         backup_api: "/api/backups".into(),
     }
 }

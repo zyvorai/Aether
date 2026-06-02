@@ -66,7 +66,9 @@ pub fn build_knowledge_graph(state_path: &Path) -> anyhow::Result<KnowledgeGraph
     let mut seen_nodes = HashSet::new();
     let mut clusters = HashSet::new();
 
-    let add_node = |nodes: &mut Vec<KnowledgeGraphNode>, seen: &mut HashSet<String>, node: KnowledgeGraphNode| {
+    let add_node = |nodes: &mut Vec<KnowledgeGraphNode>,
+                    seen: &mut HashSet<String>,
+                    node: KnowledgeGraphNode| {
         if seen.insert(node.id.clone()) {
             nodes.push(node);
         }

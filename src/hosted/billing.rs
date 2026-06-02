@@ -55,10 +55,7 @@ fn tenant_usage_line(t: &Tenant, store: &StateStore, total: usize, n: usize) -> 
     let owned = store
         .workloads
         .values()
-        .filter(|w| {
-            w.name.starts_with(&format!("{}:", t.slug))
-                || w.name.contains(&t.slug)
-        })
+        .filter(|w| w.name.starts_with(&format!("{}:", t.slug)) || w.name.contains(&t.slug))
         .count();
     let share = if n > 0 { total / n } else { 0 };
     TenantUsageLine {

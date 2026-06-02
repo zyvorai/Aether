@@ -110,24 +110,14 @@ impl GuestKitService {
         }
     }
 
-    pub fn inspect(
-        &self,
-        req: &GuestKitRequest,
-        catalog: &ImageCatalog,
-    ) -> Result<GuestKitResult> {
+    pub fn inspect(&self, req: &GuestKitRequest, catalog: &ImageCatalog) -> Result<GuestKitResult> {
         let policy = parse_policy(req.policy_manifest.as_deref())?;
         let mut findings = Vec::new();
         let mut repair_steps = Vec::new();
         let chain_valid = match req.mode {
-            InspectionMode::PreLaunch => {
-                validate_pre_launch(req, catalog, &policy, &mut findings)?
-            }
-            InspectionMode::OfflinePolicy => {
-                validate_offline_policy(&policy, req, &mut findings)?
-            }
-            InspectionMode::PostShutdown => {
-                validate_post_shutdown(req, catalog, &mut findings)?
-            }
+            InspectionMode::PreLaunch => validate_pre_launch(req, catalog, &policy, &mut findings)?,
+            InspectionMode::OfflinePolicy => validate_offline_policy(&policy, req, &mut findings)?,
+            InspectionMode::PostShutdown => validate_post_shutdown(req, catalog, &mut findings)?,
             InspectionMode::AttestedRepair => {
                 findings.push("Attestation or chain validation previously failed".into());
                 repair_steps = repair_playbook(req, catalog, self.history(&req.vm_id));
@@ -136,7 +126,8 @@ impl GuestKitService {
         };
 
         if offline_mode_active() && req.mode == InspectionMode::OfflinePolicy && policy.is_empty() {
-            findings.push("Offline sovereign mode: embed policy manifest for air-gapped verify".into());
+            findings
+                .push("Offline sovereign mode: embed policy manifest for air-gapped verify".into());
         }
 
         let passed = chain_valid && findings.iter().all(|f| !f.starts_with("ERROR:"));
@@ -198,15 +189,16 @@ pub fn inspect(req: &GuestKitRequest) -> GuestKitResult {
     let dir = crate::ragnarok::client::RagnarokClient::attestation_data_dir();
     let svc = GuestKitService::new(dir.clone());
     let catalog = ImageCatalog::load(&dir);
-    svc.inspect(req, &catalog).unwrap_or_else(|e| GuestKitResult {
-        vm_id: req.vm_id.clone(),
-        mode: req.mode.clone(),
-        passed: false,
-        findings: vec![format!("ERROR: {e}")],
-        chain_valid: false,
-        repair_steps: vec![],
-        inspected_at: chrono::Utc::now().to_rfc3339(),
-    })
+    svc.inspect(req, &catalog)
+        .unwrap_or_else(|e| GuestKitResult {
+            vm_id: req.vm_id.clone(),
+            mode: req.mode.clone(),
+            passed: false,
+            findings: vec![format!("ERROR: {e}")],
+            chain_valid: false,
+            repair_steps: vec![],
+            inspected_at: chrono::Utc::now().to_rfc3339(),
+        })
 }
 
 fn parse_policy(raw: Option<&str>) -> Result<GuestKitPolicy> {
@@ -253,7 +245,8 @@ fn validate_pre_launch(
             if &hash == expected {
                 findings.push("Expected launch digest matches image file".into());
             } else {
-                findings.push("ERROR: image hash does not match spec confidential.imageDigest".into());
+                findings
+                    .push("ERROR: image hash does not match spec confidential.imageDigest".into());
                 chain_ok = false;
             }
         }
@@ -345,7 +338,10 @@ fn repair_playbook(
         }
     }
 
-    if history.iter().any(|h| h.findings.iter().any(|f| f.contains("policy"))) {
+    if history
+        .iter()
+        .any(|h| h.findings.iter().any(|f| f.contains("policy")))
+    {
         steps.push("Refresh RAGNAROK_TRUST_POLICY or embedded offline policy manifest".into());
     }
     steps.push("Revoke and re-release attest-gated secrets after successful re-attestation".into());
@@ -368,11 +364,7 @@ pub fn enrich_explain(summary: Option<&GuestKitSummary>) -> Option<String> {
                 s.last_mode, s.inspected_at
             )
         } else {
-            format!(
-                "GuestKit {} failed: {}",
-                s.last_mode,
-                s.findings.join("; ")
-            )
+            format!("GuestKit {} failed: {}", s.last_mode, s.findings.join("; "))
         }
     })
 }

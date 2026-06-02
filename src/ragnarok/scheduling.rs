@@ -113,7 +113,8 @@ pub fn gitops_policy_issues(spec: &Workload) -> Vec<String> {
     }
 
     if let Some(ref digest) = conf.image_digest {
-        let catalog = ImageCatalog::load(&crate::ragnarok::client::RagnarokClient::attestation_data_dir());
+        let catalog =
+            ImageCatalog::load(&crate::ragnarok::client::RagnarokClient::attestation_data_dir());
         if !catalog.verify_digest(digest) {
             issues.push(format!(
                 "launch digest {digest} not in verified image catalog"
@@ -142,10 +143,7 @@ pub fn placement_bonus(spec: &Workload, host: &HostTeeStatus) -> (f64, Vec<Strin
 
     if tee_kind_matches(conf.tee, host) {
         bonus += 0.12;
-        reasons.push(format!(
-            "Host supports {}",
-            tee_hardware_label(conf.tee)
-        ));
+        reasons.push(format!("Host supports {}", tee_hardware_label(conf.tee)));
     } else {
         reasons.push(format!(
             "Host missing {} capability",
@@ -174,10 +172,7 @@ pub fn placement_advice(spec: &Workload) -> ConfidentialPlacementAdvice {
     let gitops_issues = gitops_policy_issues(spec);
     let mut blockers = gitops_issues.clone();
 
-    let confidential_enabled = spec
-        .confidential
-        .as_ref()
-        .is_some_and(|c| c.enabled);
+    let confidential_enabled = spec.confidential.as_ref().is_some_and(|c| c.enabled);
 
     let tee = spec
         .confidential
@@ -197,11 +192,7 @@ pub fn placement_advice(spec: &Workload) -> ConfidentialPlacementAdvice {
                 return crate::ragnarok::kata::resolve_runtime_class(spec);
             }
             if recommended == RuntimeKind::Kubernetes {
-                Some(
-                    KataHypervisor::from_env()
-                        .runtime_class(&c.tee)
-                        .to_string(),
-                )
+                Some(KataHypervisor::from_env().runtime_class(&c.tee).to_string())
             } else {
                 None
             }

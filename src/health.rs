@@ -105,7 +105,11 @@ impl HealthHistory {
     /// records for the given workload, expressed as a percentage (0.0 -- 100.0).
     /// Returns `0.0` if there are no records for the workload.
     pub fn uptime_percent(&self, workload: &str) -> f64 {
-        let total = self.records.iter().filter(|r| r.workload == workload).count();
+        let total = self
+            .records
+            .iter()
+            .filter(|r| r.workload == workload)
+            .count();
         if total == 0 {
             return 0.0;
         }
@@ -190,7 +194,12 @@ mod tests {
     use crate::runtime::{InstanceState, RuntimeKind};
 
     /// Helper to create a test health record.
-    fn make_record(workload: &str, ready: bool, restart_count: u32, state: InstanceState) -> HealthRecord {
+    fn make_record(
+        workload: &str,
+        ready: bool,
+        restart_count: u32,
+        state: InstanceState,
+    ) -> HealthRecord {
         HealthRecord {
             timestamp: "2026-01-15T10:00:00Z".to_string(),
             workload: workload.to_string(),
@@ -207,7 +216,11 @@ mod tests {
             timestamp: "2026-01-15T10:00:00Z".to_string(),
             workload: workload.to_string(),
             runtime: RuntimeKind::Kubernetes,
-            state: if ready { InstanceState::Running } else { InstanceState::Failed },
+            state: if ready {
+                InstanceState::Running
+            } else {
+                InstanceState::Failed
+            },
             ready,
             restart_count: 0,
             latency_ms: Some(latency_ms),

@@ -7,10 +7,10 @@
 mod cli;
 mod commands;
 
+use aether::state::StateStore;
 use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
-use aether::state::StateStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use cli::{Cli, Commands, HealthAction};
@@ -122,9 +122,7 @@ async fn main() -> Result<()> {
         }
         Commands::Tui => commands::tui_command().await,
         Commands::Copilot { message } => commands::copilot_command(message).await,
-        Commands::Completions { shell } => {
-            commands::completions_command(&shell)
-        }
+        Commands::Completions { shell } => commands::completions_command(&shell),
         Commands::Metrics => {
             commands::metrics_command().await;
             Ok(())
@@ -132,132 +130,118 @@ async fn main() -> Result<()> {
         Commands::Backup { name, description } => {
             commands::backup_command(name.clone(), description.clone()).await
         }
-        Commands::Restore { backup, merge } => {
-            commands::restore_command(&backup, merge).await
-        }
-        Commands::ListBackups => {
-            commands::list_backups_command().await
-        }
-        Commands::Cost { provider } => {
-            commands::cost_command(&cli.spec, &provider).await
-        }
-        Commands::Serve { host, port, tls_cert, tls_key } => {
-            commands::serve_command(host, port, tls_cert, tls_key).await
-        }
-        Commands::Recommend { .. } => {
-            commands::recommend_command(&cli.spec).await
-        }
-        Commands::Profile { name } => {
-            commands::profile_command(&cli.spec, name).await
-        }
-        Commands::AnalyzeLogs { name } => {
-            commands::analyze_logs_command(&name).await
-        }
+        Commands::Restore { backup, merge } => commands::restore_command(&backup, merge).await,
+        Commands::ListBackups => commands::list_backups_command().await,
+        Commands::Cost { provider } => commands::cost_command(&cli.spec, &provider).await,
+        Commands::Serve {
+            host,
+            port,
+            tls_cert,
+            tls_key,
+        } => commands::serve_command(host, port, tls_cert, tls_key).await,
+        Commands::Recommend { .. } => commands::recommend_command(&cli.spec).await,
+        Commands::Profile { name } => commands::profile_command(&cli.spec, name).await,
+        Commands::AnalyzeLogs { name } => commands::analyze_logs_command(&name).await,
         Commands::MigrationAdvice { name, target } => {
             commands::migration_advice_command(&name, &target).await
         }
-        Commands::ScalingAdvice => {
-            commands::scaling_advice_command().await
-        }
-        Commands::Config { show, init } => {
-            commands::config_command(show, init).await
-        }
-        Commands::Drift { name, reconcile } => {
-            commands::drift_command(&name, reconcile).await
-        }
+        Commands::ScalingAdvice => commands::scaling_advice_command().await,
+        Commands::Config { show, init } => commands::config_command(show, init).await,
+        Commands::Drift { name, reconcile } => commands::drift_command(&name, reconcile).await,
         Commands::PolicyCheck { policy } => {
             commands::policy_check_command(&cli.spec, &policy).await
         }
-        Commands::Deps { action } => {
-            commands::deps_command(action).await
+        Commands::Deps { action } => commands::deps_command(action).await,
+        Commands::Audit {
+            last,
+            workload,
+            summary,
+        } => commands::audit_command(last, workload, summary).await,
+        Commands::Template {
+            name,
+            workload_name,
+            owner,
+            project,
+            registry,
+            output,
+            list,
+        } => {
+            commands::template_command(
+                &name,
+                workload_name,
+                &owner,
+                &project,
+                &registry,
+                output,
+                list,
+            )
+            .await
         }
-        Commands::Audit { last, workload, summary } => {
-            commands::audit_command(last, workload, summary).await
-        }
-        Commands::Template { name, workload_name, owner, project, registry, output, list } => {
-            commands::template_command(&name, workload_name, &owner, &project, &registry, output, list).await
-        }
-        Commands::Sla { action } => {
-            commands::sla_command(action).await
-        }
-        Commands::Secrets { action } => {
-            commands::secrets_command(action).await
-        }
-        Commands::Events { last, severity, summary } => {
-            commands::events_command(last, severity, summary).await
-        }
-        Commands::Env { action } => {
-            commands::env_command(action).await
-        }
-        Commands::GitOps { action } => {
-            commands::gitops_command(action).await
-        }
-        Commands::Schedule { action } => {
-            commands::schedule_command(action).await
-        }
-        Commands::Orchestrate { action } => {
-            commands::orchestrate_command(action).await
-        }
-        Commands::Affinity { action } => {
-            commands::affinity_command(action).await
-        }
-        Commands::Webhook { action } => {
-            commands::webhook_command(action).await
-        }
+        Commands::Sla { action } => commands::sla_command(action).await,
+        Commands::Secrets { action } => commands::secrets_command(action).await,
+        Commands::Events {
+            last,
+            severity,
+            summary,
+        } => commands::events_command(last, severity, summary).await,
+        Commands::Env { action } => commands::env_command(action).await,
+        Commands::GitOps { action } => commands::gitops_command(action).await,
+        Commands::Schedule { action } => commands::schedule_command(action).await,
+        Commands::Orchestrate { action } => commands::orchestrate_command(action).await,
+        Commands::Affinity { action } => commands::affinity_command(action).await,
+        Commands::Webhook { action } => commands::webhook_command(action).await,
         Commands::HelpAll => {
             aether::completions::show_help();
             Ok(())
         }
-        Commands::Diff { name } => {
-            commands::diff_command(&name).await
-        }
-        Commands::Rollback { name, version, list } => {
-            commands::rollback_command(&name, version, list).await
-        }
-        Commands::Deploy { dir, runtime, fail_fast, dry_run } => {
-            commands::deploy_command(&dir, runtime, fail_fast, dry_run).await
-        }
-        Commands::Exec { name, command, interactive, timeout } => {
-            commands::exec_command(&name, &command, interactive, timeout).await
-        }
-        Commands::PortForward { name, ports, timeout } => {
-            commands::port_forward_command(&name, &ports, timeout).await
-        }
-        Commands::Cp { name, src, dest, timeout } => {
-            commands::cp_command(&name, &src, &dest, timeout).await
-        }
-        Commands::Watch { runtime } => {
-            commands::watch_command(&cli.spec, runtime).await
-        }
-        Commands::Compare => {
-            commands::compare_command(&cli.spec).await
-        }
-        Commands::Decide { explain } => {
-            commands::decide_command(&cli.spec, explain).await
-        }
-        Commands::Intent => {
-            commands::intent_command(&cli.spec).await
-        }
-        Commands::Init => {
-            commands::init_command().await
-        }
-        Commands::Compose { action } => {
-            commands::compose_command(action).await
-        }
-        Commands::Plugin { action } => {
-            commands::plugin_command(action).await
-        }
+        Commands::Diff { name } => commands::diff_command(&name).await,
+        Commands::Rollback {
+            name,
+            version,
+            list,
+        } => commands::rollback_command(&name, version, list).await,
+        Commands::Deploy {
+            dir,
+            runtime,
+            fail_fast,
+            dry_run,
+        } => commands::deploy_command(&dir, runtime, fail_fast, dry_run).await,
+        Commands::Exec {
+            name,
+            command,
+            interactive,
+            timeout,
+        } => commands::exec_command(&name, &command, interactive, timeout).await,
+        Commands::PortForward {
+            name,
+            ports,
+            timeout,
+        } => commands::port_forward_command(&name, &ports, timeout).await,
+        Commands::Cp {
+            name,
+            src,
+            dest,
+            timeout,
+        } => commands::cp_command(&name, &src, &dest, timeout).await,
+        Commands::Watch { runtime } => commands::watch_command(&cli.spec, runtime).await,
+        Commands::Compare => commands::compare_command(&cli.spec).await,
+        Commands::Decide { explain } => commands::decide_command(&cli.spec, explain).await,
+        Commands::Intent => commands::intent_command(&cli.spec).await,
+        Commands::Init => commands::init_command().await,
+        Commands::Compose { action } => commands::compose_command(action).await,
+        Commands::Plugin { action } => commands::plugin_command(action).await,
         Commands::Health { action } => match action {
-            HealthAction::Show { name, last, summary } => {
-                commands::health_command(&name, last, summary).await
-            }
-            HealthAction::Collect => {
-                commands::health_collect_command().await
-            }
-        }
-        Commands::HelmExport { output_dir, chart_version } => {
-            commands::helm_export_command(&cli.spec, &output_dir, chart_version.as_deref()).await
-        }
+            HealthAction::Show {
+                name,
+                last,
+                summary,
+            } => commands::health_command(&name, last, summary).await,
+            HealthAction::Collect => commands::health_collect_command().await,
+        },
+        Commands::HelmExport {
+            output_dir,
+            chart_version,
+        } => commands::helm_export_command(&cli.spec, &output_dir, chart_version.as_deref()).await,
         Commands::Confidential { action } => {
             commands::confidential_command(action, &cli.spec).await
         }
@@ -299,12 +283,11 @@ async fn main() -> Result<()> {
         };
         eprintln!(
             "\n{}",
-            format!("  ⏱ {} | {}", elapsed, command_name)
-                .truecolor(
-                    aether::output::COLOR_MUTED.0,
-                    aether::output::COLOR_MUTED.1,
-                    aether::output::COLOR_MUTED.2,
-                )
+            format!("  ⏱ {} | {}", elapsed, command_name).truecolor(
+                aether::output::COLOR_MUTED.0,
+                aether::output::COLOR_MUTED.1,
+                aether::output::COLOR_MUTED.2,
+            )
         );
     }
 

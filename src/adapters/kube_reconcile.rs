@@ -10,7 +10,7 @@ use k8s_openapi::api::core::v1::{LimitRange, PersistentVolumeClaim, ResourceQuot
 use k8s_openapi::api::policy::v1::PodDisruptionBudget;
 use kube::api::{Api, DeleteParams, Patch, PatchParams, PostParams};
 use kube::core::NamespaceResourceScope;
-use kube::{Client};
+use kube::Client;
 
 use super::kube::{
     build_configmap_manifests, build_hpa_manifest, build_ingress_manifest,
@@ -113,8 +113,16 @@ pub async fn reconcile_k8s_ancillaries(
     // ServiceAccount + RBAC
     if let Some(sa) = crate::adapters::kube_extras::build_service_account(spec, namespace) {
         let sa_name = sa.metadata.name.clone().unwrap_or_default();
-        apply_or_create(client, namespace, &sa_name, sa, mode, fail_fast, "ServiceAccount")
-            .await?;
+        apply_or_create(
+            client,
+            namespace,
+            &sa_name,
+            sa,
+            mode,
+            fail_fast,
+            "ServiceAccount",
+        )
+        .await?;
         if mode == ReconcileMode::Create {
             tracked.push(ReconcileResource {
                 kind: "serviceaccount",
@@ -153,18 +161,11 @@ pub async fn reconcile_k8s_ancillaries(
     }
 
     // PVC (create only — skip shrink on update)
-    if mode == ReconcileMode::Create
-        && crate::adapters::kube_manifest::needs_standalone_pvc(spec)
-    {
+    if mode == ReconcileMode::Create && crate::adapters::kube_manifest::needs_standalone_pvc(spec) {
         if let Some(pvc) = build_pvc_manifest(namespace, spec) {
             let pvc_name = format!("{}-pvc", spec.metadata.name);
             let pvcs: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);
-            match kube_with_timeout(
-                "PVC create",
-                pvcs.create(&PostParams::default(), &pvc),
-            )
-            .await
-            {
+            match kube_with_timeout("PVC create", pvcs.create(&PostParams::default(), &pvc)).await {
                 Ok(_) => {
                     tracing::info!("Created PVC: {}", pvc_name);
                     tracked.push(ReconcileResource {
@@ -172,7 +173,10 @@ pub async fn reconcile_k8s_ancillaries(
                         name: pvc_name,
                     });
                 }
-                Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                Err(e)
+                    if e.downcast_ref::<kube::Error>()
+                        .is_some_and(is_already_exists) =>
+                {
                     tracing::info!("PVC already exists: {}", pvc_name);
                 }
                 Err(e) => return Err(e),
@@ -249,7 +253,10 @@ pub async fn reconcile_k8s_ancillaries(
     } else if mode == ReconcileMode::Update {
         let quotas: Api<ResourceQuota> = Api::namespaced(client.clone(), namespace);
         let _ = quotas
-            .delete(&format!("{}-quota", spec.metadata.name), &DeleteParams::default())
+            .delete(
+                &format!("{}-quota", spec.metadata.name),
+                &DeleteParams::default(),
+            )
             .await;
     }
 
@@ -268,7 +275,10 @@ pub async fn reconcile_k8s_ancillaries(
     } else if mode == ReconcileMode::Update {
         let ranges: Api<LimitRange> = Api::namespaced(client.clone(), namespace);
         let _ = ranges
-            .delete(&format!("{}-limits", spec.metadata.name), &DeleteParams::default())
+            .delete(
+                &format!("{}-limits", spec.metadata.name),
+                &DeleteParams::default(),
+            )
             .await;
     }
 
@@ -352,7 +362,10 @@ pub async fn reconcile_k8s_ancillaries(
     } else if mode == ReconcileMode::Update {
         let pdbs: Api<PodDisruptionBudget> = Api::namespaced(client.clone(), namespace);
         let _ = pdbs
-            .delete(&format!("{}-pdb", spec.metadata.name), &DeleteParams::default())
+            .delete(
+                &format!("{}-pdb", spec.metadata.name),
+                &DeleteParams::default(),
+            )
             .await;
     }
 
@@ -419,9 +432,7 @@ pub async fn reconcile_k8s_ancillaries(
     }
 
     // VPA
-    if let Some(vpa) =
-        crate::adapters::kube_manifest::build_vpa_json(namespace, spec, hpa_target)
-    {
+    if let Some(vpa) = crate::adapters::kube_manifest::build_vpa_json(namespace, spec, hpa_target) {
         reconcile_dynamic_optional(
             client,
             namespace,
@@ -444,7 +455,10 @@ pub async fn reconcile_k8s_ancillaries(
     }
 
     // KEDA
-    if matches!(workload_kind, K8sWorkloadKind::Deployment | K8sWorkloadKind::StatefulSet) {
+    if matches!(
+        workload_kind,
+        K8sWorkloadKind::Deployment | K8sWorkloadKind::StatefulSet
+    ) {
         if let Some(keda) = crate::adapters::kube_manifest::build_keda_json(namespace, spec) {
             reconcile_dynamic_optional(
                 client,
@@ -469,8 +483,7 @@ pub async fn reconcile_k8s_ancillaries(
     }
 
     // ServiceMonitor
-    if let Some(monitor) =
-        crate::adapters::kube_extras::build_service_monitor_json(namespace, spec)
+    if let Some(monitor) = crate::adapters::kube_extras::build_service_monitor_json(namespace, spec)
     {
         reconcile_dynamic_optional(
             client,
@@ -496,7 +509,13 @@ pub async fn reconcile_k8s_ancillaries(
     Ok(tracked)
 }
 
-async fn reconcile_hpa(client: &Client, namespace: &str, spec: &Workload, _target_kind: &str, mode: ReconcileMode) {
+async fn reconcile_hpa(
+    client: &Client,
+    namespace: &str,
+    spec: &Workload,
+    _target_kind: &str,
+    mode: ReconcileMode,
+) {
     let hpa_name = format!("{}-hpa", spec.metadata.name);
     let hpas: Api<HorizontalPodAutoscaler> = Api::namespaced(client.clone(), namespace);
 
@@ -504,21 +523,22 @@ async fn reconcile_hpa(client: &Client, namespace: &str, spec: &Workload, _targe
         let pp = PatchParams::apply("aether").force();
         match mode {
             ReconcileMode::Update => {
-                if kube_with_timeout(
-                    "HPA patch",
-                    hpas.patch(&hpa_name, &pp, &Patch::Apply(hpa)),
-                )
-                .await
-                .is_ok()
+                if kube_with_timeout("HPA patch", hpas.patch(&hpa_name, &pp, &Patch::Apply(hpa)))
+                    .await
+                    .is_ok()
                 {
                     tracing::info!("Reconciled HPA: {}", hpa_name);
                 }
             }
             ReconcileMode::Create => {
-                match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa)).await
+                match kube_with_timeout("HPA create", hpas.create(&PostParams::default(), &hpa))
+                    .await
                 {
                     Ok(_) => tracing::info!("Created HPA: {}", hpa_name),
-                    Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+                    Err(e)
+                        if e.downcast_ref::<kube::Error>()
+                            .is_some_and(is_already_exists) =>
+                    {
                         tracing::info!("HPA already exists: {}", hpa_name);
                     }
                     Err(e) => tracing::warn!("HPA creation failed: {}", e),
@@ -555,7 +575,10 @@ where
 {
     let name = name_for_spec(spec);
     if let Some(resource) = manifest {
-        apply_or_create(client, namespace, &name, resource, mode, fail_fast, log_kind).await?;
+        apply_or_create(
+            client, namespace, &name, resource, mode, fail_fast, log_kind,
+        )
+        .await?;
         if mode == ReconcileMode::Create {
             tracked.push(ReconcileResource {
                 kind: track_kind,
@@ -613,7 +636,10 @@ where
         .await
         {
             Ok(_) => tracing::info!("Created {log_kind}: {name}"),
-            Err(e) if e.downcast_ref::<kube::Error>().is_some_and(is_already_exists) => {
+            Err(e)
+                if e.downcast_ref::<kube::Error>()
+                    .is_some_and(is_already_exists) =>
+            {
                 tracing::info!("{log_kind} already exists: {name}");
             }
             Err(e) => {
@@ -659,7 +685,10 @@ async fn reconcile_dynamic_optional(
 
 /// RBAC / registry secret names for delete helpers.
 pub fn managed_rbac_names(spec: &Workload) -> (Option<String>, Option<String>, Option<String>) {
-    let sa_spec = spec.kubernetes.as_ref().and_then(|k| k.service_account.as_ref());
+    let sa_spec = spec
+        .kubernetes
+        .as_ref()
+        .and_then(|k| k.service_account.as_ref());
     let Some(sa_spec) = sa_spec else {
         return (None, None, None);
     };

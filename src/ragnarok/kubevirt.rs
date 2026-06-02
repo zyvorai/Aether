@@ -4,9 +4,9 @@
 
 //! KubeVirt confidential VM manifest extensions.
 
-use crate::spec::{ConfidentialSpec, Workload};
 use crate::ragnarok::inject::{annotate_vm_for_attest_secrets, attest_gated_secret_names};
 use crate::ragnarok::isolation::{apply_to_kubevirt_annotations, kubevirt_anti_affinity};
+use crate::spec::{ConfidentialSpec, Workload};
 use serde_json::{json, Value};
 
 /// Apply launchSecurity, firmware, TPM, and node selectors for confidential VMs.
@@ -50,12 +50,12 @@ pub fn apply_confidential_to_vm(vm_spec: &mut Value, spec: &Workload) {
             node_selector.extend(sel);
         }
         if !node_selector.is_empty() {
-            vm_spec["spec"]["template"]["spec"]["nodeSelector"] = serde_json::to_value(node_selector)
-                .unwrap_or(json!({}));
+            vm_spec["spec"]["template"]["spec"]["nodeSelector"] =
+                serde_json::to_value(node_selector).unwrap_or(json!({}));
         }
     } else if let Some(sel) = super::tee::tee_node_selector(&conf.tee) {
-        vm_spec["spec"]["template"]["spec"]["nodeSelector"] = serde_json::to_value(sel)
-            .unwrap_or(json!({}));
+        vm_spec["spec"]["template"]["spec"]["nodeSelector"] =
+            serde_json::to_value(sel).unwrap_or(json!({}));
     }
 
     if let Some(digest) = &conf.image_digest {
@@ -64,10 +64,7 @@ pub fn apply_confidential_to_vm(vm_spec: &mut Value, spec: &Workload) {
             .map(|m| m.to_owned())
             .unwrap_or_default();
         let mut ann = annotations;
-        ann.insert(
-            "ragnarok.zyvor.dev/launch-digest".into(),
-            json!(digest),
-        );
+        ann.insert("ragnarok.zyvor.dev/launch-digest".into(), json!(digest));
         vm_spec["metadata"]["annotations"] = json!(ann);
     }
 

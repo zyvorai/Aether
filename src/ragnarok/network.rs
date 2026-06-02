@@ -48,7 +48,8 @@ pub fn compute_trust_score(
         + firmware_exposure_score * 0.2_f64;
     let composite = composite.clamp(0.0_f64, 1.0_f64);
 
-    let spiffe_id = launch_digest.map(|d| format!("spiffe://ragnarok.zyvor.dev/workload/{workload}/digest/{d}"));
+    let spiffe_id = launch_digest
+        .map(|d| format!("spiffe://ragnarok.zyvor.dev/workload/{workload}/digest/{d}"));
 
     NetworkTrustScore {
         workload: workload.to_string(),
@@ -135,7 +136,8 @@ pub fn network_status(spec: &Workload) -> ConfidentialNetworkStatus {
     let mut recommendations = Vec::new();
     if auto {
         recommendations.push(
-            "Auto CiliumNetworkPolicy will be applied on deploy (east-west cluster-only ingress)".into(),
+            "Auto CiliumNetworkPolicy will be applied on deploy (east-west cluster-only ingress)"
+                .into(),
         );
     }
     if std::env::var("AETHER_PACKETWOLF_URL")
@@ -150,7 +152,8 @@ pub fn network_status(spec: &Workload) -> ConfidentialNetworkStatus {
         policy_count: policy_count(spec),
         cilium_auto_policy: auto,
         packetwolf_hints: packetwolf_policy_hints(),
-        spiffe_id: digest.map(|d| format!("spiffe://ragnarok.zyvor.dev/workload/{name}/digest/{d}")),
+        spiffe_id: digest
+            .map(|d| format!("spiffe://ragnarok.zyvor.dev/workload/{name}/digest/{d}")),
         recommendations,
     }
 }
@@ -165,10 +168,7 @@ pub fn packetwolf_policy_hints() -> HashMap<String, String> {
         "packetwolf.zyvor.dev/alert-crypto-miner".into(),
         "true".into(),
     );
-    m.insert(
-        "packetwolf.zyvor.dev/spiffe-bound".into(),
-        "true".into(),
-    );
+    m.insert("packetwolf.zyvor.dev/spiffe-bound".into(), "true".into());
     m
 }
 
@@ -180,11 +180,12 @@ pub fn confidential_pod_annotations(spec: &Workload) -> HashMap<String, String> 
     for (k, v) in packetwolf_policy_hints() {
         ann.insert(k, v);
     }
-    if let Some(d) = spec.confidential.as_ref().and_then(|c| c.image_digest.as_ref()) {
-        ann.insert(
-            "ragnarok.zyvor.dev/attestation-digest".into(),
-            d.clone(),
-        );
+    if let Some(d) = spec
+        .confidential
+        .as_ref()
+        .and_then(|c| c.image_digest.as_ref())
+    {
+        ann.insert("ragnarok.zyvor.dev/attestation-digest".into(), d.clone());
     }
     ann
 }

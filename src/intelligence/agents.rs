@@ -45,7 +45,8 @@ pub async fn build_agent_registry(state_path: &Path) -> anyhow::Result<AgentRegi
         .collect();
 
     let config = crate::config::Config::load();
-    let policy = AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
+    let policy =
+        AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let healer = build_healer_preview(&store, &policy).await;
     let cost = FinOpsEngine::optimize_fleet(&pairs);
     let threats = SecurityEngine::scan_fleet(&pairs);
@@ -65,13 +66,38 @@ pub async fn build_agent_registry(state_path: &Path) -> anyhow::Result<AgentRegi
         .count() as u32;
 
     let agents = vec![
-        entry("sre", "Zeus SRE", healer.would_execute.len() as u32, "observability"),
+        entry(
+            "sre",
+            "Zeus SRE",
+            healer.would_execute.len() as u32,
+            "observability",
+        ),
         entry("architect", "Zeus Architect", migrate_candidates, "ai"),
-        entry("devops", "Zeus DevOps", remediation.actions.len() as u32, "gitops"),
+        entry(
+            "devops",
+            "Zeus DevOps",
+            remediation.actions.len() as u32,
+            "gitops",
+        ),
         entry("kubernetes", "Zeus Kubernetes", at_risk, "clusters"),
-        entry("security", "Zeus Security", threats.threats.len() as u32, "security"),
-        entry("cost", "Zeus Cost Optimizer", cost.recommendations.len() as u32, "cost"),
-        entry("observability", "Zeus Observability", at_risk, "observability"),
+        entry(
+            "security",
+            "Zeus Security",
+            threats.threats.len() as u32,
+            "security",
+        ),
+        entry(
+            "cost",
+            "Zeus Cost Optimizer",
+            cost.recommendations.len() as u32,
+            "cost",
+        ),
+        entry(
+            "observability",
+            "Zeus Observability",
+            at_risk,
+            "observability",
+        ),
         entry("ai_engineer", "Zeus AI Engineer", 0, "confidential"),
         entry("database", "Zeus Database Expert", 0, "workloads"),
     ];

@@ -158,7 +158,11 @@ fn chargeback_rows(store: &StateStore) -> Vec<ChargebackRow> {
             }
         }
     }
-    rows.sort_by(|a, b| b.monthly_usd.partial_cmp(&a.monthly_usd).unwrap_or(std::cmp::Ordering::Equal));
+    rows.sort_by(|a, b| {
+        b.monthly_usd
+            .partial_cmp(&a.monthly_usd)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     rows.truncate(10);
     rows
 }

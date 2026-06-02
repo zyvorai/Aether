@@ -136,7 +136,12 @@ impl EnvelopeStore {
         self.persist()
     }
 
-    pub fn mark_injected(&self, vm_id: &str, secret_name: &str, k8s_secret_name: &str) -> Result<()> {
+    pub fn mark_injected(
+        &self,
+        vm_id: &str,
+        secret_name: &str,
+        k8s_secret_name: &str,
+    ) -> Result<()> {
         let now = chrono::Utc::now().to_rfc3339();
         let mut file = self.inner.lock().unwrap();
         let Some(entries) = file.vms.get_mut(vm_id) else {
@@ -192,10 +197,7 @@ mod tests {
         store
             .mark_released("vm-a", "db-pass", "tok", "2099-01-01T00:00:00Z")
             .unwrap();
-        assert_eq!(
-            store.list_for_vm("vm-a")[0].state,
-            EnvelopeState::Released
-        );
+        assert_eq!(store.list_for_vm("vm-a")[0].state, EnvelopeState::Released);
 
         store.revoke_vm("vm-a");
         assert_eq!(store.list_for_vm("vm-a")[0].state, EnvelopeState::Revoked);

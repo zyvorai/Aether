@@ -4,7 +4,9 @@
 
 use super::handlers::{err_bad_request, err_forbidden, err_internal, err_not_found, ok_json};
 use super::types::AppState;
-use crate::fleet::edge::{edge_token_ok, EdgeEnqueueRequest, EdgeHeartbeatRequest, EdgeRegisterRequest, EdgeStore};
+use crate::fleet::edge::{
+    edge_token_ok, EdgeEnqueueRequest, EdgeHeartbeatRequest, EdgeRegisterRequest, EdgeStore,
+};
 use crate::fleet::federation::{self, FederationPlanRequest};
 use crate::gitops::GitOpsConfig;
 use crate::spec::Workload;
@@ -78,7 +80,9 @@ pub(crate) async fn api_fleet_edge_agents() -> impl IntoResponse {
     ok_json(store.list_agents())
 }
 
-pub(crate) async fn api_fleet_edge_enqueue(Json(body): Json<EdgeEnqueueRequest>) -> impl IntoResponse {
+pub(crate) async fn api_fleet_edge_enqueue(
+    Json(body): Json<EdgeEnqueueRequest>,
+) -> impl IntoResponse {
     if body.site.trim().is_empty() || body.action.trim().is_empty() {
         return err_bad_request("site and action are required");
     }
