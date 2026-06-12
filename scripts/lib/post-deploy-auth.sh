@@ -117,14 +117,18 @@ post_deploy_auth_cookie_header() {
   python3 - "${AETHER_POST_DEPLOY_COOKIE_JAR:-}" <<'PY'
 import http.cookiejar
 import sys
+from pathlib import Path
 
 jar_path = sys.argv[1]
 if not jar_path:
     sys.exit(0)
+path = Path(jar_path)
+if not path.is_file() or path.stat().st_size == 0:
+    sys.exit(0)
 jar = http.cookiejar.MozillaCookieJar(jar_path)
 try:
     jar.load(ignore_discard=True, ignore_expires=True)
-except FileNotFoundError:
+except (FileNotFoundError, http.cookiejar.LoadError):
     sys.exit(0)
 header = "; ".join(f"{cookie.name}={cookie.value}" for cookie in jar)
 if header:

@@ -46,6 +46,7 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 - **macOS shell Ship** — Tauri tray/briefing sync + notarized DMG CI documented as Ship tier
 - **Kind Playwright port-forward E2E** — fixture exposes nginx :80, dashboard testids, `cluster-exec-terminal.spec.ts` exec + port-forward tests
 - **Post-deploy auth bootstrap** — `scripts/lib/post-deploy-auth.sh` (bearer, open API, or mock IdP SAML session) wired into verify/smoke scripts
+- **Remote reference deploy** — `212.8.252.194:30090` rolled out with remote Linux build; post-deploy verify 54/54 (Cilium, copilot, hosted APIs)
 
 ## Remaining / optional
 
@@ -54,9 +55,9 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 
 ## Recommended Next Order
 
-1. Live reference cluster: `make reference-cluster-live-verify` (kubeconfig + optional API at `AETHER_API`)
+1. Live reference cluster: `make reference-cluster-live-verify` (kubeconfig + optional API at `AETHER_API`) — Metal3 live deploy needs hardware MAC on lab host; k8s API verify passes on `212.8.252.194:30090`
 2. Kind fixtures for Playwright cluster exec/port-forward UI tests — **done**
-3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh` — **local mock IdP verify works** (`AETHER_API=http://127.0.0.1:5090 make post-deploy-verify` with `AETHER_MOCK_IDP=1` server or `AETHER_API_KEY`)
+3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh` — **done** (`212.8.252.194:30090`, 54/54 post-deploy checks, Cilium + 118 cluster workloads)
 
 ## Mock IdP (development / CI)
 
