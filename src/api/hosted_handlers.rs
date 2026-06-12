@@ -33,6 +33,11 @@ pub(crate) struct IssueTenantKeyBody {
     pub name: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub(crate) struct UpgradeTenantBody {
+    pub plan: String,
+}
+
 pub(crate) async fn api_hosted_tenants_list() -> impl IntoResponse {
     let store = TenantStore::load();
     ok_json(store.list())
@@ -68,6 +73,35 @@ pub(crate) async fn api_hosted_tenants_deactivate(Path(id): Path<String>) -> imp
         Ok(()) => ok_json(serde_json::json!({"id": id, "active": false})),
         Err(e) => err_not_found(e.to_string()),
     }
+}
+
+pub(crate) async fn api_hosted_tenants_upgrade(
+    Path(id): Path<String>,
+    Json(body): Json<UpgradeTenantBody>,
+) -> impl IntoResponse {
+    let plan = match body.plan.to_lowercase().as_str() {
+        "team" => TenantPlan::Team,
+        "enterprise" => TenantPlan::Enterprise,
+        _ => TenantPlan::Free,
+    };
+    let mut store = TenantStore::load();
+    match store.upgrade_plan(&id, plan) {
+        Ok(()) => match store.get(&id) {
+            Some(t) => ok_json(t),
+            None => err_not_found("tenant not found"),
+        },
+        Err(e) => err_bad_request(e),
+    }
+}
+
+pub(crate) async fn api_hosted_upgrades_status() -> impl IntoResponse {
+    ok_json(serde_json::json!({
+        "current_version": env!("CARGO_PKG_VERSION"),
+        "channel": "stable",
+        "managed_upgrades": true,
+        "upgrade_available": false,
+        "notes": "Hosted control plane receives rolling upgrades during maintenance windows.",
+    }))
 }
 
 pub(crate) async fn api_hosted_billing_usage(

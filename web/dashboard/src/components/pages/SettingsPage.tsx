@@ -7,6 +7,8 @@ import MacOSPlatformPanel from '../MacOSPlatformPanel';
 import NavPreferencesPanel from '../NavPreferencesPanel';
 import SectionHubPage from '../SectionHubPage';
 import HubPageToc from '../HubPageToc';
+import { Link } from 'react-router';
+import { viewToPath } from '../../utils/dashboardRoutes';
 import {
   Archive,
   Bot,
@@ -28,6 +30,17 @@ const TOC = [
 export default function SettingsPage() {
   return (
     <section className="hub-page-shell">
+      <div className="mb-6 glass-context-banner" data-testid="settings-hub-context">
+        Settings hub
+        {' · '}
+        <Link to={viewToPath('platform')} className="text-aether hover:underline" data-testid="settings-context-platform-link">
+          Platform →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="settings-context-hosted-link">
+          Hosted SaaS →
+        </Link>
+      </div>
       <HubPageToc items={TOC} />
       <div id="settings-nav"><NavPreferencesPanel /></div>
       <div id="settings-autonomous"><AutonomousModePanel /></div>

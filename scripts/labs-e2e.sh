@@ -28,6 +28,14 @@ run_lab() {
 
   "$AETHER" run --spec "$spec" --runtime "$runtime"
   echo "  live deploy OK"
+  if [[ "${AETHER_LABS_CLEANUP:-1}" == "1" ]]; then
+    local wl
+    wl="$(grep -E '^  name:' "$spec" | head -1 | awk '{print $2}')"
+    if [[ -n "$wl" ]]; then
+      echo "  cleaning up workload $wl"
+      "$AETHER" stop --name "$wl" --runtime "$runtime" --cascade 2>/dev/null || true
+    fi
+  fi
 }
 
 if [[ ! -x "$AETHER" ]]; then

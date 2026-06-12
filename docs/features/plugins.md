@@ -385,10 +385,17 @@ The `create_plugin_runtime()` function searches the plugin registry for a plugin
 aether compose up
 ```
 
-### Unsupported Operations
+### Log streaming
 
-- **Logs:** Returns `"Plugin log streaming not yet supported"` (plugins do not yet implement log forwarding)
-- **List without capability:** Returns an empty list instead of an error
+Plugins with the `"logs"` capability in their manifest receive `LogsRequest` IPC messages and return `LogsResponse` with log text. The CLI and dashboard call `PluginRuntime::logs()` when the capability is present.
+
+```json
+{
+  "capabilities": ["build", "run", "stop", "status", "delete", "list", "logs"]
+}
+```
+
+If `"logs"` is omitted, the runtime returns a friendly message that log streaming is not supported for that plugin.
 
 ---
 

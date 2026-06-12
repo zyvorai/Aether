@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import type { ApiResponse, AuthStatus } from '../types/api';
+import { getActiveTenantId } from './tenantContext';
 
 const BASE = '/api';
 export const DEFAULT_DASHBOARD_USERNAME = 'admin';
@@ -97,6 +98,10 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
   const token = getAuthToken();
   if (token !== null && token.trim() !== '') {
     headers.Authorization = `Bearer ${token}`;
+  }
+  const tenant = getActiveTenantId();
+  if (tenant) {
+    headers['X-Aether-Tenant'] = tenant;
   }
   return headers;
 }

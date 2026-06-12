@@ -577,7 +577,10 @@ kubectl create secret docker-registry regcred \
   --docker-password=yourpass \
   --docker-email=your@email.com
 
-# Then reference in workload (future feature)
+# Then reference in workload spec:
+# kubernetes:
+#   image_pull_secrets:
+#     - regcred
 ```
 
 ## Advanced Features

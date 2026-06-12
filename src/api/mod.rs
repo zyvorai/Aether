@@ -1671,6 +1671,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             post(api_hosted_tenants_deactivate),
         )
         .route(
+            "/api/hosted/tenants/:id/upgrade",
+            post(api_hosted_tenants_upgrade),
+        )
+        .route("/api/hosted/upgrades", get(api_hosted_upgrades_status))
+        .route(
             "/api/hosted/tenants/:id/keys",
             get(api_hosted_tenant_keys_list).post(api_hosted_tenant_keys_issue),
         )

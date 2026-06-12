@@ -761,6 +761,14 @@ export default function ClustersPage() {
           <WorkloadScopedCrossLinks workload={workloadFocus} prefix="clusters" showDrift showAudit />
           {' · '}
           <Link
+            to={pathWithQuery(viewToPath('health'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="clusters-context-health-link"
+          >
+            Health →
+          </Link>
+          {' · '}
+          <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
             className="text-aether hover:underline"
             data-testid="clusters-platform-link"

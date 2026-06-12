@@ -172,5 +172,7 @@ mod tests {
         let mut store = TenantStore::load();
         let t = store.create("Acme", "acme-corp", TenantPlan::Team).unwrap();
         assert_eq!(store.get(&t.id).unwrap().slug, "acme-corp");
+        store.upgrade_plan(&t.id, TenantPlan::Enterprise).unwrap();
+        assert_eq!(store.get(&t.id).unwrap().plan, TenantPlan::Enterprise);
     }
 }
