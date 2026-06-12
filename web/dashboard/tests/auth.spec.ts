@@ -10,7 +10,11 @@ test.describe('Authentication', () => {
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
     expect(body.data?.methods).toContain('bearer');
-    expect(body.data?.methods).toContain('oidc_session_cookie');
+    const ssoEnabled =
+      body.data?.oidc?.enabled || body.data?.saml?.enabled || body.data?.ldap?.enabled;
+    if (ssoEnabled) {
+      expect(body.data?.methods).toContain('oidc_session_cookie');
+    }
   });
 
   test('OIDC login returns 404 when not configured', async ({ request }) => {

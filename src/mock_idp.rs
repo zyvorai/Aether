@@ -18,7 +18,7 @@ use rsa::RsaPrivateKey;
 use serde_json::json;
 use sha2::{Digest, Sha256, Sha384};
 use std::collections::HashMap;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 
 const MOCK_SESSION_SECRET: &str = "mock-idp-dev-session-key-32chars";
 const MOCK_OIDC_CLIENT_ID: &str = "aether-mock-client";
@@ -418,12 +418,23 @@ pub async fn oidc_authorize(Query(params): Query<HashMap<String, String>>) -> im
     if redirect_uri.is_empty() {
         return (StatusCode::BAD_REQUEST, "redirect_uri required").into_response();
     }
+    let code = if params.get("nonce").is_some() {
+        format!("mock-{}", short_id())
+    } else {
+        MOCK_OIDC_CODE.to_string()
+    };
+    if let Some(nonce) = params.get("nonce") {
+        oidc_pending_nonces()
+            .lock()
+            .expect("mock oidc nonce lock")
+            .insert(code.clone(), nonce.clone());
+    }
     let mut url = match url::Url::parse(&redirect_uri) {
         Ok(u) => u,
         Err(_) => return (StatusCode::BAD_REQUEST, "invalid redirect_uri").into_response(),
     };
     url.query_pairs_mut()
-        .append_pair("code", MOCK_OIDC_CODE)
+        .append_pair("code", &code)
         .append_pair("state", &state);
     Redirect::temporary(url.as_str()).into_response()
 }
@@ -437,12 +448,16 @@ pub struct TokenForm {
 }
 
 pub async fn oidc_token(Form(form): Form<TokenForm>) -> impl IntoResponse {
-    if form.code != MOCK_OIDC_CODE {
+    if form.code != MOCK_OIDC_CODE && !form.code.starts_with("mock-") {
         return (StatusCode::BAD_REQUEST, "invalid code").into_response();
     }
     let issuer = std::env::var("AETHER_OIDC_ISSUER").unwrap_or_else(|_| "mock-idp".into());
     let now = chrono::Utc::now().timestamp();
-    let claims = json!({
+    let nonce = oidc_pending_nonces()
+        .lock()
+        .expect("mock oidc nonce lock")
+        .remove(&form.code);
+    let mut claims = json!({
         "iss": issuer,
         "sub": "mock-oidc-user",
         "aud": MOCK_OIDC_CLIENT_ID,
@@ -452,6 +467,9 @@ pub async fn oidc_token(Form(form): Form<TokenForm>) -> impl IntoResponse {
         "name": "Mock IdP User",
         "groups": ["operators"],
     });
+    if let Some(n) = nonce {
+        claims["nonce"] = json!(n);
+    }
     let mut header = Header::new(Algorithm::RS256);
     header.kid = Some("mock-idp-1".to_string());
     let id_token = encode(
@@ -488,6 +506,11 @@ fn short_id() -> String {
     (0..8)
         .map(|_| format!("{:x}", rng.gen_range(0..16)))
         .collect()
+}
+
+fn oidc_pending_nonces() -> &'static Mutex<HashMap<String, String>> {
+    static PENDING: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
+    PENDING.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
 fn xml_escape(s: &str) -> String {
