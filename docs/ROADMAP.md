@@ -43,6 +43,8 @@
 - **SAML enterprise dialects** — RSA-SHA384 verification, Azure AD enveloped-signature mock IdP (`AETHER_MOCK_IDP_SHA384`, `AETHER_MOCK_IDP_AZURE_AD`)
 - **Metal3 lab MAC fixture** — `examples/labs/metal3/workload.yaml` annotations + `AETHER_METAL3_BOOT_MAC` / `AETHER_METAL3_IMAGE_URL` env overrides
 - **Hosted SaaS federation API** — `GET /api/hosted/federation`, `POST /api/hosted/tenants/:id/federation/plan`
+- **Identity & SSO** — OIDC login flow, SAML SP metadata, LDAP auth, Settings Identity panels, `?token=` bootstrap, Helm auth configmap
+- **Dashboard phases 2231–2280** — Orchestrator/Edge/Intelligence hub cross-links, Settings→RBAC link, Stripe billing portal UI, deploy helpers (`deploy-reference-ingress.sh`, `deploy-reference-sso.sh`, `deploy-with-ldap.sh`), Playwright `phases-2231-2280-features.spec.ts` + `identity-sso.spec.ts`
 
 ---
 

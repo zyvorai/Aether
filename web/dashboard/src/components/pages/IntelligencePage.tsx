@@ -151,6 +151,29 @@ export default function IntelligencePage() {
 
   return (
     <div>
+      <div className="mb-6 glass-context-banner" data-testid="intelligence-hub-context">
+        Intelligence
+        {' · '}
+        <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="intelligence-context-orchestrator-link">
+          Orchestrator →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="intelligence-context-fleet-link">
+          Fleet →
+        </Link>
+        {' · '}
+        <Link
+          to={`${viewToPath('fleet')}?tab=edge`}
+          className="text-aether hover:underline"
+          data-testid="intelligence-context-edge-link"
+        >
+          Edge →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="intelligence-context-hosted-link">
+          Hosted SaaS →
+        </Link>
+      </div>
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
       {workloadFocus ? (

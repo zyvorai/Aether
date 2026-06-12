@@ -114,6 +114,34 @@ export default function HostedPage() {
     }
   }
 
+  async function handleStripeCheckout(tenant: HostedTenant) {
+    const nextPlan = tenant.plan === 'free' ? 'team' : 'enterprise';
+    const origin = window.location.origin;
+    const res = await apiPost<{ checkout_url?: string }>('/hosted/billing/stripe/checkout', {
+      tenant_id: tenant.id,
+      plan: nextPlan,
+      success_url: `${origin}/hosted?billing=success`,
+      cancel_url: `${origin}/hosted?billing=cancel`,
+    });
+    if (res.success && res.data?.checkout_url) {
+      window.location.assign(res.data.checkout_url);
+    } else {
+      toast(res.error ?? 'Stripe checkout unavailable', 'error');
+    }
+  }
+
+  async function handleStripePortal(tenant: HostedTenant) {
+    const res = await apiPost<{ portal_url?: string }>('/hosted/billing/stripe/portal', {
+      tenant_id: tenant.id,
+      return_url: `${window.location.origin}/hosted`,
+    });
+    if (res.success && res.data?.portal_url) {
+      window.location.assign(res.data.portal_url);
+    } else {
+      toast(res.error ?? 'Billing portal unavailable — complete checkout first', 'error');
+    }
+  }
+
   if (loading && tenants.length === 0 && !loadFailed) {
     return <PageLoading label="Loading hosted control plane…" />;
   }
@@ -137,6 +165,10 @@ export default function HostedPage() {
         {' · '}
         <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="hosted-context-federation-link">
           Federation →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="hosted-context-settings-link">
+          Identity & SSO →
         </Link>
       </div>
 
@@ -210,7 +242,7 @@ export default function HostedPage() {
       )}
 
       {billing && (
-        <section className="overview-section-shell mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8">
+        <section className="overview-section-shell mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8" data-testid="hosted-billing-panel">
           <div className="glass-panel-card py-3 px-4">
             <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
               <Users size={16} /> Tenants
@@ -323,6 +355,26 @@ export default function HostedPage() {
                         className="btn-primary text-xs disabled:opacity-50"
                       >
                         {upgradingId === t.id ? 'Upgrading…' : 'Upgrade plan'}
+                      </button>
+                    ) : null}
+                    {billing?.stripe_configured && t.active && t.plan !== 'enterprise' ? (
+                      <button
+                        type="button"
+                        data-testid="hosted-stripe-checkout-button"
+                        onClick={() => void handleStripeCheckout(t)}
+                        className="btn-secondary text-xs"
+                      >
+                        Stripe checkout
+                      </button>
+                    ) : null}
+                    {billing?.stripe_configured && t.active ? (
+                      <button
+                        type="button"
+                        data-testid="hosted-stripe-portal-button"
+                        onClick={() => void handleStripePortal(t)}
+                        className="btn-secondary text-xs"
+                      >
+                        Billing portal
                       </button>
                     ) : null}
                   </td>

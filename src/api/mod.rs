@@ -491,7 +491,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
 
     let tls_enabled = config.tls_cert.is_some() && config.tls_key.is_some();
     let scheme = if tls_enabled { "https" } else { "http" };
-    let base_url = format!("{}://{}:{}", scheme, config.host, config.port);
+    let base_url = std::env::var("AETHER_PUBLIC_BASE_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| format!("{}://{}:{}", scheme, config.host, config.port));
     if crate::mock_idp::enabled() {
         crate::mock_idp::apply_env_defaults(&base_url);
     }
@@ -1716,6 +1719,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route(
             "/api/hosted/billing/stripe/checkout",
             post(api_hosted_billing_stripe_checkout),
+        )
+        .route(
+            "/api/hosted/billing/stripe/portal",
+            post(api_hosted_billing_stripe_portal),
         )
         .route(
             "/api/hosted/billing/stripe/webhook",

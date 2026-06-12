@@ -239,6 +239,149 @@ EOF
     fi
   fi
 
+  if [ -n "${AETHER_SAML_IDP_SSO_URL:-}" ]; then
+    AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aether-saml
+  namespace: ${ns}
+type: Opaque
+stringData:
+  idp-sso-url: ${AETHER_SAML_IDP_SSO_URL}
+  idp-entity-id: ${AETHER_SAML_IDP_ENTITY_ID:-}
+  acs-url: ${AETHER_SAML_ACS_URL:-}
+  session-secret: ${AETHER_SESSION_SECRET:-}
+  idp-cert: ${AETHER_SAML_IDP_CERT:-}
+  role-map: ${AETHER_SAML_ROLE_MAP:-}
+  sp-entity-id: ${AETHER_SAML_SP_ENTITY_ID:-}
+EOF
+)"
+    AETHER_MANIFEST_EXTRA_ENV_YAML+="$(cat <<'EOF'
+
+        - name: AETHER_SAML_IDP_SSO_URL
+          valueFrom:
+            secretKeyRef:
+              name: aether-saml
+              key: idp-sso-url
+        - name: AETHER_SAML_IDP_ENTITY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aether-saml
+              key: idp-entity-id
+        - name: AETHER_SAML_ACS_URL
+          valueFrom:
+            secretKeyRef:
+              name: aether-saml
+              key: acs-url
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: aether-saml
+              key: session-secret
+EOF
+)"
+    if [ -n "${AETHER_SAML_IDP_CERT:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_SAML_IDP_CERT
+          valueFrom:
+            secretKeyRef:
+              name: aether-saml
+              key: idp-cert"
+    fi
+    if [ -n "${AETHER_SAML_SP_ENTITY_ID:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_SAML_SP_ENTITY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aether-saml
+              key: sp-entity-id"
+    fi
+    if [ -n "${AETHER_SAML_ROLE_MAP:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_SAML_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: aether-saml
+              key: role-map"
+    fi
+    if [ -n "${AETHER_SAML_DEFAULT_ROLE:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_SAML_DEFAULT_ROLE
+          value: \"${AETHER_SAML_DEFAULT_ROLE}\""
+    fi
+  fi
+
+  if [ "${AETHER_MOCK_IDP:-}" = "1" ]; then
+    AETHER_MANIFEST_EXTRA_ENV_YAML+="$(cat <<EOF
+
+        - name: AETHER_MOCK_IDP
+          value: \"1\"
+        - name: AETHER_SESSION_SECRET
+          value: \"${AETHER_SESSION_SECRET:-mock-idp-dev-session-key-32chars}\"
+EOF
+)"
+    if [ -n "${AETHER_PUBLIC_BASE_URL:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_PUBLIC_BASE_URL
+          value: \"${AETHER_PUBLIC_BASE_URL}\""
+    fi
+  fi
+
+  if [ -n "${AETHER_STRIPE_SECRET_KEY:-}" ]; then
+    AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aether-stripe
+  namespace: ${ns}
+type: Opaque
+stringData:
+  secret-key: ${AETHER_STRIPE_SECRET_KEY}
+  webhook-secret: ${AETHER_STRIPE_WEBHOOK_SECRET:-}
+  price-team: ${AETHER_STRIPE_PRICE_TEAM:-}
+  price-enterprise: ${AETHER_STRIPE_PRICE_ENTERPRISE:-}
+EOF
+)"
+    AETHER_MANIFEST_EXTRA_ENV_YAML+="$(cat <<'EOF'
+
+        - name: AETHER_STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aether-stripe
+              key: secret-key
+EOF
+)"
+    if [ -n "${AETHER_STRIPE_WEBHOOK_SECRET:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_STRIPE_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: aether-stripe
+              key: webhook-secret"
+    fi
+    if [ -n "${AETHER_STRIPE_PRICE_TEAM:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_STRIPE_PRICE_TEAM
+          valueFrom:
+            secretKeyRef:
+              name: aether-stripe
+              key: price-team"
+    fi
+    if [ -n "${AETHER_STRIPE_PRICE_ENTERPRISE:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_STRIPE_PRICE_ENTERPRISE
+          valueFrom:
+            secretKeyRef:
+              name: aether-stripe
+              key: price-enterprise"
+    fi
+  fi
+
   if [ -n "${AETHER_BACKUP_REMOTE_URL:-}" ]; then
     AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
 

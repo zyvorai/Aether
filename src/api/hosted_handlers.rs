@@ -8,8 +8,8 @@ use crate::hosted::billing::usage_summary;
 use crate::hosted::keys::TenantKeyStore;
 use crate::hosted::metering::UsageMeter;
 use crate::hosted::stripe::{
-    configured as stripe_configured, create_checkout_session, handle_webhook_event,
-    verify_webhook_signature, StripeCheckoutRequest,
+    configured as stripe_configured, create_checkout_session, create_portal_session,
+    handle_webhook_event, verify_webhook_signature, StripeCheckoutRequest, StripePortalRequest,
 };
 use crate::hosted::tenant::{TenantPlan, TenantStore};
 use crate::fleet::federation::{self, FederationPlanRequest};
@@ -167,6 +167,18 @@ pub(crate) async fn api_hosted_billing_stripe_checkout(
         return err_bad_request("Stripe is not configured (set AETHER_STRIPE_SECRET_KEY)");
     }
     match create_checkout_session(&body).await {
+        Ok(resp) => ok_json(resp),
+        Err(e) => err_bad_request(e),
+    }
+}
+
+pub(crate) async fn api_hosted_billing_stripe_portal(
+    Json(body): Json<StripePortalRequest>,
+) -> impl IntoResponse {
+    if !stripe_configured() {
+        return err_bad_request("Stripe is not configured (set AETHER_STRIPE_SECRET_KEY)");
+    }
+    match create_portal_session(&body).await {
         Ok(resp) => ok_json(resp),
         Err(e) => err_bad_request(e),
     }

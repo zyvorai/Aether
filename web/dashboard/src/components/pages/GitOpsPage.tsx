@@ -229,6 +229,25 @@ export default function GitOpsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="mb-2 glass-context-banner" data-testid="gitops-hub-context">
+        GitOps
+        {' · '}
+        <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="gitops-hub-orchestrator-link">
+          Orchestrator →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('intelligence')} className="text-aether hover:underline" data-testid="gitops-hub-intelligence-link">
+          Intelligence →
+        </Link>
+        {' · '}
+        <Link to={`${viewToPath('fleet')}?tab=edge`} className="text-aether hover:underline" data-testid="gitops-hub-edge-link">
+          Edge →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="gitops-hub-hosted-link">
+          Hosted SaaS →
+        </Link>
+      </div>
       <PageToolbar
         onRefresh={() => void load()}
         refreshing={loading || syncing}

@@ -21,6 +21,7 @@ pub struct BillingSummary {
     pub period: String,
     pub tenants: Vec<TenantUsageLine>,
     pub total_workloads: usize,
+    pub stripe_configured: bool,
 }
 
 pub fn usage_summary(store: &StateStore, tenants: &TenantStore) -> BillingSummary {
@@ -48,6 +49,7 @@ pub fn usage_summary(store: &StateStore, tenants: &TenantStore) -> BillingSummar
         total_workloads: global_workloads,
         period,
         tenants: lines,
+        stripe_configured: crate::hosted::stripe::configured(),
     }
 }
 

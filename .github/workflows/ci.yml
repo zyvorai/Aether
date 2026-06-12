@@ -261,6 +261,30 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           npm run test:e2e -- tests/phases-2181-2230-features.spec.ts
           kill $SERVER_PID || true
+      - name: Run Playwright identity SSO (mock IdP)
+        working-directory: web/dashboard
+        env:
+          AETHER_E2E_SKIP_SERVER: "1"
+          AETHER_E2E_BASE_URL: http://127.0.0.1:5090
+          AETHER_MOCK_IDP: "1"
+        run: |
+          AETHER_MOCK_IDP=1 AETHER_SESSION_SECRET=mock-idp-dev-session-key-32chars \
+            ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          SERVER_PID=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
+          npm run test:e2e -- tests/identity-sso.spec.ts
+          kill $SERVER_PID || true
+      - name: Run Playwright phases 2231–2280
+        working-directory: web/dashboard
+        env:
+          AETHER_E2E_SKIP_SERVER: "1"
+          AETHER_E2E_BASE_URL: http://127.0.0.1:5090
+        run: |
+          ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          SERVER_PID=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
+          npm run test:e2e -- tests/phases-2231-2280-features.spec.ts
+          kill $SERVER_PID || true
 
   dashboard-exec-e2e:
     name: Dashboard exec E2E (kind)

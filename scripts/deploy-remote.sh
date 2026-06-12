@@ -107,6 +107,21 @@ AETHER_IMAGE="${AETHER_IMAGE:-${AETHER_REGISTRY}:latest}"
 NODE_PORT="${AETHER_NODE_PORT:-30090}"
 AETHER_EXPOSE="${AETHER_EXPOSE:-nodeport}"
 AETHER_INGRESS_HOST="${AETHER_INGRESS_HOST:-}"
+if [ "${AETHER_MOCK_IDP:-}" = "1" ] || [ "${AETHER_REFERENCE_MOCK_IDP:-}" = "1" ]; then
+  export AETHER_MOCK_IDP=1
+  export AETHER_SESSION_SECRET="${AETHER_SESSION_SECRET:-mock-idp-dev-session-key-32chars}"
+  if [ -z "${AETHER_PUBLIC_BASE_URL:-}" ]; then
+    if [ -n "${AETHER_INGRESS_HOST:-}" ] && { [ "${AETHER_EXPOSE}" = "ingress" ] || [ "${AETHER_EXPOSE}" = "both" ]; }; then
+      if [ -n "${AETHER_INGRESS_TLS_SECRET:-}" ] || [ "${AETHER_INGRESS_TLS_ACME:-}" = "1" ]; then
+        export AETHER_PUBLIC_BASE_URL="https://${AETHER_INGRESS_HOST}"
+      else
+        export AETHER_PUBLIC_BASE_URL="http://${AETHER_INGRESS_HOST}"
+      fi
+    else
+      export AETHER_PUBLIC_BASE_URL="http://${HOST}:${NODE_PORT}"
+    fi
+  fi
+fi
 IMAGE_PULL_POLICY="$(aether_deploy_image_pull_policy "${AETHER_IMAGE}")"
 DEPLOY_REPLICAS="${AETHER_DEPLOY_REPLICAS:-1}"
 DEPLOY_PDB="${AETHER_DEPLOY_PDB:-1}"
