@@ -1,13 +1,15 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
-// Proprietary software — see LICENSE in the repository root.
-// https://zyvor.dev · info@zyvor.dev
 
+import { Link } from 'react-router';
 import MigrationPlannerPanel from '../MigrationPlannerPanel';
 import AutonomousPlacementPanel from '../AutonomousPlacementPanel';
 import VolumeReplicationPanel from '../VolumeReplicationPanel';
 import MigrationWavePanel from '../MigrationWavePanel';
 import SectionHubPage from '../SectionHubPage';
 import HubPageToc from '../HubPageToc';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { Brain, GitCompare, Sparkles } from 'lucide-react';
 
 const TOC = [
@@ -19,8 +21,39 @@ const TOC = [
 ];
 
 export default function MigrationsPage() {
+  const [workload] = useQueryParam('workload');
+
   return (
     <section className="hub-page-shell">
+      {workload.trim() ? (
+        <WorkloadContextBanner testId="migrations-workload-context" workload={workload} description="Migration context">
+          <WorkloadScopedCrossLinks workload={workload} prefix="mig" showGitops showMetrics />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fabric'), { workload: workload.trim() })}
+            className="text-aether hover:underline"
+            data-testid="mig-context-fabric-link"
+          >
+            Fabric →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: workload.trim() })}
+            className="text-aether hover:underline"
+            data-testid="mig-context-fleet-link"
+          >
+            Fleet →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('drift'), { workload: workload.trim() })}
+            className="text-aether hover:underline"
+            data-testid="mig-context-drift-link"
+          >
+            Drift →
+          </Link>
+        </WorkloadContextBanner>
+      ) : null}
       <HubPageToc items={TOC} />
       <div id="mig-planner"><MigrationPlannerPanel /></div>
       <div id="mig-placement"><AutonomousPlacementPanel /></div>

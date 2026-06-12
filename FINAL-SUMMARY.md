@@ -715,8 +715,8 @@ Total             27     4951    4700        150
 Deploy the same workload to:
 - 🐳 Podman containers
 - ☸️ Kubernetes pods
-- 🖥️ KubeVirt VMs (coming soon)
-- 🖧 Metal3 bare metal (coming soon)
+- 🖥️ KubeVirt VMs
+- 🖧 Metal3 bare metal
 
 ### What Works Today
 

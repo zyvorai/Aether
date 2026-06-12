@@ -117,9 +117,21 @@ fn mock_idp_encrypted_gcm() -> bool {
         .unwrap_or(false)
 }
 
+fn mock_idp_exclusive_comments() -> bool {
+    std::env::var("AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS")
+        .ok()
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 pub fn sign_saml_element_for_test(element_xml: &str, element_id: &str) -> String {
-    sign_saml_element(element_xml, element_id)
+    sign_saml_element_with_mode(element_xml, element_id, false)
+}
+
+#[cfg(test)]
+pub fn sign_saml_element_for_test_with_comments(element_xml: &str, element_id: &str) -> String {
+    sign_saml_element_with_mode(element_xml, element_id, true)
 }
 
 pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
@@ -131,6 +143,7 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
     let issuer = std::env::var("AETHER_SAML_IDP_ENTITY_ID").unwrap_or_else(|_| "mock-idp".into());
     let assertion = format!(
         r#"<saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{assertion_id}" Version="2.0" IssueInstant="{instant}">
+  <!-- mock-idp assertion -->
   <saml2:Issuer>{issuer}</saml2:Issuer>
   <saml2:Subject>
     <saml2:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">mock-user@aether.local</saml2:NameID>
@@ -143,6 +156,11 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
 </saml2:Assertion>"#,
         issuer = xml_escape(&issuer),
     );
+    let assertion = if mock_idp_exclusive_comments() {
+        assertion
+    } else {
+        assertion.replace("  <!-- mock-idp assertion -->\n", "")
+    };
     let body = if mock_idp_encrypted() || mock_idp_encrypted_gcm() {
         std::env::set_var("AETHER_SAML_SP_KEY", MOCK_KEY_PEM);
         if mock_idp_encrypted_gcm() {
@@ -188,19 +206,44 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
 }
 
 fn sign_saml_element(element_xml: &str, element_id: &str) -> String {
-    let digest =
-        base64::engine::general_purpose::STANDARD.encode(Sha256::digest(element_xml.as_bytes()));
+    sign_saml_element_with_mode(element_xml, element_id, mock_idp_exclusive_comments())
+}
+
+fn sign_saml_element_with_mode(element_xml: &str, element_id: &str, exclusive_comments: bool) -> String {
+    let c14n = if exclusive_comments {
+        crate::saml_c14n::EXC_C14N_COMMENTS
+    } else {
+        crate::saml_c14n::EXC_C14N
+    };
     let reference_uri = format!("#{element_id}");
+    let transform_xml = if exclusive_comments {
+        format!(r#"<ds:Transforms><ds:Transform Algorithm="{c14n}" /></ds:Transforms>"#)
+    } else {
+        String::new()
+    };
+    let digest = {
+        let digest_bytes = if exclusive_comments {
+            crate::saml_c14n::digest_canonical_bytes(element_xml, &[c14n.to_string()])
+                .unwrap_or_else(|_| element_xml.as_bytes().to_vec())
+        } else {
+            element_xml.as_bytes().to_vec()
+        };
+        base64::engine::general_purpose::STANDARD.encode(Sha256::digest(&digest_bytes))
+    };
     let signed_info = [
-        r#"<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI=""#,
+        r#"<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm=""#,
+        c14n,
+        r#" /><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI=""#,
         reference_uri.as_str(),
-        r#""><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>"#,
+        r#"">"#,
+        transform_xml.as_str(),
+        r#"<ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>"#,
         digest.as_str(),
         r#"</ds:DigestValue></ds:Reference></ds:SignedInfo>"#,
     ]
     .concat();
     let signed_info_bytes =
-        crate::saml_c14n::canonicalize(&signed_info, crate::saml_c14n::EXC_C14N)
+        crate::saml_c14n::canonicalize(&signed_info, c14n)
             .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
     let signing_key = SigningKey::<Sha256>::new(keys().private_key.clone());
     let signature = signing_key.sign(&signed_info_bytes);
@@ -325,4 +368,20 @@ fn html_escape(s: &str) -> String {
         .replace('"', "&quot;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+}
+
+#[cfg(test)]
+mod signing_tests {
+    use super::*;
+
+    #[test]
+    fn exclusive_comments_algorithm_extracts_cleanly() {
+        let assertion = r#"<saml2:Assertion ID="_a" Version="2.0"><!-- c --></saml2:Assertion>"#;
+        let sig = sign_saml_element_with_mode(assertion, "_a", true);
+        assert!(
+            sig.contains(r#"Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#WithComments" />"#)
+                || sig.contains(r#"Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#WithComments"/>"#),
+            "{sig}"
+        );
+    }
 }

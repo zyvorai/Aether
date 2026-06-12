@@ -18,5 +18,10 @@ export async function ensureAuthenticated(page: Page) {
     await continueBtn.click();
   }
 
+  const samlBtn = page.getByRole('button', { name: /sign in with saml/i });
+  if (await samlBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await samlBtn.click();
+  }
+
   await expect(helpMenu).toBeVisible({ timeout: 20_000 });
 }

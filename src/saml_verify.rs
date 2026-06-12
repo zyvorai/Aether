@@ -168,6 +168,7 @@ mod tests {
 
     #[test]
     fn test_mock_idp_signature_roundtrip() {
+        std::env::remove_var("AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS");
         let assertion_id = "_mock_assert_test";
         let assertion = format!(
             r#"<saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{assertion_id}" Version="2.0"><saml2:Subject><saml2:NameID>mock-user@aether.local</saml2:NameID></saml2:Subject></saml2:Assertion>"#
@@ -176,5 +177,17 @@ mod tests {
         let xml = format!("<Response>{signature}{assertion}</Response>");
         verify_response_signature(&xml, mock_idp::idp_certificate_pem())
             .expect("signature roundtrip");
+    }
+
+    #[test]
+    fn test_mock_idp_exclusive_comments_signature_roundtrip() {
+        let assertion_id = "_mock_assert_comments";
+        let assertion = format!(
+            r#"<saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{assertion_id}" Version="2.0"><!-- idp --><saml2:Subject><saml2:NameID>mock-user@aether.local</saml2:NameID></saml2:Subject></saml2:Assertion>"#
+        );
+        let signature = mock_idp::sign_saml_element_for_test_with_comments(&assertion, assertion_id);
+        let xml = format!("<Response>{signature}{assertion}</Response>");
+        verify_response_signature(&xml, mock_idp::idp_certificate_pem())
+            .expect("exclusive comments signature roundtrip");
     }
 }

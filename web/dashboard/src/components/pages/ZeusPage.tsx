@@ -180,6 +180,14 @@ export default function ZeusPage() {
             </Link>
             {' · '}
             <Link
+              to={pathWithQuery(viewToPath('fabric'), { workload: workloadFocus })}
+              className="text-aether hover:underline"
+              data-testid="zeus-context-fabric-link"
+            >
+              Fabric →
+            </Link>
+            {' · '}
+            <Link
               to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
               className="text-aether hover:underline"
               data-testid="zeus-editor-link"

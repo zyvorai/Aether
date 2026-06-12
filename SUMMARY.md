@@ -5,8 +5,8 @@
 **Aether** is a universal runtime control plane that deploys the same workload to:
 - 🐳 **Podman** (containers)
 - ☸️ **Kubernetes** (pods)
-- 🖥️ **KubeVirt** (VMs) - coming soon
-- 🖧 **Metal3** (bare metal) - coming soon
+- 🖥️ **KubeVirt** (VMs)
+- 🖧 **Metal3** (bare metal)
 
 **One spec. Multiple runtimes. One tool.**
 

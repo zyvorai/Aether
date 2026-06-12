@@ -3,14 +3,15 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Shield, AlertTriangle, Lock, KeyRound, FileCheck } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery } from '../../utils/urlState';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import SecurityCopilotPanel from '../SecurityCopilotPanel';
@@ -19,6 +20,7 @@ import type { SecretSummary, ThreatReport, SbomMetadata, SignedImageManifest, Re
 
 export default function SecurityCenterPage() {
   const navigate = useNavigate();
+  const [workloadFocus] = useQueryParam('workload');
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [threats, setThreats] = useState<ThreatReport | null>(null);
@@ -98,6 +100,35 @@ export default function SecurityCenterPage() {
 
   return (
     <div data-testid="security-center-page">
+      {workloadFocus.trim() ? (
+        <WorkloadContextBanner testId="security-workload-context" workload={workloadFocus} description="Security context">
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="security" showAudit showDrift />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus.trim() })}
+            className="text-aether hover:underline"
+            data-testid="security-context-rbac-link"
+          >
+            RBAC →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('audit'), { workload: workloadFocus.trim() })}
+            className="text-aether hover:underline"
+            data-testid="security-context-audit-link"
+          >
+            Audit →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('confidential'), { workload: workloadFocus.trim() })}
+            className="text-aether hover:underline"
+            data-testid="security-context-confidential-link"
+          >
+            Confidential →
+          </Link>
+        </WorkloadContextBanner>
+      ) : null}
       <PageToolbar
         onRefresh={() => void load()}
         refreshing={loading}

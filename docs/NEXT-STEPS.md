@@ -37,16 +37,22 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 - **Phase C (Hosted SaaS)** — `GET/POST /api/hosted/tenants`, `GET /api/hosted/billing/usage`, tenant store at `~/.aether/tenants.json`
 - **Phase D (Billing + remediation + volume execute)** — tenant API keys (`/api/hosted/tenants/:id/keys`), request metering (`/api/hosted/billing/metering`), Stripe checkout/webhook, `POST /api/migration/volume/execute`, `GET/POST /api/intelligence/remediation/*`, Hosted dashboard page
 - **Edge agent offline replay** — `edge_executor` dispatches gitops/stop/start/restart/delete/drift/cluster actions with local offline queue at `~/.aether/edge-{site}-offline.json`
-- **New env vars**: `AETHER_PACKETWOLF_URL`, `AETHER_PACKETWOLF_API_KEY`, `AETHER_EDGE_TOKEN`, `AETHER_FEDERATION_CLUSTERS`, `AETHER_FEDERATION_WEIGHTS`, `AETHER_SAML_SP_KEY`, `AETHER_MOCK_IDP_ENCRYPTED`, `AETHER_E2E_KIND`, `AETHER_STRIPE_SECRET_KEY`, `AETHER_STRIPE_WEBHOOK_SECRET`, `AETHER_STRIPE_PRICE_TEAM`, `AETHER_STRIPE_PRICE_ENTERPRISE`
+- **New env vars**: `AETHER_PACKETWOLF_URL`, `AETHER_PACKETWOLF_API_KEY`, `AETHER_EDGE_TOKEN`, `AETHER_FEDERATION_CLUSTERS`, `AETHER_FEDERATION_WEIGHTS`, `AETHER_SAML_SP_KEY`, `AETHER_MOCK_IDP_ENCRYPTED`, `AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS`, `AETHER_LABS_CLEANUP`, `AETHER_E2E_KIND`, `AETHER_STRIPE_SECRET_KEY`, `AETHER_STRIPE_WEBHOOK_SECRET`, `AETHER_STRIPE_PRICE_TEAM`, `AETHER_STRIPE_PRICE_ENTERPRISE`
 - **New CLI**: `aether sbom export|verify`, `aether edge-agent --control-plane URL --site NAME`
+- **Dashboard phases 2131–2180** — hub page workload context (Fabric, Migrations, Labs, Security, Settings), Hosted tenant switcher + upgrade API, metrics scoped footer, Playwright `phases-2131-2180-features.spec.ts`
+- **Reference cluster live verify** — `make reference-cluster-live-verify`, `scripts/reference-cluster-live-verify.sh`, labs live cleanup via `AETHER_LABS_CLEANUP=1`
+- **Hosted SaaS depth** — `POST /api/hosted/tenants/:id/upgrade`, `GET /api/hosted/upgrades`, navbar tenant switcher (`X-Aether-Tenant`), managed upgrades panel
+- **SAML exc-c14n WithComments** — `AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS=1` mock IdP dialect + unit tests
+- **macOS shell Ship** — Tauri tray/briefing sync + notarized DMG CI documented as Ship tier
 
 ## Remaining / optional
 
-- **SAML** — additional IdP dialects beyond exc/inclusive C14N and AES-256-GCM (e.g. exclusive with comments only)
+- **SAML** — additional enterprise IdP dialects (Azure AD custom transforms, SHA-384 signatures)
+- **Hosted SaaS** — full managed multi-tenant federation UI (foundation shipped)
 
 ## Recommended Next Order
 
-1. Dedicated reference-cluster runner with `AETHER_LABS_LIVE=1` for Metal3/KubeVirt apply smoke — `make reference-cluster-live` / `scripts/labs-live-smoke.sh`
+1. Live reference cluster: `make reference-cluster-live-verify` (kubeconfig + optional API at `AETHER_API`)
 2. Kind fixtures for Playwright cluster exec/port-forward UI tests.
 3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh`.
 
@@ -60,6 +66,10 @@ AETHER_MOCK_IDP=1 AETHER_SESSION_SECRET=mock-idp-dev-session-key-32chars \
 ```
 
 Playwright: `npm run test:e2e -- tests/mock-idp-auth.spec.ts` with `AETHER_MOCK_IDP=1` on the server.
+
+Exclusive C14N with comments: `AETHER_MOCK_IDP=1 AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS=1`.
+
+Hub cross-links E2E: `npm run test:e2e -- tests/phases-2131-2180-features.spec.ts` (requires mock IdP or open API).
 
 SAML signature verification: set `AETHER_SAML_IDP_CERT` to the IdP PEM (auto-set by mock IdP).
 

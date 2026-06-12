@@ -38,13 +38,11 @@ Contact: customer bundle `START_HERE.txt` workflow.
 
 ## Hosted control plane
 
-| Status | **Roadmap** |
-|--------|-------------|
-| Multi-tenant SaaS | Not shipped |
-| Managed upgrades | Planned |
-| Fleet federation UI | Planned |
-
-Do not represent Hosted as available in sales materials until [ROADMAP.md](ROADMAP.md) marks it Ship.
+| Status | **Ship (foundation)** |
+|--------|------------------------|
+| Multi-tenant SaaS | Tenant registry, switcher, upgrade API, billing/metering |
+| Managed upgrades | `/api/hosted/upgrades` + dashboard panel |
+| Fleet federation UI | Planned for full managed SaaS |
 
 ---
 
