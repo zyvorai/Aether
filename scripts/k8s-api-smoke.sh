@@ -3,9 +3,19 @@
 set -euo pipefail
 
 API="${AETHER_API:-${AETHER_API_BASE:-http://127.0.0.1:5090}}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# shellcheck source=lib/post-deploy-auth.sh
+source "${ROOT}/scripts/lib/post-deploy-auth.sh"
+post_deploy_auth_prepare "${API}" || {
+  echo "ERROR: post-deploy auth bootstrap failed (set AETHER_API_KEY or AETHER_MOCK_IDP=1 on server)" >&2
+  exit 1
+}
+
+CURL_AUTH=( "${AUTH[@]}" "${COOKIE_ARGS[@]}" )
 
 echo "==> GET /api/observability/summary"
-code=$(curl -sS -o /tmp/aether-obs-summary.json -w '%{http_code}' "${API}/api/observability/summary")
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-obs-summary.json -w '%{http_code}' "${API}/api/observability/summary")
 [ "${code}" = "200" ] || { echo "FAIL: observability/summary HTTP ${code}" >&2; exit 1; }
 python3 - <<'PY'
 import json
@@ -18,7 +28,7 @@ print("  ok: observability summary fields present")
 PY
 
 echo "==> GET /api/cluster/cilium/status"
-code=$(curl -sS -o /tmp/aether-cilium-status.json -w '%{http_code}' "${API}/api/cluster/cilium/status")
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-cilium-status.json -w '%{http_code}' "${API}/api/cluster/cilium/status")
 if [ "${code}" = "200" ]; then
   python3 - <<'PY'
 import json
@@ -37,7 +47,7 @@ else
 fi
 
 echo "==> GET /api/cluster/cilium/hubble"
-code=$(curl -sS -o /tmp/aether-hubble.json -w '%{http_code}' "${API}/api/cluster/cilium/hubble")
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-hubble.json -w '%{http_code}' "${API}/api/cluster/cilium/hubble")
 if [ "${code}" = "200" ]; then
   python3 - <<'PY'
 import json
@@ -55,7 +65,7 @@ else
 fi
 
 echo "==> GET /api/helm/catalog"
-code=$(curl -sS -o /tmp/aether-helm-catalog.json -w '%{http_code}' "${API}/api/helm/catalog")
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-helm-catalog.json -w '%{http_code}' "${API}/api/helm/catalog")
 [ "${code}" = "200" ] || { echo "FAIL: helm/catalog HTTP ${code}" >&2; exit 1; }
 python3 - <<'PY'
 import json
@@ -68,7 +78,7 @@ print(f"  ok: helm catalog has {len(charts)} charts")
 PY
 
 echo "==> POST /api/copilot/troubleshoot"
-curl -sS -o /tmp/aether-workloads-smoke.json "${API}/api/workloads" || true
+curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-workloads-smoke.json "${API}/api/workloads" || true
 TROUBLESHOOT_PAYLOAD="$(python3 - <<'PY'
 import json, os
 
@@ -93,7 +103,7 @@ else:
 print(json.dumps(payload))
 PY
 )"
-code=$(curl -sS -o /tmp/aether-troubleshoot.json -w '%{http_code}' \
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-troubleshoot.json -w '%{http_code}' \
   -H 'Content-Type: application/json' \
   -d "${TROUBLESHOOT_PAYLOAD}" \
   "${API}/api/copilot/troubleshoot")
@@ -116,7 +126,7 @@ fi
 
 echo "==> observability API smoke passed"
 
-code=$(curl -sS -o /tmp/aether-pw-status.json -w '%{http_code}' "${API}/api/ecosystem/packetwolf/status")
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-pw-status.json -w '%{http_code}' "${API}/api/ecosystem/packetwolf/status")
 if [ "${code}" = "200" ]; then
   python3 - <<'PY'
 import json
@@ -131,7 +141,7 @@ else
   exit 1
 fi
 
-code=$(curl -sS -o /tmp/aether-sbom.json -w '%{http_code}' "${API}/api/security/sbom")
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-sbom.json -w '%{http_code}' "${API}/api/security/sbom")
 if [ "${code}" = "200" ]; then
   echo "  ok: security/sbom"
 else
@@ -139,7 +149,7 @@ else
   exit 1
 fi
 
-code=$(curl -sS -o /tmp/aether-fleet-edge.json -w '%{http_code}' "${API}/api/fleet/edge/agents")
+code=$(curl -sS "${CURL_AUTH[@]}" -o /tmp/aether-fleet-edge.json -w '%{http_code}' "${API}/api/fleet/edge/agents")
 if [ "${code}" = "200" ]; then
   echo "  ok: fleet/edge/agents"
 else

@@ -5,31 +5,46 @@
 : "${AETHER_API:=${AETHER_API_BASE:-http://127.0.0.1:5090}}"
 : "${AETHER_API_KEY:=}"
 
-_aether_auth_args() {
-  if [ -n "${AETHER_API_KEY}" ]; then
-    printf '%s' "-H" "Authorization: Bearer ${AETHER_API_KEY}"
+_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=post-deploy-auth.sh
+source "${_LIB_DIR}/post-deploy-auth.sh"
+
+_aether_confidential_auth_init() {
+  if [ -n "${_AETHER_CONFIDENTIAL_AUTH_READY:-}" ]; then
+    return 0
   fi
+  post_deploy_auth_prepare "${AETHER_API}" || return 1
+  _AETHER_CONFIDENTIAL_AUTH_READY=1
+}
+
+_aether_confidential_auth_init() {
+  if [ -n "${_AETHER_CONFIDENTIAL_AUTH_READY:-}" ]; then
+    return 0
+  fi
+  post_deploy_auth_prepare "${AETHER_API}" || return 1
+  _AETHER_CURL_EXTRA=( "${AUTH[@]}" "${COOKIE_ARGS[@]}" )
+  _AETHER_CONFIDENTIAL_AUTH_READY=1
 }
 
 _aether_curl() {
-  # shellcheck disable=SC2046
-  curl -sS -m "${AETHER_CURL_TIMEOUT:-30}" $(_aether_auth_args) "$@"
+  _aether_confidential_auth_init || return 1
+  curl -sS -m "${AETHER_CURL_TIMEOUT:-30}" "${_AETHER_CURL_EXTRA[@]}" "$@"
 }
 
 aether_http_code() {
   local path="$1"
   local method="${2:-GET}"
-  # shellcheck disable=SC2046
+  _aether_confidential_auth_init || return 1
   curl -sS -m "${AETHER_CURL_TIMEOUT:-30}" -o /dev/null -w '%{http_code}' \
-    $(_aether_auth_args) -X "${method}" "${AETHER_API}${path}"
+    "${_AETHER_CURL_EXTRA[@]}" -X "${method}" "${AETHER_API}${path}"
 }
 
 aether_fetch_json() {
   local path="$1"
   local out="$2"
   local code
-  # shellcheck disable=SC2046
-  code=$(curl -sS -m "${AETHER_CURL_TIMEOUT:-30}" $(_aether_auth_args) \
+  _aether_confidential_auth_init || return 1
+  code=$(curl -sS -m "${AETHER_CURL_TIMEOUT:-30}" "${_AETHER_CURL_EXTRA[@]}" \
     -o "${out}" -w '%{http_code}' "${AETHER_API}${path}")
   printf '%s' "${code}"
 }
