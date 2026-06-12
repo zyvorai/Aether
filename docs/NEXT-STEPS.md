@@ -44,6 +44,7 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 - **Hosted SaaS depth** — `POST /api/hosted/tenants/:id/upgrade`, `GET /api/hosted/upgrades`, navbar tenant switcher (`X-Aether-Tenant`), managed upgrades panel
 - **SAML exc-c14n WithComments** — `AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS=1` mock IdP dialect + unit tests
 - **macOS shell Ship** — Tauri tray/briefing sync + notarized DMG CI documented as Ship tier
+- **Kind Playwright port-forward E2E** — fixture exposes nginx :80, dashboard testids, `cluster-exec-terminal.spec.ts` exec + port-forward tests
 
 ## Remaining / optional
 
@@ -53,7 +54,7 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 ## Recommended Next Order
 
 1. Live reference cluster: `make reference-cluster-live-verify` (kubeconfig + optional API at `AETHER_API`)
-2. Kind fixtures for Playwright cluster exec/port-forward UI tests.
+2. Kind fixtures for Playwright cluster exec/port-forward UI tests — **done** (`kind-playwright-fixture.sh`, `cluster-exec-terminal.spec.ts`, CI `dashboard-exec-e2e`).
 3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh`.
 
 ## Mock IdP (development / CI)
