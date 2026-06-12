@@ -469,6 +469,24 @@ export default function MetricsPage() {
         </div>
         <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>
       </div>
+
+      {search.trim() ? (
+        <footer
+          className="mt-6 flex flex-wrap gap-3 text-xs text-slate-500"
+          data-testid="metrics-scoped-footer"
+        >
+          <span>Scoped links for {search.trim()}:</span>
+          <Link to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })} className="text-aether hover:underline">
+            Cost
+          </Link>
+          <Link to={pathWithQuery(viewToPath('health'), { workload: search.trim() })} className="text-aether hover:underline">
+            Health
+          </Link>
+          <Link to={pathWithQuery(viewToPath('fleet'), { workload: search.trim() })} className="text-aether hover:underline">
+            Fleet
+          </Link>
+        </footer>
+      ) : null}
     </div>
   );
 }

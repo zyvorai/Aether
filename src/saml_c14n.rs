@@ -234,6 +234,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn keeps_comments_for_exc_c14n_with_comments() {
+        let xml = "<a><!--note--><b/></a>";
+        let out = String::from_utf8(canonicalize(xml, EXC_C14N_COMMENTS).unwrap()).unwrap();
+        assert!(out.contains("note"));
+    }
+
+    #[test]
     fn strips_comments_for_exc_c14n() {
         let xml = "<a><!--c--> <b x=\"2\" y=\"1\"/></a>";
         let out = String::from_utf8(canonicalize(xml, EXC_C14N).unwrap()).unwrap();

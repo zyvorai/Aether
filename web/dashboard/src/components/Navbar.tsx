@@ -64,6 +64,7 @@ import { getViewMeta } from '../utils/dashboardNav';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
 import { isMacOSShell } from '../utils/macosBridge';
 import PlatformHealthChip from './PlatformHealthChip';
+import TenantSwitcher from './TenantSwitcher';
 
 function maskBearer(token: string | null): string {
   if (token === null || token.trim() === '') return 'Not set';
@@ -781,6 +782,7 @@ export default function Navbar({
             >
               <RefreshCw className={`h-4 w-4${spinning ? ' animate-spin' : ''}`} />
             </button>
+            <TenantSwitcher />
             <AccountMenu
               theme={theme}
               username={username}

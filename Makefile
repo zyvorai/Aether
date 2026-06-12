@@ -1,5 +1,5 @@
 .PHONY: help build test lint clean install release docker run-dev \
-	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live
+	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live reference-cluster-live-verify
 
 help:
 	@echo "Aether - Universal Runtime Control Plane"
@@ -18,7 +18,8 @@ help:
 	@echo "  confidential-fabric-e2e    - API smoke (AETHER_API, server running)"
 	@echo "  confidential-cluster-e2e   - CLI placement/migrate checks (no live deploy)"
 	@echo "  reference-cluster-e2e    - Metal3/KubeVirt + confidential kata validate (dry-run by default)"
-	@echo "  reference-cluster-live - Live Metal3/KubeVirt smoke (requires kubeconfig)"
+	@echo "  reference-cluster-live     - Live Metal3/KubeVirt smoke (requires kubeconfig)"
+	@echo "  reference-cluster-live-verify - Live smoke + post-deploy API verify"
 
 build:
 	@echo "Building debug binary..."
@@ -93,6 +94,10 @@ reference-cluster-e2e: release
 reference-cluster-live: release
 	@chmod +x scripts/labs-live-smoke.sh scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh 2>/dev/null || true
 	@AETHER_LABS_LIVE=1 ./scripts/labs-live-smoke.sh
+
+reference-cluster-live-verify: release
+	@chmod +x scripts/reference-cluster-live-verify.sh scripts/labs-live-smoke.sh scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh scripts/post-deploy-verify.sh 2>/dev/null || true
+	@AETHER_LABS_LIVE=1 ./scripts/reference-cluster-live-verify.sh
 
 # Development workflow
 watch:

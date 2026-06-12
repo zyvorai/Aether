@@ -38,6 +38,7 @@
 - **Live volume replication executor (CSI/snapshot)** — shipped in Phase D
 - **Anomaly auto-remediation workflows** — shipped in Phase D
 - **Edge agent offline queue replay** — full action dispatch + local retry queue
+- **Dashboard phases 2131–2180** — hub cross-links, tenant switcher, hosted upgrades, reference-cluster-live-verify
 
 ---
 
@@ -80,7 +81,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Root Cause fleet view (batch troubleshoot) | `/observability` | Ship |
 | AI Studio hub (Intent + Advisor + Designer) | `/ai` | Ship |
 | Live Activity cards (migration SSE) | `LiveActivityDock` | Ship |
-| Tauri macOS shell (tray + ⌘K palette) | `apps/aether-macos/` | Lab |
+| Tauri macOS shell (tray + ⌘K palette) | `apps/aether-macos/` | Ship |
 
 ### v2 deliverables
 

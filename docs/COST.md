@@ -240,7 +240,7 @@ For integration with other tools, parse the output as JSON:
 aether -s workload.yaml cost --format json > cost.json
 ```
 
-Note: JSON output format is not yet implemented. Use text parsing for now.
+Note: Use `aether --output json cost` for structured `CostComparison` JSON output.
 
 ### Cost Trends
 

@@ -1,6 +1,6 @@
 # Aether macOS Shell (Tauri)
 
-Native macOS wrapper for the Aether AI Infrastructure OS dashboard.
+Native macOS wrapper for the Aether AI Infrastructure OS dashboard — **Ship** tier with notarized DMG CI (`.github/workflows/macos-dmg.yml`).
 
 ## Features
 
