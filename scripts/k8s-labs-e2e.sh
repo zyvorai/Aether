@@ -59,10 +59,10 @@ echo "  (using lab spec for update dry-run)"
 rm -f "$TMP_SPEC"
 
 echo "  stop workload (cascade)..."
-"$AETHER" stop "$WORKLOAD" --cascade || "$AETHER" stop "$WORKLOAD" || true
+"$AETHER" --yes stop "$WORKLOAD" --cascade 2>/dev/null || "$AETHER" --yes stop "$WORKLOAD" 2>/dev/null || true
 
 echo "  cleaning up workload..."
-"$AETHER" delete "$WORKLOAD" || true
+"$AETHER" --yes delete "$WORKLOAD" 2>/dev/null || true
 
 echo "  live kubernetes deploy OK"
 

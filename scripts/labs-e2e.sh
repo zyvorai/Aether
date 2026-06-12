@@ -33,7 +33,7 @@ run_lab() {
     wl="$(grep -E '^  name:' "$spec" | head -1 | awk '{print $2}')"
     if [[ -n "$wl" ]]; then
       echo "  cleaning up workload $wl"
-      "$AETHER" stop --name "$wl" --runtime "$runtime" --cascade 2>/dev/null || true
+      "$AETHER" --yes stop --name "$wl" --runtime "$runtime" --cascade 2>/dev/null || true
     fi
   fi
 }

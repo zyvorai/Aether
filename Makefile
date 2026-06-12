@@ -1,5 +1,6 @@
 .PHONY: help build test lint clean install release docker run-dev \
-	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live reference-cluster-live-verify
+	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live reference-cluster-live-verify \
+	post-deploy-verify remote-post-deploy-verify remote-reference-verify
 
 help:
 	@echo "Aether - Universal Runtime Control Plane"
@@ -20,6 +21,9 @@ help:
 	@echo "  reference-cluster-e2e    - Metal3/KubeVirt + confidential kata validate (dry-run by default)"
 	@echo "  reference-cluster-live     - Live Metal3/KubeVirt smoke (requires kubeconfig)"
 	@echo "  reference-cluster-live-verify - Live smoke + post-deploy API verify"
+	@echo "  post-deploy-verify         - API smoke against AETHER_API (default localhost:5090)"
+	@echo "  remote-post-deploy-verify    - Post-deploy verify against 212.8.252.194:30090"
+	@echo "  remote-reference-verify      - Remote k8s live lab + post-deploy verify"
 
 build:
 	@echo "Building debug binary..."
@@ -113,6 +117,14 @@ validate:
 post-deploy-verify:
 	@chmod +x scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
 	@./scripts/post-deploy-verify.sh
+
+remote-post-deploy-verify:
+	@chmod +x scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
+	@AETHER_API=http://212.8.252.194:30090 ./scripts/post-deploy-verify.sh
+
+remote-reference-verify:
+	@chmod +x scripts/remote-reference-verify.sh scripts/k8s-labs-e2e.sh scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
+	@./scripts/remote-reference-verify.sh
 
 # Benchmark (if criterion is added)
 bench:
