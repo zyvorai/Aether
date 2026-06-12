@@ -2078,6 +2078,7 @@ export interface HostedFederationStatus {
 export interface BillingSummary {
   period: string;
   total_workloads: number;
+  stripe_configured?: boolean;
   tenants: { tenant_id: string; tenant_slug: string; plan: string; workload_count: number; api_requests_estimate: number }[];
 }
 

@@ -169,6 +169,25 @@ export default function FleetPage() {
 
   return (
     <div>
+      <div className="mb-6 glass-context-banner" data-testid="fleet-hub-context">
+        Fleet
+        {' · '}
+        <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="fleet-context-orchestrator-link">
+          Orchestrator →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('intelligence')} className="text-aether hover:underline" data-testid="fleet-context-intelligence-link">
+          Intelligence →
+        </Link>
+        {' · '}
+        <Link
+          to={`${viewToPath('fleet')}?tab=edge`}
+          className="text-aether hover:underline"
+          data-testid="fleet-context-edge-link"
+        >
+          Edge →
+        </Link>
+      </div>
       <FleetIntelligenceBrief onNavigate={(view) => { navigate(viewToPath(view)); }} />
       <MultiCloudPanel />
       <FederationPlatformPanel />

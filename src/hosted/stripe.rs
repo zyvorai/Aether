@@ -8,6 +8,17 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StripePortalRequest {
+    pub tenant_id: String,
+    pub return_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StripePortalResponse {
+    pub portal_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StripeCheckoutRequest {
     pub tenant_id: String,
     pub plan: String,
@@ -68,6 +79,7 @@ pub async fn create_checkout_session(
         "success_url": req.success_url,
         "cancel_url": req.cancel_url,
         "client_reference_id": tenant.id,
+        "customer_creation": "always",
         "metadata": {
             "tenant_id": tenant.id,
             "tenant_slug": tenant.slug,
@@ -108,6 +120,44 @@ pub async fn create_checkout_session(
         session_id,
         checkout_url,
     })
+}
+
+pub async fn create_portal_session(req: &StripePortalRequest) -> Result<StripePortalResponse> {
+    let store = TenantStore::load();
+    let customer_id = store
+        .stripe_customer_id(&req.tenant_id)
+        .context("tenant has no Stripe customer — complete checkout first")?;
+    let secret = secret_key()?;
+
+    let body = serde_json::json!({
+        "customer": customer_id,
+        "return_url": req.return_url,
+    });
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post("https://api.stripe.com/v1/billing_portal/sessions")
+        .basic_auth(&secret, Some(""))
+        .form(&flatten_json(&body))
+        .send()
+        .await
+        .context("stripe portal request failed")?;
+
+    let status = resp.status();
+    let text = resp.text().await.unwrap_or_default();
+    if !status.is_success() {
+        bail!("stripe portal failed ({status}): {text}");
+    }
+
+    let parsed: serde_json::Value =
+        serde_json::from_str(&text).context("invalid stripe portal response")?;
+    let portal_url = parsed
+        .get("url")
+        .and_then(|v| v.as_str())
+        .context("missing portal url")?
+        .to_string();
+
+    Ok(StripePortalResponse { portal_url })
 }
 
 pub fn verify_webhook_signature(payload: &[u8], sig_header: &str) -> Result<()> {
@@ -162,8 +212,16 @@ pub fn handle_webhook_event(payload: &[u8]) -> Result<StripeWebhookResult> {
                 .pointer("/metadata/plan")
                 .and_then(|v| v.as_str())
                 .map(str::to_string);
+            let customer_id = obj
+                .get("customer")
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
             if let (Some(tid), Some(plan_str)) = (&tenant_id, &plan) {
                 upgrade_tenant_plan(tid, plan_str)?;
+            }
+            if let (Some(tid), Some(cid)) = (&tenant_id, &customer_id) {
+                let mut store = TenantStore::load();
+                let _ = store.set_stripe_customer_id(tid, cid);
             }
             Ok(StripeWebhookResult {
                 event_type,

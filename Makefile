@@ -24,6 +24,9 @@ help:
 	@echo "  post-deploy-verify         - API smoke against AETHER_API (default localhost:5090)"
 	@echo "  remote-post-deploy-verify    - Post-deploy verify against 212.8.252.194:30090"
 	@echo "  remote-reference-verify      - Remote k8s live lab + post-deploy verify"
+	@echo "  deploy-reference-ingress     - Deploy remote with Ingress/TLS (AETHER_DEPLOY_ENV)"
+	@echo "  deploy-reference-sso         - Deploy remote with mock IdP SSO (AETHER_DEPLOY_ENV)"
+	@echo "  deploy-with-ldap             - Deploy remote with LDAP/AD (AETHER_DEPLOY_ENV required)"
 
 build:
 	@echo "Building debug binary..."
@@ -125,6 +128,18 @@ remote-post-deploy-verify:
 remote-reference-verify:
 	@chmod +x scripts/remote-reference-verify.sh scripts/k8s-labs-e2e.sh scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
 	@./scripts/remote-reference-verify.sh
+
+deploy-reference-ingress:
+	@chmod +x scripts/deploy-reference-ingress.sh 2>/dev/null || true
+	@echo "Usage: AETHER_DEPLOY_ENV=~/aether-ingress.env make deploy-reference-ingress HOST=<ip> USER=<ssh-user>"
+
+deploy-reference-sso:
+	@chmod +x scripts/deploy-reference-sso.sh 2>/dev/null || true
+	@echo "Usage: AETHER_DEPLOY_ENV=~/aether-sso.env make deploy-reference-sso HOST=<ip> USER=<ssh-user>"
+
+deploy-with-ldap:
+	@chmod +x scripts/deploy-with-ldap.sh 2>/dev/null || true
+	@echo "Usage: AETHER_DEPLOY_ENV=~/aether-ldap.env make deploy-with-ldap HOST=<ip> USER=<ssh-user>"
 
 # Benchmark (if criterion is added)
 bench:

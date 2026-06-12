@@ -20,13 +20,20 @@ CI builds the embedded dashboard, validates example specs, runs Playwright smoke
 ## Remaining / optional
 
 - **Confidential live** — SEV-SNP hardware or attestation-capable host for live confidential placement
-- **Hosted SaaS** — Stripe production keys, full billing portal (foundation + federation UI shipped)
+- **Hosted SaaS production** — Stripe production keys on hosted control plane (portal + checkout UI shipped)
+
+## Recently completed (2231–2280)
+
+- **Orchestrator / Edge / Intelligence hub cross-links** — Health, Intelligence, Fleet hub banners
+- **Stripe billing portal** — `POST /api/hosted/billing/stripe/portal`, Hosted SaaS checkout + portal buttons
+- **Deploy helpers** — `deploy-reference-ingress.sh`, `deploy-reference-sso.sh`, `deploy-with-ldap.sh`, env examples under `examples/deploy/`
+- **Settings RBAC link** — Settings hub → Access Control
 
 ## Recommended Next Order
 
-1. **Dashboard phases 2231+** — next hub slice (Orchestrator/Edge/Intelligence cross-links)
+1. **Dashboard phases 2281+** — next hub slice
 2. **Confidential live** when SNP lab host is available
-3. **Ingress + TLS** on reference cluster (`AETHER_EXPOSE=ingress`)
+3. **Ingress + TLS** on reference cluster (`AETHER_EXPOSE=ingress` via `deploy-reference-ingress.sh`)
 
 ## Mock IdP (development / CI)
 

@@ -135,16 +135,57 @@ export default function HealthPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const hubBanner = (
+    <div className="mb-6 glass-context-banner" data-testid="health-hub-context">
+      Orchestrator
+      {' · '}
+      <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="health-context-fleet-link">
+        Fleet →
+      </Link>
+      {' · '}
+      <Link
+        to={viewToPath('intelligence')}
+        className="text-aether hover:underline"
+        data-testid="health-context-intelligence-hub-link"
+      >
+        Intelligence →
+      </Link>
+      {' · '}
+      <Link
+        to={`${viewToPath('fleet')}?tab=edge`}
+        className="text-aether hover:underline"
+        data-testid="health-context-edge-link"
+      >
+        Edge →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="health-context-settings-link">
+        Identity & SSO →
+      </Link>
+    </div>
+  );
+
   if (loading && workloads.length === 0 && !loadFailed) {
-    return <PageLoading rows={5} />;
+    return (
+      <div>
+        {hubBanner}
+        <PageLoading rows={5} />
+      </div>
+    );
   }
 
   if (loadFailed) {
-    return <PageLoadError title="Health data unavailable" onRetry={() => void load()} />;
+    return (
+      <div>
+        {hubBanner}
+        <PageLoadError title="Health data unavailable" onRetry={() => void load()} />
+      </div>
+    );
   }
 
   return (
     <div>
+      {hubBanner}
       <WorkloadContextBanner
         testId="health-workload-context"
         workload={workloadParam}

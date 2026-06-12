@@ -46,6 +46,10 @@ export default function SettingsPage() {
         <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="settings-context-fleet-link">
           Fleet →
         </Link>
+        {' · '}
+        <Link to={viewToPath('rbac')} className="text-aether hover:underline" data-testid="settings-context-rbac-link">
+          Access Control →
+        </Link>
       </div>
       <HubPageToc items={TOC} />
       <div id="settings-identity"><IdentitySsoPanel /></div>

@@ -103,6 +103,22 @@ impl TenantStore {
         self.persist()
     }
 
+    pub fn set_stripe_customer_id(&mut self, id: &str, customer_id: &str) -> Result<()> {
+        let t = self.inner.tenants.get_mut(id).context("tenant not found")?;
+        t.labels
+            .insert("stripe_customer_id".into(), customer_id.to_string());
+        self.persist()
+    }
+
+    pub fn stripe_customer_id(&self, id: &str) -> Option<String> {
+        self.inner
+            .tenants
+            .get(id)
+            .and_then(|t| t.labels.get("stripe_customer_id"))
+            .cloned()
+            .filter(|s| !s.is_empty())
+    }
+
     fn persist(&self) -> Result<()> {
         atomic_write(&self.path, &self.inner)
     }
@@ -174,5 +190,21 @@ mod tests {
         assert_eq!(store.get(&t.id).unwrap().slug, "acme-corp");
         store.upgrade_plan(&t.id, TenantPlan::Enterprise).unwrap();
         assert_eq!(store.get(&t.id).unwrap().plan, TenantPlan::Enterprise);
+    }
+
+    #[test]
+    fn stripe_customer_id_roundtrip() {
+        let dir = tempfile::tempdir().unwrap();
+        std::env::set_var("HOME", dir.path());
+        let mut store = TenantStore::load();
+        let t = store.create("Acme", "acme", TenantPlan::Free).unwrap();
+        assert!(store.stripe_customer_id(&t.id).is_none());
+        store
+            .set_stripe_customer_id(&t.id, "cus_test123")
+            .unwrap();
+        assert_eq!(
+            store.stripe_customer_id(&t.id).as_deref(),
+            Some("cus_test123")
+        );
     }
 }

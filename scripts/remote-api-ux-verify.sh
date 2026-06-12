@@ -72,7 +72,18 @@ expect_code /api/server 200
 expect_code /api/system/ready 200
 expect_code /api/auth/providers 200
 expect_code /api/auth/me 200
+expect_code /api/auth/settings 200
 expect_code /api/dashboard/version 200
+
+f="$(fetch /api/auth/saml/metadata)"
+saml_meta_code="$(cat "${f}.code")"
+if [ "${saml_meta_code}" = "200" ]; then
+  ok "/api/auth/saml/metadata → 200"
+elif [ "${saml_meta_code}" = "404" ]; then
+  note "/api/auth/saml/metadata → 404 (SAML not configured — optional)"
+else
+  bad "/api/auth/saml/metadata → ${saml_meta_code} (expected 200 or 404)"
+fi
 
 section "Workloads & cluster (dashboard pages)"
 expect_code /api/workloads 200
