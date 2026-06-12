@@ -204,6 +204,8 @@ async fn auth_middleware(
         || path == "/api/auth/saml/login"
         || path == "/api/auth/saml/acs"
         || path == "/api/auth/saml/logout"
+        || path == "/api/auth/ldap/login"
+        || path == "/api/auth/ldap/logout"
         || path == "/api/hosted/billing/stripe/webhook"
         || path.starts_with("/api/mock-idp/")
         || (*req.method() == Method::GET && !path.starts_with("/api"));
@@ -216,7 +218,8 @@ async fn auth_middleware(
         .filter(|k| !k.is_empty());
     let oidc_enabled = app_state.oidc.is_some();
     let saml_enabled = app_state.saml.is_some();
-    let session_auth_enabled = oidc_enabled || saml_enabled;
+    let ldap_enabled = app_state.ldap.is_some();
+    let session_auth_enabled = oidc_enabled || saml_enabled || ldap_enabled;
 
     // Extract Bearer token before acquiring lock
     let header_token = req
@@ -307,6 +310,16 @@ async fn auth_middleware(
         }
         if let Some(saml) = app_state.saml.as_ref() {
             if let Some((role, _username)) = saml.verify_session_cookie(req.headers()) {
+                if !crate::rbac::check_permission(&role, &http_method, path) {
+                    return Err(StatusCode::FORBIDDEN);
+                }
+                ensure_mutation_confirm(req.method(), path, req.headers())?;
+                let tenant = resolve_tenant_id(req.headers(), None);
+                return authorized_next(req, next, tenant).await;
+            }
+        }
+        if let Some(ldap) = app_state.ldap.as_ref() {
+            if let Some((role, _username)) = ldap.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
@@ -486,6 +499,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let shared_cache = crate::ha::SharedCache::connect(redis_url.as_deref()).await?;
     let oidc = crate::oidc::OidcRuntime::new(shared_cache.clone())?;
     let saml = crate::saml::SamlRuntime::new(shared_cache.clone())?;
+    let ldap = crate::ldap::LdapRuntime::new()?;
 
     let app_state = AppState {
         state: Arc::new(RwLock::new(state_store)),
@@ -495,6 +509,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         shared_cache,
         oidc,
         saml,
+        ldap,
         tls_active: tls_enabled,
         state_path,
         workload_state_pg: workload_state_pg.clone(),
@@ -549,6 +564,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/auth/saml/login", get(api_saml_login))
         .route("/api/auth/saml/acs", post(api_saml_acs))
         .route("/api/auth/saml/logout", get(api_saml_logout))
+        .route("/api/auth/ldap/login", post(api_ldap_login))
+        .route("/api/auth/ldap/logout", get(api_ldap_logout))
         .route("/api/system/ready", get(api_system_ready))
         .route("/api/workloads", get(list_workloads))
         .route("/api/workloads", post(create_workload))
@@ -1675,6 +1692,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             post(api_hosted_tenants_upgrade),
         )
         .route("/api/hosted/upgrades", get(api_hosted_upgrades_status))
+        .route("/api/hosted/federation", get(api_hosted_federation_status))
+        .route(
+            "/api/hosted/tenants/:id/federation/plan",
+            post(api_hosted_tenant_federation_plan),
+        )
         .route(
             "/api/hosted/tenants/:id/keys",
             get(api_hosted_tenant_keys_list).post(api_hosted_tenant_keys_issue),

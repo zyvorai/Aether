@@ -62,6 +62,19 @@ fn parse_storage_to_gb(storage: &str) -> i64 {
 }
 
 /// Build BareMetalHost JSON (standalone, testable without kube::Client)
+fn metal3_annotation(spec: &Workload, key: &str, env_var: &str) -> String {
+    spec.metadata
+        .annotations
+        .get(key)
+        .cloned()
+        .or_else(|| {
+            std::env::var(env_var)
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+        })
+        .unwrap_or_default()
+}
+
 fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Value {
     let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);
 
@@ -85,19 +98,13 @@ fn build_baremetalhost_json(namespace: &str, spec: &Workload) -> serde_json::Val
         },
         "spec": {
             "online": true,
-            "bootMACAddress": spec.metadata.annotations
-                .get("aether.io/boot-mac-address")
-                .cloned()
-                .unwrap_or_default(),
+            "bootMACAddress": metal3_annotation(spec, "aether.io/boot-mac-address", "AETHER_METAL3_BOOT_MAC"),
             "bootMode": spec.metadata.annotations
                 .get("aether.io/boot-mode")
                 .cloned()
                 .unwrap_or_else(|| "UEFI".to_string()),
             "image": {
-                "url": spec.metadata.annotations
-                    .get("aether.io/image-url")
-                    .cloned()
-                    .unwrap_or_default(),
+                "url": metal3_annotation(spec, "aether.io/image-url", "AETHER_METAL3_IMAGE_URL"),
                 "checksum": spec.metadata.annotations
                     .get("aether.io/image-checksum-url")
                     .cloned()
@@ -245,27 +252,39 @@ impl Runtime for Metal3Runtime {
         common::validate_kube_name(&spec.metadata.name)?;
 
         // Validate required Metal3 annotations before proceeding
-        if !spec
+        let boot_mac = spec
             .metadata
             .annotations
-            .contains_key("aether.io/boot-mac-address")
-        {
+            .get("aether.io/boot-mac-address")
+            .cloned()
+            .or_else(|| {
+                std::env::var("AETHER_METAL3_BOOT_MAC")
+                    .ok()
+                    .filter(|value| !value.trim().is_empty())
+            });
+        if boot_mac.is_none() {
             anyhow::bail!(
                 "Required annotation 'aether.io/boot-mac-address' not set for '{}'. \
                  Metal3 provisioning requires a valid MAC address matching real hardware. \
-                 Set it in metadata.annotations.",
+                 Set it in metadata.annotations or AETHER_METAL3_BOOT_MAC.",
                 spec.metadata.name
             );
         }
-        if !spec
+        let image_url = spec
             .metadata
             .annotations
-            .contains_key("aether.io/image-url")
-        {
+            .get("aether.io/image-url")
+            .cloned()
+            .or_else(|| {
+                std::env::var("AETHER_METAL3_IMAGE_URL")
+                    .ok()
+                    .filter(|value| !value.trim().is_empty())
+            });
+        if image_url.is_none() {
             anyhow::bail!(
                 "Required annotation 'aether.io/image-url' not set for '{}'. \
                  Metal3 provisioning requires an explicit bootable disk image URL. \
-                 Set it in metadata.annotations.",
+                 Set it in metadata.annotations or AETHER_METAL3_IMAGE_URL.",
                 spec.metadata.name
             );
         }

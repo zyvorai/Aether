@@ -12,6 +12,8 @@ use crate::hosted::stripe::{
     verify_webhook_signature, StripeCheckoutRequest,
 };
 use crate::hosted::tenant::{TenantPlan, TenantStore};
+use crate::fleet::federation::{self, FederationPlanRequest};
+use serde::Serialize;
 use axum::{
     body::Bytes,
     extract::{Path, State as AxumState},
@@ -184,5 +186,61 @@ pub(crate) async fn api_hosted_billing_stripe_webhook(
     match handle_webhook_event(&body) {
         Ok(result) => ok_json(result),
         Err(e) => err_bad_request(e),
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct HostedFederationStatus {
+    pub federation_enabled: bool,
+    pub tenant_count: usize,
+    pub policy: federation::FederationPolicy,
+}
+
+pub(crate) async fn api_hosted_federation_status() -> impl IntoResponse {
+    let policy = federation::federation_policies();
+    let tenants = TenantStore::load().list();
+    ok_json(HostedFederationStatus {
+        federation_enabled: !policy.clusters.is_empty(),
+        tenant_count: tenants.len(),
+        policy,
+    })
+}
+
+pub(crate) async fn api_hosted_tenant_federation_plan(
+    AxumState(app_state): AxumState<AppState>,
+    Path(id): Path<String>,
+    Json(body): Json<FederationPlanRequest>,
+) -> impl IntoResponse {
+    let store = TenantStore::load();
+    if store.get(&id).is_none() {
+        return err_not_found(format!("tenant {id} not found"));
+    }
+    let spec = if let Some(yaml) = body.workload_yaml.filter(|s| !s.trim().is_empty()) {
+        match federation::parse_workload_yaml(&yaml) {
+            Ok(spec) => spec,
+            Err(e) => return err_bad_request(e),
+        }
+    } else if let Some(name) = body.workload_name.filter(|s| !s.trim().is_empty()) {
+        let state = app_state.state.read().await;
+        let ws = match state.get(&name) {
+            Some(w) => w,
+            None => {
+                return err_bad_request(format!(
+                    "workload {name} not found — pass workload_yaml for tenant federation plan"
+                ));
+            }
+        };
+        let path = ws.spec_path.clone();
+        drop(state);
+        match crate::spec::Workload::from_file(&path) {
+            Ok(spec) => spec,
+            Err(e) => return err_bad_request(e),
+        }
+    } else {
+        return err_bad_request("workload_yaml or workload_name is required");
+    };
+    match federation::plan_placement(&spec).await {
+        Ok(plan) => ok_json(plan),
+        Err(e) => err_bad_request(e.to_string()),
     }
 }

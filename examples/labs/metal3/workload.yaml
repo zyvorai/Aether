@@ -6,6 +6,9 @@ metadata:
   project: labs
   labels:
     lab: metal3
+  annotations:
+    aether.io/boot-mac-address: "00:11:22:33:44:55"
+    aether.io/image-url: "https://example.com/metal3-lab-host.qcow2"
 build:
   context: .
   dockerfile: Dockerfile

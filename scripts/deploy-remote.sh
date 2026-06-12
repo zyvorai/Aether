@@ -43,6 +43,7 @@
 #   AETHER_STATE_DATABASE_URL — PostgreSQL URI for HA API replicas
 #   AETHER_REDIS_URL — Redis for OIDC sessions across replicas
 #   AETHER_OIDC_* — OIDC issuer, client, redirect, session secret (see src/oidc.rs)
+#   AETHER_LDAP_* — Active Directory / LDAP bind auth (see src/ldap.rs)
 #   AETHER_BACKUP_REMOTE_URL / AETHER_BACKUP_REMOTE_TOKEN — HTTP PUT backup offload
 #   AETHER_AUDIT_WEBHOOK_URL — POST audit events to external sink
 #   AETHER_OPEN_FIREWALL=1 — best-effort ufw allow on remote (ports 80/443 and/or NodePort)

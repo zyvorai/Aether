@@ -35,6 +35,7 @@ pub mod helm;
 pub mod hosted;
 pub mod intelligence;
 pub mod kubecluster;
+pub mod ldap;
 pub mod legacy_workload_yaml;
 pub mod metrics;
 pub mod migration;

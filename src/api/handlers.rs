@@ -523,7 +523,7 @@ pub(crate) async fn api_auth_me(
             }
         }
 
-        if legacy_key.is_none() && rbac_store.list_keys().is_empty() && app_state.oidc.is_none() {
+        if legacy_key.is_none() && rbac_store.list_keys().is_empty() && app_state.oidc.is_none() && app_state.saml.is_none() && app_state.ldap.is_none() {
             return ok_json(AuthStatusResponse {
                 authenticated: true,
                 username: "local-dev".to_string(),
@@ -534,6 +534,26 @@ pub(crate) async fn api_auth_me(
 
     if let Some(oidc) = app_state.oidc.as_ref() {
         if let Some((role, username)) = oidc.verify_session_cookie(&headers) {
+            return ok_json(AuthStatusResponse {
+                authenticated: true,
+                username,
+                role: role.to_string(),
+            });
+        }
+    }
+
+    if let Some(saml) = app_state.saml.as_ref() {
+        if let Some((role, username)) = saml.verify_session_cookie(&headers) {
+            return ok_json(AuthStatusResponse {
+                authenticated: true,
+                username,
+                role: role.to_string(),
+            });
+        }
+    }
+
+    if let Some(ldap) = app_state.ldap.as_ref() {
+        if let Some((role, username)) = ldap.verify_session_cookie(&headers) {
             return ok_json(AuthStatusResponse {
                 authenticated: true,
                 username,
@@ -609,6 +629,78 @@ pub(crate) async fn api_oidc_logout(
         res.headers_mut().insert(
             header::SET_COOKIE,
             crate::saml::SamlRuntime::clear_session_cookie(app_state.tls_active),
+        );
+    }
+    if app_state.ldap.is_some() {
+        res.headers_mut().insert(
+            header::SET_COOKIE,
+            crate::ldap::LdapRuntime::clear_session_cookie(app_state.tls_active),
+        );
+    }
+    res
+}
+
+#[derive(Deserialize)]
+pub(crate) struct LdapLoginRequest {
+    username: String,
+    password: String,
+}
+
+/// POST /api/auth/ldap/login — Active Directory / LDAP username+password login.
+pub(crate) async fn api_ldap_login(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<LdapLoginRequest>,
+) -> impl IntoResponse {
+    let Some(ldap) = app_state.ldap.as_ref() else {
+        return (StatusCode::NOT_FOUND, "LDAP not configured").into_response();
+    };
+    match ldap.authenticate(req.username.trim(), &req.password).await {
+        Ok(auth) => {
+            let body = serde_json::json!({
+                "username": auth.username,
+                "role": auth.role.to_string(),
+                "display_name": auth.display_name,
+            });
+            let cookie = match ldap.session_cookie_for(&auth, app_state.tls_active) {
+                Ok(c) => c,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+                    )
+                        .into_response();
+                }
+            };
+            let mut res = Json(ApiResponse::success(body)).into_response();
+            res.headers_mut().insert(
+                header::SET_COOKIE,
+                HeaderValue::from_str(&cookie)
+                    .unwrap_or_else(|_| HeaderValue::from_static("aether_session=; Max-Age=0")),
+            );
+            res
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "ldap login failed");
+            (
+                StatusCode::UNAUTHORIZED,
+                Json(ApiResponse::<serde_json::Value>::error(
+                    "invalid username or password".to_string(),
+                )),
+            )
+                .into_response()
+        }
+    }
+}
+
+/// GET /api/auth/ldap/logout — clear LDAP session cookie and redirect to `/`.
+pub(crate) async fn api_ldap_logout(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let mut res = axum::response::Redirect::to("/").into_response();
+    if app_state.ldap.is_some() {
+        res.headers_mut().insert(
+            header::SET_COOKIE,
+            crate::ldap::LdapRuntime::clear_session_cookie(app_state.tls_active),
         );
     }
     res
@@ -4455,6 +4547,16 @@ pub(crate) async fn api_server_info(
             "groups_claim_env": "AETHER_OIDC_GROUPS_CLAIM",
             "role_mapping_configured": std::env::var("AETHER_OIDC_ROLE_MAP").ok().filter(|s| !s.is_empty()).is_some(),
         },
+        "ldap": {
+            "enabled": app_state.ldap.is_some(),
+            "url_configured": std::env::var("AETHER_LDAP_URL").ok().filter(|s| !s.is_empty()).is_some(),
+            "domain": std::env::var("AETHER_LDAP_DOMAIN").ok().filter(|s| !s.is_empty()),
+            "login_path": "/api/auth/ldap/login",
+            "logout_path": "/api/auth/ldap/logout",
+            "role_mapping_env": "AETHER_LDAP_ROLE_MAP",
+            "role_mapping_configured": std::env::var("AETHER_LDAP_ROLE_MAP").ok().filter(|s| !s.is_empty()).is_some(),
+            "bind_dn_configured": std::env::var("AETHER_LDAP_BIND_DN").ok().filter(|s| !s.is_empty()).is_some(),
+        },
         "rate_limit": { "type": "global_concurrency", "max": 200 },
         "observability": {
             "prometheus_metrics_path": "/api/metrics",
@@ -4547,8 +4649,26 @@ pub(crate) async fn api_auth_providers() -> impl IntoResponse {
     let saml_role_map = std::env::var("AETHER_SAML_ROLE_MAP")
         .ok()
         .filter(|s| !s.is_empty());
+    let ldap_ready = std::env::var("AETHER_LDAP_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some()
+        && std::env::var("AETHER_LDAP_BASE_DN")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some()
+        && std::env::var("AETHER_SESSION_SECRET")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .is_some();
+    let ldap_role_map = std::env::var("AETHER_LDAP_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let ldap_domain = std::env::var("AETHER_LDAP_DOMAIN")
+        .ok()
+        .filter(|s| !s.is_empty());
     let mut methods = vec!["bearer", "legacy_env"];
-    if oidc_ready || saml_ready {
+    if oidc_ready || saml_ready || ldap_ready {
         methods.push("oidc_session_cookie");
     }
     ok_json(serde_json::json!({
@@ -4573,6 +4693,15 @@ pub(crate) async fn api_auth_providers() -> impl IntoResponse {
             "role_mapping_configured": saml_role_map.is_some(),
             "role_mapping_env": "AETHER_SAML_ROLE_MAP",
             "note": "Dashboard: Sign in with SAML when configured. Map IdP group attributes via AETHER_SAML_ROLE_MAP."
+        },
+        "ldap": {
+            "enabled": ldap_ready,
+            "domain": ldap_domain,
+            "login_url": "/api/auth/ldap/login",
+            "logout_url": "/api/auth/ldap/logout",
+            "role_mapping_configured": ldap_role_map.is_some(),
+            "role_mapping_env": "AETHER_LDAP_ROLE_MAP",
+            "note": "Dashboard: Sign in with Active Directory credentials. Map AD groups via AETHER_LDAP_ROLE_MAP (admin=Domain Admins;operator=devs)."
         },
     }))
 }

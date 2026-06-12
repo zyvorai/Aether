@@ -16,7 +16,7 @@ import {
   Layers,
   Container,
 } from 'lucide-react';
-import { apiTryAuth, DEFAULT_DASHBOARD_USERNAME, apiFetchAuthProviders } from '../utils/api';
+import { apiTryAuth, apiLdapLogin, DEFAULT_DASHBOARD_USERNAME, apiFetchAuthProviders } from '../utils/api';
 import { useTheme } from '../contexts/ThemeContext';
 import { loginPageClass } from '../utils/themeSurface';
 import { ZyvorFooter } from './ZyvorBrand';
@@ -92,9 +92,15 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
   const [showToken, setShowToken] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ldapError, setLdapError] = useState<string | null>(null);
   const [providersLoading, setProvidersLoading] = useState(true);
   const [oidcEnabled, setOidcEnabled] = useState(false);
   const [samlEnabled, setSamlEnabled] = useState(false);
+  const [ldapEnabled, setLdapEnabled] = useState(false);
+  const [ldapDomain, setLdapDomain] = useState<string | null>(null);
+  const [ldapPassword, setLdapPassword] = useState('');
+  const [showLdapPassword, setShowLdapPassword] = useState(false);
+  const [ldapBusy, setLdapBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +108,8 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
       if (cancelled) return;
       if (p?.oidc?.enabled) setOidcEnabled(true);
       if (p?.saml?.enabled) setSamlEnabled(true);
+      if (p?.ldap?.enabled) setLdapEnabled(true);
+      if (p?.ldap?.domain) setLdapDomain(p.ldap.domain);
       setProvidersLoading(false);
     });
     return () => {
@@ -118,6 +126,45 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
     const next = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/';
     window.location.assign(`/api/auth/saml/login?next=${encodeURIComponent(next)}`);
   }, []);
+
+  const submitLdap = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLdapBusy(true);
+      setLdapError(null);
+      const result = await apiLdapLogin(username.trim(), ldapPassword);
+      if (!result.ok) {
+        setLdapBusy(false);
+        setLdapError(
+          result.reason === 'network'
+            ? 'Cannot reach the Aether API. Check that the server is running and your network connection.'
+            : 'Invalid Active Directory username or password.',
+        );
+        return;
+      }
+      const u = result.data.display_name?.trim() || result.data.username || username.trim();
+      try {
+        if (rememberName) {
+          localStorage.setItem(REMEMBER_USERNAME_KEY, u);
+        } else {
+          localStorage.removeItem(REMEMBER_USERNAME_KEY);
+        }
+      } catch {
+        /* ignore storage errors */
+      }
+      sessionStorage.setItem(
+        'aether_auth',
+        JSON.stringify({
+          authenticated: true,
+          username: u,
+          authMode: 'cookie',
+        }),
+      );
+      setLdapBusy(false);
+      onAuthenticated(u);
+    },
+    [username, ldapPassword, rememberName, onAuthenticated],
+  );
 
   const submit = useCallback(
     async (e: React.FormEvent) => {
@@ -201,8 +248,61 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
           <div className="h-11 rounded-xl glass-inset-surface animate-pulse" />
           <div className="h-px glass-inset-surface" />
         </div>
-      ) : (oidcEnabled || samlEnabled) ? (
+      ) : (oidcEnabled || samlEnabled || ldapEnabled) ? (
         <div className="mb-2">
+          {ldapEnabled ? (
+            <form onSubmit={submitLdap} className="mb-3 space-y-3" data-testid="ldap-login-form">
+              <LoginField
+                label={ldapDomain ? `Active Directory user (@${ldapDomain})` : 'Active Directory user'}
+                id="login-ldap-username"
+              >
+                <input
+                  id="login-ldap-username"
+                  type="text"
+                  value={username}
+                  onChange={(ev) => setUsername(ev.target.value)}
+                  className="login-input"
+                  autoComplete="username"
+                  placeholder={ldapDomain ? `user or user@${ldapDomain}` : 'user@domain.local'}
+                />
+              </LoginField>
+              <LoginField label="Password" id="login-ldap-password">
+                <input
+                  id="login-ldap-password"
+                  type={showLdapPassword ? 'text' : 'password'}
+                  value={ldapPassword}
+                  onChange={(ev) => {
+                    setLdapPassword(ev.target.value);
+                    if (ldapError) setLdapError(null);
+                  }}
+                  className="login-input pr-11"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLdapPassword((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  aria-label={showLdapPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showLdapPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </LoginField>
+              {ldapError ? <LoginError message={ldapError} /> : null}
+              <LoginSubmit loading={ldapBusy} disabled={ldapBusy || !username.trim() || !ldapPassword}>
+                {ldapBusy ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin relative z-10" />
+                    <span className="relative z-10">Signing in…</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="relative z-10">Sign in with Active Directory</span>
+                    <ArrowRight className="h-4 w-4 relative z-10" />
+                  </>
+                )}
+              </LoginSubmit>
+            </form>
+          ) : null}
           {oidcEnabled ? (
             <button type="button" onClick={startOidc} className="login-btn-secondary w-full flex items-center justify-center gap-2">
               <LogIn className="h-4 w-4" aria-hidden />
@@ -219,25 +319,31 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
               Sign in with SAML
             </button>
           ) : null}
-          <LoginDivider label="or use bearer token" />
         </div>
+      ) : null}
+
+      {(oidcEnabled || samlEnabled || ldapEnabled) ? (
+        <LoginDivider label={ldapEnabled ? 'or use API bearer token' : 'or use bearer token'} />
       ) : null}
 
       <form onSubmit={submit}>
         {error ? <LoginError message={error} /> : null}
+        {!ldapEnabled ? (
+          <div className="space-y-5">
+            <LoginField label="Display name" id="login-username">
+              <input
+                id="login-username"
+                type="text"
+                value={username}
+                onChange={(ev) => setUsername(ev.target.value)}
+                className="login-input"
+                autoComplete="username"
+              />
+            </LoginField>
+          </div>
+        ) : null}
 
-        <div className="space-y-5">
-          <LoginField label="Display name" id="login-username">
-            <input
-              id="login-username"
-              type="text"
-              value={username}
-              onChange={(ev) => setUsername(ev.target.value)}
-              className="login-input"
-              autoComplete="username"
-            />
-          </LoginField>
-
+        <div className={ldapEnabled ? 'space-y-5' : 'space-y-5'}>
           <LoginField label="API bearer token" id="login-token">
             <KeyRound className="login-field-icon" aria-hidden />
             <input
@@ -248,7 +354,7 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
                 setToken(ev.target.value);
                 if (error) setError(null);
               }}
-              placeholder="Optional in open dev mode"
+              placeholder={ldapEnabled ? 'Optional when using AD session' : 'Optional in open dev mode'}
               className="login-input pr-11 font-mono placeholder:font-sans"
               autoComplete="current-password"
             />
@@ -263,7 +369,9 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
           </LoginField>
         </div>
 
-        <LoginRemember checked={rememberName} onChange={setRememberName} label="Remember display name" />
+        {!ldapEnabled ? (
+          <LoginRemember checked={rememberName} onChange={setRememberName} label="Remember display name" />
+        ) : null}
 
         <LoginSubmit loading={busy} disabled={busy}>
           {busy ? (
@@ -273,7 +381,7 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
             </>
           ) : (
             <>
-              <span className="relative z-10">Continue to dashboard</span>
+              <span className="relative z-10">{ldapEnabled ? 'Continue with bearer token' : 'Continue to dashboard'}</span>
               <ArrowRight className="h-4 w-4 relative z-10" />
             </>
           )}

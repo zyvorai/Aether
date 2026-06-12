@@ -186,6 +186,14 @@ export default function PlatformPage() {
           </Link>
           {' · '}
           <Link
+            to={viewToPath('hosted')}
+            className="text-aether hover:underline"
+            data-testid="platform-context-hosted-link"
+          >
+            Hosted SaaS →
+          </Link>
+          {' · '}
+          <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
             className="text-aether hover:underline"
             data-testid="platform-editor-link"

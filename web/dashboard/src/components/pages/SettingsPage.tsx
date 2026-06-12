@@ -40,6 +40,10 @@ export default function SettingsPage() {
         <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="settings-context-hosted-link">
           Hosted SaaS →
         </Link>
+        {' · '}
+        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="settings-context-fleet-link">
+          Fleet →
+        </Link>
       </div>
       <HubPageToc items={TOC} />
       <div id="settings-nav"><NavPreferencesPanel /></div>

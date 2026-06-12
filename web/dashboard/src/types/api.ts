@@ -2066,6 +2066,15 @@ export interface HostedTenant {
   active: boolean;
 }
 
+export interface HostedFederationStatus {
+  federation_enabled: boolean;
+  tenant_count: number;
+  policy: {
+    clusters: string[];
+    weights: Record<string, number>;
+  };
+}
+
 export interface BillingSummary {
   period: string;
   total_workloads: number;
