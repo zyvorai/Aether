@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import AutonomousModePanel from '../AutonomousModePanel';
+import IdentitySsoPanel from '../IdentitySsoPanel';
 import MacOSPlatformPanel from '../MacOSPlatformPanel';
 import NavPreferencesPanel from '../NavPreferencesPanel';
 import SectionHubPage from '../SectionHubPage';
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 const TOC = [
+  { id: 'settings-identity', label: 'Identity & SSO' },
   { id: 'settings-nav', label: 'Navigation' },
   { id: 'settings-autonomous', label: 'Autonomous mode' },
   { id: 'settings-macos', label: 'macOS' },
@@ -46,6 +48,7 @@ export default function SettingsPage() {
         </Link>
       </div>
       <HubPageToc items={TOC} />
+      <div id="settings-identity"><IdentitySsoPanel /></div>
       <div id="settings-nav"><NavPreferencesPanel /></div>
       <div id="settings-autonomous"><AutonomousModePanel /></div>
       <div id="settings-macos"><MacOSPlatformPanel /></div>

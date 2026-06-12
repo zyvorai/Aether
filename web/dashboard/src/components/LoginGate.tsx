@@ -304,7 +304,12 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
             </form>
           ) : null}
           {oidcEnabled ? (
-            <button type="button" onClick={startOidc} className="login-btn-secondary w-full flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={startOidc}
+              className="login-btn-secondary w-full flex items-center justify-center gap-2"
+              data-testid="login-oidc-button"
+            >
               <LogIn className="h-4 w-4" aria-hidden />
               Sign in with OIDC
             </button>
@@ -314,6 +319,7 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
               type="button"
               onClick={startSaml}
               className={`login-btn-secondary w-full flex items-center justify-center gap-2${oidcEnabled ? ' mt-3' : ''}`}
+              data-testid="login-saml-button"
             >
               <LogIn className="h-4 w-4" aria-hidden />
               Sign in with SAML

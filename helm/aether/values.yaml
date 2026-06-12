@@ -139,6 +139,39 @@ oidc:
   sessionSecret: ""
   clientSecret: ""
   roleMap: ""
+  groupsClaim: ""
+  defaultRole: ""
+
+saml:
+  enabled: false
+  existingSecret: ""
+  idpSsoUrl: ""
+  idpEntityId: ""
+  acsUrl: ""
+  sessionSecret: ""
+  spEntityId: ""
+  idpCert: ""
+  roleMap: ""
+  defaultRole: ""
+
+ldap:
+  enabled: false
+  existingSecret: ""
+  url: ""
+  baseDn: ""
+  domain: ""
+  sessionSecret: ""
+  bindDn: ""
+  bindPassword: ""
+  userFilter: ""
+  defaultRole: ""
+  roleMap: ""
+  tlsSkipVerify: false
+
+auth:
+  configMap:
+    enabled: false
+    extra: {}
 
 backupRemote:
   enabled: false

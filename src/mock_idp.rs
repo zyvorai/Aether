@@ -418,7 +418,7 @@ pub async fn oidc_authorize(Query(params): Query<HashMap<String, String>>) -> im
     if redirect_uri.is_empty() {
         return (StatusCode::BAD_REQUEST, "redirect_uri required").into_response();
     }
-    let code = if params.get("nonce").is_some() {
+    let code = if params.contains_key("nonce") {
         format!("mock-{}", short_id())
     } else {
         MOCK_OIDC_CODE.to_string()
