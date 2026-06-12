@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { Building2, CreditCard, KeyRound, Rocket, Users } from 'lucide-react';
+import { Building2, CreditCard, Globe2, KeyRound, Rocket, Users } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { setActiveTenantId } from '../../utils/tenantContext';
@@ -11,7 +11,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
-import type { BillingSummary, HostedTenant } from '../../types/api';
+import type { BillingSummary, FederationPlan, HostedFederationStatus, HostedTenant } from '../../types/api';
 
 interface UpgradesStatus {
   current_version: string;
@@ -29,6 +29,9 @@ export default function HostedPage() {
   const [tenants, setTenants] = useState<HostedTenant[]>([]);
   const [billing, setBilling] = useState<BillingSummary | null>(null);
   const [upgrades, setUpgrades] = useState<UpgradesStatus | null>(null);
+  const [federation, setFederation] = useState<HostedFederationStatus | null>(null);
+  const [federationPlan, setFederationPlan] = useState<FederationPlan | null>(null);
+  const [planningFederation, setPlanningFederation] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [name, setName] = useState('');
@@ -40,20 +43,23 @@ export default function HostedPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const [tenantsRes, billingRes, upgradesRes] = await Promise.all([
+    const [tenantsRes, billingRes, upgradesRes, federationRes] = await Promise.all([
       apiFetchSettled<HostedTenant[]>('/hosted/tenants'),
       apiFetchSettled<BillingSummary>('/hosted/billing/usage'),
       apiFetchSettled<UpgradesStatus>('/hosted/upgrades'),
+      apiFetchSettled<HostedFederationStatus>('/hosted/federation'),
     ]);
     if (!tenantsRes.ok) {
       setLoadFailed(true);
       setTenants([]);
       setBilling(null);
       setUpgrades(null);
+      setFederation(null);
     } else {
       setTenants(tenantsRes.data);
       setBilling(billingRes.ok ? billingRes.data : null);
       setUpgrades(upgradesRes.ok ? upgradesRes.data : null);
+      setFederation(federationRes.ok ? federationRes.data : null);
     }
     setLoading(false);
   }, []);
@@ -94,6 +100,20 @@ export default function HostedPage() {
     }
   }
 
+  async function handleFederationPlan(tenant: HostedTenant) {
+    setPlanningFederation(true);
+    const res = await apiPost<FederationPlan>(`/hosted/tenants/${tenant.id}/federation/plan`, {
+      workload_name: 'nginx',
+    });
+    setPlanningFederation(false);
+    if (res.success && res.data) {
+      setFederationPlan(res.data);
+      toast(`Federation plan for ${tenant.slug}: ${res.data.recommended_cluster ?? 'no cluster'}`, 'success');
+    } else {
+      toast(res.error ?? 'Federation plan failed', 'error');
+    }
+  }
+
   if (loading && tenants.length === 0 && !loadFailed) {
     return <PageLoading label="Loading hosted control plane…" />;
   }
@@ -114,7 +134,57 @@ export default function HostedPage() {
         <Link to={viewToPath('platform')} className="text-aether hover:underline" data-testid="hosted-context-platform-link">
           Platform →
         </Link>
+        {' · '}
+        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="hosted-context-federation-link">
+          Federation →
+        </Link>
       </div>
+
+      {federation && (
+        <section className="overview-section-shell mb-6 p-6 sm:p-8" data-testid="hosted-federation-panel">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="section-label">Managed federation</p>
+              <h2 className="section-title flex items-center gap-2">
+                <Globe2 size={18} className="text-aether" />
+                {federation.federation_enabled ? 'Federation active' : 'Single-cluster mode'}
+              </h2>
+              <p className="section-subtitle">
+                {federation.tenant_count} tenant(s) · {federation.policy.clusters.length} configured cluster(s)
+              </p>
+            </div>
+            {tenants[0] && federation.federation_enabled ? (
+              <button
+                type="button"
+                data-testid="hosted-federation-plan-button"
+                disabled={planningFederation}
+                onClick={() => void handleFederationPlan(tenants[0])}
+                className="btn-secondary disabled:opacity-50"
+              >
+                {planningFederation ? 'Planning…' : 'Plan tenant placement'}
+              </button>
+            ) : null}
+          </div>
+          {federation.policy.clusters.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {federation.policy.clusters.map((cluster) => (
+                <Badge
+                  key={cluster}
+                  variant="blue"
+                  text={`${cluster}${federation.policy.weights[cluster] ? ` (${federation.policy.weights[cluster]})` : ''}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-slate-500">Set AETHER_FEDERATION_CLUSTERS to enable multi-cluster placement.</p>
+          )}
+          {federationPlan && (
+            <p className="mt-4 text-sm text-slate-300" data-testid="hosted-federation-plan-result">
+              Recommended: {federationPlan.recommended_cluster ?? 'none'} ({federationPlan.recommended_runtime})
+            </p>
+          )}
+        </section>
+      )}
 
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 

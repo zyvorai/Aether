@@ -277,6 +277,22 @@ export default function GitOpsPage() {
           </Link>
           {' · '}
           <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
+            className="text-aether hover:underline"
+            data-testid="gitops-context-fleet-link"
+          >
+            Fleet →
+          </Link>
+          {' · '}
+          <Link
+            to={viewToPath('hosted')}
+            className="text-aether hover:underline"
+            data-testid="gitops-context-hosted-link"
+          >
+            Hosted SaaS →
+          </Link>
+          {' · '}
+          <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
             className="text-aether hover:underline"
             data-testid="gitops-openapi-link"

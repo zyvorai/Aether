@@ -16,7 +16,7 @@ use rsa::signature::Signer;
 use rsa::traits::PublicKeyParts;
 use rsa::RsaPrivateKey;
 use serde_json::json;
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha384};
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -124,6 +124,36 @@ fn mock_idp_exclusive_comments() -> bool {
         .unwrap_or(false)
 }
 
+fn mock_idp_sha384() -> bool {
+    std::env::var("AETHER_MOCK_IDP_SHA384")
+        .ok()
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
+fn mock_idp_azure_ad() -> bool {
+    std::env::var("AETHER_MOCK_IDP_AZURE_AD")
+        .ok()
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
+struct SignOptions {
+    exclusive_comments: bool,
+    sha384: bool,
+    azure_transforms: bool,
+}
+
+impl SignOptions {
+    fn from_env() -> Self {
+        Self {
+            exclusive_comments: mock_idp_exclusive_comments(),
+            sha384: mock_idp_sha384(),
+            azure_transforms: mock_idp_azure_ad(),
+        }
+    }
+}
+
 #[cfg(test)]
 pub fn sign_saml_element_for_test(element_xml: &str, element_id: &str) -> String {
     sign_saml_element_with_mode(element_xml, element_id, false)
@@ -132,6 +162,42 @@ pub fn sign_saml_element_for_test(element_xml: &str, element_id: &str) -> String
 #[cfg(test)]
 pub fn sign_saml_element_for_test_with_comments(element_xml: &str, element_id: &str) -> String {
     sign_saml_element_with_mode(element_xml, element_id, true)
+}
+
+#[cfg(test)]
+pub fn sign_saml_element_for_test_sha384(element_xml: &str, element_id: &str) -> String {
+    sign_saml_element_with_options(
+        element_xml,
+        element_id,
+        SignOptions {
+            exclusive_comments: false,
+            sha384: true,
+            azure_transforms: false,
+        },
+    )
+}
+
+#[cfg(test)]
+pub fn sign_saml_response_for_test_azure(unsigned_response: &str, response_id: &str) -> String {
+    let signature = sign_saml_element_with_options(
+        unsigned_response,
+        response_id,
+        SignOptions {
+            exclusive_comments: false,
+            sha384: false,
+            azure_transforms: true,
+        },
+    );
+    if let Some(pos) = unsigned_response.find("<saml2:Assertion") {
+        format!(
+            "{}{}{}",
+            &unsigned_response[..pos],
+            signature,
+            &unsigned_response[pos..]
+        )
+    } else {
+        unsigned_response.replacen('>', &format!(">{signature}"), 1)
+    }
 }
 
 pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
@@ -174,6 +240,23 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
     };
     let signature = if mock_idp_encrypted() || mock_idp_encrypted_gcm() {
         String::new()
+    } else if mock_idp_azure_ad() {
+        let unsigned = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{response_id}" Version="2.0" IssueInstant="{instant}" Destination="{acs}">
+  <saml2:Issuer>{issuer}</saml2:Issuer>
+  <saml2p:Status><saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/></saml2p:Status>
+  {body}
+</saml2p:Response>"#,
+            issuer = xml_escape(&issuer),
+            acs = xml_escape(&acs),
+            body = body,
+        );
+        sign_saml_element_with_options(&unsigned, &response_id, SignOptions {
+            exclusive_comments: false,
+            sha384: mock_idp_sha384(),
+            azure_transforms: true,
+        })
     } else {
         sign_saml_element(&body, &assertion_id)
     };
@@ -206,38 +289,83 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
 }
 
 fn sign_saml_element(element_xml: &str, element_id: &str) -> String {
-    sign_saml_element_with_mode(element_xml, element_id, mock_idp_exclusive_comments())
+    sign_saml_element_with_options(element_xml, element_id, SignOptions::from_env())
 }
 
+#[cfg(test)]
 fn sign_saml_element_with_mode(element_xml: &str, element_id: &str, exclusive_comments: bool) -> String {
-    let c14n = if exclusive_comments {
+    sign_saml_element_with_options(
+        element_xml,
+        element_id,
+        SignOptions {
+            exclusive_comments,
+            sha384: false,
+            azure_transforms: false,
+        },
+    )
+}
+
+fn sign_saml_element_with_options(element_xml: &str, element_id: &str, options: SignOptions) -> String {
+    let c14n = if options.exclusive_comments {
         crate::saml_c14n::EXC_C14N_COMMENTS
     } else {
         crate::saml_c14n::EXC_C14N
     };
     let reference_uri = format!("#{element_id}");
-    let transform_xml = if exclusive_comments {
+    let transform_xml = if options.azure_transforms {
+        format!(
+            r#"<ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><ds:Transform Algorithm="{c14n}" /></ds:Transforms>"#
+        )
+    } else if options.exclusive_comments {
         format!(r#"<ds:Transforms><ds:Transform Algorithm="{c14n}" /></ds:Transforms>"#)
     } else {
         String::new()
     };
     let digest = {
-        let digest_bytes = if exclusive_comments {
+        let digest_bytes = if options.azure_transforms {
+            crate::saml_c14n::digest_canonical_bytes(
+                element_xml,
+                &[
+                    "http://www.w3.org/2000/09/xmldsig#enveloped-signature".into(),
+                    c14n.to_string(),
+                ],
+            )
+            .unwrap_or_else(|_| element_xml.as_bytes().to_vec())
+        } else if options.exclusive_comments {
             crate::saml_c14n::digest_canonical_bytes(element_xml, &[c14n.to_string()])
                 .unwrap_or_else(|_| element_xml.as_bytes().to_vec())
         } else {
             element_xml.as_bytes().to_vec()
         };
-        base64::engine::general_purpose::STANDARD.encode(Sha256::digest(&digest_bytes))
+        if options.sha384 {
+            base64::engine::general_purpose::STANDARD.encode(Sha384::digest(&digest_bytes))
+        } else {
+            base64::engine::general_purpose::STANDARD.encode(Sha256::digest(&digest_bytes))
+        }
+    };
+    let (sig_method, digest_method) = if options.sha384 {
+        (
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384",
+            "http://www.w3.org/2001/04/xmlenc#sha384",
+        )
+    } else {
+        (
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            "http://www.w3.org/2001/04/xmlenc#sha256",
+        )
     };
     let signed_info = [
         r#"<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm=""#,
         c14n,
-        r#" /><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI=""#,
+        r#"" /><ds:SignatureMethod Algorithm=""#,
+        sig_method,
+        r#""/><ds:Reference URI=""#,
         reference_uri.as_str(),
         r#"">"#,
         transform_xml.as_str(),
-        r#"<ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>"#,
+        r#"<ds:DigestMethod Algorithm=""#,
+        digest_method,
+        r#""/><ds:DigestValue>"#,
         digest.as_str(),
         r#"</ds:DigestValue></ds:Reference></ds:SignedInfo>"#,
     ]
@@ -245,9 +373,15 @@ fn sign_saml_element_with_mode(element_xml: &str, element_id: &str, exclusive_co
     let signed_info_bytes =
         crate::saml_c14n::canonicalize(&signed_info, c14n)
             .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
-    let signing_key = SigningKey::<Sha256>::new(keys().private_key.clone());
-    let signature = signing_key.sign(&signed_info_bytes);
-    let sig_b64 = base64::engine::general_purpose::STANDARD.encode(signature.to_bytes());
+    let sig_b64 = if options.sha384 {
+        let signing_key = SigningKey::<Sha384>::new(keys().private_key.clone());
+        let signature = signing_key.sign(&signed_info_bytes);
+        base64::engine::general_purpose::STANDARD.encode(signature.to_bytes())
+    } else {
+        let signing_key = SigningKey::<Sha256>::new(keys().private_key.clone());
+        let signature = signing_key.sign(&signed_info_bytes);
+        base64::engine::general_purpose::STANDARD.encode(signature.to_bytes())
+    };
     [
         r#"<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">"#,
         signed_info.as_str(),

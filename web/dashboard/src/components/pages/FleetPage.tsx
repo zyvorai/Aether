@@ -231,6 +231,14 @@ export default function FleetPage() {
           >
             Copilot →
           </Link>
+          {' · '}
+          <Link
+            to={viewToPath('hosted')}
+            className="text-aether hover:underline"
+            data-testid="fleet-context-hosted-link"
+          >
+            Hosted SaaS →
+          </Link>
         </WorkloadContextBanner>
       ) : null}
       <div className="mb-4">

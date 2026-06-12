@@ -159,6 +159,86 @@ EOF
     fi
   fi
 
+  if [ -n "${AETHER_LDAP_URL:-}" ]; then
+    AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aether-ldap
+  namespace: ${ns}
+type: Opaque
+stringData:
+  url: ${AETHER_LDAP_URL}
+  base-dn: ${AETHER_LDAP_BASE_DN:-}
+  domain: ${AETHER_LDAP_DOMAIN:-}
+  session-secret: ${AETHER_SESSION_SECRET:-}
+  bind-dn: ${AETHER_LDAP_BIND_DN:-}
+  bind-password: ${AETHER_LDAP_BIND_PASSWORD:-}
+  role-map: ${AETHER_LDAP_ROLE_MAP:-}
+EOF
+)"
+    AETHER_MANIFEST_EXTRA_ENV_YAML+="$(cat <<'EOF'
+
+        - name: AETHER_LDAP_URL
+          valueFrom:
+            secretKeyRef:
+              name: aether-ldap
+              key: url
+        - name: AETHER_LDAP_BASE_DN
+          valueFrom:
+            secretKeyRef:
+              name: aether-ldap
+              key: base-dn
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: aether-ldap
+              key: session-secret
+EOF
+)"
+    if [ -n "${AETHER_LDAP_DOMAIN:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_LDAP_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: aether-ldap
+              key: domain"
+    fi
+    if [ -n "${AETHER_LDAP_BIND_DN:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_LDAP_BIND_DN
+          valueFrom:
+            secretKeyRef:
+              name: aether-ldap
+              key: bind-dn
+        - name: AETHER_LDAP_BIND_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: aether-ldap
+              key: bind-password"
+    fi
+    if [ -n "${AETHER_LDAP_ROLE_MAP:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_LDAP_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: aether-ldap
+              key: role-map"
+    fi
+    if [ -n "${AETHER_LDAP_USER_FILTER:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_LDAP_USER_FILTER
+          value: \"${AETHER_LDAP_USER_FILTER}\""
+    fi
+    if [ -n "${AETHER_LDAP_DEFAULT_ROLE:-}" ]; then
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="
+        - name: AETHER_LDAP_DEFAULT_ROLE
+          value: \"${AETHER_LDAP_DEFAULT_ROLE}\""
+    fi
+  fi
+
   if [ -n "${AETHER_BACKUP_REMOTE_URL:-}" ]; then
     AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
 

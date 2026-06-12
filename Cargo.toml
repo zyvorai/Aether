@@ -86,6 +86,7 @@ base64 = "0.22"
 flate2 = "1.0"
 rsa = { version = "0.9", features = ["sha2", "pem"] }
 x509-parser = "0.16"
+ldap3 = { version = "0.11", default-features = false, features = ["sync", "tls-rustls"] }
 
 [dev-dependencies]
 tempfile = "3.15"

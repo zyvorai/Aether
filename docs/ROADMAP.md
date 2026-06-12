@@ -39,6 +39,10 @@
 - **Anomaly auto-remediation workflows** — shipped in Phase D
 - **Edge agent offline queue replay** — full action dispatch + local retry queue
 - **Dashboard phases 2131–2180** — hub cross-links, tenant switcher, hosted upgrades, reference-cluster-live-verify
+- **Dashboard phases 2181–2230** — hosted federation panel, Settings/Fleet/Backups hub links, Playwright `phases-2181-2230-features.spec.ts`
+- **SAML enterprise dialects** — RSA-SHA384 verification, Azure AD enveloped-signature mock IdP (`AETHER_MOCK_IDP_SHA384`, `AETHER_MOCK_IDP_AZURE_AD`)
+- **Metal3 lab MAC fixture** — `examples/labs/metal3/workload.yaml` annotations + `AETHER_METAL3_BOOT_MAC` / `AETHER_METAL3_IMAGE_URL` env overrides
+- **Hosted SaaS federation API** — `GET /api/hosted/federation`, `POST /api/hosted/tenants/:id/federation/plan`
 
 ---
 

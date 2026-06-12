@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Optional XML-DSig verification for SAML responses (RSA-SHA256).
+//! Optional XML-DSig verification for SAML responses (RSA-SHA256 / RSA-SHA384).
 
 use anyhow::Context;
 use base64::Engine;
@@ -10,10 +10,15 @@ use rsa::pkcs1v15::{Signature, VerifyingKey};
 use rsa::pkcs8::DecodePublicKey;
 use rsa::signature::Verifier;
 use rsa::RsaPublicKey;
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha384};
 use x509_parser::pem::parse_x509_pem;
 
-/// When `trusted_cert_pem` is set, require a valid RSA-SHA256 XML signature signed by that certificate.
+const SIG_RSA_SHA256: &str = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+const SIG_RSA_SHA384: &str = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384";
+const DIGEST_SHA256: &str = "http://www.w3.org/2001/04/xmlenc#sha256";
+const DIGEST_SHA384: &str = "http://www.w3.org/2001/04/xmlenc#sha384";
+
+/// When `trusted_cert_pem` is set, require a valid RSA XML signature signed by that certificate.
 pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::Result<()> {
     let signature_block = extract_signature_block(xml)
         .ok_or_else(|| anyhow::anyhow!("SAML response missing XML Signature"))?;
@@ -40,24 +45,61 @@ pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::R
     } else {
         crate::saml_c14n::digest_canonical_bytes(&signed_element, &transforms)?
     };
-    let digest_actual =
-        base64::engine::general_purpose::STANDARD.encode(Sha256::digest(&digest_bytes));
+    let digest_method = extract_digest_method(&reference_xml).unwrap_or_else(|| DIGEST_SHA256.into());
+    let digest_actual = digest_b64(&digest_bytes, &digest_method)?;
     if digest_actual != digest_expected.trim() {
         anyhow::bail!("SAML digest mismatch for #{target_id}");
     }
 
     let public_key = public_key_from_pem(trusted_cert_pem)?;
-    let verifying_key = VerifyingKey::<Sha256>::new(public_key);
     let signature = Signature::try_from(sig_bytes.as_slice())
         .map_err(|e| anyhow::anyhow!("invalid RSA signature: {e}"))?;
     let c14n_algo = crate::saml_c14n::extract_canonicalization_method(&signed_info)
         .unwrap_or_else(|| crate::saml_c14n::EXC_C14N.to_string());
     let signed_info_bytes = crate::saml_c14n::canonicalize(&signed_info, &c14n_algo)
         .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
-    verifying_key
-        .verify(signed_info_bytes.as_slice(), &signature)
-        .map_err(|_| anyhow::anyhow!("SAML RSA-SHA256 signature verification failed"))?;
+    let sig_method = extract_signature_method(&signed_info).unwrap_or_else(|| SIG_RSA_SHA256.into());
+    verify_rsa_signature(&public_key, &sig_method, signed_info_bytes.as_slice(), &signature)?;
     Ok(())
+}
+
+fn digest_b64(bytes: &[u8], algorithm: &str) -> anyhow::Result<String> {
+    let digest = match algorithm {
+        DIGEST_SHA256 => base64::engine::general_purpose::STANDARD.encode(Sha256::digest(bytes)),
+        DIGEST_SHA384 => base64::engine::general_purpose::STANDARD.encode(Sha384::digest(bytes)),
+        other => anyhow::bail!("unsupported SAML digest algorithm: {other}"),
+    };
+    Ok(digest)
+}
+
+fn verify_rsa_signature(
+    public_key: &RsaPublicKey,
+    algorithm: &str,
+    signed_info: &[u8],
+    signature: &Signature,
+) -> anyhow::Result<()> {
+    match algorithm {
+        SIG_RSA_SHA256 => VerifyingKey::<Sha256>::new(public_key.clone())
+            .verify(signed_info, signature)
+            .map_err(|_| anyhow::anyhow!("SAML RSA-SHA256 signature verification failed")),
+        SIG_RSA_SHA384 => VerifyingKey::<Sha384>::new(public_key.clone())
+            .verify(signed_info, signature)
+            .map_err(|_| anyhow::anyhow!("SAML RSA-SHA384 signature verification failed")),
+        other => anyhow::bail!("unsupported SAML signature algorithm: {other}"),
+    }
+}
+
+fn extract_signature_method(signed_info: &str) -> Option<String> {
+    extract_method_algorithm(signed_info, "SignatureMethod")
+}
+
+fn extract_digest_method(reference_xml: &str) -> Option<String> {
+    extract_method_algorithm(reference_xml, "DigestMethod")
+}
+
+fn extract_method_algorithm(xml: &str, element: &str) -> Option<String> {
+    let fragment = extract_element_xml(xml, element)?;
+    extract_xml_attr(&fragment, "Algorithm")
 }
 
 fn public_key_from_pem(pem: &str) -> anyhow::Result<RsaPublicKey> {
@@ -92,7 +134,7 @@ fn extract_element_by_id(xml: &str, id: &str) -> Option<String> {
             if let Some((_prefix, local)) = tag_name.split_once(':') {
                 tag_name = local.to_string();
             }
-            for prefix in ["", "saml2:", "saml:", "samlp:", "ds:"] {
+            for prefix in ["", "saml2:", "saml2p:", "saml:", "samlp:", "ds:"] {
                 let close = format!("</{prefix}{tag_name}>");
                 if let Some(rel) = xml[tag_start..].find(&close) {
                     return Some(xml[tag_start..tag_start + rel + close.len()].to_string());
@@ -123,6 +165,11 @@ fn extract_element_xml(xml: &str, name: &str) -> Option<String> {
                 let end = start + rel + end_marker.len();
                 return Some(xml[start..end].to_string());
             }
+        }
+        let slice = &xml[start..];
+        if let Some(rel) = slice.find("/>") {
+            let end = start + rel + 2;
+            return Some(xml[start..end].to_string());
         }
     }
     None
@@ -169,6 +216,8 @@ mod tests {
     #[test]
     fn test_mock_idp_signature_roundtrip() {
         std::env::remove_var("AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS");
+        std::env::remove_var("AETHER_MOCK_IDP_SHA384");
+        std::env::remove_var("AETHER_MOCK_IDP_AZURE_AD");
         let assertion_id = "_mock_assert_test";
         let assertion = format!(
             r#"<saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{assertion_id}" Version="2.0"><saml2:Subject><saml2:NameID>mock-user@aether.local</saml2:NameID></saml2:Subject></saml2:Assertion>"#
@@ -189,5 +238,28 @@ mod tests {
         let xml = format!("<Response>{signature}{assertion}</Response>");
         verify_response_signature(&xml, mock_idp::idp_certificate_pem())
             .expect("exclusive comments signature roundtrip");
+    }
+
+    #[test]
+    fn test_mock_idp_sha384_signature_roundtrip() {
+        let assertion_id = "_mock_assert_sha384";
+        let assertion = format!(
+            r#"<saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{assertion_id}" Version="2.0"><saml2:Subject><saml2:NameID>mock-user@aether.local</saml2:NameID></saml2:Subject></saml2:Assertion>"#
+        );
+        let signature = mock_idp::sign_saml_element_for_test_sha384(&assertion, assertion_id);
+        let xml = format!("<Response>{signature}{assertion}</Response>");
+        verify_response_signature(&xml, mock_idp::idp_certificate_pem()).expect("sha384 roundtrip");
+    }
+
+    #[test]
+    fn test_mock_idp_azure_ad_signature_roundtrip() {
+        let response_id = "_mock_resp_azure";
+        let assertion_id = "_mock_assert_azure";
+        let response = format!(
+            r#"<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{response_id}" Version="2.0"><saml2p:Status><saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/></saml2p:Status><saml2:Assertion ID="{assertion_id}" Version="2.0"><saml2:Subject><saml2:NameID>mock-user@aether.local</saml2:NameID></saml2:Subject></saml2:Assertion></saml2p:Response>"#
+        );
+        let signed = mock_idp::sign_saml_response_for_test_azure(&response, response_id);
+        verify_response_signature(&signed, mock_idp::idp_certificate_pem())
+            .expect("azure ad dialect roundtrip");
     }
 }

@@ -102,6 +102,17 @@ export default function BackupsPage() {
 
   return (
     <div>
+      <div className="mb-6 glass-context-banner" data-testid="backups-hub-context">
+        Backups hub
+        {' · '}
+        <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="backups-context-settings-link">
+          Settings →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('audit')} className="text-aether hover:underline" data-testid="backups-context-audit-link">
+          Audit →
+        </Link>
+      </div>
       <SearchQueryContextBanner testId="backups-workload-context" query={search} entityLabel="backups">
         <WorkloadScopedCrossLinks workload={search} prefix="backups" showGitops />
         {search.trim() ? (

@@ -81,6 +81,13 @@ export interface AuthProvidersPayload {
     enabled: boolean;
     login_url?: string;
   };
+  ldap?: {
+    enabled: boolean;
+    domain?: string | null;
+    login_url?: string;
+    logout_url?: string;
+    note?: string;
+  };
 }
 
 export async function apiFetchAuthProviders(): Promise<AuthProvidersPayload | null> {
@@ -182,6 +189,35 @@ export async function apiTryAuth(token: string): Promise<AuthTryResult> {
     }
     const json: ApiResponse<unknown> = await res.json();
     return json.success === true ? { ok: true } : { ok: false, reason: 'rejected' };
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+}
+
+export interface LdapLoginResult {
+  username: string;
+  role: string;
+  display_name?: string | null;
+}
+
+export async function apiLdapLogin(
+  username: string,
+  password: string,
+): Promise<{ ok: true; data: LdapLoginResult } | { ok: false; reason: 'network' | 'unauthorized' | 'rejected' }> {
+  try {
+    const res = await fetch(`${BASE}/auth/ldap/login`, withCreds({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    }));
+    const json: ApiResponse<LdapLoginResult> = await res.json();
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, reason: 'unauthorized' };
+    }
+    if (json.success && json.data) {
+      return { ok: true, data: json.data };
+    }
+    return { ok: false, reason: 'rejected' };
   } catch {
     return { ok: false, reason: 'network' };
   }
