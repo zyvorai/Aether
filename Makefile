@@ -111,7 +111,7 @@ validate:
 	@AETHER_BIN=./target/release/aether scripts/validate-schema-examples.sh
 
 post-deploy-verify:
-	@chmod +x scripts/post-deploy-verify.sh 2>/dev/null || true
+	@chmod +x scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
 	@./scripts/post-deploy-verify.sh
 
 # Benchmark (if criterion is added)

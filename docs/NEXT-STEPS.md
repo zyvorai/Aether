@@ -45,6 +45,7 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 - **SAML exc-c14n WithComments** — `AETHER_MOCK_IDP_EXCLUSIVE_COMMENTS=1` mock IdP dialect + unit tests
 - **macOS shell Ship** — Tauri tray/briefing sync + notarized DMG CI documented as Ship tier
 - **Kind Playwright port-forward E2E** — fixture exposes nginx :80, dashboard testids, `cluster-exec-terminal.spec.ts` exec + port-forward tests
+- **Post-deploy auth bootstrap** — `scripts/lib/post-deploy-auth.sh` (bearer, open API, or mock IdP SAML session) wired into verify/smoke scripts
 
 ## Remaining / optional
 
@@ -54,8 +55,8 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 ## Recommended Next Order
 
 1. Live reference cluster: `make reference-cluster-live-verify` (kubeconfig + optional API at `AETHER_API`)
-2. Kind fixtures for Playwright cluster exec/port-forward UI tests — **done** (`kind-playwright-fixture.sh`, `cluster-exec-terminal.spec.ts`, CI `dashboard-exec-e2e`).
-3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh`.
+2. Kind fixtures for Playwright cluster exec/port-forward UI tests — **done**
+3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh` — **local mock IdP verify works** (`AETHER_API=http://127.0.0.1:5090 make post-deploy-verify` with `AETHER_MOCK_IDP=1` server or `AETHER_API_KEY`)
 
 ## Mock IdP (development / CI)
 

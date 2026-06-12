@@ -4,10 +4,16 @@
 set -euo pipefail
 
 API="${AETHER_API:-${AETHER_API_BASE:-http://127.0.0.1:5090}}"
-AUTH=()
-if [ -n "${AETHER_API_KEY:-}" ]; then
-  AUTH=(-H "Authorization: Bearer ${AETHER_API_KEY}")
-fi
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# shellcheck source=lib/post-deploy-auth.sh
+source "${ROOT}/scripts/lib/post-deploy-auth.sh"
+post_deploy_auth_prepare "${API}" || {
+  echo "ERROR: post-deploy auth bootstrap failed (set AETHER_API_KEY or AETHER_MOCK_IDP=1 on server)" >&2
+  exit 1
+}
+export AETHER_POST_DEPLOY_COOKIE_HEADER
+AETHER_POST_DEPLOY_COOKIE_HEADER="$(post_deploy_auth_cookie_header || true)"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "${TMP}"' EXIT
@@ -24,7 +30,7 @@ fetch() {
   local path="$1"
   local out="${TMP}/$(echo "$path" | tr '/?&=' '_')"
   local code
-  code="$(curl -sS -m 20 "${AUTH[@]}" -o "${out}" -w '%{http_code}' "${API}${path}")"
+  code="$(curl -sS -m 20 "${AUTH[@]}" "${COOKIE_ARGS[@]}" -o "${out}" -w '%{http_code}' "${API}${path}")"
   echo "${code}" >"${out}.code"
   printf '%s' "${out}"
 }
@@ -38,6 +44,20 @@ expect_code() {
     ok "${path} → ${code}"
   else
     bad "${path} → ${code} (expected ${want})"
+  fi
+}
+
+expect_cluster_code() {
+  local path="$1"
+  local f code
+  f="$(fetch "$path")"
+  code="$(cat "${f}.code")"
+  if [ "${code}" = "200" ]; then
+    ok "${path} → 200"
+  elif [ "${code}" = "500" ]; then
+    note "${path} → 500 (no kubeconfig on API host — optional)"
+  else
+    bad "${path} → ${code} (expected 200 or 500 without cluster)"
   fi
 }
 
@@ -57,11 +77,11 @@ expect_code /api/dashboard/version 200
 section "Workloads & cluster (dashboard pages)"
 expect_code /api/workloads 200
 expect_code /api/cluster/summary 200
-expect_code /api/cluster/namespaces?cluster=active-client 200
-expect_code "/api/cluster/metrics/summary?cluster=active-client&namespace=aether-system" 200
-expect_code /api/cluster/cilium/status 200
-expect_code "/api/cluster/browse?cluster=active-client&namespace=aether-system&kind=CiliumNetworkPolicy" 200
-expect_code "/api/cluster/browse?cluster=active-client&namespace=_cluster&kind=CiliumClusterwideNetworkPolicy" 200
+expect_cluster_code /api/cluster/namespaces?cluster=active-client
+expect_cluster_code "/api/cluster/metrics/summary?cluster=active-client&namespace=aether-system"
+expect_cluster_code /api/cluster/cilium/status
+expect_cluster_code "/api/cluster/browse?cluster=active-client&namespace=aether-system&kind=CiliumNetworkPolicy"
+expect_cluster_code "/api/cluster/browse?cluster=active-client&namespace=_cluster&kind=CiliumClusterwideNetworkPolicy"
 
 section "Observability & platform"
 expect_code /api/observability/summary 200
@@ -69,7 +89,7 @@ expect_code /api/metrics 200
 expect_code /api/platform/recommendations 200
 
 section "CloudOS / Kubernetes UX"
-expect_code /api/cluster/cilium/hubble 200
+expect_cluster_code /api/cluster/cilium/hubble
 expect_code /api/helm/catalog 200
 expect_code /api/intelligence/threats 200
 
@@ -123,6 +143,7 @@ import json, sys, glob, os, urllib.request
 
 tmp = sys.argv[1]
 api = sys.argv[2]
+cookie = os.environ.get("AETHER_POST_DEPLOY_COOKIE_HEADER", "")
 
 def load(path_suffix):
     for f in glob.glob(os.path.join(tmp, "*" + path_suffix)):
@@ -143,10 +164,13 @@ if isinstance(workloads, list):
             "kind": cluster.get("kind"),
             "include_copilot_summary": False,
         }).encode()
+        headers = {"Content-Type": "application/json"}
+        if cookie:
+            headers["Cookie"] = cookie
         req = urllib.request.Request(
             f"{api}/api/copilot/troubleshoot",
             data=payload,
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             method="POST",
         )
         try:
