@@ -117,6 +117,41 @@ impl SamlRuntime {
         self.role_mapping.is_some()
     }
 
+    pub fn sp_entity_id(&self) -> &str {
+        &self.sp_entity_id
+    }
+
+    pub fn acs_url(&self) -> &str {
+        &self.acs_url
+    }
+
+    pub fn idp_sso_url(&self) -> &str {
+        &self.idp_sso_url
+    }
+
+    pub fn idp_entity_id(&self) -> &str {
+        &self.idp_entity_id
+    }
+
+    pub fn idp_cert_configured(&self) -> bool {
+        self.idp_cert_pem.is_some()
+    }
+
+    /// SAML 2.0 SP metadata for IdP federation (config-only; derived from env).
+    pub fn sp_metadata_xml(&self) -> String {
+        format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="{entity_id}">
+  <md:SPSSODescriptor AuthnRequestsSigned="false" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="{acs}" index="0" isDefault="true"/>
+  </md:SPSSODescriptor>
+</md:EntityDescriptor>"#,
+            entity_id = xml_escape(&self.sp_entity_id),
+            acs = xml_escape(&self.acs_url),
+        )
+    }
+
     pub async fn begin_login(&self, next_path: Option<&str>) -> Result<Response, anyhow::Error> {
         let request_id = format!("_aether_{}", uuid_like());
         let instant = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ");
@@ -454,6 +489,25 @@ fn unix_now() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_sp_metadata_xml_contains_entity_and_acs() {
+        let cache = crate::ha::SharedCache::connect(None).await.unwrap();
+        let rt = SamlRuntime {
+            idp_sso_url: "https://idp.example.com/sso".into(),
+            idp_entity_id: "https://idp.example.com".into(),
+            sp_entity_id: "https://aether.example.com".into(),
+            acs_url: "https://aether.example.com/api/auth/saml/acs".into(),
+            idp_cert_pem: None,
+            session_secret: b"test-session-secret-32chars!!".to_vec(),
+            default_role: Role::Operator,
+            role_mapping: None,
+            cache,
+        };
+        let xml = rt.sp_metadata_xml();
+        assert!(xml.contains("entityID=\"https://aether.example.com\""));
+        assert!(xml.contains("Location=\"https://aether.example.com/api/auth/saml/acs\""));
+    }
 
     #[test]
     fn test_extract_name_id_and_attributes() {

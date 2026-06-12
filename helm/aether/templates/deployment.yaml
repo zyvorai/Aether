@@ -126,7 +126,117 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
-              key: role-map
+              key: oidc-role-map
+        {{- end }}
+        {{- if .Values.oidc.groupsClaim }}
+        - name: AETHER_OIDC_GROUPS_CLAIM
+          value: {{ .Values.oidc.groupsClaim | quote }}
+        {{- end }}
+        {{- if .Values.oidc.defaultRole }}
+        - name: AETHER_OIDC_DEFAULT_ROLE
+          value: {{ .Values.oidc.defaultRole | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.saml.enabled }}
+        - name: AETHER_SAML_IDP_SSO_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-idp-sso-url
+        - name: AETHER_SAML_IDP_ENTITY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-idp-entity-id
+        - name: AETHER_SAML_ACS_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-acs-url
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-session-secret
+        {{- if .Values.saml.spEntityId }}
+        - name: AETHER_SAML_SP_ENTITY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-sp-entity-id
+        {{- end }}
+        {{- if .Values.saml.idpCert }}
+        - name: AETHER_SAML_IDP_CERT
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-idp-cert
+        {{- end }}
+        {{- if .Values.saml.roleMap }}
+        - name: AETHER_SAML_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-role-map
+        {{- end }}
+        {{- if .Values.saml.defaultRole }}
+        - name: AETHER_SAML_DEFAULT_ROLE
+          value: {{ .Values.saml.defaultRole | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.ldap.enabled }}
+        - name: AETHER_LDAP_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-url
+        - name: AETHER_LDAP_BASE_DN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-base-dn
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-session-secret
+        {{- if .Values.ldap.domain }}
+        - name: AETHER_LDAP_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-domain
+        {{- end }}
+        {{- if .Values.ldap.bindDn }}
+        - name: AETHER_LDAP_BIND_DN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-bind-dn
+        - name: AETHER_LDAP_BIND_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-bind-password
+        {{- end }}
+        {{- if .Values.ldap.userFilter }}
+        - name: AETHER_LDAP_USER_FILTER
+          value: {{ .Values.ldap.userFilter | quote }}
+        {{- end }}
+        {{- if .Values.ldap.roleMap }}
+        - name: AETHER_LDAP_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-role-map
+        {{- end }}
+        {{- if .Values.ldap.defaultRole }}
+        - name: AETHER_LDAP_DEFAULT_ROLE
+          value: {{ .Values.ldap.defaultRole | quote }}
+        {{- end }}
+        {{- if .Values.ldap.tlsSkipVerify }}
+        - name: AETHER_LDAP_TLS_SKIP_VERIFY
+          value: "1"
         {{- end }}
         {{- end }}
         {{- if .Values.backupRemote.enabled }}
@@ -164,6 +274,11 @@ spec:
         {{- end }}
         {{- with .Values.extraEnv }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.auth.configMap.enabled }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "aether.fullname" . }}-auth-config
         {{- end }}
         ports:
         - name: http

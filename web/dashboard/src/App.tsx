@@ -23,7 +23,7 @@ import { pathWithQuery } from './utils/urlState';
 import type { UniversalLinkResolveReport } from './types/api';
 import { syncMacOSLiveActivity, subscribeMacOSNavigate } from './utils/macosBridge';
 import { HERO_CONFIG } from './utils/dashboardNav';
-import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode } from './utils/api';
+import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode, apiTryAuth } from './utils/api';
 import CommandPalette from './components/CommandPalette';
 import { pushRecentView } from './utils/recentViews';
 import LoginGate from './components/LoginGate';
@@ -99,6 +99,40 @@ function AetherDashboard() {
 
   useEffect(() => {
     const run = async () => {
+      const hadTokenParam = searchParams.has('token');
+      const stripTokenFromUrl = () => {
+        if (!hadTokenParam) return;
+        const params = new URLSearchParams(searchParams);
+        params.delete('token');
+        const search = params.toString();
+        navigate(
+          { pathname: location.pathname, search: search ? `?${search}` : '' },
+          { replace: true },
+        );
+      };
+
+      const tokenFromUrl = searchParams.get('token')?.trim();
+      if (tokenFromUrl) {
+        const result = await apiTryAuth(tokenFromUrl);
+        if (result.ok) {
+          const u = DEFAULT_DASHBOARD_USERNAME;
+          sessionStorage.setItem(
+            'aether_auth',
+            JSON.stringify({
+              authenticated: true,
+              username: u,
+              token: tokenFromUrl,
+              authMode: 'bearer',
+            }),
+          );
+          setIsAuthenticated(true);
+          setUsername(u);
+          setAuthBootstrapping(false);
+          stripTokenFromUrl();
+          return;
+        }
+      }
+
       const stored = sessionStorage.getItem('aether_auth');
       if (stored) {
         try {
@@ -110,6 +144,7 @@ function AetherDashboard() {
             setIsAuthenticated(true);
             setUsername(parsed.username);
             setAuthBootstrapping(false);
+            stripTokenFromUrl();
             return;
           }
         } catch {
@@ -130,6 +165,7 @@ function AetherDashboard() {
           }),
         );
         setAuthBootstrapping(false);
+        stripTokenFromUrl();
         return;
       }
 
@@ -147,14 +183,16 @@ function AetherDashboard() {
           }),
         );
         setAuthBootstrapping(false);
+        stripTokenFromUrl();
         return;
       }
 
       setIsAuthenticated(false);
       setAuthBootstrapping(false);
+      stripTokenFromUrl();
     };
     void run();
-  }, []);
+  }, [searchParams, location.pathname, navigate]);
 
   // Real-time updates via SSE
   const { connected: sseConnected } = useEventStream('', (event) => {

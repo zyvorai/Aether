@@ -90,6 +90,77 @@ export interface AuthProvidersPayload {
   };
 }
 
+export interface AuthSettingsSession {
+  cookie_name: string;
+  session_secret_configured: boolean;
+  redis_configured: boolean;
+  jwt_session_hours: number;
+  note?: string;
+}
+
+export interface AuthSettingsOidc {
+  enabled: boolean;
+  issuer?: string | null;
+  client_id?: string | null;
+  redirect_uri?: string | null;
+  login_path?: string;
+  callback_path?: string;
+  logout_path?: string;
+  client_secret_configured?: boolean;
+  role_mapping_configured?: boolean;
+  groups_claim?: string;
+  default_role?: string;
+  flow?: string[];
+  discovery?: string | null;
+  note?: string;
+}
+
+export interface AuthSettingsSaml {
+  enabled: boolean;
+  sp_entity_id?: string | null;
+  acs_url?: string | null;
+  idp_sso_url?: string | null;
+  idp_entity_id?: string | null;
+  idp_cert_configured?: boolean;
+  metadata_path?: string;
+  login_path?: string;
+  acs_path?: string;
+  logout_path?: string;
+  role_mapping_configured?: boolean;
+  default_role?: string;
+  note?: string;
+}
+
+export interface AuthSettingsLdap {
+  enabled: boolean;
+  url?: string | null;
+  base_dn?: string | null;
+  domain?: string | null;
+  bind_dn_configured?: boolean;
+  role_mapping_configured?: boolean;
+  default_role?: string;
+  login_path?: string;
+  logout_path?: string;
+  note?: string;
+}
+
+export interface AuthSettingsPayload {
+  session: AuthSettingsSession;
+  oidc: AuthSettingsOidc;
+  saml: AuthSettingsSaml;
+  ldap: AuthSettingsLdap;
+}
+
+export async function apiFetchAuthSettings(): Promise<AuthSettingsPayload | null> {
+  try {
+    const res = await fetch(`${BASE}/auth/settings`, withCreds({ headers: authHeaders() }));
+    const json: ApiResponse<AuthSettingsPayload> = await res.json();
+    return json.success && json.data ? json.data : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function apiFetchAuthProviders(): Promise<AuthProvidersPayload | null> {
   try {
     const res = await fetch(`${BASE}/auth/providers`, withCreds());

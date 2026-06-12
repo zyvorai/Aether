@@ -4706,6 +4706,170 @@ pub(crate) async fn api_auth_providers() -> impl IntoResponse {
     }))
 }
 
+/// GET /api/auth/settings — Read-only Identity & SSO configuration for the dashboard (no secrets).
+pub(crate) async fn api_auth_settings(
+    axum::extract::State(app_state): axum::extract::State<AppState>,
+) -> impl IntoResponse {
+    let session_secret = std::env::var("AETHER_SESSION_SECRET")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some();
+    let redis_configured = app_state.shared_cache.uses_redis();
+    let oidc_issuer = std::env::var("AETHER_OIDC_ISSUER")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let oidc_client_id = std::env::var("AETHER_OIDC_CLIENT_ID")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let oidc_redirect = std::env::var("AETHER_OIDC_REDIRECT_URI")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let oidc_ready = app_state.oidc.is_some();
+    let oidc_role_map = std::env::var("AETHER_OIDC_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some();
+    let oidc_groups_claim = std::env::var("AETHER_OIDC_GROUPS_CLAIM")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "groups".to_string());
+    let oidc_default_role = std::env::var("AETHER_OIDC_DEFAULT_ROLE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "operator".to_string());
+    let oidc_client_secret = std::env::var("AETHER_OIDC_CLIENT_SECRET")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some();
+
+    let saml_ready = app_state.saml.is_some();
+    let saml_sp_entity_id = app_state
+        .saml
+        .as_ref()
+        .map(|s| s.sp_entity_id().to_string());
+    let saml_acs_url = app_state.saml.as_ref().map(|s| s.acs_url().to_string());
+    let saml_idp_sso = app_state.saml.as_ref().map(|s| s.idp_sso_url().to_string());
+    let saml_idp_entity = app_state
+        .saml
+        .as_ref()
+        .map(|s| s.idp_entity_id().to_string());
+    let saml_idp_cert = app_state
+        .saml
+        .as_ref()
+        .map(|s| s.idp_cert_configured())
+        .unwrap_or(false);
+    let saml_role_map = std::env::var("AETHER_SAML_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some();
+    let saml_default_role = std::env::var("AETHER_SAML_DEFAULT_ROLE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "operator".to_string());
+
+    let ldap_ready = app_state.ldap.is_some();
+    let ldap_url = std::env::var("AETHER_LDAP_URL")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let ldap_base_dn = std::env::var("AETHER_LDAP_BASE_DN")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let ldap_domain = std::env::var("AETHER_LDAP_DOMAIN")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let ldap_bind_dn = std::env::var("AETHER_LDAP_BIND_DN")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some();
+    let ldap_role_map = std::env::var("AETHER_LDAP_ROLE_MAP")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .is_some();
+    let ldap_default_role = std::env::var("AETHER_LDAP_DEFAULT_ROLE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "operator".to_string());
+
+    ok_json(serde_json::json!({
+        "session": {
+            "cookie_name": "aether_session",
+            "session_secret_configured": session_secret,
+            "redis_configured": redis_configured,
+            "jwt_session_hours": 168,
+            "note": "OIDC, SAML, and LDAP issue signed JWT session cookies (HS256) after successful login."
+        },
+        "oidc": {
+            "enabled": oidc_ready,
+            "issuer": oidc_issuer,
+            "client_id": oidc_client_id,
+            "redirect_uri": oidc_redirect,
+            "login_path": "/api/auth/oidc/login",
+            "callback_path": "/api/auth/oidc/callback",
+            "logout_path": "/api/auth/oidc/logout",
+            "client_secret_configured": oidc_client_secret,
+            "role_mapping_configured": oidc_role_map,
+            "groups_claim": oidc_groups_claim,
+            "default_role": oidc_default_role,
+            "flow": ["authorization_code", "pkce", "openid"],
+            "discovery": oidc_issuer.as_ref().map(|i| format!("{i}/.well-known/openid-configuration")),
+            "note": "Configure via AETHER_OIDC_* env vars. Callback exchanges code for id_token and issues aether_session JWT."
+        },
+        "saml": {
+            "enabled": saml_ready,
+            "sp_entity_id": saml_sp_entity_id,
+            "acs_url": saml_acs_url,
+            "idp_sso_url": saml_idp_sso,
+            "idp_entity_id": saml_idp_entity,
+            "idp_cert_configured": saml_idp_cert,
+            "metadata_path": "/api/auth/saml/metadata",
+            "login_path": "/api/auth/saml/login",
+            "acs_path": "/api/auth/saml/acs",
+            "logout_path": "/api/auth/saml/logout",
+            "role_mapping_configured": saml_role_map,
+            "default_role": saml_default_role,
+            "note": "Config-only: set AETHER_SAML_* env vars. Import SP metadata from /api/auth/saml/metadata into your IdP."
+        },
+        "ldap": {
+            "enabled": ldap_ready,
+            "url": ldap_url,
+            "base_dn": ldap_base_dn,
+            "domain": ldap_domain,
+            "bind_dn_configured": ldap_bind_dn,
+            "role_mapping_configured": ldap_role_map,
+            "default_role": ldap_default_role,
+            "login_path": "/api/auth/ldap/login",
+            "logout_path": "/api/auth/ldap/logout",
+            "note": "Configure via AETHER_LDAP_* env vars. Successful bind issues aether_session JWT."
+        },
+    }))
+}
+
+/// GET /api/auth/saml/metadata — SAML SP metadata XML for IdP federation (config-only).
+pub(crate) async fn api_saml_metadata(
+    axum::extract::State(app_state): axum::extract::State<AppState>,
+) -> impl IntoResponse {
+    let Some(saml) = app_state.saml.as_ref() else {
+        return (
+            StatusCode::NOT_FOUND,
+            [(header::CONTENT_TYPE, "text/plain; charset=utf-8")],
+            "SAML is not configured",
+        )
+            .into_response();
+    };
+    (
+        StatusCode::OK,
+        [
+            (header::CONTENT_TYPE, "application/samlmetadata+xml; charset=utf-8"),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"aether-sp-metadata.xml\"",
+            ),
+        ],
+        saml.sp_metadata_xml(),
+    )
+        .into_response()
+}
+
 /// GET /api/openapi.json — Minimal OpenAPI 3 document (curated list of notable routes).
 pub(crate) async fn serve_openapi() -> impl IntoResponse {
     const DOC: &str = include_str!("openapi.json");

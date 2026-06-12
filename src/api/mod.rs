@@ -198,6 +198,7 @@ async fn auth_middleware(
     let public_unauthenticated = path.starts_with("/assets")
         || path == "/api/system/ready"
         || path == "/api/auth/providers"
+        || path == "/api/auth/saml/metadata"
         || path == "/api/auth/oidc/login"
         || path == "/api/auth/oidc/callback"
         || path == "/api/auth/oidc/logout"
@@ -558,6 +559,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/events/stream", get(sse_events))
         .route("/api/auth/me", get(api_auth_me))
         .route("/api/auth/providers", get(api_auth_providers))
+        .route("/api/auth/settings", get(api_auth_settings))
+        .route("/api/auth/saml/metadata", get(api_saml_metadata))
         .route("/api/auth/oidc/login", get(api_oidc_login))
         .route("/api/auth/oidc/callback", get(api_oidc_callback))
         .route("/api/auth/oidc/logout", get(api_oidc_logout))
