@@ -419,10 +419,17 @@ export default function ClustersPage() {
       setExecPod(defaultPod);
       setPortForwardPod(defaultPod);
       setExecContainer(manifestContainerNames(detail.manifest)[0] ?? '');
-      const containerPort = (detail.manifest?.spec as { ports?: Array<{ port?: number }>; template?: { spec?: { containers?: Array<{ ports?: Array<{ containerPort?: number }> }> } } } | undefined);
+      type ManifestPorts = {
+        ports?: Array<{ port?: number }>;
+        containers?: Array<{ ports?: Array<{ containerPort?: number }> }>;
+        template?: { spec?: { containers?: Array<{ ports?: Array<{ containerPort?: number }> }> } };
+      };
+      const manifestSpec = detail.manifest?.spec as ManifestPorts | undefined;
       const defaultRemotePort = detail.kind === 'Service'
-        ? containerPort?.ports?.[0]?.port
-        : containerPort?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort;
+        ? manifestSpec?.ports?.[0]?.port
+        : detail.kind === 'Pod'
+          ? manifestSpec?.containers?.[0]?.ports?.[0]?.containerPort
+          : manifestSpec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort;
       if (typeof defaultRemotePort === 'number') {
         setPortForwardRemotePort(String(defaultRemotePort));
       }
@@ -1578,15 +1585,16 @@ export default function ClustersPage() {
             )}
 
             {detailTab === 'terminal' && (((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) || selected.kind === 'Service') && (
-              <div className="glass-drawer p-3">
+              <div className="glass-drawer p-3" data-testid="clusters-port-forward-panel">
                 <h4 className="mb-3 text-sm font-semibold text-slate-200">Port Forward</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
-                  <select value={selected.kind === 'Service' ? selected.name : portForwardPod} onChange={(e) => setPortForwardPod(e.target.value)} disabled={selected.kind === 'Service'} className="glass-select disabled:opacity-60">
+                  <select data-testid="clusters-port-forward-pod" value={selected.kind === 'Service' ? selected.name : portForwardPod} onChange={(e) => setPortForwardPod(e.target.value)} disabled={selected.kind === 'Service'} className="glass-select disabled:opacity-60">
                     {((selected.kind === 'Service') ? [selected.name] : (selected.kind === 'Pod' ? [selected.name] : selected.pods.map((pod) => pod.name))).map((podName) => (
                       <option key={podName} value={podName}>{podName}</option>
                     ))}
                   </select>
                   <input
+                    data-testid="clusters-port-forward-remote"
                     type="number"
                     value={portForwardRemotePort}
                     onChange={(e) => setPortForwardRemotePort(e.target.value)}
@@ -1594,6 +1602,7 @@ export default function ClustersPage() {
                     placeholder="Remote port"
                   />
                   <input
+                    data-testid="clusters-port-forward-local"
                     type="number"
                     value={portForwardLocalPort}
                     onChange={(e) => setPortForwardLocalPort(e.target.value)}
@@ -1602,6 +1611,7 @@ export default function ClustersPage() {
                   />
                   <div className="flex gap-2">
                     <button
+                      data-testid="clusters-port-forward-start"
                       onClick={handlePortForwardStart}
                       disabled={!portForwardPod || !portForwardRemotePort || !!portForwardSession}
                       className="flex-1 rounded-lg border border-blue-700 bg-blue-900/20 px-3 py-2 text-sm text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
@@ -1609,6 +1619,7 @@ export default function ClustersPage() {
                       {actionLoading === 'port-forward' ? 'Starting...' : 'Start'}
                     </button>
                     <button
+                      data-testid="clusters-port-forward-stop"
                       onClick={handlePortForwardStop}
                       disabled={!portForwardSession}
                       className="flex-1 glass-select text-slate-200 glass-inset-hover disabled:opacity-50"
@@ -1618,7 +1629,7 @@ export default function ClustersPage() {
                   </div>
                 </div>
                 {portForwardSession && (
-                  <div className="mt-3 glass-table-row rounded-md px-3 py-2 text-sm text-slate-300">
+                  <div data-testid="clusters-port-forward-active" className="mt-3 glass-table-row rounded-md px-3 py-2 text-sm text-slate-300">
                     Active: <span className="text-emerald-300">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
                   </div>
                 )}

@@ -283,7 +283,7 @@ jobs:
         env:
           AETHER_DASHBOARD_BUILD: ${{ env.AETHER_DASHBOARD_BUILD }}
         run: cargo build --release
-      - name: Run cluster exec Playwright test
+      - name: Run cluster exec + port-forward Playwright tests
         working-directory: web/dashboard
         env:
           AETHER_E2E_SKIP_SERVER: "1"

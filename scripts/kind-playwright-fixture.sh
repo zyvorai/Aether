@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create/reuse kind cluster for Playwright cluster exec E2E.
+# Create/reuse kind cluster for Playwright cluster exec + port-forward E2E.
 set -euo pipefail
 
 CLUSTER="${AETHER_KIND_CLUSTER:-kind-aether-playwright}"
@@ -27,6 +27,8 @@ spec:
   containers:
   - name: nginx
     image: nginx:1.25-alpine
+    ports:
+    - containerPort: 80
     command: ["/bin/sh", "-c", "while true; do echo aether-exec-ok; sleep 3600; done"]
 YAML
 
