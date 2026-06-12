@@ -47,17 +47,20 @@ CI builds the embedded dashboard first, validates example specs (including Metal
 - **Kind Playwright port-forward E2E** — fixture exposes nginx :80, dashboard testids, `cluster-exec-terminal.spec.ts` exec + port-forward tests
 - **Post-deploy auth bootstrap** — `scripts/lib/post-deploy-auth.sh` (bearer, open API, or mock IdP SAML session) wired into verify/smoke scripts
 - **Remote reference deploy** — `212.8.252.194:30090` rolled out with remote Linux build; post-deploy verify 54/54 (Cilium, copilot, hosted APIs)
+- **Remote reference verify** — `make remote-reference-verify` (SSH k8s live lab + post-deploy); `deploy-remote --local-build` refuses macOS→Linux uploads
 
 ## Remaining / optional
 
 - **SAML** — additional enterprise IdP dialects (Azure AD custom transforms, SHA-384 signatures)
 - **Hosted SaaS** — full managed multi-tenant federation UI (foundation shipped)
+- **Metal3 live lab** — set `aether.io/boot-mac-address` on lab host for hardware provisioning
+- **Confidential live** — SEV-SNP hardware or lab `AETHER_TEE_SNP=1` with attestation-capable host
 
 ## Recommended Next Order
 
-1. Live reference cluster: `make reference-cluster-live-verify` (kubeconfig + optional API at `AETHER_API`) — Metal3 live deploy needs hardware MAC on lab host; k8s API verify passes on `212.8.252.194:30090`
-2. Kind fixtures for Playwright cluster exec/port-forward UI tests — **done**
-3. Deploy to remote reference cluster and run `scripts/post-deploy-verify.sh` — **done** (`212.8.252.194:30090`, 54/54 post-deploy checks, Cilium + 118 cluster workloads)
+1. **Optional live paths** — Metal3 MAC on lab hardware; confidential live when SNP host available
+2. **Dashboard phases 2181+** — next hub cross-link / SaaS depth slice
+3. **SAML enterprise dialects** — Azure AD transforms, SHA-384 signatures
 
 ## Mock IdP (development / CI)
 

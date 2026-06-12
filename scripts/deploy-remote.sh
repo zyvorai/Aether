@@ -297,12 +297,25 @@ else
 fi
 
 if [ "${LOCAL_BUILD}" = "1" ]; then
+  REMOTE_UNAME="$(ssh_cmd 'uname -srm' 2>/dev/null || true)"
+  LOCAL_BIN="${REPO_ROOT}/target/release/aether"
+  LOCAL_FILE="$(file -b "${LOCAL_BIN}" 2>/dev/null || true)"
+  if [ -n "${REMOTE_UNAME}" ] && echo "${REMOTE_UNAME}" | grep -qi 'linux'; then
+    if echo "${LOCAL_FILE}" | grep -qiE 'Mach-O|darwin'; then
+      if [ "${AETHER_LOCAL_BUILD_FORCE:-0}" != "1" ]; then
+        error "--local-build refused: local binary is macOS (${LOCAL_FILE}) but remote is Linux (${REMOTE_UNAME}). Use remote cargo (default) or set AETHER_LOCAL_BUILD_FORCE=1 to override."
+      fi
+      warn "AETHER_LOCAL_BUILD_FORCE=1: uploading macOS binary to Linux remote — pod will crash unless cross-compiled."
+    fi
+  fi
   (cd "${REPO_ROOT}" && cargo build --release)
-  strip "${REPO_ROOT}/target/release/aether" 2>/dev/null || true
+  strip "${LOCAL_BIN}" 2>/dev/null || true
   ssh_cmd "mkdir -p ${REMOTE_DIR}/target/release"
-  rsync_cmd "${REPO_ROOT}/target/release/aether" "${USER}@${HOST}:${REMOTE_DIR}/target/release/aether"
+  rsync_cmd "${LOCAL_BIN}" "${USER}@${HOST}:${REMOTE_DIR}/target/release/aether"
   info "Binary built locally and uploaded"
-  aether_hint "Local build uploads a macOS binary — use remote cargo on Linux nodes unless cross-compiling."
+  if echo "${LOCAL_FILE}" | grep -qiE 'Mach-O|darwin'; then
+    aether_hint "Local build uploaded a macOS binary — use remote cargo on Linux nodes unless cross-compiling."
+  fi
 elif [ "${SKIP_CARGO}" = "1" ]; then
   ssh_cmd "test -x ${REMOTE_DIR}/target/release/aether" || error "No remote release binary at ${REMOTE_DIR}/target/release/aether"
   info "Skipped cargo build"
