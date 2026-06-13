@@ -19,6 +19,7 @@ test.describe('Phases 2231–2280 features', () => {
 
   test('phase 2231: orchestrator fleet link', async ({ page }) => {
     await page.goto('/health-monitor');
+    await expect(page.getByTestId('health-hub-context')).toBeVisible({ timeout: 15_000 });
     await followTestLink(page, 'health-context-fleet-link', /\/fleet/);
   });
 
