@@ -1,6 +1,11 @@
 .PHONY: help build test lint clean install release docker run-dev \
 	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live reference-cluster-live-verify \
-	post-deploy-verify remote-post-deploy-verify remote-reference-verify
+	post-deploy-verify remote-post-deploy-verify remote-reference-verify \
+	test-remote-smoke test-remote-quick test-remote-all \
+	deploy-remote deploy-all-remote test-platform-remote
+
+DEPLOY_HOST ?= 212.8.252.194
+DEPLOY_USER ?= sus
 
 help:
 	@echo "Aether - Universal Runtime Control Plane"
@@ -24,6 +29,13 @@ help:
 	@echo "  post-deploy-verify         - API smoke against AETHER_API (default localhost:5090)"
 	@echo "  remote-post-deploy-verify    - Post-deploy verify against 212.8.252.194:30090"
 	@echo "  remote-reference-verify      - Remote k8s live lab + post-deploy verify"
+	@echo "  test-remote-smoke            - AETHER_TEST_TIERS=smoke on staging host"
+	@echo "  test-remote-quick            - AETHER_TEST_TIERS=quick"
+	@echo "  test-remote-all              - AETHER_TEST_TIERS=full (nightly, includes Playwright)"
+	@echo "  See docs/TEST_PLAN.md for full tier matrix"
+	@echo "  deploy-remote                - Deploy to DEPLOY_HOST (default 212.8.252.194)"
+	@echo "  deploy-all-remote            - Full orchestrated remote deploy + health checks"
+	@echo "  test-platform-remote         - Aether + Hermes full remote E2E on DEPLOY_HOST"
 	@echo "  deploy-reference-ingress     - Deploy remote with Ingress/TLS (AETHER_DEPLOY_ENV)"
 	@echo "  deploy-reference-sso         - Deploy remote with mock IdP SSO (AETHER_DEPLOY_ENV)"
 	@echo "  deploy-with-ldap             - Deploy remote with LDAP/AD (AETHER_DEPLOY_ENV required)"
@@ -128,6 +140,32 @@ remote-post-deploy-verify:
 remote-reference-verify:
 	@chmod +x scripts/remote-reference-verify.sh scripts/k8s-labs-e2e.sh scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
 	@./scripts/remote-reference-verify.sh
+
+test-remote-smoke:
+	@chmod +x scripts/test-all-features-remote.sh 2>/dev/null || true
+	@AETHER_TEST_TIERS=smoke ./scripts/test-all-features-remote.sh $(DEPLOY_HOST) $(DEPLOY_USER)
+
+test-remote-quick:
+	@chmod +x scripts/test-all-features-remote.sh 2>/dev/null || true
+	@AETHER_TEST_TIERS=quick ./scripts/test-all-features-remote.sh $(DEPLOY_HOST) $(DEPLOY_USER)
+
+test-remote-all:
+	@chmod +x scripts/test-all-features-remote.sh 2>/dev/null || true
+	@AETHER_TEST_TIERS=full ./scripts/test-all-features-remote.sh $(DEPLOY_HOST) $(DEPLOY_USER)
+
+deploy-remote:
+	@chmod +x scripts/deploy-remote.sh scripts/lib/resolve-zyvor-sibling.sh 2>/dev/null || true
+	@./scripts/deploy-remote.sh $(DEPLOY_HOST) $(DEPLOY_USER)
+
+deploy-all-remote:
+	@chmod +x scripts/deploy-all-remote.sh scripts/deploy-all.sh scripts/deploy-remote.sh \
+		scripts/lib/resolve-zyvor-sibling.sh 2>/dev/null || true
+	@./scripts/deploy-all-remote.sh $(DEPLOY_HOST) $(DEPLOY_USER)
+
+test-platform-remote:
+	@chmod +x scripts/test-platform-remote.sh scripts/test-all-features-remote.sh \
+		scripts/lib/resolve-zyvor-sibling.sh 2>/dev/null || true
+	@AETHER_TEST_TIERS=full HERMES_TEST_TIERS=full ./scripts/test-platform-remote.sh $(DEPLOY_HOST) $(DEPLOY_USER)
 
 deploy-reference-ingress:
 	@chmod +x scripts/deploy-reference-ingress.sh 2>/dev/null || true

@@ -3,6 +3,12 @@
 # Fancy (but optional) terminal output for Aether deploy scripts.
 # Disable with: NO_COLOR=1, CI=true, AETHER_PLAIN_DEPLOY=1, or non-TTY stdout.
 
+_LIB_DEPLOY_PRETTY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_LIB_DEPLOY_PRETTY_DIR}/lib/resolve-zyvor-sibling.sh" ]]; then
+  # shellcheck source=lib/resolve-zyvor-sibling.sh
+  source "${_LIB_DEPLOY_PRETTY_DIR}/lib/resolve-zyvor-sibling.sh"
+fi
+
 _aether_tty_color() {
   [[ -z "${NO_COLOR:-}" && -z "${AETHER_PLAIN_DEPLOY:-}" && "${CI:-}" != "true" && -t 1 ]]
 }
@@ -122,10 +128,31 @@ aether_finale_success() {
   echo ""
 }
 
+aether_finale_next_steps() {
+  local host="${1:-HOST}"
+  local user="${2:-USER}"
+  local repo_root="${3:-}"
+  local smoke="./scripts/test-all-features-remote.sh ${host} ${user}"
+  local stack="./scripts/test-zyvor-stack-remote.sh ${host} 30151 ${user}"
+  if [[ -n "${repo_root}" ]] && declare -F resolve_zyvor_script >/dev/null 2>&1; then
+    local vmrogue_script
+    vmrogue_script="$(resolve_zyvor_script "${repo_root}" VMRogue "scripts/test-zyvor-stack-remote.sh" 2>/dev/null || true)"
+    if [[ -n "${vmrogue_script}" ]]; then
+      stack="${vmrogue_script} ${host} 30151 ${user}"
+    fi
+  fi
+  echo -e "  ${A_MAG}🧪${A_RST}  ${A_DIM}Next: ${A_RST}${A_CYN}${smoke}${A_RST}"
+  echo -e "  ${A_DIM}       ${A_RST}${A_CYN}${stack}${A_RST}"
+  echo -e "  ${A_DIM}       ${A_RST}${A_CYN}./scripts/post-deploy-verify.sh${A_RST} ${A_DIM}·${A_RST} ${A_CYN}./scripts/health-check-all.sh${A_RST}"
+}
+
 aether_finale_remote_deploy() {
   local url="${1:-}"
   local health="${2:-}"
   local elapsed="${3:-}"
+  local host="${4:-HOST}"
+  local user="${5:-USER}"
+  local repo_root="${6:-${AETHER_REPO_ROOT:-}}"
   echo ""
   echo -e "  ${A_GRN2}${A_BLD}🎉  DEPLOY COMPLETE${A_RST}  ${A_DIM}— Aether is live on the cluster.${A_RST}"
   if [ -n "${elapsed}" ]; then
@@ -137,7 +164,7 @@ aether_finale_remote_deploy() {
   if [ -n "${health}" ] && [ "${health}" != "${url}" ]; then
     aether_url_box "Health check" "${health}"
   fi
-  echo -e "  ${A_MAG}🧪${A_RST}  ${A_DIM}Next: ${A_RST}${A_CYN}./scripts/post-deploy-verify.sh${A_RST} ${A_DIM}·${A_RST} ${A_CYN}./scripts/health-check-all.sh${A_RST}"
+  aether_finale_next_steps "${host}" "${user}" "${repo_root}"
   echo -e "  ${A_OR}🚀${A_RST}  ${A_DIM}May your NodePorts be open and your rollouts serene.${A_RST}"
   echo ""
 }
