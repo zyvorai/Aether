@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -334,6 +335,28 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           npm run test:e2e -- tests/cluster-exec-terminal.spec.ts
           kill $SERVER_PID || true
+
+  staging-e2e:
+    name: Staging E2E (optional)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run smoke tier on staging host
+        env:
+          AETHER_STAGING_HOST: ${{ secrets.AETHER_STAGING_HOST }}
+          AETHER_REMOTE_USER: ${{ secrets.AETHER_REMOTE_USER }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AETHER_STAGING_HOST:-}" ]; then
+            echo "::notice::AETHER_STAGING_HOST secret not set — skipping staging E2E."
+            exit 0
+          fi
+          USER="${AETHER_REMOTE_USER:-sus}"
+          chmod +x scripts/test-all-features-remote.sh scripts/post-deploy-verify.sh \
+            scripts/lib/post-deploy-auth.sh
+          AETHER_TEST_TIERS=smoke ./scripts/test-all-features-remote.sh "${AETHER_STAGING_HOST}" "${USER}"
 
   coverage:
     name: Code Coverage

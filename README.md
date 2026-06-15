@@ -848,6 +848,17 @@ aether migrate my-app kubernetes --strategy rolling
 
 ## 🧪 Testing
 
+E2E tier matrix and remote orchestrator: [docs/TEST_PLAN.md](docs/TEST_PLAN.md).
+
+```bash
+# Remote smoke (staging host)
+make test-remote-smoke
+# or: AETHER_TEST_TIERS=smoke ./scripts/test-all-features-remote.sh HOST USER
+
+# Full Zyvor stack (VMRogue + PacketWolf + Aether)
+./scripts/test-zyvor-stack-remote.sh HOST 30151 USER
+```
+
 ### Run Tests
 
 ```bash

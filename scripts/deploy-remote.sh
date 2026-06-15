@@ -519,7 +519,7 @@ if [ -n "${AETHER_INGRESS_HOST}" ] && { [ "${AETHER_EXPOSE}" = "ingress" ] || [ 
   HEALTH_URL="${PUBLIC_URL}/health"
 fi
 DEPLOY_ELAPSED=$(( $(date +%s) - DEPLOY_START ))
-aether_finale_remote_deploy "${PUBLIC_URL}" "${HEALTH_URL}" "${DEPLOY_ELAPSED}"
+aether_finale_remote_deploy "${PUBLIC_URL}" "${HEALTH_URL}" "${DEPLOY_ELAPSED}" "${HOST}" "${USER}" "${REPO_ROOT}"
 if [ -n "${AETHER_API_KEY}" ]; then
   info "🔐 API authentication is enabled on the remote deployment"
 fi
