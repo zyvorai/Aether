@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Identity & SSO settings', () => {
@@ -32,6 +32,8 @@ test.describe('Identity & SSO settings', () => {
 });
 
 test.describe('Bearer token URL bootstrap', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
   test('?token= on login auto-authenticates in open dev mode', async ({ page }) => {
     const health = await page.request.get('/health');
     test.skip(!health.ok(), 'API not reachable');

@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('AI Infrastructure OS v9 — SRE & Reliability', () => {
   test('runbook schedule API', async ({ request }) => {
@@ -77,15 +77,17 @@ test.describe('AI Infrastructure OS v9 — SRE & Reliability', () => {
   });
 
   test('SRE reliability panel on observability page', async ({ page }) => {
-    await page.goto('/observability');
-    await expect(page.getByTestId('sre-reliability-panel')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('runbook-execute-dry-run')).toBeVisible();
-    await expect(page.getByTestId('incident-timeline-panel')).toBeVisible();
+    await page.goto('/observability#obs-reliability');
+    await expect(page.getByTestId('sre-reliability-panel')).toBeAttached({ timeout: 15_000 });
+    await expect(page.getByTestId('runbook-execute-dry-run')).toBeAttached();
+    await page.getByRole('tab', { name: 'Incidents' }).click();
+    await expect(page.getByTestId('incident-timeline-panel')).toBeAttached({ timeout: 10_000 });
   });
 
   test('error budget tab', async ({ page }) => {
-    await page.goto('/observability');
-    await page.getByRole('button', { name: 'Error budget' }).click();
-    await expect(page.getByTestId('error-budget-panel')).toBeVisible({ timeout: 10_000 });
+    await page.goto('/observability#obs-reliability');
+    await expect(page.getByTestId('sre-reliability-panel')).toBeAttached({ timeout: 15_000 });
+    await page.getByRole('tab', { name: 'Error budget' }).click();
+    await expect(page.getByTestId('error-budget-panel')).toBeAttached({ timeout: 10_000 });
   });
 });

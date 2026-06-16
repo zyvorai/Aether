@@ -142,7 +142,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
     return (
       <aside
         className={`zeus-rail-glass relative ${railVisibility} w-12 shrink-0 flex-col items-center border-l py-4`}
-        data-testid="zeus-rail-collapsed"
+        data-testid="copilot-rail-collapsed"
       >
         <button
           type="button"
@@ -160,7 +160,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
   return (
     <aside
       className={`zeus-rail-glass relative ${railVisibility} w-[min(380px,30vw)] shrink-0 flex-col border-l`}
-      data-testid="zeus-rail"
+      data-testid="copilot-rail"
     >
       <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
@@ -309,7 +309,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={selectedAgent ? `Ask ${agents.find((a) => a.id === selectedAgent)?.label ?? 'Aether'}…` : 'Ask Aether…'}
-          data-testid="zeus-rail-input"
+          data-testid="copilot-rail-input"
           className="glass-input min-w-0 flex-1 text-xs"
           disabled={loading}
         />

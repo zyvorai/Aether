@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Zeus smoke', () => {
   test('zeus agents API', async ({ request }) => {

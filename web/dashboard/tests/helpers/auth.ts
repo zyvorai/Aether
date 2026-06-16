@@ -5,7 +5,11 @@
 import { expect, type Page } from '@playwright/test';
 
 export async function ensureAuthenticated(page: Page) {
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.addInitScript(() => {
+    localStorage.setItem('zyvor-classic-nav', '1');
+    localStorage.setItem('zyvor-pro-view', '0');
+  });
+  await page.setViewportSize({ width: 1280, height: 1400 });
   await page.goto('/');
 
   const helpMenu = page.getByRole('button', { name: 'Help menu' });

@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect, type Locator, type APIRequestContext } from '@playwright/test';
+import { test, expect, type Locator, type APIRequestContext } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 async function openDeployDialog(page: import('@playwright/test').Page) {

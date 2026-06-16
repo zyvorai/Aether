@@ -4,6 +4,7 @@
 # Dashboard
 web/dashboard/node_modules/
 web/dashboard/test-results/
+web/dashboard/playwright/.auth/
 
 # Rust
 /target/

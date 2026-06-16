@@ -184,12 +184,28 @@ fi
 
 if tier_enabled playwright-all; then
   _pw_timeout="${AETHER_PLAYWRIGHT_TIMEOUT:-}"
+  _pw_port="${AETHER_E2E_LOCAL_PORT:-5090}"
   run_tier_cmd playwright-all bash -c "
     set -euo pipefail
+    cd '${ROOT}'
+    echo '  Building dashboard bundle + aether binary for Playwright (fresh embedded UI)'
+    (cd web/dashboard && npm ci --silent && npm run build)
+    if [[ -x ./target/release/aether ]]; then AETHER_BIN=./target/release/aether; \
+      elif [[ -x ./target/debug/aether ]]; then AETHER_BIN=./target/debug/aether; \
+      else cargo build --release && AETHER_BIN=./target/release/aether; fi
+    rm -rf web/dashboard/playwright/.auth
+    \"\${AETHER_BIN}\" serve --host 127.0.0.1 --port ${_pw_port} &
+    SERVER_PID=\$!
+    cleanup() { kill \"\${SERVER_PID}\" 2>/dev/null || true; }
+    trap cleanup EXIT
+    for i in \$(seq 1 45); do
+      curl -sf \"http://127.0.0.1:${_pw_port}/health\" >/dev/null && break
+      sleep 1
+    done
+    curl -sf \"http://127.0.0.1:${_pw_port}/health\" >/dev/null
     export AETHER_E2E_SKIP_SERVER=1
-    export AETHER_E2E_BASE_URL='${API}'
-    cd '${ROOT}/web/dashboard'
-    npm ci --silent
+    export AETHER_E2E_BASE_URL=\"http://127.0.0.1:${_pw_port}\"
+    cd web/dashboard
     npx playwright install chromium
     if [[ -n '${_pw_timeout}' ]]; then
       export PLAYWRIGHT_TIMEOUT='${_pw_timeout}'

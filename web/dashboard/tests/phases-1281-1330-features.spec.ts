@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phases 1281–1330 features', () => {

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Fleet edge and federation tabs', () => {
   test.beforeEach(async ({ page }) => {
@@ -69,7 +69,7 @@ test.describe('Fleet edge and federation tabs', () => {
   });
 
   test('placement tab shows federation plan', async ({ page }) => {
-    await page.goto('/fleet?tab=placement');
+    await page.goto('/fleet?tab=placement&workload=demo');
     await expect(page.getByTestId('fleet-placement-tab')).toBeVisible();
     await page.getByTestId('fleet-placement-run').click();
     await expect(page.getByText('kind-lab')).toBeVisible();

@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 function statCardValue(page: Page, title: string) {
@@ -20,6 +20,17 @@ function statCardValue(page: Page, title: string) {
 test.describe('Remote live UX (API-backed)', () => {
   test.beforeEach(async ({ page }) => {
     await ensureAuthenticated(page);
+  });
+
+  test.beforeAll(async ({ request }) => {
+    const res = await request.get('/api/cluster/summary');
+    if (!res.ok()) {
+      test.skip(true, 'cluster summary unavailable');
+    }
+    const body = await res.json();
+    if (!body?.data?.connected) {
+      test.skip(true, 'no connected Kubernetes cluster');
+    }
   });
 
   test('Workloads page stat cards match /api/workloads counts', async ({ page, request }) => {
@@ -64,7 +75,7 @@ test.describe('Remote live UX (API-backed)', () => {
     expect(cilium?.cni).toBe('cilium');
 
     await page.goto('/platform');
-    await expect(page.getByRole('heading', { name: 'Kubernetes / Cilium' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Kubernetes / Cilium' }).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('allow-aether-egress', { exact: true }).first()).toBeVisible();
     await expect(page.getByText(cilium.egress_mode, { exact: true }).first()).toBeVisible();
     if (cilium.cilium_daemonset_ready) {
@@ -98,7 +109,7 @@ test.describe('Remote live UX (API-backed)', () => {
     test.skip(items.length === 0, 'no CNP resources in cluster');
 
     await page.goto('/clusters?tab=network');
-    await expect(page.getByRole('button', { name: 'Network' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('tab', { name: 'Network' })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('button', { name: items[0].name }).first()).toBeVisible({ timeout: 15_000 });
   });
 });

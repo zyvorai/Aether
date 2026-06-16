@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phases 1331–1380 features', () => {

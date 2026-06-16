@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 const mockIdpEnabled = process.env.AETHER_MOCK_IDP === '1';
 

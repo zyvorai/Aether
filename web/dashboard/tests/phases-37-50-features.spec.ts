@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phases 37–50 features', () => {
@@ -211,7 +211,7 @@ test.describe('Phases 37–50 features', () => {
     );
 
     await page.goto('/backups');
-    await page.getByRole('button', { name: 'Restore' }).click();
+    await page.getByRole('button', { name: 'Restore' }).first().click();
     await expect(page.getByTestId('backup-restore-modal')).toBeVisible({ timeout: 10_000 });
   });
 });

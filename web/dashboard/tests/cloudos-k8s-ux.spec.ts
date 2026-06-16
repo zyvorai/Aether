@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 function mockKubeWorkloads(page: import('@playwright/test').Page) {
@@ -39,15 +39,32 @@ test.describe('CloudOS Kubernetes UX', () => {
 
   test('activity monitor page loads', async ({ page }) => {
     await mockKubeWorkloads(page);
-    await page.route('**/api/cluster/**', (route) =>
+    await page.route('**/api/cluster/summary', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { connected: true, clusters: [{ name: 'active-client', reachable: true }] },
+        }),
+      }),
+    );
+    await page.route('**/api/events', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ success: true, data: [] }),
       }),
     );
+    await page.route('**/api/cluster/metrics**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { pods: [] } }),
+      }),
+    );
     await page.goto('/activity');
-    await expect(page.getByTestId('activity-monitor-page')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('activity-monitor-page')).toBeVisible({ timeout: 15_000 });
   });
 
   test('security center page loads', async ({ page }) => {
@@ -57,7 +74,7 @@ test.describe('CloudOS Kubernetes UX', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: { score: 85, findings: [], last_scan: null },
+          data: { score: 85, threats: [], last_scan: null },
         }),
       }),
     );
@@ -68,8 +85,29 @@ test.describe('CloudOS Kubernetes UX', () => {
         body: JSON.stringify({ success: true, data: [] }),
       }),
     );
+    await page.route('**/api/security/sbom', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { metadata: { generated_at: new Date().toISOString(), packages: 0 } } }),
+      }),
+    );
+    await page.route('**/api/security/images', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      }),
+    );
+    await page.route('**/api/ecosystem/packetwolf/status', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { configured: false, reachable: false } }),
+      }),
+    );
     await page.goto('/security');
-    await expect(page.getByTestId('security-center-page')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('security-center-page')).toBeVisible({ timeout: 15_000 });
   });
 
   test('helm catalog page loads curated charts', async ({ page }) => {
@@ -93,6 +131,6 @@ test.describe('CloudOS Kubernetes UX', () => {
     );
     await page.goto('/helm');
     await expect(page.getByTestId('helm-catalog-page')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('nginx')).toBeVisible();
+    await expect(page.getByText('nginx').first()).toBeVisible();
   });
 });

@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phases 481–580 features', () => {
@@ -94,7 +94,7 @@ test.describe('Phases 481–580 features', () => {
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
     );
     await page.goto('/alerts');
-    await page.getByTestId('alerts-events-link').click();
+    await page.getByTestId('alerts-events-link').first().click();
     await expect(page).toHaveURL(/\/events/, { timeout: 10_000 });
   });
 

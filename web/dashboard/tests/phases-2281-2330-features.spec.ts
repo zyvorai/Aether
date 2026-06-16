@@ -1,10 +1,11 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
+import { testId } from './helpers/locators';
 
-async function followTestLink(page: Page, testId: string, urlPattern: RegExp) {
-  const link = page.getByTestId(testId);
+async function followTestLink(page: Page, id: string, urlPattern: RegExp) {
+  const link = testId(page, id);
   await expect(link).toBeVisible({ timeout: 10_000 });
   const href = await link.getAttribute('href');
   expect(href).toMatch(urlPattern);

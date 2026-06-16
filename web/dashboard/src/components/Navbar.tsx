@@ -612,14 +612,16 @@ export default function Navbar({
         label="Dashboard"
         compact
       />
-      {cloudOsNavItems.map((item) => (
-        <NavPill
-          key={item.view}
-          active={currentView === item.view}
-          onClick={() => onNavigate(item.view)}
-          icon={item.icon}
-          label={item.label}
-          compact
+      {partitionedDropdownGroups.map((group) => (
+        <Dropdown
+          key={group.label}
+          group={group}
+          ready={group.ready}
+          setup={group.setup}
+          isActive={group.items.some((item) => item.view === currentView)}
+          currentView={currentView}
+          onNavigate={onNavigate}
+          theme={theme}
         />
       ))}
     </>

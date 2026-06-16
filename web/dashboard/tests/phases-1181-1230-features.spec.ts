@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phases 1181–1230 features', () => {
@@ -71,7 +71,7 @@ test.describe('Phases 1181–1230 features', () => {
       });
     });
     await page.goto('/events?workload=web');
-    await page.getByTestId('events-alerts-link').click();
+    await page.getByTestId('events-alerts-link').first().click();
     await expect(page).toHaveURL(/\/alerts\?workload=web/, { timeout: 10_000 });
   });
 
@@ -122,7 +122,7 @@ test.describe('Phases 1181–1230 features', () => {
     );
     await page.goto('/health-monitor?workload=web');
     await expect(page.getByTestId('health-detail-panel')).toBeVisible({ timeout: 15_000 });
-    await page.getByTestId('health-alerts-link').click();
+    await page.getByTestId('health-alerts-link').first().click();
     await expect(page).toHaveURL(/\/alerts\?workload=web/, { timeout: 10_000 });
     await page.goto('/health-monitor?workload=web');
     await expect(page.getByTestId('health-detail-panel')).toBeVisible({ timeout: 15_000 });
