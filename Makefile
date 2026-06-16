@@ -1,6 +1,6 @@
 .PHONY: help build test lint clean install release docker run-dev \
 	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live reference-cluster-live-verify \
-	post-deploy-verify remote-post-deploy-verify remote-reference-verify \
+	post-deploy-verify remote-post-deploy-verify remote-reference-verify api-live-test \
 	test-remote-smoke test-remote-quick test-remote-all \
 	deploy-remote deploy-all-remote test-platform-remote
 
@@ -27,6 +27,7 @@ help:
 	@echo "  reference-cluster-live     - Live Metal3/KubeVirt smoke (requires kubeconfig)"
 	@echo "  reference-cluster-live-verify - Live smoke + post-deploy API verify"
 	@echo "  post-deploy-verify         - API smoke against AETHER_API (default localhost:5090)"
+	@echo "  api-live-test              - Live terminal walkthrough of all REST APIs"
 	@echo "  remote-post-deploy-verify    - Post-deploy verify against 212.8.252.194:30090"
 	@echo "  remote-reference-verify      - Remote k8s live lab + post-deploy verify"
 	@echo "  test-remote-smoke            - AETHER_TEST_TIERS=smoke on staging host"
@@ -132,6 +133,10 @@ validate:
 post-deploy-verify:
 	@chmod +x scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
 	@./scripts/post-deploy-verify.sh
+
+api-live-test:
+	@chmod +x scripts/api-live-test.sh 2>/dev/null || true
+	@./scripts/api-live-test.sh
 
 remote-post-deploy-verify:
 	@chmod +x scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
