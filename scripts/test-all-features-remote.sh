@@ -44,94 +44,9 @@ export DEPLOY_USER="${USER}"
 REMOTE_DIR="${AETHER_REMOTE_DIR:-~/.deployment/aether}"
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new)
 
-FAIL=0
-PASS_TIERS=0
-SUITE_START=$(date +%s)
-TIER_RESULTS=()
-
-B='\033[1m'
-G='\033[0;32m'
-R='\033[0;31m'
-N='\033[0m'
-
-tier_enabled() {
-    echo "${TIERS}" | tr ',' '\n' | grep -qx "${1}"
-}
-
-record_tier() {
-    local name="$1" status="$2" elapsed="$3"
-    TIER_RESULTS+=("${name}:${status}:${elapsed}")
-}
-
-run_tier_cmd() {
-    local name="$1"
-    shift
-    local start end elapsed rc
-    start=$(date +%s)
-    echo ""
-    echo -e "${B}══════════════════════════════════════════════${N}"
-    echo -e "${B}  Tier: ${name}${N}"
-    echo -e "${B}══════════════════════════════════════════════${N}"
-    set +e
-    "$@"
-    rc=$?
-    set -e
-    end=$(date +%s)
-    elapsed=$((end - start))
-    if [[ "${rc}" -eq 0 ]]; then
-        echo -e "${G}  Tier ${name}: PASSED (${elapsed}s)${N}"
-        PASS_TIERS=$((PASS_TIERS + 1))
-        record_tier "${name}" "passed" "${elapsed}"
-        return 0
-    fi
-    echo -e "${R}  Tier ${name}: FAILED (${elapsed}s)${N}"
-    FAIL=$((FAIL + 1))
-    record_tier "${name}" "failed" "${elapsed}"
-    return 1
-}
-
-write_report_json() {
-    local report="${AETHER_E2E_REPORT_JSON:-}"
-    [[ -z "${report}" ]] && return 0
-    local total_elapsed=$(( $(date +%s) - SUITE_START ))
-    {
-        echo "{"
-        echo "  \"product\": \"aether\","
-        echo "  \"host\": \"${HOST}\","
-        echo "  \"api\": \"${AETHER_API}\","
-        echo "  \"tiers\": \"${TIERS}\","
-        echo "  \"passed_tiers\": ${PASS_TIERS},"
-        echo "  \"failed_tiers\": ${FAIL},"
-        echo "  \"elapsed_seconds\": ${total_elapsed},"
-        echo "  \"results\": ["
-        local i=0
-        for entry in "${TIER_RESULTS[@]}"; do
-            IFS=':' read -r name status elapsed <<< "${entry}"
-            [[ $i -gt 0 ]] && echo ","
-            printf '    {"tier":"%s","status":"%s","elapsed_seconds":%s}' "${name}" "${status}" "${elapsed}"
-            i=$((i + 1))
-        done
-        echo ""
-        echo "  ]"
-        echo "}"
-    } > "${report}"
-    echo "  Report: ${report}"
-}
-
-ensure_local_aether() {
-    local bin="${AETHER_BIN:-${ROOT}/target/release/aether}"
-    if [[ -x "${bin}" ]]; then
-        export AETHER_BIN="${bin}"
-        return 0
-    fi
-    if [[ -x "${ROOT}/target/debug/aether" ]]; then
-        export AETHER_BIN="${ROOT}/target/debug/aether"
-        return 0
-    fi
-    echo "  Building local aether binary for CLI tiers..."
-    (cd "${ROOT}" && cargo build --release)
-    export AETHER_BIN="${ROOT}/target/release/aether"
-}
+# shellcheck source=lib/e2e-tier-runner.sh
+source "${SCRIPT_DIR}/lib/e2e-tier-runner.sh"
+e2e_tier_init
 
 echo -e "${B}Aether feature test suite${N}"
 echo "  API:    ${AETHER_API}"
@@ -231,20 +146,13 @@ if tier_enabled playwright-exec; then
             npm run test:e2e -- tests/cluster-exec-terminal.spec.ts
         " || true
     else
-        echo ""
-        echo -e "${B}  Tier: playwright-exec (skipped — set AETHER_E2E_KIND=1)${N}"
-        record_tier playwright-exec skipped 0
+        record_tier_skipped playwright-exec "set AETHER_E2E_KIND=1"
     fi
 fi
 
 write_report_json
 
-echo ""
-echo -e "${B}══════════════════════════════════════════════${N}"
-if [[ "${FAIL}" -eq 0 ]]; then
-    echo -e "${G}${B}  ALL TIERS PASSED${N}"
-    echo "  See docs/TEST_PLAN.md for manual-only scenarios."
+if print_suite_summary; then
     exit 0
 fi
-echo -e "${R}${B}  ${FAIL} tier(s) failed — see docs/TEST_PLAN.md${N}"
 exit 1

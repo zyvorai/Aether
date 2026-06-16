@@ -27,6 +27,7 @@
 - **Hosted SaaS foundation** — tenant registry, billing usage API, `X-Aether-Tenant` / `AETHER_TENANT_ID` isolation hooks
 - **Phase D** — Stripe billing hooks, tenant API keys + metering, volume replication executor, anomaly remediation APIs
 - **Edge agent replay** — offline queue persistence and multi-action executor (`gitops_sync`, workload lifecycle, drift, cluster actions)
+- **Live E2E orchestrator** — `scripts/api-live-test.sh` + `scripts/lib/e2e-tier-runner.sh`; tiers: api-live, smoke, deploy-remove, confidential, labs-live, playwright-all; `make api-live-test-remote`
 
 ---
 
@@ -45,6 +46,7 @@
 - **Hosted SaaS federation API** — `GET /api/hosted/federation`, `POST /api/hosted/tenants/:id/federation/plan`
 - **Identity & SSO** — OIDC login flow, SAML SP metadata, LDAP auth, Settings Identity panels, `?token=` bootstrap, Helm auth configmap
 - **Dashboard phases 2231–2280** — Orchestrator/Edge/Intelligence hub cross-links, Settings→RBAC link, Stripe billing portal UI, deploy helpers (`deploy-reference-ingress.sh`, `deploy-reference-sso.sh`, `deploy-with-ldap.sh`), Playwright `phases-2231-2280-features.spec.ts` + `identity-sso.spec.ts`
+- **Dashboard phases 2281–2330** — Migrations/Security/Cost/Platform/Backups hub cross-links, migration dry-run CI, Stripe production + confidential SNP deploy helpers, Playwright `phases-2281-2330-features.spec.ts`
 
 ---
 

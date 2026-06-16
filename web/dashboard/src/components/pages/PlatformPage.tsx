@@ -111,6 +111,26 @@ export default function PlatformPage() {
         refreshTestId="platform-toolbar-refresh"
       />
 
+      <div className="mb-6 glass-context-banner" data-testid="platform-hub-context">
+        Platform
+        {' · '}
+        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="platform-context-fleet-hub-link">
+          Fleet →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="platform-context-hosted-hub-link">
+          Hosted SaaS →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('security')} className="text-aether hover:underline" data-testid="platform-context-security-hub-link">
+          Security →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="platform-context-settings-hub-link">
+          Settings →
+        </Link>
+      </div>
+
       {focusedWorkload ? (
         <WorkloadContextBanner testId="platform-workload-context" workload={focusedWorkload} description="Platform context">
           <WorkloadScopedCrossLinks

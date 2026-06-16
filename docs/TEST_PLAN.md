@@ -5,7 +5,16 @@ End-to-end validation for the universal runtime control plane API, React dashboa
 ## Quick start
 
 ```bash
-# Default tiers from laptop (~5 min post-deploy)
+# Live E2E orchestrator — all live tiers + full Playwright (1–3+ hours)
+./scripts/api-live-test.sh 212.8.252.194 sus
+
+# Quick live preset (~5 min): API walkthrough + smoke only
+AETHER_LIVE_TIERS=quick ./scripts/api-live-test.sh 212.8.252.194 sus
+
+# Makefile remote shortcut
+make api-live-test-remote
+
+# Mixed orchestrator (dry-run + smoke; no full API walkthrough)
 ./scripts/test-all-features-remote.sh 212.8.252.194 sus
 
 # Smoke only (~2 min)
@@ -27,8 +36,10 @@ Default API: `http://<host>:30090` (NodePort) · Auth: session cookie via mock I
 
 | Tier | Script / action | Duration | What it proves |
 |------|-----------------|----------|----------------|
+| **api-live** | `api-live-test.sh` → `api-live-runner.py` | ~2 min | All routes from `mod.rs`, live terminal output |
 | **smoke** | `post-deploy-verify.sh` | ~2 min | Health, 55+ API routes, UX cross-checks, k8s-api-smoke |
 | **labs-dry** | `reference-cluster-e2e.sh` | ~1 min | Validate + dry-run Metal3, KubeVirt, k8s lab specs |
+| **migration-dry-run** | `migration-dry-run-e2e.sh` | ~30 s | Demo specs validate + `--dry-run` migrate |
 | **labs-live** | SSH `k8s-labs-e2e.sh` on remote | ~3–5 min | Live nginx deploy on cluster kubeconfig |
 | **confidential** | `confidential-fabric-e2e.sh` + `confidential-cluster-e2e.sh` | ~2 min | Confidential APIs + CLI placement checks |
 | **deploy-remove** | `deploy-remove-e2e.sh` | ~2 min | API workload create → verify → delete |
@@ -39,6 +50,7 @@ Environment:
 
 | Variable | Purpose |
 |----------|---------|
+| `AETHER_LIVE_TIERS` | Live orchestrator preset `all` / `quick` or comma list |
 | `AETHER_TEST_TIERS` | Comma list or preset `quick` / `full` |
 | `AETHER_API` | Base URL (default `http://HOST:30090`) |
 | `AETHER_E2E_REPORT_JSON` | Optional tier timing JSON summary |
@@ -48,7 +60,9 @@ Environment:
 | `AETHER_MOCK_IDP` | Must be `1` on **server** for mock-idp Playwright specs |
 | `AETHER_PLAYWRIGHT_TIMEOUT` | Optional Playwright timeout override |
 
-Default orchestrator tiers (no preset): `smoke,labs-dry,confidential`.
+Default live orchestrator tiers (`AETHER_LIVE_TIERS=all`): `api-live,smoke,deploy-remove,confidential,labs-live,playwright-all`.
+
+Default mixed orchestrator tiers (no preset): `smoke,labs-dry,confidential`.
 
 ## Feature matrix (API smoke)
 
@@ -97,7 +111,10 @@ Default orchestrator tiers (no preset): `smoke,labs-dry,confidential`.
 | Rust unit/integration | `make test` / `cargo test` | — | `test` |
 | Schema / confidential validate | `make confidential-validate` | — | `test` |
 | Labs dry-run | `scripts/labs-e2e.sh` | `labs-dry` tier | `labs-e2e` |
+| Migration dry-run | `scripts/migration-dry-run-e2e.sh` | `migration-dry-run` tier | `migration-dry-run-e2e` |
 | K8s live lab | `AETHER_LABS_LIVE=1 k8s-labs-e2e.sh` | `labs-live` tier | `k8s-live-e2e` |
+| Live E2E orchestrator | `make api-live-test` | `AETHER_LIVE_TIERS=all ./scripts/api-live-test.sh HOST USER` | Manual / staging |
+| API walkthrough | `make api-live-test` (`AETHER_LIVE_TIERS=api-live`) | same | — |
 | API smoke | `make post-deploy-verify` | `smoke` tier | `dashboard-e2e` (subset) |
 | Playwright subset | `npm run test:e2e -- tests/smoke.spec.ts` | `playwright-all` | `dashboard-e2e` jobs |
 | Full Playwright | `npm run test:e2e` | `playwright-all` tier | Nightly only |
@@ -153,6 +170,9 @@ GitHub Actions: set `AETHER_STAGING_HOST` and `AETHER_REMOTE_USER` secrets for o
 
 | Script | Role |
 |--------|------|
+| `scripts/api-live-test.sh` | **Live E2E entry point** — API walkthrough + live tiers + Playwright |
+| `scripts/lib/api-live-runner.py` | Route discovery + live terminal API probes |
+| `scripts/lib/e2e-tier-runner.sh` | Shared tier runner for orchestrators |
 | `scripts/test-all-features-remote.sh` | Laptop orchestrator (quick/full presets, JSON report) |
 | `scripts/post-deploy-verify.sh` | Tier smoke |
 | `scripts/remote-api-ux-verify.sh` | API + UX consistency |

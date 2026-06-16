@@ -1,6 +1,6 @@
 .PHONY: help build test lint clean install release docker run-dev \
 	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live reference-cluster-live-verify \
-	post-deploy-verify remote-post-deploy-verify remote-reference-verify api-live-test \
+	post-deploy-verify remote-post-deploy-verify remote-reference-verify api-live-test api-live-test-remote \
 	test-remote-smoke test-remote-quick test-remote-all \
 	deploy-remote deploy-all-remote test-platform-remote
 
@@ -27,7 +27,8 @@ help:
 	@echo "  reference-cluster-live     - Live Metal3/KubeVirt smoke (requires kubeconfig)"
 	@echo "  reference-cluster-live-verify - Live smoke + post-deploy API verify"
 	@echo "  post-deploy-verify         - API smoke against AETHER_API (default localhost:5090)"
-	@echo "  api-live-test              - Live terminal walkthrough of all REST APIs"
+	@echo "  api-live-test              - Live E2E orchestrator (default: all live tiers + Playwright)"
+	@echo "  api-live-test-remote       - api-live-test against DEPLOY_HOST (212.8.252.194)"
 	@echo "  remote-post-deploy-verify    - Post-deploy verify against 212.8.252.194:30090"
 	@echo "  remote-reference-verify      - Remote k8s live lab + post-deploy verify"
 	@echo "  test-remote-smoke            - AETHER_TEST_TIERS=smoke on staging host"
@@ -40,6 +41,9 @@ help:
 	@echo "  deploy-reference-ingress     - Deploy remote with Ingress/TLS (AETHER_DEPLOY_ENV)"
 	@echo "  deploy-reference-sso         - Deploy remote with mock IdP SSO (AETHER_DEPLOY_ENV)"
 	@echo "  deploy-with-ldap             - Deploy remote with LDAP/AD (AETHER_DEPLOY_ENV required)"
+	@echo "  deploy-hosted-stripe-prod    - Deploy remote with Stripe production billing env"
+	@echo "  deploy-confidential-snp-lab  - Validate confidential SNP lab (offline smoke)"
+	@echo "  migration-dry-run-e2e        - Validate demo specs + dry-run migrate targets"
 
 build:
 	@echo "Building debug binary..."
@@ -135,8 +139,12 @@ post-deploy-verify:
 	@./scripts/post-deploy-verify.sh
 
 api-live-test:
-	@chmod +x scripts/api-live-test.sh 2>/dev/null || true
+	@chmod +x scripts/api-live-test.sh scripts/lib/e2e-tier-runner.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
 	@./scripts/api-live-test.sh
+
+api-live-test-remote:
+	@chmod +x scripts/api-live-test.sh scripts/lib/e2e-tier-runner.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
+	@AETHER_REMOTE_HOST=$(DEPLOY_HOST) ./scripts/api-live-test.sh $(DEPLOY_HOST) $(DEPLOY_USER)
 
 remote-post-deploy-verify:
 	@chmod +x scripts/post-deploy-verify.sh scripts/lib/post-deploy-auth.sh 2>/dev/null || true
@@ -183,6 +191,19 @@ deploy-reference-sso:
 deploy-with-ldap:
 	@chmod +x scripts/deploy-with-ldap.sh 2>/dev/null || true
 	@echo "Usage: AETHER_DEPLOY_ENV=~/aether-ldap.env make deploy-with-ldap HOST=<ip> USER=<ssh-user>"
+
+deploy-hosted-stripe-prod:
+	@chmod +x scripts/deploy-hosted-stripe-prod.sh 2>/dev/null || true
+	@echo "Usage: AETHER_DEPLOY_ENV=~/aether-stripe.env make deploy-hosted-stripe-prod HOST=<ip> USER=<ssh-user>"
+
+deploy-confidential-snp-lab:
+	@chmod +x scripts/deploy-confidential-snp-lab.sh scripts/confidential-cluster-e2e.sh scripts/lib/aether-confidential-smoke.sh 2>/dev/null || true
+	@./scripts/deploy-confidential-snp-lab.sh
+
+migration-dry-run-e2e:
+	@cargo build --quiet 2>/dev/null || cargo build
+	@chmod +x scripts/migration-dry-run-e2e.sh 2>/dev/null || true
+	@AETHER_BIN=./target/debug/aether ./scripts/migration-dry-run-e2e.sh
 
 # Benchmark (if criterion is added)
 bench:
