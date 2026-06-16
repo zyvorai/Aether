@@ -121,6 +121,20 @@ jobs:
       - name: Metal3 / KubeVirt labs
         run: chmod +x scripts/labs-e2e.sh && AETHER_BIN=./target/release/aether scripts/labs-e2e.sh
 
+  migration-dry-run-e2e:
+    name: Migration dry-run E2E
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build aether
+        run: cargo build --release
+      - name: Demo migration validate + dry-run
+        run: chmod +x scripts/migration-dry-run-e2e.sh && AETHER_BIN=./target/release/aether scripts/migration-dry-run-e2e.sh
+
   k8s-live-e2e:
     name: Kubernetes live E2E (kind)
     runs-on: ubuntu-latest
@@ -285,6 +299,17 @@ jobs:
           SERVER_PID=$!
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           npm run test:e2e -- tests/phases-2231-2280-features.spec.ts
+          kill $SERVER_PID || true
+      - name: Run Playwright phases 2281–2330
+        working-directory: web/dashboard
+        env:
+          AETHER_E2E_SKIP_SERVER: "1"
+          AETHER_E2E_BASE_URL: http://127.0.0.1:5090
+        run: |
+          ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          SERVER_PID=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
+          npm run test:e2e -- tests/phases-2281-2330-features.spec.ts
           kill $SERVER_PID || true
 
   dashboard-exec-e2e:

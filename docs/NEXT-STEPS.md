@@ -29,11 +29,26 @@ CI builds the embedded dashboard, validates example specs, runs Playwright smoke
 - **Deploy helpers** — `deploy-reference-ingress.sh`, `deploy-reference-sso.sh`, `deploy-with-ldap.sh`, env examples under `examples/deploy/`
 - **Settings RBAC link** — Settings hub → Access Control
 
+## Recently completed (2281–2330)
+
+- **Migrations / Security / Cost / Platform / Backups hub cross-links** — FinOps and migration navigation banners
+- **Migration dry-run CI** — `scripts/migration-dry-run-e2e.sh`, CI `migration-dry-run-e2e` job, `make migration-dry-run-e2e`
+- **Stripe production deploy** — `examples/deploy/stripe-production.env.example`, `deploy-hosted-stripe-prod.sh`
+- **Confidential SNP lab** — `examples/deploy/confidential-snp.env.example`, `deploy-confidential-snp-lab.sh`
+- **Playwright** — `phases-2281-2330-features.spec.ts`
+
+## Recently completed (live E2E orchestrator)
+
+- **Live E2E orchestrator** — `scripts/api-live-test.sh` runs all live tiers (API walkthrough, smoke, deploy-remove, confidential, labs-live, Playwright) with shared tier runner in `scripts/lib/e2e-tier-runner.sh`
+- **Makefile** — `make api-live-test`, `make api-live-test-remote`
+- **Presets** — `AETHER_LIVE_TIERS=all|quick`; see `docs/TEST_PLAN.md`
+
 ## Recommended Next Order
 
-1. **Dashboard phases 2281+** — next hub slice
+1. **Dashboard phases 2331+** — next hub slice
 2. **Confidential live** when SNP lab host is available
 3. **Ingress + TLS** on reference cluster (`AETHER_EXPOSE=ingress` via `deploy-reference-ingress.sh`)
+4. **Hosted SaaS production** — set live Stripe keys via `deploy-hosted-stripe-prod.sh`
 
 ## Mock IdP (development / CI)
 
@@ -59,6 +74,8 @@ Remote verify:
 ```bash
 make remote-reference-verify
 AETHER_API=http://212.8.252.194:30090 make post-deploy-verify
+make api-live-test-remote   # full live E2E (API + Playwright; 1–3+ hours)
+AETHER_LIVE_TIERS=quick make api-live-test-remote   # API walkthrough + smoke (~5 min)
 ```
 
 ## Notes

@@ -98,8 +98,31 @@ export default function SecurityCenterPage() {
   const rotationNeeded = secrets.filter((s) => s.needs_rotation);
   const highRiskCount = criticalThreats.length + rotationNeeded.length;
 
+  const hubBanner = (
+    <div className="mb-6 glass-context-banner" data-testid="security-hub-context">
+      Security
+      {' · '}
+      <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="security-context-orchestrator-link">
+        Orchestrator →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('intelligence')} className="text-aether hover:underline" data-testid="security-context-intelligence-link">
+        Intelligence →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="security-context-fleet-link">
+        Fleet →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('confidential')} className="text-aether hover:underline" data-testid="security-context-confidential-hub-link">
+        Confidential →
+      </Link>
+    </div>
+  );
+
   return (
     <div data-testid="security-center-page">
+      {hubBanner}
       {workloadFocus.trim() ? (
         <WorkloadContextBanner testId="security-workload-context" workload={workloadFocus} description="Security context">
           <WorkloadScopedCrossLinks workload={workloadFocus} prefix="security" showAudit showDrift />

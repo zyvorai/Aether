@@ -23,8 +23,31 @@ const TOC = [
 export default function MigrationsPage() {
   const [workload] = useQueryParam('workload');
 
+  const hubBanner = (
+    <div className="mb-6 glass-context-banner" data-testid="migrations-hub-context">
+      Migrations
+      {' · '}
+      <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="migrations-context-orchestrator-link">
+        Orchestrator →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('security')} className="text-aether hover:underline" data-testid="migrations-context-security-link">
+        Security →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('gitops')} className="text-aether hover:underline" data-testid="migrations-context-gitops-link">
+        GitOps →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="migrations-context-hosted-link">
+        Hosted SaaS →
+      </Link>
+    </div>
+  );
+
   return (
     <section className="hub-page-shell">
+      {hubBanner}
       {workload.trim() ? (
         <WorkloadContextBanner testId="migrations-workload-context" workload={workload} description="Migration context">
           <WorkloadScopedCrossLinks workload={workload} prefix="mig" showGitops showMetrics />

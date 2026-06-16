@@ -112,6 +112,14 @@ export default function BackupsPage() {
         <Link to={viewToPath('audit')} className="text-aether hover:underline" data-testid="backups-context-audit-link">
           Audit →
         </Link>
+        {' · '}
+        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="backups-context-hosted-link">
+          Hosted SaaS →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('migrations')} className="text-aether hover:underline" data-testid="backups-context-migrations-link">
+          Migrations →
+        </Link>
       </div>
       <SearchQueryContextBanner testId="backups-workload-context" query={search} entityLabel="backups">
         <WorkloadScopedCrossLinks workload={search} prefix="backups" showGitops />

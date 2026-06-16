@@ -117,8 +117,31 @@ export default function CostPage() {
       </div>
     );
 
+  const hubBanner = (
+    <div className="mb-6 glass-context-banner" data-testid="cost-hub-context">
+      FinOps
+      {' · '}
+      <Link to={viewToPath('intelligence')} className="text-aether hover:underline" data-testid="cost-context-intelligence-hub-link">
+        Intelligence →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="cost-context-hosted-link">
+        Hosted SaaS →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('migrations')} className="text-aether hover:underline" data-testid="cost-context-migrations-link">
+        Migrations →
+      </Link>
+      {' · '}
+      <Link to={viewToPath('platform')} className="text-aether hover:underline" data-testid="cost-context-platform-hub-link">
+        Platform →
+      </Link>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
+      {hubBanner}
       <CostIntelligencePanel />
       <FinOpsPlatformPanel />
       {workloadQuery.trim() ? (
