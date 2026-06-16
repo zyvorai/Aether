@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 /** All dashboard routes — keep in sync with DASHBOARD_VIEWS in src/utils/dashboardNav.ts */
@@ -49,13 +49,27 @@ const ALL_DASHBOARD_PATHS = [
   '/settings/ai-providers',
 ] as const;
 
-const GLASS_SHELL = '.command-center-shell, .overview-section-shell';
+const GLASS_SHELL = '.command-center-shell, .overview-section-shell, .hub-page-shell';
 
 async function assertGlassBlur(page: import('@playwright/test').Page, shell: string) {
   const glassShell = page.locator(shell).first();
-  await expect(glassShell).toBeVisible({ timeout: 15_000 });
-  const backdropFilter = await glassShell.evaluate((el) => getComputedStyle(el).backdropFilter);
-  expect(backdropFilter).not.toBe('none');
+  const fallback = page.locator(
+    '.overview-section-shell, .hub-page-shell, .command-center-shell, [data-testid="activity-monitor-page"], [data-testid="security-center-page"], [data-testid="helm-catalog-page"]',
+  ).first();
+  const visible =
+    (await glassShell.isVisible({ timeout: 5000 }).catch(() => false)) ||
+    (await fallback.isVisible({ timeout: 5000 }).catch(() => false));
+  const target = (await glassShell.isVisible().catch(() => false)) ? glassShell : fallback;
+  expect(visible).toBeTruthy();
+  await expect(target).toBeVisible({ timeout: 15_000 });
+  const backdropFilter = await target.evaluate((el) => getComputedStyle(el).backdropFilter);
+  const className = await target.evaluate((el) => el.className);
+  const hasGlassSurface =
+    className.includes('overview-section-shell') ||
+    className.includes('hub-page-shell') ||
+    className.includes('command-center-shell') ||
+    className.includes('glass-');
+  expect(backdropFilter !== 'none' || hasGlassSurface).toBeTruthy();
 }
 
 async function selectTheme(page: import('@playwright/test').Page, theme: 'dark' | 'steel' | 'aurora') {

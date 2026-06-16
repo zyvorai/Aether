@@ -129,9 +129,16 @@ export default function ClustersPage() {
   const [serverDiff, setServerDiff] = useState<ClusterDiffLine[]>([]);
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [detailTab, setDetailTab] = useState<'overview' | 'events' | 'logs' | 'terminal' | 'manifest'>('overview');
-  const [pageTab, setPageTab] = useState<'browse' | 'network'>('browse');
-  const [ciliumStatus, setCiliumStatus] = useState<CiliumStatusResponse | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [pageTab, setPageTab] = useState<'browse' | 'network'>(() =>
+    searchParams.get('tab') === 'network' ? 'network' : 'browse',
+  );
+  const [ciliumStatus, setCiliumStatus] = useState<CiliumStatusResponse | null>(null);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') === 'network' ? 'network' : 'browse';
+    setPageTab((current) => (current === tab ? current : tab));
+  }, [searchParams]);
   function setPageTabWithUrl(tab: 'browse' | 'network') {
     setPageTab(tab);
     setSearchParams(

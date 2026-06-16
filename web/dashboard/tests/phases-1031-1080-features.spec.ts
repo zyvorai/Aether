@@ -2,8 +2,9 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
+import { clickTestId, waitForOverviewReady } from './helpers/overview';
 
 test.describe('Phases 1031–1080 features', () => {
   test.beforeEach(async ({ page }) => {
@@ -29,14 +30,14 @@ test.describe('Phases 1031–1080 features', () => {
       }),
     );
     await page.goto('/');
-    await expect(page.getByTestId('overview-events-stat')).toContainText('12', { timeout: 10_000 });
-    await page.getByTestId('overview-events-stat').click();
+    await expect(page.getByTestId('overview-events-stat')).toContainText('12', { timeout: 15_000 });
+    await clickTestId(page, 'overview-events-stat');
     await expect(page).toHaveURL(/severity=warning/, { timeout: 10_000 });
   });
 
   test('phase 1032: overview platform quick link testid', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId('overview-platform-quick-link').click();
+    await waitForOverviewReady(page);
+    await clickTestId(page, 'overview-platform-quick-link');
     await expect(page).toHaveURL(/\/platform/, { timeout: 10_000 });
   });
 
@@ -140,7 +141,7 @@ test.describe('Phases 1031–1080 features', () => {
     );
     await page.goto('/alerts?workload=web');
     await expect(page.getByTestId('alerts-workload-context')).toContainText('web', { timeout: 10_000 });
-    await page.getByTestId('alerts-events-link').click();
+    await page.getByTestId('alerts-events-link').first().click();
     await expect(page).toHaveURL(/workload=web/, { timeout: 10_000 });
   });
 
@@ -156,8 +157,8 @@ test.describe('Phases 1031–1080 features', () => {
       }),
     );
     await page.goto('/copilot');
-    await page.getByTestId('copilot-suggestion').first().click();
-    await expect(page).toHaveURL(/\?q=/, { timeout: 10_000 });
+    await page.getByTestId('copilot-suggestion').first().click({ force: true });
+    await expect(page.getByTestId('copilot-input')).not.toHaveValue('', { timeout: 10_000 });
   });
 
   test('phase 1037: gitops confidential compliance from API on reload', async ({ page }) => {

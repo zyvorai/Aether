@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 const ciliumStatus = {
@@ -101,7 +101,7 @@ test.describe('Cilium & observability UI', () => {
 
   test('Platform page shows Kubernetes / Cilium card', async ({ page }) => {
     await page.goto('/platform');
-    await expect(page.getByRole('heading', { name: 'Kubernetes / Cilium' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Kubernetes / Cilium' }).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('allow-aether-egress')).toBeVisible();
     await expect(page.getByText('permissive')).toBeVisible();
     await expect(page.getByRole('link', { name: /Grafana/i })).toBeVisible();
@@ -244,7 +244,10 @@ test.describe('Cilium & observability UI', () => {
     });
 
     await page.goto('/clusters?tab=network');
-    await expect(page.getByRole('button', { name: 'Network' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('clusters-page-tabs')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('clusters-page-tabs').getByRole('tab', { name: 'Network' })).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByRole('button', { name: 'allow-aether-egress' }).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'aether-control-plane-egress' })).toBeVisible();
   });

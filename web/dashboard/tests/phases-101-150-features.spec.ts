@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phases 101–150 features', () => {
@@ -19,7 +19,8 @@ test.describe('Phases 101–150 features', () => {
       }),
     );
     await page.goto('/ai?tab=optimize');
-    await expect(page.getByTestId('ai-tabs').getByRole('button', { name: 'Optimization' })).toHaveAttribute('aria-selected', 'true', {
+    await expect(page.getByTestId('ai-tabs')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('ai-tabs').getByRole('tab', { name: 'Optimization' })).toHaveAttribute('aria-selected', 'true', {
       timeout: 10_000,
     });
   });
@@ -42,7 +43,7 @@ test.describe('Phases 101–150 features', () => {
 
   test('phase 103: overview AI engine quick link', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'AI engine' }).click();
+    await page.getByRole('button', { name: 'AI engine' }).first().click();
     await expect(page).toHaveURL(/\/ai/, { timeout: 10_000 });
   });
 

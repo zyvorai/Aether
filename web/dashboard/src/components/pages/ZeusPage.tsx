@@ -9,6 +9,7 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiPost } from '../../utils/api';
+import CopilotPlatformPanel from '../CopilotPlatformPanel';
 import ZeusPlatformPanel from '../ZeusPlatformPanel';
 import ZeusPromptLibrary from '../ZeusPromptLibrary';
 
@@ -302,12 +303,12 @@ export default function ZeusPage() {
               <p className="text-sm text-slate-400">
                 Ask about health, drift, costs, migrations, or cluster state.
               </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2" data-testid="zeus-suggestions">
+              <div className="mt-4 flex flex-wrap justify-center gap-2" data-testid="copilot-suggestions">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     type="button"
-                    data-testid="zeus-suggestion"
+                    data-testid="copilot-suggestion"
                     onClick={() => {
                       setQParam(s);
                       setInput(s);
@@ -389,7 +390,7 @@ export default function ZeusPage() {
             }}
             placeholder="Ask Aether anything…"
             aria-label="Message Zeus"
-            data-testid="zeus-input"
+            data-testid="copilot-input"
             className="glass-input min-w-0 flex-1 text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
@@ -407,6 +408,7 @@ export default function ZeusPage() {
 
       <ZeusPromptLibrary />
       <ZeusPlatformPanel />
+      <CopilotPlatformPanel />
       </section>
     </div>
   );

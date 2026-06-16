@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('AI Infrastructure OS v19 — Live Labs & Reference Cluster', () => {
   test('livelabs overview API', async ({ request }) => {

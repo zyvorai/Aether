@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phase 6 features', () => {
@@ -39,7 +39,7 @@ test.describe('Phase 6 features', () => {
       }),
     );
     await page.reload();
-    await page.getByRole('button', { name: 'Intelligence' }).click();
+    await page.getByRole('button', { name: 'Intelligence', exact: true }).click();
     await expect(page.getByText('Setup required')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('menuitem', { name: /Policy Check/i }).click();
     await expect(page).toHaveURL(/\/platform/, { timeout: 10_000 });

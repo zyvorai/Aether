@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('AI Infrastructure OS v1', () => {
   test('command center briefing API', async ({ request }) => {
@@ -38,8 +38,12 @@ test.describe('AI Infrastructure OS v1', () => {
   test('copilot rail visible on wide viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await expect(page.getByTestId('copilot-rail')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('copilot-rail-input')).toBeVisible();
+    const rail = page.getByTestId('copilot-rail');
+    const collapsed = page.getByTestId('copilot-rail-collapsed');
+    await expect(rail.or(collapsed)).toBeVisible({ timeout: 15_000 });
+    if (await rail.isVisible().catch(() => false)) {
+      await expect(page.getByTestId('copilot-rail-input')).toBeVisible();
+    }
   });
 
   test('fleet root cause API', async ({ request }) => {

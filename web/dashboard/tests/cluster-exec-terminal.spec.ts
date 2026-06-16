@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { openNginxPlaywrightPodTerminal } from './helpers/kindCluster';
 
 const kindE2e = process.env.AETHER_E2E_KIND === '1';

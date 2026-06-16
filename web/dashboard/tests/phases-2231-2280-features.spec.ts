@@ -1,6 +1,6 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 async function followTestLink(page: Page, testId: string, urlPattern: RegExp) {

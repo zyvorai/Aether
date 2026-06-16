@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { ensureAuthenticated } from './helpers/auth';
 
 test.describe('Phases 1231–1280 features', () => {
@@ -50,7 +50,7 @@ test.describe('Phases 1231–1280 features', () => {
     });
     await page.goto('/audit?workload=web');
     await expect(page.getByTestId('audit-trust-link')).toBeVisible({ timeout: 10_000 });
-    await page.getByTestId('audit-trust-link').click();
+    await page.getByTestId('audit-trust-link').first().click();
     await expect(page).toHaveURL(/workload=web.*tab=trust/, { timeout: 10_000 });
   });
 
@@ -107,7 +107,7 @@ test.describe('Phases 1231–1280 features', () => {
       });
     });
     await page.goto('/events?workload=web');
-    await page.getByTestId('events-trust-link').click();
+    await page.getByTestId('events-trust-link').first().click();
     await expect(page).toHaveURL(/workload=web.*tab=trust/, { timeout: 10_000 });
   });
 
