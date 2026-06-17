@@ -17,7 +17,7 @@ One YAML spec. Four runtimes. Production migration between them.
 | KubeVirt | VMs and GPU isolation |
 | Metal3 | Bare metal |
 
-**[Product overview](docs/PRODUCT.md)** · [Migration internals](docs/guides/migration/MIGRATION-INTERNALS.md) · [Decision engine](docs/guides/decision-engine/SCORING.md) · [Demos](examples/demos/)
+**[Documentation index](docs/README.md)** · **[User stories](docs/USER_STORIES.md)** · **[Product overview](docs/PRODUCT.md)** · [Migration internals](docs/guides/migration/MIGRATION-INTERNALS.md) · [Decision engine](docs/guides/decision-engine/SCORING.md) · [Demos](examples/demos/)
 
 ## Zyvor platform
 
