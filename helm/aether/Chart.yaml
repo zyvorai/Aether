@@ -2,8 +2,8 @@ apiVersion: v2
 name: aether
 description: Universal runtime control plane - One spec, four runtimes
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.3.0
+appVersion: "0.3.0"
 keywords:
   - orchestration
   - kubernetes

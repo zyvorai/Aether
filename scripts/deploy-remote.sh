@@ -23,6 +23,7 @@
 #   --skip-image    Skip image build/import (AETHER_SKIP_IMAGE=1)
 #   --quick         Skip sync + cargo + image build/import
 #   --local-build   Build locally and upload only the release binary
+#   --dry-run       Sync source only; skip remote build, image, apply, and health (AETHER_DRY_RUN=1)
 #   --uninstall     Remove Aether from the remote cluster
 #
 # Environment:
@@ -65,6 +66,7 @@ SKIP_RSYNC="${AETHER_SKIP_RSYNC:-0}"
 SKIP_CARGO="${AETHER_SKIP_CARGO:-0}"
 SKIP_IMAGE="${AETHER_SKIP_IMAGE:-0}"
 LOCAL_BUILD="${AETHER_LOCAL_BUILD:-0}"
+DRY_RUN="${AETHER_DRY_RUN:-0}"
 UNINSTALL=0
 
 POSITIONAL=()
@@ -79,6 +81,7 @@ for arg in "$@"; do
       SKIP_IMAGE=1
       ;;
     --local-build) LOCAL_BUILD=1 ;;
+    --dry-run) DRY_RUN=1 ;;
     --uninstall) UNINSTALL=1 ;;
     --help|-h)
       sed -n '2,39p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -300,6 +303,11 @@ else
   info "Source synced to ${REMOTE_DIR}"
 fi
 
+if [ "${DRY_RUN}" = "1" ]; then
+  info "DRY RUN: source synced to ${REMOTE_DIR} — skipping remote build, image, apply, and health check"
+  exit 0
+fi
+
 step 2 "${TOTAL_STEPS}" "🦀" "Building dashboard + release binary"
 if [ "${SKIP_RSYNC}" != "1" ] || [ -d "${REPO_ROOT}/web/dashboard/node_modules" ]; then
   if [ -f "${REPO_ROOT}/web/dashboard/package.json" ]; then
@@ -337,6 +345,23 @@ elif [ "${SKIP_CARGO}" = "1" ]; then
   info "Skipped cargo build"
 else
   ssh_cmd "
+    # Install build prerequisites
+    if command -v apt-get >/dev/null 2>&1; then
+      sudo apt-get update -qq 2>/dev/null || true
+      sudo apt-get install -y -qq build-essential pkg-config libssl-dev curl wget 2>/dev/null || true
+      _nv=\$(node -v 2>/dev/null | cut -c2- | cut -d. -f1 || echo 0)
+      if [ \${_nv:-0} -lt 18 ]; then
+        curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 2>/dev/null || true
+        sudo apt-get install -y -qq nodejs 2>/dev/null || true
+      fi
+    elif command -v dnf >/dev/null 2>&1; then
+      sudo dnf install -y gcc make pkgconfig openssl-devel curl wget 2>/dev/null || true
+      _nv=\$(node -v 2>/dev/null | cut -c2- | cut -d. -f1 || echo 0)
+      if [ \${_nv:-0} -lt 18 ]; then
+        curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash - 2>/dev/null || true
+        sudo dnf install -y nodejs 2>/dev/null || true
+      fi
+    fi
     source \$HOME/.cargo/env 2>/dev/null || true
     if ! command -v cargo >/dev/null 2>&1; then
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -359,7 +384,7 @@ else
   ssh_cmd "
     cd ${REMOTE_DIR}
     cat > Dockerfile.deploy <<'EOF'
-FROM debian:bookworm-slim
+FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y ca-certificates curl openssl && rm -rf /var/lib/apt/lists/*
 COPY target/release/aether /usr/local/bin/aether
 RUN mkdir -p /var/lib/aether /tls
