@@ -64,6 +64,7 @@ pub mod state;
 pub mod state_postgres;
 pub mod templates;
 pub mod ui;
+pub mod license;
 
 pub use runtime::Runtime;
 pub use spec::Workload;
