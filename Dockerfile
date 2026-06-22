@@ -1,12 +1,16 @@
-# Example Dockerfile for testing Aether
-FROM nginx:alpine
+FROM debian:bookworm-slim
 
-# Add a simple health check endpoint
-RUN echo '<html><body><h1>Hello from Aether!</h1></body></html>' > /usr/share/nginx/html/index.html
-RUN echo 'OK' > /usr/share/nginx/html/health
-RUN echo 'READY' > /usr/share/nginx/html/ready
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates libssl3 libgcc-s1 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Expose port 80
-EXPOSE 80
+RUN useradd -r -u 65532 -g root nonroot
 
-CMD ["nginx", "-g", "daemon off;"]
+COPY aether /usr/local/bin/aether
+
+USER 65532
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/aether"]
+CMD ["serve"]
