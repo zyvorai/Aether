@@ -1,5 +1,5 @@
 # Multi-stage build for Aether CLI
-FROM rust:1.75-slim as builder
+FROM rust:1.88-slim as builder
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -11,11 +11,12 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy manifests
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock build.rs ./
 
 # Copy source
 COPY src ./src
 COPY web ./web
+COPY packaging ./packaging
 
 # Build release binary
 RUN cargo build --release
