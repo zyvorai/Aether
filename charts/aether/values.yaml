@@ -1,0 +1,53 @@
+replicaCount: 1
+
+fullnameOverride: "aether"
+
+image:
+  repository: ghcr.io/hypersdk/aether
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: "aether"
+  annotations: {}
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30808
+
+api:
+  host: "0.0.0.0"
+  port: 8080
+
+tls:
+  enabled: false
+
+auth:
+  apiKey: ""
+  secretName: "aether-api-key"
+
+license:
+  key: ""           # licence key received from sales@zyvor.dev
+  existingSecret: "" # alternative: name of a pre-created Secret with a "license.key" data key
+
+rateLimit:
+  perMinute: 60
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+rbac:
+  create: true

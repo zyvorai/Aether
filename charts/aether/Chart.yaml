@@ -1,0 +1,18 @@
+apiVersion: v2
+name: aether
+description: Aether — Universal Runtime Control Plane for Containers, Kubernetes, KubeVirt, and Metal3
+type: application
+version: 0.1.0
+appVersion: "0.3.0"
+keywords:
+  - aether
+  - kubernetes
+  - kubevirt
+  - confidential-computing
+  - runtime
+home: https://github.com/hypersdk/aether
+sources:
+  - https://github.com/hypersdk/aether
+maintainers:
+  - name: ZyvorAI Labs Private Limited
+    url: https://github.com/hypersdk
