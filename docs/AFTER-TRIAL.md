@@ -1,28 +1,9 @@
-# After the Aether Trial
+# Support & Commercial Enquiries
 
-## Get a Commercial Licence
+Aether is open to run without any time restriction.
 
-Email **[sales@zyvor.dev](mailto:sales@zyvor.dev)** with subject: `Aether licence request`
+For enterprise support, SLA agreements, or custom deployments contact:
 
-## Apply Your Licence Key
+**[sales@zyvor.dev](mailto:sales@zyvor.dev)**
 
-```bash
-kubectl create secret generic aether-license \
-  --from-literal=license.key="<your-key>" \
-  -n aether-system
-
-helm upgrade aether oci://ghcr.io/hypersdk/charts/aether \
-  --version 0.1.0 \
-  --reuse-values \
-  --set license.existingSecret="aether-license" \
-  -n aether-system
-
-kubectl -n aether-system rollout restart deployment/aether
-```
-
-## Verify
-
-```bash
-kubectl -n aether-system logs deployment/aether | grep -i "licence"
-# Expected: Aether licence: <your-org> — valid until <date>
-```
+Or visit: [https://zyvor.dev/contact](https://zyvor.dev/contact)
