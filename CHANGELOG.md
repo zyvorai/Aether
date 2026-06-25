@@ -146,6 +146,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AI Migration:** Removed unreachable `_ => RiskLevel::Critical` match arm (risk_score already clamped to 5)
 - **Scheduler:** Affinity scores clamped to `[0.0, 1.0]` before applying bonus to prevent score corruption
 
+## [0.3.0] - 2026-06-25
+
+### Added
+- **License Enforcement:** Capacity-based license system using RSA-signed `.zyvor` license files. Licenses encode node/workload limits, an expiry date, and a cryptographic signature verified at startup and on reload.
+  - `ZEUS_LICENSE_PATH` environment variable sets the path to the `.zyvor` license file
+  - License is verified on daemon startup; `aether run` and `aether serve` are gated when capacity limits are exceeded
+  - Grace-period handling allows a configurable window after expiry before hard enforcement kicks in
+- **License API Endpoints:**
+  - `GET /api/license/status` — returns current license validity, expiry date, and encoded capacity limits
+  - `GET /api/license/usage` — returns live node/workload counts measured against licensed limits
+  - `POST /api/license/reload` — hot-reloads the `.zyvor` file without restarting the daemon
+- **License Audit Actions:** 8 new audit event types recorded to the audit trail with SHA-256 integrity hashes:
+  - `LICENSE_VALID`, `LICENSE_MISSING`, `LICENSE_EXPIRED`, `LICENSE_INVALID_SIGNATURE`
+  - `LICENSE_LIMIT_EXCEEDED`, `LICENSE_RELOADED`, `LICENSE_GRACE_PERIOD`, `LICENSE_CHECKED`
+- **`licensegen` Internal Tool:** Internal CLI utility for generating RSA-signed `.zyvor` license files; used by the distribution pipeline to issue per-customer licenses.
+- **Helm Chart License Support:** New values in the Helm chart for mounting license files into Kubernetes deployments:
+  - `license.enabled` — toggle license enforcement in the chart
+  - `license.existingSecret` — name of a pre-created Kubernetes Secret holding the `.zyvor` file
+  - `license.mountPath` — path at which the secret is mounted inside the container
+- **Dashboard License UI:**
+  - `LicensePage` — full-page license status view with expiry countdown, per-resource usage meters, and a one-click reload button
+  - `LicenseBanner` — persistent top-of-page warning banner rendered when the license is missing, expired, or capacity limits are being approached
+
+---
+
 ## [0.3.0] - 2026-02-08
 
 ### Added
