@@ -4,7 +4,6 @@
 
 //! Aether CLI entrypoint
 
-mod license;
 mod cli;
 mod commands;
 
@@ -18,8 +17,6 @@ use cli::{Cli, Commands, HealthAction};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    license::load_and_check()?;
-
     // Install rustls crypto provider before any TLS operations
     let _ = rustls::crypto::ring::default_provider().install_default();
 
