@@ -8,15 +8,8 @@ Access the API:
   http://localhost:8080
 {{- end }}
 
-Check trial status:
+Check health:
   kubectl -n {{ .Release.Namespace }} logs deployment/{{ include "aether.fullname" . }} | head -5
 
-After the 30-day trial, contact sales@zyvor.dev for a licence key:
-  kubectl create secret generic aether-license \
-    --from-literal=license.key="<your-key>" \
-    -n {{ .Release.Namespace }}
-
-  helm upgrade {{ .Release.Name }} oci://ghcr.io/hypersdk/charts/aether \
-    --reuse-values \
-    --set license.existingSecret="aether-license" \
-    -n {{ .Release.Namespace }}
+For support or enterprise enquiries:
+  https://zyvor.dev/contact

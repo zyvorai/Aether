@@ -71,7 +71,3 @@ aether migrate my-app --to kubevirt --strategy blue-green
 # Check progress
 aether migrate status my-app
 ```
-
-## 6. After the 30-day trial
-
-Contact [sales@zyvor.dev](mailto:sales@zyvor.dev)
