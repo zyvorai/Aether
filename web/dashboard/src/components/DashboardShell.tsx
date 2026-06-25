@@ -14,6 +14,7 @@ import LiveActivityDock from './LiveActivityDock';
 import SseReconnectBanner from './SseReconnectBanner';
 import VersionRefreshBanner from './VersionRefreshBanner';
 import ViewerBanner from './ViewerBanner';
+import LicenseBanner from './LicenseBanner';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
@@ -27,6 +28,8 @@ interface DashboardShellProps {
   lastRefreshed: Date;
   sseConnected: boolean;
   sseBannerVisible?: boolean;
+  licenseBannerMessage?: string;
+  licenseState?: string;
   onNavigate: (view: AppView) => void;
   onLogout: () => void;
   onRefresh: () => void;
@@ -92,6 +95,8 @@ export default function DashboardShell({
   lastRefreshed,
   sseConnected,
   sseBannerVisible = false,
+  licenseBannerMessage,
+  licenseState,
   onNavigate,
   onLogout,
   onRefresh,
@@ -134,6 +139,9 @@ export default function DashboardShell({
       <ZeusContextBar refreshKey={refreshKey} />
       <ViewerBanner />
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
+      {licenseBannerMessage && licenseState ? (
+        <LicenseBanner message={licenseBannerMessage} state={licenseState} />
+      ) : null}
       <VersionRefreshBanner />
       {!showCompactHero ? (
         <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />

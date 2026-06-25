@@ -275,6 +275,10 @@ spec:
         {{- with .Values.extraEnv }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- if .Values.license.enabled }}
+        - name: ZEUS_LICENSE_PATH
+          value: {{ printf "%s/license.zyvor" .Values.license.mountPath | quote }}
+        {{- end }}
         {{- if .Values.auth.configMap.enabled }}
         envFrom:
         - configMapRef:
@@ -326,6 +330,11 @@ spec:
         {{- end }}
         - name: tmp
           mountPath: /tmp
+        {{- if .Values.license.enabled }}
+        - name: license
+          mountPath: {{ .Values.license.mountPath }}
+          readOnly: true
+        {{- end }}
       volumes:
       - name: state
         {{- if .Values.persistence.enabled }}
@@ -341,6 +350,11 @@ spec:
       {{- end }}
       - name: tmp
         emptyDir: {}
+      {{- if .Values.license.enabled }}
+      - name: license
+        secret:
+          secretName: {{ .Values.license.existingSecret }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

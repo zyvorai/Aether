@@ -44,6 +44,14 @@ pub enum AuditAction {
     DriftDetected,
     /// Externally submitted audit entry (API; admin only).
     External,
+    LicenseValid,
+    LicenseMissing,
+    LicenseInvalidSignature,
+    LicenseExpiringSoon,
+    LicenseExpired,
+    LicenseOverLimit,
+    LicenseReloaded,
+    LicenseEnforcementBlock,
 }
 
 impl std::fmt::Display for AuditAction {
@@ -62,6 +70,14 @@ impl std::fmt::Display for AuditAction {
             AuditAction::PolicyCheck => write!(f, "POLICY"),
             AuditAction::DriftDetected => write!(f, "DRIFT"),
             AuditAction::External => write!(f, "EXTERNAL"),
+            AuditAction::LicenseValid => write!(f, "LICENSE_VALID"),
+            AuditAction::LicenseMissing => write!(f, "LICENSE_MISSING"),
+            AuditAction::LicenseInvalidSignature => write!(f, "LICENSE_INVALID_SIGNATURE"),
+            AuditAction::LicenseExpiringSoon => write!(f, "LICENSE_EXPIRING_SOON"),
+            AuditAction::LicenseExpired => write!(f, "LICENSE_EXPIRED"),
+            AuditAction::LicenseOverLimit => write!(f, "LICENSE_OVER_LIMIT"),
+            AuditAction::LicenseReloaded => write!(f, "LICENSE_RELOADED"),
+            AuditAction::LicenseEnforcementBlock => write!(f, "LICENSE_ENFORCEMENT_BLOCK"),
         }
     }
 }

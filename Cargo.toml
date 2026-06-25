@@ -99,6 +99,10 @@ bytes = "1"
 name = "aether"
 path = "src/main.rs"
 
+[[bin]]
+name = "licensegen"
+path = "tools/licensegen/main.rs"
+
 [lib]
 name = "aether"
 path = "src/lib.rs"

@@ -56,6 +56,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'plugins', path: '/plugins', label: 'Plugins', breadcrumb: 'Plugins', subtitle: 'Runtime plugins and extensions', group: 'resources', paletteLabel: 'Plugins' },
   { view: 'rbac', path: '/rbac', label: 'Access Control', breadcrumb: 'Access Control', subtitle: 'API keys and role-based access', group: 'resources', paletteLabel: 'RBAC' },
   { view: 'audit', path: '/audit', label: 'Audit Trail', breadcrumb: 'Audit Trail', subtitle: 'Tamper-evident audit log', group: 'resources', paletteLabel: 'Audit' },
+  { view: 'license', path: '/license', label: 'License', breadcrumb: 'License', subtitle: 'Zeus OS license status and node utilization', group: 'resources', paletteLabel: 'License' },
   { view: 'gitops', path: '/gitops', label: 'GitOps', breadcrumb: 'GitOps', subtitle: 'GitOps reconciliation status', group: 'resources', paletteLabel: 'GitOps' },
   { view: 'metrics', path: '/metrics', label: 'Metrics', breadcrumb: 'Metrics', subtitle: 'Platform and workload metrics', group: 'resources', paletteLabel: 'Metrics' },
   { view: 'openapi', path: '/openapi', label: 'API Explorer', breadcrumb: 'API Explorer', subtitle: 'Browse OpenAPI routes and raw schema', group: 'resources', paletteLabel: 'OpenAPI' },

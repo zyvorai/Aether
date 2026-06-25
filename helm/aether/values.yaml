@@ -344,3 +344,16 @@ secrets:
 
   # Additional secrets
   additional: {}
+
+
+# Zeus OS capacity license
+# Mount a signed .zyvor license file from a Kubernetes Secret.
+license:
+  # Set to true to mount a license file from a Secret.
+  enabled: false
+  # Name of an existing K8s Secret containing the license data.
+  # The Secret must have a key named "license.zyvor".
+  # Create with: kubectl create secret generic zeus-license --from-file=license.zyvor=./license.zyvor
+  existingSecret: ""
+  # Mount path inside the container.
+  mountPath: /etc/zeus/license

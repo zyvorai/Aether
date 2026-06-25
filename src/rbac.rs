@@ -194,11 +194,15 @@ pub fn check_permission(role: &Role, method: &str, path: &str) -> bool {
                 return true;
             }
             if method_upper == "POST" {
-                // Operators cannot manage RBAC or append external audit events
+                // Operators cannot manage RBAC, append external audit events,
+                // or reload the license file.
                 if path == "/api/rbac" || path.starts_with("/api/rbac/") {
                     return false;
                 }
                 if path == "/api/audit/events" {
+                    return false;
+                }
+                if path == "/api/license/reload" {
                     return false;
                 }
                 return true;

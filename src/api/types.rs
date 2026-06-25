@@ -76,6 +76,8 @@ pub(crate) struct AppState {
     pub(crate) state_path: PathBuf,
     /// Optional Postgres pool for shared workload state across API replicas.
     pub(crate) workload_state_pg: Option<Arc<crate::state_postgres::WorkloadStatePool>>,
+    /// License state — loaded from the .zyvor file at startup.
+    pub(crate) license: Arc<tokio::sync::RwLock<crate::license::LicenseStore>>,
 }
 
 pub(crate) struct PortForwardSession {

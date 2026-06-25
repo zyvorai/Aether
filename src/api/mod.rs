@@ -14,6 +14,7 @@ mod fleet_handlers;
 mod handlers;
 mod hosted_handlers;
 mod intelligence_handlers;
+mod license_handlers;
 mod migration_handlers;
 mod ops_handlers;
 mod platform_recommendations;
@@ -39,6 +40,7 @@ use fleet_handlers::*;
 use handlers::*;
 use hosted_handlers::*;
 use intelligence_handlers::*;
+use license_handlers::*;
 use migration_handlers::*;
 use ops_handlers::*;
 use security_handlers::*;
@@ -505,6 +507,12 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let saml = crate::saml::SamlRuntime::new(shared_cache.clone())?;
     let ldap = crate::ldap::LdapRuntime::new()?;
 
+    // Load license from disk. Warn-only in v0.3.0 — never blocks startup.
+    let license_store =
+        crate::license::LicenseStore::load_from_path(crate::license::license_path());
+    crate::license::emit_startup_audit(&license_store);
+    let license = Arc::new(RwLock::new(license_store));
+
     let app_state = AppState {
         state: Arc::new(RwLock::new(state_store)),
         event_tx,
@@ -517,6 +525,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         tls_active: tls_enabled,
         state_path,
         workload_state_pg: workload_state_pg.clone(),
+        license,
     };
 
     if let Some(pg) = workload_state_pg {
@@ -1632,6 +1641,9 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/rbac/keys", get(rbac_list_keys))
         .route("/api/rbac/keys", post(rbac_create_key))
         .route("/api/rbac/keys/revoke", post(rbac_revoke_key))
+        .route("/api/license/status", get(api_license_status))
+        .route("/api/license/usage", get(api_license_usage))
+        .route("/api/license/reload", post(api_license_reload))
         .route("/api/security/sbom", get(api_security_sbom))
         .route("/api/security/images", get(api_security_images))
         .route(

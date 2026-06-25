@@ -32,6 +32,7 @@ pub mod gitops;
 pub mod ha;
 pub mod health;
 pub mod helm;
+pub mod license;
 pub mod hosted;
 pub mod intelligence;
 pub mod kubecluster;

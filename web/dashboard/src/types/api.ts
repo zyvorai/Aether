@@ -745,7 +745,38 @@ export type AppView =
   | 'activity'
   | 'security'
   | 'helm'
-  | 'openapi';
+  | 'openapi'
+  | 'license';
+
+export interface LicenseStatusResponse {
+  state: string;
+  license_id: string | null;
+  customer: string | null;
+  customer_id: string | null;
+  product: string | null;
+  allowed_nodes: number | null;
+  allowed_clusters: number | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  issued_at: string | null;
+  license_version: number | null;
+  days_remaining: number | null;
+  current_node_count: number | null;
+  warning_message: string | null;
+}
+
+export interface LicenseUsageNode {
+  name: string;
+  ready: boolean;
+  billable: boolean;
+}
+
+export interface LicenseUsageResponse {
+  allowed_nodes: number;
+  current_node_count: number;
+  utilization_pct: number;
+  nodes: LicenseUsageNode[];
+}
 
 export interface HelmCatalogChart {
   id: string;

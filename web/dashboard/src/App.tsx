@@ -60,6 +60,8 @@ import TemplatesPage from './components/pages/TemplatesPage';
 import PluginsPage from './components/pages/PluginsPage';
 import RbacPage from './components/pages/RbacPage';
 import AuditPage from './components/pages/AuditPage';
+import LicensePage from './components/pages/LicensePage';
+import type { LicenseStatusResponse } from './types/api';
 import MetricsPage from './components/pages/MetricsPage';
 import GitOpsPage from './components/pages/GitOpsPage';
 import EditorPage from './components/pages/EditorPage';
@@ -92,6 +94,7 @@ function AetherDashboard() {
   const [workloadNames, setWorkloadNames] = useState<string[]>([]);
   const [selectedWorkloadFromPalette, setSelectedWorkloadFromPalette] = useState<string | null>(null);
   const [sseBannerVisible, setSseBannerVisible] = useState(false);
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatusResponse | null>(null);
   const { toast, ToastContainer } = useToast();
   const sseWasConnectedRef = useRef(false);
   const sseDisconnectedAtRef = useRef<number | null>(null);
@@ -313,6 +316,14 @@ function AetherDashboard() {
     });
   }, [isAuthenticated, refreshKey]);
 
+  // Poll license status for the global banner
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    apiFetch<LicenseStatusResponse>('/license/status').then((r) => {
+      if (r) setLicenseStatus(r);
+    });
+  }, [isAuthenticated, refreshKey]);
+
   const handleNavigate = useCallback(
     (view: AppView) => {
       navigate(viewToPath(view));
@@ -514,6 +525,8 @@ function AetherDashboard() {
         return <ConfidentialPage key={refreshKey} />;
       case 'openapi':
         return <OpenApiPage key={refreshKey} />;
+      case 'license':
+        return <LicensePage key={refreshKey} />;
       default:
         return <OverviewPage key={refreshKey} username={username} onNavigate={handleNavigate} sseConnected={sseConnected} />;
     }
@@ -532,6 +545,8 @@ function AetherDashboard() {
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
         sseBannerVisible={sseBannerVisible}
+        licenseBannerMessage={licenseStatus?.warning_message ?? undefined}
+        licenseState={licenseStatus?.state}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
         onRefresh={handleRefresh}
