@@ -38,3 +38,6 @@ state.json
 # Local presentation exports
 presentations/
 keys/zyvor_private.pem
+
+# Generated TLS certificates (private keys must not be committed)
+certs/
