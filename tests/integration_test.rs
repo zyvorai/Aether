@@ -119,7 +119,7 @@ fn test_state_store_operations() {
         updated_at: chrono::Utc::now().to_rfc3339(),
         os_version: None,
         node_labels: vec![],
-        atlas_volume_id: None,
+        atlas_volume_ids: Vec::new(),
     };
 
     state.upsert("test-app".to_string(), workload_state);
@@ -248,7 +248,7 @@ fn test_multiple_workloads_in_state() {
             updated_at: chrono::Utc::now().to_rfc3339(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         };
 
         state.upsert(format!("app-{}", i), workload_state);
@@ -339,7 +339,7 @@ fn test_backup_create_list_restore() {
             updated_at: chrono::Utc::now().to_rfc3339(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         },
     );
     state.save(&state_path).unwrap();
@@ -433,7 +433,7 @@ fn test_backup_merge() {
             updated_at: chrono::Utc::now().to_rfc3339(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         },
     );
     state.save(&state_path).unwrap();
@@ -457,7 +457,7 @@ fn test_backup_merge() {
             updated_at: chrono::Utc::now().to_rfc3339(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         },
     );
 
@@ -1148,7 +1148,7 @@ fn test_drift_detection_full_cycle() {
         updated_at: chrono::Utc::now().to_rfc3339(),
         os_version: None,
         node_labels: vec![],
-        atlas_volume_id: None,
+        atlas_volume_ids: Vec::new(),
     };
 
     let detector = DriftDetector::new();
@@ -1337,7 +1337,7 @@ fn test_resources_json_load_save_roundtrip() {
             updated_at: chrono::Utc::now().to_rfc3339(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         },
     );
 

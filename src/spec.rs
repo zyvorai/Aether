@@ -570,6 +570,17 @@ impl Workload {
         K8sWorkloadKind::Deployment
     }
 
+    /// The replica count this workload deploys with: `scaling.min_replicas` when
+    /// autoscaling is enabled, otherwise 1. Mirrors the manifest builders.
+    pub fn resolved_replicas(&self) -> u32 {
+        self.scaling
+            .as_ref()
+            .filter(|s| s.enabled)
+            .map(|s| s.min_replicas)
+            .unwrap_or(1)
+            .max(1)
+    }
+
     /// The Atlas storage policy for this workload, if it opts into Atlas-backed
     /// storage via an `atlas/…` storage class. Returns `None` for native storage.
     ///
