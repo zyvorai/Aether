@@ -133,20 +133,38 @@ pub fn rewrite_images(obj: &mut Value, image_map: &BTreeMap<String, String>) -> 
     notes
 }
 
-/// Convert an AWS `LoadBalancer` Service to `ClusterIP` and strip AWS annotations.
+/// Convert externally-exposed Services (`LoadBalancer`/`NodePort`) to `ClusterIP`
+/// for the shadow deploy, strip node ports, and drop AWS annotations.
 pub fn rewrite_loadbalancer(obj: &mut Value) -> Vec<TransformNote> {
     let mut notes = Vec::new();
     if obj.get("kind").and_then(|k| k.as_str()) != Some("Service") {
         return notes;
     }
     if let Some(spec) = obj.get_mut("spec").and_then(|s| s.as_object_mut()) {
-        if spec.get("type").and_then(|t| t.as_str()) == Some("LoadBalancer") {
+        let ty = spec
+            .get("type")
+            .and_then(|t| t.as_str())
+            .unwrap_or("ClusterIP")
+            .to_string();
+        if ty == "LoadBalancer" || ty == "NodePort" {
             spec.insert("type".to_string(), Value::String("ClusterIP".to_string()));
             notes.push(TransformNote::new(
                 "spec.type",
-                "LoadBalancer→ClusterIP",
+                &format!("{ty}→ClusterIP"),
                 "recreate external access as Ingress/Gateway on target",
             ));
+        }
+        // Node-port allocations are cluster-unique; drop them so the shadow copy
+        // doesn't conflict with the source.
+        for k in ["healthCheckNodePort", "externalTrafficPolicy", "allocateLoadBalancerNodePorts"] {
+            spec.remove(k);
+        }
+        if let Some(ports) = spec.get_mut("ports").and_then(|p| p.as_array_mut()) {
+            for p in ports.iter_mut() {
+                if let Some(pm) = p.as_object_mut() {
+                    pm.remove("nodePort");
+                }
+            }
         }
     }
     if let Some(ann) = obj
