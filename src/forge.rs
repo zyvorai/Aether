@@ -10,7 +10,7 @@
 //! KubeVirt/Metal3) and migration decisions.
 //!
 //! Environment:
-//! - `AETHER_FORGE_URL`   — Forge API gateway base URL (default `http://127.0.0.1:24631`)
+//! - `AETHER_FORGE_URL`   — Forge API gateway base URL (unset ⇒ integration off; `FORGE_API_URL` also accepted)
 //! - `AETHER_FORGE_TOKEN` — `Authorization: Bearer` API key (`FORGE_API_KEY`)
 //!
 //! Decoupled from Forge's own crates: Aether uses its own reqwest client and

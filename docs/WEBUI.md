@@ -88,7 +88,7 @@ http://localhost:5090
 
 ## Dashboard Pages
 
-The dashboard provides 19 pages organized under a top navigation bar with dropdown groups:
+The dashboard provides 21 pages organized under a top navigation bar with dropdown groups:
 
 | Page | Description |
 |---|---|
@@ -111,6 +111,8 @@ The dashboard provides 19 pages organized under a top navigation bar with dropdo
 | **Plugins** | Plugin registry and discovery |
 | **Audit** | Audit trail with integrity verification |
 | **Metrics** | Prometheus metrics display |
+| **Storage** | Atlas-backed persistent volumes and capacity (read-only) |
+| **GPU / Forge** | Forge GPU capacity, nodes, and AI placement (read-only) |
 
 ## Dashboard Features
 

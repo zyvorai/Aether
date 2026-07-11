@@ -33,6 +33,8 @@
 | [Production Reference](deployment/PRODUCTION-REFERENCE.md) | Scale, recovery, upgrades |
 | [Benchmarks](../benchmarks/RESULTS.md) | Deploy/migrate/API baselines |
 | [Cloud Matrix](integrations/CLOUD-MATRIX.md) | Vendor support levels |
+| [Atlas Storage](integrations/ATLAS.md) | Atlas-backed persistent volumes |
+| [Forge GPU / AI](integrations/FORGE.md) | GPU capacity, nodes, placement, cost |
 | [Ecosystem](ECOSYSTEM.md) | Aether + HyperSDK suite |
 | [Product Tiers](PRODUCT-TIERS.md) | Editions and support |
 | [Roadmap](ROADMAP.md) | Ship vs planned |
