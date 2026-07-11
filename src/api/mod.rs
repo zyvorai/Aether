@@ -765,40 +765,71 @@ fn audit_autonomous_maintenance(source: &str, detail: &str) {
     }
 }
 
-/// Check the API server's TLS certificate expiry and emit an event when it is
-/// within `warn_days` of expiring (or already expired).
-fn run_cert_expiry_check(cert_path: &std::path::Path, warn_days: i64) {
-    let Ok(pem) = std::fs::read(cert_path) else {
-        return;
+/// Check the API server's TLS certificate expiry. When it is within `warn_days`
+/// of expiring, either regenerate it (self-signed + `AETHER_AUTO_RENEW_CERT=1`)
+/// or emit an expiry event. A CA-issued cert is never self-signed, so it is
+/// only alerted — Aether does not own its renewal.
+fn run_cert_expiry_check(cert_path: &std::path::Path, key_path: Option<&std::path::Path>, warn_days: i64) {
+    let info = match crate::certs::inspect(cert_path) {
+        Ok(i) => i,
+        Err(e) => {
+            tracing::debug!("cert-expiry: {e}");
+            return;
+        }
     };
-    let Ok((_, pem)) = x509_parser::pem::parse_x509_pem(&pem) else {
-        tracing::debug!("cert-expiry: could not parse PEM at {}", cert_path.display());
+    if info.days_left > warn_days {
         return;
-    };
-    let Ok(cert) = pem.parse_x509() else {
-        return;
-    };
-    let not_after = cert.validity().not_after.timestamp();
-    let now = chrono::Utc::now().timestamp();
-    let days_left = (not_after - now) / 86_400;
-    if days_left <= warn_days {
-        let (severity, verb) = if days_left < 0 {
-            (crate::events::EventSeverity::Critical, "has expired")
-        } else {
-            (crate::events::EventSeverity::Warning, "is expiring")
-        };
-        emit_maintenance_event(
-            severity,
-            crate::events::EventCategory::SystemAlert,
-            "TLS certificate expiry",
-            &format!(
-                "API TLS certificate {} ({} day(s) remaining): {}",
-                verb,
-                days_left,
-                cert_path.display()
-            ),
-        );
     }
+
+    // Self-managed renewal: a self-signed cert Aether owns can be regenerated.
+    let auto_renew = std::env::var("AETHER_AUTO_RENEW_CERT")
+        .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    if auto_renew && info.self_signed {
+        if let Some(key) = key_path {
+            let validity = env_secs("AETHER_CERT_VALIDITY_DAYS", 365) as u32;
+            match crate::certs::regenerate_self_signed(cert_path, key, &info, validity) {
+                Ok(()) => {
+                    let detail = format!(
+                        "regenerated self-signed cert (valid {validity}d); restart serve to apply: {}",
+                        cert_path.display()
+                    );
+                    emit_maintenance_event(
+                        crate::events::EventSeverity::Info,
+                        crate::events::EventCategory::SystemAlert,
+                        "TLS certificate regenerated",
+                        &detail,
+                    );
+                    audit_autonomous_maintenance("cert-renew", &detail);
+                    return;
+                }
+                Err(e) => tracing::warn!("cert auto-renew failed: {e}"),
+            }
+        }
+    }
+
+    let (severity, verb) = if info.days_left < 0 {
+        (crate::events::EventSeverity::Critical, "has expired")
+    } else {
+        (crate::events::EventSeverity::Warning, "is expiring")
+    };
+    let hint = if info.self_signed {
+        " — set AETHER_AUTO_RENEW_CERT=1 to auto-regenerate"
+    } else {
+        " — externally-managed; renew via cert-manager/ACME/your PKI"
+    };
+    emit_maintenance_event(
+        severity,
+        crate::events::EventCategory::SystemAlert,
+        "TLS certificate expiry",
+        &format!(
+            "API TLS certificate {} ({} day(s) remaining): {}{}",
+            verb,
+            info.days_left,
+            cert_path.display(),
+            hint
+        ),
+    );
 }
 
 /// Take a scheduled state backup and prune older backups to `keep`.
@@ -912,6 +943,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     {
         let maint_state = app_state.state.clone();
         let cert_path = config.tls_cert.clone();
+        let key_path = config.tls_key.clone();
         tokio::spawn(async move {
             const TICK_SECS: u64 = 60;
             let tick = std::time::Duration::from_secs(TICK_SECS);
@@ -949,7 +981,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
                         "secret_rotation" => run_secret_rotation_check(),
                         "cert_check" => {
                             if let Some(ref cert) = cert_path {
-                                run_cert_expiry_check(cert, 14);
+                                run_cert_expiry_check(cert, key_path.as_deref(), 14);
                             }
                         }
                         "backup" => run_scheduled_backup(&maint_state, backup_cfg.keep).await,

@@ -58,6 +58,7 @@ pub mod resources;
 pub mod runtime;
 pub mod saml;
 pub mod autoscale;
+pub mod certs;
 pub mod maintenance;
 pub mod saml_c14n;
 pub mod saml_decrypt;

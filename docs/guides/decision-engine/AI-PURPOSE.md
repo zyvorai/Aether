@@ -97,6 +97,19 @@ credential and are **never overwritten** — they are only alerted (event
 prevents auto-rotation from clobbering a value that must match an external
 system. Each autonomous rotation is recorded in the audit trail.
 
+### TLS certificate lifecycle
+
+The `serve` maintenance loop inspects the API TLS certificate on its schedule.
+The ownership model mirrors secret rotation: a **self-signed** cert is one Aether
+owns and can regenerate; a CA-issued cert is never self-signed and is only
+alerted (renew it via cert-manager/ACME/your PKI). With
+`AETHER_AUTO_RENEW_CERT=1`, an expiring self-signed cert is regenerated in place
+via `openssl`, preserving its CN and SANs, valid for `AETHER_CERT_VALIDITY_DAYS`
+(default 365). Regeneration takes effect on the **next serve start** (the live
+TLS listener does not hot-reload), so it suits systemd/bare deployments; on
+Kubernetes use cert-manager with a mounted Secret. Cert-check cadence:
+`AETHER_SCHED_CERT_CHECK_SECS` (default 3600).
+
 Copilot LLM: `OPENAI_API_KEY`, `AETHER_LLM_MODEL`, or `AETHER_OLLAMA_URL`
 
 ---
