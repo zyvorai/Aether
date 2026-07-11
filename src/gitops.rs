@@ -500,6 +500,52 @@ fn parse_diff_output(output: &str, commit: &str) -> Vec<GitOpsChange> {
         .collect()
 }
 
+/// Default path of the persisted GitOps config/status file.
+pub fn state_path() -> PathBuf {
+    crate::resources::aether_path("gitops.json")
+}
+
+/// Load the persisted GitOps config from `gitops.json`, tolerating both a saved
+/// config and a saved status (they share `repo_url`/`branch`; other config
+/// fields fall back to their serde defaults). Returns `None` when GitOps is not
+/// configured.
+pub fn load_persisted_config() -> Option<GitOpsConfig> {
+    let data = std::fs::read_to_string(state_path()).ok()?;
+    let cfg: GitOpsConfig = serde_json::from_str(&data).ok()?;
+    if cfg.repo_url.trim().is_empty() {
+        None
+    } else {
+        Some(cfg)
+    }
+}
+
+/// Whether GitOps has been configured (a repo is persisted).
+pub fn is_configured() -> bool {
+    load_persisted_config().is_some()
+}
+
+/// Effective poll interval (seconds) from the persisted config, or the default.
+pub fn persisted_poll_interval_secs() -> u64 {
+    load_persisted_config()
+        .map(|c| c.poll_interval_secs.max(1))
+        .unwrap_or_else(default_poll_interval)
+}
+
+/// Run one reconcile cycle against the persisted config: detect repo changes and
+/// persist updated status. Returns the detected changes. Blocking (shells out to
+/// git) — call via `spawn_blocking` from async contexts. Errors when GitOps is
+/// not configured or the sync itself fails.
+pub fn reconcile_once() -> anyhow::Result<Vec<GitOpsChange>> {
+    let cfg =
+        load_persisted_config().ok_or_else(|| anyhow::anyhow!("GitOps not configured"))?;
+    let mut ctrl = GitOpsController::new(cfg);
+    let changes = ctrl.sync()?;
+    if let Ok(json) = serde_json::to_string_pretty(ctrl.status()) {
+        let _ = std::fs::write(state_path(), json);
+    }
+    Ok(changes)
+}
+
 /// Confidential policy issues for a workload spec (GitOps pre-apply audit).
 pub fn confidential_policy_issues(spec: &crate::spec::Workload) -> Vec<String> {
     crate::ragnarok::scheduling::gitops_policy_issues(spec)
@@ -597,6 +643,33 @@ mod tests {
     use super::*;
 
     // ----- GitOpsConfig defaults -----------------------------------------
+
+    #[test]
+    fn persisted_status_deserializes_as_config() {
+        // The serve poller loads gitops.json tolerantly: a saved GitOpsStatus
+        // must still yield a usable GitOpsConfig (repo_url/branch preserved,
+        // other fields defaulted) so reconcile can run across restarts.
+        let status = GitOpsStatus {
+            configured: true,
+            repo_url: "https://example.com/app.git".into(),
+            branch: "release".into(),
+            last_sync: Some("2026-01-01T00:00:00Z".into()),
+            last_commit: Some("abc123".into()),
+            sync_count: 5,
+            error_count: 0,
+            last_error: None,
+            last_changes: None,
+            last_confidential_compliance: None,
+        };
+        let json = serde_json::to_string(&status).unwrap();
+        let cfg: GitOpsConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(cfg.repo_url, "https://example.com/app.git");
+        assert_eq!(cfg.branch, "release");
+        // Config-only fields fall back to defaults.
+        assert_eq!(cfg.poll_interval_secs, default_poll_interval());
+        assert!(!cfg.auto_apply);
+        assert!(cfg.environments.is_empty());
+    }
 
     #[test]
     fn test_config_defaults() {

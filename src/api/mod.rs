@@ -564,12 +564,48 @@ fn env_secs(key: &str, default: u64) -> u64 {
 /// maintenance scheduler based on config. Extension point for Day-2 control
 /// loops; each feature adds its own `register(...)` here and a `run_serve_job`
 /// arm below.
-fn register_serve_jobs(_sched: &mut crate::maintenance::JobScheduler, _cfg: &crate::config::Config) {
+fn register_serve_jobs(sched: &mut crate::maintenance::JobScheduler, _cfg: &crate::config::Config) {
+    // GitOps auto-reconcile: poll the configured repo on its poll interval.
+    if crate::gitops::is_configured() {
+        let secs = env_secs(
+            "AETHER_SCHED_GITOPS_SECS",
+            crate::gitops::persisted_poll_interval_secs(),
+        );
+        sched.register("gitops", secs);
+    }
 }
 
 /// Dispatch a serve-loop job by name. No-op for names not handled by an
 /// optional control loop.
-async fn run_serve_job(_name: &str, _state: &Arc<RwLock<StateStore>>) {}
+async fn run_serve_job(name: &str, _state: &Arc<RwLock<StateStore>>) {
+    if name == "gitops" {
+        run_gitops_reconcile().await;
+    }
+}
+
+/// One GitOps reconcile cycle: detect repo changes (blocking git work is moved
+/// off the async worker) and surface the result as maintenance events.
+async fn run_gitops_reconcile() {
+    match tokio::task::spawn_blocking(crate::gitops::reconcile_once).await {
+        Ok(Ok(changes)) => {
+            if !changes.is_empty() {
+                emit_maintenance_event(
+                    crate::events::EventSeverity::Info,
+                    crate::events::EventCategory::Deployment,
+                    "GitOps changes detected",
+                    &format!("{} workload change(s) from the GitOps repo", changes.len()),
+                );
+            }
+        }
+        Ok(Err(e)) => emit_maintenance_event(
+            crate::events::EventSeverity::Warning,
+            crate::events::EventCategory::Deployment,
+            "GitOps sync failed",
+            &e.to_string(),
+        ),
+        Err(_) => {} // task join error; nothing actionable
+    }
+}
 
 /// Audit an autonomous maintenance-loop action (mirrors healer::audit_autonomous).
 fn audit_autonomous_maintenance(source: &str, detail: &str) {
