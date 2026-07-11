@@ -4975,6 +4975,63 @@ pub(crate) async fn assess_command(
     Ok(())
 }
 
+pub(crate) async fn report_command(
+    connection: &str,
+    format: &str,
+    out_path: Option<std::path::PathBuf>,
+) -> Result<()> {
+    let snapshot = load_snapshot(connection)?;
+    let report = aether::assessment::build_report(&snapshot);
+
+    let rendered = match format.to_lowercase().as_str() {
+        "json" => report.to_json()?,
+        "md" | "markdown" | "text" => report.to_markdown(),
+        other => anyhow::bail!("unknown format '{}' (use md, json, or text)", other),
+    };
+
+    match out_path {
+        Some(path) => {
+            std::fs::write(&path, &rendered)?;
+            output::success(&format!("Wrote report to {}", path.display()));
+        }
+        None => print!("{}", rendered),
+    }
+    Ok(())
+}
+
+pub(crate) async fn plan_command(action: crate::cli::PlanAction) -> Result<()> {
+    use crate::cli::PlanAction;
+    use aether::migration::project::MigrationPlan;
+
+    match action {
+        PlanAction::Create {
+            app,
+            source,
+            target,
+            strategy,
+            output: out_path,
+        } => {
+            let snapshot = load_snapshot(&source)?;
+            let application = snapshot
+                .find_application(&app)
+                .ok_or_else(|| anyhow::anyhow!("Application '{}' not found in '{}'", app, source))?
+                .clone();
+            let assessment = aether::assessment::assess(&application, &snapshot.raw)?;
+            let plan =
+                MigrationPlan::from_assessment(&assessment, &source, &target, strategy.as_deref());
+            let yaml = plan.to_yaml()?;
+            match out_path {
+                Some(path) => {
+                    std::fs::write(&path, &yaml)?;
+                    output::success(&format!("Wrote migration plan to {}", path.display()));
+                }
+                None => print!("{}", yaml),
+            }
+        }
+    }
+    Ok(())
+}
+
 fn render_assessment(a: &aether::assessment::PortabilityAssessment) {
     output::section_with_icon("🧭", &format!("Portability: {}", a.application));
     println!(

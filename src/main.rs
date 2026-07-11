@@ -273,6 +273,12 @@ async fn main() -> Result<()> {
             app,
             target,
         } => commands::assess_command(&connection, &app, target.as_deref()).await,
+        Commands::Plan { action } => commands::plan_command(action).await,
+        Commands::Report {
+            connection,
+            format,
+            output,
+        } => commands::report_command(&connection, &format, output).await,
     };
 
     // Record command execution time

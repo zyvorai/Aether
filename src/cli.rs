@@ -624,6 +624,45 @@ pub(crate) enum Commands {
         #[arg(long)]
         target: Option<String>,
     },
+
+    /// Generate migration plans (aether.zyvor.dev/v1alpha1)
+    Plan {
+        #[command(subcommand)]
+        action: PlanAction,
+    },
+
+    /// Produce a Cloud Exit Assessment report for a connection
+    Report {
+        /// Connection name
+        connection: String,
+        /// Output format: md, json, or text
+        #[arg(long, default_value = "md")]
+        format: String,
+        /// Write to a file instead of stdout
+        #[arg(short, long)]
+        output: Option<std::path::PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum PlanAction {
+    /// Generate a MigrationPlan YAML for an application from its assessment
+    Create {
+        /// Application name or id
+        app: String,
+        /// Source connection
+        #[arg(long)]
+        source: String,
+        /// Target connection
+        #[arg(long)]
+        target: String,
+        /// Override the recommended strategy (immediate|blue-green|rolling|canary)
+        #[arg(long)]
+        strategy: Option<String>,
+        /// Write to a file instead of stdout
+        #[arg(short, long)]
+        output: Option<std::path::PathBuf>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -897,6 +936,8 @@ impl Commands {
             Self::Inventory { .. } => "inventory",
             Self::Dependency { .. } => "dependency",
             Self::Assess { .. } => "assess",
+            Self::Plan { .. } => "plan",
+            Self::Report { .. } => "report",
         }
     }
 }

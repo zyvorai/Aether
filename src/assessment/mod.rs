@@ -6,6 +6,8 @@
 
 pub mod compatibility;
 pub mod portability;
+pub mod report;
 
 pub use compatibility::{CompatCheck, CheckStatus, CompatibilityReport};
 pub use portability::{assess, application_to_workload, Complexity, PortabilityAssessment};
+pub use report::{build_report, AssessmentReport};
