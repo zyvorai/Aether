@@ -5,6 +5,8 @@
 //! Migration engine for moving workloads between runtimes
 
 pub mod fleet;
+pub mod image_mirror;
+pub mod move_exec;
 pub mod project;
 pub mod transform;
 pub mod volume;
