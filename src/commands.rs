@@ -283,10 +283,10 @@ async fn deploy_workload_inner(
     // Build and run based on runtime
     let rt = aether::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
 
-    // Atlas-backed storage: provision the volume before deploy so the pod
-    // references the Atlas-created PVC (named `{name}-pvc`). No-op unless the
-    // workload opts in via `storageClass: atlas/<policy>` and Atlas is configured.
-    let atlas_volume_id = provision_atlas_volume_if_needed(workload, runtime_kind).await?;
+    // Atlas-backed storage: provision volume(s) before deploy so the pod(s)
+    // reference the Atlas-created PVC(s). No-op unless the workload opts in via
+    // `storageClass: atlas/<policy>` and Atlas is configured.
+    let atlas_volume_ids = provision_atlas_volume_if_needed(workload, runtime_kind).await?;
 
     let sp = output::spinner("Building and deploying workload...");
     let image = rt.build(workload).await?;
@@ -321,7 +321,7 @@ async fn deploy_workload_inner(
         instance,
         spec_path.to_path_buf(),
     );
-    ws.atlas_volume_id = atlas_volume_id;
+    ws.atlas_volume_ids = atlas_volume_ids;
     state.upsert(workload.metadata.name.clone(), ws);
     state.save(&StateStore::default_path())?;
 
@@ -511,9 +511,10 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
     let (mut state, ws, rt) = load_state_and_runtime(name).await?;
 
     // Release Atlas-backed storage first (Atlas owns the PVC lifecycle); the
-    // adapter's own PVC delete then becomes a tolerant no-op.
-    if let Some(vol_id) = ws.atlas_volume_id.clone() {
-        release_atlas_volume(name, &vol_id).await;
+    // adapter's own PVC delete then becomes a tolerant no-op. A StatefulSet has
+    // one volume per replica.
+    if !ws.atlas_volume_ids.is_empty() {
+        release_atlas_volumes(name, &ws.atlas_volume_ids).await;
     }
 
     let sp = output::spinner(&format!("Deleting workload '{}'...", name));
@@ -608,17 +609,27 @@ pub(crate) async fn update_command(
 
     state.upsert(
         name.to_string(),
-        aether::state::WorkloadState::new(
-            name.to_string(),
-            ws.runtime,
-            new_instance,
-            spec_path.clone(),
-        ),
+        updated_workload_state(&ws, new_instance, spec_path.clone()),
     );
     state.save(&StateStore::default_path())?;
 
     output::success(&format!("Workload '{}' updated successfully", name));
     Ok(())
+}
+
+/// Build the post-update [`WorkloadState`], adopting the new instance/spec while
+/// preserving identity from the previous state: the Atlas-backed volume id
+/// (losing it would leak the volume on delete) and the original creation time.
+fn updated_workload_state(
+    old: &aether::state::WorkloadState,
+    new_instance: aether::runtime::Instance,
+    spec_path: PathBuf,
+) -> aether::state::WorkloadState {
+    let mut ws =
+        aether::state::WorkloadState::new(old.name.clone(), old.runtime, new_instance, spec_path);
+    ws.atlas_volume_ids = old.atlas_volume_ids.clone();
+    ws.created_at = old.created_at.clone();
+    ws
 }
 
 /// Resolve the image reference to deploy on `aether update`.
@@ -685,18 +696,35 @@ fn record_audit_action(
     }
 }
 
-/// Provision an Atlas-backed volume when a Kubernetes workload opts in via an
+/// The PVC names Atlas must create for an Atlas-backed workload, by kind:
+///  - Deployment/Job: a single standalone PVC `{name}-pvc` (referenced by the pod).
+///  - StatefulSet: one PVC per replica, `{name}-storage-{name}-{ordinal}`, which
+///    the StatefulSet adopts instead of dynamically provisioning via its template.
+fn atlas_pvc_names(workload: &Workload) -> Vec<String> {
+    let name = &workload.metadata.name;
+    if workload.resolved_k8s_workload_kind() == aether::spec::K8sWorkloadKind::StatefulSet {
+        (0..workload.resolved_replicas())
+            .map(|i| format!("{}-storage-{}-{}", name, name, i))
+            .collect()
+    } else {
+        vec![format!("{}-pvc", name)]
+    }
+}
+
+/// Provision Atlas-backed volume(s) when a Kubernetes workload opts in via an
 /// `atlas/<policy>` storage class and Atlas is configured. Returns the Atlas
-/// volume id (for later release) or `None` when native storage should be used.
+/// volume ids (for later release), or an empty vec when native storage is used.
+/// If provisioning fails partway through a StatefulSet, already-created volumes
+/// are rolled back to avoid orphans.
 async fn provision_atlas_volume_if_needed(
     workload: &Workload,
     runtime_kind: RuntimeKind,
-) -> Result<Option<String>> {
+) -> Result<Vec<String>> {
     if runtime_kind != RuntimeKind::Kubernetes {
-        return Ok(None);
+        return Ok(Vec::new());
     }
     let Some(policy) = workload.atlas_policy() else {
-        return Ok(None);
+        return Ok(Vec::new());
     };
     let Some(atlas) = aether::atlas::AtlasConfig::from_env() else {
         // Opted into Atlas storage but Atlas isn't configured — surface it.
@@ -705,85 +733,102 @@ async fn provision_atlas_volume_if_needed(
              falling back to native storage class.",
             workload.metadata.name, policy
         ));
-        return Ok(None);
+        return Ok(Vec::new());
     };
 
     let namespace = get_namespace().unwrap_or("default");
-    let pvc_name = format!("{}-pvc", workload.metadata.name);
     let size_bytes = aether::atlas::size_to_bytes(&workload.persistence.size);
     let access_modes = aether::atlas::access_modes_for(&workload.persistence.access_mode);
+    let name = &workload.metadata.name;
+    let pvc_names = atlas_pvc_names(workload);
 
-    let sp = output::spinner(&format!("Provisioning Atlas volume (policy: {})...", policy));
-    match atlas
-        .provision_volume(
-            &pvc_name,
-            size_bytes,
-            &policy,
-            access_modes,
-            namespace,
-            &workload.metadata.name,
-        )
-        .await
-    {
-        Ok(handle) => {
-            output::spinner_success(
-                &sp,
-                &format!("Atlas volume ready: {} (pvc {})", handle.volume_id, handle.pvc),
-            );
-            record_audit_action(
-                aether::audit::AuditAction::ConfigChange,
-                &workload.metadata.name,
-                Some("atlas"),
-                aether::audit::ActionResult::Success,
-                &format!("Provisioned Atlas volume {} (policy {})", handle.volume_id, policy),
-            );
-            Ok(Some(handle.volume_id))
-        }
-        Err(e) => {
-            output::spinner_fail(&sp, "Atlas provisioning failed");
-            record_audit_action(
-                aether::audit::AuditAction::ConfigChange,
-                &workload.metadata.name,
-                Some("atlas"),
-                aether::audit::ActionResult::Failure,
-                &format!("Atlas provisioning failed: {}", e),
-            );
-            Err(e.context("Atlas volume provisioning failed"))
+    let mut ids: Vec<String> = Vec::with_capacity(pvc_names.len());
+    for pvc_name in &pvc_names {
+        let sp = output::spinner(&format!(
+            "Provisioning Atlas volume {} (policy: {})...",
+            pvc_name, policy
+        ));
+        match atlas
+            .provision_volume(
+                pvc_name,
+                size_bytes,
+                &policy,
+                access_modes.clone(),
+                namespace,
+                name,
+            )
+            .await
+        {
+            Ok(handle) => {
+                output::spinner_success(
+                    &sp,
+                    &format!("Atlas volume ready: {} (pvc {})", handle.volume_id, handle.pvc),
+                );
+                record_audit_action(
+                    aether::audit::AuditAction::ConfigChange,
+                    name,
+                    Some("atlas"),
+                    aether::audit::ActionResult::Success,
+                    &format!(
+                        "Provisioned Atlas volume {} (pvc {}, policy {})",
+                        handle.volume_id, handle.pvc, policy
+                    ),
+                );
+                ids.push(handle.volume_id);
+            }
+            Err(e) => {
+                output::spinner_fail(&sp, "Atlas provisioning failed");
+                // Roll back any volumes already created this call to avoid orphans.
+                if !ids.is_empty() {
+                    release_atlas_volumes(name, &ids).await;
+                }
+                record_audit_action(
+                    aether::audit::AuditAction::ConfigChange,
+                    name,
+                    Some("atlas"),
+                    aether::audit::ActionResult::Failure,
+                    &format!("Atlas provisioning failed for {}: {}", pvc_name, e),
+                );
+                return Err(e.context(format!("Atlas volume provisioning failed for {}", pvc_name)));
+            }
         }
     }
+    Ok(ids)
 }
 
-/// Best-effort release of an Atlas-provisioned volume on workload delete.
+/// Best-effort release of Atlas-provisioned volumes on workload delete.
 /// Failures are logged and audited but never block deletion.
-async fn release_atlas_volume(workload: &str, volume_id: &str) {
+async fn release_atlas_volumes(workload: &str, volume_ids: &[String]) {
     let Some(atlas) = aether::atlas::AtlasConfig::from_env() else {
         tracing::warn!(
-            "Workload '{}' has Atlas volume {} but AETHER_ATLAS_URL is unset; skipping release",
+            "Workload '{}' has {} Atlas volume(s) but AETHER_ATLAS_URL is unset; skipping release",
             workload,
-            volume_id
+            volume_ids.len()
         );
         return;
     };
-    match atlas.delete_volume(volume_id).await {
-        Ok(()) => {
-            output::info(&format!("Released Atlas volume {}", volume_id));
-            record_audit_action(
-                aether::audit::AuditAction::ConfigChange,
-                workload,
-                Some("atlas"),
-                aether::audit::ActionResult::Success,
-                &format!("Released Atlas volume {}", volume_id),
-            );
-        }
-        Err(e) => {
-            tracing::warn!("Failed to release Atlas volume {}: {}", volume_id, e);
-            record_audit_action(
-                aether::audit::AuditAction::ConfigChange,
-                workload,
-                Some("atlas"),
-                aether::audit::ActionResult::Warning,
-                &format!("Atlas volume {} release failed: {}", volume_id, e),
-            );
+    for volume_id in volume_ids {
+        match atlas.delete_volume(volume_id).await {
+            Ok(()) => {
+                output::info(&format!("Released Atlas volume {}", volume_id));
+                record_audit_action(
+                    aether::audit::AuditAction::ConfigChange,
+                    workload,
+                    Some("atlas"),
+                    aether::audit::ActionResult::Success,
+                    &format!("Released Atlas volume {}", volume_id),
+                );
+            }
+            Err(e) => {
+                tracing::warn!("Failed to release Atlas volume {}: {}", volume_id, e);
+                record_audit_action(
+                    aether::audit::AuditAction::ConfigChange,
+                    workload,
+                    Some("atlas"),
+                    aether::audit::ActionResult::Warning,
+                    &format!("Atlas volume {} release failed: {}", volume_id, e),
+                );
+            }
         }
     }
 }
@@ -1092,12 +1137,26 @@ pub(crate) async fn storage_command(action: StorageAction) -> Result<()> {
         } => {
             let (state, _) = load_workload_state(&name)?;
             let ws = get_workload_state(&state, &name)?;
-            let vol_id = ws.atlas_volume_id.ok_or_else(|| {
-                anyhow::anyhow!("Workload '{}' has no Atlas-backed volume", name)
-            })?;
-            let out = atlas.snapshot_volume(&vol_id, &snapshot_name).await?;
-            output::success(&format!("Snapshot requested for '{}'", name));
-            output::muted(&out);
+            if ws.atlas_volume_ids.is_empty() {
+                anyhow::bail!("Workload '{}' has no Atlas-backed volume", name);
+            }
+            // A StatefulSet has one volume per replica; snapshot each, suffixing
+            // the snapshot name with the volume ordinal when there is more than one.
+            let multi = ws.atlas_volume_ids.len() > 1;
+            for (i, vol_id) in ws.atlas_volume_ids.iter().enumerate() {
+                let snap = if multi {
+                    format!("{}-{}", snapshot_name, i)
+                } else {
+                    snapshot_name.clone()
+                };
+                let out = atlas.snapshot_volume(vol_id, &snap).await?;
+                output::muted(&out);
+            }
+            output::success(&format!(
+                "Snapshot requested for '{}' ({} volume(s))",
+                name,
+                ws.atlas_volume_ids.len()
+            ));
             Ok(())
         }
         StorageAction::Clone {
@@ -3261,7 +3320,7 @@ pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: b
             updated_at: aether::resources::now_rfc3339(),
             os_version: snapshot_ws.os_version.clone(),
             node_labels: snapshot_ws.node_labels.clone(),
-            atlas_volume_id: snapshot_ws.atlas_volume_id.clone(),
+            atlas_volume_ids: snapshot_ws.atlas_volume_ids.clone(),
         },
     );
     state.save(&StateStore::default_path())?;
@@ -5811,7 +5870,7 @@ mod tests {
             updated_at: "2025-01-01T00:00:00Z".to_string(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         };
 
         store.upsert("web".to_string(), ws);
@@ -5848,7 +5907,7 @@ mod tests {
                 updated_at: "2025-01-01T00:00:00Z".to_string(),
                 os_version: None,
                 node_labels: vec![],
-                atlas_volume_id: None,
+                atlas_volume_ids: Vec::new(),
             },
         );
         store.save(&path).unwrap();
@@ -6234,7 +6293,7 @@ mod tests {
             updated_at: "2025-01-01T00:00:00Z".to_string(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         }
     }
 
@@ -6292,6 +6351,59 @@ mod tests {
         // Disabled persistence → never Atlas-backed.
         w.persistence.enabled = false;
         assert_eq!(w.atlas_policy(), None);
+    }
+
+    #[test]
+    fn test_updated_workload_state_preserves_atlas_and_created_at() {
+        let mut old = ws_with_image("ghcr.io/org/web:1.0.0");
+        old.atlas_volume_ids = vec!["vol_123".to_string()];
+        old.created_at = "2020-01-01T00:00:00Z".to_string();
+
+        let new_instance = aether::runtime::Instance {
+            id: "new-id".to_string(),
+            name: "web".to_string(),
+            runtime: RuntimeKind::Kubernetes,
+            image: "ghcr.io/org/web:2.0.0".to_string(),
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+        };
+        let updated =
+            updated_workload_state(&old, new_instance, PathBuf::from("new-workload.yaml"));
+
+        // Atlas volume ids and creation time preserved; instance/spec adopted.
+        assert_eq!(updated.atlas_volume_ids, vec!["vol_123".to_string()]);
+        assert_eq!(updated.created_at, "2020-01-01T00:00:00Z");
+        assert_eq!(updated.instance.id, "new-id");
+        assert_eq!(updated.spec_path, PathBuf::from("new-workload.yaml"));
+    }
+
+    #[test]
+    fn test_atlas_pvc_names_deployment_vs_statefulset() {
+        // Deployment → a single standalone PVC.
+        let mut w = make_valid_workload();
+        w.metadata.name = "web".to_string();
+        assert_eq!(atlas_pvc_names(&w), vec!["web-pvc".to_string()]);
+
+        // StatefulSet with 3 replicas → one PVC per ordinal, matching the names
+        // the StatefulSet controller expects ({claim}-{sts}-{ordinal}).
+        w.kubernetes = Some(aether::spec::KubernetesSpec {
+            workload_kind: Some(aether::spec::K8sWorkloadKind::StatefulSet),
+            ..Default::default()
+        });
+        w.scaling = Some(aether::spec::ScalingSpec {
+            enabled: true,
+            min_replicas: 3,
+            max_replicas: 5,
+            metrics: vec![],
+            behavior: None,
+        });
+        assert_eq!(
+            atlas_pvc_names(&w),
+            vec![
+                "web-storage-web-0".to_string(),
+                "web-storage-web-1".to_string(),
+                "web-storage-web-2".to_string(),
+            ]
+        );
     }
 
     #[test]

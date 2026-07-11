@@ -530,7 +530,7 @@ mod tests {
             updated_at: crate::resources::now_rfc3339(),
             os_version: None,
             node_labels: vec![],
-            atlas_volume_id: None,
+            atlas_volume_ids: Vec::new(),
         }
     }
 

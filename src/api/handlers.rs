@@ -1158,7 +1158,7 @@ pub(crate) async fn start_workload(
             updated_at: crate::resources::now_rfc3339(),
             os_version: workload_state.os_version,
             node_labels: workload_state.node_labels,
-            atlas_volume_id: workload_state.atlas_volume_id,
+            atlas_volume_ids: workload_state.atlas_volume_ids,
         },
     );
 
@@ -1322,7 +1322,7 @@ pub(crate) async fn update_workload(
             updated_at: crate::resources::now_rfc3339(),
             os_version: workload_state.os_version,
             node_labels: workload_state.node_labels,
-            atlas_volume_id: workload_state.atlas_volume_id,
+            atlas_volume_ids: workload_state.atlas_volume_ids,
         },
     );
     if let Err(e) = persist_workload_api(&app_state, &state).await {
