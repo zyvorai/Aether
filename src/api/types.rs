@@ -436,6 +436,9 @@ pub(crate) struct SecretRotationInfo {
     pub(crate) interval_days: u32,
     pub(crate) max_age_days: u32,
     pub(crate) notify_before_days: u32,
+    /// Whether Aether owns this value and may auto-generate a fresh credential
+    /// on rotation (vs. an externally-managed secret that is only alerted).
+    pub(crate) generate: bool,
 }
 
 /// Workload response
@@ -1056,6 +1059,7 @@ mod tests {
                 interval_days: 30,
                 max_age_days: 90,
                 notify_before_days: 7,
+                generate: false,
             }),
         };
         let value = serde_json::to_value(&response).unwrap();
@@ -1063,6 +1067,7 @@ mod tests {
         assert_eq!(value["rotation_policy"]["interval_days"], 30);
         assert_eq!(value["rotation_policy"]["max_age_days"], 90);
         assert_eq!(value["rotation_policy"]["notify_before_days"], 7);
+        assert_eq!(value["rotation_policy"]["generate"], false);
     }
 
     // ---------------------------------------------------------------
@@ -1075,13 +1080,15 @@ mod tests {
             interval_days: 60,
             max_age_days: 180,
             notify_before_days: 14,
+            generate: true,
         };
         let value = serde_json::to_value(&info).unwrap();
         let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 3);
+        assert_eq!(obj.len(), 4);
         assert_eq!(value["interval_days"], 60);
         assert_eq!(value["max_age_days"], 180);
         assert_eq!(value["notify_before_days"], 14);
+        assert_eq!(value["generate"], true);
     }
 
     // ---------------------------------------------------------------

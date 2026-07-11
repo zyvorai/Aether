@@ -95,6 +95,12 @@ pub struct RotationPolicy {
     pub max_age_days: u32,
     /// Notify N days before expiry
     pub notify_before_days: u32,
+    /// Whether Aether owns this value and may generate a fresh random
+    /// credential on rotation. When `false` (the default) the value mirrors an
+    /// externally-managed credential and MUST NOT be auto-generated — automated
+    /// rotation only alerts and defers to an operator/external system.
+    #[serde(default)]
+    pub generate: bool,
 }
 
 impl RotationPolicy {
@@ -127,8 +133,23 @@ impl Default for RotationPolicy {
             interval_days: 90,
             max_age_days: 365,
             notify_before_days: 14,
+            generate: false,
         }
     }
+}
+
+/// Generate a cryptographically-random alphanumeric credential of `len`
+/// characters, drawn from the OS CSPRNG. Used for auto-rotating secrets whose
+/// value Aether owns (`RotationPolicy.generate == true`).
+pub fn generate_secret_value(len: usize) -> String {
+    use rand::distributions::Alphanumeric;
+    use rand::rngs::OsRng;
+    use rand::Rng;
+    OsRng
+        .sample_iter(&Alphanumeric)
+        .take(len.max(1))
+        .map(char::from)
+        .collect()
 }
 
 /// Secret access log entry
@@ -388,6 +409,59 @@ impl SecretStore {
         });
 
         Ok(())
+    }
+
+    /// Rotate a key to a freshly-generated random credential. Only valid for
+    /// secrets Aether owns (`rotation_policy.generate == true`); callers should
+    /// gate on [`SecretStore::auto_generatable`] first. The generated plaintext
+    /// is stored encrypted and never returned or logged — only the new version
+    /// number is surfaced. Returns an error for external/mirrored secrets so a
+    /// caller can never accidentally overwrite a value Aether does not own.
+    pub fn rotate_generated(
+        &mut self,
+        secret_name: &str,
+        key: &str,
+        actor: &str,
+    ) -> anyhow::Result<u32> {
+        if !self.auto_generatable(secret_name) {
+            anyhow::bail!(
+                "Secret '{}' is not auto-generatable (rotation_policy.generate=false); \
+                 it mirrors an externally-managed credential and must be rotated externally",
+                secret_name
+            );
+        }
+        let value = generate_secret_value(32);
+        self.rotate_with_actor(secret_name, key, &value, actor)?;
+        // Value dropped here; recover the version we just wrote for the caller.
+        let version = self
+            .get_secret(secret_name)
+            .and_then(|s| s.data.get(key))
+            .map(|v| v.version)
+            .unwrap_or(0);
+        Ok(version)
+    }
+
+    /// Whether a secret's value is Aether-owned and safe to auto-generate on
+    /// rotation. False when there is no rotation policy or `generate` is unset.
+    pub fn auto_generatable(&self, secret_name: &str) -> bool {
+        self.get_secret(secret_name)
+            .and_then(|s| s.rotation_policy.as_ref())
+            .map(|p| p.generate)
+            .unwrap_or(false)
+    }
+
+    /// Test helper: backdate a key's `last_rotated` so rotation audits treat it
+    /// as due/overdue without waiting real time.
+    #[cfg(test)]
+    pub(crate) fn set_last_rotated_days_ago(&mut self, secret_name: &str, key: &str, days: i64) {
+        let ts = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
+        if let Some(v) = self
+            .secrets
+            .get_mut(secret_name)
+            .and_then(|s| s.data.get_mut(key))
+        {
+            v.last_rotated = ts;
+        }
     }
 
     /// Check which secrets need rotation
@@ -805,6 +879,67 @@ mod tests {
         policy.max_age_days = 365;
         policy.notify_before_days = 400; // more than max_age
         assert!(policy.validate().is_err());
+    }
+
+    #[test]
+    fn test_generate_secret_value_is_random_and_sized() {
+        let a = generate_secret_value(32);
+        let b = generate_secret_value(32);
+        assert_eq!(a.len(), 32);
+        assert_eq!(b.len(), 32);
+        assert_ne!(a, b, "two generated values must differ");
+        assert!(a.chars().all(|c| c.is_ascii_alphanumeric()));
+        // Never the old placeholder shape.
+        assert!(!a.starts_with("rotated-"));
+        // len 0 is clamped to at least 1 char (no panic / empty credential).
+        assert_eq!(generate_secret_value(0).len(), 1);
+    }
+
+    #[test]
+    fn test_auto_generatable_reflects_policy() {
+        let mut store = SecretStore::new();
+        // Default policy has generate=false → not auto-generatable.
+        store.create_secret("ext-cred", "prod");
+        assert!(!store.auto_generatable("ext-cred"));
+        assert!(!store.auto_generatable("missing"));
+
+        // Mark a secret as Aether-owned.
+        let owned = store.create_secret("owned-cred", "prod");
+        owned.rotation_policy = Some(RotationPolicy {
+            generate: true,
+            ..RotationPolicy::default()
+        });
+        assert!(store.auto_generatable("owned-cred"));
+    }
+
+    #[test]
+    fn test_rotate_generated_only_for_owned_secrets() {
+        let mut store = SecretStore::new();
+        store.create_secret("ext-cred", "prod");
+        store.set("ext-cred", "token", "external-value").unwrap();
+
+        // External secret: refuse to overwrite, value stays intact.
+        let err = store
+            .rotate_generated("ext-cred", "token", "test")
+            .unwrap_err();
+        assert!(err.to_string().contains("not auto-generatable"));
+        assert_eq!(store.get("ext-cred", "token").unwrap(), "external-value");
+
+        // Owned secret: rotate to a fresh random credential.
+        let owned = store.create_secret("owned-cred", "prod");
+        owned.rotation_policy = Some(RotationPolicy {
+            generate: true,
+            ..RotationPolicy::default()
+        });
+        store.set("owned-cred", "password", "initial").unwrap();
+        let version = store
+            .rotate_generated("owned-cred", "password", "test")
+            .unwrap();
+        assert_eq!(version, 2, "version bumps on rotation");
+        let rotated = store.get("owned-cred", "password").unwrap();
+        assert_ne!(rotated, "initial");
+        assert!(!rotated.starts_with("rotated-"), "no placeholder value");
+        assert_eq!(rotated.len(), 32);
     }
 
     #[test]

@@ -522,6 +522,49 @@ fn run_secret_rotation_check() {
             &alert.message,
         );
     }
+
+    // When explicitly enabled (AETHER_AUTO_ROTATE_SECRETS / autonomy healing=auto),
+    // autonomously rotate secrets Aether owns (rotation_policy.generate=true) to a
+    // freshly-generated credential. Externally-managed secrets are only alerted
+    // above and are never overwritten.
+    if crate::intelligence::policy::AutonomyPolicy::default().allows_secret_rotation() {
+        let report = crate::intelligence::security_os::run_secret_rotation_agent(
+            &crate::intelligence::security_os::SecretRotationAgentRequest { dry_run: false },
+        );
+        for line in &report.rotated {
+            emit_maintenance_event(
+                crate::events::EventSeverity::Info,
+                crate::events::EventCategory::SecretRotation,
+                "Secret auto-rotated",
+                line,
+            );
+            audit_autonomous_maintenance("secret-rotation-agent", line);
+        }
+        for line in &report.skipped {
+            emit_maintenance_event(
+                crate::events::EventSeverity::Warning,
+                crate::events::EventCategory::SecretRotation,
+                "Secret rotation deferred",
+                line,
+            );
+        }
+    }
+}
+
+/// Audit an autonomous maintenance-loop action (mirrors healer::audit_autonomous).
+fn audit_autonomous_maintenance(source: &str, detail: &str) {
+    let path = crate::audit::AuditLog::default_path();
+    if let Ok(mut log) = crate::audit::AuditLog::load(&path) {
+        log.record(
+            crate::audit::AuditAction::External,
+            source,
+            Some(source),
+            crate::audit::ActionResult::Success,
+            "autonomous_secret_rotation",
+            Some(detail),
+        );
+        let _ = log.save(&path);
+    }
 }
 
 /// Check the API server's TLS certificate expiry and emit an event when it is

@@ -4135,6 +4135,7 @@ pub(crate) async fn get_secret(Path(name): Path<String>) -> impl IntoResponse {
                     interval_days: p.interval_days,
                     max_age_days: p.max_age_days,
                     notify_before_days: p.notify_before_days,
+                    generate: p.generate,
                 });
                 let keys: Vec<String> = secret.data.keys().cloned().collect();
                 let response = SecretMetadataResponse {

@@ -353,6 +353,19 @@ pub fn run_secret_rotation_agent(req: &SecretRotationAgentRequest) -> SecretRota
         };
     };
 
+    let report = rotate_due_secrets(&mut store, req.dry_run);
+
+    if !req.dry_run && !report.rotated.is_empty() {
+        let _ = store.save(&path);
+    }
+
+    report
+}
+
+/// Core rotation logic over an already-loaded store (no filesystem/IO), so it
+/// is unit-testable in isolation. Rotates due secrets Aether owns; reports
+/// externally-managed secrets as skipped without ever overwriting them.
+fn rotate_due_secrets(store: &mut SecretStore, dry_run: bool) -> SecretRotationAgentReport {
     let alerts = store.audit_rotation();
     let mut actions = Vec::new();
     let mut rotated = Vec::new();
@@ -371,24 +384,28 @@ pub fn run_secret_rotation_agent(req: &SecretRotationAgentRequest) -> SecretRota
             message: alert.message.clone(),
         });
         let line = format!("rotate {}:{}", alert.secret, alert.key);
-        if req.dry_run {
+        // Only secrets Aether owns (rotation_policy.generate=true) may be
+        // auto-rotated to a fresh generated credential. Externally-managed
+        // secrets are never overwritten — they are reported for out-of-band
+        // rotation so a mirrored credential is never clobbered.
+        if !store.auto_generatable(&alert.secret) {
+            skipped.push(format!(
+                "{line}: requires external rotation (rotation_policy.generate=false)"
+            ));
+            continue;
+        }
+        if dry_run {
             rotated.push(format!("dry-run: {line}"));
         } else {
-            let placeholder = format!("rotated-{}", crate::resources::now_rfc3339());
-            match store.rotate_with_actor(&alert.secret, &alert.key, &placeholder, "security-agent")
-            {
-                Ok(()) => rotated.push(line),
+            match store.rotate_generated(&alert.secret, &alert.key, "security-agent") {
+                Ok(_version) => rotated.push(line),
                 Err(e) => skipped.push(format!("{line}: {e}")),
             }
         }
     }
 
-    if !req.dry_run && !rotated.is_empty() {
-        let _ = store.save(&path);
-    }
-
     SecretRotationAgentReport {
-        dry_run: req.dry_run,
+        dry_run,
         actions,
         rotated,
         skipped,
@@ -744,5 +761,58 @@ mod tests {
     fn zero_trust_wizard_has_steps() {
         let r = build_zero_trust_wizard(&[]);
         assert_eq!(r.steps.len(), 3);
+    }
+
+    #[test]
+    fn rotate_due_secrets_rotates_owned_and_defers_external() {
+        use crate::secrets::{RotationPolicy, SecretStore};
+        let mut store = SecretStore::new();
+
+        // External (mirrored) secret — overdue, but Aether does not own it.
+        store.create_secret("ext-cred", "prod");
+        store.set("ext-cred", "token", "external-value").unwrap();
+        store.set_last_rotated_days_ago("ext-cred", "token", 500);
+
+        // Owned secret — overdue and auto-generatable.
+        let owned = store.create_secret("owned-cred", "prod");
+        owned.rotation_policy = Some(RotationPolicy {
+            generate: true,
+            ..RotationPolicy::default()
+        });
+        store.set("owned-cred", "password", "initial").unwrap();
+        store.set_last_rotated_days_ago("owned-cred", "password", 500);
+
+        let report = rotate_due_secrets(&mut store, false);
+
+        // Owned secret rotated to a fresh, non-placeholder value.
+        assert!(report.rotated.iter().any(|l| l.contains("owned-cred")));
+        let rotated = store.get("owned-cred", "password").unwrap();
+        assert_ne!(rotated, "initial");
+        assert!(!rotated.starts_with("rotated-"));
+
+        // External secret deferred, value never touched.
+        assert!(report
+            .skipped
+            .iter()
+            .any(|l| l.contains("ext-cred") && l.contains("requires external rotation")));
+        assert_eq!(store.get("ext-cred", "token").unwrap(), "external-value");
+    }
+
+    #[test]
+    fn rotate_due_secrets_dry_run_makes_no_changes() {
+        use crate::secrets::{RotationPolicy, SecretStore};
+        let mut store = SecretStore::new();
+        let owned = store.create_secret("owned-cred", "prod");
+        owned.rotation_policy = Some(RotationPolicy {
+            generate: true,
+            ..RotationPolicy::default()
+        });
+        store.set("owned-cred", "password", "initial").unwrap();
+        store.set_last_rotated_days_ago("owned-cred", "password", 500);
+
+        let report = rotate_due_secrets(&mut store, true);
+        assert!(report.rotated.iter().any(|l| l.starts_with("dry-run:")));
+        // Value untouched in dry-run.
+        assert_eq!(store.get("owned-cred", "password").unwrap(), "initial");
     }
 }

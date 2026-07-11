@@ -28,6 +28,9 @@ impl From<&AutonomyLevel> for AutonomyTier {
 pub struct AutonomyPolicy {
     pub auto_restart: bool,
     pub auto_reconcile_drift: bool,
+    /// Auto-rotate secrets Aether owns (rotation_policy.generate=true) when they
+    /// come due. Externally-managed secrets are never auto-rotated regardless.
+    pub auto_rotate_secrets: bool,
     pub auto_migrate: AutonomyTier,
     pub auto_evolve: AutonomyTier,
 }
@@ -37,6 +40,7 @@ impl Default for AutonomyPolicy {
         Self {
             auto_restart: env_bool("AETHER_AUTO_RESTART", false),
             auto_reconcile_drift: env_bool("AETHER_AUTO_RECONCILE", false),
+            auto_rotate_secrets: env_bool("AETHER_AUTO_ROTATE_SECRETS", false),
             auto_migrate: AutonomyTier::Recommend,
             auto_evolve: AutonomyTier::Recommend,
         }
@@ -67,6 +71,7 @@ impl AutonomyPolicy {
             AutonomyLevel::Auto => {
                 self.auto_restart = true;
                 self.auto_reconcile_drift = true;
+                self.auto_rotate_secrets = true;
             }
             AutonomyLevel::AutoLowRisk => {
                 self.auto_restart = true;
@@ -81,6 +86,10 @@ impl AutonomyPolicy {
 
     pub fn allows_drift_reconcile(&self) -> bool {
         self.auto_reconcile_drift
+    }
+
+    pub fn allows_secret_rotation(&self) -> bool {
+        self.auto_rotate_secrets
     }
 
     pub fn allows_auto_migrate(&self, risk: crate::ai::migration::RiskLevel) -> bool {
