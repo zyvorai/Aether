@@ -219,6 +219,7 @@ mod tests {
             secret_refs: vec![],
             pvc_refs: vec![],
             env_endpoints: vec![],
+            manifest: None,
         };
         let mut db = a.clone();
         a.name = "web".into();

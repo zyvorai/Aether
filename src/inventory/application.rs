@@ -300,6 +300,7 @@ mod tests {
             secret_refs: vec![],
             pvc_refs: vec![],
             env_endpoints: vec![],
+            manifest: None,
         }
     }
 

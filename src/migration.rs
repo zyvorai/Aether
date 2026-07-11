@@ -6,6 +6,7 @@
 
 pub mod fleet;
 pub mod project;
+pub mod transform;
 pub mod volume;
 
 use crate::runtime::{Instance, Runtime, RuntimeKind};

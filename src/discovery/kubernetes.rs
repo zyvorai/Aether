@@ -83,6 +83,10 @@ pub struct DiscoveredWorkload {
     /// Env values that look like external endpoints (host:port or URL).
     #[serde(default)]
     pub env_endpoints: Vec<String>,
+    /// Raw object manifest, retained for faithful Move/transform. Never includes
+    /// Secret data (only workload controllers/services/configmaps are captured).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manifest: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,6 +98,8 @@ pub struct ServiceInfo {
     #[serde(default)]
     pub selector: BTreeMap<String, String>,
     pub type_: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manifest: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,6 +145,9 @@ pub struct RawInventory {
     pub pvcs: Vec<PvcInfo>,
     #[serde(default)]
     pub storage_classes: Vec<StorageClassInfo>,
+    /// Raw ConfigMap manifests (config data — never Secrets), for Move.
+    #[serde(default)]
+    pub config_maps: Vec<serde_json::Value>,
     #[serde(default)]
     pub pdbs: Vec<String>,
     #[serde(default)]
@@ -210,8 +219,9 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
         for d in list.items {
             let replicas = d.spec.as_ref().and_then(|s| s.replicas).unwrap_or(1);
             let podspec = d.spec.as_ref().and_then(|s| s.template.spec.as_ref());
+            let manifest = serde_json::to_value(&d).ok();
             inv.workloads.push(build_workload(
-                ns, "Deployment", &d.metadata, replicas, podspec,
+                ns, "Deployment", &d.metadata, replicas, podspec, manifest,
             ));
         }
     }
@@ -220,7 +230,8 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
         for s in list.items {
             let replicas = s.spec.as_ref().and_then(|sp| sp.replicas).unwrap_or(1);
             let podspec = s.spec.as_ref().and_then(|sp| sp.template.spec.as_ref());
-            let mut w = build_workload(ns, "StatefulSet", &s.metadata, replicas, podspec);
+            let manifest = serde_json::to_value(&s).ok();
+            let mut w = build_workload(ns, "StatefulSet", &s.metadata, replicas, podspec, manifest);
             // StatefulSet volumeClaimTemplates count as PVC usage.
             if let Some(vcts) = s.spec.as_ref().and_then(|sp| sp.volume_claim_templates.as_ref()) {
                 for vct in vcts {
@@ -236,8 +247,9 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
     if let Ok(list) = ds.list(&ListParams::default()).await {
         for d in list.items {
             let podspec = d.spec.as_ref().and_then(|s| s.template.spec.as_ref());
+            let manifest = serde_json::to_value(&d).ok();
             inv.workloads
-                .push(build_workload(ns, "DaemonSet", &d.metadata, 1, podspec));
+                .push(build_workload(ns, "DaemonSet", &d.metadata, 1, podspec, manifest));
         }
     }
     let jobs: Api<Job> = Api::namespaced(client.clone(), ns);
@@ -248,8 +260,9 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
                 continue;
             }
             let podspec = j.spec.as_ref().and_then(|s| s.template.spec.as_ref());
+            let manifest = serde_json::to_value(&j).ok();
             inv.workloads
-                .push(build_workload(ns, "Job", &j.metadata, 1, podspec));
+                .push(build_workload(ns, "Job", &j.metadata, 1, podspec, manifest));
         }
     }
     let cronjobs: Api<CronJob> = Api::namespaced(client.clone(), ns);
@@ -260,8 +273,9 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
                 .as_ref()
                 .and_then(|s| s.job_template.spec.as_ref())
                 .and_then(|jt| jt.template.spec.as_ref());
+            let manifest = serde_json::to_value(&c).ok();
             inv.workloads
-                .push(build_workload(ns, "CronJob", &c.metadata, 1, podspec));
+                .push(build_workload(ns, "CronJob", &c.metadata, 1, podspec, manifest));
         }
     }
     // Naked pods (no controller owner).
@@ -271,8 +285,9 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
             if !owner_kinds(&p.metadata).is_empty() {
                 continue; // owned by a controller → represented above
             }
+            let manifest = serde_json::to_value(&p).ok();
             inv.workloads
-                .push(build_workload(ns, "Pod", &p.metadata, 1, p.spec.as_ref()));
+                .push(build_workload(ns, "Pod", &p.metadata, 1, p.spec.as_ref(), manifest));
         }
     }
 
@@ -280,6 +295,7 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
     let svcs: Api<Service> = Api::namespaced(client.clone(), ns);
     if let Ok(list) = svcs.list(&ListParams::default()).await {
         for s in list.items {
+            let manifest = serde_json::to_value(&s).ok();
             inv.services.push(ServiceInfo {
                 namespace: ns.to_string(),
                 name: s.metadata.name.unwrap_or_default(),
@@ -296,7 +312,18 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
                     .as_ref()
                     .and_then(|sp| sp.type_.clone())
                     .unwrap_or_else(|| "ClusterIP".to_string()),
+                manifest,
             });
+        }
+    }
+
+    // ConfigMaps (raw manifests — config data, never Secrets).
+    let cms: Api<k8s_openapi::api::core::v1::ConfigMap> = Api::namespaced(client.clone(), ns);
+    if let Ok(list) = cms.list(&ListParams::default()).await {
+        for c in list.items {
+            if let Ok(v) = serde_json::to_value(&c) {
+                inv.config_maps.push(v);
+            }
         }
     }
 
@@ -381,6 +408,7 @@ fn build_workload(
     meta: &k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta,
     replicas: i32,
     podspec: Option<&PodSpec>,
+    manifest: Option<serde_json::Value>,
 ) -> DiscoveredWorkload {
     let mut w = DiscoveredWorkload {
         namespace: ns.to_string(),
@@ -409,6 +437,7 @@ fn build_workload(
         secret_refs: Vec::new(),
         pvc_refs: Vec::new(),
         env_endpoints: Vec::new(),
+        manifest,
     };
     if let Some(ps) = podspec {
         extract_podspec(ps, &mut w);

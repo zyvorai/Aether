@@ -135,6 +135,7 @@ mod tests {
                 secret_refs: vec![],
                 pvc_refs: vec![],
                 env_endpoints: vec!["https://api.stripe.com".into()],
+                manifest: None,
             }],
             services: vec![ServiceInfo {
                 namespace: "prod".into(),
@@ -142,6 +143,7 @@ mod tests {
                 labels: BTreeMap::new(),
                 selector,
                 type_: "ClusterIP".into(),
+                manifest: None,
             }],
             ingresses: vec![IngressInfo {
                 namespace: "prod".into(),
