@@ -53,6 +53,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'secrets', path: '/secrets', label: 'Secrets', breadcrumb: 'Secrets', subtitle: 'Encrypted secrets management', group: 'resources', paletteLabel: 'Secrets' },
   { view: 'backups', path: '/backups', label: 'Backups', breadcrumb: 'Backups', subtitle: 'Backup snapshots and restore', group: 'resources', paletteLabel: 'Backups' },
   { view: 'storage', path: '/storage', label: 'Storage', breadcrumb: 'Storage', subtitle: 'Atlas-backed persistent volumes and capacity', group: 'resources', paletteLabel: 'Storage' },
+  { view: 'forge', path: '/forge', label: 'GPU / Forge', breadcrumb: 'GPU / Forge', subtitle: 'Forge GPU capacity, nodes, and AI placement', group: 'resources', paletteLabel: 'GPU / Forge' },
   { view: 'templates', path: '/templates', label: 'Templates', breadcrumb: 'Templates', subtitle: 'Workload templates library', group: 'resources', paletteLabel: 'Templates' },
   { view: 'plugins', path: '/plugins', label: 'Plugins', breadcrumb: 'Plugins', subtitle: 'Runtime plugins and extensions', group: 'resources', paletteLabel: 'Plugins' },
   { view: 'rbac', path: '/rbac', label: 'Access Control', breadcrumb: 'Access Control', subtitle: 'API keys and role-based access', group: 'resources', paletteLabel: 'RBAC' },

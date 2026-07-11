@@ -98,6 +98,43 @@ EOF
 )"
   fi
 
+  # Forge GPU/AI integration (opt-in). Enable with AETHER_FORGE_URL or
+  # AETHER_FORGE_ENABLE=1; URL defaults to the in-cluster Forge gateway. The
+  # bearer token is injected from a Secret only when AETHER_FORGE_TOKEN is set.
+  if [ -n "${AETHER_FORGE_URL:-}" ] || [ "${AETHER_FORGE_ENABLE:-}" = "1" ]; then
+    local forge_url="${AETHER_FORGE_URL:-http://forge-api-gateway.forge.svc.cluster.local:24631}"
+    AETHER_MANIFEST_EXTRA_ENV_YAML+="$(cat <<EOF
+
+        - name: AETHER_FORGE_URL
+          value: "${forge_url}"
+EOF
+)"
+    if [ -n "${AETHER_FORGE_TOKEN:-}" ]; then
+      AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aether-forge
+  namespace: ${ns}
+type: Opaque
+stringData:
+  token: ${AETHER_FORGE_TOKEN}
+EOF
+)"
+      AETHER_MANIFEST_EXTRA_ENV_YAML+="$(cat <<'EOF'
+
+        - name: AETHER_FORGE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: aether-forge
+              key: token
+EOF
+)"
+    fi
+  fi
+
   if [ -n "${AETHER_OIDC_ISSUER:-}" ]; then
     AETHER_MANIFEST_SECRETS_YAML+="$(cat <<EOF
 

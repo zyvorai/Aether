@@ -46,6 +46,8 @@
 #   AETHER_OIDC_* — OIDC issuer, client, redirect, session secret (see src/oidc.rs)
 #   AETHER_LDAP_* — Active Directory / LDAP bind auth (see src/ldap.rs)
 #   AETHER_BACKUP_REMOTE_URL / AETHER_BACKUP_REMOTE_TOKEN — HTTP PUT backup offload
+#   AETHER_FORGE_ENABLE=1 (or AETHER_FORGE_URL) + AETHER_FORGE_TOKEN — wire the Forge
+#     GPU/AI integration into the pod (URL defaults to the in-cluster Forge gateway)
 #   AETHER_AUDIT_WEBHOOK_URL — POST audit events to external sink
 #   AETHER_OPEN_FIREWALL=1 — best-effort ufw allow on remote (ports 80/443 and/or NodePort)
 #

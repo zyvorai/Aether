@@ -57,6 +57,7 @@ import EnvsPage from './components/pages/EnvsPage';
 import SecretsPage from './components/pages/SecretsPage';
 import BackupsPage from './components/pages/BackupsPage';
 import StoragePage from './components/pages/StoragePage';
+import ForgePage from './components/pages/ForgePage';
 import TemplatesPage from './components/pages/TemplatesPage';
 import PluginsPage from './components/pages/PluginsPage';
 import RbacPage from './components/pages/RbacPage';
@@ -499,6 +500,8 @@ function AetherDashboard() {
         return <BackupsPage key={refreshKey} />;
       case 'storage':
         return <StoragePage key={refreshKey} />;
+      case 'forge':
+        return <ForgePage key={refreshKey} />;
       case 'templates':
         return <TemplatesPage key={refreshKey} />;
       case 'plugins':

@@ -3250,6 +3250,33 @@ pub(crate) async fn api_storage_status() -> impl IntoResponse {
     }
 }
 
+/// `GET /api/forge/stats` — Forge GPU cluster stats (`{configured:false}` when off).
+pub(crate) async fn api_forge_stats() -> impl IntoResponse {
+    match crate::forge::ForgeConfig::from_env() {
+        Some(forge) => match forge.cluster_stats().await {
+            Ok(mut s) => {
+                if let Some(m) = s.as_object_mut() {
+                    m.insert("configured".to_string(), serde_json::Value::Bool(true));
+                }
+                ok_json(s)
+            }
+            Err(e) => err_internal::<serde_json::Value>(e),
+        },
+        None => ok_json(serde_json::json!({ "configured": false })),
+    }
+}
+
+/// `GET /api/forge/nodes` — Forge GPU nodes (empty when Forge is not configured).
+pub(crate) async fn api_forge_nodes() -> impl IntoResponse {
+    match crate::forge::ForgeConfig::from_env() {
+        Some(forge) => match forge.list_nodes().await {
+            Ok(nodes) => ok_json(nodes),
+            Err(e) => err_internal::<Vec<serde_json::Value>>(e),
+        },
+        None => ok_json(Vec::<serde_json::Value>::new()),
+    }
+}
+
 /// GET /api/observability/prometheus/query - Whitelisted instant query proxy.
 pub(crate) async fn api_observability_prometheus_query(
     Query(query): Query<PrometheusQueryParams>,

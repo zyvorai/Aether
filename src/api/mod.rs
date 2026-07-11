@@ -762,6 +762,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/observability/summary", get(api_observability_summary))
         .route("/api/storage/volumes", get(api_storage_volumes))
         .route("/api/storage/status", get(api_storage_status))
+        .route("/api/forge/stats", get(api_forge_stats))
+        .route("/api/forge/nodes", get(api_forge_nodes))
         .route(
             "/api/observability/prometheus/query",
             get(api_observability_prometheus_query),

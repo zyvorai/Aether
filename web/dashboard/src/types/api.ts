@@ -729,6 +729,20 @@ export interface StorageStatus {
   total_size_bytes?: number;
 }
 
+export interface ForgeStats {
+  configured: boolean;
+  totalGPUs?: number;
+  availableGPUs?: number;
+  allocatedGPUs?: number;
+  utilizationPercent?: number;
+  runningJobs?: number;
+}
+
+export interface ForgeNode {
+  metadata?: { name?: string };
+  spec?: { gpuCount?: number };
+}
+
 export type AppView =
   | 'overview'
   | 'fabric'
@@ -759,6 +773,7 @@ export type AppView =
   | 'secrets'
   | 'backups'
   | 'storage'
+  | 'forge'
   | 'templates'
   | 'plugins'
   | 'rbac'
