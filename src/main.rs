@@ -11,9 +11,9 @@ use aether::state::StateStore;
 use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
 
-use cli::{Cli, Commands, HealthAction};
+use cli::{Cli, Commands, HealthAction, NodeAction};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -31,17 +31,18 @@ async fn main() -> Result<()> {
 
     // Support structured JSON logs via AETHER_LOG_FORMAT=json or config
     let log_format = std::env::var("AETHER_LOG_FORMAT").unwrap_or_default();
-    if log_format == "json" {
-        tracing_subscriber::registry()
-            .with(filter)
-            .with(tracing_subscriber::fmt::layer().json())
-            .init();
+    let fmt_layer = if log_format == "json" {
+        tracing_subscriber::fmt::layer().json().boxed()
     } else {
-        tracing_subscriber::registry()
-            .with(filter)
-            .with(tracing_subscriber::fmt::layer())
-            .init();
-    }
+        tracing_subscriber::fmt::layer().boxed()
+    };
+    // Optional OTLP distributed-tracing layer (opt-in via AETHER_OTLP_ENDPOINT).
+    let otel_layer = aether::observability::otel_trace_layer();
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(fmt_layer)
+        .with(otel_layer)
+        .init();
 
     // Set output modes
     aether::output::set_quiet(cli.quiet);
@@ -93,7 +94,9 @@ async fn main() -> Result<()> {
             }
             commands::delete_command(&name).await
         }
-        Commands::Update { name } => commands::update_command(&name, &cli.spec).await,
+        Commands::Update { name, image, tag } => {
+            commands::update_command(&name, &cli.spec, image, tag).await
+        }
         Commands::List => commands::list_command().await,
         Commands::Migrate {
             name,
@@ -264,6 +267,36 @@ async fn main() -> Result<()> {
             )
             .await
         }
+        Commands::Scale { name, replicas } => {
+            if cli.dry_run {
+                aether::output::info(&format!(
+                    "[dry-run] Would scale workload '{}' to {} replica(s)",
+                    name, replicas
+                ));
+                return Ok(());
+            }
+            commands::scale_command(&name, replicas).await
+        }
+        Commands::Restart { name } => {
+            if cli.dry_run {
+                aether::output::info(&format!("[dry-run] Would restart workload '{}'", name));
+                return Ok(());
+            }
+            commands::restart_command(&name).await
+        }
+        Commands::Node { action } => {
+            let (verb, node) = match &action {
+                NodeAction::Cordon { node } => ("cordon", node),
+                NodeAction::Uncordon { node } => ("uncordon", node),
+                NodeAction::Drain { node } => ("drain", node),
+            };
+            if cli.dry_run {
+                aether::output::info(&format!("[dry-run] Would {} node '{}'", verb, node));
+                return Ok(());
+            }
+            commands::node_command(verb, node).await
+        }
+        Commands::Storage { action } => commands::storage_command(action).await,
     };
 
     // Record command execution time
@@ -290,6 +323,9 @@ async fn main() -> Result<()> {
             )
         );
     }
+
+    // Flush any buffered OTLP spans before the process exits.
+    aether::observability::otel_shutdown();
 
     // Styled error display — print our styled version, then return a
     // minimal error so the runtime doesn't re-print the full message.

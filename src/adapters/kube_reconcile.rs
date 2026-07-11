@@ -160,8 +160,15 @@ pub async fn reconcile_k8s_ancillaries(
         }
     }
 
-    // PVC (create only — skip shrink on update)
-    if mode == ReconcileMode::Create && crate::adapters::kube_manifest::needs_standalone_pvc(spec) {
+    // PVC (create only — skip shrink on update). When the workload is Atlas-backed
+    // (`storageClass: atlas/…` + AETHER_ATLAS_URL set), Atlas already created the
+    // PVC (`{name}-pvc`), so Aether must not create a native one.
+    let atlas_backed =
+        spec.atlas_policy().is_some() && crate::atlas::AtlasConfig::from_env().is_some();
+    if mode == ReconcileMode::Create
+        && !atlas_backed
+        && crate::adapters::kube_manifest::needs_standalone_pvc(spec)
+    {
         if let Some(pvc) = build_pvc_manifest(namespace, spec) {
             let pvc_name = format!("{}-pvc", spec.metadata.name);
             let pvcs: Api<PersistentVolumeClaim> = Api::namespaced(client.clone(), namespace);

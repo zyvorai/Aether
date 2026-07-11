@@ -35,6 +35,8 @@ pub struct Config {
     pub logging: LoggingConfig,
     #[serde(default)]
     pub notifications: NotificationsConfig,
+    #[serde(default)]
+    pub backup: BackupConfig,
 }
 
 impl Config {
@@ -406,6 +408,28 @@ impl Default for ReconciliationConfig {
     }
 }
 
+/// Scheduled-backup configuration used by the `aether serve` control loop.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupConfig {
+    /// Take automatic state backups on an interval while `aether serve` runs.
+    pub enabled: bool,
+    /// Interval between scheduled backups, in hours (minimum 1).
+    pub interval_hours: u64,
+    /// Number of most-recent backups to retain; older ones are pruned.
+    pub keep: usize,
+}
+
+impl Default for BackupConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            interval_hours: 24,
+            keep: 7,
+        }
+    }
+}
+
 /// Logging configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -532,6 +556,16 @@ mod tests {
         assert!(config.slack_webhook_url.is_none());
         assert!(config.slack_channel.is_none());
         assert_eq!(config.min_severity, "warning");
+    }
+
+    #[test]
+    fn test_backup_config_defaults() {
+        let config = BackupConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.interval_hours, 24);
+        assert_eq!(config.keep, 7);
+        // The overall Config carries the backup section.
+        assert_eq!(Config::default().backup.keep, 7);
     }
 
     #[test]

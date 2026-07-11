@@ -914,6 +914,7 @@ mod tests {
             resilience: None,
             compliance: None,
             trust: None,
+            storage: None,
         }
     }
 
@@ -985,6 +986,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         let runtimes = engine.get_allowed_runtimes(&spec);
         let filtered = engine.filter_by_intent(&spec, runtimes);
@@ -1003,6 +1005,7 @@ mod tests {
             resilience: Some(ResilienceLevel::High),
             compliance: None,
             trust: None,
+            storage: None,
         });
         let runtimes = engine.get_allowed_runtimes(&spec);
         let filtered = engine.filter_by_intent(&spec, runtimes);
@@ -1034,6 +1037,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         let runtimes = engine.get_allowed_runtimes(&spec);
         let filtered = engine.filter_by_intent(&spec, runtimes);
@@ -1091,6 +1095,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         let result = engine.score(&spec);
         // KubeVirt should get isolation bonus

@@ -161,6 +161,11 @@ impl MigrationEngine {
     }
 
     /// Execute migration
+    #[tracing::instrument(
+        name = "migration.execute",
+        skip(self, plan),
+        fields(from = %plan.source_runtime, to = %plan.target_runtime)
+    )]
     pub async fn migrate(&self, plan: MigrationPlan) -> Result<MigrationResult> {
         // Guard: reject same-runtime migration
         if plan.source_runtime == plan.target_runtime {
