@@ -4678,6 +4678,270 @@ pub(crate) async fn sbom_command(action: crate::cli::SbomAction) -> Result<()> {
     Ok(())
 }
 
+pub(crate) async fn connection_command(action: crate::cli::ConnectionAction) -> Result<()> {
+    use crate::cli::ConnectionAction;
+    use aether::discovery::{Connection, ConnectionKind, ConnectionStore};
+
+    let mut store = ConnectionStore::load_default()?;
+
+    match action {
+        ConnectionAction::Add {
+            name,
+            kind,
+            context,
+            kubeconfig,
+        } => {
+            let kind: ConnectionKind = kind.parse()?;
+            store.upsert(Connection {
+                name: name.clone(),
+                kind,
+                context,
+                kubeconfig,
+                created_at: aether::resources::now_rfc3339(),
+            });
+            store.save_default()?;
+            output::success(&format!("Added connection '{}' ({})", name, kind));
+        }
+        ConnectionAction::List => {
+            let conns = store.list();
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&store.connections)?);
+                return Ok(());
+            }
+            output::section_with_icon("🔌", "Connections");
+            if conns.is_empty() {
+                output::muted("No connections. Add one with `aether connection add <name> --context <ctx>`.");
+                return Ok(());
+            }
+            let rows: Vec<Vec<String>> = conns
+                .iter()
+                .map(|c| {
+                    vec![
+                        c.name.clone(),
+                        c.kind.to_string(),
+                        if c.context.is_empty() {
+                            "(current-context)".to_string()
+                        } else {
+                            c.context.clone()
+                        },
+                        c.kubeconfig
+                            .as_ref()
+                            .map(|p| p.display().to_string())
+                            .unwrap_or_else(|| "(default)".to_string()),
+                    ]
+                })
+                .collect();
+            println!(
+                "{}",
+                output::table(&["NAME", "KIND", "CONTEXT", "KUBECONFIG"], rows)
+            );
+        }
+        ConnectionAction::Remove { name } => {
+            if store.remove(&name).is_some() {
+                store.save_default()?;
+                output::success(&format!("Removed connection '{}'", name));
+            } else {
+                anyhow::bail!("Connection '{}' not found", name);
+            }
+        }
+        ConnectionAction::Test { name } => {
+            let conn = store
+                .get(&name)
+                .ok_or_else(|| anyhow::anyhow!("Connection '{}' not found", name))?;
+            let sp = output::spinner(&format!("Connecting to '{}'...", name));
+            match conn.connect().await {
+                Ok((_client, version)) => {
+                    output::spinner_success(&sp, "Reachable");
+                    output::kv(
+                        "API server",
+                        version.as_deref().unwrap_or("(version unavailable)"),
+                    );
+                }
+                Err(e) => {
+                    output::spinner_fail(&sp, "Unreachable");
+                    return Err(e);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(crate) async fn discover_command(action: crate::cli::DiscoverAction) -> Result<()> {
+    use crate::cli::DiscoverAction;
+    use aether::discovery::ConnectionStore;
+    use aether::inventory::InventorySnapshot;
+
+    match action {
+        DiscoverAction::Start {
+            connection,
+            namespaces,
+        } => {
+            let store = ConnectionStore::load_default()?;
+            let conn = store
+                .get(&connection)
+                .ok_or_else(|| anyhow::anyhow!("Connection '{}' not found", connection))?;
+            output::section_with_icon("🔎", "Discovery");
+            let sp = output::spinner(&format!("Connecting to '{}'...", connection));
+            let (client, _version) = conn.connect().await?;
+            sp.set_message("Scanning cluster...");
+            let raw = aether::discovery::discover(&client, &connection, &namespaces).await?;
+            let snapshot = InventorySnapshot::from_raw(raw);
+            snapshot.save()?;
+            output::spinner_success(&sp, "Discovery complete");
+            print_discovery_summary(&snapshot);
+        }
+        DiscoverAction::Status { connection } => {
+            let snapshot = InventorySnapshot::load_for(&connection).map_err(|_| {
+                anyhow::anyhow!(
+                    "No inventory for '{}'. Run `aether discover start --connection {}` first.",
+                    connection,
+                    connection
+                )
+            })?;
+            output::section_with_icon("🔎", "Discovery Status");
+            output::kv("Connection", &snapshot.connection);
+            output::kv("Discovered at", &snapshot.discovered_at);
+            print_discovery_summary(&snapshot);
+        }
+    }
+    Ok(())
+}
+
+fn print_discovery_summary(snapshot: &aether::inventory::InventorySnapshot) {
+    use aether::inventory::MigrationClass;
+    let raw = &snapshot.raw;
+    let stateful = snapshot
+        .applications
+        .iter()
+        .filter(|a| a.class == MigrationClass::StatefulNative)
+        .count();
+    let external: usize = snapshot.applications.iter().map(|a| a.external_deps.len()).sum();
+    let blockers: usize = snapshot.applications.iter().map(|a| a.blockers.len()).sum();
+    println!(
+        "{}",
+        output::property_table(&[
+            ("Namespaces", raw.namespaces.len().to_string()),
+            ("Applications", snapshot.applications.len().to_string()),
+            ("Workloads", raw.workloads.len().to_string()),
+            ("Stateful apps", stateful.to_string()),
+            ("Persistent volumes", raw.pvcs.len().to_string()),
+            ("External dependencies", external.to_string()),
+            ("Blockers", blockers.to_string()),
+        ])
+    );
+}
+
+pub(crate) async fn inventory_command(action: crate::cli::InventoryAction) -> Result<()> {
+    use crate::cli::InventoryAction;
+
+    match action {
+        InventoryAction::Applications { connection } => {
+            let snapshot = load_snapshot(&connection)?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&snapshot.applications)?);
+                return Ok(());
+            }
+            output::section_with_icon("📦", "Applications");
+            if snapshot.applications.is_empty() {
+                output::muted("No applications discovered.");
+                return Ok(());
+            }
+            let rows: Vec<Vec<String>> = snapshot
+                .applications
+                .iter()
+                .map(|a| {
+                    vec![
+                        a.name.clone(),
+                        a.namespace.clone(),
+                        format!("{}", a.class.letter()),
+                        a.workloads.len().to_string(),
+                        a.external_deps.len().to_string(),
+                        a.blockers.len().to_string(),
+                    ]
+                })
+                .collect();
+            println!(
+                "{}",
+                output::table(&["APP", "NAMESPACE", "CLASS", "WORKLOADS", "EXT-DEPS", "BLOCKERS"], rows)
+            );
+        }
+        InventoryAction::Show { connection, app } => {
+            let snapshot = load_snapshot(&connection)?;
+            let a = snapshot
+                .find_application(&app)
+                .ok_or_else(|| anyhow::anyhow!("Application '{}' not found in '{}'", app, connection))?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(a)?);
+                return Ok(());
+            }
+            output::section_with_icon("📦", &format!("Application: {}", a.name));
+            println!(
+                "{}",
+                output::property_table(&[
+                    ("Namespace", a.namespace.clone()),
+                    ("Class", a.class.to_string()),
+                    ("Workloads", a.workloads.join(", ")),
+                    ("Services", a.services.join(", ")),
+                    ("PVCs", a.pvcs.join(", ")),
+                    ("Config maps", a.config_map_refs.join(", ")),
+                    ("Secret refs", a.secret_refs.join(", ")),
+                    ("External deps", a.external_deps.join(", ")),
+                ])
+            );
+            if !a.blockers.is_empty() {
+                output::warning("Blockers:");
+                for b in &a.blockers {
+                    output::detail(&format!("  - {}", b));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(crate) async fn dependency_command(action: crate::cli::DependencyAction) -> Result<()> {
+    use crate::cli::DependencyAction;
+
+    match action {
+        DependencyAction::Graph { connection, app } => {
+            let snapshot = load_snapshot(&connection)?;
+            let a = snapshot
+                .find_application(&app)
+                .ok_or_else(|| anyhow::anyhow!("Application '{}' not found in '{}'", app, connection))?;
+            // An app's nodes are its namespace-qualified workloads.
+            let prefixes: Vec<String> = a
+                .workloads
+                .iter()
+                .map(|w| {
+                    let (kind, name) = w.split_once('/').unwrap_or(("", w.as_str()));
+                    format!("{}/{}:{}", a.namespace, kind, name)
+                })
+                .collect();
+            let edges = snapshot.dependencies.for_prefixes(&prefixes);
+            output::section_with_icon("🕸️", &format!("Dependencies: {}", a.name));
+            if edges.is_empty() {
+                output::muted("No discovered dependencies.");
+                return Ok(());
+            }
+            for e in edges {
+                println!("  {}  --{:?}-->  {}", e.from, e.kind, e.to);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn load_snapshot(connection: &str) -> Result<aether::inventory::InventorySnapshot> {
+    aether::inventory::InventorySnapshot::load_for(connection).map_err(|_| {
+        anyhow::anyhow!(
+            "No inventory for '{}'. Run `aether discover start --connection {}` first.",
+            connection,
+            connection
+        )
+    })
+}
+
 pub(crate) async fn edge_agent_command(
     control_plane: &str,
     site: &str,

@@ -264,6 +264,10 @@ async fn main() -> Result<()> {
             )
             .await
         }
+        Commands::Connection { action } => commands::connection_command(action).await,
+        Commands::Discover { action } => commands::discover_command(action).await,
+        Commands::Inventory { action } => commands::inventory_command(action).await,
+        Commands::Dependency { action } => commands::dependency_command(action).await,
     };
 
     // Record command execution time

@@ -588,6 +588,108 @@ pub(crate) enum Commands {
         #[arg(long, default_value = "30")]
         interval_secs: u64,
     },
+
+    /// Manage saved cluster connections for discovery & assessment
+    Connection {
+        #[command(subcommand)]
+        action: ConnectionAction,
+    },
+
+    /// Discover applications from a connected cluster into an inventory
+    Discover {
+        #[command(subcommand)]
+        action: DiscoverAction,
+    },
+
+    /// Browse the discovered application inventory
+    Inventory {
+        #[command(subcommand)]
+        action: InventoryAction,
+    },
+
+    /// Show discovered dependencies for an application
+    Dependency {
+        #[command(subcommand)]
+        action: DependencyAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum DiscoverAction {
+    /// Run discovery for a connection and persist the inventory snapshot
+    Start {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+        /// Limit to these namespaces (comma-separated; default: all)
+        #[arg(long, value_delimiter = ',')]
+        namespaces: Vec<String>,
+    },
+    /// Show the last discovery snapshot summary for a connection
+    Status {
+        /// Connection name
+        connection: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum InventoryAction {
+    /// List discovered applications
+    Applications {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+    },
+    /// Show one application in detail
+    Show {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+        /// Application name or id
+        app: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum DependencyAction {
+    /// Show the dependency graph for an application
+    Graph {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+        /// Application name or id
+        app: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ConnectionAction {
+    /// Add or update a saved connection
+    Add {
+        /// Connection name
+        name: String,
+        /// Source platform: eks, aks, gke, openshift, rancher, tanzu, kubernetes, k3s, rke2, podman, compose
+        #[arg(long, default_value = "kubernetes")]
+        kind: String,
+        /// Kubeconfig context to use (defaults to current-context)
+        #[arg(long, default_value = "")]
+        context: String,
+        /// Explicit kubeconfig file (defaults to ambient KUBECONFIG)
+        #[arg(long)]
+        kubeconfig: Option<std::path::PathBuf>,
+    },
+    /// List saved connections
+    List,
+    /// Remove a saved connection
+    Remove {
+        /// Connection name
+        name: String,
+    },
+    /// Test reachability of a connection
+    Test {
+        /// Connection name
+        name: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -778,6 +880,10 @@ impl Commands {
             Self::Confidential { .. } => "confidential",
             Self::Sbom { .. } => "sbom",
             Self::EdgeAgent { .. } => "edge-agent",
+            Self::Connection { .. } => "connection",
+            Self::Discover { .. } => "discover",
+            Self::Inventory { .. } => "inventory",
+            Self::Dependency { .. } => "dependency",
         }
     }
 }
