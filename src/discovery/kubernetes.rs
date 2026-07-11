@@ -37,6 +37,11 @@ pub struct ContainerInfo {
     pub image: String,
     /// Whether the container declares CPU/memory requests.
     pub has_requests: bool,
+    /// Declared CPU/memory request quantities (when present).
+    #[serde(default)]
+    pub cpu_request: Option<String>,
+    #[serde(default)]
+    pub memory_request: Option<String>,
     /// Whether the container requests a GPU (e.g. nvidia.com/gpu).
     pub wants_gpu: bool,
     /// Whether the container's securityContext is privileged.
@@ -441,12 +446,10 @@ fn extract_podspec(ps: &PodSpec, w: &mut DiscoveredWorkload) {
         .iter()
         .chain(ps.init_containers.iter().flatten());
     for c in all_containers {
-        let has_requests = c
-            .resources
-            .as_ref()
-            .and_then(|r| r.requests.as_ref())
-            .map(|r| !r.is_empty())
-            .unwrap_or(false);
+        let requests = c.resources.as_ref().and_then(|r| r.requests.as_ref());
+        let has_requests = requests.map(|r| !r.is_empty()).unwrap_or(false);
+        let cpu_request = requests.and_then(|r| r.get("cpu")).map(|q| q.0.clone());
+        let memory_request = requests.and_then(|r| r.get("memory")).map(|q| q.0.clone());
         let wants_gpu = c
             .resources
             .as_ref()
@@ -462,6 +465,8 @@ fn extract_podspec(ps: &PodSpec, w: &mut DiscoveredWorkload) {
             name: c.name.clone(),
             image: c.image.clone().unwrap_or_default(),
             has_requests,
+            cpu_request,
+            memory_request,
             wants_gpu,
             privileged,
         });

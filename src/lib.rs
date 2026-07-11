@@ -9,6 +9,7 @@
 pub mod adapters;
 pub mod ai;
 pub mod api;
+pub mod assessment;
 pub mod audit;
 pub mod backup;
 pub mod backup_remote;

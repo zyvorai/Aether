@@ -612,6 +612,18 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         action: DependencyAction,
     },
+
+    /// Assess an application's portability / migration readiness
+    Assess {
+        /// Connection name (source)
+        #[arg(long)]
+        connection: String,
+        /// Application name or id
+        app: String,
+        /// Target connection to run a compatibility preflight against
+        #[arg(long)]
+        target: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -884,6 +896,7 @@ impl Commands {
             Self::Discover { .. } => "discover",
             Self::Inventory { .. } => "inventory",
             Self::Dependency { .. } => "dependency",
+            Self::Assess { .. } => "assess",
         }
     }
 }

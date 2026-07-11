@@ -268,6 +268,11 @@ async fn main() -> Result<()> {
         Commands::Discover { action } => commands::discover_command(action).await,
         Commands::Inventory { action } => commands::inventory_command(action).await,
         Commands::Dependency { action } => commands::dependency_command(action).await,
+        Commands::Assess {
+            connection,
+            app,
+            target,
+        } => commands::assess_command(&connection, &app, target.as_deref()).await,
     };
 
     // Record command execution time

@@ -290,6 +290,8 @@ mod tests {
                 name: "c".into(),
                 image: "app:1.0".into(),
                 has_requests: true,
+                cpu_request: Some("100m".into()),
+                memory_request: Some("128Mi".into()),
                 wants_gpu: false,
                 privileged: false,
             }],

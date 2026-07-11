@@ -4932,6 +4932,91 @@ pub(crate) async fn dependency_command(action: crate::cli::DependencyAction) -> 
     Ok(())
 }
 
+pub(crate) async fn assess_command(
+    connection: &str,
+    app: &str,
+    target: Option<&str>,
+) -> Result<()> {
+    let snapshot = load_snapshot(connection)?;
+    let application = snapshot
+        .find_application(app)
+        .ok_or_else(|| anyhow::anyhow!("Application '{}' not found in '{}'", app, connection))?
+        .clone();
+
+    let mut assessment = aether::assessment::assess(&application, &snapshot.raw)?;
+
+    // Optional target-compatibility preflight.
+    if let Some(target_conn) = target {
+        let store = aether::discovery::ConnectionStore::load_default()?;
+        let tconn = store
+            .get(target_conn)
+            .ok_or_else(|| anyhow::anyhow!("Target connection '{}' not found", target_conn))?;
+        let sp = output::spinner(&format!("Preflight against '{}'...", target_conn));
+        match aether::assessment::compatibility::check_compatibility(&application, &snapshot.raw, tconn)
+            .await
+        {
+            Ok(report) => {
+                output::spinner_success(&sp, "Preflight complete");
+                assessment.compatibility = Some(report);
+            }
+            Err(e) => {
+                output::spinner_fail(&sp, "Preflight failed");
+                output::warning(&format!("Compatibility preflight skipped: {}", e));
+            }
+        }
+    }
+
+    if output::is_json() {
+        println!("{}", serde_json::to_string_pretty(&assessment)?);
+        return Ok(());
+    }
+
+    render_assessment(&assessment);
+    Ok(())
+}
+
+fn render_assessment(a: &aether::assessment::PortabilityAssessment) {
+    output::section_with_icon("🧭", &format!("Portability: {}", a.application));
+    println!(
+        "{}",
+        output::property_table(&[
+            ("Namespace", a.namespace.clone()),
+            ("Class", a.class.to_string()),
+            ("Portability score", format!("{}/100", a.score)),
+            ("Complexity", a.complexity.to_string()),
+            ("Recommended target", a.recommended_target.to_string()),
+            ("Recommended strategy", a.recommended_strategy.to_string()),
+            ("Risk", format!("{:?}", a.risk)),
+            ("Downtime class", a.downtime_class.clone()),
+            (
+                "Est. monthly cost",
+                a.monthly_cost_usd
+                    .map(|c| format!("${:.0}", c))
+                    .unwrap_or_else(|| "—".to_string())
+            ),
+            ("Dependency completeness", format!("{}%", a.dependency_completeness)),
+        ])
+    );
+    if !a.blockers.is_empty() {
+        output::warning("Blockers:");
+        for b in &a.blockers {
+            output::detail(&format!("  - {}", b));
+        }
+    }
+    if !a.remediations.is_empty() {
+        output::info("Remediations:");
+        for r in &a.remediations {
+            output::detail(&format!("  - {}", r));
+        }
+    }
+    if let Some(compat) = &a.compatibility {
+        output::info(&format!("Compatibility vs '{}':", compat.target));
+        for c in &compat.checks {
+            output::detail(&format!("  {} {} — {}", c.status.icon(), c.name, c.detail));
+        }
+    }
+}
+
 fn load_snapshot(connection: &str) -> Result<aether::inventory::InventorySnapshot> {
     aether::inventory::InventorySnapshot::load_for(connection).map_err(|_| {
         anyhow::anyhow!(
