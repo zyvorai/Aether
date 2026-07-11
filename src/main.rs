@@ -297,6 +297,21 @@ async fn main() -> Result<()> {
             commands::node_command(verb, node).await
         }
         Commands::Storage { action } => commands::storage_command(action).await,
+        Commands::Connection { action } => commands::connection_command(action).await,
+        Commands::Discover { action } => commands::discover_command(action).await,
+        Commands::Inventory { action } => commands::inventory_command(action).await,
+        Commands::Dependency { action } => commands::dependency_command(action).await,
+        Commands::Assess {
+            connection,
+            app,
+            target,
+        } => commands::assess_command(&connection, &app, target.as_deref()).await,
+        Commands::Plan { action } => commands::plan_command(action).await,
+        Commands::Report {
+            connection,
+            format,
+            output,
+        } => commands::report_command(&connection, &format, output).await,
     };
 
     // Record command execution time

@@ -9,6 +9,7 @@
 pub mod adapters;
 pub mod ai;
 pub mod api;
+pub mod assessment;
 pub mod atlas;
 pub mod audit;
 pub mod backup;
@@ -23,6 +24,7 @@ pub mod copilot {
 }
 pub mod cost;
 pub mod dependencies;
+pub mod discovery;
 pub mod drift;
 pub mod ecosystem;
 pub mod engine;
@@ -35,6 +37,7 @@ pub mod health;
 pub mod helm;
 pub mod hosted;
 pub mod intelligence;
+pub mod inventory;
 pub mod kubecluster;
 pub mod ldap;
 pub mod legacy_workload_yaml;

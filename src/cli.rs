@@ -623,6 +623,60 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         action: StorageAction,
     },
+
+    /// Manage saved cluster connections for discovery & assessment
+    Connection {
+        #[command(subcommand)]
+        action: ConnectionAction,
+    },
+
+    /// Discover applications from a connected cluster into an inventory
+    Discover {
+        #[command(subcommand)]
+        action: DiscoverAction,
+    },
+
+    /// Browse the discovered application inventory
+    Inventory {
+        #[command(subcommand)]
+        action: InventoryAction,
+    },
+
+    /// Show discovered dependencies for an application
+    Dependency {
+        #[command(subcommand)]
+        action: DependencyAction,
+    },
+
+    /// Assess an application's portability / migration readiness
+    Assess {
+        /// Connection name (source)
+        #[arg(long)]
+        connection: String,
+        /// Application name or id
+        app: String,
+        /// Target connection to run a compatibility preflight against
+        #[arg(long)]
+        target: Option<String>,
+    },
+
+    /// Generate migration plans (aether.zyvor.dev/v1alpha1)
+    Plan {
+        #[command(subcommand)]
+        action: PlanAction,
+    },
+
+    /// Produce a Cloud Exit Assessment report for a connection
+    Report {
+        /// Connection name
+        connection: String,
+        /// Output format: md, json, or text
+        #[arg(long, default_value = "md")]
+        format: String,
+        /// Write to a file instead of stdout
+        #[arg(short, long)]
+        output: Option<std::path::PathBuf>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -651,6 +705,105 @@ pub(crate) enum StorageAction {
         snapshot_id: String,
         /// New volume name
         new_name: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum PlanAction {
+    /// Generate a MigrationPlan YAML for an application from its assessment
+    Create {
+        /// Application name or id
+        app: String,
+        /// Source connection
+        #[arg(long)]
+        source: String,
+        /// Target connection
+        #[arg(long)]
+        target: String,
+        /// Override the recommended strategy (immediate|blue-green|rolling|canary)
+        #[arg(long)]
+        strategy: Option<String>,
+        /// Write to a file instead of stdout
+        #[arg(short, long)]
+        output: Option<std::path::PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum DiscoverAction {
+    /// Run discovery for a connection and persist the inventory snapshot
+    Start {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+        /// Limit to these namespaces (comma-separated; default: all)
+        #[arg(long, value_delimiter = ',')]
+        namespaces: Vec<String>,
+    },
+    /// Show the last discovery snapshot summary for a connection
+    Status {
+        /// Connection name
+        connection: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum InventoryAction {
+    /// List discovered applications
+    Applications {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+    },
+    /// Show one application in detail
+    Show {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+        /// Application name or id
+        app: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum DependencyAction {
+    /// Show the dependency graph for an application
+    Graph {
+        /// Connection name
+        #[arg(long)]
+        connection: String,
+        /// Application name or id
+        app: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ConnectionAction {
+    /// Add or update a saved connection
+    Add {
+        /// Connection name
+        name: String,
+        /// Source platform: eks, aks, gke, openshift, rancher, tanzu, kubernetes, k3s, rke2, podman, compose
+        #[arg(long, default_value = "kubernetes")]
+        kind: String,
+        /// Kubeconfig context to use (defaults to current-context)
+        #[arg(long, default_value = "")]
+        context: String,
+        /// Explicit kubeconfig file (defaults to ambient KUBECONFIG)
+        #[arg(long)]
+        kubeconfig: Option<std::path::PathBuf>,
+    },
+    /// List saved connections
+    List,
+    /// Remove a saved connection
+    Remove {
+        /// Connection name
+        name: String,
+    },
+    /// Test reachability of a connection
+    Test {
+        /// Connection name
+        name: String,
     },
 }
 
@@ -865,6 +1018,13 @@ impl Commands {
             Self::Restart { .. } => "restart",
             Self::Node { .. } => "node",
             Self::Storage { .. } => "storage",
+            Self::Connection { .. } => "connection",
+            Self::Discover { .. } => "discover",
+            Self::Inventory { .. } => "inventory",
+            Self::Dependency { .. } => "dependency",
+            Self::Assess { .. } => "assess",
+            Self::Plan { .. } => "plan",
+            Self::Report { .. } => "report",
         }
     }
 }
