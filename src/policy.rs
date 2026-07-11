@@ -547,6 +547,49 @@ pub fn gate_deploy(spec: &Workload, config: &crate::config::PolicyConfig) -> any
     Ok(())
 }
 
+/// Deploy-time gate that enforces per-project resource quotas.
+///
+/// Loads the persistent [`QuotaStore`] and rejects the deploy if the workload's
+/// CPU/memory/storage requirements would push the project over its configured
+/// quota. Projects without a configured quota (or a missing store) are treated
+/// as unlimited, so this is a no-op until an operator sets a quota.
+pub fn gate_quota(spec: &Workload) -> anyhow::Result<()> {
+    // A missing/unreadable store means no quotas are configured — allow.
+    let store = match QuotaStore::load(&QuotaStore::default_path()) {
+        Ok(s) => s,
+        Err(_) => return Ok(()),
+    };
+    check_quota_gate(&store, spec)
+}
+
+/// Core of [`gate_quota`], split out so it can be tested against an in-memory
+/// [`QuotaStore`] without touching the on-disk store.
+pub fn check_quota_gate(store: &QuotaStore, spec: &Workload) -> anyhow::Result<()> {
+    let project = spec.metadata.project.trim();
+    if project.is_empty() {
+        return Ok(());
+    }
+
+    let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
+    let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
+    let storage_gi = crate::resources::parse_memory_gi(&spec.requirements.storage);
+
+    let violations = store.check_quota(project, cpu, memory_gi, storage_gi);
+    if !violations.is_empty() {
+        let detail = violations
+            .iter()
+            .map(|v| format!("  - {}", v))
+            .collect::<Vec<_>>()
+            .join("\n");
+        anyhow::bail!(
+            "Resource quota exceeded for project '{}':\n{}",
+            project,
+            detail
+        );
+    }
+    Ok(())
+}
+
 /// Format policy result as a report
 pub fn format_policy_report(result: &PolicyResult) -> String {
     let mut output = String::new();
@@ -732,5 +775,41 @@ mod tests {
         let result = engine.evaluate(&spec);
         let report = format_policy_report(&result);
         assert!(report.contains("Policy Evaluation"));
+    }
+
+    #[test]
+    fn test_quota_gate_rejects_over_limit() {
+        // Project 'demo' requests cpu=2, mem=4Gi, storage=20Gi (from test_workload).
+        let mut store = QuotaStore::new();
+        store.set_quota("demo", 1.0, 8.0, 100.0); // cpu limit below request
+        let spec = test_workload();
+        let err = check_quota_gate(&store, &spec).unwrap_err().to_string();
+        assert!(err.contains("Resource quota exceeded"));
+        assert!(err.contains("CPU quota exceeded"));
+    }
+
+    #[test]
+    fn test_quota_gate_allows_within_limit() {
+        let mut store = QuotaStore::new();
+        store.set_quota("demo", 8.0, 16.0, 100.0);
+        let spec = test_workload();
+        assert!(check_quota_gate(&store, &spec).is_ok());
+    }
+
+    #[test]
+    fn test_quota_gate_no_quota_is_unlimited() {
+        // No quota configured for the project -> always allowed.
+        let store = QuotaStore::new();
+        let spec = test_workload();
+        assert!(check_quota_gate(&store, &spec).is_ok());
+    }
+
+    #[test]
+    fn test_quota_gate_empty_project_skipped() {
+        let mut store = QuotaStore::new();
+        store.set_quota("", 0.0, 0.0, 0.0);
+        let mut spec = test_workload();
+        spec.metadata.project = String::new();
+        assert!(check_quota_gate(&store, &spec).is_ok());
     }
 }

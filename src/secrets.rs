@@ -574,6 +574,58 @@ impl SecretStore {
     }
 }
 
+/// Encrypt an arbitrary UTF-8 blob with AES-256-GCM using the ambient key
+/// (`AETHER_SECRET_KEY`, or a machine-derived key when unset). Returns
+/// `base64(nonce || ciphertext)`. Shared with the backup subsystem so backups
+/// can be encrypted at rest with the same scheme as secrets.
+pub fn encrypt_blob(plaintext: &str) -> anyhow::Result<String> {
+    use aes_gcm::aead::rand_core::RngCore;
+    use aes_gcm::aead::{Aead, KeyInit, OsRng};
+    use aes_gcm::{Aes256Gcm, Nonce};
+    use sha2::{Digest, Sha256};
+
+    let key = SecretStore::default_key();
+    let key_bytes: [u8; 32] = Sha256::digest(&key).into();
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes)
+        .map_err(|e| anyhow::anyhow!("Failed to initialize AES-256-GCM cipher: {}", e))?;
+
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext.as_bytes())
+        .map_err(|e| anyhow::anyhow!("AES-256-GCM encryption failed: {}", e))?;
+
+    let mut combined = nonce_bytes.to_vec();
+    combined.extend_from_slice(&ciphertext);
+    Ok(base64_encode(&combined))
+}
+
+/// Decrypt a blob produced by [`encrypt_blob`].
+pub fn decrypt_blob(ciphertext: &str) -> anyhow::Result<String> {
+    use aes_gcm::aead::{Aead, KeyInit};
+    use aes_gcm::{Aes256Gcm, Nonce};
+    use sha2::{Digest, Sha256};
+
+    let key = SecretStore::default_key();
+    let combined = base64_decode(ciphertext)?;
+    if combined.len() < 12 {
+        anyhow::bail!("Invalid AES ciphertext: too short (missing nonce)");
+    }
+
+    let (nonce_bytes, encrypted) = combined.split_at(12);
+    let key_bytes: [u8; 32] = Sha256::digest(&key).into();
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("32-byte key");
+    let nonce = Nonce::from_slice(nonce_bytes);
+
+    let plaintext = cipher.decrypt(nonce, encrypted).map_err(|_| {
+        anyhow::anyhow!("AES-256-GCM decryption failed (wrong key or corrupted data)")
+    })?;
+    String::from_utf8(plaintext)
+        .map_err(|e| anyhow::anyhow!("Decrypted data is not valid UTF-8: {}", e))
+}
+
 // Simple base64 encode/decode without external dependency
 fn base64_encode(data: &[u8]) -> String {
     use std::fmt::Write;

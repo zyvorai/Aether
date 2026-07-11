@@ -1277,6 +1277,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
     }
@@ -1298,6 +1299,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         // KubeVirt not allowed, should fall back to Metal3
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Metal3);
@@ -1317,6 +1319,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         // Neither KubeVirt nor Metal3 allowed — falls through to Podman
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
@@ -1347,6 +1350,7 @@ mod tests {
             resilience: None,
             compliance: None,
             trust: None,
+            storage: None,
         });
         // Intent without compliance doesn't affect rule-based engine
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::Podman);
@@ -1373,6 +1377,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         // Rule 0 (intent isolation) fires before Rule 1 (GPU)
         // Both would select KubeVirt, so the result is the same

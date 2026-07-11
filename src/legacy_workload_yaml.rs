@@ -230,6 +230,7 @@ fn intent_from_legacy(raw: &str) -> IntentSpec {
         resilience: None,
         compliance: None,
         trust: None,
+        storage: None,
     }
 }
 
