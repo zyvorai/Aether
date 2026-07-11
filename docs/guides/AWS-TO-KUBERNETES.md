@@ -30,7 +30,20 @@ aether dependency graph payments --connection prod-eks
 aether assess payments --connection prod-eks --target target
 aether plan create payments --source prod-eks --target target --strategy blue-green
 aether report prod-eks --format md            # Cloud Exit Assessment + AWS mapping
+
+# Execute the Move (stateless / Class-A, blue-green):
+aether move plan  payments --source prod-eks --target target --registry <reg> --namespace payments
+aether move start payments --source prod-eks --target target --registry <reg>   # shadow deploy
+aether move status   payments
+aether move cutover  payments   # then point external DNS/Ingress at the target
+aether move rollback payments   # deletes the applied target resources
 ```
+
+`move` reuses the discovery snapshot: it mirrors images to the target registry,
+transforms each manifest (strip `status`/`uid`/`nodeName`/`clusterIP`, retarget the
+namespace, ECR→registry, AWS `LoadBalancer`→`ClusterIP`, drop IRSA `role-arn`,
+AWS endpoints→in-cluster DNS), applies them to the target (ConfigMaps→Services→
+workloads), and records a resumable run for cutover/rollback.
 
 Connections use the **kubeconfig** (EKS/AKS/GKE kubeconfigs already carry cloud auth
 via exec-plugins). Discovery is **read-only** and never reads Secret *values* — only
