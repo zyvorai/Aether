@@ -145,6 +145,14 @@ pub(crate) enum Commands {
     Update {
         /// Workload name
         name: String,
+
+        /// Pin a specific image reference (e.g. registry/app:1.2.3). Overrides --tag.
+        #[arg(long)]
+        image: Option<String>,
+
+        /// Pin a specific image tag (default: reuse the running image's tag)
+        #[arg(long)]
+        tag: Option<String>,
     },
 
     /// List all instances
@@ -588,6 +596,62 @@ pub(crate) enum Commands {
         #[arg(long, default_value = "30")]
         interval_secs: u64,
     },
+
+    /// Scale a deployed workload to a target replica count (Kubernetes)
+    Scale {
+        /// Workload name
+        name: String,
+
+        /// Target replica count (zero or greater)
+        replicas: i32,
+    },
+
+    /// Restart a deployed workload (rolling restart on Kubernetes, stop+start otherwise)
+    Restart {
+        /// Workload name
+        name: String,
+    },
+
+    /// Node maintenance operations (Kubernetes)
+    Node {
+        #[command(subcommand)]
+        action: NodeAction,
+    },
+
+    /// Atlas-backed storage: list volumes and manage snapshots
+    Storage {
+        #[command(subcommand)]
+        action: StorageAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum StorageAction {
+    /// List Atlas volumes owned by Aether
+    List,
+    /// Show a summary of Atlas-backed storage
+    Status,
+    /// Snapshot a deployed workload's Atlas volume
+    Snapshot {
+        /// Workload name
+        name: String,
+        /// Snapshot name
+        snapshot_name: String,
+    },
+    /// Clone a snapshot into a new independent volume
+    Clone {
+        /// Snapshot id
+        snapshot_id: String,
+        /// New volume name
+        new_name: String,
+    },
+    /// Restore a snapshot into a point-in-time volume
+    Restore {
+        /// Snapshot id
+        snapshot_id: String,
+        /// New volume name
+        new_name: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -698,6 +762,25 @@ pub(crate) enum ConfidentialImageAction {
 }
 
 #[derive(Subcommand)]
+pub(crate) enum NodeAction {
+    /// Mark a node unschedulable
+    Cordon {
+        /// Node name
+        node: String,
+    },
+    /// Mark a node schedulable again
+    Uncordon {
+        /// Node name
+        node: String,
+    },
+    /// Safely evict workloads from a node (kubectl drain)
+    Drain {
+        /// Node name
+        node: String,
+    },
+}
+
+#[derive(Subcommand)]
 pub(crate) enum HealthAction {
     /// Show health history for a workload
     Show {
@@ -778,6 +861,10 @@ impl Commands {
             Self::Confidential { .. } => "confidential",
             Self::Sbom { .. } => "sbom",
             Self::EdgeAgent { .. } => "edge-agent",
+            Self::Scale { .. } => "scale",
+            Self::Restart { .. } => "restart",
+            Self::Node { .. } => "node",
+            Self::Storage { .. } => "storage",
         }
     }
 }

@@ -215,8 +215,12 @@ async fn deploy_workload_inner(
 ) -> Result<()> {
     // Policy gate: evaluate workload against configured policies
     let config = aether::config::Config::load();
-    if config.policy.enforce_on_deploy && !ctx::skip_policy() {
-        aether::policy::gate_deploy(workload, &config.policy)?;
+    if !ctx::skip_policy() {
+        if config.policy.enforce_on_deploy {
+            aether::policy::gate_deploy(workload, &config.policy)?;
+        }
+        // Quota gate: enforce per-project resource quotas at admission.
+        aether::policy::gate_quota(workload)?;
     }
 
     let engine = Engine::new();
@@ -278,6 +282,12 @@ async fn deploy_workload_inner(
 
     // Build and run based on runtime
     let rt = aether::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
+
+    // Atlas-backed storage: provision the volume before deploy so the pod
+    // references the Atlas-created PVC (named `{name}-pvc`). No-op unless the
+    // workload opts in via `storageClass: atlas/<policy>` and Atlas is configured.
+    let atlas_volume_id = provision_atlas_volume_if_needed(workload, runtime_kind).await?;
+
     let sp = output::spinner("Building and deploying workload...");
     let image = rt.build(workload).await?;
 
@@ -305,15 +315,14 @@ async fn deploy_workload_inner(
             tracing::warn!("Failed to create pre-deploy snapshot: {}", e);
         }
     }
-    state.upsert(
+    let mut ws = aether::state::WorkloadState::new(
         workload.metadata.name.clone(),
-        aether::state::WorkloadState::new(
-            workload.metadata.name.clone(),
-            runtime_kind,
-            instance,
-            spec_path.to_path_buf(),
-        ),
+        runtime_kind,
+        instance,
+        spec_path.to_path_buf(),
     );
+    ws.atlas_volume_id = atlas_volume_id;
+    state.upsert(workload.metadata.name.clone(), ws);
     state.save(&StateStore::default_path())?;
 
     // Record metrics
@@ -501,6 +510,12 @@ pub(crate) async fn delete_command(name: &str) -> Result<()> {
 
     let (mut state, ws, rt) = load_state_and_runtime(name).await?;
 
+    // Release Atlas-backed storage first (Atlas owns the PVC lifecycle); the
+    // adapter's own PVC delete then becomes a tolerant no-op.
+    if let Some(vol_id) = ws.atlas_volume_id.clone() {
+        release_atlas_volume(name, &vol_id).await;
+    }
+
     let sp = output::spinner(&format!("Deleting workload '{}'...", name));
     rt.delete(&ws.instance).await?;
 
@@ -573,19 +588,20 @@ fn cascade_delete(name: &str) {
     }
 }
 
-pub(crate) async fn update_command(name: &str, spec_path: &PathBuf) -> Result<()> {
+pub(crate) async fn update_command(
+    name: &str,
+    spec_path: &PathBuf,
+    image_override: Option<String>,
+    tag_override: Option<String>,
+) -> Result<()> {
     let (mut state, ws, rt) = load_state_and_runtime(name).await?;
     let workload = Workload::from_file(spec_path)?;
 
     output::section_with_icon("🔄", "Updating Workload");
-    let sp = output::spinner("Updating workload...");
 
-    let image = aether::runtime::Image {
-        name: workload.metadata.name.clone(),
-        tag: "latest".to_string(),
-        digest: None,
-        runtime: ws.runtime,
-    };
+    let image = resolve_update_image(&workload, &ws, image_override, tag_override);
+    output::kv("Image", &image.reference());
+    let sp = output::spinner("Updating workload...");
 
     let new_instance = rt.update(&ws.instance, &image, &workload).await?;
     output::spinner_success(&sp, "Workload updated");
@@ -603,6 +619,506 @@ pub(crate) async fn update_command(name: &str, spec_path: &PathBuf) -> Result<()
 
     output::success(&format!("Workload '{}' updated successfully", name));
     Ok(())
+}
+
+/// Resolve the image reference to deploy on `aether update`.
+///
+/// Precedence: explicit `--image` (a full `name[:tag]` ref) > `--tag` (applied to
+/// the workload name) > the tag of the currently-running image > the spec/default.
+/// This replaces the previous behaviour that always hardcoded `:latest`.
+fn resolve_update_image(
+    workload: &Workload,
+    ws: &aether::state::WorkloadState,
+    image_override: Option<String>,
+    tag_override: Option<String>,
+) -> aether::runtime::Image {
+    if let Some(img) = image_override {
+        // Split on the last ':' into name/tag, but treat a trailing "host:port/path"
+        // (where the segment after ':' contains '/') as a registry port, not a tag.
+        let (name, tag) = match img.rsplit_once(':') {
+            Some((n, t)) if !t.is_empty() && !t.contains('/') => (n.to_string(), t.to_string()),
+            _ => (img.clone(), String::new()),
+        };
+        return aether::runtime::Image {
+            name,
+            tag,
+            digest: None,
+            runtime: ws.runtime,
+        };
+    }
+
+    let resolved_tag = tag_override
+        .or_else(|| {
+            ws.instance
+                .image
+                .rsplit_once(':')
+                .map(|(_, t)| t.to_string())
+                .filter(|t| !t.is_empty() && !t.contains('/'))
+        })
+        .unwrap_or_else(|| "latest".to_string());
+
+    aether::runtime::Image {
+        name: workload.metadata.name.clone(),
+        tag: resolved_tag,
+        digest: None,
+        runtime: ws.runtime,
+    }
+}
+
+/// Record a Day-2 operational action to the audit log (best-effort; logs on failure).
+fn record_audit_action(
+    action: aether::audit::AuditAction,
+    workload: &str,
+    runtime: Option<&str>,
+    result: aether::audit::ActionResult,
+    message: &str,
+) {
+    let path = aether::audit::AuditLog::default_path();
+    match aether::audit::AuditLog::load(&path) {
+        Ok(mut log) => {
+            log.record(action, workload, runtime, result, message, None);
+            if let Err(e) = log.save(&path) {
+                tracing::warn!("Failed to save audit log: {}", e);
+            }
+        }
+        Err(e) => tracing::warn!("Failed to load audit log: {}", e),
+    }
+}
+
+/// Provision an Atlas-backed volume when a Kubernetes workload opts in via an
+/// `atlas/<policy>` storage class and Atlas is configured. Returns the Atlas
+/// volume id (for later release) or `None` when native storage should be used.
+async fn provision_atlas_volume_if_needed(
+    workload: &Workload,
+    runtime_kind: RuntimeKind,
+) -> Result<Option<String>> {
+    if runtime_kind != RuntimeKind::Kubernetes {
+        return Ok(None);
+    }
+    let Some(policy) = workload.atlas_policy() else {
+        return Ok(None);
+    };
+    let Some(atlas) = aether::atlas::AtlasConfig::from_env() else {
+        // Opted into Atlas storage but Atlas isn't configured — surface it.
+        output::warning(&format!(
+            "Workload '{}' requests atlas/{} storage but AETHER_ATLAS_URL is not set; \
+             falling back to native storage class.",
+            workload.metadata.name, policy
+        ));
+        return Ok(None);
+    };
+
+    let namespace = get_namespace().unwrap_or("default");
+    let pvc_name = format!("{}-pvc", workload.metadata.name);
+    let size_bytes = aether::atlas::size_to_bytes(&workload.persistence.size);
+    let access_modes = aether::atlas::access_modes_for(&workload.persistence.access_mode);
+
+    let sp = output::spinner(&format!("Provisioning Atlas volume (policy: {})...", policy));
+    match atlas
+        .provision_volume(
+            &pvc_name,
+            size_bytes,
+            &policy,
+            access_modes,
+            namespace,
+            &workload.metadata.name,
+        )
+        .await
+    {
+        Ok(handle) => {
+            output::spinner_success(
+                &sp,
+                &format!("Atlas volume ready: {} (pvc {})", handle.volume_id, handle.pvc),
+            );
+            record_audit_action(
+                aether::audit::AuditAction::ConfigChange,
+                &workload.metadata.name,
+                Some("atlas"),
+                aether::audit::ActionResult::Success,
+                &format!("Provisioned Atlas volume {} (policy {})", handle.volume_id, policy),
+            );
+            Ok(Some(handle.volume_id))
+        }
+        Err(e) => {
+            output::spinner_fail(&sp, "Atlas provisioning failed");
+            record_audit_action(
+                aether::audit::AuditAction::ConfigChange,
+                &workload.metadata.name,
+                Some("atlas"),
+                aether::audit::ActionResult::Failure,
+                &format!("Atlas provisioning failed: {}", e),
+            );
+            Err(e.context("Atlas volume provisioning failed"))
+        }
+    }
+}
+
+/// Best-effort release of an Atlas-provisioned volume on workload delete.
+/// Failures are logged and audited but never block deletion.
+async fn release_atlas_volume(workload: &str, volume_id: &str) {
+    let Some(atlas) = aether::atlas::AtlasConfig::from_env() else {
+        tracing::warn!(
+            "Workload '{}' has Atlas volume {} but AETHER_ATLAS_URL is unset; skipping release",
+            workload,
+            volume_id
+        );
+        return;
+    };
+    match atlas.delete_volume(volume_id).await {
+        Ok(()) => {
+            output::info(&format!("Released Atlas volume {}", volume_id));
+            record_audit_action(
+                aether::audit::AuditAction::ConfigChange,
+                workload,
+                Some("atlas"),
+                aether::audit::ActionResult::Success,
+                &format!("Released Atlas volume {}", volume_id),
+            );
+        }
+        Err(e) => {
+            tracing::warn!("Failed to release Atlas volume {}: {}", volume_id, e);
+            record_audit_action(
+                aether::audit::AuditAction::ConfigChange,
+                workload,
+                Some("atlas"),
+                aether::audit::ActionResult::Warning,
+                &format!("Atlas volume {} release failed: {}", volume_id, e),
+            );
+        }
+    }
+}
+
+/// Resolve the Kubernetes cluster context for cluster-scoped CLI operations.
+/// Honours `AETHER_CONTEXT`, then falls back to the first reachable cluster.
+async fn resolve_cli_cluster() -> Result<String> {
+    let ctx = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+    aether::kubecluster::resolve_reachable_cluster(ctx.as_deref()).await
+}
+
+/// Scale a deployed workload to `replicas` (Kubernetes/KubeVirt only).
+pub(crate) async fn scale_command(name: &str, replicas: i32) -> Result<()> {
+    if replicas < 0 {
+        anyhow::bail!("replicas must be zero or greater");
+    }
+    let (state, _) = load_workload_state(name)?;
+    let ws = get_workload_state(&state, name)?;
+
+    if !matches!(
+        ws.runtime,
+        aether::runtime::RuntimeKind::Kubernetes | aether::runtime::RuntimeKind::KubeVirt
+    ) {
+        anyhow::bail!(
+            "scale is only supported for Kubernetes workloads (workload '{}' runs on {})",
+            name,
+            ws.runtime
+        );
+    }
+
+    output::section_with_icon("⚖️", "Scaling Workload");
+
+    // Determine the workload kind from the spec (defaults to Deployment).
+    let kind = Workload::from_file(&ws.spec_path)
+        .map(|w| format!("{:?}", w.resolved_k8s_workload_kind()))
+        .unwrap_or_else(|_| "Deployment".to_string());
+    let cluster = resolve_cli_cluster().await?;
+    let namespace = get_namespace().unwrap_or("default").to_string();
+
+    let req = aether::kubecluster::ClusterActionRequest {
+        cluster,
+        namespace,
+        kind,
+        name: name.to_string(),
+        action: "scale".to_string(),
+        replicas: Some(replicas),
+        api_version: None,
+        plural: None,
+        namespaced: None,
+    };
+
+    let sp = output::spinner(&format!("Scaling to {} replica(s)...", replicas));
+    match aether::kubecluster::workload_action(&req).await {
+        Ok(msg) => {
+            output::spinner_success(&sp, "Scaled");
+            output::success(&msg);
+            record_audit_action(
+                aether::audit::AuditAction::Scale,
+                name,
+                Some(&ws.runtime.to_string()),
+                aether::audit::ActionResult::Success,
+                &format!("Scaled to {} replica(s)", replicas),
+            );
+            emit_event(
+                aether::events::EventSeverity::Info,
+                aether::events::EventCategory::Deployment,
+                "cli",
+                Some(name),
+                "Workload scaled",
+                &format!("Scaled '{}' to {} replica(s)", name, replicas),
+            );
+            Ok(())
+        }
+        Err(e) => {
+            output::spinner_fail(&sp, "Scale failed");
+            record_audit_action(
+                aether::audit::AuditAction::Scale,
+                name,
+                Some(&ws.runtime.to_string()),
+                aether::audit::ActionResult::Failure,
+                &format!("Scale failed: {}", e),
+            );
+            Err(e)
+        }
+    }
+}
+
+/// Restart a deployed workload: rolling restart on Kubernetes/KubeVirt,
+/// stop + rebuild + run for local runtimes.
+pub(crate) async fn restart_command(name: &str) -> Result<()> {
+    let (state, ws, rt) = load_state_and_runtime(name).await?;
+    output::section_with_icon("🔁", "Restarting Workload");
+
+    let result = if matches!(
+        ws.runtime,
+        aether::runtime::RuntimeKind::Kubernetes | aether::runtime::RuntimeKind::KubeVirt
+    ) {
+        restart_via_cluster(name, &ws).await
+    } else {
+        restart_via_runtime(name, &ws, rt.as_ref(), state).await
+    };
+
+    match result {
+        Ok(()) => {
+            output::success(&format!("Workload '{}' restarted", name));
+            record_audit_action(
+                aether::audit::AuditAction::Start,
+                name,
+                Some(&ws.runtime.to_string()),
+                aether::audit::ActionResult::Success,
+                "Workload restarted",
+            );
+            emit_event(
+                aether::events::EventSeverity::Info,
+                aether::events::EventCategory::Deployment,
+                "cli",
+                Some(name),
+                "Workload restarted",
+                &format!("Restarted '{}'", name),
+            );
+            Ok(())
+        }
+        Err(e) => {
+            record_audit_action(
+                aether::audit::AuditAction::Start,
+                name,
+                Some(&ws.runtime.to_string()),
+                aether::audit::ActionResult::Failure,
+                &format!("Restart failed: {}", e),
+            );
+            Err(e)
+        }
+    }
+}
+
+async fn restart_via_cluster(name: &str, ws: &aether::state::WorkloadState) -> Result<()> {
+    let kind = Workload::from_file(&ws.spec_path)
+        .map(|w| format!("{:?}", w.resolved_k8s_workload_kind()))
+        .unwrap_or_else(|_| "Deployment".to_string());
+    let cluster = resolve_cli_cluster().await?;
+    let namespace = get_namespace().unwrap_or("default").to_string();
+    let req = aether::kubecluster::ClusterActionRequest {
+        cluster,
+        namespace,
+        kind,
+        name: name.to_string(),
+        action: "restart".to_string(),
+        replicas: None,
+        api_version: None,
+        plural: None,
+        namespaced: None,
+    };
+    let sp = output::spinner("Triggering rolling restart...");
+    let res = aether::kubecluster::workload_action(&req).await;
+    match res {
+        Ok(_) => {
+            output::spinner_success(&sp, "Rolling restart triggered");
+            Ok(())
+        }
+        Err(e) => {
+            output::spinner_fail(&sp, "Restart failed");
+            Err(e)
+        }
+    }
+}
+
+async fn restart_via_runtime(
+    name: &str,
+    ws: &aether::state::WorkloadState,
+    rt: &dyn aether::Runtime,
+    mut state: StateStore,
+) -> Result<()> {
+    let spec = Workload::from_file(&ws.spec_path)?;
+    let sp = output::spinner("Stopping, rebuilding and starting instance...");
+    rt.stop(&ws.instance).await?;
+    let image = rt.build(&spec).await?;
+    let instance = rt.run(&image, &spec).await?;
+    output::spinner_success(&sp, "Instance restarted");
+    state.upsert(name.to_string(), ws.migrated(ws.runtime, instance));
+    state.save(&StateStore::default_path())?;
+    Ok(())
+}
+
+/// Node maintenance: cordon / uncordon / drain a Kubernetes node.
+pub(crate) async fn node_command(action: &str, node: &str) -> Result<()> {
+    output::section_with_icon("🖥️", "Node Maintenance");
+    let cluster = resolve_cli_cluster().await?;
+    let req = aether::kubecluster::ClusterActionRequest {
+        cluster,
+        namespace: "default".to_string(),
+        kind: "Node".to_string(),
+        name: node.to_string(),
+        action: action.to_string(),
+        replicas: None,
+        api_version: None,
+        plural: None,
+        namespaced: None,
+    };
+    let sp = output::spinner(&format!("Running {} on node '{}'...", action, node));
+    match aether::kubecluster::workload_action(&req).await {
+        Ok(msg) => {
+            output::spinner_success(&sp, "Done");
+            output::success(&msg);
+            record_audit_action(
+                aether::audit::AuditAction::ConfigChange,
+                node,
+                Some("kubernetes"),
+                aether::audit::ActionResult::Success,
+                &format!("Node {} {}", action, node),
+            );
+            Ok(())
+        }
+        Err(e) => {
+            output::spinner_fail(&sp, "Failed");
+            record_audit_action(
+                aether::audit::AuditAction::ConfigChange,
+                node,
+                Some("kubernetes"),
+                aether::audit::ActionResult::Failure,
+                &format!("Node {} failed: {}", action, e),
+            );
+            Err(e)
+        }
+    }
+}
+
+/// Human-readable byte size (GiB/MiB) for Atlas volume listings.
+fn fmt_bytes(bytes: i64) -> String {
+    const GI: i64 = 1024 * 1024 * 1024;
+    const MI: i64 = 1024 * 1024;
+    if bytes >= GI {
+        format!("{:.1}Gi", bytes as f64 / GI as f64)
+    } else if bytes >= MI {
+        format!("{:.0}Mi", bytes as f64 / MI as f64)
+    } else {
+        format!("{}B", bytes)
+    }
+}
+
+fn atlas_json_str<'a>(v: &'a serde_json::Value, keys: &[&str]) -> &'a str {
+    for k in keys {
+        if let Some(s) = v.get(*k).and_then(|x| x.as_str()) {
+            return s;
+        }
+    }
+    "-"
+}
+
+/// `aether storage …` — Atlas-backed storage listing and snapshot management.
+pub(crate) async fn storage_command(action: StorageAction) -> Result<()> {
+    let atlas = aether::atlas::AtlasConfig::from_env().ok_or_else(|| {
+        anyhow::anyhow!("Atlas is not configured. Set AETHER_ATLAS_URL (and AETHER_ATLAS_TOKEN).")
+    })?;
+
+    match action {
+        StorageAction::List => {
+            let vols = atlas.list_volumes().await?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&vols)?);
+                return Ok(());
+            }
+            output::section_with_icon("💾", "Atlas Volumes");
+            if vols.is_empty() {
+                output::muted("No Atlas volumes");
+                return Ok(());
+            }
+            let rows: Vec<Vec<String>> = vols
+                .iter()
+                .map(|v| {
+                    vec![
+                        atlas_json_str(v, &["name"]).to_string(),
+                        atlas_json_str(v, &["state"]).to_string(),
+                        atlas_json_str(v, &["pvc", "pvc_name"]).to_string(),
+                        atlas_json_str(v, &["storage_class"]).to_string(),
+                        fmt_bytes(v.get("size_bytes").and_then(|x| x.as_i64()).unwrap_or(0)),
+                    ]
+                })
+                .collect();
+            println!(
+                "{}",
+                output::table(&["NAME", "STATE", "PVC", "CLASS", "SIZE"], rows)
+            );
+            Ok(())
+        }
+        StorageAction::Status => {
+            let vols = atlas.list_volumes().await?;
+            let total: i64 = vols
+                .iter()
+                .filter_map(|v| v.get("size_bytes").and_then(|x| x.as_i64()))
+                .sum();
+            output::section_with_icon("💾", "Atlas Storage Status");
+            println!(
+                "{}",
+                output::property_table(&[
+                    ("Endpoint", atlas.base_url.clone()),
+                    ("Tenant", atlas.tenant.clone()),
+                    ("Volumes", vols.len().to_string()),
+                    ("Total size", fmt_bytes(total)),
+                ])
+            );
+            Ok(())
+        }
+        StorageAction::Snapshot {
+            name,
+            snapshot_name,
+        } => {
+            let (state, _) = load_workload_state(&name)?;
+            let ws = get_workload_state(&state, &name)?;
+            let vol_id = ws.atlas_volume_id.ok_or_else(|| {
+                anyhow::anyhow!("Workload '{}' has no Atlas-backed volume", name)
+            })?;
+            let out = atlas.snapshot_volume(&vol_id, &snapshot_name).await?;
+            output::success(&format!("Snapshot requested for '{}'", name));
+            output::muted(&out);
+            Ok(())
+        }
+        StorageAction::Clone {
+            snapshot_id,
+            new_name,
+        } => {
+            let out = atlas.clone_snapshot(&snapshot_id, &new_name).await?;
+            output::success(&format!("Clone requested → '{}'", new_name));
+            output::muted(&out);
+            Ok(())
+        }
+        StorageAction::Restore {
+            snapshot_id,
+            new_name,
+        } => {
+            let out = atlas.restore_snapshot(&snapshot_id, &new_name).await?;
+            output::success(&format!("Restore requested → '{}'", new_name));
+            output::muted(&out);
+            Ok(())
+        }
+    }
 }
 
 pub(crate) async fn list_command() -> Result<()> {
@@ -2745,6 +3261,7 @@ pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: b
             updated_at: aether::resources::now_rfc3339(),
             os_version: snapshot_ws.os_version.clone(),
             node_labels: snapshot_ws.node_labels.clone(),
+            atlas_volume_id: snapshot_ws.atlas_volume_id.clone(),
         },
     );
     state.save(&StateStore::default_path())?;
@@ -5294,6 +5811,7 @@ mod tests {
             updated_at: "2025-01-01T00:00:00Z".to_string(),
             os_version: None,
             node_labels: vec![],
+            atlas_volume_id: None,
         };
 
         store.upsert("web".to_string(), ws);
@@ -5330,6 +5848,7 @@ mod tests {
                 updated_at: "2025-01-01T00:00:00Z".to_string(),
                 os_version: None,
                 node_labels: vec![],
+                atlas_volume_id: None,
             },
         );
         store.save(&path).unwrap();
@@ -5697,5 +6216,108 @@ mod tests {
         // Remaining sorted alphabetically
         assert_eq!(ordered[1].1.metadata.name, "cache-svc");
         assert_eq!(ordered[2].1.metadata.name, "web-svc");
+    }
+
+    fn ws_with_image(image: &str) -> aether::state::WorkloadState {
+        aether::state::WorkloadState {
+            name: "web".to_string(),
+            runtime: RuntimeKind::Kubernetes,
+            instance: aether::runtime::Instance {
+                id: "abc123".to_string(),
+                name: "web".to_string(),
+                runtime: RuntimeKind::Kubernetes,
+                image: image.to_string(),
+                created_at: "2025-01-01T00:00:00Z".to_string(),
+            },
+            spec_path: PathBuf::from("workload.yaml"),
+            created_at: "2025-01-01T00:00:00Z".to_string(),
+            updated_at: "2025-01-01T00:00:00Z".to_string(),
+            os_version: None,
+            node_labels: vec![],
+            atlas_volume_id: None,
+        }
+    }
+
+    #[test]
+    fn test_resolve_update_image_explicit_image() {
+        let w = make_valid_workload();
+        let ws = ws_with_image("ghcr.io/org/web:1.0.0");
+        // Full ref with registry and tag
+        let img = resolve_update_image(&w, &ws, Some("registry:5000/app:2.3.4".into()), None);
+        assert_eq!(img.name, "registry:5000/app");
+        assert_eq!(img.tag, "2.3.4");
+        // Ref with registry port but no tag -> whole thing is the name, empty tag
+        let img = resolve_update_image(&w, &ws, Some("registry:5000/app".into()), None);
+        assert_eq!(img.name, "registry:5000/app");
+        assert_eq!(img.tag, "");
+    }
+
+    #[test]
+    fn test_resolve_update_image_tag_override() {
+        let w = make_valid_workload();
+        let ws = ws_with_image("ghcr.io/org/web:1.0.0");
+        let img = resolve_update_image(&w, &ws, None, Some("v9".into()));
+        assert_eq!(img.name, w.metadata.name);
+        assert_eq!(img.tag, "v9");
+    }
+
+    #[test]
+    fn test_resolve_update_image_reuses_running_tag() {
+        // No overrides: reuse the tag of the currently-running image (not hardcoded "latest").
+        let w = make_valid_workload();
+        let ws = ws_with_image("ghcr.io/org/web:1.4.2");
+        let img = resolve_update_image(&w, &ws, None, None);
+        assert_eq!(img.tag, "1.4.2");
+    }
+
+    #[test]
+    fn test_resolve_update_image_defaults_to_latest() {
+        // Running image has no parseable tag -> fall back to "latest".
+        let w = make_valid_workload();
+        let ws = ws_with_image("bare-image-no-tag");
+        let img = resolve_update_image(&w, &ws, None, None);
+        assert_eq!(img.tag, "latest");
+    }
+
+    #[test]
+    fn test_atlas_policy_explicit_and_native() {
+        let mut w = make_valid_workload();
+        w.persistence.enabled = true;
+        // Native storage class → not Atlas-backed.
+        w.persistence.storage_class = Some("gp3".to_string());
+        assert_eq!(w.atlas_policy(), None);
+        // Explicit atlas policy.
+        w.persistence.storage_class = Some("atlas/database".to_string());
+        assert_eq!(w.atlas_policy().as_deref(), Some("database"));
+        // Disabled persistence → never Atlas-backed.
+        w.persistence.enabled = false;
+        assert_eq!(w.atlas_policy(), None);
+    }
+
+    #[test]
+    fn test_atlas_policy_intent_and_default() {
+        let mut w = make_valid_workload();
+        w.persistence.enabled = true;
+        // `atlas/` with no explicit policy falls back to intent tier.
+        w.persistence.storage_class = Some("atlas/".to_string());
+        w.intent = Some(aether::spec::IntentSpec {
+            goal: aether::spec::IntentGoal::Balanced,
+            sla: None,
+            budget: None,
+            resilience: None,
+            compliance: None,
+            trust: None,
+            storage: Some(aether::spec::StorageIntent {
+                tier: "ai".to_string(),
+            }),
+        });
+        assert_eq!(w.atlas_policy().as_deref(), Some("ai"));
+        // No intent tier, RWX access mode → "shared" default.
+        w.intent = None;
+        w.persistence.access_mode = aether::spec::AccessMode::ReadWriteMany;
+        assert_eq!(w.atlas_policy().as_deref(), Some("shared"));
+        // No intent tier, RWO → "production" default.
+        w.persistence.access_mode = aether::spec::AccessMode::ReadWriteOnce;
+        assert_eq!(w.atlas_policy().as_deref(), Some("production"));
     }
 }

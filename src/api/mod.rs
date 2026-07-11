@@ -130,7 +130,23 @@ async fn security_headers_middleware(req: Request<Body>, next: Next) -> Response
     res
 }
 
+/// Adapts an HTTP `HeaderMap` to the OpenTelemetry propagation `Extractor` trait
+/// so incoming W3C `traceparent`/`tracestate` headers can seed a parent context.
+struct HeaderMapExtractor<'a>(&'a axum::http::HeaderMap);
+
+impl opentelemetry::propagation::Extractor for HeaderMapExtractor<'_> {
+    fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|v| v.to_str().ok())
+    }
+    fn keys(&self) -> Vec<&str> {
+        self.0.keys().map(axum::http::HeaderName::as_str).collect()
+    }
+}
+
 async fn observability_middleware(req: Request<Body>, next: Next) -> Response {
+    use tracing::Instrument as _;
+    use tracing_opentelemetry::OpenTelemetrySpanExt as _;
+
     let hdr = HeaderName::from_static("x-request-id");
     let rid = req
         .headers()
@@ -146,7 +162,23 @@ async fn observability_middleware(req: Request<Body>, next: Next) -> Response {
         });
 
     let method = req.method().as_str().to_string();
-    let mut res = next.run(req).await;
+    let path = req.uri().path().to_string();
+
+    // Continue an inbound distributed trace when a `traceparent` header is present.
+    // With OTLP disabled the global propagator is a no-op, so this is a cheap root span.
+    let parent_cx = opentelemetry::global::get_text_map_propagator(|prop| {
+        prop.extract(&HeaderMapExtractor(req.headers()))
+    });
+    let span = tracing::info_span!(
+        "http.request",
+        otel.name = %format!("{method} {path}"),
+        http.method = %method,
+        http.route = %path,
+        request.id = %rid,
+    );
+    span.set_parent(parent_cx);
+
+    let mut res = next.run(req).instrument(span).await;
     let status = res.status().as_u16().to_string();
     crate::metrics::record_api_http(&method, &status);
     if let Ok(val) = HeaderValue::try_from(rid.as_str()) {
@@ -456,6 +488,100 @@ async fn run_alert_evaluation(state: &Arc<RwLock<StateStore>>) {
     }
 }
 
+/// Emit a single event to the persistent [`EventBus`] (best-effort).
+fn emit_maintenance_event(
+    severity: crate::events::EventSeverity,
+    category: crate::events::EventCategory,
+    title: &str,
+    message: &str,
+) {
+    let path = crate::events::EventBus::default_path();
+    if let Ok(mut bus) = crate::events::EventBus::load(&path) {
+        bus.emit_simple(severity, category, "serve-maintenance", None, title, message);
+        let _ = bus.save(&path);
+    }
+}
+
+/// Check configured secret-rotation policies and emit events for any secret
+/// that is due (or overdue) for rotation.
+fn run_secret_rotation_check() {
+    let path = crate::secrets::SecretStore::default_path();
+    let Ok(store) = crate::secrets::SecretStore::load(&path) else {
+        return;
+    };
+    for alert in store.audit_rotation() {
+        let severity = match alert.severity {
+            crate::secrets::AlertSeverity::Critical => crate::events::EventSeverity::Critical,
+            crate::secrets::AlertSeverity::Warning => crate::events::EventSeverity::Warning,
+            crate::secrets::AlertSeverity::Info => crate::events::EventSeverity::Info,
+        };
+        emit_maintenance_event(
+            severity,
+            crate::events::EventCategory::SecretRotation,
+            "Secret rotation due",
+            &alert.message,
+        );
+    }
+}
+
+/// Check the API server's TLS certificate expiry and emit an event when it is
+/// within `warn_days` of expiring (or already expired).
+fn run_cert_expiry_check(cert_path: &std::path::Path, warn_days: i64) {
+    let Ok(pem) = std::fs::read(cert_path) else {
+        return;
+    };
+    let Ok((_, pem)) = x509_parser::pem::parse_x509_pem(&pem) else {
+        tracing::debug!("cert-expiry: could not parse PEM at {}", cert_path.display());
+        return;
+    };
+    let Ok(cert) = pem.parse_x509() else {
+        return;
+    };
+    let not_after = cert.validity().not_after.timestamp();
+    let now = chrono::Utc::now().timestamp();
+    let days_left = (not_after - now) / 86_400;
+    if days_left <= warn_days {
+        let (severity, verb) = if days_left < 0 {
+            (crate::events::EventSeverity::Critical, "has expired")
+        } else {
+            (crate::events::EventSeverity::Warning, "is expiring")
+        };
+        emit_maintenance_event(
+            severity,
+            crate::events::EventCategory::SystemAlert,
+            "TLS certificate expiry",
+            &format!(
+                "API TLS certificate {} ({} day(s) remaining): {}",
+                verb,
+                days_left,
+                cert_path.display()
+            ),
+        );
+    }
+}
+
+/// Take a scheduled state backup and prune older backups to `keep`.
+async fn run_scheduled_backup(state: &Arc<RwLock<StateStore>>, keep: usize) {
+    let manager = crate::backup::BackupManager::new(crate::backup::BackupManager::default_dir());
+    let snapshot = {
+        let store = state.read().await;
+        store.clone()
+    };
+    match manager.create_backup(&snapshot, None, Some("scheduled".to_string())) {
+        Ok(path) => {
+            tracing::info!("Scheduled backup created: {}", path.display());
+            match manager.cleanup_old_backups(keep) {
+                Ok(removed) if removed > 0 => {
+                    tracing::info!("Pruned {} old backup(s)", removed);
+                }
+                Ok(_) => {}
+                Err(e) => tracing::warn!("Backup cleanup failed: {}", e),
+            }
+        }
+        Err(e) => tracing::warn!("Scheduled backup failed: {}", e),
+    }
+}
+
 /// Start the API server
 pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let state_path = config.state_path.clone();
@@ -537,6 +663,41 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         });
     }
 
+    // Spawn background Day-2 maintenance loop:
+    //   * drain the persistent webhook retry queue so alert deliveries survive
+    //     transient failures even when only `serve` is running,
+    //   * run secret-rotation and TLS-cert-expiry checks,
+    //   * take scheduled state backups (when enabled) and prune old ones.
+    {
+        let maint_state = app_state.state.clone();
+        let cert_path = config.tls_cert.clone();
+        tokio::spawn(async move {
+            const TICK_SECS: u64 = 60;
+            let tick = std::time::Duration::from_secs(TICK_SECS);
+            // Re-read backup config each spawn so operators can tune it via config.yaml.
+            let backup_cfg = crate::config::Config::load().backup;
+            let backup_interval_secs = backup_cfg.interval_hours.max(1) * 3600;
+            let mut backup_elapsed: u64 = 0;
+            loop {
+                tokio::time::sleep(tick).await;
+
+                crate::events::WebhookQueue::process_queue_once();
+                run_secret_rotation_check();
+                if let Some(ref cert) = cert_path {
+                    run_cert_expiry_check(cert, 14);
+                }
+
+                if backup_cfg.enabled {
+                    backup_elapsed += TICK_SECS;
+                    if backup_elapsed >= backup_interval_secs {
+                        backup_elapsed = 0;
+                        run_scheduled_backup(&maint_state, backup_cfg.keep).await;
+                    }
+                }
+            }
+        });
+    }
+
     let scheme = if tls_enabled { "https" } else { "http" };
 
     // CORS: allow any origin since the dashboard is served from this same server.
@@ -599,6 +760,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/secrets/:name", delete(delete_secret))
         .route("/api/metrics", get(get_metrics))
         .route("/api/observability/summary", get(api_observability_summary))
+        .route("/api/storage/volumes", get(api_storage_volumes))
+        .route("/api/storage/status", get(api_storage_status))
         .route(
             "/api/observability/prometheus/query",
             get(api_observability_prometheus_query),

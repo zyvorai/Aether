@@ -905,6 +905,11 @@ pub(crate) async fn list_workloads(
 }
 
 /// Deploy a workload spec through the API (shared by create and compose-up).
+#[tracing::instrument(
+    name = "workload.deploy",
+    skip(app_state, request),
+    fields(workload = %request.spec.metadata.name)
+)]
 async fn deploy_workload_spec(
     app_state: &AppState,
     request: CreateWorkloadRequest,
@@ -913,6 +918,11 @@ async fn deploy_workload_spec(
         opa_enforce_workload::<String>(&request.spec, &request.spec.metadata.name).await
     {
         return Err(resp);
+    }
+
+    // Enforce per-project resource quotas at admission (no-op unless a quota is set).
+    if let Err(e) = crate::policy::gate_quota(&request.spec) {
+        return Err(err_bad_request(e));
     }
 
     let runtime_kind = if let Some(runtime_name) = request.runtime {
@@ -1148,6 +1158,7 @@ pub(crate) async fn start_workload(
             updated_at: crate::resources::now_rfc3339(),
             os_version: workload_state.os_version,
             node_labels: workload_state.node_labels,
+            atlas_volume_id: workload_state.atlas_volume_id,
         },
     );
 
@@ -1311,6 +1322,7 @@ pub(crate) async fn update_workload(
             updated_at: crate::resources::now_rfc3339(),
             os_version: workload_state.os_version,
             node_labels: workload_state.node_labels,
+            atlas_volume_id: workload_state.atlas_volume_id,
         },
     );
     if let Err(e) = persist_workload_api(&app_state, &state).await {
@@ -1731,6 +1743,7 @@ pub(crate) async fn ai_intent_optimize(
                     resilience: None,
                     compliance: None,
                     trust: None,
+                    storage: None,
                 });
             }
         }
@@ -3202,6 +3215,39 @@ pub(crate) async fn api_observability_summary(
         .await
         .ok();
     ok_json(crate::observability::build_summary(cluster_metrics, cilium))
+}
+
+/// `GET /api/storage/volumes` — Atlas volumes owned by this tenant (empty when
+/// Atlas is not configured).
+pub(crate) async fn api_storage_volumes() -> impl IntoResponse {
+    match crate::atlas::AtlasConfig::from_env() {
+        Some(atlas) => match atlas.list_volumes().await {
+            Ok(vols) => ok_json(vols),
+            Err(e) => err_internal::<Vec<serde_json::Value>>(e),
+        },
+        None => ok_json(Vec::<serde_json::Value>::new()),
+    }
+}
+
+/// `GET /api/storage/status` — summary of Atlas-backed storage.
+pub(crate) async fn api_storage_status() -> impl IntoResponse {
+    match crate::atlas::AtlasConfig::from_env() {
+        Some(atlas) => {
+            let vols = atlas.list_volumes().await.unwrap_or_default();
+            let total: i64 = vols
+                .iter()
+                .filter_map(|v| v.get("size_bytes").and_then(|x| x.as_i64()))
+                .sum();
+            ok_json(serde_json::json!({
+                "configured": true,
+                "endpoint": atlas.base_url,
+                "tenant": atlas.tenant,
+                "volumes": vols.len(),
+                "total_size_bytes": total,
+            }))
+        }
+        None => ok_json(serde_json::json!({ "configured": false })),
+    }
 }
 
 /// GET /api/observability/prometheus/query - Whitelisted instant query proxy.

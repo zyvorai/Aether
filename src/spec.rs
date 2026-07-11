@@ -570,6 +570,41 @@ impl Workload {
         K8sWorkloadKind::Deployment
     }
 
+    /// The Atlas storage policy for this workload, if it opts into Atlas-backed
+    /// storage via an `atlas/…` storage class. Returns `None` for native storage.
+    ///
+    /// Policy precedence once opted in:
+    /// 1. explicit `atlas/<policy>` suffix,
+    /// 2. `intent.storage.tier`,
+    /// 3. access-mode default (`ReadWriteMany` → `shared`, else `production`).
+    pub fn atlas_policy(&self) -> Option<String> {
+        if !self.persistence.enabled {
+            return None;
+        }
+        let sc = self.persistence.storage_class.as_deref()?;
+        // Opt-in gate: only `atlas` or `atlas/<policy>` storage classes are Atlas-backed.
+        if sc != "atlas" && !sc.starts_with("atlas/") {
+            return None;
+        }
+        if let Some(policy) = crate::atlas::atlas_policy_from_storage_class(sc) {
+            return Some(policy.to_string());
+        }
+        // `atlas` / `atlas/` with no explicit policy → intent tier, then default.
+        if let Some(tier) = self
+            .intent
+            .as_ref()
+            .and_then(|i| i.storage.as_ref())
+            .map(|s| s.tier.trim())
+            .filter(|t| !t.is_empty())
+        {
+            return Some(tier.to_string());
+        }
+        Some(match self.persistence.access_mode {
+            AccessMode::ReadWriteMany => "shared".to_string(),
+            _ => "production".to_string(),
+        })
+    }
+
     /// Whether the workload needs a headless ClusterIP service.
     pub fn wants_headless_service(&self) -> bool {
         if matches!(self.network.service_type, ServiceType::Headless) || self.network.headless {
@@ -1520,6 +1555,18 @@ pub struct IntentSpec {
     /// Trust level — controls node attestation and security requirements
     #[serde(default)]
     pub trust: Option<TrustLevel>,
+    /// Storage intent — maps to an Atlas storage policy when Atlas-backed.
+    #[serde(default)]
+    pub storage: Option<StorageIntent>,
+}
+
+/// Storage intent tier, mapped to an Atlas storage policy (e.g. `production`,
+/// `database`, `shared`, `ai`) when a workload uses an `atlas/` storage class.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageIntent {
+    /// Storage tier / Atlas policy name.
+    pub tier: String,
 }
 
 impl IntentSpec {
@@ -2620,6 +2667,7 @@ mod tests {
                 encryption_required: false,
             }),
             trust: None,
+            storage: None,
         });
         assert!(w.validate().is_ok());
     }
@@ -2636,6 +2684,7 @@ mod tests {
             resilience: None,
             compliance: None,
             trust: None,
+            storage: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("maxMonthlyUsd"), "{}", err);
@@ -2653,6 +2702,7 @@ mod tests {
             resilience: None,
             compliance: None,
             trust: None,
+            storage: None,
         });
         assert!(w.validate().is_err());
     }
@@ -2670,6 +2720,7 @@ mod tests {
             resilience: None,
             compliance: None,
             trust: None,
+            storage: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("minAvailabilityPct"), "{}", err);
@@ -2688,6 +2739,7 @@ mod tests {
             resilience: None,
             compliance: None,
             trust: None,
+            storage: None,
         });
         assert!(w.validate().is_err());
     }
@@ -2705,6 +2757,7 @@ mod tests {
             resilience: None,
             compliance: None,
             trust: None,
+            storage: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("maxLatencyMs"), "{}", err);
@@ -2732,6 +2785,7 @@ mod tests {
             resilience: Some(ResilienceLevel::Standard),
             compliance: None,
             trust: None,
+            storage: None,
         });
         let yaml = serde_yaml::to_string(&w).unwrap();
         let parsed: Workload = serde_yaml::from_str(&yaml).unwrap();

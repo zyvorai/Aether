@@ -59,6 +59,7 @@ pub fn parse_nl_intent(req: &NlIntentRequest) -> anyhow::Result<NlIntentReport> 
         resilience: None,
         compliance: None,
         trust: None,
+        storage: None,
     };
 
     if text.contains("99.9") || text.contains("availability") || text.contains("uptime") {

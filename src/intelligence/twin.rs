@@ -242,6 +242,7 @@ mod tests {
             updated_at: "2024-01-01T00:00:00Z".into(),
             os_version: None,
             node_labels: vec![],
+            atlas_volume_id: None,
         };
         let pairs = vec![(spec, ws)];
         let report = DigitalTwinEngine::simulate(

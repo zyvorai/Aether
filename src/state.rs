@@ -30,6 +30,10 @@ pub struct WorkloadState {
     /// Hardware labels discovered from the node (GPU, NVMe, etc.)
     #[serde(default)]
     pub node_labels: Vec<String>,
+    /// Atlas-provisioned volume id backing this workload's persistence, if any.
+    /// Used to release the volume via Atlas on delete.
+    #[serde(default)]
+    pub atlas_volume_id: Option<String>,
 }
 
 impl WorkloadState {
@@ -45,6 +49,7 @@ impl WorkloadState {
             updated_at: now,
             os_version: None,
             node_labels: Vec::new(),
+            atlas_volume_id: None,
         }
     }
 
@@ -59,6 +64,7 @@ impl WorkloadState {
             updated_at: crate::resources::now_rfc3339(),
             os_version: self.os_version.clone(),
             node_labels: self.node_labels.clone(),
+            atlas_volume_id: self.atlas_volume_id.clone(),
         }
     }
 }
@@ -192,6 +198,7 @@ mod tests {
             updated_at: "2024-01-01T00:00:00Z".to_string(),
             os_version: None,
             node_labels: vec![],
+            atlas_volume_id: None,
         }
     }
 
@@ -211,6 +218,7 @@ mod tests {
             updated_at: "2024-06-15T12:00:00Z".to_string(),
             os_version: None,
             node_labels: vec![],
+            atlas_volume_id: None,
         }
     }
 
@@ -269,6 +277,7 @@ mod tests {
             updated_at: "2025-03-02T10:00:00Z".to_string(),
             os_version: None,
             node_labels: vec![],
+            atlas_volume_id: None,
         };
         assert_eq!(state.name, "my-service");
         assert_eq!(state.runtime, RuntimeKind::Kubernetes);
@@ -531,6 +540,7 @@ mod tests {
             updated_at: "2025-07-05T12:00:00Z".to_string(),
             os_version: None,
             node_labels: vec![],
+            atlas_volume_id: None,
         };
 
         let mut store = StateStore::new();

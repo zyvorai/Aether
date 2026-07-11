@@ -654,6 +654,7 @@ pub(crate) async fn api_workload_rollback(
             updated_at: crate::resources::now_rfc3339(),
             os_version: snapshot_ws.os_version.clone(),
             node_labels: snapshot_ws.node_labels.clone(),
+            atlas_volume_id: snapshot_ws.atlas_volume_id.clone(),
         },
     );
     if let Err(e) = persist_workload_api(&app_state, &store).await {

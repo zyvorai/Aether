@@ -10,6 +10,14 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Backups are encrypted at rest only when an explicit `AETHER_SECRET_KEY` is
+/// set, so that key-less setups keep portable plaintext backups.
+fn encryption_enabled() -> bool {
+    std::env::var("AETHER_SECRET_KEY")
+        .map(|k| !k.trim().is_empty())
+        .unwrap_or(false)
+}
+
 /// Backup metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,6 +34,48 @@ pub struct BackupMetadata {
     pub aether_version: String,
 }
 
+/// Raw contents of the auxiliary JSON stores captured alongside workload state,
+/// so a backup restores the full control-plane state — not just workloads.
+/// Each field holds the verbatim file contents (`None` when the file is absent).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AuxStores {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secrets: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rbac: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub environments: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quotas: Option<String>,
+}
+
+impl AuxStores {
+    fn is_empty(&self) -> bool {
+        self.secrets.is_none()
+            && self.rbac.is_none()
+            && self.environments.is_none()
+            && self.quotas.is_none()
+    }
+}
+
+/// The files backed up under `~/.aether`, paired with whether they hold secrets
+/// (and therefore need `0o600` on restore).
+const AUX_STORE_FILES: [(&str, bool); 4] = [
+    ("secrets.json", true),
+    ("rbac.json", true),
+    ("environments.json", false),
+    ("quotas.json", false),
+];
+
+/// On-disk wrapper distinguishing an encrypted backup from a legacy plaintext one.
+#[derive(Debug, Serialize, Deserialize)]
+struct BackupEnvelope {
+    encrypted: bool,
+    /// `base64(nonce || ciphertext)` of the backup JSON (see [`crate::secrets::encrypt_blob`]).
+    data: String,
+}
+
 /// Complete backup including metadata and state
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,12 +84,28 @@ pub struct Backup {
     pub metadata: BackupMetadata,
     /// Workload states
     pub workloads: Vec<WorkloadState>,
+    /// Auxiliary control-plane stores (secrets, rbac, environments, quotas).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stores: Option<AuxStores>,
 }
 
 impl Backup {
-    /// Create a new backup from current state
+    /// Create a new backup from current state, also capturing the auxiliary
+    /// control-plane stores (secrets/rbac/environments/quotas) from `~/.aether`.
     pub fn from_state(state: &StateStore, description: Option<String>) -> Self {
         let workloads: Vec<WorkloadState> = state.list().into_iter().cloned().collect();
+
+        let mut aux = AuxStores::default();
+        for (file, _secret) in AUX_STORE_FILES {
+            let content = fs::read_to_string(crate::resources::aether_path(file)).ok();
+            match file {
+                "secrets.json" => aux.secrets = content,
+                "rbac.json" => aux.rbac = content,
+                "environments.json" => aux.environments = content,
+                "quotas.json" => aux.quotas = content,
+                _ => {}
+            }
+        }
 
         Self {
             metadata: BackupMetadata {
@@ -50,14 +116,32 @@ impl Backup {
                 aether_version: env!("CARGO_PKG_VERSION").to_string(),
             },
             workloads,
+            stores: if aux.is_empty() { None } else { Some(aux) },
         }
     }
 
-    /// Save backup to file with restricted permissions (0o600)
+    /// Save backup to file with restricted permissions (0o600).
+    ///
+    /// When `AETHER_SECRET_KEY` is set the backup is encrypted at rest with
+    /// AES-256-GCM (see [`crate::secrets::encrypt_blob`]); otherwise it is written
+    /// as plaintext JSON for backward compatibility. [`Backup::load`] auto-detects
+    /// the format either way.
     pub fn save(&self, path: &Path) -> Result<()> {
         let json = serde_json::to_string_pretty(self).context("Failed to serialize backup")?;
 
-        fs::write(path, &json).context(format!("Failed to write backup to {}", path.display()))?;
+        let payload = if encryption_enabled() {
+            let data = crate::secrets::encrypt_blob(&json).context("Failed to encrypt backup")?;
+            serde_json::to_string_pretty(&BackupEnvelope {
+                encrypted: true,
+                data,
+            })
+            .context("Failed to serialize backup envelope")?
+        } else {
+            json
+        };
+
+        fs::write(path, &payload)
+            .context(format!("Failed to write backup to {}", path.display()))?;
 
         // Set restrictive permissions (owner read/write only)
         #[cfg(unix)]
@@ -71,16 +155,68 @@ impl Backup {
         Ok(())
     }
 
-    /// Load backup from file
+    /// Load a backup from file, transparently decrypting encrypted backups and
+    /// falling back to legacy plaintext backups.
     pub fn load(path: &Path) -> Result<Self> {
         let contents = fs::read_to_string(path)
             .context(format!("Failed to read backup from {}", path.display()))?;
+
+        // Encrypted backups are wrapped in a small envelope; a legacy plaintext
+        // backup lacks the `encrypted`/`data` fields and fails this parse, so we
+        // fall through to parsing it directly.
+        if let Ok(env) = serde_json::from_str::<BackupEnvelope>(&contents) {
+            if env.encrypted {
+                let json = crate::secrets::decrypt_blob(&env.data)
+                    .context("Failed to decrypt backup (wrong AETHER_SECRET_KEY?)")?;
+                let backup: Backup =
+                    serde_json::from_str(&json).context("Failed to deserialize backup")?;
+                tracing::info!("Backup loaded (encrypted) from {}", path.display());
+                return Ok(backup);
+            }
+        }
 
         let backup: Backup =
             serde_json::from_str(&contents).context("Failed to deserialize backup")?;
 
         tracing::info!("Backup loaded from {}", path.display());
         Ok(backup)
+    }
+
+    /// Load and validate a backup without applying it. Returns the workload count.
+    pub fn verify(path: &Path) -> Result<usize> {
+        let backup = Backup::load(path)?;
+        Ok(backup.workloads.len())
+    }
+
+    /// Restore the auxiliary control-plane stores captured in this backup back to
+    /// `~/.aether`, applying `0o600` to secret-bearing files.
+    fn restore_aux_stores(&self) -> Result<()> {
+        let Some(stores) = &self.stores else {
+            return Ok(());
+        };
+        for (file, is_secret) in AUX_STORE_FILES {
+            let content = match file {
+                "secrets.json" => &stores.secrets,
+                "rbac.json" => &stores.rbac,
+                "environments.json" => &stores.environments,
+                "quotas.json" => &stores.quotas,
+                _ => &None,
+            };
+            if let Some(body) = content {
+                let dest = crate::resources::aether_path(file);
+                if let Some(parent) = dest.parent() {
+                    fs::create_dir_all(parent).ok();
+                }
+                fs::write(&dest, body)
+                    .context(format!("Failed to restore {}", dest.display()))?;
+                #[cfg(unix)]
+                if is_secret {
+                    use std::os::unix::fs::PermissionsExt;
+                    let _ = fs::set_permissions(&dest, fs::Permissions::from_mode(0o600));
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Restore backup to state store
@@ -92,6 +228,7 @@ impl Backup {
         }
 
         state.save(state_path)?;
+        self.restore_aux_stores()?;
 
         tracing::info!("Restored {} workloads from backup", self.workloads.len());
         Ok(())
@@ -319,6 +456,7 @@ impl SnapshotManager {
                 aether_version: env!("CARGO_PKG_VERSION").to_string(),
             },
             workloads: vec![ws.clone()],
+            stores: None,
         };
 
         let json = serde_json::to_string_pretty(&backup).context("Failed to serialize snapshot")?;
@@ -392,6 +530,7 @@ mod tests {
             updated_at: crate::resources::now_rfc3339(),
             os_version: None,
             node_labels: vec![],
+            atlas_volume_id: None,
         }
     }
 
@@ -521,5 +660,80 @@ mod tests {
         assert_eq!(snapshots.len(), 2);
         // Sorted, so first should be older
         assert!(snapshots[0] < snapshots[1]);
+    }
+
+    #[test]
+    fn test_encrypt_blob_roundtrip() {
+        // Uses the ambient (machine-derived) key — no global env mutation, so this
+        // is safe to run alongside other tests in parallel.
+        let plaintext = r#"{"hello":"world","n":42}"#;
+        let ct = crate::secrets::encrypt_blob(plaintext).unwrap();
+        assert_ne!(ct, plaintext, "ciphertext must differ from plaintext");
+        let pt = crate::secrets::decrypt_blob(&ct).unwrap();
+        assert_eq!(pt, plaintext);
+    }
+
+    #[test]
+    fn test_backup_encrypted_roundtrip() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("enc-backup.json");
+
+        let mut state = StateStore::new();
+        state.upsert("test".to_string(), create_test_workload_state());
+        let backup = Backup::from_state(&state, Some("enc".to_string()));
+
+        // Simulate an encrypted-at-rest backup via the shared crypto path.
+        let json = serde_json::to_string_pretty(&backup).unwrap();
+        let data = crate::secrets::encrypt_blob(&json).unwrap();
+        let envelope = BackupEnvelope {
+            encrypted: true,
+            data,
+        };
+        fs::write(&path, serde_json::to_string(&envelope).unwrap()).unwrap();
+
+        // On-disk contents must not leak the workload name.
+        let raw = fs::read_to_string(&path).unwrap();
+        assert!(raw.contains("\"encrypted\""));
+        assert!(!raw.contains("test-workload"));
+
+        // load() auto-detects the envelope and decrypts.
+        let loaded = Backup::load(&path).unwrap();
+        assert_eq!(loaded.workloads.len(), 1);
+        assert_eq!(loaded.metadata.description, Some("enc".to_string()));
+    }
+
+    #[test]
+    fn test_backup_aux_stores_roundtrip() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("aux-backup.json");
+
+        let mut state = StateStore::new();
+        state.upsert("test".to_string(), create_test_workload_state());
+        let mut backup = Backup::from_state(&state, None);
+        backup.stores = Some(AuxStores {
+            secrets: Some("{\"secrets\":{}}".to_string()),
+            rbac: Some("{\"keys\":[]}".to_string()),
+            environments: None,
+            quotas: Some("{\"quotas\":{}}".to_string()),
+        });
+
+        backup.save(&path).unwrap();
+        let loaded = Backup::load(&path).unwrap();
+        let stores = loaded.stores.expect("aux stores preserved");
+        assert_eq!(stores.secrets.as_deref(), Some("{\"secrets\":{}}"));
+        assert_eq!(stores.rbac.as_deref(), Some("{\"keys\":[]}"));
+        assert!(stores.environments.is_none());
+        assert_eq!(stores.quotas.as_deref(), Some("{\"quotas\":{}}"));
+    }
+
+    #[test]
+    fn test_backup_verify() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("verify-backup.json");
+        let mut state = StateStore::new();
+        state.upsert("test".to_string(), create_test_workload_state());
+        Backup::from_state(&state, None).save(&path).unwrap();
+
+        assert_eq!(Backup::verify(&path).unwrap(), 1);
     }
 }

@@ -112,6 +112,71 @@ pub async fn prometheus_instant_query(query: &str) -> Result<serde_json::Value> 
     Ok(response.json().await?)
 }
 
+// ---------------------------------------------------------------------------
+// Distributed tracing (OpenTelemetry / OTLP)
+// ---------------------------------------------------------------------------
+
+/// Build the OpenTelemetry tracing layer when `AETHER_OTLP_ENDPOINT` is set.
+///
+/// Opt-in: when the env var points at an OTLP/HTTP collector
+/// (e.g. `http://localhost:4318`), all `tracing` spans are exported via a batch
+/// OTLP exporter and the W3C trace-context propagator is installed so trace IDs
+/// flow across service boundaries. When unset, returns `None` and tracing runs
+/// with no exporter overhead.
+pub fn otel_trace_layer<S>() -> Option<Box<dyn tracing_subscriber::Layer<S> + Send + Sync>>
+where
+    S: tracing::Subscriber
+        + for<'a> tracing_subscriber::registry::LookupSpan<'a>
+        + Send
+        + Sync
+        + 'static,
+{
+    use opentelemetry::trace::TracerProvider as _;
+    use opentelemetry_otlp::WithExportConfig as _;
+    use tracing_subscriber::Layer as _;
+
+    let endpoint = std::env::var("AETHER_OTLP_ENDPOINT")
+        .ok()
+        .filter(|s| !s.trim().is_empty())?;
+
+    // Install the W3C trace-context propagator for cross-service correlation.
+    opentelemetry::global::set_text_map_propagator(
+        opentelemetry_sdk::propagation::TraceContextPropagator::new(),
+    );
+
+    let exporter = match opentelemetry_otlp::SpanExporter::builder()
+        .with_http()
+        .with_endpoint(endpoint.clone())
+        .build()
+    {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("OTLP exporter init failed ({endpoint}): {e}");
+            return None;
+        }
+    };
+
+    let resource = opentelemetry_sdk::Resource::new(vec![opentelemetry::KeyValue::new(
+        "service.name",
+        "aether",
+    )]);
+    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
+        .with_resource(resource)
+        .build();
+
+    let tracer = provider.tracer("aether");
+    opentelemetry::global::set_tracer_provider(provider);
+
+    Some(tracing_opentelemetry::layer().with_tracer(tracer).boxed())
+}
+
+/// Flush any buffered spans and shut down the global tracer provider.
+/// Safe to call even when tracing was never initialised.
+pub fn otel_shutdown() {
+    opentelemetry::global::shutdown_tracer_provider();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
