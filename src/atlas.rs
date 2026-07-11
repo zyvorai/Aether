@@ -200,6 +200,33 @@ impl AtlasConfig {
         Ok(payload.to_string())
     }
 
+    /// Resolve an intent policy name (e.g. `database`) to its concrete Kubernetes
+    /// StorageClass via Atlas's policy catalog (`GET /policies`). Used to fill a
+    /// StatefulSet `volumeClaimTemplate` / KubeVirt DataVolume with a valid class
+    /// that CDI/CSI can provision against.
+    pub async fn resolve_storage_class(&self, policy: &str) -> Result<String> {
+        let client = self.client()?;
+        let url = self.url("/api/atlas/v1/policies");
+        let resp = self
+            .auth(client.get(&url))
+            .send()
+            .await
+            .with_context(|| format!("Atlas GET {}", url))?;
+        let status = resp.status();
+        let payload: serde_json::Value = resp.json().await.context("atlas policies json")?;
+        if !status.is_success() {
+            anyhow::bail!("Atlas list policies returned {}: {}", status, payload);
+        }
+        payload
+            .as_array()
+            .into_iter()
+            .flatten()
+            .find(|p| p.get("intent").and_then(|v| v.as_str()) == Some(policy))
+            .and_then(|p| p.get("storage_class").and_then(|v| v.as_str()))
+            .map(|s| s.to_string())
+            .ok_or_else(|| anyhow::anyhow!("Atlas has no storage policy named '{}'", policy))
+    }
+
     /// List volumes for the configured tenant (read model for CLI/UI surfacing).
     pub async fn list_volumes(&self) -> Result<Vec<serde_json::Value>> {
         let client = self.client()?;
@@ -470,6 +497,36 @@ mod tests {
             .unwrap();
         assert_eq!(handle.pvc, "web-pvc");
         assert_eq!(handle.volume_id, "vol_1");
+    }
+
+    #[tokio::test]
+    async fn test_resolve_storage_class() {
+        use axum::routing::get;
+        use axum::{Json, Router};
+
+        let app = Router::new().route(
+            "/api/atlas/v1/policies",
+            get(|| async {
+                Json(serde_json::json!([
+                    { "intent": "production", "storage_class": "zyvor-rbd-prod" },
+                    { "intent": "shared", "storage_class": "zyvor-cephfs-shared" },
+                ]))
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let cfg = AtlasConfig {
+            base_url: format!("http://{}", addr),
+            token: None,
+            tenant: "default".to_string(),
+        };
+        assert_eq!(cfg.resolve_storage_class("shared").await.unwrap(), "zyvor-cephfs-shared");
+        assert_eq!(cfg.resolve_storage_class("production").await.unwrap(), "zyvor-rbd-prod");
+        assert!(cfg.resolve_storage_class("nonexistent").await.is_err());
     }
 
     #[tokio::test]

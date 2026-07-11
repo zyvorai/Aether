@@ -280,14 +280,16 @@ async fn deploy_workload_inner(
         output::runtime_display(&runtime_kind)
     ));
 
+    // Atlas-backed storage: resolve the concrete storage class (rewriting the
+    // StatefulSet/KubeVirt manifest to use it) and provision tracked volume(s)
+    // before deploy. No-op unless the workload opts in via `storageClass:
+    // atlas/<policy>` and Atlas is configured.
+    let (effective_workload, atlas_volume_ids) =
+        prepare_atlas_storage(workload, runtime_kind).await?;
+    let workload: &Workload = &effective_workload;
+
     // Build and run based on runtime
     let rt = aether::runtime::create_runtime_ns(&runtime_kind, get_namespace()).await?;
-
-    // Atlas-backed storage: provision volume(s) before deploy so the pod(s)
-    // reference the Atlas-created PVC(s). No-op unless the workload opts in via
-    // `storageClass: atlas/<policy>` and Atlas is configured.
-    let atlas_volume_ids = provision_atlas_volume_if_needed(workload, runtime_kind).await?;
-
     let sp = output::spinner("Building and deploying workload...");
     let image = rt.build(workload).await?;
 
@@ -711,31 +713,75 @@ fn atlas_pvc_names(workload: &Workload) -> Vec<String> {
     }
 }
 
-/// Provision Atlas-backed volume(s) when a Kubernetes workload opts in via an
-/// `atlas/<policy>` storage class and Atlas is configured. Returns the Atlas
-/// volume ids (for later release), or an empty vec when native storage is used.
-/// If provisioning fails partway through a StatefulSet, already-created volumes
-/// are rolled back to avoid orphans.
-async fn provision_atlas_volume_if_needed(
+/// Prepare Atlas-backed storage for a workload before deploy.
+///
+/// Returns the (possibly rewritten) workload to deploy and the ids of any Atlas
+/// volumes provisioned (for later release). When the workload opts into Atlas
+/// (`storageClass: atlas/<policy>`) on Kubernetes/KubeVirt and Atlas is
+/// configured, this:
+///  - resolves the policy to a concrete StorageClass and rewrites it into the
+///    spec for StatefulSet `volumeClaimTemplate`s and KubeVirt DataVolumes (so
+///    they reference a valid class, incl. for StatefulSet scale-up),
+///  - provisions tracked PVCs via the Atlas API for Deployment/Job (one) and
+///    StatefulSet (one per replica). KubeVirt disks are CDI-owned and provisioned
+///    by the resolved class, so no Atlas volume is created for them.
+async fn prepare_atlas_storage(
     workload: &Workload,
     runtime_kind: RuntimeKind,
-) -> Result<Vec<String>> {
-    if runtime_kind != RuntimeKind::Kubernetes {
-        return Ok(Vec::new());
+) -> Result<(std::borrow::Cow<'_, Workload>, Vec<String>)> {
+    use std::borrow::Cow;
+
+    if !matches!(runtime_kind, RuntimeKind::Kubernetes | RuntimeKind::KubeVirt) {
+        return Ok((Cow::Borrowed(workload), Vec::new()));
     }
     let Some(policy) = workload.atlas_policy() else {
-        return Ok(Vec::new());
+        return Ok((Cow::Borrowed(workload), Vec::new()));
     };
     let Some(atlas) = aether::atlas::AtlasConfig::from_env() else {
-        // Opted into Atlas storage but Atlas isn't configured — surface it.
         output::warning(&format!(
             "Workload '{}' requests atlas/{} storage but AETHER_ATLAS_URL is not set; \
              falling back to native storage class.",
             workload.metadata.name, policy
         ));
-        return Ok(Vec::new());
+        return Ok((Cow::Borrowed(workload), Vec::new()));
     };
 
+    let kind = workload.resolved_k8s_workload_kind();
+    let is_statefulset = kind == aether::spec::K8sWorkloadKind::StatefulSet;
+    // StatefulSet templates and KubeVirt DataVolumes must carry a concrete class;
+    // a Deployment's pod just references the Atlas-created `{name}-pvc` (its native
+    // PVC is skipped in reconcile via the still-`atlas/…` class), so leave it be.
+    let needs_class_rewrite = runtime_kind == RuntimeKind::KubeVirt || is_statefulset;
+
+    let effective: Cow<Workload> = if needs_class_rewrite {
+        let real_class = atlas
+            .resolve_storage_class(&policy)
+            .await
+            .context("resolving Atlas storage class")?;
+        let mut w = workload.clone();
+        w.persistence.storage_class = Some(real_class);
+        Cow::Owned(w)
+    } else {
+        Cow::Borrowed(workload)
+    };
+
+    // KubeVirt disks are provisioned by CDI via the resolved class — no Atlas API volume.
+    let ids = if runtime_kind == RuntimeKind::Kubernetes {
+        provision_atlas_pvcs(effective.as_ref(), &policy, &atlas).await?
+    } else {
+        Vec::new()
+    };
+
+    Ok((effective, ids))
+}
+
+/// Provision the PVCs an Atlas-backed Kubernetes workload needs (Deployment: one;
+/// StatefulSet: one per replica), rolling back on partial failure.
+async fn provision_atlas_pvcs(
+    workload: &Workload,
+    policy: &str,
+    atlas: &aether::atlas::AtlasConfig,
+) -> Result<Vec<String>> {
     let namespace = get_namespace().unwrap_or("default");
     let size_bytes = aether::atlas::size_to_bytes(&workload.persistence.size);
     let access_modes = aether::atlas::access_modes_for(&workload.persistence.access_mode);
@@ -752,7 +798,7 @@ async fn provision_atlas_volume_if_needed(
             .provision_volume(
                 pvc_name,
                 size_bytes,
-                &policy,
+                policy,
                 access_modes.clone(),
                 namespace,
                 name,
