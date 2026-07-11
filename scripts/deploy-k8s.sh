@@ -94,7 +94,7 @@ apply_manifests() {
   aether_probe_cilium_connectivity "${NAMESPACE}" "${KUBECTL}" || true
   aether_apply_cilium_connectivity_cronjob "${REPO_ROOT}" "${NAMESPACE}" "${KUBECTL}"
   {
-    printf '%s' "${AETHER_MANIFEST_SECRETS_YAML}"
+    printf '%s\n' "${AETHER_MANIFEST_SECRETS_YAML}"
     cat <<EOF
 ---
 apiVersion: apps/v1

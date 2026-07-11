@@ -429,7 +429,7 @@ aether_install_metrics_server "${K}" "\${_DISTRO}"
 aether_probe_cilium_connectivity "${AETHER_NS}" "${K}" || true
 aether_apply_cilium_connectivity_cronjob "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
 {
-printf '%s' "${AETHER_MANIFEST_SECRETS_YAML}"
+printf '%s\n' "${AETHER_MANIFEST_SECRETS_YAML}"
 cat <<YAML
 ---
 apiVersion: apps/v1
