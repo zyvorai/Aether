@@ -33,6 +33,9 @@ pub struct AssessmentReport {
     pub totals: ReportTotals,
     pub assessments: Vec<PortabilityAssessment>,
     pub waves: Vec<Wave>,
+    /// Detected AWS managed-service dependencies and their K8s-native targets.
+    #[serde(default)]
+    pub aws_dependencies: Vec<crate::assessment::aws::AwsDependency>,
 }
 
 /// Assign a migration wave (0 = remediate first, higher = riskier/later).
@@ -95,12 +98,15 @@ pub fn build_report(snapshot: &InventorySnapshot) -> AssessmentReport {
         })
         .collect();
 
+    let aws_dependencies = crate::assessment::aws::detect(&snapshot.applications);
+
     AssessmentReport {
         connection: snapshot.connection.clone(),
         discovered_at: snapshot.discovered_at.clone(),
         totals,
         assessments,
         waves,
+        aws_dependencies,
     }
 }
 
@@ -145,6 +151,24 @@ impl AssessmentReport {
         }
         m.push('\n');
 
+        if !self.aws_dependencies.is_empty() {
+            m.push_str("## AWS managed-service dependencies → Kubernetes targets\n\n");
+            m.push_str("| App | AWS service | Endpoint | Kubernetes target | Migration method | Difficulty |\n");
+            m.push_str("|---|---|---|---|---|---|\n");
+            for d in &self.aws_dependencies {
+                m.push_str(&format!(
+                    "| {} | {} | `{}` | {} | {} | {} |\n",
+                    d.application,
+                    d.service.name(),
+                    redact_endpoint(&d.endpoint),
+                    d.service.k8s_target(),
+                    d.service.method(),
+                    d.service.difficulty(),
+                ));
+            }
+            m.push('\n');
+        }
+
         m.push_str("## Migration waves\n\n");
         for w in &self.waves {
             m.push_str(&format!(
@@ -157,6 +181,17 @@ impl AssessmentReport {
         m.push('\n');
         m
     }
+}
+
+/// Strip any credentials embedded in a discovered endpoint before printing it.
+fn redact_endpoint(e: &str) -> String {
+    // Drop a `user:pass@` prefix if present (e.g. postgres://u:p@host).
+    if let Some(at) = e.rfind('@') {
+        if let Some(scheme) = e.find("://") {
+            return format!("{}://***@{}", &e[..scheme], &e[at + 1..]);
+        }
+    }
+    e.to_string()
 }
 
 #[cfg(test)]

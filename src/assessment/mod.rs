@@ -4,6 +4,7 @@
 
 //! Portability assessment: classification, scoring, compatibility, and reporting.
 
+pub mod aws;
 pub mod compatibility;
 pub mod portability;
 pub mod report;
