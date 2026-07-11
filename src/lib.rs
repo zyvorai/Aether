@@ -31,6 +31,7 @@ pub mod engine;
 pub mod environments;
 pub mod events;
 pub mod fleet;
+pub mod forge;
 pub mod gitops;
 pub mod ha;
 pub mod health;

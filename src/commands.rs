@@ -1508,7 +1508,7 @@ pub(crate) async fn tui_command() -> Result<()> {
     res
 }
 
-pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<()> {
+pub(crate) async fn ask_command(initial_message: Option<String>) -> Result<()> {
     use aether::rbac::Role;
     use aether::zeus::agent::{tool_context, ZeusAgent};
     use std::io::{self, Write};
@@ -1528,16 +1528,16 @@ pub(crate) async fn copilot_command(initial_message: Option<String>) -> Result<(
         println!("{}", resp.reply);
         for a in &resp.pending_actions {
             println!(
-                "  [pending] {} — confirm: aether copilot (then confirm {})",
+                "  [pending] {} — confirm: aether ask (then confirm {})",
                 a.description, a.id
             );
         }
         return Ok(());
     }
 
-    output::info("Aether Copilot — type 'exit' or Ctrl+D to quit");
+    output::info("Ask Zeus — Aether AI ops assistant. Type 'exit' or Ctrl+D to quit.");
     loop {
-        print!("copilot> ");
+        print!("zeus> ");
         io::stdout().flush()?;
         let mut line = String::new();
         if io::stdin().read_line(&mut line)? == 0 {
@@ -5617,6 +5617,123 @@ pub(crate) async fn report_command(
             output::success(&format!("Wrote report to {}", path.display()));
         }
         None => print!("{}", rendered),
+    }
+    Ok(())
+}
+
+pub(crate) async fn forge_command(action: crate::cli::ForgeAction) -> Result<()> {
+    use crate::cli::ForgeAction;
+
+    let forge = aether::forge::ForgeConfig::from_env().ok_or_else(|| {
+        anyhow::anyhow!("Forge is not configured. Set AETHER_FORGE_URL (and AETHER_FORGE_TOKEN).")
+    })?;
+
+    fn n(v: &serde_json::Value, k: &str) -> String {
+        v.get(k)
+            .map(|x| {
+                x.as_str()
+                    .map(String::from)
+                    .unwrap_or_else(|| x.to_string())
+            })
+            .unwrap_or_else(|| "—".to_string())
+    }
+
+    match action {
+        ForgeAction::Stats => {
+            let s = forge.cluster_stats().await?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&s)?);
+                return Ok(());
+            }
+            output::section_with_icon("🖥️", "Forge GPU Cluster");
+            println!(
+                "{}",
+                output::property_table(&[
+                    ("Total GPUs", n(&s, "totalGPUs")),
+                    ("Available", n(&s, "availableGPUs")),
+                    ("Allocated", n(&s, "allocatedGPUs")),
+                    ("Utilization %", n(&s, "utilizationPercent")),
+                    ("Running jobs", n(&s, "runningJobs")),
+                ])
+            );
+        }
+        ForgeAction::Nodes => {
+            let nodes = forge.list_nodes().await?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&nodes)?);
+                return Ok(());
+            }
+            output::section_with_icon("🖥️", "Forge GPU Nodes");
+            if nodes.is_empty() {
+                output::muted("No GPU nodes");
+                return Ok(());
+            }
+            let rows: Vec<Vec<String>> = nodes
+                .iter()
+                .map(|node| {
+                    let name = node
+                        .get("metadata")
+                        .and_then(|m| m.get("name"))
+                        .and_then(|x| x.as_str())
+                        .unwrap_or("—")
+                        .to_string();
+                    let gpus = node
+                        .get("spec")
+                        .and_then(|s| s.get("gpuCount"))
+                        .map(|x| x.to_string())
+                        .unwrap_or_else(|| "—".to_string());
+                    vec![name, gpus]
+                })
+                .collect();
+            println!("{}", output::table(&["NODE", "GPUS"], rows));
+        }
+        ForgeAction::Recommend {
+            gpu_type,
+            gpus,
+            model,
+        } => {
+            let rec = forge
+                .recommend_placement(model.as_deref(), &gpu_type, gpus)
+                .await?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&rec)?);
+                return Ok(());
+            }
+            output::section_with_icon("🎯", "Forge Placement Recommendation");
+            let selected = rec
+                .get("selectedNodes")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|x| x.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_else(|| "—".to_string());
+            println!(
+                "{}",
+                output::property_table(&[
+                    ("Selected nodes", selected),
+                    ("Score", n(&rec, "score")),
+                    ("Reasoning", n(&rec, "reasoning")),
+                ])
+            );
+        }
+        ForgeAction::Cost => {
+            let c = forge.costs().await?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&c)?);
+                return Ok(());
+            }
+            output::section_with_icon("💰", "Forge GPU Cost");
+            println!(
+                "{}",
+                output::property_table(&[
+                    ("Total cost", n(&c, "totalCost")),
+                    ("Monthly", n(&c, "monthly")),
+                ])
+            );
+        }
     }
     Ok(())
 }

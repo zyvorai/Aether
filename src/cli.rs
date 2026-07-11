@@ -186,9 +186,10 @@ pub(crate) enum Commands {
     /// Launch interactive TUI dashboard (k9s-style real-time monitoring)
     Tui,
 
-    /// Interactive AI copilot in the terminal (phase 72)
-    Copilot {
-        /// Optional initial message (non-interactive single turn)
+    /// Ask Zeus — interactive AI ops assistant in the terminal
+    #[command(visible_alias = "copilot")]
+    Ask {
+        /// Optional initial question (non-interactive single turn)
         message: Option<String>,
     },
 
@@ -683,6 +684,34 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         action: MoveAction,
     },
+
+    /// Forge GPU/AI infrastructure: capacity, placement, and cost
+    Forge {
+        #[command(subcommand)]
+        action: ForgeAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ForgeAction {
+    /// Cluster GPU stats (total/available/allocated, utilization)
+    Stats,
+    /// List GPU nodes
+    Nodes,
+    /// Recommend GPU placement for a workload
+    Recommend {
+        /// GPU type (e.g. a100, h100, any)
+        #[arg(long, default_value = "any")]
+        gpu_type: String,
+        /// Number of GPUs required
+        #[arg(long, default_value = "1")]
+        gpus: u32,
+        /// Model name to place (optional)
+        #[arg(long)]
+        model: Option<String>,
+    },
+    /// Show GPU cost breakdown
+    Cost,
 }
 
 #[derive(Subcommand)]
@@ -1021,7 +1050,7 @@ impl Commands {
             Self::List => "list",
             Self::Migrate { .. } => "migrate",
             Self::Tui => "tui",
-            Self::Copilot { .. } => "copilot",
+            Self::Ask { .. } => "ask",
             Self::Completions { .. } => "completions",
             Self::Metrics => "metrics",
             Self::Backup { .. } => "backup",
@@ -1080,6 +1109,7 @@ impl Commands {
             Self::Plan { .. } => "plan",
             Self::Report { .. } => "report",
             Self::Move { .. } => "move",
+            Self::Forge { .. } => "forge",
         }
     }
 }

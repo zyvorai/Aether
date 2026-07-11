@@ -124,7 +124,7 @@ async fn main() -> Result<()> {
             .await
         }
         Commands::Tui => commands::tui_command().await,
-        Commands::Copilot { message } => commands::copilot_command(message).await,
+        Commands::Ask { message } => commands::ask_command(message).await,
         Commands::Completions { shell } => commands::completions_command(&shell),
         Commands::Metrics => {
             commands::metrics_command().await;
@@ -313,6 +313,7 @@ async fn main() -> Result<()> {
             output,
         } => commands::report_command(&connection, &format, output).await,
         Commands::Move { action } => commands::move_command(action).await,
+        Commands::Forge { action } => commands::forge_command(action).await,
     };
 
     // Record command execution time
