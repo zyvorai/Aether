@@ -702,6 +702,33 @@ export interface ObservabilitySummary {
 }
 
 // ─── View types ──────────────────────────────────────────────────────
+// ─── Storage (Atlas) ─────────────────────────────────────────────────
+// Volume objects are forwarded opaquely from the upstream Atlas service; the
+// only field the gateway guarantees is `size_bytes`. Keep the shape permissive.
+export interface StorageVolume {
+  volume_id?: string;
+  id?: string;
+  name?: string;
+  pvc?: string;
+  pvc_name?: string;
+  tenant_id?: string;
+  storage_class?: string;
+  storage_class_name?: string;
+  namespace?: string;
+  kubernetes_namespace?: string;
+  state?: string;
+  size_bytes?: number;
+  [key: string]: unknown;
+}
+
+export interface StorageStatus {
+  configured: boolean;
+  endpoint?: string;
+  tenant?: string;
+  volumes?: number;
+  total_size_bytes?: number;
+}
+
 export type AppView =
   | 'overview'
   | 'fabric'
@@ -731,6 +758,7 @@ export type AppView =
   | 'envs'
   | 'secrets'
   | 'backups'
+  | 'storage'
   | 'templates'
   | 'plugins'
   | 'rbac'
