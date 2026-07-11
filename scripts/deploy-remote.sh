@@ -428,8 +428,9 @@ if ${K} get nodes -o jsonpath='{.items[0].status.nodeInfo.kubeletVersion}' 2>/de
 aether_install_metrics_server "${K}" "\${_DISTRO}"
 aether_probe_cilium_connectivity "${AETHER_NS}" "${K}" || true
 aether_apply_cilium_connectivity_cronjob "${REMOTE_DIR}" "${AETHER_NS}" "${K}"
+{
 printf '%s' "${AETHER_MANIFEST_SECRETS_YAML}"
-cat <<YAML | ${K} apply -f -
+cat <<YAML
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -485,6 +486,7 @@ ${AETHER_MANIFEST_EXTRA_ENV_YAML}
 ${SVC_INGRESS_YAML}
 ${PDB_YAML_APPEND}
 YAML
+} | ${K} apply -f -
 ${K} -n ${AETHER_NS} rollout restart deployment/aether >/dev/null 2>&1 || true
 ${K} -n ${AETHER_NS} rollout status deployment/aether --timeout=180s
 REMOTE_APPLY
