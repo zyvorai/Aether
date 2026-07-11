@@ -219,6 +219,39 @@ pub async fn execute_orchestrator_actions(
             OrchestratorAction::Alert { workload, message } => {
                 result.executed.push(format!("alert {workload}: {message}"));
             }
+            OrchestratorAction::CircuitOpened { workload, reason } => {
+                if !policy.allows_rollback() {
+                    result.skipped.push(format!(
+                        "circuit-opened {workload}: {reason} (auto-rollback disabled)"
+                    ));
+                    continue;
+                }
+                // Guard against rollback thrash to a bad snapshot: at most one
+                // rollback per workload per cooldown window.
+                let now = chrono::Utc::now().timestamp();
+                if !rollback_cooldown_elapsed(workload, now) {
+                    result
+                        .skipped
+                        .push(format!("rollback {workload}: within cooldown"));
+                    continue;
+                }
+                match rollback_workload_internal(state, state_path, workload).await {
+                    Ok(snapshot) => {
+                        mark_rollback(workload, now);
+                        let detail = format!(
+                            "auto-rollback to {} (circuit opened: {reason})",
+                            snapshot.display()
+                        );
+                        audit_autonomous(source, workload, &detail);
+                        result.executed.push(format!("rolled back {workload}: {detail}"));
+                    }
+                    Err(e) => {
+                        result
+                            .skipped
+                            .push(format!("rollback {workload} failed: {e}"));
+                    }
+                }
+            }
             other => {
                 result.skipped.push(format!("{other} (no auto executor)"));
             }
@@ -254,6 +287,98 @@ async fn restart_workload_internal(
     store.upsert(name.to_string(), ws.migrated(ws.runtime, instance));
     store.save(state_path)?;
     Ok(())
+}
+
+/// Per-workload timestamp (epoch seconds) of the last autonomous rollback, used
+/// to bound rollback frequency so a persistently-failing workload isn't rolled
+/// back to the same snapshot every time its circuit reopens.
+fn rollback_ledger() -> &'static std::sync::Mutex<std::collections::HashMap<String, i64>> {
+    static LEDGER: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<String, i64>>> =
+        std::sync::OnceLock::new();
+    LEDGER.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+}
+
+fn rollback_cooldown_secs() -> i64 {
+    std::env::var("AETHER_ROLLBACK_COOLDOWN_SECS")
+        .ok()
+        .and_then(|s| s.parse::<i64>().ok())
+        .filter(|&v| v > 0)
+        .unwrap_or(600)
+}
+
+fn rollback_cooldown_elapsed(workload: &str, now: i64) -> bool {
+    let cooldown = rollback_cooldown_secs();
+    let ledger = rollback_ledger().lock().unwrap();
+    match ledger.get(workload) {
+        Some(&t) => now.saturating_sub(t) >= cooldown,
+        None => true,
+    }
+}
+
+fn mark_rollback(workload: &str, now: i64) {
+    rollback_ledger()
+        .lock()
+        .unwrap()
+        .insert(workload.to_string(), now);
+}
+
+/// Roll a workload back to its most recent snapshot: stop the current instance
+/// (best-effort), then rebuild and redeploy from the snapshot's spec and restore
+/// its state. Returns the snapshot path used. Errors when no snapshot exists.
+async fn rollback_workload_internal(
+    state: &Arc<RwLock<StateStore>>,
+    state_path: &Path,
+    name: &str,
+) -> anyhow::Result<std::path::PathBuf> {
+    use crate::backup::{Backup, SnapshotManager};
+
+    let snap_mgr = SnapshotManager::new();
+    let snapshot_path = snap_mgr
+        .latest_snapshot(name)?
+        .ok_or_else(|| anyhow::anyhow!("no snapshot available for '{name}'"))?;
+    let backup = Backup::load(&snapshot_path)?;
+    let snap_ws = backup
+        .workloads
+        .first()
+        .cloned()
+        .ok_or_else(|| anyhow::anyhow!("snapshot for '{name}' is empty"))?;
+
+    // Stop the current (failing) instance, best-effort.
+    let current = {
+        let store = state.read().await;
+        store.get(name).cloned()
+    };
+    if let Some(current) = current {
+        if let Ok(rt) = create_runtime(&current.runtime).await {
+            if let Err(e) = rt.stop(&current.instance).await {
+                tracing::warn!("rollback {name}: stop of current instance failed: {e}");
+            }
+        }
+    }
+
+    // Redeploy from the snapshot's spec.
+    let rt = create_runtime(&snap_ws.runtime).await?;
+    let spec = Workload::from_file(&snap_ws.spec_path)?;
+    let image = rt.build(&spec).await?;
+    let instance = rt.run(&image, &spec).await?;
+
+    let mut store = state.write().await;
+    store.upsert(
+        name.to_string(),
+        WorkloadState {
+            name: name.to_string(),
+            runtime: snap_ws.runtime,
+            instance,
+            spec_path: snap_ws.spec_path.clone(),
+            created_at: snap_ws.created_at.clone(),
+            updated_at: crate::resources::now_rfc3339(),
+            os_version: snap_ws.os_version.clone(),
+            node_labels: snap_ws.node_labels.clone(),
+            atlas_volume_ids: snap_ws.atlas_volume_ids.clone(),
+        },
+    );
+    store.save(state_path)?;
+    Ok(snapshot_path)
 }
 
 async fn reconcile_drift_fleet(
@@ -310,5 +435,25 @@ fn audit_autonomous(source: &str, workload: &str, detail: &str) {
             Some(detail),
         );
         let _ = log.save(&path);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rollback_cooldown_gates_repeat_rollbacks() {
+        // Unique workload name so the process-global ledger doesn't collide
+        // with other tests running in parallel.
+        let w = "healer-cooldown-test-workload-xyz";
+        let now = 1_000_000i64;
+        // Never rolled back → allowed.
+        assert!(rollback_cooldown_elapsed(w, now));
+        mark_rollback(w, now);
+        // Within the default 600s window → blocked.
+        assert!(!rollback_cooldown_elapsed(w, now + 100));
+        // After the window → allowed again.
+        assert!(rollback_cooldown_elapsed(w, now + 601));
     }
 }

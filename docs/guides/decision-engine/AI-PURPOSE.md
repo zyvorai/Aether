@@ -48,8 +48,20 @@ autonomy:
 ```
 
 Environment: `AETHER_AUTO_RESTART=1`, `AETHER_AUTO_RECONCILE=1`,
-`AETHER_AUTO_ROTATE_SECRETS=1` (all default off; `healing: auto` enables the
-first three), and `AETHER_AUTO_SCALE=1` (reactive autoscaling, default off).
+`AETHER_AUTO_ROTATE_SECRETS=1`, `AETHER_AUTO_ROLLBACK=1` (all default off;
+`healing: auto` enables all four), and `AETHER_AUTO_SCALE=1` (reactive
+autoscaling, default off).
+
+### Health-gated auto-rollback
+
+When `AETHER_AUTO_ROLLBACK=1`, the `serve` self-healing loop rolls a workload
+back to its most recent snapshot when its circuit breaker opens — i.e. restarts
+have been exhausted or a recovery attempt failed. It stops the failing instance
+and redeploys from the last snapshot's spec, restoring state. A per-workload
+cooldown (`AETHER_ROLLBACK_COOLDOWN_SECS`, default 600) prevents repeated
+rollbacks to a persistently-bad snapshot, and each rollback is audited. Rollback
+only fires on the circuit-open edge (not every cycle), so it complements
+auto-restart rather than competing with it.
 
 ### Reactive autoscaling
 
