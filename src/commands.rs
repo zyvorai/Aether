@@ -5621,6 +5621,139 @@ pub(crate) async fn report_command(
     Ok(())
 }
 
+pub(crate) async fn move_command(action: crate::cli::MoveAction) -> Result<()> {
+    use crate::cli::MoveAction;
+    use aether::discovery::ConnectionStore;
+    use aether::migration::move_exec::{self, MoveRequest};
+
+    // Build a MoveRequest, defaulting the target namespace to the app's namespace.
+    fn build_req(
+        snapshot: &aether::inventory::InventorySnapshot,
+        app: String,
+        source: String,
+        target: String,
+        namespace: Option<String>,
+        registry: Option<String>,
+    ) -> Result<MoveRequest> {
+        let a = snapshot
+            .find_application(&app)
+            .ok_or_else(|| anyhow::anyhow!("Application '{}' not found", app))?;
+        Ok(MoveRequest {
+            app: a.name.clone(),
+            source_conn: source,
+            target_conn: target,
+            target_namespace: namespace.unwrap_or_else(|| a.namespace.clone()),
+            registry,
+            strategy: "blue-green".to_string(),
+        })
+    }
+
+    match action {
+        MoveAction::Plan {
+            app,
+            source,
+            target,
+            namespace,
+            registry,
+        } => {
+            let snapshot = load_snapshot(&source)?;
+            let req = build_req(&snapshot, app, source, target, namespace, registry)?;
+            let plan = move_exec::plan_move(&snapshot, &req).await?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&plan)?);
+                return Ok(());
+            }
+            render_move_plan(&plan);
+        }
+        MoveAction::Start {
+            app,
+            source,
+            target,
+            namespace,
+            registry,
+        } => {
+            let snapshot = load_snapshot(&source)?;
+            let connections = ConnectionStore::load_default()?;
+            let req = build_req(&snapshot, app, source, target, namespace, registry)?;
+            output::section_with_icon("🚚", "Move");
+            let sp = output::spinner(&format!(
+                "Deploying '{}' to '{}/{}'...",
+                req.app, req.target_conn, req.target_namespace
+            ));
+            match move_exec::execute_move(&snapshot, &req, &connections).await {
+                Ok(run) => {
+                    output::spinner_success(&sp, "Shadow deploy complete");
+                    output::success(&format!(
+                        "Moved '{}' → {}/{} ({} resource(s)). Cut over with `aether move cutover {}`.",
+                        run.app,
+                        run.target_conn,
+                        run.target_namespace,
+                        run.applied.len(),
+                        run.app
+                    ));
+                }
+                Err(e) => {
+                    output::spinner_fail(&sp, "Move failed");
+                    return Err(e);
+                }
+            }
+        }
+        MoveAction::Cutover { app } => {
+            move_exec::cutover(&app)?;
+            output::success(&format!(
+                "'{}' marked cut over. Point external DNS/Ingress at the target; source retained for rollback.",
+                app
+            ));
+        }
+        MoveAction::Rollback { app } => {
+            let connections = ConnectionStore::load_default()?;
+            let n = move_exec::rollback(&app, &connections).await?;
+            output::success(&format!("Rolled back '{}' — deleted {} target resource(s)", app, n));
+        }
+        MoveAction::Status { app } => match move_exec::get_run(&app)? {
+            Some(run) => {
+                if output::is_json() {
+                    println!("{}", serde_json::to_string_pretty(&run)?);
+                    return Ok(());
+                }
+                output::section_with_icon("🚚", &format!("Move: {}", run.app));
+                println!(
+                    "{}",
+                    output::property_table(&[
+                        ("Phase", format!("{:?}", run.phase)),
+                        ("Target", format!("{}/{}", run.target_conn, run.target_namespace)),
+                        ("Resources", run.applied.len().to_string()),
+                        ("Started", run.started_at.clone()),
+                    ])
+                );
+            }
+            None => output::muted(&format!("No Move run for '{}'", app)),
+        },
+    }
+    Ok(())
+}
+
+fn render_move_plan(plan: &aether::migration::move_exec::MovePlan) {
+    output::section_with_icon("🚚", &format!("Move plan: {}", plan.app));
+    output::kv("Target namespace", &plan.target_namespace);
+    if !plan.images.is_empty() {
+        output::info("Image mirror:");
+        for m in &plan.images {
+            output::detail(&format!("  {} → {}", m.source, m.target));
+        }
+    }
+    output::info("Objects to apply:");
+    for item in &plan.items {
+        output::detail(&format!("  {} {}", item.kind, item.name));
+    }
+    if !plan.notes.is_empty() {
+        output::info("Transforms:");
+        for n in &plan.notes {
+            output::detail(&format!("  {} — {} ({})", n.field, n.action, n.reason));
+        }
+    }
+}
+
 pub(crate) async fn plan_command(action: crate::cli::PlanAction) -> Result<()> {
     use crate::cli::PlanAction;
     use aether::migration::project::MigrationPlan;

@@ -312,6 +312,7 @@ async fn main() -> Result<()> {
             format,
             output,
         } => commands::report_command(&connection, &format, output).await,
+        Commands::Move { action } => commands::move_command(action).await,
     };
 
     // Record command execution time

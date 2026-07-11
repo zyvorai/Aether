@@ -95,6 +95,20 @@ pub struct Connection {
 }
 
 impl Connection {
+    /// Resolve this connection's kubeconfig context string (applying an explicit
+    /// kubeconfig via `KUBECONFIG` as a side effect). Suitable for passing to
+    /// `kubecluster::apply_manifest` / `client_for_context`.
+    pub async fn resolve_context(&self) -> Result<String> {
+        if let Some(path) = &self.kubeconfig {
+            std::env::set_var("KUBECONFIG", path);
+        }
+        if self.context.is_empty() {
+            crate::kubecluster::resolve_reachable_cluster(None).await
+        } else {
+            Ok(self.context.clone())
+        }
+    }
+
     /// Build a Kubernetes client for this connection, honouring an explicit
     /// kubeconfig path when set. Returns the client and the apiserver version.
     pub async fn connect(&self) -> Result<(kube::Client, Option<String>)> {

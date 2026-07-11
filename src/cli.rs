@@ -677,6 +677,60 @@ pub(crate) enum Commands {
         #[arg(short, long)]
         output: Option<std::path::PathBuf>,
     },
+
+    /// Move an application from a source cluster to a target (stateless, blue-green)
+    Move {
+        #[command(subcommand)]
+        action: MoveAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum MoveAction {
+    /// Dry-run: show transformed manifests, image-mirror plan, and transform notes
+    Plan {
+        /// Application name or id
+        app: String,
+        /// Source connection (has the discovery snapshot)
+        #[arg(long)]
+        source: String,
+        /// Target connection
+        #[arg(long)]
+        target: String,
+        /// Target namespace (defaults to the app's namespace)
+        #[arg(long)]
+        namespace: Option<String>,
+        /// Target image registry (mirror images here)
+        #[arg(long)]
+        registry: Option<String>,
+    },
+    /// Mirror images + shadow-deploy the app to the target (no external traffic)
+    Start {
+        app: String,
+        #[arg(long)]
+        source: String,
+        #[arg(long)]
+        target: String,
+        #[arg(long)]
+        namespace: Option<String>,
+        #[arg(long)]
+        registry: Option<String>,
+    },
+    /// Mark the Move cut over (perform the DNS/ingress change yourself)
+    Cutover {
+        /// Application name
+        app: String,
+    },
+    /// Roll back a Move: delete the applied resources from the target
+    Rollback {
+        /// Application name
+        app: String,
+    },
+    /// Show the status of a Move
+    Status {
+        /// Application name
+        app: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1025,6 +1079,7 @@ impl Commands {
             Self::Assess { .. } => "assess",
             Self::Plan { .. } => "plan",
             Self::Report { .. } => "report",
+            Self::Move { .. } => "move",
         }
     }
 }
