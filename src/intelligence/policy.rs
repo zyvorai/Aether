@@ -31,6 +31,8 @@ pub struct AutonomyPolicy {
     /// Auto-rotate secrets Aether owns (rotation_policy.generate=true) when they
     /// come due. Externally-managed secrets are never auto-rotated regardless.
     pub auto_rotate_secrets: bool,
+    /// Reactively scale workloads (scaling.enabled=true) from live utilization.
+    pub auto_scale: bool,
     pub auto_migrate: AutonomyTier,
     pub auto_evolve: AutonomyTier,
 }
@@ -41,6 +43,7 @@ impl Default for AutonomyPolicy {
             auto_restart: env_bool("AETHER_AUTO_RESTART", false),
             auto_reconcile_drift: env_bool("AETHER_AUTO_RECONCILE", false),
             auto_rotate_secrets: env_bool("AETHER_AUTO_ROTATE_SECRETS", false),
+            auto_scale: env_bool("AETHER_AUTO_SCALE", false),
             auto_migrate: AutonomyTier::Recommend,
             auto_evolve: AutonomyTier::Recommend,
         }
@@ -90,6 +93,10 @@ impl AutonomyPolicy {
 
     pub fn allows_secret_rotation(&self) -> bool {
         self.auto_rotate_secrets
+    }
+
+    pub fn allows_autoscale(&self) -> bool {
+        self.auto_scale
     }
 
     pub fn allows_auto_migrate(&self, risk: crate::ai::migration::RiskLevel) -> bool {

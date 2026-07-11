@@ -48,7 +48,22 @@ autonomy:
 ```
 
 Environment: `AETHER_AUTO_RESTART=1`, `AETHER_AUTO_RECONCILE=1`,
-`AETHER_AUTO_ROTATE_SECRETS=1` (all default off; `healing: auto` enables all three).
+`AETHER_AUTO_ROTATE_SECRETS=1` (all default off; `healing: auto` enables the
+first three), and `AETHER_AUTO_SCALE=1` (reactive autoscaling, default off).
+
+### Reactive autoscaling
+
+When `AETHER_AUTO_SCALE=1`, `aether serve` runs a control loop that samples live
+per-workload utilization from `metrics.k8s.io` (normalized against pod requests
+— never synthetic), feeds a rolling history to the scaling engine, and applies a
+replica change when warranted. It acts only on workloads that declare
+`scaling.enabled`, stays within `scaling.min_replicas`/`max_replicas`, and
+honors `scaling.cooldownSecs` between actions. Workloads without resource
+requests, without metrics yet, or that aren't Deployments/StatefulSets are
+skipped. Thresholds come from the `scaling` config
+(`scale_up_threshold` / `scale_down_threshold`); sample interval via
+`AETHER_SCHED_AUTOSCALE_SECS` (default 60). Each action emits a `ScalingEvent`
+and is audited.
 
 ### Autonomous secret rotation
 

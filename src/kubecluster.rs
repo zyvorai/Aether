@@ -1067,6 +1067,126 @@ async fn list_pod_metrics(
         .collect())
 }
 
+/// Live per-workload resource utilization, normalized to a 0–1 ratio of usage
+/// vs. the pod template's requests. Sourced from the real `metrics.k8s.io`
+/// PodMetrics API — never synthetic.
+#[derive(Debug, Clone)]
+pub struct WorkloadUtilization {
+    /// Mean CPU usage across pods as a fraction of the per-pod CPU request.
+    pub cpu_ratio: f64,
+    /// Mean memory usage across pods as a fraction of the per-pod memory request.
+    pub mem_ratio: f64,
+    /// Desired replicas from the workload's `spec.replicas`.
+    pub current_replicas: u32,
+    /// Number of pods observed for the workload.
+    pub pod_count: usize,
+}
+
+/// Sum the pod template's CPU-request millicores and memory-request MiB across
+/// all containers. Returns `(0, 0)` when no requests are declared.
+fn pod_template_requests(manifest: &serde_json::Value) -> (i64, i64) {
+    let mut cpu_mc = 0i64;
+    let mut mem_mib = 0i64;
+    if let Some(containers) = manifest
+        .pointer("/spec/template/spec/containers")
+        .and_then(|c| c.as_array())
+    {
+        for c in containers {
+            if let Some(cpu) = c.pointer("/resources/requests/cpu").and_then(|v| v.as_str()) {
+                cpu_mc += cpu_to_millicores(cpu);
+            }
+            if let Some(mem) = c
+                .pointer("/resources/requests/memory")
+                .and_then(|v| v.as_str())
+            {
+                mem_mib += memory_to_mib(mem);
+            }
+        }
+    }
+    (cpu_mc, mem_mib)
+}
+
+/// Read live utilization for a Deployment/StatefulSet from `metrics.k8s.io`,
+/// normalized against the pod template's requests. Returns `None` (skip — cannot
+/// make a safe scaling decision) when the workload declares no resource
+/// requests, has no selector, has no running pods, or has no metrics yet.
+pub async fn workload_utilization(
+    cluster: &str,
+    namespace: &str,
+    kind: &str,
+    name: &str,
+) -> Result<Option<WorkloadUtilization>> {
+    let client = client_for_context(cluster).await?;
+    let req = ClusterLogsRequest {
+        cluster: cluster.to_string(),
+        namespace: namespace.to_string(),
+        kind: kind.to_string(),
+        name: name.to_string(),
+        api_version: None,
+        plural: None,
+        namespaced: Some(true),
+    };
+    let manifest = manifest_for_workload(&client, &req).await?;
+    let current_replicas = manifest
+        .pointer("/spec/replicas")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(1) as u32;
+
+    let (cpu_req_mc, mem_req_mib) = pod_template_requests(&manifest);
+    if cpu_req_mc <= 0 && mem_req_mib <= 0 {
+        return Ok(None); // no requests → cannot normalize to a ratio
+    }
+    let Some(selector) = selector_for_value(&manifest) else {
+        return Ok(None);
+    };
+
+    let pods: Api<Pod> = Api::namespaced(client.clone(), namespace);
+    let pod_names: std::collections::HashSet<String> = pods_for_selector(&pods, &selector)
+        .await?
+        .items
+        .iter()
+        .map(|p| p.name_any())
+        .collect();
+    if pod_names.is_empty() {
+        return Ok(None);
+    }
+
+    let metrics = list_pod_metrics(&client, Some(namespace)).await?;
+    let mut usage_cpu_mc = 0i64;
+    let mut usage_mem_mib = 0i64;
+    let mut matched = 0i64;
+    for m in &metrics {
+        if pod_names.contains(&m.name) {
+            usage_cpu_mc += cpu_to_millicores(&m.cpu);
+            usage_mem_mib += memory_to_mib(&m.memory);
+            matched += 1;
+        }
+    }
+    if matched == 0 {
+        return Ok(None); // metrics not yet available for these pods
+    }
+
+    // Ratio = total usage / (per-pod request × pods observed) = mean per-pod
+    // utilization, since all pods share the template's requests.
+    let cpu_ratio = if cpu_req_mc > 0 {
+        usage_cpu_mc as f64 / (cpu_req_mc * matched) as f64
+    } else {
+        0.0
+    };
+    let mem_ratio = if mem_req_mib > 0 {
+        usage_mem_mib as f64 / (mem_req_mib * matched) as f64
+    } else {
+        0.0
+    };
+
+    Ok(Some(WorkloadUtilization {
+        cpu_ratio,
+        mem_ratio,
+        current_replicas,
+        pod_count: pod_names.len(),
+    }))
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn manifest_diff(
     cluster: &str,

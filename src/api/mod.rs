@@ -607,6 +607,148 @@ async fn run_gitops_reconcile() {
     }
 }
 
+/// Reactive autoscaling control loop. Every sample interval it reads live
+/// utilization for each `scaling.enabled` workload from metrics.k8s.io, feeds a
+/// rolling history to the scaling engine, and applies a scale patch when the
+/// engine recommends one — within the workload's min/max and a cooldown. Only
+/// runs when autoscaling is enabled (checked before spawn).
+async fn run_autoscale_loop(state: Arc<RwLock<StateStore>>) {
+    use crate::ai::scaling::{ScalingAction, ScalingEngine};
+
+    let cfg = crate::config::Config::load().scaling;
+    let sample_secs = env_secs("AETHER_SCHED_AUTOSCALE_SECS", 60);
+    let interval = std::time::Duration::from_secs(sample_secs);
+    let engine = ScalingEngine::new(cfg.clone());
+    let cost_per_replica_hourly = 0.05; // for the recommendation's cost_impact only
+    const MIN_POINTS: usize = 3;
+
+    let ctx = std::env::var("AETHER_CONTEXT").ok().filter(|s| !s.is_empty());
+    let cluster = match crate::kubecluster::resolve_reachable_cluster(ctx.as_deref()).await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!("autoscale: no reachable cluster ({e}); loop disabled");
+            return;
+        }
+    };
+    let namespace = std::env::var("AETHER_NAMESPACE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".to_string());
+    tracing::info!(
+        "reactive autoscaling loop: interval={}s cluster={} namespace={}",
+        sample_secs,
+        cluster,
+        namespace
+    );
+
+    let mut autoscale = crate::autoscale::AutoscaleState::new();
+    loop {
+        tokio::time::sleep(interval).await;
+
+        // Snapshot workload names/specs without holding the lock across awaits.
+        let candidates: Vec<(String, std::path::PathBuf)> = {
+            let store = state.read().await;
+            store
+                .list()
+                .iter()
+                .filter(|ws| {
+                    matches!(
+                        ws.runtime,
+                        crate::runtime::RuntimeKind::Kubernetes
+                            | crate::runtime::RuntimeKind::KubeVirt
+                    )
+                })
+                .map(|ws| (ws.name.clone(), ws.spec_path.clone()))
+                .collect()
+        };
+
+        let now = chrono::Utc::now().timestamp();
+        for (name, spec_path) in candidates {
+            let Ok(wl) = crate::spec::Workload::from_file(&spec_path) else {
+                continue;
+            };
+            let Some(scaling) = wl.scaling.as_ref().filter(|s| s.enabled) else {
+                continue;
+            };
+            if scaling.max_replicas <= scaling.min_replicas {
+                continue; // no room to scale
+            }
+            let kind = format!("{:?}", wl.resolved_k8s_workload_kind());
+            if kind != "Deployment" && kind != "StatefulSet" {
+                continue; // only these are imperatively scalable
+            }
+
+            let util = match crate::kubecluster::workload_utilization(
+                &cluster, &namespace, &kind, &name,
+            )
+            .await
+            {
+                Ok(Some(u)) => u,
+                Ok(None) => continue, // no requests / metrics / pods yet
+                Err(e) => {
+                    tracing::debug!("autoscale {name}: {e}");
+                    continue;
+                }
+            };
+            autoscale.record(&name, util.cpu_ratio, util.mem_ratio);
+
+            if !autoscale.cooldown_elapsed(&name, now, cfg.cooldown_secs) {
+                continue;
+            }
+            let Some(rec) = autoscale.recommend(
+                &engine,
+                &name,
+                util.current_replicas,
+                scaling.min_replicas,
+                scaling.max_replicas,
+                cost_per_replica_hourly,
+                MIN_POINTS,
+            ) else {
+                continue;
+            };
+            if rec.action == ScalingAction::NoChange
+                || rec.recommended_replicas == util.current_replicas
+            {
+                continue;
+            }
+
+            let req = crate::kubecluster::ClusterActionRequest {
+                cluster: cluster.clone(),
+                namespace: namespace.clone(),
+                kind: kind.clone(),
+                name: name.clone(),
+                action: "scale".to_string(),
+                replicas: Some(rec.recommended_replicas as i32),
+                api_version: None,
+                plural: None,
+                namespaced: Some(true),
+            };
+            let msg = format!(
+                "{} {}→{} replicas ({})",
+                name, util.current_replicas, rec.recommended_replicas, rec.reason
+            );
+            match crate::kubecluster::workload_action(&req).await {
+                Ok(_) => {
+                    autoscale.mark_scaled(&name, now);
+                    emit_maintenance_event(
+                        crate::events::EventSeverity::Info,
+                        crate::events::EventCategory::ScalingEvent,
+                        "Autoscaled workload",
+                        &msg,
+                    );
+                    audit_autonomous_maintenance("autoscale", &msg);
+                }
+                Err(e) => emit_maintenance_event(
+                    crate::events::EventSeverity::Warning,
+                    crate::events::EventCategory::ScalingEvent,
+                    "Autoscale failed",
+                    &format!("{name}: {e}"),
+                ),
+            }
+        }
+    }
+}
+
 /// Audit an autonomous maintenance-loop action (mirrors healer::audit_autonomous).
 fn audit_autonomous_maintenance(source: &str, detail: &str) {
     let path = crate::audit::AuditLog::default_path();
@@ -815,6 +957,18 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
                     }
                 }
             }
+        });
+    }
+
+    // Reactive autoscaling control loop (opt-in: AETHER_AUTO_SCALE=1). Samples
+    // live utilization from metrics.k8s.io and scales workloads that declare
+    // scaling.enabled, within their min/max bounds and a cooldown. Stateful
+    // (rolling per-workload history), so it runs as its own task rather than a
+    // stateless maintenance job.
+    if crate::intelligence::policy::AutonomyPolicy::default().allows_autoscale() {
+        let scale_state = app_state.state.clone();
+        tokio::spawn(async move {
+            run_autoscale_loop(scale_state).await;
         });
     }
 
