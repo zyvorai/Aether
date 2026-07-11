@@ -551,6 +551,26 @@ fn run_secret_rotation_check() {
     }
 }
 
+/// Parse a positive-seconds env override, falling back to `default`.
+fn env_secs(key: &str, default: u64) -> u64 {
+    std::env::var(key)
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .filter(|&v| v > 0)
+        .unwrap_or(default)
+}
+
+/// Register optional serve-loop jobs (GitOps reconcile, autoscaling, …) on the
+/// maintenance scheduler based on config. Extension point for Day-2 control
+/// loops; each feature adds its own `register(...)` here and a `run_serve_job`
+/// arm below.
+fn register_serve_jobs(_sched: &mut crate::maintenance::JobScheduler, _cfg: &crate::config::Config) {
+}
+
+/// Dispatch a serve-loop job by name. No-op for names not handled by an
+/// optional control loop.
+async fn run_serve_job(_name: &str, _state: &Arc<RwLock<StateStore>>) {}
+
 /// Audit an autonomous maintenance-loop action (mirrors healer::audit_autonomous).
 fn audit_autonomous_maintenance(source: &str, detail: &str) {
     let path = crate::audit::AuditLog::default_path();
@@ -717,24 +737,45 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         tokio::spawn(async move {
             const TICK_SECS: u64 = 60;
             let tick = std::time::Duration::from_secs(TICK_SECS);
-            // Re-read backup config each spawn so operators can tune it via config.yaml.
-            let backup_cfg = crate::config::Config::load().backup;
+            // Re-read config each spawn so operators can tune it via config.yaml.
+            let cfg = crate::config::Config::load();
+            let backup_cfg = cfg.backup.clone();
             let backup_interval_secs = backup_cfg.interval_hours.max(1) * 3600;
-            let mut backup_elapsed: u64 = 0;
+            let secret_check_secs = env_secs("AETHER_SCHED_SECRET_CHECK_SECS", 3600);
+            let cert_check_secs = env_secs("AETHER_SCHED_CERT_CHECK_SECS", 3600);
+
+            // Register maintenance jobs on the interval scheduler. Timing is
+            // pure/testable (see crate::maintenance); the async work stays here
+            // so it can borrow serve-scoped state.
+            let mut sched = crate::maintenance::JobScheduler::new(TICK_SECS);
+            sched.register("webhook_queue", 0); // every tick
+            sched.register("secret_rotation", secret_check_secs);
+            if cert_path.is_some() {
+                sched.register("cert_check", cert_check_secs);
+            }
+            if backup_cfg.enabled {
+                sched.register("backup", backup_interval_secs);
+            }
+            register_serve_jobs(&mut sched, &cfg);
+            tracing::info!(
+                "serve maintenance scheduler: tick={}s jobs={:?}",
+                sched.tick_secs(),
+                sched.job_names()
+            );
+
             loop {
                 tokio::time::sleep(tick).await;
-
-                crate::events::WebhookQueue::process_queue_once();
-                run_secret_rotation_check();
-                if let Some(ref cert) = cert_path {
-                    run_cert_expiry_check(cert, 14);
-                }
-
-                if backup_cfg.enabled {
-                    backup_elapsed += TICK_SECS;
-                    if backup_elapsed >= backup_interval_secs {
-                        backup_elapsed = 0;
-                        run_scheduled_backup(&maint_state, backup_cfg.keep).await;
+                for job in sched.tick() {
+                    match job.as_str() {
+                        "webhook_queue" => crate::events::WebhookQueue::process_queue_once(),
+                        "secret_rotation" => run_secret_rotation_check(),
+                        "cert_check" => {
+                            if let Some(ref cert) = cert_path {
+                                run_cert_expiry_check(cert, 14);
+                            }
+                        }
+                        "backup" => run_scheduled_backup(&maint_state, backup_cfg.keep).await,
+                        other => run_serve_job(other, &maint_state).await,
                     }
                 }
             }
