@@ -56,6 +56,7 @@ pub enum MovePhase {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceRef {
+    pub api_version: String,
     pub kind: String,
     pub name: String,
 }
@@ -86,6 +87,64 @@ crate::impl_json_store!(MoveStore, "moves.json");
 
 fn obj_kind(v: &Value) -> String {
     v.get("kind").and_then(|k| k.as_str()).unwrap_or("").to_string()
+}
+fn obj_api_version(v: &Value) -> String {
+    v.get("apiVersion").and_then(|k| k.as_str()).unwrap_or("v1").to_string()
+}
+
+/// `apiVersion` + `kind` → GroupVersionKind (core group is empty).
+fn gvk(api_version: &str, kind: &str) -> kube::core::GroupVersionKind {
+    let (group, version) = match api_version.split_once('/') {
+        Some((g, v)) => (g.to_string(), v.to_string()),
+        None => (String::new(), api_version.to_string()),
+    };
+    kube::core::GroupVersionKind::gvk(&group, &version, kind)
+}
+
+/// Server-side apply an object to the target cluster (create-or-update), resolving
+/// the resource dynamically so any kind works — the `kubectl apply` equivalent.
+async fn apply_object(client: &kube::Client, namespace: &str, obj: &Value) -> Result<()> {
+    use kube::api::{Api, Patch, PatchParams};
+    use kube::core::DynamicObject;
+
+    let gvk = gvk(&obj_api_version(obj), &obj_kind(obj));
+    let (ar, caps) = kube::discovery::pinned_kind(client, &gvk)
+        .await
+        .with_context(|| format!("resolving {}/{}", gvk.group, gvk.kind))?;
+    let dobj: DynamicObject = serde_json::from_value(obj.clone())?;
+    let name = dobj
+        .metadata
+        .name
+        .clone()
+        .ok_or_else(|| anyhow::anyhow!("manifest has no metadata.name"))?;
+    let api: Api<DynamicObject> = if caps.scope == kube::discovery::Scope::Cluster {
+        Api::all_with(client.clone(), &ar)
+    } else {
+        Api::namespaced_with(client.clone(), namespace, &ar)
+    };
+    api.patch(
+        &name,
+        &PatchParams::apply("aether-move").force(),
+        &Patch::Apply(&dobj),
+    )
+    .await?;
+    Ok(())
+}
+
+/// Delete an object from the target cluster (best-effort).
+async fn delete_object(client: &kube::Client, namespace: &str, r: &ResourceRef) -> Result<()> {
+    use kube::api::{Api, DeleteParams};
+    use kube::core::DynamicObject;
+
+    let gvk = gvk(&r.api_version, &r.kind);
+    let (ar, caps) = kube::discovery::pinned_kind(client, &gvk).await?;
+    let api: Api<DynamicObject> = if caps.scope == kube::discovery::Scope::Cluster {
+        Api::all_with(client.clone(), &ar)
+    } else {
+        Api::namespaced_with(client.clone(), namespace, &ar)
+    };
+    api.delete(&r.name, &DeleteParams::default()).await?;
+    Ok(())
 }
 fn obj_name(v: &Value) -> String {
     v.get("metadata")
@@ -217,33 +276,27 @@ pub async fn execute_move(
     let target = connections
         .get(&req.target_conn)
         .ok_or_else(|| anyhow::anyhow!("target connection '{}' not found", req.target_conn))?;
-    let ctx = target.resolve_context().await?;
+    let (client, _version) = target.connect().await?;
 
     // Ensure the target namespace exists.
     let ns_manifest = serde_json::json!({
         "apiVersion": "v1", "kind": "Namespace",
         "metadata": {"name": req.target_namespace}
     });
-    let _ = crate::kubecluster::apply_manifest(&ctx, "", "Namespace", ns_manifest, None, None, None)
-        .await;
+    apply_object(&client, "", &ns_manifest)
+        .await
+        .context("creating target namespace")?;
 
     let mut ordered = plan.items.clone();
     ordered.sort_by_key(|i| apply_rank(&i.kind));
 
     let mut applied = Vec::new();
     for item in &ordered {
-        crate::kubecluster::apply_manifest(
-            &ctx,
-            &req.target_namespace,
-            &item.kind,
-            item.manifest.clone(),
-            None,
-            None,
-            None,
-        )
-        .await
-        .with_context(|| format!("applying {} {}", item.kind, item.name))?;
+        apply_object(&client, &req.target_namespace, &item.manifest)
+            .await
+            .with_context(|| format!("applying {} {}", item.kind, item.name))?;
         applied.push(ResourceRef {
+            api_version: obj_api_version(&item.manifest),
             kind: item.kind.clone(),
             name: item.name.clone(),
         });
@@ -274,22 +327,11 @@ pub async fn rollback(app: &str, connections: &ConnectionStore) -> Result<usize>
     let target = connections
         .get(&run.target_conn)
         .ok_or_else(|| anyhow::anyhow!("target connection '{}' not found", run.target_conn))?;
-    let ctx = target.resolve_context().await?;
+    let (client, _version) = target.connect().await?;
 
     let mut deleted = 0;
     for r in &run.applied {
-        let req = crate::kubecluster::ClusterActionRequest {
-            cluster: ctx.clone(),
-            namespace: run.target_namespace.clone(),
-            kind: r.kind.clone(),
-            name: r.name.clone(),
-            action: "delete".to_string(),
-            replicas: None,
-            api_version: None,
-            plural: None,
-            namespaced: None,
-        };
-        if crate::kubecluster::workload_action(&req).await.is_ok() {
+        if delete_object(&client, &run.target_namespace, r).await.is_ok() {
             deleted += 1;
         }
     }
