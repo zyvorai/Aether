@@ -86,10 +86,16 @@ crate::impl_json_store!(MoveStore, "moves.json");
 // ── Planning ────────────────────────────────────────────────────────────────
 
 fn obj_kind(v: &Value) -> String {
-    v.get("kind").and_then(|k| k.as_str()).unwrap_or("").to_string()
+    v.get("kind")
+        .and_then(|k| k.as_str())
+        .unwrap_or("")
+        .to_string()
 }
 fn obj_api_version(v: &Value) -> String {
-    v.get("apiVersion").and_then(|k| k.as_str()).unwrap_or("v1").to_string()
+    v.get("apiVersion")
+        .and_then(|k| k.as_str())
+        .unwrap_or("v1")
+        .to_string()
 }
 
 /// `apiVersion` + `kind` → GroupVersionKind (core group is empty).
@@ -156,7 +162,10 @@ fn obj_name(v: &Value) -> String {
 fn cm_matches(v: &Value, ns: &str, name: &str) -> bool {
     let m = v.get("metadata");
     m.and_then(|m| m.get("name")).and_then(|n| n.as_str()) == Some(name)
-        && m.and_then(|m| m.get("namespace")).and_then(|n| n.as_str()).unwrap_or(ns) == ns
+        && m.and_then(|m| m.get("namespace"))
+            .and_then(|n| n.as_str())
+            .unwrap_or(ns)
+            == ns
 }
 
 /// Build the Move plan (dry-run): resolve the app's objects from the snapshot,
@@ -172,9 +181,12 @@ pub async fn plan_move(snapshot: &InventorySnapshot, req: &MoveRequest) -> Resul
 
     for wref in &app.workloads {
         let (kind, name) = wref.split_once('/').unwrap_or(("", wref.as_str()));
-        if let Some(w) = snapshot.raw.workloads.iter().find(|w| {
-            w.namespace == app.namespace && w.kind == kind && w.name == name
-        }) {
+        if let Some(w) = snapshot
+            .raw
+            .workloads
+            .iter()
+            .find(|w| w.namespace == app.namespace && w.kind == kind && w.name == name)
+        {
             for c in &w.containers {
                 if !c.image.is_empty() {
                     images.insert(c.image.clone());
@@ -331,7 +343,10 @@ pub async fn rollback(app: &str, connections: &ConnectionStore) -> Result<usize>
 
     let mut deleted = 0;
     for r in &run.applied {
-        if delete_object(&client, &run.target_namespace, r).await.is_ok() {
+        if delete_object(&client, &run.target_namespace, r)
+            .await
+            .is_ok()
+        {
             deleted += 1;
         }
     }

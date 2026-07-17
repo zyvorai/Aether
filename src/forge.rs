@@ -79,10 +79,7 @@ impl ForgeConfig {
     /// GPU nodes (`GET /api/nodes`). Returns the `items` array (or a bare array).
     pub async fn list_nodes(&self) -> Result<Vec<serde_json::Value>> {
         let payload = self.get("/api/nodes").await?;
-        let arr = payload
-            .get("items")
-            .cloned()
-            .unwrap_or(payload);
+        let arr = payload.get("items").cloned().unwrap_or(payload);
         Ok(arr.as_array().cloned().unwrap_or_default())
     }
 
@@ -169,7 +166,10 @@ mod tests {
         let nodes = cfg.list_nodes().await.unwrap();
         assert_eq!(nodes.len(), 1);
         assert_eq!(nodes[0]["metadata"]["name"], "gpu-1");
-        let rec = cfg.recommend_placement(Some("llama"), "any", 2).await.unwrap();
+        let rec = cfg
+            .recommend_placement(Some("llama"), "any", 2)
+            .await
+            .unwrap();
         assert_eq!(rec["selectedNodes"][0], "gpu-1");
     }
 }

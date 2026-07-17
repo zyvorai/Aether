@@ -387,9 +387,18 @@ mod tests {
 
     #[test]
     fn test_access_modes_for() {
-        assert_eq!(access_modes_for(&AccessMode::ReadWriteOnce), vec!["ReadWriteOnce"]);
-        assert_eq!(access_modes_for(&AccessMode::ReadWriteMany), vec!["ReadWriteMany"]);
-        assert_eq!(access_modes_for(&AccessMode::ReadOnlyMany), vec!["ReadOnlyMany"]);
+        assert_eq!(
+            access_modes_for(&AccessMode::ReadWriteOnce),
+            vec!["ReadWriteOnce"]
+        );
+        assert_eq!(
+            access_modes_for(&AccessMode::ReadWriteMany),
+            vec!["ReadWriteMany"]
+        );
+        assert_eq!(
+            access_modes_for(&AccessMode::ReadOnlyMany),
+            vec!["ReadOnlyMany"]
+        );
     }
 
     #[test]
@@ -409,7 +418,10 @@ mod tests {
             token: Some("t".to_string()),
             tenant: "default".to_string(),
         };
-        assert_eq!(cfg.url("/api/atlas/v1/volumes"), "http://atlas:5110/api/atlas/v1/volumes");
+        assert_eq!(
+            cfg.url("/api/atlas/v1/volumes"),
+            "http://atlas:5110/api/atlas/v1/volumes"
+        );
     }
 
     #[test]
@@ -524,8 +536,14 @@ mod tests {
             token: None,
             tenant: "default".to_string(),
         };
-        assert_eq!(cfg.resolve_storage_class("shared").await.unwrap(), "zyvor-cephfs-shared");
-        assert_eq!(cfg.resolve_storage_class("production").await.unwrap(), "zyvor-rbd-prod");
+        assert_eq!(
+            cfg.resolve_storage_class("shared").await.unwrap(),
+            "zyvor-cephfs-shared"
+        );
+        assert_eq!(
+            cfg.resolve_storage_class("production").await.unwrap(),
+            "zyvor-rbd-prod"
+        );
         assert!(cfg.resolve_storage_class("nonexistent").await.is_err());
     }
 
@@ -567,6 +585,9 @@ mod tests {
             .await
             .unwrap_err()
             .to_string();
-        assert!(err.contains("pool full"), "expected job error surfaced: {err}");
+        assert!(
+            err.contains("pool full"),
+            "expected job error surfaced: {err}"
+        );
     }
 }

@@ -118,7 +118,10 @@ impl AssessmentReport {
     /// Render as a Markdown "Cloud Exit Assessment".
     pub fn to_markdown(&self) -> String {
         let mut m = String::new();
-        m.push_str(&format!("# Cloud Exit Assessment — {}\n\n", self.connection));
+        m.push_str(&format!(
+            "# Cloud Exit Assessment — {}\n\n",
+            self.connection
+        ));
         m.push_str(&format!("_Discovered: {}_\n\n", self.discovered_at));
 
         m.push_str("## Summary\n\n");
@@ -134,7 +137,9 @@ impl AssessmentReport {
         ));
 
         m.push_str("## Applications\n\n");
-        m.push_str("| App | Namespace | Class | Score | Complexity | Target | Strategy | Blockers |\n");
+        m.push_str(
+            "| App | Namespace | Class | Score | Complexity | Target | Strategy | Blockers |\n",
+        );
         m.push_str("|---|---|---|---|---|---|---|---|\n");
         for a in &self.assessments {
             m.push_str(&format!(

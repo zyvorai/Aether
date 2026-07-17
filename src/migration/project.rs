@@ -180,7 +180,9 @@ pub fn parse_resource(yaml: &str) -> anyhow::Result<AetherResource> {
     }
     let env: Envelope = serde_yaml::from_str(yaml)?;
     match env.kind.as_str() {
-        "MigrationProject" => Ok(AetherResource::MigrationProject(serde_yaml::from_str(yaml)?)),
+        "MigrationProject" => Ok(AetherResource::MigrationProject(serde_yaml::from_str(
+            yaml,
+        )?)),
         "MigrationPlan" => Ok(AetherResource::MigrationPlan(serde_yaml::from_str(yaml)?)),
         other => anyhow::bail!("unknown aether.zyvor.dev kind '{}'", other),
     }

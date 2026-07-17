@@ -45,7 +45,8 @@ pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::R
     } else {
         crate::saml_c14n::digest_canonical_bytes(&signed_element, &transforms)?
     };
-    let digest_method = extract_digest_method(&reference_xml).unwrap_or_else(|| DIGEST_SHA256.into());
+    let digest_method =
+        extract_digest_method(&reference_xml).unwrap_or_else(|| DIGEST_SHA256.into());
     let digest_actual = digest_b64(&digest_bytes, &digest_method)?;
     if digest_actual != digest_expected.trim() {
         anyhow::bail!("SAML digest mismatch for #{target_id}");
@@ -58,8 +59,14 @@ pub fn verify_response_signature(xml: &str, trusted_cert_pem: &str) -> anyhow::R
         .unwrap_or_else(|| crate::saml_c14n::EXC_C14N.to_string());
     let signed_info_bytes = crate::saml_c14n::canonicalize(&signed_info, &c14n_algo)
         .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
-    let sig_method = extract_signature_method(&signed_info).unwrap_or_else(|| SIG_RSA_SHA256.into());
-    verify_rsa_signature(&public_key, &sig_method, signed_info_bytes.as_slice(), &signature)?;
+    let sig_method =
+        extract_signature_method(&signed_info).unwrap_or_else(|| SIG_RSA_SHA256.into());
+    verify_rsa_signature(
+        &public_key,
+        &sig_method,
+        signed_info_bytes.as_slice(),
+        &signature,
+    )?;
     Ok(())
 }
 
@@ -234,7 +241,8 @@ mod tests {
         let assertion = format!(
             r#"<saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" ID="{assertion_id}" Version="2.0"><!-- idp --><saml2:Subject><saml2:NameID>mock-user@aether.local</saml2:NameID></saml2:Subject></saml2:Assertion>"#
         );
-        let signature = mock_idp::sign_saml_element_for_test_with_comments(&assertion, assertion_id);
+        let signature =
+            mock_idp::sign_saml_element_for_test_with_comments(&assertion, assertion_id);
         let xml = format!("<Response>{signature}{assertion}</Response>");
         verify_response_signature(&xml, mock_idp::idp_certificate_pem())
             .expect("exclusive comments signature roundtrip");

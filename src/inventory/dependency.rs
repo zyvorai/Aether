@@ -80,16 +80,32 @@ pub fn discover_dependencies(inv: &RawInventory) -> DependencyEdges {
     for w in &inv.workloads {
         let from = q(&w.namespace, &w.kind, &w.name);
         for cm in &w.config_map_refs {
-            edges.push(DepEdge { from: from.clone(), to: q(&w.namespace, "ConfigMap", cm), kind: EdgeKind::Config });
+            edges.push(DepEdge {
+                from: from.clone(),
+                to: q(&w.namespace, "ConfigMap", cm),
+                kind: EdgeKind::Config,
+            });
         }
         for s in &w.secret_refs {
-            edges.push(DepEdge { from: from.clone(), to: q(&w.namespace, "Secret", s), kind: EdgeKind::Secret });
+            edges.push(DepEdge {
+                from: from.clone(),
+                to: q(&w.namespace, "Secret", s),
+                kind: EdgeKind::Secret,
+            });
         }
         for p in &w.pvc_refs {
-            edges.push(DepEdge { from: from.clone(), to: q(&w.namespace, "PVC", p), kind: EdgeKind::Storage });
+            edges.push(DepEdge {
+                from: from.clone(),
+                to: q(&w.namespace, "PVC", p),
+                kind: EdgeKind::Storage,
+            });
         }
         for e in &w.env_endpoints {
-            edges.push(DepEdge { from: from.clone(), to: format!("external:{e}"), kind: EdgeKind::External });
+            edges.push(DepEdge {
+                from: from.clone(),
+                to: format!("external:{e}"),
+                kind: EdgeKind::External,
+            });
         }
     }
 
@@ -102,7 +118,11 @@ impl DependencyEdges {
     pub fn for_prefixes(&self, prefixes: &[String]) -> Vec<&DepEdge> {
         self.edges
             .iter()
-            .filter(|e| prefixes.iter().any(|p| e.from.starts_with(p) || e.to.starts_with(p)))
+            .filter(|e| {
+                prefixes
+                    .iter()
+                    .any(|p| e.from.starts_with(p) || e.to.starts_with(p))
+            })
             .collect()
     }
 }

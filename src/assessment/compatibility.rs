@@ -230,7 +230,8 @@ pub async fn check_compatibility(
         checks.push(CompatCheck {
             name: "ReadWriteMany".to_string(),
             status: CheckStatus::Warn,
-            detail: "app uses RWX; confirm a target StorageClass supports ReadWriteMany".to_string(),
+            detail: "app uses RWX; confirm a target StorageClass supports ReadWriteMany"
+                .to_string(),
         });
     }
 

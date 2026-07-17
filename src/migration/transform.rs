@@ -81,7 +81,11 @@ pub fn sanitize(obj: &mut Value) -> Vec<TransformNote> {
             "selfLink",
         ] {
             if meta.remove(k).is_some() {
-                notes.push(TransformNote::new(&format!("metadata.{k}"), "removed", "cluster-scoped"));
+                notes.push(TransformNote::new(
+                    &format!("metadata.{k}"),
+                    "removed",
+                    "cluster-scoped",
+                ));
             }
         }
         if let Some(ann) = meta.get_mut("annotations").and_then(|a| a.as_object_mut()) {
@@ -92,14 +96,22 @@ pub fn sanitize(obj: &mut Value) -> Vec<TransformNote> {
     if let Some(spec) = obj.get_mut("spec").and_then(|s| s.as_object_mut()) {
         for k in ["clusterIP", "clusterIPs"] {
             if spec.remove(k).is_some() {
-                notes.push(TransformNote::new(&format!("spec.{k}"), "removed", "target assigns"));
+                notes.push(TransformNote::new(
+                    &format!("spec.{k}"),
+                    "removed",
+                    "target assigns",
+                ));
             }
         }
     }
     if let Some(ps) = pod_spec_mut(obj) {
         if let Some(m) = ps.as_object_mut() {
             if m.remove("nodeName").is_some() {
-                notes.push(TransformNote::new("spec…nodeName", "removed", "target schedules"));
+                notes.push(TransformNote::new(
+                    "spec…nodeName",
+                    "removed",
+                    "target schedules",
+                ));
             }
         }
     }
@@ -156,7 +168,11 @@ pub fn rewrite_loadbalancer(obj: &mut Value) -> Vec<TransformNote> {
         }
         // Node-port allocations are cluster-unique; drop them so the shadow copy
         // doesn't conflict with the source.
-        for k in ["healthCheckNodePort", "externalTrafficPolicy", "allocateLoadBalancerNodePorts"] {
+        for k in [
+            "healthCheckNodePort",
+            "externalTrafficPolicy",
+            "allocateLoadBalancerNodePorts",
+        ] {
             spec.remove(k);
         }
         if let Some(ports) = spec.get_mut("ports").and_then(|p| p.as_array_mut()) {
@@ -179,7 +195,11 @@ pub fn rewrite_loadbalancer(obj: &mut Value) -> Vec<TransformNote> {
             .collect();
         for k in aws_keys {
             ann.remove(&k);
-            notes.push(TransformNote::new(&format!("annotations.{k}"), "removed", "AWS-specific"));
+            notes.push(TransformNote::new(
+                &format!("annotations.{k}"),
+                "removed",
+                "AWS-specific",
+            ));
         }
     }
     notes
@@ -205,14 +225,20 @@ pub fn rewrite_iam(obj: &mut Value) -> Vec<TransformNote> {
 }
 
 /// Replace AWS endpoints in container env values with in-cluster targets.
-pub fn rewrite_endpoints(obj: &mut Value, endpoint_map: &BTreeMap<String, String>) -> Vec<TransformNote> {
+pub fn rewrite_endpoints(
+    obj: &mut Value,
+    endpoint_map: &BTreeMap<String, String>,
+) -> Vec<TransformNote> {
     let mut notes = Vec::new();
     for_each_container(obj, |c| {
         let Some(env) = c.get_mut("env").and_then(|e| e.as_array_mut()) else {
             return;
         };
         for var in env.iter_mut() {
-            let orig = var.get("value").and_then(|v| v.as_str()).map(str::to_string);
+            let orig = var
+                .get("value")
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
             let Some(orig) = orig else { continue };
             let mut new_val = orig.clone();
             for (frag, repl) in endpoint_map {
@@ -221,11 +247,19 @@ pub fn rewrite_endpoints(obj: &mut Value, endpoint_map: &BTreeMap<String, String
                 }
             }
             if new_val != orig {
-                let name = var.get("name").and_then(|n| n.as_str()).unwrap_or("?").to_string();
+                let name = var
+                    .get("name")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("?")
+                    .to_string();
                 if let Some(m) = var.as_object_mut() {
                     m.insert("value".to_string(), Value::String(new_val));
                 }
-                notes.push(TransformNote::new(&format!("env.{name}"), "endpoint rewritten", "AWS→in-cluster"));
+                notes.push(TransformNote::new(
+                    &format!("env.{name}"),
+                    "endpoint rewritten",
+                    "AWS→in-cluster",
+                ));
             }
         }
     });
@@ -307,7 +341,10 @@ mod tests {
             "registry.zyvor.internal/api:1".to_string(),
         );
         let mut endpoint_map = BTreeMap::new();
-        endpoint_map.insert("db.abc.rds.amazonaws.com:5432".to_string(), "postgres.data.svc:5432".to_string());
+        endpoint_map.insert(
+            "db.abc.rds.amazonaws.com:5432".to_string(),
+            "postgres.data.svc:5432".to_string(),
+        );
         let opts = TransformOptions {
             target_namespace: Some("payments".into()),
             image_map,
@@ -315,13 +352,18 @@ mod tests {
         };
         let notes = transform(&mut d, &opts);
         assert_eq!(d["metadata"]["namespace"], "payments");
-        assert_eq!(d["spec"]["template"]["spec"]["containers"][0]["image"], "registry.zyvor.internal/api:1");
+        assert_eq!(
+            d["spec"]["template"]["spec"]["containers"][0]["image"],
+            "registry.zyvor.internal/api:1"
+        );
         assert_eq!(
             d["spec"]["template"]["spec"]["containers"][0]["env"][0]["value"],
             "postgres.data.svc:5432"
         );
         // IRSA annotation stripped, "keep" retained.
-        assert!(d["metadata"]["annotations"].get("eks.amazonaws.com/role-arn").is_none());
+        assert!(d["metadata"]["annotations"]
+            .get("eks.amazonaws.com/role-arn")
+            .is_none());
         assert_eq!(d["metadata"]["annotations"]["keep"], "yes");
         assert!(notes.iter().any(|n| n.action == "rewritten"));
     }
@@ -339,7 +381,10 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(svc["spec"]["type"], "ClusterIP");
         assert!(svc["spec"].get("clusterIP").is_none());
-        assert!(svc["metadata"]["annotations"].as_object().unwrap().is_empty());
+        assert!(svc["metadata"]["annotations"]
+            .as_object()
+            .unwrap()
+            .is_empty());
         assert!(notes.iter().any(|n| n.action.contains("LoadBalancer")));
     }
 }

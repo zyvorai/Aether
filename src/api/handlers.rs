@@ -523,7 +523,12 @@ pub(crate) async fn api_auth_me(
             }
         }
 
-        if legacy_key.is_none() && rbac_store.list_keys().is_empty() && app_state.oidc.is_none() && app_state.saml.is_none() && app_state.ldap.is_none() {
+        if legacy_key.is_none()
+            && rbac_store.list_keys().is_empty()
+            && app_state.oidc.is_none()
+            && app_state.saml.is_none()
+            && app_state.ldap.is_none()
+        {
             return ok_json(AuthStatusResponse {
                 authenticated: true,
                 username: "local-dev".to_string(),
@@ -4933,7 +4938,10 @@ pub(crate) async fn api_saml_metadata(
     (
         StatusCode::OK,
         [
-            (header::CONTENT_TYPE, "application/samlmetadata+xml; charset=utf-8"),
+            (
+                header::CONTENT_TYPE,
+                "application/samlmetadata+xml; charset=utf-8",
+            ),
             (
                 header::CONTENT_DISPOSITION,
                 "attachment; filename=\"aether-sp-metadata.xml\"",

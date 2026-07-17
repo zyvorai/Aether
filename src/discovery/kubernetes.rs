@@ -175,7 +175,11 @@ pub async fn discover(
     let ns_list: Vec<String> = if namespaces.is_empty() {
         let api: Api<Namespace> = Api::all(client.clone());
         match api.list(&ListParams::default()).await {
-            Ok(list) => list.items.into_iter().filter_map(|n| n.metadata.name).collect(),
+            Ok(list) => list
+                .items
+                .into_iter()
+                .filter_map(|n| n.metadata.name)
+                .collect(),
             Err(e) => {
                 inv.warnings.push(format!("list namespaces failed: {e}"));
                 Vec::new()
@@ -221,7 +225,12 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
             let podspec = d.spec.as_ref().and_then(|s| s.template.spec.as_ref());
             let manifest = serde_json::to_value(&d).ok();
             inv.workloads.push(build_workload(
-                ns, "Deployment", &d.metadata, replicas, podspec, manifest,
+                ns,
+                "Deployment",
+                &d.metadata,
+                replicas,
+                podspec,
+                manifest,
             ));
         }
     }
@@ -233,7 +242,11 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
             let manifest = serde_json::to_value(&s).ok();
             let mut w = build_workload(ns, "StatefulSet", &s.metadata, replicas, podspec, manifest);
             // StatefulSet volumeClaimTemplates count as PVC usage.
-            if let Some(vcts) = s.spec.as_ref().and_then(|sp| sp.volume_claim_templates.as_ref()) {
+            if let Some(vcts) = s
+                .spec
+                .as_ref()
+                .and_then(|sp| sp.volume_claim_templates.as_ref())
+            {
                 for vct in vcts {
                     if let Some(n) = &vct.metadata.name {
                         w.pvc_refs.push(n.clone());
@@ -248,8 +261,14 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
         for d in list.items {
             let podspec = d.spec.as_ref().and_then(|s| s.template.spec.as_ref());
             let manifest = serde_json::to_value(&d).ok();
-            inv.workloads
-                .push(build_workload(ns, "DaemonSet", &d.metadata, 1, podspec, manifest));
+            inv.workloads.push(build_workload(
+                ns,
+                "DaemonSet",
+                &d.metadata,
+                1,
+                podspec,
+                manifest,
+            ));
         }
     }
     let jobs: Api<Job> = Api::namespaced(client.clone(), ns);
@@ -274,8 +293,14 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
                 .and_then(|s| s.job_template.spec.as_ref())
                 .and_then(|jt| jt.template.spec.as_ref());
             let manifest = serde_json::to_value(&c).ok();
-            inv.workloads
-                .push(build_workload(ns, "CronJob", &c.metadata, 1, podspec, manifest));
+            inv.workloads.push(build_workload(
+                ns,
+                "CronJob",
+                &c.metadata,
+                1,
+                podspec,
+                manifest,
+            ));
         }
     }
     // Naked pods (no controller owner).
@@ -286,8 +311,14 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
                 continue; // owned by a controller → represented above
             }
             let manifest = serde_json::to_value(&p).ok();
-            inv.workloads
-                .push(build_workload(ns, "Pod", &p.metadata, 1, p.spec.as_ref(), manifest));
+            inv.workloads.push(build_workload(
+                ns,
+                "Pod",
+                &p.metadata,
+                1,
+                p.spec.as_ref(),
+                manifest,
+            ));
         }
     }
 
@@ -365,7 +396,9 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
                 namespace: ns.to_string(),
                 name: p.metadata.name.unwrap_or_default(),
                 storage_class: spec.and_then(|s| s.storage_class_name.clone()),
-                access_modes: spec.and_then(|s| s.access_modes.clone()).unwrap_or_default(),
+                access_modes: spec
+                    .and_then(|s| s.access_modes.clone())
+                    .unwrap_or_default(),
                 size: spec
                     .and_then(|s| s.resources.as_ref())
                     .and_then(|r| r.requests.as_ref())
@@ -414,7 +447,12 @@ fn build_workload(
         namespace: ns.to_string(),
         kind: kind.to_string(),
         name: meta.name.clone().unwrap_or_default(),
-        labels: meta.labels.clone().unwrap_or_default().into_iter().collect(),
+        labels: meta
+            .labels
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .collect(),
         annotations: meta
             .annotations
             .clone()
@@ -565,7 +603,9 @@ mod tests {
     #[test]
     fn test_looks_like_endpoint() {
         assert!(looks_like_endpoint("https://api.stripe.com/v1"));
-        assert!(looks_like_endpoint("mydb.abc123.us-east-1.rds.amazonaws.com:5432"));
+        assert!(looks_like_endpoint(
+            "mydb.abc123.us-east-1.rds.amazonaws.com:5432"
+        ));
         assert!(looks_like_endpoint("postgres://host:5432/db"));
         assert!(!looks_like_endpoint("true"));
         assert!(!looks_like_endpoint("8080"));

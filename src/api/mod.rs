@@ -497,7 +497,14 @@ fn emit_maintenance_event(
 ) {
     let path = crate::events::EventBus::default_path();
     if let Ok(mut bus) = crate::events::EventBus::load(&path) {
-        bus.emit_simple(severity, category, "serve-maintenance", None, title, message);
+        bus.emit_simple(
+            severity,
+            category,
+            "serve-maintenance",
+            None,
+            title,
+            message,
+        );
         let _ = bus.save(&path);
     }
 }
@@ -622,7 +629,9 @@ async fn run_autoscale_loop(state: Arc<RwLock<StateStore>>) {
     let cost_per_replica_hourly = 0.05; // for the recommendation's cost_impact only
     const MIN_POINTS: usize = 3;
 
-    let ctx = std::env::var("AETHER_CONTEXT").ok().filter(|s| !s.is_empty());
+    let ctx = std::env::var("AETHER_CONTEXT")
+        .ok()
+        .filter(|s| !s.is_empty());
     let cluster = match crate::kubecluster::resolve_reachable_cluster(ctx.as_deref()).await {
         Ok(c) => c,
         Err(e) => {
@@ -678,18 +687,17 @@ async fn run_autoscale_loop(state: Arc<RwLock<StateStore>>) {
                 continue; // only these are imperatively scalable
             }
 
-            let util = match crate::kubecluster::workload_utilization(
-                &cluster, &namespace, &kind, &name,
-            )
-            .await
-            {
-                Ok(Some(u)) => u,
-                Ok(None) => continue, // no requests / metrics / pods yet
-                Err(e) => {
-                    tracing::debug!("autoscale {name}: {e}");
-                    continue;
-                }
-            };
+            let util =
+                match crate::kubecluster::workload_utilization(&cluster, &namespace, &kind, &name)
+                    .await
+                {
+                    Ok(Some(u)) => u,
+                    Ok(None) => continue, // no requests / metrics / pods yet
+                    Err(e) => {
+                        tracing::debug!("autoscale {name}: {e}");
+                        continue;
+                    }
+                };
             autoscale.record(&name, util.cpu_ratio, util.mem_ratio);
 
             if !autoscale.cooldown_elapsed(&name, now, cfg.cooldown_secs) {
@@ -769,7 +777,11 @@ fn audit_autonomous_maintenance(source: &str, detail: &str) {
 /// of expiring, either regenerate it (self-signed + `AETHER_AUTO_RENEW_CERT=1`)
 /// or emit an expiry event. A CA-issued cert is never self-signed, so it is
 /// only alerted — Aether does not own its renewal.
-fn run_cert_expiry_check(cert_path: &std::path::Path, key_path: Option<&std::path::Path>, warn_days: i64) {
+fn run_cert_expiry_check(
+    cert_path: &std::path::Path,
+    key_path: Option<&std::path::Path>,
+    warn_days: i64,
+) {
     let info = match crate::certs::inspect(cert_path) {
         Ok(i) => i,
         Err(e) => {

@@ -44,7 +44,13 @@ impl InventorySnapshot {
     pub fn path_for(connection: &str) -> PathBuf {
         let safe: String = connection
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         crate::resources::aether_path(&format!("inventory-{safe}.json"))
     }

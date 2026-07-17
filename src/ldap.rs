@@ -106,8 +106,8 @@ impl LdapRuntime {
         if !user_filter.contains("{user}") && !user_filter.contains("{sam}") {
             anyhow::bail!("AETHER_LDAP_USER_FILTER must contain a {{user}} or {{sam}} placeholder");
         }
-        let group_attr = std::env::var("AETHER_LDAP_GROUP_ATTR")
-            .unwrap_or_else(|_| "memberOf".into());
+        let group_attr =
+            std::env::var("AETHER_LDAP_GROUP_ATTR").unwrap_or_else(|_| "memberOf".into());
         let default_role =
             parse_role_env(std::env::var("AETHER_LDAP_DEFAULT_ROLE").ok().as_deref());
         let role_mapping = parse_ldap_role_mapping_from_env()?;
@@ -141,7 +141,11 @@ impl LdapRuntime {
         self.domain.as_deref()
     }
 
-    pub async fn authenticate(&self, username: &str, password: &str) -> Result<LdapAuthResult, anyhow::Error> {
+    pub async fn authenticate(
+        &self,
+        username: &str,
+        password: &str,
+    ) -> Result<LdapAuthResult, anyhow::Error> {
         let password = password.trim();
         if password.is_empty() {
             anyhow::bail!("password required");
@@ -178,7 +182,11 @@ impl LdapRuntime {
         .context("ldap task join")?
     }
 
-    pub fn session_cookie_for(&self, auth: &LdapAuthResult, tls: bool) -> Result<String, anyhow::Error> {
+    pub fn session_cookie_for(
+        &self,
+        auth: &LdapAuthResult,
+        tls: bool,
+    ) -> Result<String, anyhow::Error> {
         let jwt = self.issue_session_jwt(
             &auth.username,
             Some(auth.username.clone()),
@@ -281,7 +289,10 @@ fn ldap_bind_and_profile(ctx: LdapBindContext<'_>) -> Result<LdapAuthResult, any
 
     let filter = user_filter_tpl
         .replace("{user}", &ldap_filter_escape(normalized_user))
-        .replace("{sam}", &ldap_filter_escape(sam_account_name(normalized_user)));
+        .replace(
+            "{sam}",
+            &ldap_filter_escape(sam_account_name(normalized_user)),
+        );
     let attrs = vec![
         "cn",
         "displayName",
@@ -421,7 +432,10 @@ fn sam_account_name(normalized_user: &str) -> &str {
 fn cn_from_dn(dn: &str) -> Option<String> {
     dn.split(',')
         .next()
-        .and_then(|part| part.strip_prefix("CN=").or_else(|| part.strip_prefix("cn=")))
+        .and_then(|part| {
+            part.strip_prefix("CN=")
+                .or_else(|| part.strip_prefix("cn="))
+        })
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string)

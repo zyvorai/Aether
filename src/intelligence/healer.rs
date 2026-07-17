@@ -243,7 +243,9 @@ pub async fn execute_orchestrator_actions(
                             snapshot.display()
                         );
                         audit_autonomous(source, workload, &detail);
-                        result.executed.push(format!("rolled back {workload}: {detail}"));
+                        result
+                            .executed
+                            .push(format!("rolled back {workload}: {detail}"));
                     }
                     Err(e) => {
                         result

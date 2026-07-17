@@ -86,7 +86,10 @@ pub fn inspect(cert_path: &Path) -> Result<CertInfo> {
 
 fn ip_from_bytes(bytes: &[u8]) -> Option<String> {
     match bytes.len() {
-        4 => Some(format!("{}.{}.{}.{}", bytes[0], bytes[1], bytes[2], bytes[3])),
+        4 => Some(format!(
+            "{}.{}.{}.{}",
+            bytes[0], bytes[1], bytes[2], bytes[3]
+        )),
         16 => {
             let segs: Vec<String> = bytes
                 .chunks(2)

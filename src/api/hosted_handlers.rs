@@ -4,6 +4,7 @@
 
 use super::handlers::{err_bad_request, err_not_found, ok_json};
 use super::types::AppState;
+use crate::fleet::federation::{self, FederationPlanRequest};
 use crate::hosted::billing::usage_summary;
 use crate::hosted::keys::TenantKeyStore;
 use crate::hosted::metering::UsageMeter;
@@ -12,8 +13,6 @@ use crate::hosted::stripe::{
     handle_webhook_event, verify_webhook_signature, StripeCheckoutRequest, StripePortalRequest,
 };
 use crate::hosted::tenant::{TenantPlan, TenantStore};
-use crate::fleet::federation::{self, FederationPlanRequest};
-use serde::Serialize;
 use axum::{
     body::Bytes,
     extract::{Path, State as AxumState},
@@ -22,6 +21,7 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct CreateTenantBody {

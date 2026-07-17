@@ -536,8 +536,7 @@ pub fn persisted_poll_interval_secs() -> u64 {
 /// git) — call via `spawn_blocking` from async contexts. Errors when GitOps is
 /// not configured or the sync itself fails.
 pub fn reconcile_once() -> anyhow::Result<Vec<GitOpsChange>> {
-    let cfg =
-        load_persisted_config().ok_or_else(|| anyhow::anyhow!("GitOps not configured"))?;
+    let cfg = load_persisted_config().ok_or_else(|| anyhow::anyhow!("GitOps not configured"))?;
     let mut ctrl = GitOpsController::new(cfg);
     let changes = ctrl.sync()?;
     if let Ok(json) = serde_json::to_string_pretty(ctrl.status()) {

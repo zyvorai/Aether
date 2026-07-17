@@ -207,8 +207,7 @@ impl Backup {
                 if let Some(parent) = dest.parent() {
                     fs::create_dir_all(parent).ok();
                 }
-                fs::write(&dest, body)
-                    .context(format!("Failed to restore {}", dest.display()))?;
+                fs::write(&dest, body).context(format!("Failed to restore {}", dest.display()))?;
                 #[cfg(unix)]
                 if is_secret {
                     use std::os::unix::fs::PermissionsExt;

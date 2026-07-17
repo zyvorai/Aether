@@ -199,9 +199,7 @@ mod tests {
         let mut store = TenantStore::load();
         let t = store.create("Acme", "acme", TenantPlan::Free).unwrap();
         assert!(store.stripe_customer_id(&t.id).is_none());
-        store
-            .set_stripe_customer_id(&t.id, "cus_test123")
-            .unwrap();
+        store.set_stripe_customer_id(&t.id, "cus_test123").unwrap();
         assert_eq!(
             store.stripe_customer_id(&t.id).as_deref(),
             Some("cus_test123")

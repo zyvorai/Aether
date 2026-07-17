@@ -252,11 +252,15 @@ pub async fn saml_sso(Query(params): Query<HashMap<String, String>>) -> impl Int
             acs = xml_escape(&acs),
             body = body,
         );
-        sign_saml_element_with_options(&unsigned, &response_id, SignOptions {
-            exclusive_comments: false,
-            sha384: mock_idp_sha384(),
-            azure_transforms: true,
-        })
+        sign_saml_element_with_options(
+            &unsigned,
+            &response_id,
+            SignOptions {
+                exclusive_comments: false,
+                sha384: mock_idp_sha384(),
+                azure_transforms: true,
+            },
+        )
     } else {
         sign_saml_element(&body, &assertion_id)
     };
@@ -293,7 +297,11 @@ fn sign_saml_element(element_xml: &str, element_id: &str) -> String {
 }
 
 #[cfg(test)]
-fn sign_saml_element_with_mode(element_xml: &str, element_id: &str, exclusive_comments: bool) -> String {
+fn sign_saml_element_with_mode(
+    element_xml: &str,
+    element_id: &str,
+    exclusive_comments: bool,
+) -> String {
     sign_saml_element_with_options(
         element_xml,
         element_id,
@@ -305,7 +313,11 @@ fn sign_saml_element_with_mode(element_xml: &str, element_id: &str, exclusive_co
     )
 }
 
-fn sign_saml_element_with_options(element_xml: &str, element_id: &str, options: SignOptions) -> String {
+fn sign_saml_element_with_options(
+    element_xml: &str,
+    element_id: &str,
+    options: SignOptions,
+) -> String {
     let c14n = if options.exclusive_comments {
         crate::saml_c14n::EXC_C14N_COMMENTS
     } else {
@@ -370,9 +382,8 @@ fn sign_saml_element_with_options(element_xml: &str, element_id: &str, options: 
         r#"</ds:DigestValue></ds:Reference></ds:SignedInfo>"#,
     ]
     .concat();
-    let signed_info_bytes =
-        crate::saml_c14n::canonicalize(&signed_info, c14n)
-            .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
+    let signed_info_bytes = crate::saml_c14n::canonicalize(&signed_info, c14n)
+        .unwrap_or_else(|_| signed_info.as_bytes().to_vec());
     let sig_b64 = if options.sha384 {
         let signing_key = SigningKey::<Sha384>::new(keys().private_key.clone());
         let signature = signing_key.sign(&signed_info_bytes);
@@ -537,7 +548,9 @@ mod signing_tests {
         let sig = sign_saml_element_with_mode(assertion, "_a", true);
         assert!(
             sig.contains(r#"Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#WithComments" />"#)
-                || sig.contains(r#"Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#WithComments"/>"#),
+                || sig.contains(
+                    r#"Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#WithComments"/>"#
+                ),
             "{sig}"
         );
     }

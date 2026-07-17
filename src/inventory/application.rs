@@ -108,7 +108,10 @@ fn group_key(w: &DiscoveredWorkload) -> String {
 }
 
 /// True when `selector` is a non-empty subset of `labels` (a Service targets a pod).
-fn selector_matches(selector: &BTreeMap<String, String>, labels: &BTreeMap<String, String>) -> bool {
+fn selector_matches(
+    selector: &BTreeMap<String, String>,
+    labels: &BTreeMap<String, String>,
+) -> bool {
     !selector.is_empty() && selector.iter().all(|(k, v)| labels.get(k) == Some(v))
 }
 
@@ -130,7 +133,10 @@ pub fn group_into_applications(inv: &RawInventory) -> Vec<Application> {
             name: key.clone(),
             namespace: namespace.clone(),
             connection: inv.connection.clone(),
-            workloads: members.iter().map(|w| format!("{}/{}", w.kind, w.name)).collect(),
+            workloads: members
+                .iter()
+                .map(|w| format!("{}/{}", w.kind, w.name))
+                .collect(),
             services: Vec::new(),
             pvcs: Vec::new(),
             config_map_refs: Vec::new(),
@@ -143,7 +149,8 @@ pub fn group_into_applications(inv: &RawInventory) -> Vec<Application> {
 
         for w in &members {
             app.pvcs.extend(w.pvc_refs.iter().cloned());
-            app.config_map_refs.extend(w.config_map_refs.iter().cloned());
+            app.config_map_refs
+                .extend(w.config_map_refs.iter().cloned());
             app.secret_refs.extend(w.secret_refs.iter().cloned());
             app.external_deps.extend(w.env_endpoints.iter().cloned());
         }
@@ -244,7 +251,10 @@ fn classify(members: &[&DiscoveredWorkload]) -> (MigrationClass, Vec<String>, Ve
         }
         for c in &w.containers {
             if c.image.ends_with(":latest") || !c.image.contains(':') {
-                blockers.push(format!("container '{}' uses a mutable tag ({})", c.name, c.image));
+                blockers.push(format!(
+                    "container '{}' uses a mutable tag ({})",
+                    c.name, c.image
+                ));
             }
             if !c.has_requests {
                 warnings.push(format!("container '{}' has no resource requests", c.name));
@@ -325,7 +335,10 @@ mod tests {
     fn test_class_stateful() {
         let mut w = wl("StatefulSet", "pg");
         w.pvc_refs.push("data".into());
-        let inv = RawInventory { workloads: vec![w], ..Default::default() };
+        let inv = RawInventory {
+            workloads: vec![w],
+            ..Default::default()
+        };
         let apps = group_into_applications(&inv);
         assert_eq!(apps[0].class, MigrationClass::StatefulNative);
     }
@@ -334,20 +347,36 @@ mod tests {
     fn test_class_node_dependent_and_cloud() {
         let mut w = wl("DaemonSet", "agent");
         w.signals.host_network = true;
-        let inv = RawInventory { workloads: vec![w], ..Default::default() };
-        assert_eq!(group_into_applications(&inv)[0].class, MigrationClass::PrivilegedNodeDependent);
+        let inv = RawInventory {
+            workloads: vec![w],
+            ..Default::default()
+        };
+        assert_eq!(
+            group_into_applications(&inv)[0].class,
+            MigrationClass::PrivilegedNodeDependent
+        );
 
         let mut c = wl("Deployment", "api");
-        c.env_endpoints.push("db.abc.us-east-1.rds.amazonaws.com:5432".into());
-        let inv = RawInventory { workloads: vec![c], ..Default::default() };
-        assert_eq!(group_into_applications(&inv)[0].class, MigrationClass::CloudManagedDependency);
+        c.env_endpoints
+            .push("db.abc.us-east-1.rds.amazonaws.com:5432".into());
+        let inv = RawInventory {
+            workloads: vec![c],
+            ..Default::default()
+        };
+        assert_eq!(
+            group_into_applications(&inv)[0].class,
+            MigrationClass::CloudManagedDependency
+        );
     }
 
     #[test]
     fn test_blockers_latest_and_naked_pod() {
         let mut w = wl("Pod", "debug");
         w.containers[0].image = "nginx:latest".into();
-        let inv = RawInventory { workloads: vec![w], ..Default::default() };
+        let inv = RawInventory {
+            workloads: vec![w],
+            ..Default::default()
+        };
         let app = &group_into_applications(&inv)[0];
         assert_eq!(app.class, MigrationClass::NonPortable);
         assert!(app.blockers.iter().any(|b| b.contains("naked Pod")));
@@ -357,8 +386,17 @@ mod tests {
     #[test]
     fn test_operator_managed() {
         let mut w = wl("Deployment", "kafka");
-        w.owner_refs.push(OwnerRef { kind: "Kafka".into(), name: "my-kafka".into() });
-        let inv = RawInventory { workloads: vec![w], ..Default::default() };
-        assert_eq!(group_into_applications(&inv)[0].class, MigrationClass::OperatorManaged);
+        w.owner_refs.push(OwnerRef {
+            kind: "Kafka".into(),
+            name: "my-kafka".into(),
+        });
+        let inv = RawInventory {
+            workloads: vec![w],
+            ..Default::default()
+        };
+        assert_eq!(
+            group_into_applications(&inv)[0].class,
+            MigrationClass::OperatorManaged
+        );
     }
 }

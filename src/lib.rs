@@ -22,6 +22,8 @@ pub mod zeus;
 pub mod copilot {
     pub use crate::zeus::*;
 }
+pub mod autoscale;
+pub mod certs;
 pub mod cost;
 pub mod dependencies;
 pub mod discovery;
@@ -42,6 +44,7 @@ pub mod inventory;
 pub mod kubecluster;
 pub mod ldap;
 pub mod legacy_workload_yaml;
+pub mod maintenance;
 pub mod metrics;
 pub mod migration;
 pub mod mock_idp;
@@ -57,9 +60,6 @@ pub mod rbac;
 pub mod resources;
 pub mod runtime;
 pub mod saml;
-pub mod autoscale;
-pub mod certs;
-pub mod maintenance;
 pub mod saml_c14n;
 pub mod saml_decrypt;
 pub mod saml_verify;

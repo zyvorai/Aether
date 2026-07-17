@@ -181,7 +181,10 @@ mod tests {
             let k: ConnectionKind = s.parse().unwrap();
             assert_eq!(k.as_str(), s);
         }
-        assert_eq!("k8s".parse::<ConnectionKind>().unwrap(), ConnectionKind::Kubernetes);
+        assert_eq!(
+            "k8s".parse::<ConnectionKind>().unwrap(),
+            ConnectionKind::Kubernetes
+        );
         assert!("bogus".parse::<ConnectionKind>().is_err());
     }
 

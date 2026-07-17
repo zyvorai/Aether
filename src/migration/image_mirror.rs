@@ -103,10 +103,16 @@ mod tests {
     #[test]
     fn test_target_ref() {
         assert_eq!(
-            target_ref("1.dkr.ecr.us-east-1.amazonaws.com/team/api:1.2", "registry.zyvor.internal"),
+            target_ref(
+                "1.dkr.ecr.us-east-1.amazonaws.com/team/api:1.2",
+                "registry.zyvor.internal"
+            ),
             "registry.zyvor.internal/team/api:1.2"
         );
-        assert_eq!(target_ref("nginx:1.25", "reg.local"), "reg.local/nginx:1.25");
+        assert_eq!(
+            target_ref("nginx:1.25", "reg.local"),
+            "reg.local/nginx:1.25"
+        );
         assert_eq!(target_ref("nginx", "reg.local/"), "reg.local/nginx");
         assert_eq!(
             target_ref("quay.io/prometheus/node-exporter:v1", "reg.local"),

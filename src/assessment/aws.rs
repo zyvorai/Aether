@@ -54,7 +54,9 @@ impl AwsService {
     /// The Kubernetes-native replacement Aether recommends.
     pub fn k8s_target(&self) -> &'static str {
         match self {
-            AwsService::Rds | AwsService::Aurora => "CloudNativePG / Percona on Ceph (via DataBridge)",
+            AwsService::Rds | AwsService::Aurora => {
+                "CloudNativePG / Percona on Ceph (via DataBridge)"
+            }
             AwsService::ElastiCache => "Redis / KeyDB (Bitnami/operator)",
             AwsService::S3 => "Ceph RGW / MinIO (S3-compatible, via Atlas)",
             AwsService::Sqs => "NATS JetStream / RabbitMQ",
@@ -100,9 +102,10 @@ impl AwsService {
             | AwsService::ApiGateway
             | AwsService::SecretsManager
             | AwsService::Kms => "low",
-            AwsService::ElastiCache | AwsService::Sqs | AwsService::Sns | AwsService::OpenSearch => {
-                "medium"
-            }
+            AwsService::ElastiCache
+            | AwsService::Sqs
+            | AwsService::Sns
+            | AwsService::OpenSearch => "medium",
             AwsService::Rds | AwsService::Aurora | AwsService::DynamoDb | AwsService::Msk => "high",
         }
     }

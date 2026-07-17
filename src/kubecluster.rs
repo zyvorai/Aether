@@ -1092,7 +1092,10 @@ fn pod_template_requests(manifest: &serde_json::Value) -> (i64, i64) {
         .and_then(|c| c.as_array())
     {
         for c in containers {
-            if let Some(cpu) = c.pointer("/resources/requests/cpu").and_then(|v| v.as_str()) {
+            if let Some(cpu) = c
+                .pointer("/resources/requests/cpu")
+                .and_then(|v| v.as_str())
+            {
                 cpu_mc += cpu_to_millicores(cpu);
             }
             if let Some(mem) = c
