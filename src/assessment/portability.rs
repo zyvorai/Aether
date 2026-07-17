@@ -210,11 +210,13 @@ pub fn application_to_workload(app: &Application, raw: &RawInventory) -> Result<
         storage = storage,
     );
 
-    let mut wl: Workload = serde_yaml::from_str(&yaml).context("parsing synthetic workload yaml")?;
+    let mut wl: Workload =
+        serde_yaml::from_str(&yaml).context("parsing synthetic workload yaml")?;
     if gpu > 0 {
         wl.requirements.gpu = Some(GpuRequirements {
             count: gpu,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
     }
     if !app.pvcs.is_empty() {
@@ -227,7 +229,13 @@ pub fn application_to_workload(app: &Application, raw: &RawInventory) -> Result<
 fn sanitize_name(s: &str) -> String {
     let cleaned: String = s
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '-' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect();
     let trimmed = cleaned.trim_matches('-');
     if trimmed.is_empty() {
@@ -345,9 +353,16 @@ mod tests {
 
     #[test]
     fn test_score_monotonicity() {
-        let clean = assess(&app_with(MigrationClass::StatelessPortable, vec![]), &raw_with_web()).unwrap();
+        let clean = assess(
+            &app_with(MigrationClass::StatelessPortable, vec![]),
+            &raw_with_web(),
+        )
+        .unwrap();
         let blocked = assess(
-            &app_with(MigrationClass::NonPortable, vec!["naked Pod".into(), "mutable tag".into()]),
+            &app_with(
+                MigrationClass::NonPortable,
+                vec!["naked Pod".into(), "mutable tag".into()],
+            ),
             &raw_with_web(),
         )
         .unwrap();

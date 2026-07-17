@@ -635,6 +635,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         }
     }
 
@@ -734,6 +735,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 2,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         assert_eq!(profiler.classify(&spec), WorkloadType::GpuCompute);
     }
@@ -753,6 +755,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "amd".to_string(),
+            vgpu_profile: None,
         });
         // GPU should win
         assert_eq!(profiler.classify(&spec), WorkloadType::GpuCompute);
@@ -1499,6 +1502,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 4,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         let profile = profiler.profile(&spec, Some(RuntimeKind::Podman));
         assert_eq!(profile.classification, WorkloadType::GpuCompute);

@@ -48,6 +48,20 @@ pub struct Workload {
     /// Kubernetes-only options (workload kind, scheduling, security, Gateway API, etc.)
     #[serde(default)]
     pub kubernetes: Option<KubernetesSpec>,
+    /// KubeVirt-only options (live migration)
+    #[serde(default)]
+    pub kubevirt: Option<KubevirtSpec>,
+}
+
+/// KubeVirt-only options applied when the workload runs as a VM.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct KubevirtSpec {
+    /// Set evictionStrategy LiveMigrate on the VMI template so the VM migrates
+    /// instead of shutting down on node drain. GPU workloads additionally need
+    /// requirements.gpu.vgpuProfile (passthrough GPUs cannot live-migrate).
+    #[serde(default)]
+    pub live_migration: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -109,6 +123,12 @@ pub struct ResourceRequirements {
 pub struct GpuRequirements {
     pub count: u32,
     pub vendor: String, // "nvidia", "amd", "intel"
+    /// vGPU mediated-device profile as a fully-qualified resource name
+    /// (e.g. "nvidia.com/GRID_A100-10C"). When set, KubeVirt attaches vGPU
+    /// slices instead of passthrough devices; required for live migration of
+    /// GPU workloads (VFIO passthrough pins the VM to its host).
+    #[serde(default, rename = "vgpuProfile")]
+    pub vgpu_profile: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -427,6 +447,26 @@ impl Workload {
             }
             if gpu.vendor.is_empty() {
                 anyhow::bail!("requirements.gpu.vendor cannot be empty");
+            }
+            if let Some(ref profile) = gpu.vgpu_profile {
+                if !profile.contains('/') {
+                    anyhow::bail!(
+                        "requirements.gpu.vgpuProfile '{profile}' must be a fully-qualified device resource name (e.g. nvidia.com/GRID_A100-10C)"
+                    );
+                }
+            }
+        }
+
+        // Validate KubeVirt options
+        if let Some(ref kv) = self.kubevirt {
+            if kv.live_migration {
+                if let Some(ref gpu) = self.requirements.gpu {
+                    if gpu.vgpu_profile.is_none() {
+                        anyhow::bail!(
+                            "kubevirt.liveMigration is incompatible with passthrough GPUs: VFIO passthrough pins the VM to its host; set requirements.gpu.vgpuProfile to a mediated vGPU profile"
+                        );
+                    }
+                }
             }
         }
 
@@ -1887,6 +1927,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         };
 
         assert!(workload.validate().is_ok());
@@ -1936,6 +1977,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         };
 
         assert_eq!(workload.image_name(), "ghcr.io/yourorg/my-app:latest");
@@ -1985,6 +2027,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         };
 
         let result = workload.validate();
@@ -2036,6 +2079,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         };
 
         let result = workload.validate();
@@ -2087,6 +2131,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         };
 
         let result = workload.validate();
@@ -2138,6 +2183,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         };
 
         let result = workload.validate();
@@ -2192,6 +2238,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         }
     }
 
@@ -2429,6 +2476,7 @@ mod tests {
         w.requirements.gpu = Some(GpuRequirements {
             count: 2,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         assert!(w.validate().is_ok());
     }
@@ -2439,6 +2487,7 @@ mod tests {
         w.requirements.gpu = Some(GpuRequirements {
             count: 0,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("gpu.count"), "{}", err);
@@ -2450,9 +2499,93 @@ mod tests {
         w.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "".to_string(),
+            vgpu_profile: None,
         });
         let err = w.validate().unwrap_err().to_string();
         assert!(err.contains("gpu.vendor"), "{}", err);
+    }
+
+    #[test]
+    fn test_vgpu_profile_valid() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: Some("nvidia.com/GRID_A100-10C".to_string()),
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_vgpu_profile_unqualified_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: Some("GRID_A100-10C".to_string()),
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("fully-qualified"), "{}", err);
+    }
+
+    #[test]
+    fn test_live_migration_with_vgpu_valid() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: Some("nvidia.com/GRID_A100-10C".to_string()),
+        });
+        w.kubevirt = Some(KubevirtSpec {
+            live_migration: true,
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_live_migration_with_passthrough_gpu_rejected() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: None,
+        });
+        w.kubevirt = Some(KubevirtSpec {
+            live_migration: true,
+        });
+        let err = w.validate().unwrap_err().to_string();
+        assert!(err.contains("passthrough"), "{}", err);
+    }
+
+    #[test]
+    fn test_live_migration_without_gpu_valid() {
+        let mut w = make_valid_workload();
+        w.kubevirt = Some(KubevirtSpec {
+            live_migration: true,
+        });
+        assert!(w.validate().is_ok());
+    }
+
+    #[test]
+    fn test_vgpu_profile_yaml_round_trip() {
+        let mut w = make_valid_workload();
+        w.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: Some("nvidia.com/GRID_A100-10C".to_string()),
+        });
+        w.kubevirt = Some(KubevirtSpec {
+            live_migration: true,
+        });
+        let yaml = serde_yaml::to_string(&w).unwrap();
+        assert!(
+            yaml.contains("vgpuProfile: nvidia.com/GRID_A100-10C"),
+            "{}",
+            yaml
+        );
+        assert!(yaml.contains("liveMigration: true"), "{}", yaml);
+        let back: Workload = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(back, w);
     }
 
     // ---------------------------------------------------------------

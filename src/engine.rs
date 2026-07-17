@@ -174,6 +174,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
 
         let runtime = engine.decide(&spec).unwrap();
@@ -231,6 +232,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         }
     }
 
@@ -280,6 +282,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 2,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
     }
@@ -294,6 +297,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "amd".to_string(),
+            vgpu_profile: None,
         });
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
     }
@@ -308,6 +312,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 4,
             vendor: "intel".to_string(),
+            vgpu_profile: None,
         });
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
     }
@@ -322,6 +327,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         // GPU is set but KubeVirt is not in the allow list,
         // so the engine should fall through to the next rule.
@@ -569,6 +575,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         spec.requirements.cpu = "32".to_string();
         spec.requirements.memory = "128Gi".to_string();
@@ -590,6 +597,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         spec.network.service = true;
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
@@ -724,6 +732,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         assert_eq!(engine.decide(&spec).unwrap(), RuntimeKind::KubeVirt);
     }
@@ -1038,6 +1047,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 2,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         spec.network.service = true;
         // GPU rule fires first
@@ -1088,6 +1098,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 4,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         spec.requirements.cpu = "64".to_string();
         spec.requirements.memory = "256Gi".to_string();
@@ -1147,6 +1158,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         spec.requirements.cpu = "32".to_string();
         spec.network.service = true;
@@ -1163,6 +1175,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         spec.requirements.cpu = "32".to_string();
         spec.network.service = true;
@@ -1366,6 +1379,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         spec.intent = Some(IntentSpec {
             goal: IntentGoal::Balanced,

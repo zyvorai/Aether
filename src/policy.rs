@@ -688,6 +688,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         }
     }
 

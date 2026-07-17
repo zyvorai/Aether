@@ -183,6 +183,16 @@ pub(crate) enum Commands {
         verbose_trace: bool,
     },
 
+    /// Live-migrate a running KubeVirt VM to another node (requires kubevirt.liveMigration in the spec)
+    LiveMigrate {
+        /// Workload name
+        name: String,
+
+        /// Seconds to watch migration progress before returning (0 = fire-and-forget)
+        #[arg(long, default_value = "120")]
+        watch_timeout: u64,
+    },
+
     /// Launch interactive TUI dashboard (k9s-style real-time monitoring)
     Tui,
 
@@ -1049,6 +1059,7 @@ impl Commands {
             Self::Update { .. } => "update",
             Self::List => "list",
             Self::Migrate { .. } => "migrate",
+            Self::LiveMigrate { .. } => "live-migrate",
             Self::Tui => "tui",
             Self::Ask { .. } => "ask",
             Self::Completions { .. } => "completions",

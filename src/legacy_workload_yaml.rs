@@ -164,6 +164,7 @@ fn parse_legacy_workload_yaml(yaml: &str) -> Result<Workload> {
         confidential: None,
         schedule: None,
         kubernetes: None,
+        kubevirt: None,
     };
 
     workload.validate()?;

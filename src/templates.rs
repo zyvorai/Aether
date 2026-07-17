@@ -260,6 +260,7 @@ fn base_workload(
         confidential: None,
         schedule: None,
         kubernetes: None,
+        kubevirt: None,
     }
 }
 
@@ -561,6 +562,7 @@ fn generate_ml_training(params: &TemplateParams) -> Workload {
     w.requirements.gpu = Some(GpuRequirements {
         count: 1,
         vendor: "nvidia".to_string(),
+        vgpu_profile: None,
     });
 
     w.network = NetworkSpec::default();

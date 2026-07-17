@@ -731,7 +731,10 @@ async fn prepare_atlas_storage(
 ) -> Result<(std::borrow::Cow<'_, Workload>, Vec<String>)> {
     use std::borrow::Cow;
 
-    if !matches!(runtime_kind, RuntimeKind::Kubernetes | RuntimeKind::KubeVirt) {
+    if !matches!(
+        runtime_kind,
+        RuntimeKind::Kubernetes | RuntimeKind::KubeVirt
+    ) {
         return Ok((Cow::Borrowed(workload), Vec::new()));
     }
     let Some(policy) = workload.atlas_policy() else {
@@ -808,7 +811,10 @@ async fn provision_atlas_pvcs(
             Ok(handle) => {
                 output::spinner_success(
                     &sp,
-                    &format!("Atlas volume ready: {} (pvc {})", handle.volume_id, handle.pvc),
+                    &format!(
+                        "Atlas volume ready: {} (pvc {})",
+                        handle.volume_id, handle.pvc
+                    ),
                 );
                 record_audit_action(
                     aether::audit::AuditAction::ConfigChange,
@@ -882,7 +888,9 @@ async fn release_atlas_volumes(workload: &str, volume_ids: &[String]) {
 /// Resolve the Kubernetes cluster context for cluster-scoped CLI operations.
 /// Honours `AETHER_CONTEXT`, then falls back to the first reachable cluster.
 async fn resolve_cli_cluster() -> Result<String> {
-    let ctx = std::env::var("AETHER_CONTEXT").ok().filter(|c| !c.is_empty());
+    let ctx = std::env::var("AETHER_CONTEXT")
+        .ok()
+        .filter(|c| !c.is_empty());
     aether::kubecluster::resolve_reachable_cluster(ctx.as_deref()).await
 }
 
@@ -1321,6 +1329,66 @@ pub(crate) async fn list_command() -> Result<()> {
     }
 
     Ok(())
+}
+
+pub(crate) async fn live_migrate_command(name: &str, watch_timeout: u64) -> Result<()> {
+    use aether::adapters::kubevirt::KubeVirtRuntime;
+    use std::time::Duration;
+
+    // Confirm the workload is a KubeVirt VM before triggering
+    let (state, _) = load_workload_state(name)?;
+    let workload_state = get_workload_state(&state, name)?;
+    if workload_state.runtime != RuntimeKind::KubeVirt {
+        anyhow::bail!(
+            "'{}' runs on {} — live migration only applies to KubeVirt VMs (use 'aether migrate' to change runtimes)",
+            name,
+            output::runtime_display(&workload_state.runtime)
+        );
+    }
+
+    output::section_with_icon("🔀", &format!("Live-migrating VM '{}'", name));
+    let runtime = KubeVirtRuntime::new().await?;
+    let mig_name = runtime.live_migrate(name).await?;
+    output::info(&format!("Created migration '{}'", mig_name));
+
+    if watch_timeout == 0 {
+        return Ok(());
+    }
+
+    let sp = output::spinner("Waiting for live migration...");
+    let start = std::time::Instant::now();
+    loop {
+        let phase = runtime
+            .migration_phase(&mig_name)
+            .await
+            .unwrap_or_else(|_| "Unknown".to_string());
+        match phase.as_str() {
+            "Succeeded" => {
+                output::spinner_success(&sp, "Live migration succeeded");
+                return Ok(());
+            }
+            "Failed" => {
+                output::spinner_fail(&sp, "Live migration failed");
+                anyhow::bail!(
+                    "migration '{}' failed — check 'kubectl describe vmim {}' for details",
+                    mig_name,
+                    mig_name
+                );
+            }
+            _ => sp.set_message(format!("Waiting for live migration... ({})", phase)),
+        }
+        if start.elapsed().as_secs() >= watch_timeout {
+            output::spinner_success(
+                &sp,
+                &format!(
+                    "Migration '{}' still in phase {} after {}s — continuing in background",
+                    mig_name, phase, watch_timeout
+                ),
+            );
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_secs(3)).await;
+    }
 }
 
 pub(crate) async fn migrate_command(
@@ -5332,7 +5400,9 @@ pub(crate) async fn connection_command(action: crate::cli::ConnectionAction) -> 
             }
             output::section_with_icon("🔌", "Connections");
             if conns.is_empty() {
-                output::muted("No connections. Add one with `aether connection add <name> --context <ctx>`.");
+                output::muted(
+                    "No connections. Add one with `aether connection add <name> --context <ctx>`.",
+                );
                 return Ok(());
             }
             let rows: Vec<Vec<String>> = conns
@@ -5438,7 +5508,11 @@ fn print_discovery_summary(snapshot: &aether::inventory::InventorySnapshot) {
         .iter()
         .filter(|a| a.class == MigrationClass::StatefulNative)
         .count();
-    let external: usize = snapshot.applications.iter().map(|a| a.external_deps.len()).sum();
+    let external: usize = snapshot
+        .applications
+        .iter()
+        .map(|a| a.external_deps.len())
+        .sum();
     let blockers: usize = snapshot.applications.iter().map(|a| a.blockers.len()).sum();
     println!(
         "{}",
@@ -5485,14 +5559,24 @@ pub(crate) async fn inventory_command(action: crate::cli::InventoryAction) -> Re
                 .collect();
             println!(
                 "{}",
-                output::table(&["APP", "NAMESPACE", "CLASS", "WORKLOADS", "EXT-DEPS", "BLOCKERS"], rows)
+                output::table(
+                    &[
+                        "APP",
+                        "NAMESPACE",
+                        "CLASS",
+                        "WORKLOADS",
+                        "EXT-DEPS",
+                        "BLOCKERS"
+                    ],
+                    rows
+                )
             );
         }
         InventoryAction::Show { connection, app } => {
             let snapshot = load_snapshot(&connection)?;
-            let a = snapshot
-                .find_application(&app)
-                .ok_or_else(|| anyhow::anyhow!("Application '{}' not found in '{}'", app, connection))?;
+            let a = snapshot.find_application(&app).ok_or_else(|| {
+                anyhow::anyhow!("Application '{}' not found in '{}'", app, connection)
+            })?;
             if output::is_json() {
                 println!("{}", serde_json::to_string_pretty(a)?);
                 return Ok(());
@@ -5528,9 +5612,9 @@ pub(crate) async fn dependency_command(action: crate::cli::DependencyAction) -> 
     match action {
         DependencyAction::Graph { connection, app } => {
             let snapshot = load_snapshot(&connection)?;
-            let a = snapshot
-                .find_application(&app)
-                .ok_or_else(|| anyhow::anyhow!("Application '{}' not found in '{}'", app, connection))?;
+            let a = snapshot.find_application(&app).ok_or_else(|| {
+                anyhow::anyhow!("Application '{}' not found in '{}'", app, connection)
+            })?;
             // An app's nodes are its namespace-qualified workloads.
             let prefixes: Vec<String> = a
                 .workloads
@@ -5574,8 +5658,12 @@ pub(crate) async fn assess_command(
             .get(target_conn)
             .ok_or_else(|| anyhow::anyhow!("Target connection '{}' not found", target_conn))?;
         let sp = output::spinner(&format!("Preflight against '{}'...", target_conn));
-        match aether::assessment::compatibility::check_compatibility(&application, &snapshot.raw, tconn)
-            .await
+        match aether::assessment::compatibility::check_compatibility(
+            &application,
+            &snapshot.raw,
+            tconn,
+        )
+        .await
         {
             Ok(report) => {
                 output::spinner_success(&sp, "Preflight complete");
@@ -5825,7 +5913,10 @@ pub(crate) async fn move_command(action: crate::cli::MoveAction) -> Result<()> {
         MoveAction::Rollback { app } => {
             let connections = ConnectionStore::load_default()?;
             let n = move_exec::rollback(&app, &connections).await?;
-            output::success(&format!("Rolled back '{}' — deleted {} target resource(s)", app, n));
+            output::success(&format!(
+                "Rolled back '{}' — deleted {} target resource(s)",
+                app, n
+            ));
         }
         MoveAction::Status { app } => match move_exec::get_run(&app)? {
             Some(run) => {
@@ -5838,7 +5929,10 @@ pub(crate) async fn move_command(action: crate::cli::MoveAction) -> Result<()> {
                     "{}",
                     output::property_table(&[
                         ("Phase", format!("{:?}", run.phase)),
-                        ("Target", format!("{}/{}", run.target_conn, run.target_namespace)),
+                        (
+                            "Target",
+                            format!("{}/{}", run.target_conn, run.target_namespace)
+                        ),
                         ("Resources", run.applied.len().to_string()),
                         ("Started", run.started_at.clone()),
                     ])
@@ -5923,7 +6017,10 @@ fn render_assessment(a: &aether::assessment::PortabilityAssessment) {
                     .map(|c| format!("${:.0}", c))
                     .unwrap_or_else(|| "—".to_string())
             ),
-            ("Dependency completeness", format!("{}%", a.dependency_completeness)),
+            (
+                "Dependency completeness",
+                format!("{}%", a.dependency_completeness)
+            ),
         ])
     );
     if !a.blockers.is_empty() {
@@ -6165,6 +6262,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         }
     }
 

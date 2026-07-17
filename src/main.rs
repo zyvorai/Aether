@@ -123,6 +123,19 @@ async fn main() -> Result<()> {
             )
             .await
         }
+        Commands::LiveMigrate {
+            name,
+            watch_timeout,
+        } => {
+            if cli.dry_run {
+                aether::output::info(&format!(
+                    "[dry-run] Would live-migrate KubeVirt VM '{}' to another node",
+                    name
+                ));
+                return Ok(());
+            }
+            commands::live_migrate_command(&name, watch_timeout).await
+        }
         Commands::Tui => commands::tui_command().await,
         Commands::Ask { message } => commands::ask_command(message).await,
         Commands::Completions { shell } => commands::completions_command(&shell),

@@ -791,6 +791,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         }
     }
 
@@ -808,6 +809,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
         assert_eq!(engine.classify_workload(&spec), WorkloadClass::GpuCompute);
     }

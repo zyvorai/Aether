@@ -7,6 +7,7 @@
 use super::common;
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::{AccessMode, Workload};
+use anyhow::Context as _;
 use async_trait::async_trait;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
@@ -57,6 +58,65 @@ impl KubeVirtRuntime {
             "VirtualMachine",
         )
         .await
+    }
+
+    /// Get API for VirtualMachineInstanceMigration CRD
+    async fn get_migration_api(&self) -> anyhow::Result<Api<DynamicObject>> {
+        common::discover_crd_api(
+            self.client.clone(),
+            &self.namespace,
+            "kubevirt.io",
+            "v1",
+            "VirtualMachineInstanceMigration",
+        )
+        .await
+    }
+
+    /// Trigger a KubeVirt live migration of a running VM. Returns the created
+    /// VirtualMachineInstanceMigration name; progress can be watched via
+    /// `migration_phase`. The VM must have been deployed with
+    /// kubevirt.liveMigration (evictionStrategy LiveMigrate).
+    pub async fn live_migrate(&self, name: &str) -> anyhow::Result<String> {
+        common::validate_kube_name(name)?;
+        let mig_name = format!(
+            "{}-mig-{:08x}",
+            name,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs() as u32)
+                .unwrap_or_default()
+        );
+        let mig_json = json!({
+            "apiVersion": "kubevirt.io/v1",
+            "kind": "VirtualMachineInstanceMigration",
+            "metadata": {
+                "name": mig_name,
+                "namespace": self.namespace,
+                "labels": { "app.kubernetes.io/managed-by": "aether" }
+            },
+            "spec": { "vmiName": name }
+        });
+        let mig: DynamicObject = serde_json::from_value(mig_json)?;
+        let api = self.get_migration_api().await?;
+        api.create(&PostParams::default(), &mig)
+            .await
+            .context("creating VirtualMachineInstanceMigration (is the VM running with liveMigration enabled?)")?;
+        tracing::info!("Created VirtualMachineInstanceMigration: {}", mig_name);
+        Ok(mig_name)
+    }
+
+    /// Read the phase of a VirtualMachineInstanceMigration (e.g. Pending,
+    /// Scheduling, PreparingTarget, TargetReady, Running, Succeeded, Failed).
+    pub async fn migration_phase(&self, mig_name: &str) -> anyhow::Result<String> {
+        let api = self.get_migration_api().await?;
+        let mig = api.get(mig_name).await?;
+        Ok(mig
+            .data
+            .get("status")
+            .and_then(|s| s.get("phase"))
+            .and_then(|p| p.as_str())
+            .unwrap_or("Pending")
+            .to_string())
     }
 
     /// Get VM status
@@ -215,18 +275,27 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
         }
     });
 
-    // Add GPU if requested
+    // Add GPU if requested: a vGPU profile attaches mediated slices (the only
+    // GPU mode compatible with live migration); otherwise VFIO passthrough.
     if let Some(ref gpu_req) = spec.requirements.gpu {
+        let device_name = gpu_req
+            .vgpu_profile
+            .clone()
+            .unwrap_or_else(|| format!("{}.com/gpu", gpu_req.vendor));
         let gpus: Vec<serde_json::Value> = (0..gpu_req.count)
             .map(|i| {
                 json!({
                     "name": format!("gpu{}", i),
-                    "deviceName": format!("{}.com/gpu", gpu_req.vendor)
+                    "deviceName": device_name
                 })
             })
             .collect();
 
         vm_spec["spec"]["template"]["spec"]["domain"]["devices"]["gpus"] = json!(gpus);
+    }
+
+    if spec.kubevirt.as_ref().is_some_and(|kv| kv.live_migration) {
+        vm_spec["spec"]["template"]["spec"]["evictionStrategy"] = json!("LiveMigrate");
     }
 
     crate::ragnarok::kubevirt::apply_confidential_to_vm(&mut vm_spec, spec);
@@ -559,6 +628,7 @@ mod tests {
             confidential: None,
             schedule: None,
             kubernetes: None,
+            kubevirt: None,
         }
     }
 
@@ -771,6 +841,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
 
         let vm = build_virtualmachine_json("default", &spec);
@@ -789,6 +860,7 @@ mod tests {
         spec.requirements.gpu = Some(GpuRequirements {
             count: 4,
             vendor: "nvidia".to_string(),
+            vgpu_profile: None,
         });
 
         let vm = build_virtualmachine_json("default", &spec);
@@ -804,11 +876,74 @@ mod tests {
     }
 
     #[test]
+    fn test_vm_json_vgpu_profile_device_name() {
+        let mut spec = make_workload("vgpu-vm", "8", "32Gi", "100Gi");
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 2,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: Some("nvidia.com/GRID_A100-10C".to_string()),
+        });
+
+        let vm = build_virtualmachine_json("default", &spec);
+
+        let gpus = vm["spec"]["template"]["spec"]["domain"]["devices"]["gpus"]
+            .as_array()
+            .unwrap();
+        assert_eq!(gpus.len(), 2);
+        for gpu in gpus {
+            assert_eq!(gpu["deviceName"], "nvidia.com/GRID_A100-10C");
+        }
+    }
+
+    #[test]
+    fn test_vm_json_no_eviction_strategy_by_default() {
+        let spec = make_workload("plain-vm", "2", "4Gi", "20Gi");
+        let vm = build_virtualmachine_json("default", &spec);
+        assert!(vm["spec"]["template"]["spec"]["evictionStrategy"].is_null());
+    }
+
+    #[test]
+    fn test_vm_json_live_migration_eviction_strategy() {
+        let mut spec = make_workload("lm-vm", "2", "4Gi", "20Gi");
+        spec.kubevirt = Some(crate::spec::KubevirtSpec {
+            live_migration: true,
+        });
+        let vm = build_virtualmachine_json("default", &spec);
+        assert_eq!(
+            vm["spec"]["template"]["spec"]["evictionStrategy"],
+            "LiveMigrate"
+        );
+    }
+
+    #[test]
+    fn test_vm_json_vgpu_with_live_migration() {
+        let mut spec = make_workload("vgpu-lm-vm", "8", "32Gi", "100Gi");
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: Some("nvidia.com/GRID_A100-10C".to_string()),
+        });
+        spec.kubevirt = Some(crate::spec::KubevirtSpec {
+            live_migration: true,
+        });
+        let vm = build_virtualmachine_json("default", &spec);
+        assert_eq!(
+            vm["spec"]["template"]["spec"]["evictionStrategy"],
+            "LiveMigrate"
+        );
+        assert_eq!(
+            vm["spec"]["template"]["spec"]["domain"]["devices"]["gpus"][0]["deviceName"],
+            "nvidia.com/GRID_A100-10C"
+        );
+    }
+
+    #[test]
     fn test_vm_json_amd_gpu_passthrough() {
         let mut spec = make_workload("amd-vm", "8", "32Gi", "100Gi");
         spec.requirements.gpu = Some(GpuRequirements {
             count: 2,
             vendor: "amd".to_string(),
+            vgpu_profile: None,
         });
 
         let vm = build_virtualmachine_json("default", &spec);
