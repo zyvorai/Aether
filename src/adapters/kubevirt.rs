@@ -211,6 +211,12 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
 
     let cpu_cores = common::parse_cpu_cores(&spec.requirements.cpu);
 
+    let live_migration = spec.kubevirt.as_ref().is_some_and(|kv| kv.live_migration);
+    // KubeVirt refuses to migrate VMIs on the pod network unless the interface
+    // uses masquerade binding (bridge is the default when none is specified),
+    // so live-migratable VMs always get an explicit masquerade interface.
+    let pod_network = spec.network.service || live_migration;
+
     let mut vm_spec = json!({
         "apiVersion": "kubevirt.io/v1",
         "kind": "VirtualMachine",
@@ -246,7 +252,7 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
                                     "bus": "virtio"
                                 }
                             }],
-                            "interfaces": if spec.network.service {
+                            "interfaces": if pod_network {
                                 Some(vec![json!({
                                     "name": "default",
                                     "masquerade": {}
@@ -256,7 +262,7 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
                             }
                         }
                     },
-                    "networks": if spec.network.service {
+                    "networks": if pod_network {
                         Some(vec![json!({
                             "name": "default",
                             "pod": {}
@@ -912,6 +918,27 @@ mod tests {
         assert_eq!(
             vm["spec"]["template"]["spec"]["evictionStrategy"],
             "LiveMigrate"
+        );
+    }
+
+    #[test]
+    fn test_vm_json_live_migration_forces_masquerade_interface() {
+        // KubeVirt's migration webhook rejects pod-network VMIs without
+        // masquerade binding, so liveMigration must render the interface even
+        // when no service is requested.
+        let mut spec = make_workload("lm-net-vm", "2", "4Gi", "20Gi");
+        spec.network.service = false;
+        spec.kubevirt = Some(crate::spec::KubevirtSpec {
+            live_migration: true,
+        });
+        let vm = build_virtualmachine_json("default", &spec);
+        assert_eq!(
+            vm["spec"]["template"]["spec"]["domain"]["devices"]["interfaces"][0]["masquerade"],
+            serde_json::json!({})
+        );
+        assert_eq!(
+            vm["spec"]["template"]["spec"]["networks"][0]["pod"],
+            serde_json::json!({})
         );
     }
 
