@@ -41,7 +41,7 @@ Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** 
 |-------|-------------------|
 | **Core** | Rust runtime control plane — `src/` |
 | **Runtimes** | Podman, K8s, KubeVirt, Metal3 adapters |
-| **Migration** | Immediate, blue-green, rolling — 16 combinations |
+| **Migration** | Immediate, blue-green, rolling — 16 combinations; KubeVirt live migration (vGPU-aware) |
 | **UI** | 19-page React dashboard + interactive TUI — `web/` |
 | **Deploy** | Helm, Docker, deb/rpm packages — `helm/`, `packaging/` |
 | **Examples** | Compose stacks, demos, migration scenarios — `examples/` |
@@ -92,6 +92,7 @@ cd web && npm install && npm run dev
 ```bash
 aether run --spec workload.yaml --runtime kubevirt
 aether migrate my-app --from kube --to kubevirt --strategy blue-green
+aether live-migrate my-vm            # KubeVirt node-to-node live migration
 aether policy-check --policy production
 aether orchestrate watch --interval 30
 ```

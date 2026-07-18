@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **KubeVirt vGPU Attachment:** `requirements.gpu.vgpuProfile` attaches mediated vGPU slices (e.g. `nvidia.com/GRID_A100-10C`) instead of VFIO passthrough; the profile becomes the KubeVirt GPU `deviceName`. Validation requires a fully-qualified resource name.
+- **KubeVirt Live Migration:** new `kubevirt.liveMigration` spec section renders `evictionStrategy: LiveMigrate` and a masquerade pod-network interface (bridge binding is not migratable). New `aether live-migrate <name> [--watch-timeout N]` command creates a `VirtualMachineInstanceMigration` and watches its phase. Validation rejects `liveMigration` with passthrough GPUs — VFIO pins the VM to its host; use `vgpuProfile`.
 - **RBAC API Integration:** API middleware now enforces Admin/Operator/Viewer roles via `RbacStore`. New endpoints: `GET /api/rbac/keys`, `POST /api/rbac/keys`, `POST /api/rbac/keys/revoke`. Falls back to `AETHER_API_KEY` for backward compatibility.
 - **NetworkPolicy Manifest Generation:** `kube.rs` now generates Kubernetes NetworkPolicy resources from `spec.network.network_policy` config, supporting `deny_all_ingress`, `deny_all_egress`, `allow_from`, and `allow_to` label selectors.
 - **Custom HPA Metrics:** `ScalingMetric` now has an optional `metric_name` field. `MetricType::Custom` generates a `PodsMetricSource` in the HPA manifest, enabling scaling on application-specific metrics.

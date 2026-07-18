@@ -115,6 +115,8 @@ _Move a running workload between any two runtimes with health gates, connection 
   - **How:** CLI: streamed to stderr during `aether migrate`; add `-v` for verbose phase output.
 - **AI Migration Advice** — Get an AI assessment of moving a named workload to a target runtime before you commit. — _Understand the risks and gains of a move up front._
   - **How:** CLI: `aether migration-advice hello-web kube`; Web UI: Migrations.
+- **KubeVirt Live Migration (vGPU-aware)** — Move a running VM to another node with no shutdown; migratable networking is configured automatically, and GPU VMs migrate when they use mediated vGPU slices (`requirements.gpu.vgpuProfile`) — passthrough GPUs are rejected up front because they pin the VM to its host. — _Drain nodes for maintenance without taking tenant VMs down._
+  - **How:** Spec: `kubevirt.liveMigration: true`; CLI: `aether live-migrate my-vm` (watches progress; `--watch-timeout 0` for fire-and-forget).
 
 > Migration is designed for stateless and container-image portability. Persistent volume data is not automatically carried across runtimes — see caveats.
 

@@ -36,7 +36,8 @@ Aether simplifies KubeVirt VM deployment:
 
 ✅ **One Spec Format**: Same YAML for containers and VMs
 ✅ **Auto-Generation**: Creates VirtualMachine and DataVolume CRDs
-✅ **GPU Support**: Automatic GPU passthrough configuration
+✅ **GPU Support**: Automatic GPU passthrough or vGPU slice configuration
+✅ **Live Migration**: `aether live-migrate` moves running VMs between nodes
 ✅ **Lifecycle Management**: Start, stop, delete VMs easily
 ✅ **Monitoring**: Integrated TUI dashboard
 
@@ -455,6 +456,35 @@ devices:
 - KubeVirt GPU feature gate enabled
 - Nodes with GPU devices
 
+### vGPU (Mediated Devices)
+
+Set `vgpuProfile` to attach mediated vGPU slices instead of passthrough devices:
+
+```yaml
+requirements:
+  gpu:
+    vendor: "nvidia"
+    count: 1
+    vgpuProfile: "nvidia.com/GRID_A100-10C"
+```
+
+Generated configuration uses the profile as the device name:
+```yaml
+devices:
+  gpus:
+    - name: gpu0
+      deviceName: nvidia.com/GRID_A100-10C
+```
+
+**Prerequisites for vGPU:**
+- NVIDIA vGPU Manager installed on the hosts
+- The profile listed under KubeVirt `permittedHostDevices.mediatedDevices`
+- NVIDIA vGPU software licensing
+
+vGPU is the only GPU mode compatible with live migration — VFIO passthrough
+pins the VM to its host, and `aether validate` rejects
+`kubevirt.liveMigration` combined with passthrough GPUs.
+
 ---
 
 ## Advanced Features
@@ -507,13 +537,37 @@ metadata:
 
 ### Live Migration
 
-KubeVirt supports live VM migration between nodes:
+Aether natively supports KubeVirt live migration. Opt in via the spec:
+
+```yaml
+kubevirt:
+  liveMigration: true
+```
+
+This sets `evictionStrategy: LiveMigrate` on the VMI template (so node drains
+migrate the VM instead of shutting it down) and always renders a masquerade
+pod-network interface — KubeVirt refuses to migrate VMIs using the default
+bridge binding.
+
+Trigger and watch a migration from the CLI:
 
 ```bash
-# Trigger migration
-kubectl virt migrate ubuntu-vm
+# Create a VirtualMachineInstanceMigration and watch its phase
+aether live-migrate ubuntu-vm
 
-# Check migration status
+# Fire-and-forget
+aether live-migrate ubuntu-vm --watch-timeout 0
+```
+
+**Prerequisites for live migration:**
+- A multi-node cluster (single-node migrations stay in `Scheduling` — there is no target)
+- Shared/RWX storage for the VM disk is strongly recommended (e.g. CephFS)
+- GPU workloads must use `vgpuProfile` (passthrough GPUs cannot migrate; validation rejects the combination)
+
+The equivalent kubectl flow still works:
+
+```bash
+kubectl virt migrate ubuntu-vm
 kubectl get vmim
 ```
 

@@ -9,7 +9,7 @@ Aether is a Universal Runtime Control Plane written in Rust. It deploys workload
 ```bash
 cargo build          # Debug build
 cargo build --release  # Release build
-cargo test           # Run all 1,064 tests
+cargo test           # Run all 1,325 tests
 cargo clippy         # Lint (must pass with zero warnings)
 cargo check          # Fast type-check
 make ci              # Full CI pipeline
@@ -49,6 +49,7 @@ make ci              # Full CI pipeline
 - **RBAC** — API middleware enforces Admin/Operator/Viewer roles via RbacStore; falls back to `AETHER_API_KEY`
 - **SSE events** — API handlers emit `ServerEvent` after mutations; web dashboard receives real-time updates via `useEventStream`
 - **Health check loop** — Background tokio task runs health checks every 30s when `aether serve` is running
+- **KubeVirt live migration** — `kubevirt.liveMigration` spec renders `evictionStrategy: LiveMigrate` + masquerade pod networking (bridge is not migratable); `aether live-migrate <name>` creates/watches a VirtualMachineInstanceMigration; passthrough GPUs + liveMigration is rejected at validation (use `requirements.gpu.vgpuProfile` for mediated vGPU slices)
 
 ## Security Architecture
 
@@ -62,7 +63,7 @@ make ci              # Full CI pipeline
 
 ## Testing
 
-- 1,064 tests (970 lib + 46 bin + 48 integration)
+- 1,325 tests (1,203 lib + bin + integration)
 - Tests use `tempfile::tempdir()` for isolated filesystem state
 - No external services needed (K8s/Podman tests are unit tests against manifest generation)
 - `#[tokio::test]` for async command tests
