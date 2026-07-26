@@ -2613,9 +2613,9 @@ pub(crate) async fn api_cluster_logs(Query(query): Query<ClusterLogsQuery>) -> i
         namespace: query.namespace,
         kind: query.kind,
         name: query.name,
-        api_version: None,
-        plural: None,
-        namespaced: None,
+        container: query.container,
+        tail_lines: query.tail,
+        ..Default::default()
     })
     .await
     {
@@ -2636,6 +2636,7 @@ pub(crate) async fn api_cluster_resource(
         api_version: query.api_version,
         plural: query.plural,
         namespaced: query.namespaced,
+        ..Default::default()
     };
 
     match crate::kubecluster::workload_detail(&request).await {
@@ -2656,6 +2657,7 @@ pub(crate) async fn api_cluster_health(
         api_version: query.api_version,
         plural: query.plural,
         namespaced: query.namespaced,
+        ..Default::default()
     })
     .await
     {
@@ -3144,9 +3146,7 @@ pub(crate) async fn api_cluster_top(Query(query): Query<ClusterTopQuery>) -> imp
         namespace: query.namespace,
         kind: query.kind,
         name: query.name,
-        api_version: None,
-        plural: None,
-        namespaced: None,
+        ..Default::default()
     })
     .await
     {

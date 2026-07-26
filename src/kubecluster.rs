@@ -61,7 +61,7 @@ pub struct ClusterWorkload {
     pub created_at: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ClusterLogsRequest {
     pub cluster: String,
     pub namespace: String,
@@ -70,6 +70,10 @@ pub struct ClusterLogsRequest {
     pub api_version: Option<String>,
     pub plural: Option<String>,
     pub namespaced: Option<bool>,
+    /// Optional container name within the resolved pod (multi-container pods).
+    pub container: Option<String>,
+    /// Optional tail line count; defaults to 200 when unset.
+    pub tail_lines: Option<i64>,
 }
 
 #[derive(Debug, Clone)]
@@ -643,11 +647,20 @@ pub async fn workload_logs(req: &ClusterLogsRequest) -> Result<String> {
         .clone()
         .context("pod missing metadata.name")?;
 
+    // Clamp tail to a sane window; default 200, hard cap 5000.
+    let tail_lines = Some(req.tail_lines.unwrap_or(200).clamp(1, 5000));
+    let container = req
+        .container
+        .as_deref()
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+
     pods.logs(
         &pod_name,
         &LogParams {
             follow: false,
-            tail_lines: Some(200),
+            tail_lines,
+            container,
             ..Default::default()
         },
     )
@@ -1106,9 +1119,8 @@ pub async fn workload_utilization(
         namespace: namespace.to_string(),
         kind: kind.to_string(),
         name: name.to_string(),
-        api_version: None,
-        plural: None,
         namespaced: Some(true),
+        ..Default::default()
     };
     let manifest = manifest_for_workload(&client, &req).await?;
     let current_replicas = manifest
@@ -1192,6 +1204,7 @@ pub async fn manifest_diff(
             api_version: api_version.map(str::to_string),
             plural: plural.map(str::to_string),
             namespaced,
+            ..Default::default()
         },
     )
     .await?;

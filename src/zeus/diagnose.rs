@@ -95,9 +95,7 @@ pub async fn diagnose_workload(
             namespace: namespace.to_string(),
             kind: kind.to_string(),
             name: target.resource_name.clone(),
-            api_version: None,
-            plural: None,
-            namespaced: None,
+            ..Default::default()
         };
 
         let health = health_summary(&logs_req).await.unwrap_or_else(|_| {

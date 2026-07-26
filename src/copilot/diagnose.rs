@@ -92,9 +92,7 @@ pub async fn diagnose_workload(req: &DiagnoseRequest, store: &StateStore) -> Res
             namespace: namespace.to_string(),
             kind: kind.to_string(),
             name: target.resource_name.clone(),
-            api_version: None,
-            plural: None,
-            namespaced: None,
+            ..Default::default()
         };
 
         let health = health_summary(&logs_req).await.unwrap_or_else(|_| {

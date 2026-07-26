@@ -9,7 +9,7 @@ import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
-import { pickExecPodName } from '../utils/clusterExec';
+import { pickExecPodName, isShellableClusterKind as kindSupportsShell, buildKubectlCommands } from '../utils/clusterExec';
 import LogViewer from './LogViewer';
 import FixItPanel, { type FixAction } from './FixItPanel';
 import ApplicationTopology from './ApplicationTopology';
@@ -23,21 +23,14 @@ import type { ClusterResourceDetail, Event, ScoringResult, WorkloadResponse } fr
 
 export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust' | 'topology';
 
-const SHELLABLE_CLUSTER_KINDS = [
-  'Pod',
-  'Deployment',
-  'StatefulSet',
-  'DaemonSet',
-  'VirtualMachine',
-  'VirtualMachineInstance',
-] as const;
-
 interface WorkloadDetailProps {
   workload: WorkloadResponse;
   onClose: () => void;
   onAction: () => void;
   onMigrate?: (name: string) => void;
   initialTab?: DetailTab;
+  /** When true, open the Shell modal as soon as the panel mounts. */
+  initialShellOpen?: boolean;
   canMutate?: boolean;
 }
 
@@ -112,7 +105,15 @@ function ScoringResultsView({ data }: { data: ScoringResult }) {
   );
 }
 
-export default function WorkloadDetail({ workload, onClose, onAction, onMigrate, initialTab = 'overview', canMutate = true }: WorkloadDetailProps) {
+export default function WorkloadDetail({
+  workload,
+  onClose,
+  onAction,
+  onMigrate,
+  initialTab = 'overview',
+  initialShellOpen = false,
+  canMutate = true,
+}: WorkloadDetailProps) {
   const navigate = useNavigate();
   const isAetherManaged = (workload.source ?? 'aether') === 'aether';
   const isKubeWorkload = isK8sApplication(workload);
@@ -126,14 +127,11 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   });
   const isScalableClusterWorkload = !isAetherManaged && ['Deployment', 'StatefulSet'].includes(workload.kind ?? '');
   const clusterResourceName = workload.name.split('/').pop() ?? workload.name;
-  const isShellableClusterKind = SHELLABLE_CLUSTER_KINDS.includes(
-    (workload.kind ?? '') as (typeof SHELLABLE_CLUSTER_KINDS)[number],
-  );
   const canShellDiscovered =
     !isAetherManaged
     && canMutate
     && Boolean(workload.cluster && workload.namespace && workload.kind)
-    && isShellableClusterKind;
+    && kindSupportsShell(workload.kind);
   const canShellManaged = isAetherManaged && canMutate;
   const showShell = canShellDiscovered || canShellManaged;
   const clusterLogsPath = !isAetherManaged && workload.cluster && workload.namespace && workload.kind
@@ -145,12 +143,13 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   const [activeTab, setActiveTab] = useState<DetailTab>(initialTab);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
-  const [shellOpen, setShellOpen] = useState(false);
+  const [shellOpen, setShellOpen] = useState(initialShellOpen);
   const [shellOutput, setShellOutput] = useState('');
   const [shellInput, setShellInput] = useState('');
   const [shellConnected, setShellConnected] = useState(false);
   const [shellFullscreen, setShellFullscreen] = useState(false);
   const [shellPod, setShellPod] = useState('');
+  const [copiedCmd, setCopiedCmd] = useState('');
   const shellSocketRef = useRef<WebSocket | null>(null);
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
   const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
@@ -180,6 +179,13 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab, workload.name]);
+
+  useEffect(() => {
+    if (!initialShellOpen) return;
+    setShellOutput('');
+    setShellPod('');
+    setShellOpen(true);
+  }, [initialShellOpen, workload.name]);
 
   useEffect(() => {
     if (activeTab !== 'overview' || !isAetherManaged) return;
@@ -322,7 +328,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   ]);
 
   useEffect(() => {
-    if (activeTab === 'manifest' && clusterResourcePath && !clusterDetail) {
+    if ((activeTab === 'manifest' || activeTab === 'overview') && clusterResourcePath && !clusterDetail) {
       apiFetch<ClusterResourceDetail>(clusterResourcePath).then((detail) => {
         if (detail) {
           setClusterDetail(detail);
@@ -613,6 +619,86 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
               {workload.kind && <div><span className="text-slate-500">Kind</span><p className="text-white">{workload.kind}</p></div>}
               <div><span className="text-slate-500">Source</span><p className="text-white capitalize">{workload.source ?? 'aether'}</p></div>
             </div>
+
+            {!isAetherManaged && clusterDetail && clusterDetail.pods.length > 0 ? (
+              <div className="mt-4" data-testid="workload-pod-info">
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Pods</h4>
+                <div className="overflow-x-auto rounded-lg border glass-divider">
+                  <table className="w-full min-w-[28rem] text-left text-xs">
+                    <thead>
+                      <tr className="glass-inset-surface text-slate-500">
+                        <th className="px-3 py-2 font-medium">Name</th>
+                        <th className="px-3 py-2 font-medium">Phase</th>
+                        <th className="px-3 py-2 font-medium">Ready</th>
+                        <th className="px-3 py-2 font-medium">Restarts</th>
+                        <th className="px-3 py-2 font-medium">Node</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {clusterDetail.pods.map((pod) => (
+                        <tr key={pod.name} className="glass-divider-t">
+                          <td className="px-3 py-2 font-mono text-slate-200">{pod.name}</td>
+                          <td className="px-3 py-2 text-slate-300">{pod.phase}</td>
+                          <td className="px-3 py-2 text-slate-300">{pod.ready}/{pod.total_containers}</td>
+                          <td className="px-3 py-2 text-slate-300">{pod.restarts}</td>
+                          <td className="px-3 py-2 text-slate-400">{pod.node ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+
+            {!isAetherManaged && workload.cluster ? (() => {
+              const cmds = buildKubectlCommands({
+                kind: workload.kind,
+                namespace: workload.namespace,
+                resourceName: clusterResourceName,
+                podName:
+                  shellPod ||
+                  pickExecPodName(
+                    workload.kind ?? undefined,
+                    clusterResourceName,
+                    clusterDetail?.pods.map((p) => ({ name: p.name, phase: p.phase })) ?? [],
+                  ),
+                context: workload.cluster,
+              });
+              if (cmds.length === 0) return null;
+              return (
+                <div className="mt-4" data-testid="workload-kubectl">
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Run in your terminal
+                  </h4>
+                  <div className="space-y-1.5">
+                    {cmds.map((cmd) => (
+                      <div
+                        key={cmd.label}
+                        className="flex items-center gap-2 rounded-lg glass-inset-surface px-3 py-2"
+                      >
+                        <span className="w-24 shrink-0 text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                          {cmd.label}
+                        </span>
+                        <code className="min-w-0 flex-1 truncate font-mono text-xs text-slate-300" title={cmd.command}>
+                          {cmd.command}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void navigator.clipboard.writeText(cmd.command);
+                            setCopiedCmd(cmd.label);
+                            window.setTimeout(() => setCopiedCmd(''), 1500);
+                          }}
+                          className="shrink-0 rounded px-2 py-1 text-[11px] text-slate-400 transition-colors hover:bg-white/5 hover:text-aether"
+                        >
+                          {copiedCmd === cmd.label ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })() : null}
 
             <div className="mt-4 flex flex-wrap gap-2" data-testid="workload-quick-links">
               {(

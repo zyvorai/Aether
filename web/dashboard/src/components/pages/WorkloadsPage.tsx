@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers } from 'lucide-react';
+import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers, Terminal, Info } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam, pathWithQuery } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -21,6 +21,7 @@ import {
   parseCreatedWorkloadName,
   sortWorkloadsForDisplay,
 } from '../../utils/workloadFilters';
+import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../../utils/clusterExec';
 import { formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -107,6 +108,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [pendingSelect, setPendingSelect] = useState<{ name: string; tab: DetailTab } | null>(null);
   const [selectedWorkload, setSelectedWorkload] = useState<WorkloadResponse | null>(null);
   const [detailInitialTab, setDetailInitialTab] = useState<DetailTab>('overview');
+  const [detailInitialShell, setDetailInitialShell] = useState(false);
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
 
@@ -336,7 +338,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     closeDeployModal();
   }
 
-  function openWorkloadDetail(workload: WorkloadResponse, tab: DetailTab) {
+  function openWorkloadDetail(workload: WorkloadResponse, tab: DetailTab, openShell = false) {
+    setDetailInitialShell(openShell);
     setDetailInitialTab(tab);
     setSelectedWorkload(workload);
     setSearchParams(
@@ -357,6 +360,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   function closeWorkloadDetail() {
     setSelectedWorkload(null);
+    setDetailInitialShell(false);
     setSearchParams(
       (prev) => {
         const copy = new URLSearchParams(prev);
@@ -829,7 +833,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       ) : (
         <div className="glass-table-shell" data-testid="workloads-table">
           <ResponsiveTable stickyFirstColumn>
-            <table className="w-full table-fixed border-collapse">
+            <table className="w-full min-w-[960px] border-collapse">
               <thead>
                 <tr className="glass-divider-b">
                   <th scope="col" className="w-10 py-3 px-2">
@@ -846,19 +850,27 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                       }}
                     />
                   </th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[18%] min-w-0">Name</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[12%] min-w-0">Runtime</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[36%] min-w-0">Image</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Status</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[14%] min-w-0">Created</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 w-[10%] min-w-0">Actions</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[11rem]">Name</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[7rem]">Runtime</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[12rem]">Image</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[6rem]">Status</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[9rem]">Created</th>
+                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[9rem]">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredWorkloads.map((w) => (
+                {filteredWorkloads.map((w) => {
+                  const shortName = clusterResourceName(w.name);
+                  const locationLabel = [w.cluster, w.namespace].filter(Boolean).join('/');
+                  const metaLabel = [w.kind, locationLabel || null].filter(Boolean).join(' · ');
+                  const discovered = !isAetherManaged(w);
+                  const showLogs = !discovered || hasClusterLogs(w.kind);
+                  const showShell = discovered && canMutate && isShellableClusterKind(w.kind);
+
+                  return (
                   <tr key={w.name} className="glass-table-row glass-inset-hover transition-colors">
                     <td className="py-3 px-2 align-top">
-                      {isAetherManaged(w) && (
+                      {!discovered && (
                         <input
                           type="checkbox"
                           checked={selectedNames.has(w.name)}
@@ -871,38 +883,69 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                       <button
                         type="button"
                         onClick={() => openWorkloadDetail(w, 'overview')}
-                        className="hover:text-aether transition-colors text-left w-full min-w-0 truncate block"
+                        className="hover:text-aether transition-colors text-left w-full min-w-0 block"
                         title={w.name}
                       >
-                        {w.name}
+                        <span className="block truncate">{shortName}</span>
+                        {metaLabel ? (
+                          <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500" title={metaLabel}>
+                            {metaLabel}
+                          </span>
+                        ) : null}
                       </button>
                     </td>
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0"><RuntimeBadge runtime={w.runtime} /></td>
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
-                      <div className="space-y-1 min-w-0">
-                        <code
-                          className="text-xs glass-inset-surface px-2 py-1 rounded text-slate-300 block w-full min-w-0 truncate"
-                          title={w.image}
-                        >
-                          {w.image}
-                        </code>
-                        {(w.cluster || w.namespace || w.kind) && (
-                          <div
-                            className="text-[11px] text-slate-500 truncate"
-                            title={[w.kind, w.cluster, w.namespace].filter(Boolean).join(' · ')}
-                          >
-                            {[w.kind, w.cluster, w.namespace].filter(Boolean).join(' · ')}
-                          </div>
-                        )}
-                      </div>
+                      <code
+                        className="text-xs glass-inset-surface px-2 py-1 rounded text-slate-300 block w-full max-w-[18rem] truncate"
+                        title={w.image}
+                      >
+                        {w.image}
+                      </code>
                     </td>
-                    <td className="py-3 px-3 sm:px-4 align-top min-w-0">
+                    <td className="py-3 px-3 sm:px-4 align-top min-w-0 whitespace-nowrap">
                       <Badge text={w.status} variant={getStatusVariant(w.status)} />
                     </td>
-                    <td className="py-3 px-3 sm:px-4 text-sm text-slate-400 align-top min-w-0 whitespace-nowrap">{formatTimestamp(w.created_at)}</td>
+                    <td className="py-3 px-3 sm:px-4 text-sm text-slate-400 align-top min-w-0 whitespace-nowrap">
+                      {formatTimestamp(w.created_at)}
+                    </td>
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
-                      <div className="flex flex-wrap gap-1">
-                        {isAetherManaged(w) ? (
+                      <div className="flex flex-nowrap items-center gap-0.5">
+                        {discovered ? (
+                          <>
+                            <button
+                              type="button"
+                              data-testid={`workload-info-${shortName}`}
+                              onClick={() => openWorkloadDetail(w, 'overview')}
+                              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded transition-colors"
+                              title="Pod / resource info"
+                            >
+                              <Info size={14} />
+                            </button>
+                            {showLogs ? (
+                              <button
+                                type="button"
+                                data-testid={`workload-logs-${shortName}`}
+                                onClick={() => openWorkloadDetail(w, 'logs')}
+                                className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                                title="Logs"
+                              >
+                                <FileText size={14} />
+                              </button>
+                            ) : null}
+                            {showShell ? (
+                              <button
+                                type="button"
+                                data-testid={`workload-shell-${shortName}`}
+                                onClick={() => openWorkloadDetail(w, 'overview', true)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
+                                title="Shell / exec"
+                              >
+                                <Terminal size={14} />
+                              </button>
+                            ) : null}
+                          </>
+                        ) : (
                           <>
                             <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
                             {canMutate ? (
@@ -921,15 +964,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                             <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
                             ) : null}
                           </>
-                        ) : (
-                          <span className="text-xs text-slate-500 px-2 py-1">
-                            K8s discovered
-                          </span>
                         )}
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </ResponsiveTable>
@@ -938,9 +978,10 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
       {selectedWorkload && (
         <WorkloadDetail
-          key={`${selectedWorkload.name}-${detailInitialTab}`}
+          key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
           workload={selectedWorkload}
           initialTab={detailInitialTab}
+          initialShellOpen={detailInitialShell}
           canMutate={canMutate}
           onClose={closeWorkloadDetail}
           onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}

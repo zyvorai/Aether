@@ -175,6 +175,10 @@ pub(crate) struct ClusterLogsQuery {
     pub(crate) namespace: String,
     pub(crate) kind: String,
     pub(crate) name: String,
+    /// Optional container within the resolved pod.
+    pub(crate) container: Option<String>,
+    /// Optional tail line count (defaults to 200 server-side).
+    pub(crate) tail: Option<i64>,
 }
 
 /// Query parameters for native Kubernetes workload detail inspection.
