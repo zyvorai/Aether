@@ -178,12 +178,18 @@ fn generate_api_key() -> String {
     format!("aether_{}", hex)
 }
 
+/// Paths that look like GETs but mutate cluster state (interactive shells, etc.).
+fn is_privileged_get(path: &str) -> bool {
+    path == "/api/cluster/ws/exec" || path.starts_with("/api/cluster/ws/exec?")
+}
+
 /// Check whether a given role has permission to perform a request.
 ///
 /// Permission matrix:
-/// - **Viewer**: GET requests only
-/// - **Operator**: GET; POST except `/api/rbac/*`; PUT/PATCH on workload updates;
-///   DELETE on workloads, secrets, backups, and dependency edges; no admin-only audit append.
+/// - **Viewer**: GET requests only (excluding privileged GETs such as cluster exec)
+/// - **Operator**: GET including privileged GETs; POST except `/api/rbac/*`; PUT/PATCH on
+///   workload updates; DELETE on workloads, secrets, backups, and dependency edges;
+///   no admin-only audit append.
 /// - **Admin**: all methods, all paths
 pub fn check_permission(role: &Role, method: &str, path: &str) -> bool {
     match role {
@@ -214,7 +220,10 @@ pub fn check_permission(role: &Role, method: &str, path: &str) -> bool {
             }
             false
         }
-        Role::Viewer => method.to_uppercase() == "GET",
+        Role::Viewer => {
+            let method_upper = method.to_uppercase();
+            method_upper == "GET" && !is_privileged_get(path)
+        }
     }
 }
 
@@ -444,6 +453,18 @@ mod tests {
         // Viewers can GET
         assert!(check_permission(&Role::Viewer, "GET", "/api/workloads"));
         assert!(check_permission(&Role::Viewer, "GET", "/api/rbac/keys"));
+
+        // Viewers cannot open an interactive cluster exec shell (privileged GET)
+        assert!(!check_permission(
+            &Role::Viewer,
+            "GET",
+            "/api/cluster/ws/exec"
+        ));
+        assert!(check_permission(
+            &Role::Operator,
+            "GET",
+            "/api/cluster/ws/exec"
+        ));
 
         // Viewers cannot POST, PUT, DELETE
         assert!(!check_permission(&Role::Viewer, "POST", "/api/workloads"));
