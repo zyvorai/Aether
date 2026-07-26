@@ -2615,6 +2615,7 @@ pub(crate) async fn api_cluster_logs(Query(query): Query<ClusterLogsQuery>) -> i
         name: query.name,
         container: query.container,
         tail_lines: query.tail,
+        previous: query.previous,
         ..Default::default()
     })
     .await

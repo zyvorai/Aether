@@ -879,7 +879,7 @@ export default function WorkloadDetail({
       ) : null}
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 px-4 py-3 glass-divider-b">
+      <div className="sticky top-0 z-10 flex flex-wrap gap-2 px-4 py-3 glass-divider-b glass-inset-surface/95 backdrop-blur-sm">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -1228,7 +1228,12 @@ export default function WorkloadDetail({
             ) : null}
 
             {!isAetherManaged && (imageDrift || observedImages.length > 0 || containerResources.length > 0) ? (
-              <div className="mt-4 space-y-3" data-testid="workload-manifest-insights">
+              <details className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-manifest-insights">
+                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Labels, resources &amp; images
+                  {imageDrift ? <span className="ml-2 text-amber-400 normal-case tracking-normal">drift</span> : null}
+                </summary>
+                <div className="mt-3 space-y-3">
                 {(imageDrift || observedImages.length > 0) ? (
                   <div data-testid="workload-image-drift">
                     <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -1300,7 +1305,8 @@ export default function WorkloadDetail({
                     ) : null}
                   </div>
                 ) : null}
-              </div>
+                </div>
+              </details>
             ) : null}
 
             {!isAetherManaged && (clusterMetrics.length > 0 || clusterEvents.length > 0) ? (
@@ -1544,25 +1550,25 @@ export default function WorkloadDetail({
               });
               if (cmds.length === 0) return null;
               return (
-                <div className="mt-4" data-testid="workload-kubectl">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      Run in your terminal
-                    </h4>
+                <details className="mt-4" data-testid="workload-kubectl">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <span>Run in your terminal</span>
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         void navigator.clipboard.writeText(cmds.map((c) => `# ${c.label}\n${c.command}`).join('\n\n'));
                         setCopiedCmd('all');
                         window.setTimeout(() => setCopiedCmd(''), 1500);
                       }}
-                      className="rounded px-2 py-1 text-[11px] text-slate-400 transition-colors hover:bg-white/5 hover:text-aether"
+                      className="rounded px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-slate-400 transition-colors hover:bg-white/5 hover:text-aether"
                       data-testid="workload-kubectl-copy-all"
                     >
                       {copiedCmd === 'all' ? 'Copied all' : 'Copy all'}
                     </button>
-                  </div>
-                  <div className="space-y-1.5">
+                  </summary>
+                  <div className="mt-2 space-y-1.5">
                     {cmds.map((cmd) => (
                       <div
                         key={cmd.label}
@@ -1588,11 +1594,15 @@ export default function WorkloadDetail({
                       </div>
                     ))}
                   </div>
-                </div>
+                </details>
               );
             })() : null}
 
-            <div className="mt-4 flex flex-wrap gap-2" data-testid="workload-quick-links">
+            <details className="mt-4" data-testid="workload-quick-links">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Related pages
+              </summary>
+              <div className="mt-2 flex flex-wrap gap-2">
               {(
                 [
                   { label: 'AI analysis', slug: 'ai', path: pathWithQuery(viewToPath('ai'), { workload: workload.name, tab: 'analyze' }) },
@@ -1644,7 +1654,8 @@ export default function WorkloadDetail({
                   {link.label}
                 </a>
               ))}
-            </div>
+              </div>
+            </details>
 
             {isAetherManaged ? (
               <div className="mt-4 glass-drawer p-3" data-testid="workload-snapshots">
@@ -1707,7 +1718,12 @@ export default function WorkloadDetail({
         )}
 
         {activeTab === 'logs' && (
-          <LogViewer workloadName={workload.name} logsPath={clusterLogsPath} containers={logContainers} />
+          <LogViewer
+            workloadName={workload.name}
+            logsPath={clusterLogsPath}
+            containers={logContainers}
+            statusHint={workload.status || clusterDetail?.pods[0]?.phase || undefined}
+          />
         )}
 
         {activeTab === 'topology' && isKubeWorkload && (

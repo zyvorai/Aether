@@ -179,6 +179,8 @@ pub(crate) struct ClusterLogsQuery {
     pub(crate) container: Option<String>,
     /// Optional tail line count (defaults to 200 server-side).
     pub(crate) tail: Option<i64>,
+    /// Fetch previous terminated container instance logs.
+    pub(crate) previous: Option<bool>,
 }
 
 /// Query parameters for native Kubernetes workload detail inspection.

@@ -10,6 +10,8 @@ interface LogViewerProps {
   logsPath?: string;
   /** Available container names for the resolved pod (multi-container workloads). */
   containers?: string[];
+  /** Optional status hint for empty-state messaging (e.g. Succeeded / stopped). */
+  statusHint?: string;
 }
 
 const TAIL_OPTIONS = [100, 200, 500, 1000, 5000] as const;
@@ -22,7 +24,7 @@ function withParam(path: string, key: string, value: string): string {
   return `${base}?${params.toString()}`;
 }
 
-export default function LogViewer({ workloadName, logsPath, containers = [] }: LogViewerProps) {
+export default function LogViewer({ workloadName, logsPath, containers = [], statusHint }: LogViewerProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [following, setFollowing] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -30,6 +32,8 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
   const [filter, setFilter] = useState('');
   const [tail, setTail] = useState<number>(200);
   const [container, setContainer] = useState('');
+  const [previous, setPrevious] = useState(false);
+  const [fetchError, setFetchError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const containerRef = useRef<HTMLPreElement>(null);
 
@@ -51,15 +55,25 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
       if (container) {
         path = withParam(path, 'container', container);
       }
+      if (previous) {
+        path = withParam(path, 'previous', 'true');
+      }
       const resp = await apiFetch<string>(path);
-      if (resp && typeof resp === 'string') {
-        setLogs(resp.split('\n'));
-      } else if (resp) {
+      if (typeof resp === 'string') {
+        // Empty string is a valid response (completed pods with no output).
+        setLogs(resp.length > 0 ? resp.split('\n') : []);
+        setFetchError('');
+      } else if (resp == null) {
+        setFetchError('Failed to load logs from the API.');
+      } else {
         setLogs([String(resp)]);
+        setFetchError('');
       }
       setLastUpdated(Date.now());
-    } catch { /* ignore */ }
-  }, [logsPath, workloadName, tail, container]);
+    } catch {
+      setFetchError('Failed to load logs.');
+    }
+  }, [logsPath, workloadName, tail, container, previous]);
 
   useEffect(() => {
     fetchLogs();
@@ -93,6 +107,8 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
     ? logs.filter(l => l.toLowerCase().includes(filter.toLowerCase()))
     : logs;
 
+  const nonemptyFiltered = filteredLogs.filter((line) => line.length > 0);
+
   const downloadLogs = () => {
     const blob = new Blob([filteredLogs.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -114,6 +130,13 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
     if (lower.includes('debug') || lower.includes('trace')) return 'text-slate-500';
     return 'text-slate-300';
   };
+
+  const emptyMessage = fetchError
+    || (previous
+      ? 'No previous container logs available.'
+      : statusHint && /stop|succeed|complet|exit|fail/i.test(statusHint)
+        ? `No current logs for this ${statusHint.toLowerCase()} workload. Try “Previous” if the container restarted, or check Events.`
+        : 'No logs available yet. Press Refresh to reload, or enable Previous for the last terminated instance.');
 
   return (
     <div className="glass-panel-card p-4" data-testid="log-viewer">
@@ -157,6 +180,15 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
         </label>
         <button
           type="button"
+          onClick={() => setPrevious(!previous)}
+          className={`glass-tab tab-chip ${previous ? 'glass-tab-active tab-chip-active !border-amber-500/30 !bg-amber-500/10 !text-amber-300' : ''}`}
+          data-testid="log-previous-toggle"
+          title="Show logs from the previous container instance"
+        >
+          Previous
+        </button>
+        <button
+          type="button"
           onClick={() => setFollowing(!following)}
           className={`glass-tab tab-chip ${following ? 'glass-tab-active tab-chip-active !border-emerald-500/30 !bg-emerald-500/10 !text-emerald-300' : ''}`}
         >
@@ -186,6 +218,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
           type="button"
           onClick={() => { void navigator.clipboard.writeText(filteredLogs.join('\n')); }}
           className="btn-secondary !px-3 !py-1.5 !text-xs"
+          disabled={nonemptyFiltered.length === 0}
         >
           Copy
         </button>
@@ -194,11 +227,12 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
           onClick={downloadLogs}
           className="btn-secondary !px-3 !py-1.5 !text-xs"
           data-testid="log-download"
+          disabled={nonemptyFiltered.length === 0}
         >
           Download
         </button>
         <span className="text-xs text-slate-500">
-          {filteredLogs.length} lines
+          {nonemptyFiltered.length} lines
           {lastUpdated ? ` · ${new Date(lastUpdated).toLocaleTimeString()}` : ''}
         </span>
       </div>
@@ -207,10 +241,11 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
         <pre
           ref={containerRef}
           onScroll={handleScroll}
-          className={`glass-code-block-body max-h-96 overflow-auto p-3 text-xs ${wrap ? 'whitespace-pre-wrap break-words' : ''}`}
+          className={`glass-code-block-body max-h-[min(32rem,60vh)] overflow-auto p-3 text-xs ${wrap ? 'whitespace-pre-wrap break-words' : ''}`}
+          data-testid="log-viewer-body"
         >
-          {filteredLogs.length === 0 ? (
-            <span className="text-slate-500">No logs available. Press Refresh to reload.</span>
+          {nonemptyFiltered.length === 0 ? (
+            <span className="text-slate-500" data-testid="log-viewer-empty">{emptyMessage}</span>
           ) : (
             filteredLogs.map((line, i) => (
               <div key={i} className="flex">
@@ -222,7 +257,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [] }: L
             ))
           )}
         </pre>
-        {!following ? (
+        {!following && nonemptyFiltered.length > 0 ? (
           <button
             type="button"
             onClick={jumpToBottom}

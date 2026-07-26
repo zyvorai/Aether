@@ -74,6 +74,8 @@ pub struct ClusterLogsRequest {
     pub container: Option<String>,
     /// Optional tail line count; defaults to 200 when unset.
     pub tail_lines: Option<i64>,
+    /// When true, fetch previous terminated container logs.
+    pub previous: Option<bool>,
 }
 
 #[derive(Debug, Clone)]
@@ -661,17 +663,31 @@ pub async fn workload_logs(req: &ClusterLogsRequest) -> Result<String> {
         .filter(|value| !value.is_empty())
         .map(str::to_string);
 
-    pods.logs(
-        &pod_name,
-        &LogParams {
-            follow: false,
-            tail_lines,
-            container,
-            ..Default::default()
-        },
-    )
-    .await
-    .with_context(|| format!("failed to get logs for pod {}", pod_name))
+    let mut params = LogParams {
+        follow: false,
+        tail_lines,
+        container: container.clone(),
+        previous: req.previous.unwrap_or(false),
+        ..Default::default()
+    };
+
+    let logs = pods
+        .logs(&pod_name, &params)
+        .await
+        .with_context(|| format!("failed to get logs for pod {}", pod_name))?;
+
+    // Completed/restarted pods often have empty current logs — fall back to previous
+    // once unless the caller already requested previous explicitly.
+    if logs.trim().is_empty() && !req.previous.unwrap_or(false) {
+        params.previous = true;
+        if let Ok(previous_logs) = pods.logs(&pod_name, &params).await {
+            if !previous_logs.trim().is_empty() {
+                return Ok(previous_logs);
+            }
+        }
+    }
+
+    Ok(logs)
 }
 
 pub async fn workload_detail(req: &ClusterLogsRequest) -> Result<ClusterResourceDetail> {

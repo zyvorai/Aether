@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
@@ -113,6 +113,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [detailInitialShell, setDetailInitialShell] = useState(false);
   const [pinnedNames, setPinnedNames] = useState<string[]>(() => getPinnedWorkloads());
   const [pinnedOnly, setPinnedOnly] = useState(false);
+  const detailRef = useRef<HTMLDivElement | null>(null);
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
 
@@ -232,6 +233,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setDetailInitialTab(tab);
     setSelectedWorkload(match);
   }, [workloadParam, tabParam, workloads]);
+
+  useEffect(() => {
+    if (!selectedWorkload) return;
+    // Bring the detail panel into view — previously it rendered under the full inventory table.
+    window.requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [selectedWorkload?.name, detailInitialTab]);
 
   async function handleAction(name: string, action: string) {
     setActionLoading(`${name}-${action}`);
@@ -671,6 +680,38 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         }
       />
 
+      {selectedWorkload ? (
+        <div ref={detailRef} className="mb-4 scroll-mt-4" data-testid="workloads-detail-anchor">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={closeWorkloadDetail}
+              className="btn-secondary !px-3 !py-1.5 !text-xs"
+              data-testid="workloads-back-to-list"
+            >
+              ← Back to inventory
+            </button>
+            <span className="text-xs text-slate-500">
+              Viewing {clusterResourceName(selectedWorkload.name)}
+              {selectedWorkload.kind ? ` · ${selectedWorkload.kind}` : ''}
+              {selectedWorkload.status ? ` · ${selectedWorkload.status}` : ''}
+            </span>
+          </div>
+          <WorkloadDetail
+            key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
+            workload={selectedWorkload}
+            initialTab={detailInitialTab}
+            initialShellOpen={detailInitialShell}
+            canMutate={canMutate}
+            onClose={closeWorkloadDetail}
+            onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
+            onAction={() => load()}
+          />
+        </div>
+      ) : null}
+
+      {!selectedWorkload ? (
+        <>
       {kinds.length > 2 ? (
         <div className="mb-4 flex flex-wrap gap-1.5" data-testid="workloads-kind-chips">
           {kinds.map((kind) => {
@@ -1131,19 +1172,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           </ResponsiveTable>
         </div>
       )}
-
-      {selectedWorkload && (
-        <WorkloadDetail
-          key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
-          workload={selectedWorkload}
-          initialTab={detailInitialTab}
-          initialShellOpen={detailInitialShell}
-          canMutate={canMutate}
-          onClose={closeWorkloadDetail}
-          onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
-          onAction={() => load()}
-        />
-      )}
+        </>
+      ) : null}
 
       <Modal
         isOpen={bulkConfirmDelete}
