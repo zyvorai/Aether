@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Viewer keys can no longer open pod shells:** `/api/cluster/ws/exec` is a WebSocket upgrade over GET, and `Role::Viewer` previously allowed every GET — a read-only key could obtain an interactive shell in any pod in any namespace. `rbac::check_permission` now treats the cluster exec route as a privileged GET requiring Operator or Admin.
+- **Local key material is gitignored:** `certs/`, `keys/`, `*.pem`, and `*.key` are excluded (mock-idp fixtures excepted) so TLS and signing keys cannot be committed by accident.
+
 ### Added
+- **Logs and Shell for discovered pods and VMs:** The Workloads detail panel now offers a Shell for cluster-discovered `Pod`, `Deployment`, `StatefulSet`, `DaemonSet`, `VirtualMachine`, and `VirtualMachineInstance` resources. The exec target is resolved before connecting (preferring a Running pod, e.g. a VM's `virt-launcher-*`) instead of passing the composite `cluster/namespace/name` as a pod name, and the terminal header shows the attached pod.
+- **Scaling advice declares its data source:** `GET /api/ai/scaling-advice` returns `metrics_source` (`prometheus` or `synthetic`) and annotates the reason when the fixed demo series is used because `AETHER_PROMETHEUS_URL` is unset or a query failed.
 - **KubeVirt vGPU Attachment:** `requirements.gpu.vgpuProfile` attaches mediated vGPU slices (e.g. `nvidia.com/GRID_A100-10C`) instead of VFIO passthrough; the profile becomes the KubeVirt GPU `deviceName`. Validation requires a fully-qualified resource name.
 - **KubeVirt Live Migration:** new `kubevirt.liveMigration` spec section renders `evictionStrategy: LiveMigrate` and a masquerade pod-network interface (bridge binding is not migratable). New `aether live-migrate <name> [--watch-timeout N]` command creates a `VirtualMachineInstanceMigration` and watches its phase. Validation rejects `liveMigration` with passthrough GPUs — VFIO pins the VM to its host; use `vgpuProfile`.
 - **RBAC API Integration:** API middleware now enforces Admin/Operator/Viewer roles via `RbacStore`. New endpoints: `GET /api/rbac/keys`, `POST /api/rbac/keys`, `POST /api/rbac/keys/revoke`. Falls back to `AETHER_API_KEY` for backward compatibility.
@@ -31,12 +37,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New Modules:** `src/rbac.rs` (RBAC key store), `src/gitops.rs` (GitOps reconciliation), `src/helm.rs` (Helm chart management)
 
 ### Fixed
+- **KubeVirt log/pod resolution:** Cluster logs and related-pod lookups for `VirtualMachine`/`VirtualMachineInstance` now try both `kubevirt.io/vm=` and `vm.kubevirt.io/name=` (KubeVirt versions differ) and prefer a Running virt-launcher pod, instead of silently returning nothing when only one label matched.
+- **Dashboard assets no longer block the Rust build:** `web/dashboard/dist/` was committed *and* consumed by `include_str!`, so deleting the generated bundle broke `cargo build`. The directory is now gitignored and `build.rs` builds it on demand, falling back to placeholder stubs when npm is unavailable.
+- **`Cargo.lock` is tracked again** for reproducible application builds.
 - **Container Memory Format:** Podman/Docker adapters now convert K8s memory format (e.g., `256Mi`) to container-native format (e.g., `256m`).
 - **Rootless Cgroup Handling:** Podman/Docker adapters skip `--cpus`/`--memory` flags when running as rootless (euid != 0) to avoid cgroup permission errors.
 - **State File Path:** `state.json` now lives in `~/.aether/` (persistent, shared between CLI and systemd service).
 - **Lock File Path:** Lock files use `/run/aether/` (root), `$XDG_RUNTIME_DIR/aether/` (user), or `/tmp/aether-<uid>` (fallback) instead of colocating with the state file.
 
 ### Changed
+- **Intelligence apply/execute endpoints stopped reporting fake success.** Remediation, FinOps cost apply, security remediate, capacity scale, evolution, federation sync, PacketWolf guard, GitOps agent, SRE runbook, and game-day execution previously pushed action strings onto `executed`/`applied` for non-dry-run calls even though nothing was mutated. They now report those actions under `skipped` with an explicit "not implemented" reason; dry-run output is unchanged.
+- **CI parity:** `make ci` now runs dashboard unit tests (`dashboard-unit`), and GitHub Actions clippy uses `--all-targets --all-features` to match the Makefile.
+- **Docs corrected:** default UI port is 5090 (not 8080), metrics are served at `GET /api/metrics`, the Quick Start example is `examples/demo-webserver.yaml`, and dashboard page/test counts reflect the current tree.
 - Test suite expanded from 958 to 1,064 tests (970 lib + 46 bin + 48 integration)
 
 ### Added

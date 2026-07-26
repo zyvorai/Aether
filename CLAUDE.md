@@ -7,13 +7,16 @@ Aether is a Universal Runtime Control Plane written in Rust. It deploys workload
 ## Build & Test
 
 ```bash
+cd web/dashboard && npm run build   # Build embedded UI assets (see note below)
 cargo build          # Debug build
 cargo build --release  # Release build
-cargo test           # Run all 1,325 tests
-cargo clippy         # Lint (must pass with zero warnings)
+cargo test           # Run all 1,329 tests
+cargo clippy --all-targets --all-features  # Lint (must pass with zero warnings)
 cargo check          # Fast type-check
-make ci              # Full CI pipeline
+make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 ```
+
+`web/dashboard/dist/` is generated, not committed. `src/api/handlers.rs` embeds it with `include_str!`, so `build.rs` runs the dashboard build when the assets are missing and writes placeholder stubs if npm is unavailable. Run a real `npm run build` before shipping a binary.
 
 ## Project Structure
 
@@ -46,7 +49,9 @@ make ci              # Full CI pipeline
 - **Intent engine** — `intent:` YAML field drives runtime scoring weights, filtering, and score multipliers; violations tracked in reconciliation loop
 - **Structured logging** — `AETHER_LOG_FORMAT=json` enables JSON-formatted tracing output
 - **Rate limiting** — Tower middleware limits API to 200 concurrent requests
-- **RBAC** — API middleware enforces Admin/Operator/Viewer roles via RbacStore; falls back to `AETHER_API_KEY`
+- **RBAC** — API middleware enforces Admin/Operator/Viewer roles via RbacStore; falls back to `AETHER_API_KEY`. Viewers get read-only GETs except privileged GETs (`/api/cluster/ws/exec`), which require Operator or Admin
+- **Cluster discovery logs/exec** — `/api/cluster/logs` and `/api/cluster/ws/exec` serve discovered pods and KubeVirt VMs; VM lookups try both `kubevirt.io/vm=` and `vm.kubevirt.io/name=` and prefer a Running virt-launcher pod
+- **Honest apply semantics** — intelligence execute/apply endpoints (remediation, FinOps, security, capacity, evolution, federation, GitOps agent, game-day) report `skipped` with "not implemented" instead of claiming success when no mutation is wired
 - **SSE events** — API handlers emit `ServerEvent` after mutations; web dashboard receives real-time updates via `useEventStream`
 - **Health check loop** — Background tokio task runs health checks every 30s when `aether serve` is running
 - **KubeVirt live migration** — `kubevirt.liveMigration` spec renders `evictionStrategy: LiveMigrate` + masquerade pod networking (bridge is not migratable); `aether live-migrate <name>` creates/watches a VirtualMachineInstanceMigration; passthrough GPUs + liveMigration is rejected at validation (use `requirements.gpu.vgpuProfile` for mediated vGPU slices)
@@ -56,6 +61,8 @@ make ci              # Full CI pipeline
 - `AETHER_SECRET_KEY` env → SHA-256 → AES-256-GCM encryption
 - `AETHER_API_KEY` env → Bearer token authentication on API (backward-compat fallback)
 - **RBAC API** — `RbacStore` enforces Admin/Operator/Viewer roles; endpoints: `GET/POST /api/rbac/keys`, `POST /api/rbac/keys/revoke`
+- **Privileged GETs** — `rbac::check_permission` denies Viewers the cluster exec WebSocket so a read-only key cannot open a pod shell
+- **Local key material** — `certs/`, `keys/`, `*.pem`, `*.key` are gitignored (mock-idp fixtures excepted); never commit TLS or signing keys
 - Backups/snapshots: `0o600` permissions
 - K8s: 5-min timeouts, resource cleanup on failure, 409 conflict handling
 - Input: DNS-1123 name validation, path traversal prevention
@@ -63,7 +70,7 @@ make ci              # Full CI pipeline
 
 ## Testing
 
-- 1,325 tests (1,203 lib + bin + integration)
+- 1,329 tests (lib + integration)
 - Tests use `tempfile::tempdir()` for isolated filesystem state
 - No external services needed (K8s/Podman tests are unit tests against manifest generation)
 - `#[tokio::test]` for async command tests
@@ -86,6 +93,8 @@ make ci              # Full CI pipeline
 - Intent Debugger with AI scoring visualization and pure SVG radar chart
 - SSE connection indicator (green/red dot in navbar)
 - Keyboard shortcuts: `r` (refresh), `?` (command palette), `Cmd+K` (command palette)
+- Discovered pods/VMs: WorkloadDetail offers Logs plus a Shell for `Pod`, `Deployment`, `StatefulSet`, `DaemonSet`, `VirtualMachine`, and `VirtualMachineInstance`; `pickExecPodName` (`src/utils/clusterExec.ts`) resolves the backing pod before the exec WebSocket opens
+- Unit tests: `npm run test` (vitest, `src/**/*.test.ts`); e2e: `npm run test:e2e`
 
 ## Default Ports
 

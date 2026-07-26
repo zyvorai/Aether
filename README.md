@@ -42,7 +42,7 @@ Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** 
 | **Core** | Rust runtime control plane — `src/` |
 | **Runtimes** | Podman, K8s, KubeVirt, Metal3 adapters |
 | **Migration** | Immediate, blue-green, rolling — 16 combinations; KubeVirt live migration (vGPU-aware) |
-| **UI** | 19-page React dashboard + interactive TUI — `web/` |
+| **UI** | React dashboard (40+ pages) + interactive TUI — `web/` |
 | **Deploy** | Helm, Docker, deb/rpm packages — `helm/`, `packaging/` |
 | **Examples** | Compose stacks, demos, migration scenarios — `examples/` |
 
@@ -52,20 +52,24 @@ Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** 
 
 ```bash
 git clone https://github.com/ssahani/Aether.git && cd Aether
+
+# Build the dashboard bundle the binary embeds (build.rs falls back to a stub if skipped)
+(cd web/dashboard && npm ci && npm run build)
+
 cargo build --release
 
 # First-time setup
 ./target/release/aether init
 
 # Deploy a workload
-./target/release/aether run --spec examples/workloads/simple-web.yaml
+./target/release/aether run --spec examples/demo-webserver.yaml
 
 # List across all runtimes
 ./target/release/aether list --output wide
 
 # Web dashboard
 ./target/release/aether serve
-# → http://localhost:8080
+# → http://localhost:5090
 ```
 
 | Scenario | Path |
@@ -81,7 +85,7 @@ cargo build --release
 
 ### Web UI
 
-SSE real-time updates, command palette (`⌘K`), intent debugger with radar chart, log viewer with follow mode.
+SSE real-time updates, command palette (`⌘K`), intent debugger with radar chart, log viewer with follow mode. Discovered Kubernetes pods and KubeVirt VMs expose logs and an in-browser shell (the shell resolves the backing pod, e.g. `virt-launcher-*` for VMs, and requires an Operator or Admin key).
 
 ```bash
 cd web && npm install && npm run dev

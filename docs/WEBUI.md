@@ -143,6 +143,15 @@ Click any workload name to open a tabbed detail view with four tabs:
 
 The panel includes action buttons: **Start**, **Stop**, **Restart**, and **Delete** -- each with confirmation dialogs.
 
+#### Discovered pods and VMs
+
+Resources discovered directly from Kubernetes (workloads whose `source` is `cluster`) also expose **Logs** and a **Shell**:
+
+- The Shell button appears for `Pod`, `Deployment`, `StatefulSet`, `DaemonSet`, `VirtualMachine`, and `VirtualMachineInstance`.
+- For anything other than a bare Pod, Aether fetches the resource detail and picks a **Running** related pod before connecting, so the terminal title shows the pod actually attached (for a VM this is its `virt-launcher-*` pod).
+- Opening a shell requires an **Operator** or **Admin** key. Viewer keys are rejected because the exec WebSocket is a privileged GET.
+- VM logs are virt-launcher container output, not guest-OS logs. Aether matches launcher pods on both `kubevirt.io/vm=` and `vm.kubevirt.io/name=`. For a guest console use `virtctl console <vm>`.
+
 ### LogViewer
 
 A full-featured log viewer component with:
@@ -871,7 +880,7 @@ aether serve
 ## Limitations
 
 Current limitations:
-- In-browser exec terminal flows are not covered by automated E2E (cluster browser route and SSO login are tested).
+- In-browser exec terminal flows have limited automated E2E coverage: `tests/cluster-exec-terminal.spec.ts` (kind-gated) and `tests/workload-discovered-shell.spec.ts` (exec target resolution with a stubbed WebSocket).
 - Use Ingress TLS or `--tls-cert` / `--tls-key` for HTTPS in production.
 
 Enterprise SSO is provided via **OIDC** (`AETHER_OIDC_*`) and **SAML** (`AETHER_SAML_*`). For local/CI testing, set `AETHER_MOCK_IDP=1` to embed a mock IdP (see `docs/NEXT-STEPS.md`).

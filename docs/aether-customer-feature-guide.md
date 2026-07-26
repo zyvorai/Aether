@@ -26,9 +26,9 @@ This is the customer-facing onboarding guide — how to access the product, your
 
 **How to access it**
 
-- **Web:** Run `aether serve --port 8080` and open http://localhost:8080 for the React dashboard (default port is 5090 if `--port` is omitted). It offers a ⌘K / Ctrl+K command palette, live SSE real-time updates (no polling), a runtime-fabric topology graph, tabbed workload detail, and the Ask Aether copilot rail.
+- **Web:** Run `aether serve` (default port **5090**) and open http://localhost:5090 for the React dashboard. Override with `--port` if needed. It offers a ⌘K / Ctrl+K command palette, live SSE real-time updates (no polling), a runtime-fabric topology graph, tabbed workload detail, and the Ask Aether copilot rail.
 - **CLI:** The `aether` binary is the primary interface (65+ commands). Core loop: `aether init` (first-run wizard), `aether validate --spec workload.yaml`, `aether build`, `aether run --runtime kube`, `aether list`, `aether status `, `aether logs  --follow`, `aether migrate   --strategy blue-green`, and `aether policy-check --policy production`. Global flags include `-s/--spec`, `-n/--namespace`, `-o/--output {table,json,yaml,wide}`, and `-y/--yes` for automation.
-- **API:** The same `aether serve` process exposes a REST API under `/api` on the serve host (e.g. `GET /api/workloads`, `POST /api/workloads`, `GET /api/workloads/{name}/logs`, `POST /api/cost`, `GET /api/command-center/briefing`, `GET/POST /api/rbac/keys`). Responses are `{success, data, error}` JSON; `GET /health` and `GET /metrics` are public.
+- **API:** The same `aether serve` process exposes a REST API under `/api` on the serve host (e.g. `GET /api/workloads`, `POST /api/workloads`, `GET /api/workloads/{name}/logs`, `POST /api/cost`, `GET /api/command-center/briefing`, `GET/POST /api/rbac/keys`). Responses are `{success, data, error}` JSON; `GET /health` and `GET /api/metrics` are public.
 - **Login:** Dashboard default credentials are `admin` / `aether`. API auth is off by default; set `AETHER_API_KEY` to require an `Authorization: Bearer ` header on `/api/*`. Enterprise SSO is available via `AETHER_OIDC_*` / `AETHER_SAML_*`.
 - **Needs:** Linux (x86_64/aarch64) with Rust 1.75+ and Podman 4.0+; build with `cargo build --release`, install the `aether` binary, then run `aether init`.
 
@@ -65,7 +65,7 @@ This is the customer-facing onboarding guide — how to access the product, your
   1. Generate a versioned plan: `aether plan create` (emits a MigrationPlan CRD).
   1. Rehearse safely with a shadow deploy: `aether move plan` → `aether move start` → `aether move cutover` (or `aether move rollback`).
 - **Operate and observe the fleet**
-  1. Launch the terminal dashboard: `aether tui`, or the web UI: `aether serve --port 8080` → http://localhost:8080.
+  1. Launch the terminal dashboard: `aether tui`, or the web UI: `aether serve` → http://localhost:5090.
   1. Watch health continuously: `aether orchestrate watch --interval 10`.
   1. Detect and fix config drift: `aether drift hello-web --reconcile`.
   1. Estimate spend across clouds: `aether cost --provider all`.
@@ -164,6 +164,7 @@ _Day-2 workload operations — inspect, scale, restart, back up, roll back, and 
 
 - **Logs, Exec & Port-Forward** — Tail logs with follow mode, exec into containers, forward ports, and copy files across runtimes. — _The kubectl toolbox for every runtime, in one CLI._
   - **How:** CLI: `aether logs  --follow`, `aether exec  "ls -la"`, `aether port-forward  8080:80`.
+  - **Discovered pods & VMs:** In the Web UI, resources discovered straight from Kubernetes also expose Logs and a Shell from the workload detail panel. Aether resolves the backing pod first (for a KubeVirt VM this is its `virt-launcher-*` pod), so VM logs and shells are launcher-level, not guest-OS. Use `virtctl console <vm>` for a guest serial console. Shell access requires an Operator or Admin key.
 - **Scale & Restart** — Scale a Kubernetes workload to a target replica count or trigger a rolling restart. — _Routine scaling actions without leaving Aether._
   - **How:** CLI: `aether scale my-app `; Web UI: Workload detail → Restart.
 - **Health-Aware Orchestration** — Register workloads for health monitoring, watch at an interval, and trip or reset circuit breakers. — _Continuous health signal that feeds migrations and auto-rollback._
@@ -181,12 +182,12 @@ _Day-2 workload operations — inspect, scale, restart, back up, roll back, and 
 
 _A k9s-level view of the fleet — metrics, events, audit, drift, cost, and SLA — across CLI, TUI, and web._
 
-- **Web Dashboard** — A 19-page React dashboard with SSE real-time updates, command palette (⌘K), and a live runtime-fabric topology graph. — _One pane of glass for the whole runtime fleet._
-  - **How:** CLI: `aether serve --port 8080`, then open http://localhost:8080.
+- **Web Dashboard** — A React dashboard (40+ pages) with SSE real-time updates, command palette (⌘K), and a live runtime-fabric topology graph. — _One pane of glass for the whole runtime fleet._
+  - **How:** CLI: `aether serve`, then open http://localhost:5090.
 - **Interactive TUI** — A k9s-style terminal dashboard for real-time monitoring, logs, and workload navigation. — _Full situational awareness without leaving the terminal._
   - **How:** CLI: `aether tui`.
 - **Prometheus Metrics** — Export workload and control-plane metrics in Prometheus format for your existing stack. — _Plug Aether straight into Grafana and Alertmanager._
-  - **How:** CLI: `aether metrics`; REST: `GET /metrics`.
+  - **How:** CLI: `aether metrics`; REST: `GET /api/metrics`.
 - **Events & Audit Trail** — Filterable event stream by severity plus a tamper-evident audit trail of every action. — _Know what changed, when, by whom — with integrity you can prove._
   - **How:** CLI: `aether events`, `aether audit`; Web UI: Events / Audit pages.
 - **Drift Detection** — Detect configuration drift between spec, stored state, and live runtime — with optional auto-reconcile. — _Silent config drift becomes a visible, fixable signal._
@@ -227,6 +228,7 @@ _Encrypted secrets, enterprise SSO, RBAC, policy gates, and supply-chain evidenc
   - **How:** Config: set `AETHER_OIDC_*` or `AETHER_SAML_*` env vars before `aether serve` (set `AETHER_MOCK_IDP=1` for local testing).
 - **RBAC & Audit Export** — Role-based access control across API and UI, with exportable audit logs for compliance. — _Least-privilege access with an exportable paper trail._
   - **How:** REST: `GET/POST /api/rbac/keys` and `/api/rbac/keys/revoke` (Admin role); CLI: `aether audit` exports the trail.
+  - **Roles:** Admin has full access; Operator can read and mutate workloads; Viewer is read-only. Viewer keys cannot open the cluster exec shell (`/api/cluster/ws/exec`) even though it is a GET — interactive shells require Operator or Admin.
 - **Policy Gate on Deploy** — Enforce production/development policy sets — or a custom OPA/Rego policy — before a workload ships. — _Non-compliant workloads are blocked at deploy, not audited after._
   - **How:** CLI: `aether policy-check --policy production` (runs automatically on deploy; bypass with `--skip-policy`); Web UI: Policy page.
 - **SBOM Export & Verify** — Produce and validate CycloneDX software bills of materials for workloads. — _Supply-chain evidence auditors and customers can verify._
