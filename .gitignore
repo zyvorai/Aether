@@ -3,13 +3,14 @@
 
 # Dashboard
 web/dashboard/node_modules/
+web/dashboard/dist/
 web/dashboard/test-results/
 web/dashboard/playwright/.auth/
+web/dashboard/playwright-report/
 
 # Rust
 /target/
 **/target/
-Cargo.lock
 **/*.rs.bk
 *.pdb
 
@@ -27,6 +28,14 @@ Thumbs.db
 # Aether
 .aether/
 state.json
+
+# Local TLS / signing material (never commit)
+certs/
+keys/
+*.pem
+*.key
+!packaging/mock-idp/cert.pem
+!packaging/mock-idp/key.pem
 
 # Claude
 .claude/
