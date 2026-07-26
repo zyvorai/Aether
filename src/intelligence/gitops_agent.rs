@@ -137,7 +137,9 @@ pub async fn execute_gitops_agent(
         if dry_run {
             executed.push(format!("dry-run: {action}"));
         } else {
-            executed.push(action);
+            skipped.push(format!(
+                "{action} — not applied: GitOps reconcile mutation not implemented"
+            ));
         }
     }
 

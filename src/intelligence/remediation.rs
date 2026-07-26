@@ -133,10 +133,10 @@ pub async fn execute_remediation(
         }
 
         let detail = match action.action_type.as_str() {
-            "avoid_placement" => format!("recorded placement penalty for {}", action.target),
-            "notify_operator" => format!("operator notification queued for {}", action.target),
-            "reconcile_drift" => format!("drift reconcile requested for {}", action.target),
-            other => format!("noop for unsupported action {other}"),
+            "avoid_placement" => format!("would record placement penalty for {}", action.target),
+            "notify_operator" => format!("would queue operator notification for {}", action.target),
+            "reconcile_drift" => format!("would request drift reconcile for {}", action.target),
+            other => format!("unsupported action {other}"),
         };
 
         if dry_run {
@@ -144,9 +144,11 @@ pub async fn execute_remediation(
                 .skipped
                 .push(format!("dry-run: {} — {}", action.action_type, detail));
         } else {
-            result
-                .executed
-                .push(format!("{} — {}", action.action_type, detail));
+            // Mutations are not wired yet — never claim they executed.
+            result.skipped.push(format!(
+                "{} {}: not applied — cluster mutation not implemented ({})",
+                action.action_type, action.target, detail
+            ));
         }
     }
 

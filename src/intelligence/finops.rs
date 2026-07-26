@@ -142,7 +142,11 @@ impl FinOpsEngine {
             if dry_run {
                 applied.push(format!("dry-run: {line}"));
             } else {
-                applied.push(line);
+                // Runtime preference patches are not written to state/YAML yet.
+                skipped.push(format!(
+                    "{}: not applied — workload mutation not implemented ({line})",
+                    patch.workload
+                ));
             }
         }
         CostApplyReport {

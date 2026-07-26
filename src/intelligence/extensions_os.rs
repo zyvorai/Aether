@@ -209,9 +209,9 @@ pub async fn execute_game_day_scenario(
         }
     } else {
         skipped.push("Live game-day requires operator confirmation in dashboard or CLI".into());
-        executed.push(format!(
-            "scheduled: {} ({} min)",
-            scenario.title, scenario.duration_minutes
+        skipped.push(format!(
+            "not applied: game-day orchestration not implemented ({})",
+            scenario.title
         ));
     }
 

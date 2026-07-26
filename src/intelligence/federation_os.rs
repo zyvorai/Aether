@@ -79,7 +79,9 @@ pub async fn execute_federation_sync(
         if dry_run {
             executed.push(format!("dry-run: {line}"));
         } else {
-            executed.push(line);
+            skipped.push(format!(
+                "{line} — not applied: federation sync mutation not implemented"
+            ));
         }
     } else {
         skipped.push(format!("no reachable cluster for {}", ws.name));
@@ -722,7 +724,9 @@ pub async fn apply_packetwolf_guard(dry_run: bool) -> anyhow::Result<PacketWolfG
             if dry_run {
                 applied.push(format!("dry-run: {line}"));
             } else {
-                applied.push(line);
+                skipped.push(format!(
+                    "{line} — not applied: placement guard mutation not implemented"
+                ));
             }
         } else {
             skipped.push(format!("{}: within anomaly threshold", entry.cluster));

@@ -654,7 +654,9 @@ pub async fn execute_runbook(
                 skipped.push(format!("{line} (requires approval)"));
             }
         } else if action.auto_safe {
-            executed.push(line);
+            skipped.push(format!(
+                "{line} — not applied: remediation mutation not implemented"
+            ));
         } else {
             skipped.push(format!("{line} (requires approval)"));
         }

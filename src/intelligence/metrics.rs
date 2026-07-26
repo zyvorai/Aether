@@ -90,7 +90,7 @@ pub fn time_series_from_range(json: &serde_json::Value, name: &str, unit: &str) 
     series
 }
 
-pub async fn fetch_fleet_utilization_series() -> (TimeSeries, TimeSeries) {
+pub async fn fetch_fleet_utilization_series() -> (TimeSeries, TimeSeries, bool) {
     let mut cpu = TimeSeries::new("cpu_utilization", "ratio");
     let mut mem = TimeSeries::new("memory_utilization", "ratio");
 
@@ -100,7 +100,7 @@ pub async fn fetch_fleet_utilization_series() -> (TimeSeries, TimeSeries) {
         .is_none()
     {
         synthetic_series(&mut cpu, &mut mem);
-        return (cpu, mem);
+        return (cpu, mem, true);
     }
 
     let cpu_q = "avg(rate(container_cpu_usage_seconds_total[5m]))";
@@ -111,7 +111,7 @@ pub async fn fetch_fleet_utilization_series() -> (TimeSeries, TimeSeries) {
         Err(e) => {
             tracing::debug!("prometheus cpu range query failed: {e}");
             synthetic_series(&mut cpu, &mut mem);
-            return (cpu, mem);
+            return (cpu, mem, true);
         }
     }
 
@@ -121,15 +121,17 @@ pub async fn fetch_fleet_utilization_series() -> (TimeSeries, TimeSeries) {
             tracing::debug!("prometheus mem range query failed: {e}");
             if cpu.points.is_empty() {
                 synthetic_series(&mut cpu, &mut mem);
+                return (cpu, mem, true);
             }
         }
     }
 
     if cpu.points.is_empty() {
         synthetic_series(&mut cpu, &mut mem);
+        return (cpu, mem, true);
     }
 
-    (cpu, mem)
+    (cpu, mem, false)
 }
 
 fn synthetic_series(cpu: &mut TimeSeries, mem: &mut TimeSeries) {

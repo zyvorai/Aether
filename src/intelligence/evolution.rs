@@ -213,7 +213,9 @@ pub async fn execute_evolution(
         if dry_run {
             executed.push(format!("dry-run: {line}"));
         } else {
-            executed.push(line);
+            skipped.push(format!(
+                "{line} — not applied: runtime evolution mutation not implemented"
+            ));
         }
     }
 

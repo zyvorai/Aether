@@ -1655,16 +1655,24 @@ pub(crate) async fn ai_scaling_advice() -> impl IntoResponse {
     let config = Config::load();
     let engine = ScalingEngine::new(config.scaling);
 
-    let (cpu_series, mem_series) = fetch_fleet_utilization_series().await;
+    let (cpu_series, mem_series, synthetic) = fetch_fleet_utilization_series().await;
+    let metrics_source = if synthetic { "synthetic" } else { "prometheus" };
 
     let rec = engine.recommend(&cpu_series, &mem_series, 3, 1, 10, 0.05);
+    let mut reason = rec.reason;
+    if synthetic {
+        reason.push_str(
+            " [metrics_source=synthetic — set AETHER_PROMETHEUS_URL for live utilization]",
+        );
+    }
 
     let response = ScalingAdviceResponse {
         action: format!("{}", rec.action),
         current_replicas: rec.current_replicas,
         recommended_replicas: rec.recommended_replicas,
-        reason: rec.reason,
+        reason,
         confidence: rec.confidence,
+        metrics_source: metrics_source.to_string(),
         forecast: ForecastResponse {
             trend: format!("{}", rec.forecast.trend),
             predicted_value: rec.forecast.predicted_value,

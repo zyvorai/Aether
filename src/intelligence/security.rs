@@ -369,7 +369,11 @@ rules: []
             if dry_run {
                 applied.push(format!("dry-run: {line}"));
             } else {
-                applied.push(line);
+                // Policy YAML is suggested only — not applied to the cluster yet.
+                skipped.push(format!(
+                    "{}: not applied — cluster policy apply not implemented ({line})",
+                    suggestion.workload
+                ));
             }
         }
 

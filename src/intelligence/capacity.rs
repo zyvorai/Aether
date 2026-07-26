@@ -130,7 +130,9 @@ pub fn execute_scale_suggestions(
         if dry_run {
             executed.push(format!("dry-run: {action}"));
         } else {
-            executed.push(action);
+            skipped.push(format!(
+                "{action} — not applied: capacity scale mutation not implemented"
+            ));
         }
     }
 

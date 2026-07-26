@@ -507,6 +507,8 @@ pub(crate) struct ScalingAdviceResponse {
     pub(crate) recommended_replicas: u32,
     pub(crate) reason: String,
     pub(crate) confidence: f64,
+    /// `"prometheus"` when live range queries succeeded; `"synthetic"` when demo series was used.
+    pub(crate) metrics_source: String,
     pub(crate) forecast: ForecastResponse,
     pub(crate) cost_impact: CostImpactResponse,
 }
@@ -1819,6 +1821,7 @@ mod tests {
             recommended_replicas: 5,
             reason: "CPU utilization trending upward".to_string(),
             confidence: 0.85,
+            metrics_source: "synthetic".to_string(),
             forecast: ForecastResponse {
                 trend: "Increasing".to_string(),
                 predicted_value: 0.78,
@@ -1850,6 +1853,7 @@ mod tests {
             recommended_replicas: 2,
             reason: "Stable".to_string(),
             confidence: 0.95,
+            metrics_source: "synthetic".to_string(),
             forecast: ForecastResponse {
                 trend: "Stable".to_string(),
                 predicted_value: 0.45,
@@ -1872,9 +1876,10 @@ mod tests {
         assert!(obj.contains_key("recommended_replicas"));
         assert!(obj.contains_key("reason"));
         assert!(obj.contains_key("confidence"));
+        assert!(obj.contains_key("metrics_source"));
         assert!(obj.contains_key("forecast"));
         assert!(obj.contains_key("cost_impact"));
-        assert_eq!(obj.len(), 7);
+        assert_eq!(obj.len(), 8);
     }
 
     #[test]
@@ -1885,6 +1890,7 @@ mod tests {
             recommended_replicas: 5,
             reason: "Low utilization detected".to_string(),
             confidence: 0.72,
+            metrics_source: "synthetic".to_string(),
             forecast: ForecastResponse {
                 trend: "Decreasing".to_string(),
                 predicted_value: 0.20,
@@ -2042,6 +2048,7 @@ mod tests {
             recommended_replicas: 4,
             reason: "High CPU".to_string(),
             confidence: 0.90,
+            metrics_source: "synthetic".to_string(),
             forecast: ForecastResponse {
                 trend: "Increasing".to_string(),
                 predicted_value: 0.85,
