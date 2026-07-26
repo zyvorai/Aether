@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download } from 'lucide-react';
+import { Play, Square, Trash2, FileText, ClipboardCheck, Inbox, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download, LayoutGrid, List } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam, pathWithQuery } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -24,21 +24,19 @@ import {
 import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../../utils/clusterExec';
 import { getPinnedWorkloads, togglePinnedWorkload } from '../../utils/pinnedWorkloads';
 import { downloadTextFile, workloadsToCsv } from '../../utils/workloadCsv';
-import { formatRelativeTime, formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
-import StatCard from '../StatCard';
 import Modal from '../Modal';
 import YamlInput from '../YamlInput';
 import ValidateResultPanel from '../ValidateResultPanel';
 import DeploySuccessPanel from '../DeploySuccessPanel';
 import EmptyState from '../EmptyState';
-import type { WorkloadResponse, ValidateResponse, BuildResponse, MigrationAdvice, PolicyResult, ConfidentialMigrationPlan } from '../../types/api';
+import type { WorkloadResponse, ValidateResponse, MigrationAdvice, PolicyResult, ConfidentialMigrationPlan } from '../../types/api';
 import PageToolbar from '../PageToolbar';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import ResponsiveTable from '../ResponsiveTable';
 import WorkloadDetail, { type DetailTab } from '../WorkloadDetail';
+import WorkloadCard from '../WorkloadCard';
 
 interface WorkloadsPageProps {
   initialSelectedName?: string | null;
@@ -113,9 +111,23 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [detailInitialShell, setDetailInitialShell] = useState(false);
   const [pinnedNames, setPinnedNames] = useState<string[]>(() => getPinnedWorkloads());
   const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>(() => {
+    try {
+      return localStorage.getItem('aether_workloads_view') === 'table' ? 'table' : 'cards';
+    } catch {
+      return 'cards';
+    }
+  });
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
+
+  function setViewModePersist(mode: 'cards' | 'table') {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('aether_workloads_view', mode);
+    } catch { /* ignore */ }
+  }
 
   function togglePin(name: string) {
     setPinnedNames(togglePinnedWorkload(name));
@@ -257,18 +269,6 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       toast(`${action.charAt(0).toUpperCase() + action.slice(1)} "${name}" succeeded`, 'success');
     } else {
       toast(`${action.charAt(0).toUpperCase() + action.slice(1)} "${name}" failed: ${res?.error ?? 'unknown error'}`, 'error');
-    }
-    load();
-  }
-
-  async function handleBuild(name: string) {
-    setActionLoading(`${name}-build`);
-    const res = await apiPost<BuildResponse>(`/workloads/${name}/build`);
-    setActionLoading(null);
-    if (res.success && res.data) {
-      toast(`Build "${name}" succeeded: ${res.data.full_name}`, 'success');
-    } else {
-      toast(`Build "${name}" failed: ${res.error ?? 'unknown error'}`, 'error');
     }
     load();
   }
@@ -596,7 +596,35 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const filterSelectClass = 'glass-select';
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
+      {!selectedWorkload ? (
+        <section className="workloads-masthead mb-5 px-5 py-5 sm:px-6 sm:py-6" data-testid="workloads-masthead">
+          <div className="relative z-[1] flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0">
+              <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-aether">
+                <span className="h-1.5 w-1.5 rounded-full bg-aether platform-pulse" />
+                Runtime inventory
+              </div>
+              <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Workloads</h2>
+              <p className="mt-1.5 max-w-xl text-sm text-slate-400">
+                Cards-first ops deck — open Info, stream Logs, or Exec without leaving the grid.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-[11px]">
+              <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-300">
+                {runningCount} running
+              </span>
+              <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-sky-300">
+                {clusterDiscoveredCount} discovered
+              </span>
+              <span className="rounded-full border border-violet-500/25 bg-violet-500/10 px-3 py-1 text-violet-200">
+                {aetherManagedCount} managed
+              </span>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -681,40 +709,65 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       />
 
       {selectedWorkload ? (
-        <div ref={detailRef} className="mb-4 scroll-mt-4" data-testid="workloads-detail-anchor">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={closeWorkloadDetail}
-              className="btn-secondary !px-3 !py-1.5 !text-xs"
-              data-testid="workloads-back-to-list"
-            >
-              ← Back to inventory
-            </button>
-            <span className="text-xs text-slate-500">
-              Viewing {clusterResourceName(selectedWorkload.name)}
-              {selectedWorkload.kind ? ` · ${selectedWorkload.kind}` : ''}
-              {selectedWorkload.status ? ` · ${selectedWorkload.status}` : ''}
-            </span>
+        <div
+          ref={detailRef}
+          className="mb-4 scroll-mt-4 grid gap-4 lg:grid-cols-[minmax(16rem,18rem)_minmax(0,1fr)]"
+          data-testid="workloads-detail-anchor"
+        >
+          <aside className="hidden max-h-[calc(100vh-7rem)] flex-col gap-2 overflow-y-auto rounded-2xl border glass-divider p-2 lg:flex" data-testid="workloads-side-rail">
+            <div className="sticky top-0 z-[1] mb-1 flex items-center justify-between gap-2 rounded-xl glass-inset-surface px-2 py-2">
+              <button
+                type="button"
+                onClick={closeWorkloadDetail}
+                className="text-[11px] text-slate-400 hover:text-aether"
+                data-testid="workloads-back-to-list"
+              >
+                ← Inventory
+              </button>
+              <span className="text-[10px] text-slate-600">{displayWorkloads.length}</span>
+            </div>
+            {displayWorkloads.map((w) => (
+              <WorkloadCard
+                key={w.name}
+                workload={w}
+                pinned={pinnedSet.has(w.name)}
+                selected={w.name === selectedWorkload.name}
+                compact
+                canMutate={canMutate}
+                onOpen={(tab = 'overview', openShell = false) => openWorkloadDetail(w, tab, openShell)}
+                onTogglePin={() => togglePin(w.name)}
+              />
+            ))}
+          </aside>
+          <div className="min-w-0">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 lg:hidden">
+              <button
+                type="button"
+                onClick={closeWorkloadDetail}
+                className="btn-secondary !px-3 !py-1.5 !text-xs"
+              >
+                ← Back to inventory
+              </button>
+            </div>
+            <WorkloadDetail
+              key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
+              workload={selectedWorkload}
+              initialTab={detailInitialTab}
+              initialShellOpen={detailInitialShell}
+              canMutate={canMutate}
+              onClose={closeWorkloadDetail}
+              onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
+              onAction={() => load()}
+            />
           </div>
-          <WorkloadDetail
-            key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
-            workload={selectedWorkload}
-            initialTab={detailInitialTab}
-            initialShellOpen={detailInitialShell}
-            canMutate={canMutate}
-            onClose={closeWorkloadDetail}
-            onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
-            onAction={() => load()}
-          />
         </div>
       ) : null}
 
       {!selectedWorkload ? (
         <>
-      {kinds.length > 2 ? (
-        <div className="mb-4 flex flex-wrap gap-1.5" data-testid="workloads-kind-chips">
-          {kinds.map((kind) => {
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1.5" data-testid="workloads-kind-chips">
+          {(kinds.length > 2 ? kinds : ['all']).map((kind) => {
             const count = kind === 'all'
               ? workloads.length
               : workloads.filter((w) => w.kind === kind).length;
@@ -730,18 +783,38 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                     : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
                 }`}
               >
-                {kind === 'all' ? 'All kinds' : kind}
+                {kind === 'all' ? 'All' : kind}
                 <span className="ml-1 opacity-70">{count}</span>
               </button>
             );
           })}
         </div>
-      ) : null}
+        <div className="flex items-center gap-1 rounded-xl border glass-divider p-1" data-testid="workloads-view-toggle">
+          <button
+            type="button"
+            onClick={() => setViewModePersist('cards')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-aether/20 text-aether' : 'text-slate-400 hover:text-slate-200'}`}
+            title="Card view"
+          >
+            <LayoutGrid size={14} />
+            Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewModePersist('table')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-aether/20 text-aether' : 'text-slate-400 hover:text-slate-200'}`}
+            title="Table view"
+          >
+            <List size={14} />
+            Table
+          </button>
+        </div>
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-1.5" data-testid="workloads-status-chips">
         {(
           [
-            { id: 'all', label: 'All statuses', count: workloads.length },
+            { id: 'all', label: 'All', count: workloads.length },
             { id: 'running', label: 'Running', count: runningCount },
             { id: 'stopped', label: 'Stopped', count: stoppedCount },
           ] as const
@@ -763,36 +836,28 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
             </button>
           );
         })}
+        {namespaces.length > 2
+          ? namespaces.slice(0, 10).filter((n) => n !== 'all').map((namespace) => {
+              const count = workloads.filter((w) => w.namespace === namespace).length;
+              const active = namespaceFilter === namespace;
+              return (
+                <button
+                  key={namespace}
+                  type="button"
+                  onClick={() => setNamespaceFilter(active ? 'all' : namespace)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                    active
+                      ? 'bg-aether/20 text-aether border border-aether/40'
+                      : 'glass-inset-surface text-slate-500 border glass-divider hover:text-slate-200'
+                  }`}
+                >
+                  {namespace}
+                  <span className="ml-1 opacity-70">{count}</span>
+                </button>
+              );
+            })
+          : null}
       </div>
-
-      {namespaces.length > 2 ? (
-        <div className="mb-4 flex flex-wrap gap-1.5" data-testid="workloads-namespace-chips">
-          {namespaces.slice(0, 16).map((namespace) => {
-            const count = namespace === 'all'
-              ? workloads.length
-              : workloads.filter((w) => w.namespace === namespace).length;
-            const active = namespaceFilter === namespace;
-            return (
-              <button
-                key={namespace}
-                type="button"
-                onClick={() => setNamespaceFilter(namespace)}
-                className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
-                  active
-                    ? 'bg-aether/20 text-aether border border-aether/40'
-                    : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
-                }`}
-              >
-                {namespace === 'all' ? 'All namespaces' : namespace}
-                <span className="ml-1 opacity-70">{count}</span>
-              </button>
-            );
-          })}
-          {namespaces.length > 16 ? (
-            <span className="self-center text-[11px] text-slate-600">+{namespaces.length - 16} more in filter</span>
-          ) : null}
-        </div>
-      ) : null}
 
       {workloadParam.trim() && !selectedWorkload ? (
         <WorkloadContextBanner
@@ -926,31 +991,30 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         </div>
       ) : null}
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
-        <div className="overview-section-header">
-          <p className="section-label">Fabric</p>
-          <h2 className="section-title">Workload inventory</h2>
-          <p className="section-subtitle">Managed and discovered workloads across runtimes</p>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard title="Total" value={workloads.length} color="orange" />
-          <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="text-left">
-            <StatCard title="Running" value={runningCount} color="green" />
-          </button>
-          <button type="button" onClick={() => setStatusFilter('stopped')} className="text-left">
-            <StatCard title="Stopped" value={stoppedCount} color="red" />
-          </button>
-          <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="text-left">
-            <StatCard title="Aether" value={aetherManagedCount} color="purple" />
-          </button>
-          <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="text-left">
-            <StatCard title="Discovered" value={clusterDiscoveredCount} color="blue" />
-          </button>
-          <StatCard
-            title="Namespaces"
-            value={namespaces.filter((namespace) => namespace !== 'all').length}
-            color="green"
-          />
+      <section className="mb-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border glass-divider sm:grid-cols-3 xl:grid-cols-6" data-testid="workloads-stats">
+        <button type="button" onClick={() => { setStatusFilter('all'); setSourceFilter('all'); }} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-white/[0.03]">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Total</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-white">{workloads.length}</div>
+        </button>
+        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-emerald-500/5">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Running</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-emerald-300">{runningCount}</div>
+        </button>
+        <button type="button" onClick={() => setStatusFilter('stopped')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-amber-500/5">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Stopped</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-amber-200">{stoppedCount}</div>
+        </button>
+        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-violet-500/5">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Aether</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-violet-200">{aetherManagedCount}</div>
+        </button>
+        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-sky-500/5">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Discovered</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-sky-200">{clusterDiscoveredCount}</div>
+        </button>
+        <div className="glass-inset-surface px-3 py-3">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Namespaces</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-white">{namespaces.filter((namespace) => namespace !== 'all').length}</div>
         </div>
       </section>
 
@@ -1013,163 +1077,136 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         ) : (
           <EmptyState icon={<Inbox size={48} />} title="No matching workloads" description="Try adjusting your search or filters" />
         )
+      ) : viewMode === 'cards' ? (
+        <div
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+          data-testid="workloads-card-grid"
+        >
+          {displayWorkloads.map((w, i) => (
+            <WorkloadCard
+              key={w.name}
+              workload={w}
+              pinned={pinnedSet.has(w.name)}
+              canMutate={canMutate}
+              index={i}
+              onOpen={(tab = 'overview', openShell = false) => openWorkloadDetail(w, tab, openShell)}
+              onTogglePin={() => togglePin(w.name)}
+            />
+          ))}
+        </div>
       ) : (
-        <div className="glass-table-shell" data-testid="workloads-table">
-          <ResponsiveTable stickyFirstColumn>
-            <table className="w-full min-w-[960px] border-collapse">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th scope="col" className="w-10 py-3 px-2">
-                    <input
-                      type="checkbox"
-                      aria-label="Select all"
-                      checked={filteredWorkloads.length > 0 && filteredWorkloads.every((w) => selectedNames.has(w.name))}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedNames(new Set(filteredWorkloads.map((w) => w.name)));
-                        } else {
-                          setSelectedNames(new Set());
-                        }
-                      }}
-                    />
-                  </th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[11rem]">Name</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[7rem]">Runtime</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[12rem]">Image</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[6rem]">Status</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[9rem]">Created</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 sm:px-4 min-w-[9rem]">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayWorkloads.map((w) => {
-                  const shortName = clusterResourceName(w.name);
-                  const locationLabel = [w.cluster, w.namespace].filter(Boolean).join('/');
-                  const metaLabel = [w.kind, locationLabel || null].filter(Boolean).join(' · ');
-                  const discovered = !isAetherManaged(w);
-                  const showLogs = !discovered || hasClusterLogs(w.kind);
-                  const showShell = discovered && canMutate && isShellableClusterKind(w.kind);
-                  const pinned = pinnedSet.has(w.name);
+        <div className="glass-table-shell overflow-x-auto" data-testid="workloads-table">
+          <table className="w-full min-w-0 border-collapse">
+            <thead>
+              <tr className="glass-divider-b">
+                <th scope="col" className="w-10 py-3 px-2">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all"
+                    checked={filteredWorkloads.length > 0 && filteredWorkloads.every((w) => selectedNames.has(w.name))}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedNames(new Set(filteredWorkloads.map((w) => w.name)));
+                      } else {
+                        setSelectedNames(new Set());
+                      }
+                    }}
+                  />
+                </th>
+                <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3">Name</th>
+                <th scope="col" className="hidden text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 md:table-cell">Runtime</th>
+                <th scope="col" className="hidden text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 lg:table-cell">Image</th>
+                <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3">Status</th>
+                <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayWorkloads.map((w) => {
+                const shortName = clusterResourceName(w.name);
+                const locationLabel = [w.cluster, w.namespace].filter(Boolean).join('/');
+                const metaLabel = [w.kind, locationLabel || null].filter(Boolean).join(' · ');
+                const discovered = !isAetherManaged(w);
+                const showLogs = !discovered || hasClusterLogs(w.kind);
+                const showShell = discovered && canMutate && isShellableClusterKind(w.kind);
+                const pinned = pinnedSet.has(w.name);
 
-                  return (
-                  <tr key={w.name} className="glass-table-row glass-inset-hover transition-colors">
-                    <td className="py-3 px-2 align-top">
-                      {!discovered && (
-                        <input
-                          type="checkbox"
-                          checked={selectedNames.has(w.name)}
-                          onChange={() => toggleSelect(w.name)}
-                          aria-label={`Select ${w.name}`}
-                        />
-                      )}
-                    </td>
-                    <td className="py-3 px-3 sm:px-4 font-medium text-slate-200 align-top min-w-0">
-                      <div className="flex items-start gap-1.5 min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => togglePin(w.name)}
-                          className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-aether' : 'text-slate-600 hover:text-slate-300'}`}
-                          title={pinned ? 'Unpin workload' : 'Pin workload'}
-                          aria-label={pinned ? `Unpin ${shortName}` : `Pin ${shortName}`}
-                          data-testid={`workload-pin-${shortName}`}
-                        >
-                          <Star size={13} className={pinned ? 'fill-current' : ''} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openWorkloadDetail(w, 'overview')}
-                          className="hover:text-aether transition-colors text-left w-full min-w-0 block"
-                          title={w.name}
-                        >
-                          <span className="block truncate">{shortName}</span>
-                          {metaLabel ? (
-                            <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500" title={metaLabel}>
-                              {metaLabel}
-                            </span>
-                          ) : null}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 sm:px-4 align-top min-w-0"><RuntimeBadge runtime={w.runtime} /></td>
-                    <td className="py-3 px-3 sm:px-4 align-top min-w-0">
-                      <code
-                        className="text-xs glass-inset-surface px-2 py-1 rounded text-slate-300 block w-full max-w-[18rem] truncate"
-                        title={w.image}
+                return (
+                <tr key={w.name} className="glass-table-row glass-inset-hover transition-colors">
+                  <td className="py-3 px-2 align-top">
+                    {!discovered && (
+                      <input
+                        type="checkbox"
+                        checked={selectedNames.has(w.name)}
+                        onChange={() => toggleSelect(w.name)}
+                        aria-label={`Select ${w.name}`}
+                      />
+                    )}
+                  </td>
+                  <td className="py-3 px-3 font-medium text-slate-200 align-top min-w-0">
+                    <div className="flex items-start gap-1.5 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => togglePin(w.name)}
+                        className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-aether' : 'text-slate-600 hover:text-slate-300'}`}
+                        title={pinned ? 'Unpin workload' : 'Pin workload'}
                       >
-                        {w.image}
-                      </code>
-                    </td>
-                    <td className="py-3 px-3 sm:px-4 align-top min-w-0 whitespace-nowrap">
-                      <Badge text={w.status} variant={getStatusVariant(w.status)} />
-                    </td>
-                    <td className="py-3 px-3 sm:px-4 text-sm text-slate-400 align-top min-w-0 whitespace-nowrap" title={formatTimestamp(w.created_at)}>
-                      <span className="block">{w.created_at ? formatRelativeTime(w.created_at) : '—'}</span>
-                      <span className="block text-[11px] text-slate-600">{formatTimestamp(w.created_at)}</span>
-                    </td>
-                    <td className="py-3 px-3 sm:px-4 align-top min-w-0">
-                      <div className="flex flex-nowrap items-center gap-0.5">
-                        {discovered ? (
-                          <>
-                            <button
-                              type="button"
-                              data-testid={`workload-info-${shortName}`}
-                              onClick={() => openWorkloadDetail(w, 'overview')}
-                              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded transition-colors"
-                              title="Pod / resource info"
-                            >
-                              <Info size={14} />
-                            </button>
-                            {showLogs ? (
-                              <button
-                                type="button"
-                                data-testid={`workload-logs-${shortName}`}
-                                onClick={() => openWorkloadDetail(w, 'logs')}
-                                className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
-                                title="Logs"
-                              >
-                                <FileText size={14} />
-                              </button>
-                            ) : null}
-                            {showShell ? (
-                              <button
-                                type="button"
-                                data-testid={`workload-shell-${shortName}`}
-                                onClick={() => openWorkloadDetail(w, 'overview', true)}
-                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
-                                title="Shell / exec"
-                              >
-                                <Terminal size={14} />
-                              </button>
-                            ) : null}
-                          </>
-                        ) : (
-                          <>
+                        <Star size={13} className={pinned ? 'fill-current' : ''} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openWorkloadDetail(w, 'overview')}
+                        className="hover:text-aether transition-colors text-left w-full min-w-0 block"
+                        title={w.name}
+                      >
+                        <span className="block truncate">{shortName}</span>
+                        {metaLabel ? (
+                          <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500" title={metaLabel}>
+                            {metaLabel}
+                          </span>
+                        ) : null}
+                      </button>
+                    </div>
+                  </td>
+                  <td className="hidden py-3 px-3 align-top md:table-cell"><RuntimeBadge runtime={w.runtime} /></td>
+                  <td className="hidden py-3 px-3 align-top lg:table-cell min-w-0">
+                    <code className="text-xs glass-inset-surface px-2 py-1 rounded text-slate-300 block truncate" title={w.image}>
+                      {w.image}
+                    </code>
+                  </td>
+                  <td className="py-3 px-3 align-top whitespace-nowrap">
+                    <Badge text={w.status} variant={getStatusVariant(w.status)} />
+                  </td>
+                  <td className="py-3 px-3 align-top">
+                    <div className="flex flex-nowrap items-center gap-0.5">
+                      {discovered ? (
+                        <>
+                          <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded transition-colors" title="Info"><Info size={14} /></button>
+                          {showLogs ? (
                             <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
-                            {canMutate ? (
-                              <>
-                            <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
-                            <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
-                            <button type="button" onClick={() => handleBuild(w.name)} disabled={actionLoading === `${w.name}-build`} className="p-1.5 text-slate-400 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors" title="Build"><Hammer size={14} /></button>
-                            <button type="button" onClick={() => setUpdateModal(w.name)} className="p-1.5 text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 rounded transition-colors" title="Update spec"><FileText size={14} /></button>
-                            <button type="button" onClick={() => setMigrateModal(w.name)} className="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 rounded transition-colors" title="Migrate"><ArrowRightLeft size={14} /></button>
-                              </>
-                            ) : null}
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded transition-colors" title="Profile"><Cpu size={14} /></button>
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'scoring')} className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors" title="Analyze"><Search size={14} /></button>
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'drift')} className="p-1.5 text-slate-400 hover:text-orange-400 hover:bg-orange-500/10 rounded transition-colors" title="Drift"><RefreshCw size={14} /></button>
-                            {canMutate ? (
-                            <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
-                            ) : null}
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </ResponsiveTable>
+                          ) : null}
+                          {showShell ? (
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Shell / exec"><Terminal size={14} /></button>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
+                          {canMutate ? (
+                            <>
+                              <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
+                              <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
+                              <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
+                            </>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
         </>

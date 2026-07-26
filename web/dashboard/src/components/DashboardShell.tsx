@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Navbar from './Navbar';
 import Hero, { type HeroBadge } from './Hero';
 import Footer from './Footer';
@@ -108,9 +108,21 @@ export default function DashboardShell({
     () => buildHeroBadges(capabilities?.version, capabilities, ready, sseConnected),
     [capabilities, ready, sseConnected],
   );
-  const [zeusCollapsed, setZeusCollapsed] = useState(false);
+  const [zeusCollapsed, setZeusCollapsed] = useState(
+    () => currentView === 'workloads' || currentView === 'clusters' || currentView === 'fleet',
+  );
   const [mobileZeusOpen, setMobileZeusOpen] = useState(false);
-  const showCompactHero = currentView === 'overview' || currentView === 'fabric';
+  const showCompactHero =
+    currentView === 'overview'
+    || currentView === 'fabric'
+    || currentView === 'workloads';
+
+  // Reclaim horizontal space on dense inventory pages.
+  useEffect(() => {
+    if (currentView === 'workloads' || currentView === 'clusters' || currentView === 'fleet') {
+      setZeusCollapsed(true);
+    }
+  }, [currentView]);
 
   return (
     <div className={shellClass}>
