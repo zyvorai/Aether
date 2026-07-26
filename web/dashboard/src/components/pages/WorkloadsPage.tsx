@@ -611,6 +611,32 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         }
       />
 
+      {kinds.length > 2 ? (
+        <div className="mb-4 flex flex-wrap gap-1.5" data-testid="workloads-kind-chips">
+          {kinds.map((kind) => {
+            const count = kind === 'all'
+              ? workloads.length
+              : workloads.filter((w) => w.kind === kind).length;
+            const active = kindFilter === kind;
+            return (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => setKindFilter(kind)}
+                className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                  active
+                    ? 'bg-aether/20 text-aether border border-aether/40'
+                    : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
+                }`}
+              >
+                {kind === 'all' ? 'All kinds' : kind}
+                <span className="ml-1 opacity-70">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       {workloadParam.trim() && !selectedWorkload ? (
         <WorkloadContextBanner
           testId="workloads-context-banner"

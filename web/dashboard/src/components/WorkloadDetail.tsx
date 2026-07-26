@@ -19,7 +19,7 @@ import BarChart from './BarChart';
 import RadarChart from './RadarChart';
 import IntentDebugger from './IntentDebugger';
 import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
-import type { ClusterResourceDetail, Event, ScoringResult, WorkloadResponse } from '../types/api';
+import type { ClusterRelatedEvent, ClusterResourceDetail, ClusterTopMetric, Event, ScoringResult, WorkloadResponse } from '../types/api';
 
 export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust' | 'topology';
 
@@ -149,7 +149,12 @@ export default function WorkloadDetail({
   const [shellConnected, setShellConnected] = useState(false);
   const [shellFullscreen, setShellFullscreen] = useState(false);
   const [shellPod, setShellPod] = useState('');
+  const [shellPods, setShellPods] = useState<Array<{ name: string; phase: string; containers: string[] }>>([]);
+  const [shellContainer, setShellContainer] = useState('');
+  const [shellCommand, setShellCommand] = useState('/bin/sh');
   const [copiedCmd, setCopiedCmd] = useState('');
+  const [clusterEvents, setClusterEvents] = useState<ClusterRelatedEvent[]>([]);
+  const [clusterMetrics, setClusterMetrics] = useState<ClusterTopMetric[]>([]);
   const shellSocketRef = useRef<WebSocket | null>(null);
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
   const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
@@ -250,72 +255,67 @@ export default function WorkloadDetail({
     });
   }, [activeTab, workload.name]);
 
-  // Resolve exec target + open Shell WebSocket (kubectl exec into a real pod name).
+  // Resolve available pods when the shell opens; reconnect when pod/container/command changes.
   useEffect(() => {
     if (!shellOpen || !workload.cluster || !workload.namespace) return;
 
     let cancelled = false;
 
-    async function connectShell() {
-      let pods: Array<{ name: string; phase: string }> = [];
+    async function resolvePods() {
+      let pods: Array<{ name: string; phase: string; containers: string[] }> = [];
       if (canShellDiscovered && workload.kind !== 'Pod' && clusterResourcePath) {
         const detail = await apiFetch<ClusterResourceDetail>(clusterResourcePath);
         if (cancelled) return;
         if (detail) {
           setClusterDetail(detail);
-          pods = detail.pods ?? [];
+          pods = (detail.pods ?? []).map((pod) => ({
+            name: pod.name,
+            phase: pod.phase,
+            containers: pod.containers ?? [],
+          }));
         }
+      } else if (canShellDiscovered && workload.kind === 'Pod' && clusterResourcePath) {
+        const detail = await apiFetch<ClusterResourceDetail>(clusterResourcePath);
+        if (cancelled) return;
+        if (detail) {
+          setClusterDetail(detail);
+          const match = detail.pods.find((pod) => pod.name === clusterResourceName) ?? detail.pods[0];
+          if (match) {
+            pods = [{ name: match.name, phase: match.phase, containers: match.containers ?? [] }];
+          } else {
+            pods = [{ name: clusterResourceName, phase: 'Unknown', containers: [] }];
+          }
+        } else {
+          pods = [{ name: clusterResourceName, phase: 'Unknown', containers: [] }];
+        }
+      } else {
+        pods = [{ name: clusterResourceName, phase: 'Running', containers: [] }];
       }
 
-      const resolvedPod = canShellDiscovered
-        ? pickExecPodName(workload.kind ?? undefined, clusterResourceName, pods)
-        : clusterResourceName;
-
       if (cancelled) return;
-      setShellPod(resolvedPod);
+      setShellPods(pods);
 
-      if (!resolvedPod) {
+      const preferred = pickExecPodName(
+        workload.kind ?? undefined,
+        clusterResourceName,
+        pods.map((pod) => ({ name: pod.name, phase: pod.phase })),
+      );
+      if (!preferred) {
+        setShellPod('');
         setShellOutput(
           '[aether] No pod available to exec into. For VMs, ensure the virt-launcher pod is running.\n',
         );
         return;
       }
-
-      const wsUrl = apiWebSocketUrl(
-        `/cluster/ws/exec?cluster=${encodeURIComponent(workload.cluster!)}&namespace=${encodeURIComponent(workload.namespace!)}&pod=${encodeURIComponent(resolvedPod)}&command=/bin/sh`,
-      );
-
-      try {
-        const socket = new WebSocket(wsUrl);
-        shellSocketRef.current = socket;
-
-        socket.onopen = () => {
-          setShellConnected(true);
-          setShellOutput((prev) => `${prev}[aether] Connected to ${resolvedPod}\n`);
-        };
-
-        socket.onmessage = (event) => {
-          setShellOutput((prev) => prev + event.data);
-        };
-
-        socket.onclose = () => {
-          setShellConnected(false);
-          setShellOutput((prev) => `${prev}\n[aether] Connection closed\n`);
-        };
-
-        socket.onerror = () => {
-          setShellOutput((prev) => `${prev}\n[aether] Connection error\n`);
-        };
-      } catch {
-        setShellOutput('[aether] Failed to connect to shell\n');
-      }
+      setShellPod((current) => {
+        if (current && pods.some((pod) => pod.name === current)) return current;
+        return preferred;
+      });
     }
 
-    void connectShell();
-
+    void resolvePods();
     return () => {
       cancelled = true;
-      shellSocketRef.current?.close();
     };
   }, [
     shellOpen,
@@ -328,7 +328,74 @@ export default function WorkloadDetail({
   ]);
 
   useEffect(() => {
-    if ((activeTab === 'manifest' || activeTab === 'overview') && clusterResourcePath && !clusterDetail) {
+    if (!shellOpen || !workload.cluster || !workload.namespace || !shellPod) return;
+
+    const selected = shellPods.find((pod) => pod.name === shellPod);
+    const containers = selected?.containers ?? [];
+    if (containers.length > 0 && (!shellContainer || !containers.includes(shellContainer))) {
+      setShellContainer(containers[0] ?? '');
+      return; // reconnect after container state settles
+    }
+
+    let cancelled = false;
+    setShellConnected(false);
+
+    const params = new URLSearchParams({
+      cluster: workload.cluster,
+      namespace: workload.namespace,
+      pod: shellPod,
+      command: shellCommand || '/bin/sh',
+    });
+    if (shellContainer) params.set('container', shellContainer);
+
+    const wsUrl = apiWebSocketUrl(`/cluster/ws/exec?${params.toString()}`);
+
+    try {
+      const socket = new WebSocket(wsUrl);
+      shellSocketRef.current = socket;
+
+      socket.onopen = () => {
+        if (cancelled) return;
+        setShellConnected(true);
+        const target = shellContainer ? `${shellPod}/${shellContainer}` : shellPod;
+        setShellOutput((prev) => `${prev}[aether] Connected to ${target}\n`);
+      };
+
+      socket.onmessage = (event) => {
+        setShellOutput((prev) => prev + event.data);
+      };
+
+      socket.onclose = () => {
+        if (cancelled) return;
+        setShellConnected(false);
+        setShellOutput((prev) => `${prev}\n[aether] Connection closed\n`);
+      };
+
+      socket.onerror = () => {
+        if (cancelled) return;
+        setShellOutput((prev) => `${prev}\n[aether] Connection error\n`);
+      };
+    } catch {
+      setShellOutput('[aether] Failed to connect to shell\n');
+    }
+
+    return () => {
+      cancelled = true;
+      shellSocketRef.current?.close();
+      shellSocketRef.current = null;
+    };
+  }, [
+    shellOpen,
+    shellPod,
+    shellContainer,
+    shellCommand,
+    shellPods,
+    workload.cluster,
+    workload.namespace,
+  ]);
+
+  useEffect(() => {
+    if ((activeTab === 'manifest' || activeTab === 'overview' || activeTab === 'logs') && clusterResourcePath && !clusterDetail) {
       apiFetch<ClusterResourceDetail>(clusterResourcePath).then((detail) => {
         if (detail) {
           setClusterDetail(detail);
@@ -340,6 +407,42 @@ export default function WorkloadDetail({
       });
     }
   }, [activeTab, clusterDetail, clusterResourcePath]);
+
+  useEffect(() => {
+    if (activeTab !== 'overview' || isAetherManaged || !workload.cluster || !workload.namespace || !workload.kind) {
+      return;
+    }
+    let cancelled = false;
+    const base = `cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`;
+    void Promise.all([
+      apiFetch<ClusterRelatedEvent[]>(`/cluster/events?${base}`),
+      apiFetch<ClusterTopMetric[]>(`/cluster/top?${base}`),
+    ]).then(([events, metrics]) => {
+      if (cancelled) return;
+      setClusterEvents((events ?? []).slice(0, 8));
+      setClusterMetrics(metrics ?? []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, isAetherManaged, workload.cluster, workload.namespace, workload.kind, clusterResourceName]);
+
+  const logContainers = (() => {
+    if (!clusterDetail?.pods?.length) return [] as string[];
+    if (workload.kind === 'Pod') {
+      return (
+        clusterDetail.pods.find((pod) => pod.name === clusterResourceName)?.containers
+        ?? clusterDetail.pods[0]?.containers
+        ?? []
+      );
+    }
+    const preferred = pickExecPodName(
+      workload.kind ?? undefined,
+      clusterResourceName,
+      clusterDetail.pods.map((pod) => ({ name: pod.name, phase: pod.phase })),
+    );
+    return clusterDetail.pods.find((pod) => pod.name === preferred)?.containers ?? [];
+  })();
 
   const handleAction = async (action: string, replicas?: number) => {
     setActionLoading(action);
@@ -512,6 +615,7 @@ export default function WorkloadDetail({
                     onClick={() => {
                       setShellOutput('');
                       setShellPod('');
+                      setShellContainer('');
                       setShellOpen(true);
                     }}
                     className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
@@ -562,6 +666,7 @@ export default function WorkloadDetail({
                       onClick={() => {
                         setShellOutput('');
                         setShellPod('');
+                        setShellContainer('');
                         setShellOpen(true);
                       }}
                       className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
@@ -631,6 +736,7 @@ export default function WorkloadDetail({
                         <th className="px-3 py-2 font-medium">Phase</th>
                         <th className="px-3 py-2 font-medium">Ready</th>
                         <th className="px-3 py-2 font-medium">Restarts</th>
+                        <th className="px-3 py-2 font-medium">Containers</th>
                         <th className="px-3 py-2 font-medium">Node</th>
                       </tr>
                     </thead>
@@ -641,12 +747,64 @@ export default function WorkloadDetail({
                           <td className="px-3 py-2 text-slate-300">{pod.phase}</td>
                           <td className="px-3 py-2 text-slate-300">{pod.ready}/{pod.total_containers}</td>
                           <td className="px-3 py-2 text-slate-300">{pod.restarts}</td>
+                          <td className="px-3 py-2 text-slate-400 truncate max-w-[10rem]" title={(pod.containers ?? []).join(', ')}>
+                            {(pod.containers ?? []).join(', ') || '—'}
+                          </td>
                           <td className="px-3 py-2 text-slate-400">{pod.node ?? '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+              </div>
+            ) : null}
+
+            {!isAetherManaged && (clusterMetrics.length > 0 || clusterEvents.length > 0) ? (
+              <div className="mt-4 grid gap-4 lg:grid-cols-2" data-testid="workload-live-ops">
+                {clusterMetrics.length > 0 ? (
+                  <div data-testid="workload-live-metrics">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Live usage</h4>
+                    <div className="overflow-x-auto rounded-lg border glass-divider">
+                      <table className="w-full min-w-[16rem] text-left text-xs">
+                        <thead>
+                          <tr className="glass-inset-surface text-slate-500">
+                            <th className="px-3 py-2 font-medium">Pod</th>
+                            <th className="px-3 py-2 font-medium">CPU</th>
+                            <th className="px-3 py-2 font-medium">Memory</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {clusterMetrics.map((metric) => (
+                            <tr key={metric.name} className="glass-divider-t">
+                              <td className="px-3 py-2 font-mono text-slate-200 truncate max-w-[12rem]" title={metric.name}>{metric.name}</td>
+                              <td className="px-3 py-2 text-slate-300">{metric.cpu}</td>
+                              <td className="px-3 py-2 text-slate-300">{metric.memory}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : null}
+                {clusterEvents.length > 0 ? (
+                  <div data-testid="workload-recent-events">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Recent cluster events</h4>
+                    <div className="max-h-40 space-y-1.5 overflow-auto rounded-lg border glass-divider p-2">
+                      {clusterEvents.map((event, index) => (
+                        <div key={`${event.timestamp}-${event.reason}-${index}`} className="rounded glass-inset-surface px-2.5 py-1.5">
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <span className={event.type_ === 'Warning' ? 'text-amber-400' : 'text-emerald-400'}>
+                              {event.type_}
+                            </span>
+                            <span className="font-medium text-slate-200">{event.reason}</span>
+                            <span className="ml-auto text-slate-600">{event.timestamp?.slice(0, 19)}</span>
+                          </div>
+                          <p className="mt-0.5 truncate text-[11px] text-slate-400" title={event.message}>{event.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -815,7 +973,7 @@ export default function WorkloadDetail({
         )}
 
         {activeTab === 'logs' && (
-          <LogViewer workloadName={workload.name} logsPath={clusterLogsPath} />
+          <LogViewer workloadName={workload.name} logsPath={clusterLogsPath} containers={logContainers} />
         )}
 
         {activeTab === 'topology' && isKubeWorkload && (
@@ -1035,13 +1193,52 @@ export default function WorkloadDetail({
           <div className="glass-modal-backdrop absolute inset-0" aria-hidden />
           <div className={`glass-modal-panel relative overflow-hidden transition-all ${shellFullscreen ? 'h-full w-full max-w-none rounded-none' : 'mx-4 w-full max-w-4xl'}`}>
             <div className="flex items-center justify-between glass-divider-b glass-inset-surface px-5 py-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="font-medium" data-testid="workload-shell-title">
                   Shell — {shellPod || workload.name}
                 </div>
                 <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'glass-inset-surface text-slate-400'}`}>
                   {shellConnected ? 'Connected' : 'Disconnected'}
                 </div>
+                {shellPods.length > 1 ? (
+                  <label className="flex items-center gap-1 text-xs text-slate-400">
+                    Pod
+                    <select
+                      value={shellPod}
+                      onChange={(e) => {
+                        setShellOutput('');
+                        setShellContainer('');
+                        setShellPod(e.target.value);
+                      }}
+                      className="glass-input !py-1 !px-2 text-xs max-w-[14rem]"
+                      data-testid="workload-shell-pod-select"
+                    >
+                      {shellPods.map((pod) => (
+                        <option key={pod.name} value={pod.name}>
+                          {pod.name} ({pod.phase})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                {(shellPods.find((pod) => pod.name === shellPod)?.containers.length ?? 0) > 1 ? (
+                  <label className="flex items-center gap-1 text-xs text-slate-400">
+                    Container
+                    <select
+                      value={shellContainer}
+                      onChange={(e) => {
+                        setShellOutput('');
+                        setShellContainer(e.target.value);
+                      }}
+                      className="glass-input !py-1 !px-2 text-xs max-w-[10rem]"
+                      data-testid="workload-shell-container-select"
+                    >
+                      {(shellPods.find((pod) => pod.name === shellPod)?.containers ?? []).map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
               </div>
 
               <div className="flex items-center gap-2">
@@ -1070,6 +1267,8 @@ export default function WorkloadDetail({
                     setShellConnected(false);
                     setShellOutput('');
                     setShellPod('');
+                    setShellPods([]);
+                    setShellContainer('');
                     setShellFullscreen(false);
                   }} 
                   className="text-slate-400 hover:text-white text-xl leading-none ml-1"
@@ -1087,13 +1286,18 @@ export default function WorkloadDetail({
                 data-testid="workload-shell-output"
                 className="glass-code-block-body h-[420px] overflow-auto whitespace-pre-wrap font-mono text-sm text-emerald-400 shadow-inner"
               >
-                {shellOutput || '[aether] Connecting to pod shell...\n'}
+                {shellOutput || (shellPod ? '[aether] Connecting to pod shell...\n' : '[aether] Resolving pod...\n')}
               </div>
 
               <div className="mt-4 flex gap-2 items-center">
                 <select 
                   className="glass-select text-sm text-slate-400"
-                  defaultValue="/bin/sh"
+                  value={shellCommand}
+                  onChange={(e) => {
+                    setShellOutput('');
+                    setShellCommand(e.target.value);
+                  }}
+                  data-testid="workload-shell-command-select"
                 >
                   <option value="/bin/sh">/bin/sh</option>
                   <option value="/bin/bash">/bin/bash</option>

@@ -133,6 +133,9 @@ pub struct ClusterPodSummary {
     pub total_containers: usize,
     pub restarts: i32,
     pub node: Option<String>,
+    /// Container names from pod status (for log/exec targeting).
+    #[serde(default)]
+    pub containers: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -2917,6 +2920,17 @@ fn summarize_pod(pod: &Pod) -> ClusterPodSummary {
         .unwrap_or_default();
     let ready = statuses.iter().filter(|status| status.ready).count();
     let restarts = statuses.iter().map(|status| status.restart_count).sum();
+    let mut containers: Vec<String> = statuses.iter().map(|status| status.name.clone()).collect();
+    if containers.is_empty() {
+        // Fall back to spec when the pod has not reported statuses yet.
+        if let Some(spec) = pod.spec.as_ref() {
+            containers = spec
+                .containers
+                .iter()
+                .map(|container| container.name.clone())
+                .collect();
+        }
+    }
 
     ClusterPodSummary {
         name: pod.metadata.name.clone().unwrap_or_default(),
@@ -2926,9 +2940,14 @@ fn summarize_pod(pod: &Pod) -> ClusterPodSummary {
             .and_then(|status| status.phase.clone())
             .unwrap_or_else(|| "Unknown".to_string()),
         ready,
-        total_containers: statuses.len(),
+        total_containers: if statuses.is_empty() {
+            containers.len()
+        } else {
+            statuses.len()
+        },
         restarts,
         node: pod.spec.as_ref().and_then(|spec| spec.node_name.clone()),
+        containers,
     }
 }
 

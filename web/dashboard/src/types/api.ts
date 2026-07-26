@@ -48,6 +48,8 @@ export interface ClusterPodSummary {
   total_containers: number;
   restarts: number;
   node: string | null;
+  /** Container names for log/exec targeting (when available). */
+  containers?: string[];
 }
 
 export interface ClusterConditionSummary {

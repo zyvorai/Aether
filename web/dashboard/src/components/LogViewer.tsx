@@ -8,6 +8,8 @@ import { apiFetch } from '../utils/api';
 interface LogViewerProps {
   workloadName: string;
   logsPath?: string;
+  /** Available container names for the resolved pod (multi-container workloads). */
+  containers?: string[];
 }
 
 const TAIL_OPTIONS = [100, 200, 500, 1000, 5000] as const;
@@ -20,20 +22,35 @@ function withParam(path: string, key: string, value: string): string {
   return `${base}?${params.toString()}`;
 }
 
-export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
+export default function LogViewer({ workloadName, logsPath, containers = [] }: LogViewerProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [following, setFollowing] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [wrap, setWrap] = useState(false);
   const [filter, setFilter] = useState('');
   const [tail, setTail] = useState<number>(200);
+  const [container, setContainer] = useState('');
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const containerRef = useRef<HTMLPreElement>(null);
+
+  useEffect(() => {
+    // Reset container selection when the available set changes.
+    if (containers.length === 0) {
+      setContainer('');
+      return;
+    }
+    if (!container || !containers.includes(container)) {
+      setContainer(containers[0] ?? '');
+    }
+  }, [containers, container]);
 
   const fetchLogs = useCallback(async () => {
     try {
       const basePath = logsPath ?? `/workloads/${workloadName}/logs`;
-      const path = withParam(basePath, 'tail', String(tail));
+      let path = withParam(basePath, 'tail', String(tail));
+      if (container) {
+        path = withParam(path, 'container', container);
+      }
       const resp = await apiFetch<string>(path);
       if (resp && typeof resp === 'string') {
         setLogs(resp.split('\n'));
@@ -42,7 +59,7 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
       }
       setLastUpdated(Date.now());
     } catch { /* ignore */ }
-  }, [logsPath, workloadName, tail]);
+  }, [logsPath, workloadName, tail, container]);
 
   useEffect(() => {
     fetchLogs();
@@ -108,6 +125,22 @@ export default function LogViewer({ workloadName, logsPath }: LogViewerProps) {
           onChange={(e) => setFilter(e.target.value)}
           className="glass-input min-w-[12rem] flex-1"
         />
+        {containers.length > 1 ? (
+          <label className="flex items-center gap-1 text-xs text-slate-400">
+            Container
+            <select
+              value={container}
+              onChange={(e) => setContainer(e.target.value)}
+              className="glass-input !py-1 !px-2 text-xs max-w-[10rem]"
+              data-testid="log-container-select"
+              aria-label="Container"
+            >
+              {containers.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="flex items-center gap-1 text-xs text-slate-400">
           Tail
           <select
