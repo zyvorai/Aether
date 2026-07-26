@@ -19,7 +19,7 @@ help:
 	@echo "  install    - Install release binary to /usr/local/bin"
 	@echo "  docker     - Build Docker image"
 	@echo "  run-dev    - Run in development mode with verbose logging"
-	@echo "  ci         - Run CI checks (test + lint + dashboard glass guard)"
+	@echo "  ci         - Run CI checks (test + lint + dashboard build + vitest)"
 	@echo "  confidential-validate      - Validate examples/confidential-*.yaml"
 	@echo "  confidential-fabric-e2e    - API smoke (AETHER_API, server running)"
 	@echo "  confidential-cluster-e2e   - CLI placement/migrate checks (no live deploy)"
@@ -84,12 +84,16 @@ run-dev:
 	@echo "Running aether in development mode..."
 	cargo run -- -v --help
 
-ci: test lint confidential-validate audit-warn dashboard-glass
+ci: test lint confidential-validate audit-warn dashboard-glass dashboard-unit
 	@echo "CI checks passed!"
 
 dashboard-glass:
 	@echo "Checking dashboard liquid glass surfaces..."
 	cd web/dashboard && npm run check:hex-surfaces && npm run build
+
+dashboard-unit:
+	@echo "Running dashboard unit tests..."
+	cd web/dashboard && npm run test
 
 audit-warn:
 	@echo "Running cargo audit (non-blocking)..."
