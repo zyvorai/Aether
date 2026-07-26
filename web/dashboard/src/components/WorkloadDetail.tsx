@@ -9,6 +9,7 @@ import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
+import { pickExecPodName } from '../utils/clusterExec';
 import LogViewer from './LogViewer';
 import FixItPanel, { type FixAction } from './FixItPanel';
 import ApplicationTopology from './ApplicationTopology';
@@ -21,6 +22,15 @@ import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
 import type { ClusterResourceDetail, Event, ScoringResult, WorkloadResponse } from '../types/api';
 
 export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust' | 'topology';
+
+const SHELLABLE_CLUSTER_KINDS = [
+  'Pod',
+  'Deployment',
+  'StatefulSet',
+  'DaemonSet',
+  'VirtualMachine',
+  'VirtualMachineInstance',
+] as const;
 
 interface WorkloadDetailProps {
   workload: WorkloadResponse;
@@ -116,6 +126,16 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   });
   const isScalableClusterWorkload = !isAetherManaged && ['Deployment', 'StatefulSet'].includes(workload.kind ?? '');
   const clusterResourceName = workload.name.split('/').pop() ?? workload.name;
+  const isShellableClusterKind = SHELLABLE_CLUSTER_KINDS.includes(
+    (workload.kind ?? '') as (typeof SHELLABLE_CLUSTER_KINDS)[number],
+  );
+  const canShellDiscovered =
+    !isAetherManaged
+    && canMutate
+    && Boolean(workload.cluster && workload.namespace && workload.kind)
+    && isShellableClusterKind;
+  const canShellManaged = isAetherManaged && canMutate;
+  const showShell = canShellDiscovered || canShellManaged;
   const clusterLogsPath = !isAetherManaged && workload.cluster && workload.namespace && workload.kind
     ? `/cluster/logs?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`
     : undefined;
@@ -130,6 +150,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
   const [shellInput, setShellInput] = useState('');
   const [shellConnected, setShellConnected] = useState(false);
   const [shellFullscreen, setShellFullscreen] = useState(false);
+  const [shellPod, setShellPod] = useState('');
   const shellSocketRef = useRef<WebSocket | null>(null);
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
   const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
@@ -223,43 +244,82 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
     });
   }, [activeTab, workload.name]);
 
-  // Shell WebSocket Connection
+  // Resolve exec target + open Shell WebSocket (kubectl exec into a real pod name).
   useEffect(() => {
     if (!shellOpen || !workload.cluster || !workload.namespace) return;
 
-    const wsUrl = apiWebSocketUrl(
-      `/cluster/ws/exec?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&pod=${encodeURIComponent(workload.name)}&command=/bin/sh`
-    );
+    let cancelled = false;
 
-    try {
-      const socket = new WebSocket(wsUrl);
-      shellSocketRef.current = socket;
+    async function connectShell() {
+      let pods: Array<{ name: string; phase: string }> = [];
+      if (canShellDiscovered && workload.kind !== 'Pod' && clusterResourcePath) {
+        const detail = await apiFetch<ClusterResourceDetail>(clusterResourcePath);
+        if (cancelled) return;
+        if (detail) {
+          setClusterDetail(detail);
+          pods = detail.pods ?? [];
+        }
+      }
 
-      socket.onopen = () => {
-        setShellConnected(true);
-        setShellOutput(prev => prev + '[aether] Connected to pod shell\n');
-      };
+      const resolvedPod = canShellDiscovered
+        ? pickExecPodName(workload.kind ?? undefined, clusterResourceName, pods)
+        : clusterResourceName;
 
-      socket.onmessage = (event) => {
-        setShellOutput(prev => prev + event.data);
-      };
+      if (cancelled) return;
+      setShellPod(resolvedPod);
 
-      socket.onclose = () => {
-        setShellConnected(false);
-        setShellOutput(prev => prev + '\n[aether] Connection closed\n');
-      };
+      if (!resolvedPod) {
+        setShellOutput(
+          '[aether] No pod available to exec into. For VMs, ensure the virt-launcher pod is running.\n',
+        );
+        return;
+      }
 
-      socket.onerror = () => {
-        setShellOutput(prev => prev + '\n[aether] Connection error\n');
-      };
-    } catch (e) {
-      setShellOutput('[aether] Failed to connect to shell\n');
+      const wsUrl = apiWebSocketUrl(
+        `/cluster/ws/exec?cluster=${encodeURIComponent(workload.cluster!)}&namespace=${encodeURIComponent(workload.namespace!)}&pod=${encodeURIComponent(resolvedPod)}&command=/bin/sh`,
+      );
+
+      try {
+        const socket = new WebSocket(wsUrl);
+        shellSocketRef.current = socket;
+
+        socket.onopen = () => {
+          setShellConnected(true);
+          setShellOutput((prev) => `${prev}[aether] Connected to ${resolvedPod}\n`);
+        };
+
+        socket.onmessage = (event) => {
+          setShellOutput((prev) => prev + event.data);
+        };
+
+        socket.onclose = () => {
+          setShellConnected(false);
+          setShellOutput((prev) => `${prev}\n[aether] Connection closed\n`);
+        };
+
+        socket.onerror = () => {
+          setShellOutput((prev) => `${prev}\n[aether] Connection error\n`);
+        };
+      } catch {
+        setShellOutput('[aether] Failed to connect to shell\n');
+      }
     }
 
+    void connectShell();
+
     return () => {
+      cancelled = true;
       shellSocketRef.current?.close();
     };
-  }, [shellOpen, workload.name, workload.cluster, workload.namespace]);
+  }, [
+    shellOpen,
+    canShellDiscovered,
+    clusterResourceName,
+    clusterResourcePath,
+    workload.kind,
+    workload.cluster,
+    workload.namespace,
+  ]);
 
   useEffect(() => {
     if (activeTab === 'manifest' && clusterResourcePath && !clusterDetail) {
@@ -440,12 +500,19 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
             {/* Action Buttons */}
             {isAetherManaged && canMutate ? (
               <div className="flex gap-2 mb-4 flex-wrap">
-                <button
-                  onClick={() => setShellOpen(true)}
-                  className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
-                >
-                  Shell
-                </button>
+                {showShell ? (
+                  <button
+                    data-testid="workload-shell-button"
+                    onClick={() => {
+                      setShellOutput('');
+                      setShellPod('');
+                      setShellOpen(true);
+                    }}
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
+                  >
+                    Shell
+                  </button>
+                ) : null}
                 {['start', 'stop', 'restart', 'build', 'rollback', 'delete'].map(action => (
                   <button
                     key={action}
@@ -483,6 +550,19 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                   This resource is discovered directly from Kubernetes. Aether can inspect it and execute native cluster actions from this panel.
                 </div>
                 <div className="flex flex-wrap items-end gap-2">
+                  {canShellDiscovered ? (
+                    <button
+                      data-testid="workload-shell-button"
+                      onClick={() => {
+                        setShellOutput('');
+                        setShellPod('');
+                        setShellOpen(true);
+                      }}
+                      className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
+                    >
+                      Shell
+                    </button>
+                  ) : null}
                   <button
                     onClick={() => handleAction('restart')}
                     disabled={!!actionLoading}
@@ -870,7 +950,9 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
           <div className={`glass-modal-panel relative overflow-hidden transition-all ${shellFullscreen ? 'h-full w-full max-w-none rounded-none' : 'mx-4 w-full max-w-4xl'}`}>
             <div className="flex items-center justify-between glass-divider-b glass-inset-surface px-5 py-3">
               <div className="flex items-center gap-3">
-                <div className="font-medium">Shell — {workload.name}</div>
+                <div className="font-medium" data-testid="workload-shell-title">
+                  Shell — {shellPod || workload.name}
+                </div>
                 <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'glass-inset-surface text-slate-400'}`}>
                   {shellConnected ? 'Connected' : 'Disconnected'}
                 </div>
@@ -901,6 +983,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                     setShellOpen(false);
                     setShellConnected(false);
                     setShellOutput('');
+                    setShellPod('');
                     setShellFullscreen(false);
                   }} 
                   className="text-slate-400 hover:text-white text-xl leading-none ml-1"
@@ -915,6 +998,7 @@ export default function WorkloadDetail({ workload, onClose, onAction, onMigrate,
                 ref={(el) => {
                   if (el) el.scrollTop = el.scrollHeight;
                 }}
+                data-testid="workload-shell-output"
                 className="glass-code-block-body h-[420px] overflow-auto whitespace-pre-wrap font-mono text-sm text-emerald-400 shadow-inner"
               >
                 {shellOutput || '[aether] Connecting to pod shell...\n'}

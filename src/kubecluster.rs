@@ -633,30 +633,9 @@ pub async fn list_workloads() -> Result<Vec<ClusterWorkload>> {
 pub async fn workload_logs(req: &ClusterLogsRequest) -> Result<String> {
     let client = client_for_context(&req.cluster).await?;
     let pods: Api<Pod> = Api::namespaced(client.clone(), &req.namespace);
-    let list = if req.kind == "Pod" {
-        let pod = pods.get(&req.name).await?;
-        kube::api::ObjectList {
-            metadata: Default::default(),
-            types: Default::default(),
-            items: vec![pod],
-        }
-    } else {
-        let selector = selector_for_workload(&client, req).await?;
-        pods_for_selector(&pods, &selector).await?
-    };
+    let list = list_pods_for_cluster_workload(&client, req).await?;
 
-    let pod = list
-        .items
-        .iter()
-        .find(|pod| {
-            pod.status
-                .as_ref()
-                .and_then(|status| status.phase.as_deref())
-                .map(|phase| phase == "Running")
-                .unwrap_or(false)
-        })
-        .or_else(|| list.items.first())
-        .context("no pods found for workload")?;
+    let pod = pick_running_or_first_pod(&list.items).context("no pods found for workload")?;
 
     let pod_name = pod
         .metadata
@@ -713,13 +692,18 @@ pub async fn workload_detail(req: &ClusterLogsRequest) -> Result<ClusterResource
         })
         .unwrap_or_default();
 
-    let pods = if req.kind == "Pod" {
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &req.namespace);
-        vec![summarize_pod(&pod_api.get(&req.name).await?)]
-    } else if let Some(selector) = selector {
-        let pods_api: Api<Pod> = Api::namespaced(client.clone(), &req.namespace);
-        let pod_list = pods_for_selector(&pods_api, &selector).await?;
-        pod_list.items.iter().map(summarize_pod).collect()
+    let pods = if req.kind == "Pod"
+        || matches!(
+            req.kind.as_str(),
+            "VirtualMachine" | "VirtualMachineInstance"
+        )
+        || selector.is_some()
+    {
+        match list_pods_for_cluster_workload(&client, req).await {
+            Ok(pod_list) => pod_list.items.iter().map(summarize_pod).collect(),
+            Err(_) if req.kind != "Pod" => Vec::new(),
+            Err(err) => return Err(err),
+        }
     } else {
         Vec::new()
     };
@@ -978,10 +962,7 @@ pub async fn top_metrics(req: &ClusterLogsRequest) -> Result<Vec<ClusterTopMetri
     if req.kind == "Pod" {
         return Ok(all.into_iter().filter(|m| m.name == req.name).collect());
     }
-    let selector = selector_for_workload(&client, req).await?;
-    let pods: Api<Pod> = Api::namespaced(client, &req.namespace);
-    let matched = pods
-        .list(&ListParams::default().labels(&selector))
+    let matched = list_pods_for_cluster_workload(&client, req)
         .await?
         .items
         .into_iter()
@@ -2577,6 +2558,8 @@ async fn selector_for_workload(client: &Client, req: &ClusterLogsRequest) -> Res
         req.kind.as_str(),
         "VirtualMachine" | "VirtualMachineInstance"
     ) {
+        // Prefer the common kubevirt.io/vm label; callers that need both labels
+        // should use list_pods_for_cluster_workload / pods_for_kubevirt_vm.
         return Ok(format!("kubevirt.io/vm={}", req.name));
     }
     if req.kind == "HelmRelease" {
@@ -2584,6 +2567,88 @@ async fn selector_for_workload(client: &Client, req: &ClusterLogsRequest) -> Res
     }
     let manifest = manifest_for_workload(client, req).await?;
     selector_for_value(&manifest).context("workload selector.matchLabels missing")
+}
+
+/// Label selectors used to find virt-launcher pods for a VM or VMI.
+/// KubeVirt historically used both `kubevirt.io/vm` and `vm.kubevirt.io/name`.
+pub(crate) fn kubevirt_vm_label_selectors(vm_name: &str) -> [String; 2] {
+    [
+        format!("kubevirt.io/vm={}", vm_name),
+        format!("vm.kubevirt.io/name={}", vm_name),
+    ]
+}
+
+fn pick_running_or_first_pod(items: &[Pod]) -> Option<&Pod> {
+    items
+        .iter()
+        .find(|pod| {
+            pod.status
+                .as_ref()
+                .and_then(|status| status.phase.as_deref())
+                .map(|phase| phase == "Running")
+                .unwrap_or(false)
+        })
+        .or_else(|| items.first())
+}
+
+async fn pods_for_kubevirt_vm(
+    pods: &Api<Pod>,
+    vm_name: &str,
+) -> Result<kube::api::ObjectList<Pod>> {
+    let mut combined_items = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    let mut last_err: Option<anyhow::Error> = None;
+
+    for selector in kubevirt_vm_label_selectors(vm_name) {
+        match pods_for_selector(pods, &selector).await {
+            Ok(list) => {
+                for pod in list.items {
+                    if seen.insert(pod.name_any()) {
+                        combined_items.push(pod);
+                    }
+                }
+            }
+            Err(err) => last_err = Some(err),
+        }
+    }
+
+    if combined_items.is_empty() {
+        if let Some(err) = last_err {
+            return Err(err).context(format!(
+                "no virt-launcher pods found for VM/VMI {} (tried kubevirt.io/vm and vm.kubevirt.io/name)",
+                vm_name
+            ));
+        }
+    }
+
+    Ok(kube::api::ObjectList {
+        metadata: Default::default(),
+        types: Default::default(),
+        items: combined_items,
+    })
+}
+
+async fn list_pods_for_cluster_workload(
+    client: &Client,
+    req: &ClusterLogsRequest,
+) -> Result<kube::api::ObjectList<Pod>> {
+    let pods: Api<Pod> = Api::namespaced(client.clone(), &req.namespace);
+    if req.kind == "Pod" {
+        let pod = pods.get(&req.name).await?;
+        return Ok(kube::api::ObjectList {
+            metadata: Default::default(),
+            types: Default::default(),
+            items: vec![pod],
+        });
+    }
+    if matches!(
+        req.kind.as_str(),
+        "VirtualMachine" | "VirtualMachineInstance"
+    ) {
+        return pods_for_kubevirt_vm(&pods, &req.name).await;
+    }
+    let selector = selector_for_workload(client, req).await?;
+    pods_for_selector(&pods, &selector).await
 }
 
 async fn manifest_for_workload(
@@ -3547,5 +3612,41 @@ mod inventory_tests {
             ..Default::default()
         }];
         assert!(pod_is_inventory_workload(&pod_with_owners(owners)));
+    }
+
+    #[test]
+    fn kubevirt_vm_label_selectors_include_both_common_labels() {
+        let selectors = kubevirt_vm_label_selectors("demo-vm");
+        assert_eq!(selectors[0], "kubevirt.io/vm=demo-vm");
+        assert_eq!(selectors[1], "vm.kubevirt.io/name=demo-vm");
+    }
+
+    #[test]
+    fn pick_running_or_first_pod_prefers_running() {
+        let pending: Pod = serde_json::from_value(serde_json::json!({
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": { "name": "launcher-pending" },
+            "status": { "phase": "Pending" }
+        }))
+        .expect("pending pod");
+        let running: Pod = serde_json::from_value(serde_json::json!({
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": { "name": "launcher-running" },
+            "status": { "phase": "Running" }
+        }))
+        .expect("running pod");
+        let running_list = [pending.clone(), running];
+        let picked = pick_running_or_first_pod(&running_list).expect("pod");
+        assert_eq!(picked.metadata.name.as_deref(), Some("launcher-running"));
+
+        let pending_list = [pending];
+        let only_pending = pick_running_or_first_pod(&pending_list).expect("fallback");
+        assert_eq!(
+            only_pending.metadata.name.as_deref(),
+            Some("launcher-pending")
+        );
+        assert!(pick_running_or_first_pod(&[]).is_none());
     }
 }
