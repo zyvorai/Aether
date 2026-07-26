@@ -166,11 +166,6 @@ export default function SecurityCenterPage() {
         }
       />
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-100">Security Center</h2>
-        <p className="text-sm text-slate-500 mt-1">Privacy &amp; Security for your Kubernetes platform.</p>
-      </div>
-
       <div className="mb-8">
         <SecurityCopilotPanel />
       </div>

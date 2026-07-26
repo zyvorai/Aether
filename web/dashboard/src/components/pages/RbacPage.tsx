@@ -10,6 +10,8 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
@@ -215,52 +217,37 @@ export default function RbacPage() {
 
       {keys.length === 0 && !listLoading ? (
         <EmptyState icon={<KeyRound size={48} />} title="No RBAC keys" description="Create admin, operator, or viewer API keys." />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<KeyRound size={48} />} title="No matching keys" description="No keys match your search." />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="rbac-keys-list">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Role</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Created</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((entry) => (
-                  <tr key={entry.name} className="glass-divider-b glass-inset-hover">
-                    <td className="py-3 px-4 text-sm font-medium text-slate-100">{entry.name}</td>
-                    <td className="py-3 px-4">
-                      <Badge
-                        text={entry.role}
-                        variant={entry.role === 'admin' ? 'red' : entry.role === 'operator' ? 'yellow' : 'blue'}
-                      />
-                    </td>
-                    <td className="py-3 px-4 text-sm text-slate-400">{entry.created_at}</td>
-                    <td className="py-3 px-4">
-                      {canAdmin ? (
-                      <button
-                        type="button"
-                        onClick={() => setRevokeName(entry.name)}
-                        className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-red-300 hover:bg-red-500/10"
-                      >
-                        <Trash2 size={14} />
-                        Revoke
-                      </button>
-                      ) : (
-                        <span className="text-xs text-slate-500">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filtered.length === 0 && keys.length > 0 && (
-              <p className="text-sm text-slate-500 py-6 text-center">No keys match your search.</p>
-            )}
-          </div>
-        </div>
+        <CardGrid columns="compact" testId="rbac-keys-list">
+          {filtered.map((entry, i) => (
+            <EntityCard
+              key={entry.name}
+              index={i}
+              testId={`rbac-key-card-${entry.name}`}
+              icon={<KeyRound size={18} />}
+              statusTone={entry.role === 'admin' ? 'red' : entry.role === 'operator' ? 'amber' : 'sky'}
+              title={entry.name}
+              subtitle={entry.created_at}
+              badge={<Badge text={entry.role} variant={entry.role === 'admin' ? 'red' : entry.role === 'operator' ? 'yellow' : 'blue'} />}
+              footer={
+                canAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => setRevokeName(entry.name)}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-red-500/15 hover:text-red-300"
+                  >
+                    <Trash2 size={13} />
+                    Revoke
+                  </button>
+                ) : (
+                  <span className="flex-1 py-1.5 text-center text-[11px] text-slate-500">Read-only</span>
+                )
+              }
+            />
+          ))}
+        </CardGrid>
       )}
       </section>
 

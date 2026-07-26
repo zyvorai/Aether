@@ -147,11 +147,7 @@ export default function ActivityMonitorPage() {
     <div data-testid="activity-monitor-page">
       <PageToolbar onRefresh={() => void load(true)} refreshing={refreshing} />
 
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-100">Activity Monitor</h2>
-          <p className="text-sm text-slate-500 mt-1">macOS-style resource view for your Kubernetes fleet.</p>
-        </div>
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-xs text-slate-400">
             <input

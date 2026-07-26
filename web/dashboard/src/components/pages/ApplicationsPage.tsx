@@ -126,13 +126,7 @@ export default function ApplicationsPage() {
         />
       ) : null}
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-100">Applications</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage Kubernetes apps like an operating system — not like YAML.
-          </p>
-        </div>
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-xs text-slate-400">
             <input

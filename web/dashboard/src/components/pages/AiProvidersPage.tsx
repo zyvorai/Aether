@@ -133,16 +133,6 @@ export default function AiProvidersPage() {
       errorTitle="AI providers unavailable"
     >
       <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8" data-testid="ai-providers-page">
-        <div>
-          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Bot className="h-5 w-5 text-aether" />
-            AI Providers
-          </h2>
-          <p className="mt-1 text-sm text-slate-400">
-            Configure multi-LLM providers for Zeus — OpenAI, Claude, Gemini, Grok, Ollama, vLLM, and custom endpoints.
-          </p>
-        </div>
-
         <PageTabs
           tabs={[
             { id: 'providers', label: 'Providers' },
