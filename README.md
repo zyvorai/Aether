@@ -7,6 +7,8 @@
 
 **[Aether — Customer Feature Guide](docs/aether-customer-feature-guide.md)** — a complete, customer-facing reference covering all **70 features** across **10 areas**, grounded in the product's actual capabilities. Also available as a print-ready **[PDF](docs/aether-customer-feature-guide.pdf)**.
 
+**[Customer manual (page-by-page)](docs/customer/README.md)** — getting started, admin basics, and a guide for every product surface (PDFs under `docs/customer/pdf/`).
+
 Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** without rewriting infrastructure. One YAML spec. Sixteen migration paths. Production-grade drift detection and intent-driven runtime scoring.
 
 ```text

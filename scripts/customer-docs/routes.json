@@ -1,0 +1,268 @@
+{
+  "routes": [
+    {
+      "label": "Overview",
+      "path": "/",
+      "category": "Primary",
+      "legacy": false
+    },
+    {
+      "label": "Runtime Fabric",
+      "path": "/fabric",
+      "category": "Primary",
+      "legacy": false
+    },
+    {
+      "label": "Migrations",
+      "path": "/migrations",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Observability",
+      "path": "/observability",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Labs",
+      "path": "/labs",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Settings",
+      "path": "/settings",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Applications",
+      "path": "/applications",
+      "category": "Primary",
+      "legacy": false
+    },
+    {
+      "label": "Workloads",
+      "path": "/workloads",
+      "category": "Primary",
+      "legacy": false
+    },
+    {
+      "label": "AI Engine",
+      "path": "/ai",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Zeus",
+      "path": "/zeus",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "AI Providers",
+      "path": "/settings/ai-providers",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Cost Estimation",
+      "path": "/cost",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Runtime Affinity",
+      "path": "/affinity",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Drift Detection",
+      "path": "/drift",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Intelligence Layer",
+      "path": "/intelligence",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Policy Check",
+      "path": "/policy",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Confidential Computing",
+      "path": "/confidential",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Cluster Browser",
+      "path": "/clusters",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Fleet Overview",
+      "path": "/fleet",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Hosted SaaS",
+      "path": "/hosted",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Activity Monitor",
+      "path": "/activity",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Helm App Store",
+      "path": "/helm",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Security Center",
+      "path": "/security",
+      "category": "Intelligence",
+      "legacy": false
+    },
+    {
+      "label": "Compose Import",
+      "path": "/compose",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Visual Editor",
+      "path": "/editor",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Scheduler",
+      "path": "/scheduler",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Health Monitor",
+      "path": "/health-monitor",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Events",
+      "path": "/events",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Alerts",
+      "path": "/alerts",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Platform",
+      "path": "/platform",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "SLA Compliance",
+      "path": "/sla",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Dependencies",
+      "path": "/deps",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Environments",
+      "path": "/envs",
+      "category": "Operations",
+      "legacy": false
+    },
+    {
+      "label": "Secrets",
+      "path": "/secrets",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Backups",
+      "path": "/backups",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Storage",
+      "path": "/storage",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "GPU / Forge",
+      "path": "/forge",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Templates",
+      "path": "/templates",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Plugins",
+      "path": "/plugins",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Access Control",
+      "path": "/rbac",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Audit Trail",
+      "path": "/audit",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "GitOps",
+      "path": "/gitops",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "Metrics",
+      "path": "/metrics",
+      "category": "Resources",
+      "legacy": false
+    },
+    {
+      "label": "API Explorer",
+      "path": "/openapi",
+      "category": "Resources",
+      "legacy": false
+    }
+  ]
+}

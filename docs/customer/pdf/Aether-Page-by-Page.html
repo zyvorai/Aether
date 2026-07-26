@@ -1,0 +1,1796 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>Page-by-Page Product Manual — Aether</title>
+<style>
+@page{size:A4;margin:15mm 16mm}*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:#1f2937;line-height:1.58;font-size:10.5pt}
+.cover{height:262mm;margin:-15mm -16mm 0;background:linear-gradient(135deg,#0f0a1a,#312e81,#0d1b2a);color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;page-break-after:always;position:relative}
+.cover .kicker{letter-spacing:5px;text-transform:uppercase;opacity:.72;margin-bottom:1.4em}
+.cover h1{font-size:3.2em;font-weight:800;letter-spacing:-2px}
+.cover h1 span{color:#818cf8}
+.cover .sub{font-size:1.3em;font-weight:300;opacity:.93;margin:1em 0;max-width:24em}
+.cover .badge{display:inline-block;background:rgba(96,165,250,.2);border:1px solid #818cf8;padding:8px 22px;border-radius:20px;margin-top:2em}
+.cover .foot{position:absolute;bottom:34px;font-size:.82em;opacity:.6}
+h2{page-break-before:always;margin:0 0 .35em;font-size:1.55em;font-weight:750;color:#12203a;border-bottom:2px solid #e5edfb;padding-bottom:.28em}
+h2:first-of-type{page-break-before:avoid}
+h3{margin:1.1em 0 .4em;font-size:1.12em;font-weight:700}
+p,li{margin:.4em 0}ul,ol{margin:.5em 0 .9em 1.4em}
+a{color:#2563eb;text-decoration:none}
+code{background:#eef2f7;padding:1px 6px;border-radius:4px;font-size:.86em;font-family:ui-monospace,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;padding:12px 15px;border-radius:9px;overflow-x:auto;margin:.8em 0}
+table{width:100%;border-collapse:collapse;margin:.8em 0 1.1em;font-size:9.5pt}
+th,td{border:1px solid #e5e7eb;padding:6px 8px;text-align:left;vertical-align:top}th{background:#f1f5f9}
+hr{border:none;border-top:1px solid #e5e7eb;margin:1.2em 0}
+</style></head><body>
+<section class="cover"><div class="kicker">ZyvorAI Labs · Customer Documentation</div>
+<h1>Ae<span>ther</span></h1>
+<div class="sub">Page-by-Page Product Manual</div>
+<div class="badge">2026-07-26</div>
+<div class="foot">zyvor.dev · Confidential — for licensed customers</div></section>
+<main><h2>Page-by-page guides</h2>
+<p>Each guide follows: Purpose → When to use it → How to get there → What you can do → Related pages.</p>
+<p>Every route is also listed in the <a href="../PAGE_INDEX.md">complete page index</a>.</p>
+<h3>Intelligence</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="intelligence/affinity.md">Runtime Affinity</a></td>
+<td>Workload class affinity and runtime fit</td>
+</tr>
+<tr>
+<td><a href="intelligence/ai.md">AI Engine</a></td>
+<td>Intent scoring, runtime recommendations &amp; migration planning</td>
+</tr>
+<tr>
+<td><a href="intelligence/confidential.md">Confidential Computing</a></td>
+<td>TEE capabilities, attestation trust scores, and Ragnarok integration</td>
+</tr>
+<tr>
+<td><a href="intelligence/cost.md">Cost Estimation</a></td>
+<td>Resource cost projections across runtimes</td>
+</tr>
+<tr>
+<td><a href="intelligence/drift.md">Drift Detection</a></td>
+<td>Configuration drift &amp; desired-state reconciliation</td>
+</tr>
+<tr>
+<td><a href="intelligence/intelligence.md">Intelligence Layer</a></td>
+<td>Failure predictions, threats, cost optimization, and global placement</td>
+</tr>
+<tr>
+<td><a href="intelligence/migrations.md">Migrations</a></td>
+<td>AI migration planner with risk analysis and strategy</td>
+</tr>
+<tr>
+<td><a href="intelligence/policy.md">Policy Check</a></td>
+<td>Validate workloads against policy rules</td>
+</tr>
+<tr>
+<td><a href="intelligence/security.md">Security Center</a></td>
+<td>Threats, secrets, policies, and hardening</td>
+</tr>
+<tr>
+<td><a href="intelligence/zeus.md">Zeus</a></td>
+<td>AI infrastructure operating layer — multi-LLM, multi-agent intelligence</td>
+</tr>
+</tbody></table>
+<h3>Operations</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="operations/activity.md">Activity Monitor</a></td>
+<td>CPU, memory, restarts, and errors across the fleet</td>
+</tr>
+<tr>
+<td><a href="operations/alerts.md">Alerts</a></td>
+<td>Notification channels, alert rules, and webhook tests</td>
+</tr>
+<tr>
+<td><a href="operations/clusters.md">Cluster Browser</a></td>
+<td>Browse and manage Kubernetes resources</td>
+</tr>
+<tr>
+<td><a href="operations/compose.md">Compose Import</a></td>
+<td>Import Docker Compose into Aether workloads</td>
+</tr>
+<tr>
+<td><a href="operations/deps.md">Dependencies</a></td>
+<td>Workload dependency graph</td>
+</tr>
+<tr>
+<td><a href="operations/editor.md">Visual Editor</a></td>
+<td>Form-based workload designer (no YAML required)</td>
+</tr>
+<tr>
+<td><a href="operations/envs.md">Environments</a></td>
+<td>Environment tiers and configuration</td>
+</tr>
+<tr>
+<td><a href="operations/events.md">Events</a></td>
+<td>Platform and workload events</td>
+</tr>
+<tr>
+<td><a href="operations/fleet.md">Fleet Overview</a></td>
+<td>Multi-cluster inventory, Hubble, and PacketWolf links</td>
+</tr>
+<tr>
+<td><a href="operations/health-monitor.md">Health Monitor</a></td>
+<td>Workload health checks and status</td>
+</tr>
+<tr>
+<td><a href="operations/helm.md">Helm App Store</a></td>
+<td>Install curated charts with a guided wizard</td>
+</tr>
+<tr>
+<td><a href="operations/observability.md">Observability</a></td>
+<td>Health, metrics, events, and correlated diagnostics</td>
+</tr>
+<tr>
+<td><a href="operations/platform.md">Platform</a></td>
+<td>HA mode, setup recommendations, OPA, and observability</td>
+</tr>
+<tr>
+<td><a href="operations/scheduler.md">Scheduler</a></td>
+<td>Scheduling recommendations and placement</td>
+</tr>
+<tr>
+<td><a href="operations/sla.md">SLA Compliance</a></td>
+<td>SLA tracking and compliance</td>
+</tr>
+</tbody></table>
+<h3>Primary</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="primary/applications.md">Applications</a></td>
+<td>Manage Kubernetes apps like an operating system — not like YAML</td>
+</tr>
+<tr>
+<td><a href="primary/fabric.md">Runtime Fabric</a></td>
+<td>Live Application → Runtime → Cluster → Node topology</td>
+</tr>
+<tr>
+<td><a href="primary/home.md">Overview</a></td>
+<td>Fleet briefing, savings, and capacity intelligence</td>
+</tr>
+<tr>
+<td><a href="primary/workloads.md">Workloads</a></td>
+<td>Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt &amp; Metal3</td>
+</tr>
+</tbody></table>
+<h3>Resources</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="resources/audit.md">Audit Trail</a></td>
+<td>Tamper-evident audit log</td>
+</tr>
+<tr>
+<td><a href="resources/backups.md">Backups</a></td>
+<td>Backup snapshots and restore</td>
+</tr>
+<tr>
+<td><a href="resources/forge.md">GPU / Forge</a></td>
+<td>Forge GPU capacity, nodes, and AI placement</td>
+</tr>
+<tr>
+<td><a href="resources/gitops.md">GitOps</a></td>
+<td>GitOps reconciliation status</td>
+</tr>
+<tr>
+<td><a href="resources/hosted.md">Hosted SaaS</a></td>
+<td>Tenants, API keys, metering, and Stripe billing</td>
+</tr>
+<tr>
+<td><a href="resources/labs.md">Labs</a></td>
+<td>Experimental AI-generated infrastructure artifacts</td>
+</tr>
+<tr>
+<td><a href="resources/metrics.md">Metrics</a></td>
+<td>Platform and workload metrics</td>
+</tr>
+<tr>
+<td><a href="resources/openapi.md">API Explorer</a></td>
+<td>Browse OpenAPI routes and raw schema</td>
+</tr>
+<tr>
+<td><a href="resources/plugins.md">Plugins</a></td>
+<td>Runtime plugins and extensions</td>
+</tr>
+<tr>
+<td><a href="resources/rbac.md">Access Control</a></td>
+<td>API keys and role-based access</td>
+</tr>
+<tr>
+<td><a href="resources/secrets.md">Secrets</a></td>
+<td>Encrypted secrets management</td>
+</tr>
+<tr>
+<td><a href="resources/settings-ai-providers.md">AI Providers</a></td>
+<td>Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints</td>
+</tr>
+<tr>
+<td><a href="resources/settings.md">Settings</a></td>
+<td>Platform, environments, secrets, and extensions</td>
+</tr>
+<tr>
+<td><a href="resources/storage.md">Storage</a></td>
+<td>Atlas-backed persistent volumes and capacity</td>
+</tr>
+<tr>
+<td><a href="resources/templates.md">Templates</a></td>
+<td>Workload templates library</td>
+</tr>
+</tbody></table>
+<hr>
+<p>44 guides. Regenerate: <code>node scripts/customer-docs/generate-guide-index.mjs</code>.</p>
+<hr>
+<h2>Runtime Affinity</h2>
+<h3>Purpose</h3>
+<p>Workload class affinity and runtime fit</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/affinity</code></li>
+<li>Nav: <strong>Intelligence → Runtime Affinity</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/affinity</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>AI Engine</h2>
+<h3>Purpose</h3>
+<p>Intent scoring, runtime recommendations &amp; migration planning</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/ai</code></li>
+<li>Nav: <strong>Intelligence → AI Engine</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/ai</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Confidential Computing</h2>
+<h3>Purpose</h3>
+<p>TEE capabilities, attestation trust scores, and Ragnarok integration</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/confidential</code></li>
+<li>Nav: <strong>Intelligence → Confidential Computing</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/confidential</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Cost Estimation</h2>
+<h3>Purpose</h3>
+<p>Resource cost projections across runtimes</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/cost</code></li>
+<li>Nav: <strong>Intelligence → Cost Estimation</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/cost</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Drift Detection</h2>
+<h3>Purpose</h3>
+<p>Configuration drift &amp; desired-state reconciliation</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/drift</code></li>
+<li>Nav: <strong>Intelligence → Drift Detection</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/drift</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Intelligence Layer</h2>
+<h3>Purpose</h3>
+<p>Failure predictions, threats, cost optimization, and global placement</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/intelligence</code></li>
+<li>Nav: <strong>Intelligence → Intelligence Layer</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/intelligence</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Migrations</h2>
+<h3>Purpose</h3>
+<p>AI migration planner with risk analysis and strategy</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/migrations</code></li>
+<li>Nav: <strong>Intelligence → Migrations</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/migrations</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Policy Check</h2>
+<h3>Purpose</h3>
+<p>Validate workloads against policy rules</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/policy</code></li>
+<li>Nav: <strong>Intelligence → Policy Check</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/policy</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Security Center</h2>
+<h3>Purpose</h3>
+<p>Threats, secrets, policies, and hardening</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/security</code></li>
+<li>Nav: <strong>Intelligence → Security Center</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/security</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Zeus</h2>
+<h3>Purpose</h3>
+<p>AI infrastructure operating layer — multi-LLM, multi-agent intelligence</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/zeus</code></li>
+<li>Nav: <strong>Intelligence → Zeus</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/zeus</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Activity Monitor</h2>
+<h3>Purpose</h3>
+<p>CPU, memory, restarts, and errors across the fleet</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/activity</code></li>
+<li>Nav: <strong>Operations → Activity Monitor</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/activity</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Alerts</h2>
+<h3>Purpose</h3>
+<p>Notification channels, alert rules, and webhook tests</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/alerts</code></li>
+<li>Nav: <strong>Operations → Alerts</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/alerts</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Cluster Browser</h2>
+<h3>Purpose</h3>
+<p>Browse and manage Kubernetes resources</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/clusters</code></li>
+<li>Nav: <strong>Operations → Cluster Browser</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/clusters</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Compose Import</h2>
+<h3>Purpose</h3>
+<p>Import Docker Compose into Aether workloads</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/compose</code></li>
+<li>Nav: <strong>Operations → Compose Import</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/compose</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Dependencies</h2>
+<h3>Purpose</h3>
+<p>Workload dependency graph</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/deps</code></li>
+<li>Nav: <strong>Operations → Dependencies</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/deps</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Visual Editor</h2>
+<h3>Purpose</h3>
+<p>Form-based workload designer (no YAML required)</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/editor</code></li>
+<li>Nav: <strong>Operations → Visual Editor</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/editor</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Environments</h2>
+<h3>Purpose</h3>
+<p>Environment tiers and configuration</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/envs</code></li>
+<li>Nav: <strong>Operations → Environments</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/envs</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Events</h2>
+<h3>Purpose</h3>
+<p>Platform and workload events</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/events</code></li>
+<li>Nav: <strong>Operations → Events</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/events</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Fleet Overview</h2>
+<h3>Purpose</h3>
+<p>Multi-cluster inventory, Hubble, and PacketWolf links</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/fleet</code></li>
+<li>Nav: <strong>Operations → Fleet Overview</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/fleet</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Health Monitor</h2>
+<h3>Purpose</h3>
+<p>Workload health checks and status</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/health-monitor</code></li>
+<li>Nav: <strong>Operations → Health Monitor</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/health-monitor</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Helm App Store</h2>
+<h3>Purpose</h3>
+<p>Install curated charts with a guided wizard</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/helm</code></li>
+<li>Nav: <strong>Operations → Helm App Store</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/helm</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Observability</h2>
+<h3>Purpose</h3>
+<p>Health, metrics, events, and correlated diagnostics</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/observability</code></li>
+<li>Nav: <strong>Operations → Observability</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/observability</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Platform</h2>
+<h3>Purpose</h3>
+<p>HA mode, setup recommendations, OPA, and observability</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/platform</code></li>
+<li>Nav: <strong>Operations → Platform</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/platform</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Scheduler</h2>
+<h3>Purpose</h3>
+<p>Scheduling recommendations and placement</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/scheduler</code></li>
+<li>Nav: <strong>Operations → Scheduler</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/scheduler</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>SLA Compliance</h2>
+<h3>Purpose</h3>
+<p>SLA tracking and compliance</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/sla</code></li>
+<li>Nav: <strong>Operations → SLA Compliance</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/sla</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Applications</h2>
+<h3>Purpose</h3>
+<p>Manage Kubernetes apps like an operating system — not like YAML</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/applications</code></li>
+<li>Nav: <strong>Primary → Applications</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/applications</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Runtime Fabric</h2>
+<h3>Purpose</h3>
+<p>Live Application → Runtime → Cluster → Node topology</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/fabric</code></li>
+<li>Nav: <strong>Primary → Runtime Fabric</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/fabric</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Overview</h2>
+<h3>Purpose</h3>
+<p>Fleet briefing, savings, and capacity intelligence</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/</code></li>
+<li>Nav: <strong>Primary → Overview</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Workloads</h2>
+<h3>Purpose</h3>
+<p>Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt &amp; Metal3</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/workloads</code></li>
+<li>Nav: <strong>Primary → Workloads</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/workloads</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Audit Trail</h2>
+<h3>Purpose</h3>
+<p>Tamper-evident audit log</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/audit</code></li>
+<li>Nav: <strong>Resources → Audit Trail</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/audit</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Backups</h2>
+<h3>Purpose</h3>
+<p>Backup snapshots and restore</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/backups</code></li>
+<li>Nav: <strong>Resources → Backups</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/backups</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>GPU / Forge</h2>
+<h3>Purpose</h3>
+<p>Forge GPU capacity, nodes, and AI placement</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/forge</code></li>
+<li>Nav: <strong>Resources → GPU / Forge</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/forge</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>GitOps</h2>
+<h3>Purpose</h3>
+<p>GitOps reconciliation status</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/gitops</code></li>
+<li>Nav: <strong>Resources → GitOps</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/gitops</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Hosted SaaS</h2>
+<h3>Purpose</h3>
+<p>Tenants, API keys, metering, and Stripe billing</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/hosted</code></li>
+<li>Nav: <strong>Resources → Hosted SaaS</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/hosted</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Labs</h2>
+<h3>Purpose</h3>
+<p>Experimental AI-generated infrastructure artifacts</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/labs</code></li>
+<li>Nav: <strong>Resources → Labs</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/labs</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Metrics</h2>
+<h3>Purpose</h3>
+<p>Platform and workload metrics</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/metrics</code></li>
+<li>Nav: <strong>Resources → Metrics</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/metrics</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>API Explorer</h2>
+<h3>Purpose</h3>
+<p>Browse OpenAPI routes and raw schema</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/openapi</code></li>
+<li>Nav: <strong>Resources → API Explorer</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/openapi</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Plugins</h2>
+<h3>Purpose</h3>
+<p>Runtime plugins and extensions</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/plugins</code></li>
+<li>Nav: <strong>Resources → Plugins</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/plugins</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Access Control</h2>
+<h3>Purpose</h3>
+<p>API keys and role-based access</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/rbac</code></li>
+<li>Nav: <strong>Resources → Access Control</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/rbac</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Secrets</h2>
+<h3>Purpose</h3>
+<p>Encrypted secrets management</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/secrets</code></li>
+<li>Nav: <strong>Resources → Secrets</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/secrets</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>AI Providers</h2>
+<h3>Purpose</h3>
+<p>Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/settings/ai-providers</code></li>
+<li>Nav: <strong>Resources → AI Providers</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/settings/ai-providers</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Settings</h2>
+<h3>Purpose</h3>
+<p>Platform, environments, secrets, and extensions</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/settings</code></li>
+<li>Nav: <strong>Resources → Settings</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/settings</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Storage</h2>
+<h3>Purpose</h3>
+<p>Atlas-backed persistent volumes and capacity</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/storage</code></li>
+<li>Nav: <strong>Resources → Storage</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/storage</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Templates</h2>
+<h3>Purpose</h3>
+<p>Workload templates library</p>
+<h3>When to use it</h3>
+<ul>
+<li>Open this surface when the job matches the purpose above</li>
+<li>Start from the product home / dashboard if you are unsure where to begin</li>
+<li>Confirm auth and that required backends/operators are reachable if data looks empty</li>
+</ul>
+<h3>How to get there</h3>
+<ul>
+<li>Route / id: <code>/templates</code></li>
+<li>Nav: <strong>Resources → Templates</strong> (sidebar, command palette, or desktop nav)</li>
+</ul>
+<h3>What you can do</h3>
+<ol>
+<li>Open <code>/templates</code> and wait for live data from Aether.</li>
+<li>Use filters and search when the page provides them.</li>
+<li>Drill into a row or card for detail, then jump to related surfaces.</li>
+<li>For mutating actions: review impact, role gates, and confirmation dialogs first.</li>
+</ol>
+<p>If the page stays empty, check service health, auth configuration, and that dependencies for this domain are installed.</p>
+<h3>Related pages</h3>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+<hr>
+<h2>Aether — Complete page index</h2>
+<p>Every primary navigable dashboard route.</p>
+<p><em>Generated: 2026-07-26 · 44 routes</em></p>
+<p>Regenerate: <code>node scripts/customer-docs/generate-page-index.mjs</code></p>
+<h3>Primary</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Route</th>
+<th>Purpose</th>
+<th>Guide</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Overview</td>
+<td><code>/</code></td>
+<td>Fleet briefing, savings, and capacity intelligence</td>
+<td><a href="pages/primary/home.md">Open</a></td>
+</tr>
+<tr>
+<td>Runtime Fabric</td>
+<td><code>/fabric</code></td>
+<td>Live Application → Runtime → Cluster → Node topology</td>
+<td><a href="pages/primary/fabric.md">Open</a></td>
+</tr>
+<tr>
+<td>Applications</td>
+<td><code>/applications</code></td>
+<td>Manage Kubernetes apps like an operating system — not like YAML</td>
+<td><a href="pages/primary/applications.md">Open</a></td>
+</tr>
+<tr>
+<td>Workloads</td>
+<td><code>/workloads</code></td>
+<td>Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt &amp; Metal3</td>
+<td><a href="pages/primary/workloads.md">Open</a></td>
+</tr>
+</tbody></table>
+<h3>Intelligence</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Route</th>
+<th>Purpose</th>
+<th>Guide</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Migrations</td>
+<td><code>/migrations</code></td>
+<td>AI migration planner with risk analysis and strategy</td>
+<td><a href="pages/intelligence/migrations.md">Open</a></td>
+</tr>
+<tr>
+<td>AI Engine</td>
+<td><code>/ai</code></td>
+<td>Intent scoring, runtime recommendations &amp; migration planning</td>
+<td><a href="pages/intelligence/ai.md">Open</a></td>
+</tr>
+<tr>
+<td>Zeus</td>
+<td><code>/zeus</code></td>
+<td>AI infrastructure operating layer — multi-LLM, multi-agent intelligence</td>
+<td><a href="pages/intelligence/zeus.md">Open</a></td>
+</tr>
+<tr>
+<td>Cost Estimation</td>
+<td><code>/cost</code></td>
+<td>Resource cost projections across runtimes</td>
+<td><a href="pages/intelligence/cost.md">Open</a></td>
+</tr>
+<tr>
+<td>Runtime Affinity</td>
+<td><code>/affinity</code></td>
+<td>Workload class affinity and runtime fit</td>
+<td><a href="pages/intelligence/affinity.md">Open</a></td>
+</tr>
+<tr>
+<td>Drift Detection</td>
+<td><code>/drift</code></td>
+<td>Configuration drift &amp; desired-state reconciliation</td>
+<td><a href="pages/intelligence/drift.md">Open</a></td>
+</tr>
+<tr>
+<td>Intelligence Layer</td>
+<td><code>/intelligence</code></td>
+<td>Failure predictions, threats, cost optimization, and global placement</td>
+<td><a href="pages/intelligence/intelligence.md">Open</a></td>
+</tr>
+<tr>
+<td>Policy Check</td>
+<td><code>/policy</code></td>
+<td>Validate workloads against policy rules</td>
+<td><a href="pages/intelligence/policy.md">Open</a></td>
+</tr>
+<tr>
+<td>Confidential Computing</td>
+<td><code>/confidential</code></td>
+<td>TEE capabilities, attestation trust scores, and Ragnarok integration</td>
+<td><a href="pages/intelligence/confidential.md">Open</a></td>
+</tr>
+<tr>
+<td>Security Center</td>
+<td><code>/security</code></td>
+<td>Threats, secrets, policies, and hardening</td>
+<td><a href="pages/intelligence/security.md">Open</a></td>
+</tr>
+</tbody></table>
+<h3>Operations</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Route</th>
+<th>Purpose</th>
+<th>Guide</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Observability</td>
+<td><code>/observability</code></td>
+<td>Health, metrics, events, and correlated diagnostics</td>
+<td><a href="pages/operations/observability.md">Open</a></td>
+</tr>
+<tr>
+<td>Cluster Browser</td>
+<td><code>/clusters</code></td>
+<td>Browse and manage Kubernetes resources</td>
+<td><a href="pages/operations/clusters.md">Open</a></td>
+</tr>
+<tr>
+<td>Fleet Overview</td>
+<td><code>/fleet</code></td>
+<td>Multi-cluster inventory, Hubble, and PacketWolf links</td>
+<td><a href="pages/operations/fleet.md">Open</a></td>
+</tr>
+<tr>
+<td>Activity Monitor</td>
+<td><code>/activity</code></td>
+<td>CPU, memory, restarts, and errors across the fleet</td>
+<td><a href="pages/operations/activity.md">Open</a></td>
+</tr>
+<tr>
+<td>Helm App Store</td>
+<td><code>/helm</code></td>
+<td>Install curated charts with a guided wizard</td>
+<td><a href="pages/operations/helm.md">Open</a></td>
+</tr>
+<tr>
+<td>Compose Import</td>
+<td><code>/compose</code></td>
+<td>Import Docker Compose into Aether workloads</td>
+<td><a href="pages/operations/compose.md">Open</a></td>
+</tr>
+<tr>
+<td>Visual Editor</td>
+<td><code>/editor</code></td>
+<td>Form-based workload designer (no YAML required)</td>
+<td><a href="pages/operations/editor.md">Open</a></td>
+</tr>
+<tr>
+<td>Scheduler</td>
+<td><code>/scheduler</code></td>
+<td>Scheduling recommendations and placement</td>
+<td><a href="pages/operations/scheduler.md">Open</a></td>
+</tr>
+<tr>
+<td>Health Monitor</td>
+<td><code>/health-monitor</code></td>
+<td>Workload health checks and status</td>
+<td><a href="pages/operations/health-monitor.md">Open</a></td>
+</tr>
+<tr>
+<td>Events</td>
+<td><code>/events</code></td>
+<td>Platform and workload events</td>
+<td><a href="pages/operations/events.md">Open</a></td>
+</tr>
+<tr>
+<td>Alerts</td>
+<td><code>/alerts</code></td>
+<td>Notification channels, alert rules, and webhook tests</td>
+<td><a href="pages/operations/alerts.md">Open</a></td>
+</tr>
+<tr>
+<td>Platform</td>
+<td><code>/platform</code></td>
+<td>HA mode, setup recommendations, OPA, and observability</td>
+<td><a href="pages/operations/platform.md">Open</a></td>
+</tr>
+<tr>
+<td>SLA Compliance</td>
+<td><code>/sla</code></td>
+<td>SLA tracking and compliance</td>
+<td><a href="pages/operations/sla.md">Open</a></td>
+</tr>
+<tr>
+<td>Dependencies</td>
+<td><code>/deps</code></td>
+<td>Workload dependency graph</td>
+<td><a href="pages/operations/deps.md">Open</a></td>
+</tr>
+<tr>
+<td>Environments</td>
+<td><code>/envs</code></td>
+<td>Environment tiers and configuration</td>
+<td><a href="pages/operations/envs.md">Open</a></td>
+</tr>
+</tbody></table>
+<h3>Resources</h3>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Route</th>
+<th>Purpose</th>
+<th>Guide</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Labs</td>
+<td><code>/labs</code></td>
+<td>Experimental AI-generated infrastructure artifacts</td>
+<td><a href="pages/resources/labs.md">Open</a></td>
+</tr>
+<tr>
+<td>Settings</td>
+<td><code>/settings</code></td>
+<td>Platform, environments, secrets, and extensions</td>
+<td><a href="pages/resources/settings.md">Open</a></td>
+</tr>
+<tr>
+<td>AI Providers</td>
+<td><code>/settings/ai-providers</code></td>
+<td>Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints</td>
+<td><a href="pages/resources/settings-ai-providers.md">Open</a></td>
+</tr>
+<tr>
+<td>Hosted SaaS</td>
+<td><code>/hosted</code></td>
+<td>Tenants, API keys, metering, and Stripe billing</td>
+<td><a href="pages/resources/hosted.md">Open</a></td>
+</tr>
+<tr>
+<td>Secrets</td>
+<td><code>/secrets</code></td>
+<td>Encrypted secrets management</td>
+<td><a href="pages/resources/secrets.md">Open</a></td>
+</tr>
+<tr>
+<td>Backups</td>
+<td><code>/backups</code></td>
+<td>Backup snapshots and restore</td>
+<td><a href="pages/resources/backups.md">Open</a></td>
+</tr>
+<tr>
+<td>Storage</td>
+<td><code>/storage</code></td>
+<td>Atlas-backed persistent volumes and capacity</td>
+<td><a href="pages/resources/storage.md">Open</a></td>
+</tr>
+<tr>
+<td>GPU / Forge</td>
+<td><code>/forge</code></td>
+<td>Forge GPU capacity, nodes, and AI placement</td>
+<td><a href="pages/resources/forge.md">Open</a></td>
+</tr>
+<tr>
+<td>Templates</td>
+<td><code>/templates</code></td>
+<td>Workload templates library</td>
+<td><a href="pages/resources/templates.md">Open</a></td>
+</tr>
+<tr>
+<td>Plugins</td>
+<td><code>/plugins</code></td>
+<td>Runtime plugins and extensions</td>
+<td><a href="pages/resources/plugins.md">Open</a></td>
+</tr>
+<tr>
+<td>Access Control</td>
+<td><code>/rbac</code></td>
+<td>API keys and role-based access</td>
+<td><a href="pages/resources/rbac.md">Open</a></td>
+</tr>
+<tr>
+<td>Audit Trail</td>
+<td><code>/audit</code></td>
+<td>Tamper-evident audit log</td>
+<td><a href="pages/resources/audit.md">Open</a></td>
+</tr>
+<tr>
+<td>GitOps</td>
+<td><code>/gitops</code></td>
+<td>GitOps reconciliation status</td>
+<td><a href="pages/resources/gitops.md">Open</a></td>
+</tr>
+<tr>
+<td>Metrics</td>
+<td><code>/metrics</code></td>
+<td>Platform and workload metrics</td>
+<td><a href="pages/resources/metrics.md">Open</a></td>
+</tr>
+<tr>
+<td>API Explorer</td>
+<td><code>/openapi</code></td>
+<td>Browse OpenAPI routes and raw schema</td>
+<td><a href="pages/resources/openapi.md">Open</a></td>
+</tr>
+</tbody></table>
+<h3>Related</h3>
+<ul>
+<li><a href="README.md">Customer docs home</a></li>
+<li><a href="pages/README.md">Page-by-page guides</a></li>
+</ul>
+</main></body></html>
