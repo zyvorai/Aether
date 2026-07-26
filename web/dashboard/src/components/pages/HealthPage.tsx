@@ -4,14 +4,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Inbox } from 'lucide-react';
+import { Inbox, HeartPulse } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import { markHealthReviewed } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
-import StatCard from '../StatCard';
+import StatRibbon from '../StatRibbon';
+import CardGrid from '../CardGrid';
+import EntityCard, { type EntityStatusTone } from '../EntityCard';
 import Badge, { RuntimeBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -32,6 +34,14 @@ function getCircuitVariant(circuit: string): 'green' | 'red' | 'yellow' | 'muted
   if (c === 'closed') return 'green';
   if (c === 'open') return 'red';
   if (c === 'half-open' || c === 'half_open') return 'yellow';
+  return 'muted';
+}
+
+function getHealthTone(health: string): EntityStatusTone {
+  const h = health.toLowerCase();
+  if (h === 'healthy') return 'green';
+  if (h === 'degraded') return 'amber';
+  if (h === 'unhealthy') return 'red';
   return 'muted';
 }
 
@@ -258,21 +268,16 @@ export default function HealthPage() {
             <h2 className="section-title">Fleet status</h2>
             <p className="section-subtitle">Orchestrator health checks and circuit breaker state</p>
           </div>
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <button type="button" data-testid="health-healthy-stat" onClick={() => setStatusFilter('healthy')} className="text-left">
-            <StatCard title="Healthy" value={summary.healthy} color="green" />
-          </button>
-          <button type="button" data-testid="health-degraded-stat" onClick={() => setStatusFilter('degraded')} className="text-left">
-            <StatCard title="Degraded" value={summary.degraded} color="yellow" />
-          </button>
-          <button type="button" data-testid="health-unhealthy-stat" onClick={() => setStatusFilter('unhealthy')} className="text-left">
-            <StatCard title="Unhealthy" value={summary.unhealthy} color="red" />
-          </button>
-          <button type="button" data-testid="health-unknown-stat" onClick={() => setStatusFilter('unknown')} className="text-left">
-            <StatCard title="Unknown" value={summary.unknown} color="blue" />
-          </button>
-          <StatCard title="Circuits open" value={summary.circuits_open} color="orange" />
-        </div>
+        <StatRibbon
+          columns={5}
+          items={[
+            { label: 'Healthy', value: summary.healthy, tone: 'emerald', onClick: () => setStatusFilter('healthy'), testId: 'health-healthy-stat' },
+            { label: 'Degraded', value: summary.degraded, tone: 'amber', onClick: () => setStatusFilter('degraded'), testId: 'health-degraded-stat' },
+            { label: 'Unhealthy', value: summary.unhealthy, tone: 'red', onClick: () => setStatusFilter('unhealthy'), testId: 'health-unhealthy-stat' },
+            { label: 'Unknown', value: summary.unknown, tone: 'sky', onClick: () => setStatusFilter('unknown'), testId: 'health-unknown-stat' },
+            { label: 'Circuits open', value: summary.circuits_open, tone: 'aether' },
+          ]}
+        />
         </section>
       )}
 
@@ -328,53 +333,33 @@ export default function HealthPage() {
         <EmptyState icon={<Inbox size={48} />} title="No managed workloads" description="No workloads are being monitored" />
       ) : (
         <>
-          <div className="glass-table-shell mb-6" data-testid="health-workload-table">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="glass-divider-b">
-                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workload</th>
-                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Runtime</th>
-                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Health</th>
-                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Circuit</th>
-                    <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Restarts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((w) => (
-                    <tr
-                      key={w.name}
-                      onClick={() => void handleRowClick(w)}
-                      className={`glass-table-row cursor-pointer transition-colors ${
-                        selected?.workload.name === w.name ? 'bg-aether/10' : 'glass-inset-hover'
-                      }`}
-                    >
-                      <td className="py-3 px-4 font-medium text-slate-200">
-                        {historyLoading === w.name ? (
-                          <span className="text-slate-500">Loading…</span>
-                        ) : (
-                          w.name
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <RuntimeBadge runtime={w.runtime} />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge text={w.health} variant={getHealthVariant(w.health)} />
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge text={w.circuit ?? 'unknown'} variant={getCircuitVariant(w.circuit ?? 'unknown')} />
-                      </td>
-                      <td className="py-3 px-4 text-sm text-slate-300">{w.restart_count}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filtered.length === 0 && (
-                <p className="text-sm text-slate-500 py-6 text-center">No workloads match your search.</p>
-              )}
-            </div>
-          </div>
+          {filtered.length === 0 ? (
+            <EmptyState icon={<Inbox size={48} />} title="No matching workloads" description="No workloads match your search." />
+          ) : (
+            <CardGrid columns="compact" className="mb-6" testId="health-workload-table">
+              {filtered.map((w, i) => (
+                <EntityCard
+                  key={w.name}
+                  index={i}
+                  testId={`health-card-${w.name}`}
+                  icon={<HeartPulse size={18} />}
+                  statusTone={getHealthTone(w.health)}
+                  pulse={w.health.toLowerCase() === 'healthy'}
+                  selected={selected?.workload.name === w.name}
+                  title={historyLoading === w.name ? 'Loading…' : w.name}
+                  badge={<Badge text={w.health} variant={getHealthVariant(w.health)} />}
+                  onClick={() => void handleRowClick(w)}
+                  body={
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <RuntimeBadge runtime={w.runtime} />
+                      <Badge text={w.circuit ?? 'unknown'} variant={getCircuitVariant(w.circuit ?? 'unknown')} />
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">{w.restart_count} restarts</span>
+                    </div>
+                  }
+                />
+              ))}
+            </CardGrid>
+          )}
 
           {selected && (
             <div className="glass-panel-card" data-testid="health-detail-panel">

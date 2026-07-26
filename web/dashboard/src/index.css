@@ -365,10 +365,12 @@
     animation: platform-pulse 2.4s ease-in-out infinite;
   }
 
-  .workload-card-rise {
+  .workload-card-rise,
+  .card-rise {
     animation: page-rise 0.45s ease-out both;
   }
 
+  .page-masthead,
   .workloads-masthead {
     position: relative;
     overflow: hidden;
@@ -380,6 +382,7 @@
       linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
   }
 
+  .page-masthead::after,
   .workloads-masthead::after {
     content: '';
     position: absolute;

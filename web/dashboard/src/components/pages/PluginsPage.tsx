@@ -3,13 +3,15 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Inbox } from 'lucide-react';
+import { Search, Inbox, Plug, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -258,55 +260,56 @@ export default function PluginsPage() {
       {visiblePlugins.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No plugins" description="No plugins match your filters. Try discovering plugins." />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="plugins-list">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Version</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Runtime</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Capabilities</th>
-                  <th className="text-right text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visiblePlugins.map((p) => (
-                  <tr key={p.name} className="glass-table-row glass-inset-hover transition-colors">
-                    <td className="py-3 px-4 font-medium text-slate-200">{p.name}</td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{p.version}</td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{p.runtime_kind}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-1">
-                        {p.capabilities.map((c) => (
-                          <Badge key={c} text={c} variant="blue" />
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPlugin(p)}
-                        className="rounded-lg border glass-divider px-3 py-1.5 text-xs font-medium text-slate-300 glass-inset-hover"
-                      >
-                        Inspect
-                      </button>
-                      {canMutate && (
-                        <button
-                          type="button"
-                          onClick={() => void handleRemove(p.name)}
-                          className="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <CardGrid columns="compact" testId="plugins-list">
+          {visiblePlugins.map((p, i) => (
+            <EntityCard
+              key={p.name}
+              index={i}
+              testId={`plugin-card-${p.name}`}
+              icon={<Plug size={18} />}
+              statusTone="sky"
+              title={p.name}
+              subtitle={`${p.runtime_kind} · v${p.version}`}
+              onClick={() => setSelectedPlugin(p)}
+              body={
+                p.capabilities.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {p.capabilities.slice(0, 6).map((c) => (
+                      <Badge key={c} text={c} variant="blue" />
+                    ))}
+                    {p.capabilities.length > 6 ? (
+                      <span className="text-[11px] text-slate-500">+{p.capabilities.length - 6}</span>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-[12px] text-slate-500">No declared capabilities</p>
+                )
+              }
+              footer={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlugin(p)}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Search size={13} />
+                    Inspect
+                  </button>
+                  {canMutate ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleRemove(p.name)}
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-red-500/15 hover:text-red-300"
+                    >
+                      <Trash2 size={13} />
+                      Remove
+                    </button>
+                  ) : null}
+                </>
+              }
+            />
+          ))}
+        </CardGrid>
       )}
       </section>
 

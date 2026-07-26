@@ -10,6 +10,8 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { markFirstDeploy } from '../../utils/onboardingState';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import Modal from '../Modal';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -248,64 +250,60 @@ export default function TemplatesPage() {
 
       {templates.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No templates" description="No templates are available" />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<Inbox size={48} />} title="No matching templates" description="Try adjusting your search." />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="templates-list">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Description</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">CPU</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Memory</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((t) => (
-                  <tr key={t.name} className="glass-table-row glass-inset-hover transition-colors">
-                    <td className="py-3 px-4 font-medium text-slate-200">{t.name}</td>
-                    <td className="py-3 px-4 text-sm text-slate-400">{t.description}</td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{t.default_cpu}</td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{t.default_memory}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void handleGenerate(t.name)}
-                          disabled={generateLoading === t.name}
-                          className="flex items-center gap-1.5 btn-primary disabled:opacity-50 text-xs"
-                        >
-                          <Wand2 size={12} />
-                          {generateLoading === t.name ? 'Generating…' : 'Generate'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', template: t.name }))}
-                          className="flex items-center gap-1.5 btn-secondary text-xs"
-                        >
-                          <FileCode2 size={12} />
-                          Use template
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfigureTemplate(t.name)}
-                          className="flex items-center gap-1.5 btn-secondary text-xs"
-                        >
-                          <Settings2 size={12} />
-                          Configure
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filtered.length === 0 && (
-              <p className="text-sm text-slate-500 py-6 text-center">No templates match your search.</p>
-            )}
-          </div>
-        </div>
+        <CardGrid columns="compact" testId="templates-list">
+          {filtered.map((t, i) => (
+            <EntityCard
+              key={t.name}
+              index={i}
+              testId={`template-card-${t.name}`}
+              icon={<FileCode2 size={18} />}
+              statusTone="sky"
+              title={t.name}
+              onClick={() => void handleGenerate(t.name)}
+              body={
+                <>
+                  <p className="line-clamp-2 min-h-[2.5rem] text-[12px] leading-relaxed text-slate-400">{t.description}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">CPU {t.default_cpu}</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">Mem {t.default_memory}</span>
+                  </div>
+                </>
+              }
+              footer={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void handleGenerate(t.name)}
+                    disabled={generateLoading === t.name}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-aether/15 hover:text-aether disabled:opacity-50"
+                  >
+                    <Wand2 size={13} />
+                    {generateLoading === t.name ? '…' : 'Generate'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', template: t.name }))}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <FileCode2 size={13} />
+                    Use
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigureTemplate(t.name)}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Settings2 size={13} />
+                    Config
+                  </button>
+                </>
+              }
+            />
+          ))}
+        </CardGrid>
       )}
       </section>
 

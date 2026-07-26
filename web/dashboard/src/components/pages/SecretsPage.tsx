@@ -2,14 +2,16 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
-import { Inbox, ChevronDown, ChevronRight, Trash2, Plus, Copy } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Inbox, ChevronDown, ChevronRight, Trash2, Plus, Copy, KeyRound } from 'lucide-react';
 import { apiFetch, apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { useNavigate, Link } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
-import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
+import { pathWithQuery, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import Badge from '../Badge';
 import Modal from '../Modal';
 import EmptyState from '../EmptyState';
@@ -253,109 +255,86 @@ export default function SecretsPage() {
 
       {secrets.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No secrets" description="No secrets have been stored" />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<Inbox size={48} />} title="No matching secrets" description="Try adjusting your search." />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="secrets-list">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Namespace</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Keys</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Rotation</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Updated</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((s) => (
-                  <Fragment key={`${s.namespace}/${s.name}`}>
-                    <tr className="glass-table-row glass-inset-hover transition-colors">
-                      <td className="py-3 px-4">
-                        <button
-                          type="button"
-                          onClick={() => void handleExpand(s.name)}
-                          className="flex items-center gap-1.5 font-medium text-slate-200 hover:text-aether transition-colors"
-                        >
-                          {detailLoading === s.name ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b border-aether" />
-                          ) : expandedSecret === s.name ? (
-                            <ChevronDown size={14} />
-                          ) : (
-                            <ChevronRight size={14} />
-                          )}
-                          {s.name}
-                        </button>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-slate-400">{s.namespace}</td>
-                      <td className="py-3 px-4 text-sm text-slate-300">{s.key_count}</td>
-                      <td className="py-3 px-4">
-                        <Badge
-                          text={s.needs_rotation ? 'Needs rotation' : 'OK'}
-                          variant={s.needs_rotation ? 'red' : 'green'}
-                        />
-                      </td>
-                      <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(s.updated_at)}</td>
-                      <td className="py-3 px-4">
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDelete(s.name)}
-                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedSecret === s.name && secretDetail && (
-                      <tr className="glass-table-row">
-                        <td colSpan={6} className="px-4 py-3">
-                          <div className="glass-panel-card p-4 space-y-3 border glass-divider">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                              <div>
-                                <span className="text-slate-500">Keys: </span>
-                                <span className="text-slate-200 inline-flex flex-wrap gap-2">
-                                  {secretDetail.keys.map((key) => (
-                                    <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-xs">
-                                      {key}
-                                      <button
-                                        type="button"
-                                        onClick={() => void copyKeyName(key)}
-                                        className="text-slate-500 hover:text-aether"
-                                        title="Copy key name"
-                                        data-testid={`secrets-copy-key-${key}`}
-                                      >
-                                        <Copy size={12} />
-                                      </button>
-                                    </span>
-                                  ))}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-slate-500">Created: </span>
-                                <span className="text-slate-200">{formatTimestamp(secretDetail.created_at)}</span>
-                              </div>
-                            </div>
-                            {secretDetail.rotation_policy && (
-                              <p className="text-sm text-slate-400">
-                                Rotation every {secretDetail.rotation_policy.interval_days} days, max age{' '}
-                                {secretDetail.rotation_policy.max_age_days} days, notify{' '}
-                                {secretDetail.rotation_policy.notify_before_days} days before
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-            {filtered.length === 0 && (
-              <p className="text-sm text-slate-500 py-6 text-center">No secrets match your search.</p>
-            )}
-          </div>
-        </div>
+        <CardGrid columns="compact" testId="secrets-list">
+          {filtered.map((s, i) => {
+            const expanded = expandedSecret === s.name;
+            return (
+              <EntityCard
+                key={`${s.namespace}/${s.name}`}
+                index={i}
+                testId={`secret-card-${s.name}`}
+                icon={<KeyRound size={18} />}
+                statusTone={s.needs_rotation ? 'red' : 'green'}
+                title={s.name}
+                subtitle={s.namespace}
+                badge={<Badge text={s.needs_rotation ? 'Rotate' : 'OK'} variant={s.needs_rotation ? 'red' : 'green'} />}
+                body={
+                  <>
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">{s.key_count} keys</span>
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-400">{formatTimestamp(s.updated_at)}</span>
+                    </div>
+                    {expanded && secretDetail ? (
+                      <div className="mt-3 space-y-2 rounded-lg border glass-divider glass-inset-surface p-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          {secretDetail.keys.map((key) => (
+                            <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-[11px] text-slate-300">
+                              {key}
+                              <button
+                                type="button"
+                                onClick={() => void copyKeyName(key)}
+                                className="text-slate-500 hover:text-aether"
+                                title="Copy key name"
+                                data-testid={`secrets-copy-key-${key}`}
+                              >
+                                <Copy size={11} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-slate-500">Created {formatTimestamp(secretDetail.created_at)}</p>
+                        {secretDetail.rotation_policy ? (
+                          <p className="text-[11px] text-slate-400">
+                            Rotate every {secretDetail.rotation_policy.interval_days}d · max age {secretDetail.rotation_policy.max_age_days}d · notify {secretDetail.rotation_policy.notify_before_days}d before
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </>
+                }
+                footer={
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void handleExpand(s.name)}
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    >
+                      {detailLoading === s.name ? (
+                        <span className="h-3 w-3 animate-spin rounded-full border-b border-aether" />
+                      ) : expanded ? (
+                        <ChevronDown size={13} />
+                      ) : (
+                        <ChevronRight size={13} />
+                      )}
+                      {expanded ? 'Hide' : 'Keys'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(s.name)}
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-red-500/15 hover:text-red-300"
+                    >
+                      <Trash2 size={13} />
+                      Delete
+                    </button>
+                  </>
+                }
+              />
+            );
+          })}
+        </CardGrid>
       )}
       </section>
 

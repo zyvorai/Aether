@@ -3,13 +3,15 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Inbox, RotateCcw } from 'lucide-react';
+import { Plus, Inbox, RotateCcw, Archive } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { Link, useNavigate } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -237,48 +239,43 @@ export default function BackupsPage() {
 
       {backups.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No backups" description="Create a backup to get started" />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<Inbox size={48} />} title="No matching backups" description="Try adjusting your search." />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="backups-list">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">File</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workloads</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Created</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Version</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((b) => (
-                  <tr key={b.filename} className="glass-table-row glass-inset-hover transition-colors">
-                    <td className="py-3 px-4">
-                      <code className="glass-table-row text-xs px-2 py-1 rounded text-slate-300">{b.filename}</code>
-                      {b.description && <p className="text-xs text-slate-500 mt-1">{b.description}</p>}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{b.workload_count}</td>
-                    <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(b.created_at)}</td>
-                    <td className="py-3 px-4 text-sm text-slate-400">{b.aether_version}</td>
-                    <td className="py-3 px-4">
-                      <button
-                        type="button"
-                        onClick={() => setRestoreOpen(b.filename)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border glass-divider px-2.5 py-1 text-xs text-slate-300 hover:border-emerald-600/50 hover:text-emerald-300"
-                      >
-                        <RotateCcw size={12} />
-                        Restore
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filtered.length === 0 && (
-              <p className="text-sm text-slate-500 py-6 text-center">No backups match your search.</p>
-            )}
-          </div>
-        </div>
+        <CardGrid columns="compact" testId="backups-list">
+          {filtered.map((b, i) => (
+            <EntityCard
+              key={b.filename}
+              index={i}
+              testId={`backup-card-${b.filename}`}
+              icon={<Archive size={18} />}
+              statusTone="sky"
+              title={b.filename}
+              titleTooltip={b.filename}
+              subtitle={formatTimestamp(b.created_at)}
+              onClick={() => setRestoreOpen(b.filename)}
+              body={
+                <>
+                  {b.description ? <p className="line-clamp-2 text-[12px] text-slate-400">{b.description}</p> : null}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">{b.workload_count} workloads</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">v{b.aether_version}</span>
+                  </div>
+                </>
+              }
+              footer={
+                <button
+                  type="button"
+                  onClick={() => setRestoreOpen(b.filename)}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-emerald-500/15 hover:text-emerald-300"
+                >
+                  <RotateCcw size={13} />
+                  Restore
+                </button>
+              }
+            />
+          ))}
+        </CardGrid>
       )}
       </section>
 

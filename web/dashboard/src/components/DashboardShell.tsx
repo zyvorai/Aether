@@ -4,7 +4,8 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Navbar from './Navbar';
-import Hero, { type HeroBadge } from './Hero';
+import Breadcrumb from './Breadcrumb';
+import PageHeader, { type HeaderPill } from './PageHeader';
 import Footer from './Footer';
 import ZeusRail, { ZeusRailToggle } from './ZeusRail';
 import ZeusContextBar from './ZeusContextBar';
@@ -32,6 +33,7 @@ interface DashboardShellProps {
   onRefresh: () => void;
   onOpenCommandPalette?: () => void;
   onOpenHelp?: (tab?: HelpTab) => void;
+  breadcrumbWorkload?: string;
   children: ReactNode;
   commandPalette: ReactNode;
   helpDialog: ReactNode;
@@ -39,17 +41,27 @@ interface DashboardShellProps {
   refreshKey?: number;
 }
 
+// Views that render their own in-page masthead / hero and should NOT get the
+// shared compact PageHeader (avoids a double title bar).
+const SELF_MASTHEAD_VIEWS: ReadonlySet<AppView> = new Set<AppView>([
+  'overview',
+  'fabric',
+  'workloads',
+  'zeus',
+  'copilot',
+]);
+
 function buildHeroBadges(
   version: string | undefined,
   platform: ReturnType<typeof useServerCapabilities>['capabilities'],
   ready: ReturnType<typeof useServerCapabilities>['ready'],
   sseConnected: boolean,
-): HeroBadge[] {
+): HeaderPill[] {
   if (!platform?.platform) {
     return version ? [{ label: `v${version}`, tone: 'brand' }] : [];
   }
   const p = platform.platform;
-  const badges: HeroBadge[] = [{ label: `v${p.version}`, tone: 'brand' }];
+  const badges: HeaderPill[] = [{ label: `v${p.version}`, tone: 'brand' }];
 
   if (p.workloadState.backend === 'postgresql') {
     badges.push({
@@ -97,6 +109,7 @@ export default function DashboardShell({
   onRefresh,
   onOpenCommandPalette,
   onOpenHelp,
+  breadcrumbWorkload,
   children,
   commandPalette,
   helpDialog,
@@ -108,21 +121,16 @@ export default function DashboardShell({
     () => buildHeroBadges(capabilities?.version, capabilities, ready, sseConnected),
     [capabilities, ready, sseConnected],
   );
-  const [zeusCollapsed, setZeusCollapsed] = useState(
-    () => currentView === 'workloads' || currentView === 'clusters' || currentView === 'fleet',
-  );
+  const isZeusView = currentView === 'zeus' || currentView === 'copilot';
+  const [zeusCollapsed, setZeusCollapsed] = useState(() => !isZeusView);
   const [mobileZeusOpen, setMobileZeusOpen] = useState(false);
-  const showCompactHero =
-    currentView === 'overview'
-    || currentView === 'fabric'
-    || currentView === 'workloads';
+  const showSharedHeader = !SELF_MASTHEAD_VIEWS.has(currentView);
 
-  // Reclaim horizontal space on dense inventory pages.
+  // Reclaim horizontal space on every view except the Zeus workspace, where the
+  // rail IS the primary surface.
   useEffect(() => {
-    if (currentView === 'workloads' || currentView === 'clusters' || currentView === 'fleet') {
-      setZeusCollapsed(true);
-    }
-  }, [currentView]);
+    setZeusCollapsed(!isZeusView);
+  }, [currentView, isZeusView]);
 
   return (
     <div className={shellClass}>
@@ -147,11 +155,20 @@ export default function DashboardShell({
       <ViewerBanner />
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
-      {!showCompactHero ? (
-        <Hero title={heroTitle} subtitle={heroSubtitle} badges={heroBadges} />
-      ) : null}
       <div className="flex min-h-0 flex-1">
-        <main id="main-content" className="min-w-0 flex-1 dash-content py-8 lg:py-10">{children}</main>
+        <main id="main-content" className="min-w-0 flex-1 dash-content py-5 lg:py-6">
+          <Breadcrumb currentView={currentView} onNavigate={onNavigate} workloadName={breadcrumbWorkload} />
+          {showSharedHeader ? (
+            <PageHeader
+              title={heroTitle}
+              subtitle={heroSubtitle}
+              eyebrow="Control Plane"
+              pills={heroBadges}
+              testId="page-header"
+            />
+          ) : null}
+          {children}
+        </main>
         <ZeusRail collapsed={zeusCollapsed} onCollapsedChange={setZeusCollapsed} />
       </div>
       <ZeusRailToggle onClick={() => setMobileZeusOpen(true)} />

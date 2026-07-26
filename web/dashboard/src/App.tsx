@@ -7,7 +7,6 @@ import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } fr
 import type { AppView } from './types/api';
 import DashboardShell from './components/DashboardShell';
 import ErrorBoundary from './components/ErrorBoundary';
-import Breadcrumb from './components/Breadcrumb';
 import HelpDialog, { type HelpTab } from './components/HelpDialog';
 import { useToast } from './components/Toast';
 import { useEventStream } from './hooks/useEventStream';
@@ -571,13 +570,9 @@ function AetherDashboard() {
         }
         toastContainer={<ToastContainer />}
         refreshKey={refreshKey}
+        breadcrumbWorkload={breadcrumbWorkload}
       >
         <ErrorBoundary>
-          <Breadcrumb
-            currentView={currentView}
-            onNavigate={handleNavigate}
-            workloadName={breadcrumbWorkload}
-          />
           <div className="page-frame">{renderPage()}</div>
         </ErrorBoundary>
       </DashboardShell>
