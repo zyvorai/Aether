@@ -50,6 +50,8 @@ export interface ClusterPodSummary {
   node: string | null;
   /** Container names for log/exec targeting (when available). */
   containers?: string[];
+  /** Container images for drift detection (when available). */
+  images?: string[];
 }
 
 export interface ClusterConditionSummary {

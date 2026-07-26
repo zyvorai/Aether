@@ -136,6 +136,9 @@ pub struct ClusterPodSummary {
     /// Container names from pod status (for log/exec targeting).
     #[serde(default)]
     pub containers: Vec<String>,
+    /// Container images from pod status (for drift detection).
+    #[serde(default)]
+    pub images: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -2921,6 +2924,11 @@ fn summarize_pod(pod: &Pod) -> ClusterPodSummary {
     let ready = statuses.iter().filter(|status| status.ready).count();
     let restarts = statuses.iter().map(|status| status.restart_count).sum();
     let mut containers: Vec<String> = statuses.iter().map(|status| status.name.clone()).collect();
+    let mut images: Vec<String> = statuses
+        .iter()
+        .map(|status| status.image.clone())
+        .filter(|image| !image.is_empty())
+        .collect();
     if containers.is_empty() {
         // Fall back to spec when the pod has not reported statuses yet.
         if let Some(spec) = pod.spec.as_ref() {
@@ -2929,6 +2937,13 @@ fn summarize_pod(pod: &Pod) -> ClusterPodSummary {
                 .iter()
                 .map(|container| container.name.clone())
                 .collect();
+            if images.is_empty() {
+                images = spec
+                    .containers
+                    .iter()
+                    .filter_map(|container| container.image.clone())
+                    .collect();
+            }
         }
     }
 
@@ -2948,6 +2963,7 @@ fn summarize_pod(pod: &Pod) -> ClusterPodSummary {
         restarts,
         node: pod.spec.as_ref().and_then(|spec| spec.node_name.clone()),
         containers,
+        images,
     }
 }
 

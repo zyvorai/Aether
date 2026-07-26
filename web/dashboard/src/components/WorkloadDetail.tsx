@@ -10,6 +10,15 @@ import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
 import { pickExecPodName, isShellableClusterKind as kindSupportsShell, buildKubectlCommands, isRolloutClusterKind, canPortForwardClusterKind } from '../utils/clusterExec';
+import {
+  distinctPodImages,
+  entriesSorted,
+  hasImageDrift,
+  manifestAnnotations,
+  manifestContainers,
+  manifestLabels,
+  manifestServicePorts,
+} from '../utils/clusterManifest';
 import LogViewer from './LogViewer';
 import FixItPanel, { type FixAction } from './FixItPanel';
 import ApplicationTopology from './ApplicationTopology';
@@ -508,9 +517,18 @@ export default function WorkloadDetail({
     };
   }, [activeTab, isAetherManaged, workload.kind, workload.cluster, workload.namespace, clusterResourceName]);
 
-  // Prefill port-forward target when pods load.
+  // Prefill port-forward target when pods load; prefer Service ports when available.
   useEffect(() => {
-    if (!clusterDetail?.pods?.length) return;
+    if (!clusterDetail) return;
+    if (workload.kind === 'Service') {
+      const ports = manifestServicePorts(clusterDetail.manifest);
+      if (ports[0]?.port) {
+        setPortForwardRemotePort(String(ports[0].port));
+      }
+      setPortForwardPod(clusterResourceName);
+      return;
+    }
+    if (!clusterDetail.pods.length) return;
     setPortForwardPod((current) => {
       if (current && clusterDetail.pods.some((pod) => pod.name === current)) return current;
       return pickExecPodName(
@@ -537,6 +555,13 @@ export default function WorkloadDetail({
     );
     return clusterDetail.pods.find((pod) => pod.name === preferred)?.containers ?? [];
   })();
+
+  const labelEntries = clusterDetail ? entriesSorted(manifestLabels(clusterDetail.manifest)) : [];
+  const annotationEntries = clusterDetail ? entriesSorted(manifestAnnotations(clusterDetail.manifest)) : [];
+  const containerResources = clusterDetail ? manifestContainers(clusterDetail.manifest) : [];
+  const servicePorts = clusterDetail && workload.kind === 'Service' ? manifestServicePorts(clusterDetail.manifest) : [];
+  const observedImages = clusterDetail ? distinctPodImages(clusterDetail.pods) : [];
+  const imageDrift = clusterDetail ? hasImageDrift(clusterDetail.pods) : false;
 
   const handleAction = async (action: string, replicas?: number) => {
     setActionLoading(action);
@@ -1097,8 +1122,8 @@ export default function WorkloadDetail({
                           <td className="px-3 py-2 text-slate-300">{pod.phase}</td>
                           <td className="px-3 py-2 text-slate-300">{pod.ready}/{pod.total_containers}</td>
                           <td className={`px-3 py-2 ${pod.restarts > 5 ? 'text-amber-400 font-medium' : 'text-slate-300'}`}>{pod.restarts}</td>
-                          <td className="px-3 py-2 text-slate-400 truncate max-w-[10rem]" title={(pod.containers ?? []).join(', ')}>
-                            {(pod.containers ?? []).join(', ') || '—'}
+                          <td className="px-3 py-2 text-slate-400 truncate max-w-[10rem]" title={(pod.images?.length ? pod.images : pod.containers ?? []).join(', ')}>
+                            {(pod.images?.length ? pod.images : pod.containers ?? []).join(', ') || '—'}
                           </td>
                           <td className="px-3 py-2 text-slate-400">{pod.node ?? '—'}</td>
                           <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -1197,6 +1222,82 @@ export default function WorkloadDetail({
                         </li>
                       ))}
                     </ul>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!isAetherManaged && (imageDrift || observedImages.length > 0 || containerResources.length > 0) ? (
+              <div className="mt-4 space-y-3" data-testid="workload-manifest-insights">
+                {(imageDrift || observedImages.length > 0) ? (
+                  <div data-testid="workload-image-drift">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Images{imageDrift ? <span className="ml-2 text-amber-400 normal-case tracking-normal">· drift detected</span> : null}
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(observedImages.length > 0 ? observedImages : containerResources.map((c) => c.image).filter(Boolean) as string[]).map((image) => (
+                        <code key={image} className="rounded glass-inset-surface px-2 py-1 text-[11px] text-slate-300">{image}</code>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {containerResources.length > 0 ? (
+                  <div data-testid="workload-resources">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Resources</h4>
+                    <div className="overflow-x-auto rounded-lg border glass-divider">
+                      <table className="w-full min-w-[24rem] text-left text-xs">
+                        <thead>
+                          <tr className="glass-inset-surface text-slate-500">
+                            <th className="px-3 py-2 font-medium">Container</th>
+                            <th className="px-3 py-2 font-medium">Requests</th>
+                            <th className="px-3 py-2 font-medium">Limits</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {containerResources.map((container) => (
+                            <tr key={container.name} className="glass-divider-t">
+                              <td className="px-3 py-2 font-mono text-slate-200">{container.name}</td>
+                              <td className="px-3 py-2 text-slate-300">
+                                {[container.requests.cpu, container.requests.memory].filter(Boolean).join(' / ') || '—'}
+                              </td>
+                              <td className="px-3 py-2 text-slate-300">
+                                {[container.limits.cpu, container.limits.memory].filter(Boolean).join(' / ') || '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : null}
+                {(labelEntries.length > 0 || annotationEntries.length > 0) ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {labelEntries.length > 0 ? (
+                      <div data-testid="workload-labels">
+                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Labels</h4>
+                        <div className="max-h-28 space-y-1 overflow-auto text-[11px]">
+                          {labelEntries.map(([key, value]) => (
+                            <div key={key} className="flex gap-2 font-mono">
+                              <span className="shrink-0 text-slate-500">{key}=</span>
+                              <span className="truncate text-slate-300" title={value}>{value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {annotationEntries.length > 0 ? (
+                      <div data-testid="workload-annotations">
+                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Annotations</h4>
+                        <div className="max-h-28 space-y-1 overflow-auto text-[11px]">
+                          {annotationEntries.slice(0, 20).map(([key, value]) => (
+                            <div key={key} className="flex gap-2 font-mono">
+                              <span className="shrink-0 text-slate-500">{key}=</span>
+                              <span className="truncate text-slate-300" title={value}>{value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -1363,15 +1464,32 @@ export default function WorkloadDetail({
                       <option key={name} value={name}>{name}</option>
                     ))}
                   </select>
-                  <input
-                    type="number"
-                    value={portForwardRemotePort}
-                    onChange={(e) => setPortForwardRemotePort(e.target.value)}
-                    className="glass-input text-xs"
-                    placeholder="Remote port"
-                    data-testid="workload-pf-remote"
-                    disabled={!!portForwardSession}
-                  />
+                  {servicePorts.length > 0 ? (
+                    <select
+                      value={portForwardRemotePort}
+                      onChange={(e) => setPortForwardRemotePort(e.target.value)}
+                      className="glass-select text-xs"
+                      data-testid="workload-pf-remote"
+                      disabled={!!portForwardSession}
+                    >
+                      {servicePorts.map((port) => (
+                        <option key={`${port.name ?? 'port'}-${port.port}`} value={String(port.port)}>
+                          {port.name ? `${port.name} · ${port.port}` : String(port.port)}
+                          {port.targetPort != null ? ` → ${port.targetPort}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      value={portForwardRemotePort}
+                      onChange={(e) => setPortForwardRemotePort(e.target.value)}
+                      className="glass-input text-xs"
+                      placeholder="Remote port"
+                      data-testid="workload-pf-remote"
+                      disabled={!!portForwardSession}
+                    />
+                  )}
                   <input
                     type="number"
                     value={portForwardLocalPort}
@@ -1427,9 +1545,23 @@ export default function WorkloadDetail({
               if (cmds.length === 0) return null;
               return (
                 <div className="mt-4" data-testid="workload-kubectl">
-                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Run in your terminal
-                  </h4>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Run in your terminal
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(cmds.map((c) => `# ${c.label}\n${c.command}`).join('\n\n'));
+                        setCopiedCmd('all');
+                        window.setTimeout(() => setCopiedCmd(''), 1500);
+                      }}
+                      className="rounded px-2 py-1 text-[11px] text-slate-400 transition-colors hover:bg-white/5 hover:text-aether"
+                      data-testid="workload-kubectl-copy-all"
+                    >
+                      {copiedCmd === 'all' ? 'Copied all' : 'Copy all'}
+                    </button>
+                  </div>
                   <div className="space-y-1.5">
                     {cmds.map((cmd) => (
                       <div
