@@ -27,6 +27,7 @@ import type {
   ClusterRolloutStatus,
   ClusterTopMetric,
   Event,
+  HelmRevisionEntry,
   ScoringResult,
   WorkloadResponse,
 } from '../types/api';
@@ -177,6 +178,9 @@ export default function WorkloadDetail({
   const [portForwardSession, setPortForwardSession] = useState<ClusterPortForwardSession | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [yamlCopied, setYamlCopied] = useState(false);
+  const [helmHistory, setHelmHistory] = useState<HelmRevisionEntry[]>([]);
+  const [helmRevision, setHelmRevision] = useState('');
+  const [opsAutoRefresh, setOpsAutoRefresh] = useState(true);
   const shellSocketRef = useRef<WebSocket | null>(null);
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
   const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
@@ -451,15 +455,17 @@ export default function WorkloadDetail({
     }
     let cancelled = false;
     const base = `cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`;
-    const fetches: Array<Promise<unknown>> = [
-      apiFetch<ClusterRelatedEvent[]>(`/cluster/events?${base}`),
-      apiFetch<ClusterTopMetric[]>(`/cluster/top?${base}`),
-      apiFetch<ClusterHealthSummary>(`/cluster/health?${base}`),
-    ];
-    if (isRolloutClusterKind(workload.kind)) {
-      fetches.push(apiFetch<ClusterRolloutStatus>(`/cluster/rollout?${base}`));
-    }
-    void Promise.all(fetches).then((results) => {
+
+    async function loadOps() {
+      const fetches: Array<Promise<unknown>> = [
+        apiFetch<ClusterRelatedEvent[]>(`/cluster/events?${base}`),
+        apiFetch<ClusterTopMetric[]>(`/cluster/top?${base}`),
+        apiFetch<ClusterHealthSummary>(`/cluster/health?${base}`),
+      ];
+      if (isRolloutClusterKind(workload.kind)) {
+        fetches.push(apiFetch<ClusterRolloutStatus>(`/cluster/rollout?${base}`));
+      }
+      const results = await Promise.all(fetches);
       if (cancelled) return;
       setClusterEvents(((results[0] as ClusterRelatedEvent[] | null) ?? []).slice(0, 8));
       setClusterMetrics((results[1] as ClusterTopMetric[] | null) ?? []);
@@ -469,11 +475,38 @@ export default function WorkloadDetail({
       } else {
         setRollout(null);
       }
+    }
+
+    void loadOps();
+    if (!opsAutoRefresh) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    const interval = setInterval(() => void loadOps(), 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeTab, isAetherManaged, workload.cluster, workload.namespace, workload.kind, clusterResourceName, opsAutoRefresh]);
+
+  // Helm revision history for discovered HelmRelease resources.
+  useEffect(() => {
+    if (activeTab !== 'overview' || isAetherManaged || workload.kind !== 'HelmRelease' || !workload.cluster || !workload.namespace) {
+      return;
+    }
+    let cancelled = false;
+    void apiFetch<HelmRevisionEntry[]>(
+      `/cluster/helm/history?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&release=${encodeURIComponent(clusterResourceName)}`,
+    ).then((history) => {
+      if (cancelled) return;
+      setHelmHistory(history ?? []);
+      setHelmRevision(history?.[0]?.revision ?? '');
     });
     return () => {
       cancelled = true;
     };
-  }, [activeTab, isAetherManaged, workload.cluster, workload.namespace, workload.kind, clusterResourceName]);
+  }, [activeTab, isAetherManaged, workload.kind, workload.cluster, workload.namespace, clusterResourceName]);
 
   // Prefill port-forward target when pods load.
   useEffect(() => {
@@ -599,6 +632,47 @@ export default function WorkloadDetail({
     }
     setPortForwardSession(null);
     toast('Port-forward stopped', 'success');
+  }
+
+  async function handleDeletePod(podName: string) {
+    if (!workload.cluster || !workload.namespace || !canMutate) return;
+    setActionLoading(`delete-pod-${podName}`);
+    const response = await apiPost<string>('/cluster/action', {
+      cluster: workload.cluster,
+      namespace: workload.namespace,
+      kind: 'Pod',
+      name: podName,
+      action: 'delete',
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`Delete pod failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    toast(`Pod ${podName} deleted (controller will recreate it)`, 'success');
+    if (clusterResourcePath) {
+      const detail = await apiFetch<ClusterResourceDetail>(clusterResourcePath);
+      if (detail) setClusterDetail(detail);
+    }
+  }
+
+  async function handleHelmRollback() {
+    if (!workload.cluster || !workload.namespace || !canMutate || !helmRevision) return;
+    setActionLoading('helm-rollback');
+    const response = await apiPost<string>('/cluster/helm/action', {
+      cluster: workload.cluster,
+      namespace: workload.namespace,
+      release: clusterResourceName,
+      action: 'rollback',
+      revision: helmRevision,
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`Helm rollback failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    toast(`Rolled back ${clusterResourceName} to revision ${helmRevision}`, 'success');
+    onAction();
   }
 
   async function handleRolloutAction(action: 'pause' | 'resume' | 'undo' | 'restart') {
@@ -952,6 +1026,9 @@ export default function WorkloadDetail({
                         <th className="px-3 py-2 font-medium">Restarts</th>
                         <th className="px-3 py-2 font-medium">Containers</th>
                         <th className="px-3 py-2 font-medium">Node</th>
+                        {canMutate && workload.kind !== 'Pod' ? (
+                          <th className="px-3 py-2 font-medium" aria-label="Pod actions" />
+                        ) : null}
                       </tr>
                     </thead>
                     <tbody>
@@ -965,6 +1042,20 @@ export default function WorkloadDetail({
                             {(pod.containers ?? []).join(', ') || '—'}
                           </td>
                           <td className="px-3 py-2 text-slate-400">{pod.node ?? '—'}</td>
+                          {canMutate && workload.kind !== 'Pod' ? (
+                            <td className="px-3 py-2 text-right">
+                              <button
+                                type="button"
+                                onClick={() => void handleDeletePod(pod.name)}
+                                disabled={!!actionLoading}
+                                className="rounded px-2 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                                title="Delete pod (controller recreates it)"
+                                data-testid={`workload-pod-delete-${pod.name}`}
+                              >
+                                {actionLoading === `delete-pod-${pod.name}` ? '...' : 'Recycle'}
+                              </button>
+                            </td>
+                          ) : null}
                         </tr>
                       ))}
                     </tbody>
@@ -974,7 +1065,20 @@ export default function WorkloadDetail({
             ) : null}
 
             {!isAetherManaged && (clusterMetrics.length > 0 || clusterEvents.length > 0) ? (
-              <div className="mt-4 grid gap-4 lg:grid-cols-2" data-testid="workload-live-ops">
+              <div className="mt-4" data-testid="workload-live-ops">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Live ops</span>
+                  <button
+                    type="button"
+                    onClick={() => setOpsAutoRefresh((v) => !v)}
+                    className={`glass-tab tab-chip !px-2.5 !py-1 !text-[11px] ${opsAutoRefresh ? 'glass-tab-active tab-chip-active' : ''}`}
+                    title={opsAutoRefresh ? 'Auto-refresh on (15s)' : 'Auto-refresh paused'}
+                    data-testid="workload-ops-autorefresh"
+                  >
+                    {opsAutoRefresh ? 'Live · 15s' : 'Paused'}
+                  </button>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
                 {clusterMetrics.length > 0 ? (
                   <div data-testid="workload-live-metrics">
                     <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Live usage</h4>
@@ -1019,6 +1123,48 @@ export default function WorkloadDetail({
                     </div>
                   </div>
                 ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {!isAetherManaged && workload.kind === 'HelmRelease' && helmHistory.length > 0 ? (
+              <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-helm-history">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Helm revisions</h4>
+                  {canMutate ? (
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={helmRevision}
+                        onChange={(e) => setHelmRevision(e.target.value)}
+                        className="glass-select !py-1 !px-2 text-xs"
+                        data-testid="workload-helm-revision"
+                      >
+                        {helmHistory.map((rev) => (
+                          <option key={rev.revision} value={rev.revision}>#{rev.revision} · {rev.status}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => void handleHelmRollback()}
+                        disabled={!!actionLoading || !helmRevision}
+                        className="btn-secondary !px-3 !py-1.5 !text-xs disabled:opacity-50"
+                        data-testid="workload-helm-rollback"
+                      >
+                        {actionLoading === 'helm-rollback' ? '...' : 'Rollback'}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+                <div className="max-h-32 overflow-auto text-xs">
+                  {helmHistory.slice(0, 8).map((rev) => (
+                    <div key={rev.revision} className="flex flex-wrap gap-2 glass-divider-t py-1 text-slate-400">
+                      <span className="font-mono text-slate-300">#{rev.revision}</span>
+                      <span>{rev.chart}</span>
+                      <span className={rev.status === 'deployed' ? 'text-emerald-400' : ''}>{rev.status}</span>
+                      <span className="ml-auto text-slate-600">{rev.updated?.slice(0, 19)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 

@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers, Terminal, Info } from 'lucide-react';
+import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam, pathWithQuery } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -22,7 +22,8 @@ import {
   sortWorkloadsForDisplay,
 } from '../../utils/workloadFilters';
 import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../../utils/clusterExec';
-import { formatTimestamp } from '../../utils/formatters';
+import { getPinnedWorkloads, togglePinnedWorkload } from '../../utils/pinnedWorkloads';
+import { formatRelativeTime, formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
 import Modal from '../Modal';
@@ -109,8 +110,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [selectedWorkload, setSelectedWorkload] = useState<WorkloadResponse | null>(null);
   const [detailInitialTab, setDetailInitialTab] = useState<DetailTab>('overview');
   const [detailInitialShell, setDetailInitialShell] = useState(false);
+  const [pinnedNames, setPinnedNames] = useState<string[]>(() => getPinnedWorkloads());
+  const [pinnedOnly, setPinnedOnly] = useState(false);
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
+
+  function togglePin(name: string) {
+    setPinnedNames(togglePinnedWorkload(name));
+  }
 
   async function load() {
     setLoading(true);
@@ -538,9 +545,16 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       statusFilter === 'all' ||
       (statusFilter === 'running' && isRunning) ||
       (statusFilter === 'stopped' && isStopped);
-    return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace && matchesStatus;
+    const matchesPinned = !pinnedOnly || pinnedNames.includes(workload.name);
+    return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace && matchesStatus && matchesPinned;
     }),
   );
+  const pinnedSet = new Set(pinnedNames);
+  const displayWorkloads = [...filteredWorkloads].sort((a, b) => {
+    const ap = pinnedSet.has(a.name) ? 0 : 1;
+    const bp = pinnedSet.has(b.name) ? 0 : 1;
+    return ap - bp;
+  });
 
   const aetherManagedCount = countAetherManaged(workloads);
   const clusterDiscoveredCount = workloads.length - aetherManagedCount;
@@ -583,6 +597,20 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               <option value="running">Running</option>
               <option value="stopped">Stopped</option>
             </select>
+            <button
+              type="button"
+              onClick={() => setPinnedOnly((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                pinnedOnly
+                  ? 'bg-aether/20 text-aether border border-aether/40'
+                  : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
+              }`}
+              title="Show pinned workloads only"
+              data-testid="workloads-pinned-filter"
+            >
+              <Star size={14} className={pinnedOnly ? 'fill-current' : ''} />
+              Pinned{pinnedNames.length > 0 ? ` (${pinnedNames.length})` : ''}
+            </button>
           </>
         }
         actions={
@@ -885,13 +913,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 </tr>
               </thead>
               <tbody>
-                {filteredWorkloads.map((w) => {
+                {displayWorkloads.map((w) => {
                   const shortName = clusterResourceName(w.name);
                   const locationLabel = [w.cluster, w.namespace].filter(Boolean).join('/');
                   const metaLabel = [w.kind, locationLabel || null].filter(Boolean).join(' · ');
                   const discovered = !isAetherManaged(w);
                   const showLogs = !discovered || hasClusterLogs(w.kind);
                   const showShell = discovered && canMutate && isShellableClusterKind(w.kind);
+                  const pinned = pinnedSet.has(w.name);
 
                   return (
                   <tr key={w.name} className="glass-table-row glass-inset-hover transition-colors">
@@ -906,19 +935,31 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                       )}
                     </td>
                     <td className="py-3 px-3 sm:px-4 font-medium text-slate-200 align-top min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => openWorkloadDetail(w, 'overview')}
-                        className="hover:text-aether transition-colors text-left w-full min-w-0 block"
-                        title={w.name}
-                      >
-                        <span className="block truncate">{shortName}</span>
-                        {metaLabel ? (
-                          <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500" title={metaLabel}>
-                            {metaLabel}
-                          </span>
-                        ) : null}
-                      </button>
+                      <div className="flex items-start gap-1.5 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => togglePin(w.name)}
+                          className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-aether' : 'text-slate-600 hover:text-slate-300'}`}
+                          title={pinned ? 'Unpin workload' : 'Pin workload'}
+                          aria-label={pinned ? `Unpin ${shortName}` : `Pin ${shortName}`}
+                          data-testid={`workload-pin-${shortName}`}
+                        >
+                          <Star size={13} className={pinned ? 'fill-current' : ''} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openWorkloadDetail(w, 'overview')}
+                          className="hover:text-aether transition-colors text-left w-full min-w-0 block"
+                          title={w.name}
+                        >
+                          <span className="block truncate">{shortName}</span>
+                          {metaLabel ? (
+                            <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500" title={metaLabel}>
+                              {metaLabel}
+                            </span>
+                          ) : null}
+                        </button>
+                      </div>
                     </td>
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0"><RuntimeBadge runtime={w.runtime} /></td>
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
@@ -932,8 +973,9 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0 whitespace-nowrap">
                       <Badge text={w.status} variant={getStatusVariant(w.status)} />
                     </td>
-                    <td className="py-3 px-3 sm:px-4 text-sm text-slate-400 align-top min-w-0 whitespace-nowrap">
-                      {formatTimestamp(w.created_at)}
+                    <td className="py-3 px-3 sm:px-4 text-sm text-slate-400 align-top min-w-0 whitespace-nowrap" title={formatTimestamp(w.created_at)}>
+                      <span className="block">{w.created_at ? formatRelativeTime(w.created_at) : '—'}</span>
+                      <span className="block text-[11px] text-slate-600">{formatTimestamp(w.created_at)}</span>
                     </td>
                     <td className="py-3 px-3 sm:px-4 align-top min-w-0">
                       <div className="flex flex-nowrap items-center gap-0.5">
