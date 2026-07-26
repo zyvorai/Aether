@@ -3,9 +3,12 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
-import { Inbox } from 'lucide-react';
+import { Cpu, Inbox } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
+import StatRibbon from '../StatRibbon';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -51,7 +54,7 @@ export default function ForgePage() {
   const notConfigured = stats !== null && stats.configured === false;
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
         <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
@@ -63,19 +66,17 @@ export default function ForgePage() {
           />
         ) : (
           <>
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="forge-stats">
-              {[
-                ['Total GPUs', num(stats?.totalGPUs)],
-                ['Available', num(stats?.availableGPUs)],
-                ['Allocated', num(stats?.allocatedGPUs)],
-                ['Utilization %', num(stats?.utilizationPercent)],
-              ].map(([label, value]) => (
-                <div key={label} className="glass-panel-card px-4 py-3">
-                  <div className="text-xs uppercase tracking-wider text-slate-500">{label}</div>
-                  <div className="mt-2 text-lg font-semibold text-slate-100">{value}</div>
-                </div>
-              ))}
-            </div>
+            <StatRibbon
+              className="mb-5"
+              testId="forge-stats"
+              columns={4}
+              items={[
+                { label: 'Total GPUs', value: num(stats?.totalGPUs), tone: 'white' },
+                { label: 'Available', value: num(stats?.availableGPUs), tone: 'emerald' },
+                { label: 'Allocated', value: num(stats?.allocatedGPUs), tone: 'amber' },
+                { label: 'Utilization %', value: num(stats?.utilizationPercent), tone: 'aether' },
+              ]}
+            />
 
             {nodes.length === 0 ? (
               <EmptyState
@@ -84,26 +85,30 @@ export default function ForgePage() {
                 description="Forge reports no GPU-capable nodes on this cluster."
               />
             ) : (
-              <div className="glass-panel-card overflow-hidden" data-testid="forge-nodes">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="glass-divider-b">
-                        <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Node</th>
-                        <th className="text-right text-xs uppercase tracking-wider text-slate-500 py-3 px-4">GPUs</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {nodes.map((n, i) => (
-                        <tr key={(n.metadata?.name ?? '') + i} className="glass-table-row glass-inset-hover transition-colors">
-                          <td className="py-3 px-4 font-medium text-slate-200">{n.metadata?.name ?? '—'}</td>
-                          <td className="py-3 px-4 text-right text-sm text-slate-300">{num(n.spec?.gpuCount)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <CardGrid columns="compact" testId="forge-nodes">
+                {nodes.map((n, i) => {
+                  const name = n.metadata?.name ?? '—';
+                  const gpus = num(n.spec?.gpuCount);
+                  return (
+                    <EntityCard
+                      key={name + i}
+                      index={i}
+                      testId={`forge-card-${name}`}
+                      icon={<Cpu size={18} />}
+                      statusTone="sky"
+                      title={name}
+                      subtitle="GPU node"
+                      body={
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                            {gpus} GPU{gpus === '1' ? '' : 's'}
+                          </span>
+                        </div>
+                      }
+                    />
+                  );
+                })}
+              </CardGrid>
             )}
           </>
         )}

@@ -16,6 +16,8 @@ import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import FleetIntelligenceBrief from '../FleetIntelligenceBrief';
 import MultiCloudPanel from '../MultiCloudPanel';
 import FederationPlatformPanel from '../FederationPlatformPanel';
@@ -419,35 +421,37 @@ export default function FleetPage() {
           {!focusedWorkload ? (
             <p className="text-sm text-slate-500">Add <code className="text-slate-400">?workload=name</code> to plan federation placement.</p>
           ) : placementPlan ? (
-            <div className="overflow-x-auto">
+            <div>
               {placementPlan.anomaly_signals_configured ? (
                 <p className="text-xs text-cyan-300 mb-2" data-testid="placement-anomaly-hint">
                   PacketWolf anomalies considered ({placementPlan.total_anomalies ?? 0} signals)
                   {placementPlan.recommended_cluster ? ` · recommended: ${placementPlan.recommended_cluster}` : ''}
                 </p>
               ) : null}
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-slate-500 glass-divider-b">
-                    <th className="py-2">Cluster</th>
-                    <th>Score</th>
-                    <th>Anomalies</th>
-                    <th>Reachable</th>
-                    <th>Runtime</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {placementPlan.clusters.map((c) => (
-                    <tr key={c.cluster} className="border-b glass-divider">
-                      <td className="py-2 text-slate-200">{c.cluster}</td>
-                      <td>{c.score.toFixed(1)}</td>
-                      <td className="text-slate-400">{c.anomaly_count ?? 0}</td>
-                      <td>{c.reachable ? 'yes' : 'no'}</td>
-                      <td className="text-slate-400">{c.runtime_hint}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <CardGrid columns="compact">
+                {placementPlan.clusters.map((c, i) => (
+                  <EntityCard
+                    key={c.cluster}
+                    index={i}
+                    icon={<Server size={18} />}
+                    statusTone={c.reachable ? 'green' : 'red'}
+                    pulse={c.reachable && c.cluster === placementPlan.recommended_cluster}
+                    title={c.cluster}
+                    subtitle={c.runtime_hint}
+                    badge={<Badge text={c.reachable ? 'reachable' : 'down'} variant={c.reachable ? 'green' : 'red'} />}
+                    body={
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                          Score {c.score.toFixed(1)}
+                        </span>
+                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                          {c.anomaly_count ?? 0} anomalies
+                        </span>
+                      </div>
+                    }
+                  />
+                ))}
+              </CardGrid>
             </div>
           ) : (
             <p className="text-sm text-slate-500">Run placement plan to rank clusters for {focusedWorkload}.</p>
@@ -497,22 +501,27 @@ export default function FleetPage() {
           </p>
         ) : (
           <div className="space-y-3">
-            {clusters.map((c) => (
-              <button
-                key={c.name}
-                type="button"
-                data-testid={`fleet-cluster-${c.name}`}
-                onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
-                className="w-full text-left rounded-xl border glass-divider glass-panel-card px-4 py-3 backdrop-blur-sm transition hover:border-aether/30"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium text-slate-100">{c.name}</span>
-                  <Badge text={c.reachable ? 'reachable' : 'unreachable'} variant={c.reachable ? 'green' : 'red'} />
-                </div>
-                <p className="text-xs text-slate-500 mt-1 font-mono truncate">{c.server ?? '—'}</p>
-                {c.version && <p className="text-xs text-slate-400 mt-1">Kubernetes {c.version}</p>}
-              </button>
-            ))}
+            <CardGrid columns="compact">
+              {clusters.map((c, i) => (
+                <EntityCard
+                  key={c.name}
+                  index={i}
+                  testId={`fleet-cluster-${c.name}`}
+                  icon={<Server size={18} />}
+                  statusTone={c.reachable ? 'green' : 'red'}
+                  pulse={c.reachable}
+                  title={c.name}
+                  subtitle={c.version ? `Kubernetes ${c.version}` : 'Cluster'}
+                  badge={<Badge text={c.reachable ? 'reachable' : 'unreachable'} variant={c.reachable ? 'green' : 'red'} />}
+                  onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
+                  body={
+                    <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-slate-400" title={c.server ?? undefined}>
+                      {c.server ?? '—'}
+                    </code>
+                  }
+                />
+              ))}
+            </CardGrid>
           </div>
         )}
         <p className="mt-4 text-xs text-slate-500">

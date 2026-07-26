@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Container, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { Container, LayoutGrid, List, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
@@ -15,6 +15,8 @@ import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import ResponsiveTable from '../ResponsiveTable';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import PageTabs from '../PageTabs';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
@@ -22,6 +24,7 @@ import EventCorrelationPanel from '../EventCorrelationPanel';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { setClusterContext } from '../../utils/clusterContext';
 import { formatTimestamp } from '../../utils/formatters';
+import Badge from '../Badge';
 import type {
   AuthStatus,
   ClusterBrowseItem,
@@ -39,6 +42,14 @@ import type {
   AuditEvent,
   CiliumStatusResponse,
 } from '../../types/api';
+
+function statusTone(status: string): 'green' | 'red' | 'amber' | 'muted' | 'sky' {
+  const s = status.toLowerCase();
+  if (s.includes('running') || s.includes('ready') || s.includes('active') || s.includes('bound')) return 'green';
+  if (s.includes('fail') || s.includes('error') || s.includes('crash')) return 'red';
+  if (s.includes('pending') || s.includes('progress') || s.includes('wait')) return 'amber';
+  return 'sky';
+}
 
 const kindOptions = ['Namespace', 'Node', 'PersistentVolume', 'StorageClass', 'Pod', 'ServiceAccount', 'Secret', 'PersistentVolumeClaim', 'ResourceQuota', 'LimitRange', 'Deployment', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob', 'HorizontalPodAutoscaler', 'Service', 'EndpointSlice', 'Ingress', 'NetworkPolicy', 'CiliumNetworkPolicy', 'CiliumClusterwideNetworkPolicy', 'ConfigMap', 'Event', 'HelmRelease', 'DataVolume', 'VirtualMachine', 'VirtualMachineInstance', 'CustomResource'];
 
@@ -94,6 +105,13 @@ export default function ClustersPage() {
   const [resources, setResources] = useState<ClusterBrowseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [bootstrapLoading, setBootstrapLoading] = useState(true);
+  const [resourceView, setResourceView] = useState<'cards' | 'table'>(() => {
+    try {
+      return localStorage.getItem('aether_clusters_view') === 'table' ? 'table' : 'cards';
+    } catch {
+      return 'cards';
+    }
+  });
   const [bootstrapFailed, setBootstrapFailed] = useState(false);
   const [selected, setSelected] = useState<ClusterResourceDetail | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<ClusterRelatedEvent[]>([]);
@@ -1024,52 +1042,126 @@ export default function ClustersPage() {
           description={pageTab === 'network' ? 'No NetworkPolicy or Cilium policies in this scope.' : 'Try a different cluster, namespace, or resource kind.'}
         />
       ) : (
-        <div className={`glass-table-shell ${panelClass}`} data-testid="clusters-resource-table">
-          <ResponsiveTable stickyFirstColumn>
-            <table className="w-full">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Name</th>
-                  {pageTab === 'network' && (
-                    <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Kind</th>
-                  )}
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Namespace</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Status</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Detail</th>
-                  <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resources.map((resource) => (
-                  <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="glass-table-row glass-inset-hover transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openDetail(resource)} className="text-left font-medium text-slate-200 hover:text-aether transition-colors">
-                          {resource.name}
-                        </button>
-                        {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
-                          <Link
-                            to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
-                            className="text-xs text-aether hover:underline"
-                            title="Open in workloads"
-                          >
-                            →
-                          </Link>
+        <div className={panelClass} data-testid="clusters-resource-table">
+          <div className="mb-3 flex items-center justify-end gap-1 rounded-xl border glass-divider p-1 w-fit ml-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setResourceView('cards');
+                try { localStorage.setItem('aether_clusters_view', 'cards'); } catch { /* ignore */ }
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-aether/20 text-aether' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <LayoutGrid size={14} />
+              Cards
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setResourceView('table');
+                try { localStorage.setItem('aether_clusters_view', 'table'); } catch { /* ignore */ }
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-aether/20 text-aether' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <List size={14} />
+              Table
+            </button>
+          </div>
+          {resourceView === 'cards' ? (
+            <CardGrid columns="compact">
+              {resources.map((resource, i) => (
+                <EntityCard
+                  key={`${resource.kind}/${resource.namespace}/${resource.name}`}
+                  index={i}
+                  icon={<Container size={18} />}
+                  statusTone={statusTone(resource.status)}
+                  title={resource.name}
+                  subtitle={[resource.kind, resource.namespace].filter(Boolean).join(' · ')}
+                  onClick={() => openDetail(resource)}
+                  body={
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge text={resource.status || '—'} variant="muted" />
+                      {resource.detail ? (
+                        <span className="truncate rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-400" title={resource.detail}>
+                          {resource.detail}
+                        </span>
+                      ) : null}
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-500">
+                        {formatTimestamp(resource.created_at)}
+                      </span>
+                    </div>
+                  }
+                  footer={
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openDetail(resource)}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                      >
+                        Open
+                      </button>
+                      {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) ? (
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-aether transition hover:bg-aether/10"
+                        >
+                          Workloads
+                        </Link>
+                      ) : null}
+                    </>
+                  }
+                />
+              ))}
+            </CardGrid>
+          ) : (
+            <div className="glass-table-shell overflow-x-auto">
+              <ResponsiveTable stickyFirstColumn>
+                <table className="w-full min-w-0">
+                  <thead>
+                    <tr className="glass-divider-b">
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Name</th>
+                      {pageTab === 'network' && (
+                        <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Kind</th>
+                      )}
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Namespace</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Status</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Detail</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-4">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resources.map((resource) => (
+                      <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="glass-table-row glass-inset-hover transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => openDetail(resource)} className="text-left font-medium text-slate-200 hover:text-aether transition-colors">
+                              {resource.name}
+                            </button>
+                            {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
+                              <Link
+                                to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
+                                className="text-xs text-aether hover:underline"
+                                title="Open in workloads"
+                              >
+                                →
+                              </Link>
+                            )}
+                          </div>
+                        </td>
+                        {pageTab === 'network' && (
+                          <td className="py-3 px-4 text-sm text-slate-400">{resource.kind}</td>
                         )}
-                      </div>
-                    </td>
-                    {pageTab === 'network' && (
-                      <td className="py-3 px-4 text-sm text-slate-400">{resource.kind}</td>
-                    )}
-                    <td className="py-3 px-4 text-sm text-slate-400">{resource.namespace}</td>
-                    <td className="py-3 px-4 text-sm text-slate-200">{resource.status}</td>
-                    <td className="py-3 px-4 text-sm text-slate-500">{resource.detail ?? '—'}</td>
-                    <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(resource.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </ResponsiveTable>
+                        <td className="py-3 px-4 text-sm text-slate-400">{resource.namespace}</td>
+                        <td className="py-3 px-4 text-sm text-slate-200">{resource.status}</td>
+                        <td className="py-3 px-4 text-sm text-slate-500">{resource.detail ?? '—'}</td>
+                        <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(resource.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </ResponsiveTable>
+            </div>
+          )}
         </div>
       )}
 

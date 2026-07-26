@@ -4,13 +4,15 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
-import { Inbox } from 'lucide-react';
+import { Inbox, Layers, Search } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard, { type EntityStatusTone } from '../EntityCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -28,7 +30,16 @@ function getTierVariant(tier: string): 'green' | 'yellow' | 'red' | 'blue' | 'mu
   if (t === 'production' || t === 'prod') return 'red';
   if (t === 'staging') return 'yellow';
   if (t === 'development' || t === 'dev') return 'green';
-  if (t === 'testing' || t === 'test') return 'blue';
+  if (t === 'qa' || t === 'test') return 'blue';
+  return 'muted';
+}
+
+function getTierTone(tier: string): EntityStatusTone {
+  const v = getTierVariant(tier);
+  if (v === 'green') return 'green';
+  if (v === 'yellow') return 'amber';
+  if (v === 'red') return 'red';
+  if (v === 'blue') return 'sky';
   return 'muted';
 }
 
@@ -353,48 +364,44 @@ export default function EnvsPage() {
 
       {environments.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No environments" description="No environments have been configured" />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<Inbox size={48} />} title="No matching environments" description="Try adjusting your search." />
       ) : (
-        <div className="glass-panel-card overflow-hidden" data-testid="envs-list">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="glass-divider-b">
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Name</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Tier</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Workloads</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Variables</th>
-                  <th className="text-left text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Updated</th>
-                  <th className="text-right text-xs uppercase tracking-wider text-slate-500 py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((env) => (
-                  <tr key={env.name} className="glass-table-row glass-inset-hover transition-colors">
-                    <td className="py-3 px-4 font-medium text-slate-200">{env.name}</td>
-                    <td className="py-3 px-4">
-                      <Badge text={env.tier} variant={getTierVariant(env.tier)} />
-                    </td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{Object.keys(env.workloads ?? {}).length}</td>
-                    <td className="py-3 px-4 text-sm text-slate-300">{Object.keys(env.variables ?? {}).length}</td>
-                    <td className="py-3 px-4 text-sm text-slate-400">{formatTimestamp(env.updated_at)}</td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedEnvironment(env)}
-                        className="rounded-lg border glass-divider px-3 py-1.5 text-xs font-medium text-slate-300 glass-inset-hover"
-                      >
-                        Inspect
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filtered.length === 0 && (
-              <p className="text-sm text-slate-500 py-6 text-center">No environments match your search.</p>
-            )}
-          </div>
-        </div>
+        <CardGrid columns="compact" testId="envs-list">
+          {filtered.map((env, i) => (
+            <EntityCard
+              key={env.name}
+              index={i}
+              testId={`env-card-${env.name}`}
+              icon={<Layers size={18} />}
+              statusTone={getTierTone(env.tier)}
+              title={env.name}
+              subtitle={formatTimestamp(env.updated_at)}
+              badge={<Badge text={env.tier} variant={getTierVariant(env.tier)} />}
+              onClick={() => setSelectedEnvironment(env)}
+              body={
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                    {Object.keys(env.workloads ?? {}).length} workloads
+                  </span>
+                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                    {Object.keys(env.variables ?? {}).length} vars
+                  </span>
+                </div>
+              }
+              footer={
+                <button
+                  type="button"
+                  onClick={() => setSelectedEnvironment(env)}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                >
+                  <Search size={13} />
+                  Inspect
+                </button>
+              }
+            />
+          ))}
+        </CardGrid>
       )}
 
       </section>

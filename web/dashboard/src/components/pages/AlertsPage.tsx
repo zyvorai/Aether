@@ -4,12 +4,14 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
-import { BellRing, Radio, Send, Plus, Trash2 } from 'lucide-react';
+import { BellRing, Radio, Send, Plus, Trash2, Webhook } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiFetchSettled, apiPost, apiDelete } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -475,28 +477,24 @@ export default function AlertsPage() {
         {queue.length === 0 ? (
           <p className="text-sm text-slate-500">No pending webhook deliveries.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="glass-divider-b text-xs uppercase text-slate-500">
-                  <th className="py-2 px-3 text-left">URL</th>
-                  <th className="py-2 px-3 text-left">Method</th>
-                  <th className="py-2 px-3 text-left">Attempts</th>
-                  <th className="py-2 px-3 text-left">Next retry</th>
-                </tr>
-              </thead>
-              <tbody>
-                {queue.map((item, i) => (
-                  <tr key={`${item.url}-${i}`} className="glass-table-row">
-                    <td className="py-2 px-3 font-mono text-xs text-slate-400 max-w-xs truncate">{item.url}</td>
-                    <td className="py-2 px-3">{item.method}</td>
-                    <td className="py-2 px-3">{item.attempts}/{item.max_attempts}</td>
-                    <td className="py-2 px-3 text-slate-500">{item.next_attempt_at.slice(0, 19)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CardGrid columns="compact">
+            {queue.map((item, i) => (
+              <EntityCard
+                key={`${item.url}-${i}`}
+                index={i}
+                icon={<Webhook size={18} />}
+                statusTone="amber"
+                title={item.url}
+                titleTooltip={item.url}
+                subtitle={`${item.method} · next ${item.next_attempt_at.slice(0, 19)}`}
+                body={
+                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                    Attempts {item.attempts}/{item.max_attempts}
+                  </span>
+                }
+              />
+            ))}
+          </CardGrid>
         )}
       </div>
       </section>

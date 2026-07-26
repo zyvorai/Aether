@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Inbox } from 'lucide-react';
+import { Inbox, MapPin } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -14,6 +14,8 @@ import BarChart from '../BarChart';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
@@ -170,44 +172,36 @@ export default function SchedulerPage() {
         )}
       </div>
 
-      <div className="glass-panel-card mb-6" data-testid="scheduler-placements">
-        <h2 className="text-lg font-semibold text-slate-100 mb-4">Current placements</h2>
+      <div className="mb-6" data-testid="scheduler-placements">
+        <h2 className="mb-4 text-lg font-semibold text-slate-100">Current placements</h2>
         {placements.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No placements" description="No scheduler placement records yet" />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="glass-divider-b text-xs uppercase text-slate-500">
-                  <th className="py-2 px-3 text-left">Workload</th>
-                  <th className="py-2 px-3 text-left">Runtime</th>
-                  <th className="py-2 px-3 text-left">CPU</th>
-                  <th className="py-2 px-3 text-left">Memory</th>
-                </tr>
-              </thead>
-              <tbody>
-                {placements.map((p) => (
-                  <tr
-                    key={p.workload_name}
-                    className={`glass-table-row ${workloadQuery.trim() === p.workload_name ? 'bg-aether/10' : ''}`}
-                    data-testid={workloadQuery.trim() === p.workload_name ? 'scheduler-workload-highlight' : undefined}
-                  >
-                    <td className="py-2 px-3">
-                      <Link
-                        to={pathWithQuery(viewToPath('workloads'), { workload: p.workload_name })}
-                        className="text-aether hover:underline"
-                      >
-                        {p.workload_name}
-                      </Link>
-                    </td>
-                    <td className="py-2 px-3">{p.runtime}</td>
-                    <td className="py-2 px-3">{p.cpu_reserved}</td>
-                    <td className="py-2 px-3">{p.memory_reserved_mb} MB</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CardGrid columns="compact">
+            {placements.map((p, i) => (
+              <EntityCard
+                key={p.workload_name}
+                index={i}
+                testId={workloadQuery.trim() === p.workload_name ? 'scheduler-workload-highlight' : `scheduler-placement-${p.workload_name}`}
+                icon={<MapPin size={18} />}
+                statusTone="sky"
+                selected={workloadQuery.trim() === p.workload_name}
+                title={p.workload_name}
+                subtitle={p.runtime}
+                onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: p.workload_name }))}
+                body={
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                      CPU {p.cpu_reserved}
+                    </span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                      Mem {p.memory_reserved_mb} MB
+                    </span>
+                  </div>
+                }
+              />
+            ))}
+          </CardGrid>
         )}
       </div>
 

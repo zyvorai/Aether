@@ -7,6 +7,8 @@ import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { setActiveTenantId } from '../../utils/tenantContext';
 import PageToolbar from '../PageToolbar';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
@@ -315,74 +317,71 @@ export default function HostedPage() {
           description="Create a tenant to enable multi-tenant API keys and billing."
         />
       ) : (
-        <div className="glass-table-shell overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--surface-elevated)] text-left">
-              <tr>
-                <th className="p-3">Name</th>
-                <th className="p-3">Slug</th>
-                <th className="p-3">Plan</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tenants.map((t) => (
-                <tr key={t.id} className="border-t border-[var(--border)]">
-                  <td className="p-3">{t.name}</td>
-                  <td className="p-3 font-mono text-xs">{t.slug}</td>
-                  <td className="p-3">{t.plan}</td>
-                  <td className="p-3">
-                    <Badge variant={t.active ? 'green' : 'muted'} text={t.active ? 'Active' : 'Inactive'} />
-                  </td>
-                  <td className="p-3 flex flex-wrap gap-2">
+        <CardGrid columns="compact" testId="hosted-tenants-list">
+          {tenants.map((t, i) => (
+            <EntityCard
+              key={t.id}
+              index={i}
+              testId={`hosted-tenant-${t.slug}`}
+              icon={<Building2 size={18} />}
+              statusTone={t.active ? 'green' : 'muted'}
+              pulse={t.active}
+              title={t.name}
+              subtitle={t.slug}
+              badge={<Badge variant={t.active ? 'green' : 'muted'} text={t.active ? 'Active' : 'Inactive'} />}
+              body={
+                <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] capitalize text-slate-300">
+                  Plan: {t.plan}
+                </span>
+              }
+              footer={
+                <>
+                  <button
+                    type="button"
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    onClick={() => {
+                      setActiveTenantId(t.slug);
+                      toast(`Active tenant: ${t.slug}`, 'success');
+                    }}
+                  >
+                    Use
+                  </button>
+                  {t.plan !== 'enterprise' && t.active ? (
                     <button
                       type="button"
-                      className="btn-secondary text-xs"
-                      onClick={() => {
-                        setActiveTenantId(t.slug);
-                        toast(`Active tenant: ${t.slug}`, 'success');
-                      }}
+                      data-testid="hosted-upgrade-button"
+                      disabled={upgradingId === t.id}
+                      onClick={() => void handleUpgrade(t)}
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-aether/15 hover:text-aether disabled:opacity-50"
                     >
-                      Use tenant
+                      {upgradingId === t.id ? '…' : 'Upgrade'}
                     </button>
-                    {t.plan !== 'enterprise' && t.active ? (
-                      <button
-                        type="button"
-                        data-testid="hosted-upgrade-button"
-                        disabled={upgradingId === t.id}
-                        onClick={() => void handleUpgrade(t)}
-                        className="btn-primary text-xs disabled:opacity-50"
-                      >
-                        {upgradingId === t.id ? 'Upgrading…' : 'Upgrade plan'}
-                      </button>
-                    ) : null}
-                    {billing?.stripe_configured && t.active && t.plan !== 'enterprise' ? (
-                      <button
-                        type="button"
-                        data-testid="hosted-stripe-checkout-button"
-                        onClick={() => void handleStripeCheckout(t)}
-                        className="btn-secondary text-xs"
-                      >
-                        Stripe checkout
-                      </button>
-                    ) : null}
-                    {billing?.stripe_configured && t.active ? (
-                      <button
-                        type="button"
-                        data-testid="hosted-stripe-portal-button"
-                        onClick={() => void handleStripePortal(t)}
-                        className="btn-secondary text-xs"
-                      >
-                        Billing portal
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ) : null}
+                  {billing?.stripe_configured && t.active && t.plan !== 'enterprise' ? (
+                    <button
+                      type="button"
+                      data-testid="hosted-stripe-checkout-button"
+                      onClick={() => void handleStripeCheckout(t)}
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    >
+                      Stripe
+                    </button>
+                  ) : null}
+                  {billing?.stripe_configured && t.active ? (
+                    <button
+                      type="button"
+                      data-testid="hosted-stripe-portal-button"
+                      onClick={() => void handleStripePortal(t)}
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    >
+                      Portal
+                    </button>
+                  ) : null}
+                </>
+              }
+            />
+          ))}
+        </CardGrid>
       )}
     </div>
   );
