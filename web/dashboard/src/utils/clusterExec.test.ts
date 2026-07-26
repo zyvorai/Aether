@@ -7,7 +7,9 @@ import {
   buildKubectlCommands,
   clusterResourceName,
   hasClusterLogs,
+  isRolloutClusterKind,
   isShellableClusterKind,
+  canPortForwardClusterKind,
   pickExecPodName,
 } from './clusterExec';
 
@@ -49,6 +51,10 @@ describe('clusterExec helpers', () => {
     expect(isShellableClusterKind('Job')).toBe(false);
     expect(hasClusterLogs('Job')).toBe(true);
     expect(hasClusterLogs('ConfigMap')).toBe(false);
+    expect(isRolloutClusterKind('Deployment')).toBe(true);
+    expect(isRolloutClusterKind('Pod')).toBe(false);
+    expect(canPortForwardClusterKind('Service')).toBe(true);
+    expect(canPortForwardClusterKind('ConfigMap')).toBe(false);
   });
 });
 

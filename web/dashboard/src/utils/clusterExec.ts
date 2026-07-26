@@ -36,6 +36,18 @@ export function hasClusterLogs(kind: string | null | undefined): boolean {
   return (LOGS_CLUSTER_KINDS as readonly string[]).includes(kind ?? '');
 }
 
+/** Kinds that support kubectl rollout status/history/actions. */
+export const ROLLOUT_CLUSTER_KINDS = ['Deployment', 'StatefulSet', 'DaemonSet'] as const;
+
+export function isRolloutClusterKind(kind: string | null | undefined): boolean {
+  return (ROLLOUT_CLUSTER_KINDS as readonly string[]).includes(kind ?? '');
+}
+
+/** Kinds that can start an Aether-managed port-forward session. */
+export function canPortForwardClusterKind(kind: string | null | undefined): boolean {
+  return isShellableClusterKind(kind) || kind === 'Service';
+}
+
 /** Short resource name from composite `cluster/namespace/name` discovery ids. */
 export function clusterResourceName(workloadName: string): string {
   return workloadName.split('/').pop() ?? workloadName;

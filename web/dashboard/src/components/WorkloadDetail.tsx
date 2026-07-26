@@ -9,7 +9,7 @@ import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
-import { pickExecPodName, isShellableClusterKind as kindSupportsShell, buildKubectlCommands } from '../utils/clusterExec';
+import { pickExecPodName, isShellableClusterKind as kindSupportsShell, buildKubectlCommands, isRolloutClusterKind, canPortForwardClusterKind } from '../utils/clusterExec';
 import LogViewer from './LogViewer';
 import FixItPanel, { type FixAction } from './FixItPanel';
 import ApplicationTopology from './ApplicationTopology';
@@ -19,9 +19,23 @@ import BarChart from './BarChart';
 import RadarChart from './RadarChart';
 import IntentDebugger from './IntentDebugger';
 import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
-import type { ClusterRelatedEvent, ClusterResourceDetail, ClusterTopMetric, Event, ScoringResult, WorkloadResponse } from '../types/api';
+import type {
+  ClusterHealthSummary,
+  ClusterPortForwardSession,
+  ClusterRelatedEvent,
+  ClusterResourceDetail,
+  ClusterRolloutStatus,
+  ClusterTopMetric,
+  Event,
+  ScoringResult,
+  WorkloadResponse,
+} from '../types/api';
 
 export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust' | 'topology';
+
+function toast(message: string, type: 'success' | 'error') {
+  window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+}
 
 interface WorkloadDetailProps {
   workload: WorkloadResponse;
@@ -155,6 +169,14 @@ export default function WorkloadDetail({
   const [copiedCmd, setCopiedCmd] = useState('');
   const [clusterEvents, setClusterEvents] = useState<ClusterRelatedEvent[]>([]);
   const [clusterMetrics, setClusterMetrics] = useState<ClusterTopMetric[]>([]);
+  const [clusterHealth, setClusterHealth] = useState<ClusterHealthSummary | null>(null);
+  const [rollout, setRollout] = useState<ClusterRolloutStatus | null>(null);
+  const [portForwardPod, setPortForwardPod] = useState('');
+  const [portForwardRemotePort, setPortForwardRemotePort] = useState('8080');
+  const [portForwardLocalPort, setPortForwardLocalPort] = useState('');
+  const [portForwardSession, setPortForwardSession] = useState<ClusterPortForwardSession | null>(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [yamlCopied, setYamlCopied] = useState(false);
   const shellSocketRef = useRef<WebSocket | null>(null);
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
   const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
@@ -216,7 +238,20 @@ export default function WorkloadDetail({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.tagName === 'SELECT') return;
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+        return;
+      }
+      if (e.key === 's' && showShell && !shellOpen) {
+        e.preventDefault();
+        setShellOutput('');
+        setShellPod('');
+        setShellContainer('');
+        setShellOpen(true);
+        return;
+      }
       const shortcuts: Record<string, DetailTab> = {
         '1': 'overview',
         '2': 'logs',
@@ -227,6 +262,8 @@ export default function WorkloadDetail({
         l: 'logs',
         m: 'manifest',
         d: 'drift',
+        e: 'events',
+        o: 'overview',
       };
       const tab = shortcuts[e.key];
       if (tab) {
@@ -236,7 +273,7 @@ export default function WorkloadDetail({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [showShell, shellOpen]);
 
   useEffect(() => {
     if (activeTab === 'drift' && isAetherManaged) {
@@ -414,18 +451,42 @@ export default function WorkloadDetail({
     }
     let cancelled = false;
     const base = `cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`;
-    void Promise.all([
+    const fetches: Array<Promise<unknown>> = [
       apiFetch<ClusterRelatedEvent[]>(`/cluster/events?${base}`),
       apiFetch<ClusterTopMetric[]>(`/cluster/top?${base}`),
-    ]).then(([events, metrics]) => {
+      apiFetch<ClusterHealthSummary>(`/cluster/health?${base}`),
+    ];
+    if (isRolloutClusterKind(workload.kind)) {
+      fetches.push(apiFetch<ClusterRolloutStatus>(`/cluster/rollout?${base}`));
+    }
+    void Promise.all(fetches).then((results) => {
       if (cancelled) return;
-      setClusterEvents((events ?? []).slice(0, 8));
-      setClusterMetrics(metrics ?? []);
+      setClusterEvents(((results[0] as ClusterRelatedEvent[] | null) ?? []).slice(0, 8));
+      setClusterMetrics((results[1] as ClusterTopMetric[] | null) ?? []);
+      setClusterHealth((results[2] as ClusterHealthSummary | null) ?? null);
+      if (isRolloutClusterKind(workload.kind)) {
+        setRollout((results[3] as ClusterRolloutStatus | null) ?? null);
+      } else {
+        setRollout(null);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [activeTab, isAetherManaged, workload.cluster, workload.namespace, workload.kind, clusterResourceName]);
+
+  // Prefill port-forward target when pods load.
+  useEffect(() => {
+    if (!clusterDetail?.pods?.length) return;
+    setPortForwardPod((current) => {
+      if (current && clusterDetail.pods.some((pod) => pod.name === current)) return current;
+      return pickExecPodName(
+        workload.kind ?? undefined,
+        clusterResourceName,
+        clusterDetail.pods.map((pod) => ({ name: pod.name, phase: pod.phase })),
+      );
+    });
+  }, [clusterDetail, clusterResourceName, workload.kind]);
 
   const logContainers = (() => {
     if (!clusterDetail?.pods?.length) return [] as string[];
@@ -500,6 +561,104 @@ export default function WorkloadDetail({
     }
   };
 
+  async function handlePortForwardStart() {
+    if (!workload.cluster || !workload.namespace || !canMutate) return;
+    const isService = workload.kind === 'Service';
+    const target = isService ? clusterResourceName : portForwardPod;
+    if (!target) return;
+    setActionLoading('port-forward');
+    const response = await apiPost<ClusterPortForwardSession>('/cluster/port-forward', {
+      cluster: workload.cluster,
+      namespace: workload.namespace,
+      target_kind: isService ? 'Service' : 'Pod',
+      target_name: target,
+      pod: isService ? undefined : target,
+      remote_port: Number.parseInt(portForwardRemotePort, 10),
+      local_port: portForwardLocalPort ? Number.parseInt(portForwardLocalPort, 10) : undefined,
+    });
+    setActionLoading('');
+    if (!response.success || !response.data) {
+      toast(`Port-forward failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    setPortForwardSession(response.data);
+    setPortForwardLocalPort(String(response.data.local_port));
+    toast(`Forwarding to ${response.data.local_url}`, 'success');
+  }
+
+  async function handlePortForwardStop() {
+    if (!portForwardSession) return;
+    setActionLoading('port-forward-stop');
+    const response = await apiPost<string>('/cluster/port-forward/stop', {
+      session_id: portForwardSession.session_id,
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`Stop failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    setPortForwardSession(null);
+    toast('Port-forward stopped', 'success');
+  }
+
+  async function handleRolloutAction(action: 'pause' | 'resume' | 'undo' | 'restart') {
+    if (!workload.cluster || !workload.namespace || !workload.kind || !canMutate) return;
+    setActionLoading(`rollout-${action}`);
+    const response = await apiPost<string>('/cluster/rollout/action', {
+      cluster: workload.cluster,
+      namespace: workload.namespace,
+      kind: workload.kind,
+      name: clusterResourceName,
+      action,
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`Rollout ${action} failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    toast(`Rollout ${action} triggered`, 'success');
+    onAction();
+    const base = `cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`;
+    const next = await apiFetch<ClusterRolloutStatus>(`/cluster/rollout?${base}`);
+    if (next) setRollout(next);
+  }
+
+  function manifestYamlText(): string {
+    if (!clusterDetail?.manifest) return '';
+    try {
+      return JSON.stringify(clusterDetail.manifest, null, 2);
+    } catch {
+      return '';
+    }
+  }
+
+  async function copyManifestYaml() {
+    const text = manifestYamlText();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setYamlCopied(true);
+      window.setTimeout(() => setYamlCopied(false), 1500);
+      toast('Manifest copied', 'success');
+    } catch {
+      toast('Clipboard unavailable', 'error');
+    }
+  }
+
+  function downloadManifestYaml() {
+    const text = manifestYamlText();
+    if (!text) return;
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${clusterResourceName}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
   const tabs: { id: DetailTab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'logs', label: 'Logs' },
@@ -565,9 +724,32 @@ export default function WorkloadDetail({
             )}
           </div>
           <Badge text={workload.status} variant={getStatusVariant(workload.status)} />
+          {!isAetherManaged && clusterHealth ? (
+            <Badge
+              text={`health: ${clusterHealth.level}`}
+              variant={
+                clusterHealth.level === 'healthy' || clusterHealth.level === 'ok'
+                  ? 'green'
+                  : clusterHealth.level === 'warning' || clusterHealth.level === 'degraded'
+                    ? 'yellow'
+                    : clusterHealth.level === 'critical' || clusterHealth.level === 'unhealthy'
+                      ? 'red'
+                      : 'muted'
+              }
+            />
+          ) : null}
           <span className="text-sm text-slate-400">{workload.runtime}</span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowShortcuts((v) => !v)}
+            className="btn-secondary px-2.5 py-1 text-xs"
+            title="Keyboard shortcuts (?)"
+            data-testid="workload-shortcuts-toggle"
+          >
+            ?
+          </button>
           <button
             type="button"
             onClick={() => void copyShareLink()}
@@ -580,6 +762,15 @@ export default function WorkloadDetail({
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close">&times;</button>
         </div>
       </div>
+
+      {showShortcuts ? (
+        <div className="px-4 py-2 text-xs text-slate-400 glass-divider-b glass-inset-surface" data-testid="workload-shortcuts-hint">
+          <span className="text-slate-300">Shortcuts:</span>{' '}
+          <kbd className="text-slate-300">1–6</kbd> tabs · <kbd className="text-slate-300">l</kbd> logs ·{' '}
+          <kbd className="text-slate-300">e</kbd> events · <kbd className="text-slate-300">o</kbd> overview ·{' '}
+          <kbd className="text-slate-300">s</kbd> shell · <kbd className="text-slate-300">?</kbd> toggle
+        </div>
+      ) : null}
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 px-4 py-3 glass-divider-b">
@@ -723,7 +914,30 @@ export default function WorkloadDetail({
               {workload.namespace && <div><span className="text-slate-500">Namespace</span><p className="text-white">{workload.namespace}</p></div>}
               {workload.kind && <div><span className="text-slate-500">Kind</span><p className="text-white">{workload.kind}</p></div>}
               <div><span className="text-slate-500">Source</span><p className="text-white capitalize">{workload.source ?? 'aether'}</p></div>
+              {!isAetherManaged && clusterHealth ? (
+                <div className="col-span-2" data-testid="workload-health-summary">
+                  <span className="text-slate-500">Cluster health</span>
+                  <p className="text-white">
+                    {clusterHealth.summary}{' '}
+                    <span className="text-slate-400">
+                      ({clusterHealth.ready_pods}/{clusterHealth.total_pods} ready
+                      {clusterHealth.warning_events > 0 ? ` · ${clusterHealth.warning_events} warnings` : ''})
+                    </span>
+                  </p>
+                </div>
+              ) : null}
             </div>
+
+            {!isAetherManaged && clusterDetail ? (
+              <div className="mt-3 flex flex-wrap gap-2" data-testid="workload-manifest-export">
+                <button type="button" onClick={() => void copyManifestYaml()} className="btn-secondary !px-3 !py-1.5 !text-xs">
+                  {yamlCopied ? 'Copied JSON' : 'Copy manifest JSON'}
+                </button>
+                <button type="button" onClick={downloadManifestYaml} className="btn-secondary !px-3 !py-1.5 !text-xs">
+                  Download JSON
+                </button>
+              </div>
+            ) : null}
 
             {!isAetherManaged && clusterDetail && clusterDetail.pods.length > 0 ? (
               <div className="mt-4" data-testid="workload-pod-info">
@@ -804,6 +1018,110 @@ export default function WorkloadDetail({
                       ))}
                     </div>
                   </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!isAetherManaged && isRolloutClusterKind(workload.kind) ? (
+              <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-rollout">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Rollout</h4>
+                  {rollout ? (
+                    <span className="text-xs text-slate-400">{rollout.status || 'unknown'}</span>
+                  ) : (
+                    <span className="text-xs text-slate-600">Loading…</span>
+                  )}
+                </div>
+                {canMutate ? (
+                  <div className="flex flex-wrap gap-2">
+                    {(['restart', 'undo', 'pause', 'resume'] as const).map((action) => (
+                      <button
+                        key={action}
+                        type="button"
+                        onClick={() => void handleRolloutAction(action)}
+                        disabled={!!actionLoading}
+                        className="btn-secondary !px-3 !py-1.5 !text-xs capitalize disabled:opacity-50"
+                        data-testid={`workload-rollout-${action}`}
+                      >
+                        {actionLoading === `rollout-${action}` ? '...' : action}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {rollout && rollout.history.length > 0 ? (
+                  <div className="mt-3 max-h-28 overflow-auto text-xs">
+                    {rollout.history.slice(0, 5).map((rev) => (
+                      <div key={rev.revision} className="flex gap-2 glass-divider-t py-1 text-slate-400">
+                        <span className="font-mono text-slate-300">#{rev.revision}</span>
+                        <span className="truncate">{rev.change_cause || '—'}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!isAetherManaged && canMutate && canPortForwardClusterKind(workload.kind) && (workload.kind === 'Service' || (clusterDetail?.pods.length ?? 0) > 0 || portForwardPod) ? (
+              <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-port-forward">
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Port forward</h4>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+                  <select
+                    value={workload.kind === 'Service' ? clusterResourceName : portForwardPod}
+                    onChange={(e) => setPortForwardPod(e.target.value)}
+                    disabled={workload.kind === 'Service' || !!portForwardSession}
+                    className="glass-select text-xs disabled:opacity-60"
+                    data-testid="workload-pf-pod"
+                  >
+                    {(workload.kind === 'Service'
+                      ? [clusterResourceName]
+                      : (clusterDetail?.pods.map((p) => p.name) ?? (portForwardPod ? [portForwardPod] : []))
+                    ).map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    value={portForwardRemotePort}
+                    onChange={(e) => setPortForwardRemotePort(e.target.value)}
+                    className="glass-input text-xs"
+                    placeholder="Remote port"
+                    data-testid="workload-pf-remote"
+                    disabled={!!portForwardSession}
+                  />
+                  <input
+                    type="number"
+                    value={portForwardLocalPort}
+                    onChange={(e) => setPortForwardLocalPort(e.target.value)}
+                    className="glass-input text-xs"
+                    placeholder="Local (optional)"
+                    data-testid="workload-pf-local"
+                    disabled={!!portForwardSession}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handlePortForwardStart()}
+                      disabled={!!portForwardSession || !!actionLoading || (!portForwardPod && workload.kind !== 'Service')}
+                      className="flex-1 rounded-lg border border-blue-700/40 bg-blue-900/20 px-2 py-1.5 text-xs text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
+                      data-testid="workload-pf-start"
+                    >
+                      {actionLoading === 'port-forward' ? '...' : 'Start'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handlePortForwardStop()}
+                      disabled={!portForwardSession || !!actionLoading}
+                      className="flex-1 btn-secondary !px-2 !py-1.5 !text-xs disabled:opacity-50"
+                      data-testid="workload-pf-stop"
+                    >
+                      {actionLoading === 'port-forward-stop' ? '...' : 'Stop'}
+                    </button>
+                  </div>
+                </div>
+                {portForwardSession ? (
+                  <p className="mt-2 text-xs text-emerald-300" data-testid="workload-pf-active">
+                    Active: {portForwardSession.local_url} → {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
+                  </p>
                 ) : null}
               </div>
             ) : null}
