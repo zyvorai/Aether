@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star } from 'lucide-react';
+import { Play, Square, ArrowRightLeft, Trash2, FileText, Cpu, Search, ClipboardCheck, RefreshCw, Inbox, Hammer, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam, pathWithQuery } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -23,6 +23,7 @@ import {
 } from '../../utils/workloadFilters';
 import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../../utils/clusterExec';
 import { getPinnedWorkloads, togglePinnedWorkload } from '../../utils/pinnedWorkloads';
+import { downloadTextFile, workloadsToCsv } from '../../utils/workloadCsv';
 import { formatRelativeTime, formatTimestamp } from '../../utils/formatters';
 import Badge, { RuntimeBadge } from '../Badge';
 import StatCard from '../StatCard';
@@ -556,6 +557,25 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     return ap - bp;
   });
 
+  function exportFilteredCsv() {
+    const csv = workloadsToCsv(
+      displayWorkloads.map((w) => ({
+        name: w.name,
+        kind: w.kind,
+        runtime: w.runtime,
+        image: w.image,
+        status: w.status,
+        cluster: w.cluster,
+        namespace: w.namespace,
+        source: w.source,
+        created_at: w.created_at,
+      })),
+    );
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    downloadTextFile(`aether-workloads-${stamp}.csv`, csv);
+    toast(`Exported ${displayWorkloads.length} workload(s)`, 'success');
+  }
+
   const aetherManagedCount = countAetherManaged(workloads);
   const clusterDiscoveredCount = workloads.length - aetherManagedCount;
   const runningCount = workloads.filter((w) => {
@@ -614,7 +634,18 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           </>
         }
         actions={
-          canMutate ? (
+          <>
+            <button
+              type="button"
+              data-testid="workloads-export-csv"
+              onClick={exportFilteredCsv}
+              className="btn-secondary inline-flex items-center gap-2"
+              title="Export filtered workloads as CSV"
+            >
+              <Download size={16} />
+              Export CSV
+            </button>
+            {canMutate ? (
           <>
             <button
               type="button"
@@ -635,7 +666,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               Validate
             </button>
           </>
-          ) : null
+          ) : null}
+          </>
         }
       />
 
@@ -664,6 +696,33 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           })}
         </div>
       ) : null}
+
+      <div className="mb-4 flex flex-wrap gap-1.5" data-testid="workloads-status-chips">
+        {(
+          [
+            { id: 'all', label: 'All statuses', count: workloads.length },
+            { id: 'running', label: 'Running', count: runningCount },
+            { id: 'stopped', label: 'Stopped', count: stoppedCount },
+          ] as const
+        ).map((chip) => {
+          const active = statusFilter === chip.id;
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => setStatusFilter(chip.id)}
+              className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                active
+                  ? 'bg-aether/20 text-aether border border-aether/40'
+                  : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
+              }`}
+            >
+              {chip.label}
+              <span className="ml-1 opacity-70">{chip.count}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {workloadParam.trim() && !selectedWorkload ? (
         <WorkloadContextBanner

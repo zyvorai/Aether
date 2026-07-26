@@ -560,17 +560,24 @@ export default function WorkloadDetail({
           onClose();
         }
       } else if (workload.cluster && workload.namespace && workload.kind) {
-        const replicas = action === 'scale' ? Number.parseInt(replicasInput, 10) : undefined;
+        const scaleReplicas = action === 'scale'
+          ? (typeof replicas === 'number' && Number.isFinite(replicas)
+            ? replicas
+            : Number.parseInt(replicasInput, 10))
+          : undefined;
         const response = await apiPost<string>('/cluster/action', {
           cluster: workload.cluster,
           namespace: workload.namespace,
           kind: workload.kind,
           name: clusterResourceName,
           action,
-          replicas: Number.isFinite(replicas) ? replicas : undefined,
+          replicas: Number.isFinite(scaleReplicas) ? scaleReplicas : undefined,
         });
         if (!response.success) {
           throw new Error(response.error ?? `cluster action ${action} failed`);
+        }
+        if (action === 'scale' && typeof scaleReplicas === 'number' && Number.isFinite(scaleReplicas)) {
+          setReplicasInput(String(scaleReplicas));
         }
         if (action === 'delete') {
           onClose();
@@ -950,13 +957,43 @@ export default function WorkloadDetail({
                     <>
                       <div>
                         <label className="mb-1 block text-xs text-slate-500">Replicas</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={replicasInput}
-                          onChange={(e) => setReplicasInput(e.target.value)}
-                          className="w-24 rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-white"
-                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.max(0, (Number.parseInt(replicasInput, 10) || 0) - 1);
+                              setReplicasInput(String(next));
+                              void handleAction('scale', next);
+                            }}
+                            disabled={!!actionLoading}
+                            className="rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
+                            title="Scale down by 1"
+                            data-testid="workload-scale-down"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min={0}
+                            value={replicasInput}
+                            onChange={(e) => setReplicasInput(e.target.value)}
+                            className="w-16 rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-white text-center"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.max(0, (Number.parseInt(replicasInput, 10) || 0) + 1);
+                              setReplicasInput(String(next));
+                              void handleAction('scale', next);
+                            }}
+                            disabled={!!actionLoading}
+                            className="rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
+                            title="Scale up by 1"
+                            data-testid="workload-scale-up"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                       <button
                         onClick={() => handleAction('scale')}
@@ -967,6 +1004,30 @@ export default function WorkloadDetail({
                       </button>
                     </>
                   )}
+                  <Link
+                    to={pathWithQuery(viewToPath('copilot'), {
+                      workload: workload.name,
+                      q: `Diagnose ${workload.kind ?? 'workload'} ${clusterResourceName} in ${workload.namespace ?? 'default'}`,
+                    })}
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-violet-600/20 text-violet-300 hover:bg-violet-600/30 border border-violet-600/30 transition-colors"
+                    data-testid="workload-diagnose-link"
+                  >
+                    Diagnose
+                  </Link>
+                  {workload.cluster && workload.kind ? (
+                    <Link
+                      to={pathWithQuery(viewToPath('clusters'), {
+                        cluster: workload.cluster,
+                        namespace: workload.namespace ?? undefined,
+                        kind: workload.kind,
+                        workload: workload.name,
+                      })}
+                      className="px-3 py-1.5 text-sm font-medium rounded glass-inset-surface text-slate-300 hover:bg-white/[0.08] border glass-divider transition-colors"
+                      data-testid="workload-open-clusters-link"
+                    >
+                      Open in Clusters
+                    </Link>
+                  ) : null}
                   <button
                     onClick={() => handleAction('delete')}
                     disabled={!!actionLoading}
@@ -1026,9 +1087,7 @@ export default function WorkloadDetail({
                         <th className="px-3 py-2 font-medium">Restarts</th>
                         <th className="px-3 py-2 font-medium">Containers</th>
                         <th className="px-3 py-2 font-medium">Node</th>
-                        {canMutate && workload.kind !== 'Pod' ? (
-                          <th className="px-3 py-2 font-medium" aria-label="Pod actions" />
-                        ) : null}
+                        <th className="px-3 py-2 font-medium" aria-label="Pod actions" />
                       </tr>
                     </thead>
                     <tbody>
@@ -1037,30 +1096,109 @@ export default function WorkloadDetail({
                           <td className="px-3 py-2 font-mono text-slate-200">{pod.name}</td>
                           <td className="px-3 py-2 text-slate-300">{pod.phase}</td>
                           <td className="px-3 py-2 text-slate-300">{pod.ready}/{pod.total_containers}</td>
-                          <td className="px-3 py-2 text-slate-300">{pod.restarts}</td>
+                          <td className={`px-3 py-2 ${pod.restarts > 5 ? 'text-amber-400 font-medium' : 'text-slate-300'}`}>{pod.restarts}</td>
                           <td className="px-3 py-2 text-slate-400 truncate max-w-[10rem]" title={(pod.containers ?? []).join(', ')}>
                             {(pod.containers ?? []).join(', ') || '—'}
                           </td>
                           <td className="px-3 py-2 text-slate-400">{pod.node ?? '—'}</td>
-                          {canMutate && workload.kind !== 'Pod' ? (
-                            <td className="px-3 py-2 text-right">
+                          <td className="px-3 py-2 text-right whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void navigator.clipboard.writeText(pod.name);
+                                toast(`Copied ${pod.name}`, 'success');
+                              }}
+                              className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-200"
+                              title="Copy pod name"
+                            >
+                              Copy
+                            </button>
+                            {canShellDiscovered ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShellOutput('');
+                                  setShellContainer('');
+                                  setShellPod(pod.name);
+                                  setShellOpen(true);
+                                }}
+                                className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400"
+                                title="Shell into this pod"
+                                data-testid={`workload-pod-shell-${pod.name}`}
+                              >
+                                Shell
+                              </button>
+                            ) : null}
+                            {canMutate && workload.kind !== 'Pod' ? (
                               <button
                                 type="button"
                                 onClick={() => void handleDeletePod(pod.name)}
                                 disabled={!!actionLoading}
-                                className="rounded px-2 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                                className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                                 title="Delete pod (controller recreates it)"
                                 data-testid={`workload-pod-delete-${pod.name}`}
                               >
                                 {actionLoading === `delete-pod-${pod.name}` ? '...' : 'Recycle'}
                               </button>
-                            </td>
-                          ) : null}
+                            ) : null}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+              </div>
+            ) : null}
+
+            {!isAetherManaged && clusterDetail && clusterDetail.conditions.length > 0 ? (
+              <div className="mt-4" data-testid="workload-conditions">
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Conditions</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {clusterDetail.conditions.map((condition) => (
+                    <span
+                      key={`${condition.type_}:${condition.reason ?? 'none'}`}
+                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] ${
+                        condition.status === 'True'
+                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                          : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                      }`}
+                      title={[condition.reason, condition.message].filter(Boolean).join(' — ')}
+                    >
+                      {condition.type_}
+                      <span className="opacity-70">{condition.status}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {!isAetherManaged && clusterDetail && ((clusterDetail.owner_references?.length ?? 0) > 0 || (clusterDetail.owned_resources?.length ?? 0) > 0) ? (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2" data-testid="workload-ownership">
+                {(clusterDetail.owner_references?.length ?? 0) > 0 ? (
+                  <div>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Owned by</h4>
+                    <ul className="space-y-1 text-xs text-slate-300">
+                      {clusterDetail.owner_references!.map((owner) => (
+                        <li key={`${owner.kind}/${owner.name}`} className="font-mono">
+                          {owner.kind}/{owner.name}
+                          {owner.controller ? <span className="ml-1 text-slate-500">(controller)</span> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {(clusterDetail.owned_resources?.length ?? 0) > 0 ? (
+                  <div>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Owns</h4>
+                    <ul className="max-h-28 space-y-1 overflow-auto text-xs text-slate-300">
+                      {clusterDetail.owned_resources!.slice(0, 12).map((child) => (
+                        <li key={`${child.kind}/${child.name}`} className="font-mono">
+                          {child.kind}/{child.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
