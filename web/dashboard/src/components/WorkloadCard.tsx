@@ -59,7 +59,9 @@ export default function WorkloadCard({
   const discovered = !isAetherManaged(workload);
   const locationLabel = [workload.cluster, workload.namespace].filter(Boolean).join('/');
   const showLogs = !discovered || hasClusterLogs(workload.kind);
-  const showShell = discovered ? canMutate && isShellableClusterKind(workload.kind) : canMutate;
+  const shellable = discovered ? isShellableClusterKind(workload.kind) : true;
+  const showShell = shellable && canMutate;
+  const showShellDenied = shellable && !canMutate;
   const variant = statusVariant(workload.status);
   const running = variant === 'green';
   const KindIcon = kindGlyph(workload.kind ?? undefined);
@@ -192,8 +194,19 @@ export default function WorkloadCard({
               type="button"
               onClick={() => onOpen('overview', true)}
               className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-emerald-500/15 hover:text-emerald-200"
-              title="Shell / exec"
+              title="Exec into pod"
               data-testid={`workload-card-shell-${shortName}`}
+            >
+              <Terminal size={13} />
+              Exec
+            </button>
+          ) : showShellDenied ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600"
+              title="Exec requires Operator or Admin role"
+              data-testid={`workload-card-shell-denied-${shortName}`}
             >
               <Terminal size={13} />
               Exec

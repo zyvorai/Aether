@@ -8,6 +8,8 @@ export const SHELLABLE_CLUSTER_KINDS = [
   'Deployment',
   'StatefulSet',
   'DaemonSet',
+  'Job',
+  'CronJob',
   'VirtualMachine',
   'VirtualMachineInstance',
 ] as const;
@@ -53,6 +55,12 @@ export function clusterResourceName(workloadName: string): string {
   return workloadName.split('/').pop() ?? workloadName;
 }
 
+/** Phases that can accept kubectl exec (interactive shell). */
+export function isExecReadyPhase(phase: string | null | undefined): boolean {
+  const normalized = (phase ?? '').trim().toLowerCase();
+  return normalized === 'running';
+}
+
 /** Pick a Running pod when available, otherwise the first related pod. */
 export function pickExecPodName(
   kind: string | undefined,
@@ -60,8 +68,47 @@ export function pickExecPodName(
   pods: Array<{ name: string; phase: string }>,
 ): string {
   if (kind === 'Pod') return resourceName;
-  const running = pods.find((pod) => pod.phase === 'Running');
+  const running = pods.find((pod) => isExecReadyPhase(pod.phase));
   return running?.name ?? pods[0]?.name ?? '';
+}
+
+/**
+ * Prefer a pod that can actually accept exec. Returns empty when none are Ready
+ * (e.g. Job pods that are Succeeded/Failed).
+ */
+export function pickExecReadyPodName(
+  kind: string | undefined,
+  resourceName: string,
+  pods: Array<{ name: string; phase: string }>,
+): string {
+  if (kind === 'Pod') {
+    if (pods.length === 0) return resourceName;
+    const self = pods.find((pod) => pod.name === resourceName) ?? pods[0];
+    if (!self) return resourceName;
+    const phase = (self.phase ?? '').trim().toLowerCase();
+    // Allow Unknown when pod detail could not be fully resolved (still try exec).
+    if (phase === 'running' || phase === 'unknown' || phase === '') return self.name;
+    return '';
+  }
+  return pods.find((pod) => isExecReadyPhase(pod.phase))?.name ?? '';
+}
+
+/** Honest message when Workloads Exec cannot open a live shell. */
+export function execUnavailableMessage(
+  kind: string | null | undefined,
+  pods: Array<{ name: string; phase: string }>,
+): string {
+  if (pods.length === 0) {
+    if (kind === 'Job' || kind === 'CronJob') {
+      return '[aether] No pods found for this job. Open Logs for completed run output.\n';
+    }
+    if (kind === 'VirtualMachine' || kind === 'VirtualMachineInstance') {
+      return '[aether] No pod available to exec into. Ensure the virt-launcher pod is running.\n';
+    }
+    return '[aether] No pod available to exec into.\n';
+  }
+  const phases = [...new Set(pods.map((pod) => pod.phase || 'Unknown'))].join(', ');
+  return `[aether] No Running pod to exec into (found: ${phases}). Use Logs for completed containers.\n`;
 }
 
 export interface KubectlCommand {

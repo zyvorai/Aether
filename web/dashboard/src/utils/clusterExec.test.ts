@@ -6,11 +6,14 @@ import { describe, expect, it } from 'vitest';
 import {
   buildKubectlCommands,
   clusterResourceName,
+  execUnavailableMessage,
   hasClusterLogs,
+  isExecReadyPhase,
   isRolloutClusterKind,
   isShellableClusterKind,
   canPortForwardClusterKind,
   pickExecPodName,
+  pickExecReadyPodName,
 } from './clusterExec';
 
 describe('pickExecPodName', () => {
@@ -41,6 +44,39 @@ describe('pickExecPodName', () => {
   });
 });
 
+describe('pickExecReadyPodName', () => {
+  it('only returns Running pods for Jobs and Deployments', () => {
+    expect(
+      pickExecReadyPodName('Job', 'batch', [
+        { name: 'batch-1', phase: 'Succeeded' },
+        { name: 'batch-2', phase: 'Failed' },
+      ]),
+    ).toBe('');
+    expect(
+      pickExecReadyPodName('Job', 'batch', [
+        { name: 'batch-1', phase: 'Succeeded' },
+        { name: 'batch-2', phase: 'Running' },
+      ]),
+    ).toBe('batch-2');
+  });
+
+  it('rejects completed Pods but allows Unknown detail gaps', () => {
+    expect(pickExecReadyPodName('Pod', 'nginx', [{ name: 'nginx', phase: 'Succeeded' }])).toBe('');
+    expect(pickExecReadyPodName('Pod', 'nginx', [{ name: 'nginx', phase: 'Unknown' }])).toBe('nginx');
+  });
+});
+
+describe('execUnavailableMessage', () => {
+  it('points Jobs at Logs when pods are terminal', () => {
+    expect(isExecReadyPhase('Succeeded')).toBe(false);
+    expect(isExecReadyPhase('Running')).toBe(true);
+    expect(
+      execUnavailableMessage('Job', [{ name: 'j-1', phase: 'Succeeded' }]),
+    ).toContain('No Running pod');
+    expect(execUnavailableMessage('Job', [])).toContain('Open Logs');
+  });
+});
+
 describe('clusterExec helpers', () => {
   it('strips composite discovery names', () => {
     expect(clusterResourceName('active-client/default/playwright-nginx')).toBe('playwright-nginx');
@@ -48,7 +84,9 @@ describe('clusterExec helpers', () => {
 
   it('identifies shellable and loggable kinds', () => {
     expect(isShellableClusterKind('Pod')).toBe(true);
-    expect(isShellableClusterKind('Job')).toBe(false);
+    expect(isShellableClusterKind('Job')).toBe(true);
+    expect(isShellableClusterKind('CronJob')).toBe(true);
+    expect(isShellableClusterKind('ConfigMap')).toBe(false);
     expect(hasClusterLogs('Job')).toBe(true);
     expect(hasClusterLogs('ConfigMap')).toBe(false);
     expect(isRolloutClusterKind('Deployment')).toBe(true);

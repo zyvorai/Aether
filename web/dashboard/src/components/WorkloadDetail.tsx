@@ -9,7 +9,17 @@ import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
-import { pickExecPodName, isShellableClusterKind as kindSupportsShell, buildKubectlCommands, isRolloutClusterKind, canPortForwardClusterKind } from '../utils/clusterExec';
+import {
+  pickExecPodName,
+  pickExecReadyPodName,
+  isExecReadyPhase,
+  execUnavailableMessage,
+  isShellableClusterKind as kindSupportsShell,
+  buildKubectlCommands,
+  isRolloutClusterKind,
+  canPortForwardClusterKind,
+} from '../utils/clusterExec';
+import ExecTerminal, { type ExecTerminalHandle } from './ExecTerminal';
 import {
   distinctPodImages,
   entriesSorted,
@@ -151,13 +161,15 @@ export default function WorkloadDetail({
   });
   const isScalableClusterWorkload = !isAetherManaged && ['Deployment', 'StatefulSet'].includes(workload.kind ?? '');
   const clusterResourceName = workload.name.split('/').pop() ?? workload.name;
-  const canShellDiscovered =
+  const shellableDiscovered =
     !isAetherManaged
-    && canMutate
     && Boolean(workload.cluster && workload.namespace && workload.kind)
     && kindSupportsShell(workload.kind);
+  const canShellDiscovered = shellableDiscovered && canMutate;
   const canShellManaged = isAetherManaged && canMutate;
   const showShell = canShellDiscovered || canShellManaged;
+  /** Kind supports exec, but role is Viewer (or otherwise cannot mutate). */
+  const execDeniedByRole = !canMutate && (shellableDiscovered || isAetherManaged);
   const clusterLogsPath = !isAetherManaged && workload.cluster && workload.namespace && workload.kind
     ? `/cluster/logs?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`
     : undefined;
@@ -168,14 +180,16 @@ export default function WorkloadDetail({
   const [events, setEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [shellOpen, setShellOpen] = useState(initialShellOpen);
-  const [shellOutput, setShellOutput] = useState('');
-  const [shellInput, setShellInput] = useState('');
   const [shellConnected, setShellConnected] = useState(false);
+  /** User requested an active session; Connect sets this, Disconnect clears it. */
+  const [shellWantConnect, setShellWantConnect] = useState(false);
+  const [shellResolving, setShellResolving] = useState(false);
   const [shellFullscreen, setShellFullscreen] = useState(false);
   const [shellPod, setShellPod] = useState('');
   const [shellPods, setShellPods] = useState<Array<{ name: string; phase: string; containers: string[] }>>([]);
   const [shellContainer, setShellContainer] = useState('');
   const [shellCommand, setShellCommand] = useState('/bin/sh');
+  const [shellStatusMessage, setShellStatusMessage] = useState('');
   const [copiedCmd, setCopiedCmd] = useState('');
   const [clusterEvents, setClusterEvents] = useState<ClusterRelatedEvent[]>([]);
   const [clusterMetrics, setClusterMetrics] = useState<ClusterTopMetric[]>([]);
@@ -191,6 +205,11 @@ export default function WorkloadDetail({
   const [helmRevision, setHelmRevision] = useState('');
   const [opsAutoRefresh, setOpsAutoRefresh] = useState(true);
   const shellSocketRef = useRef<WebSocket | null>(null);
+  const shellTermRef = useRef<ExecTerminalHandle | null>(null);
+  const shellWantConnectRef = useRef(false);
+  const shellPodRef = useRef('');
+  shellWantConnectRef.current = shellWantConnect;
+  shellPodRef.current = shellPod;
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
   const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
   const [scoringError, setScoringError] = useState('');
@@ -222,8 +241,9 @@ export default function WorkloadDetail({
 
   useEffect(() => {
     if (!initialShellOpen) return;
-    setShellOutput('');
+    setShellStatusMessage('');
     setShellPod('');
+    setShellWantConnect(false);
     setShellOpen(true);
   }, [initialShellOpen, workload.name]);
 
@@ -259,9 +279,10 @@ export default function WorkloadDetail({
       }
       if (e.key === 's' && showShell && !shellOpen) {
         e.preventDefault();
-        setShellOutput('');
+        setShellStatusMessage('');
         setShellPod('');
         setShellContainer('');
+        setShellWantConnect(false);
         setShellOpen(true);
         return;
       }
@@ -305,13 +326,14 @@ export default function WorkloadDetail({
     });
   }, [activeTab, workload.name]);
 
-  // Resolve available pods when the shell opens; reconnect when pod/container/command changes.
+  // Resolve available pods when the shell opens; soft-refresh while open.
   useEffect(() => {
     if (!shellOpen || !workload.cluster || !workload.namespace) return;
 
     let cancelled = false;
 
-    async function resolvePods() {
+    async function resolvePods(soft: boolean) {
+      if (!soft) setShellResolving(true);
       let pods: Array<{ name: string; phase: string; containers: string[] }> = [];
       if (canShellDiscovered && workload.kind !== 'Pod' && clusterResourcePath) {
         const detail = await apiFetch<ClusterResourceDetail>(clusterResourcePath);
@@ -344,28 +366,72 @@ export default function WorkloadDetail({
 
       if (cancelled) return;
       setShellPods(pods);
+      if (!soft) setShellResolving(false);
 
-      const preferred = pickExecPodName(
+      const preferred = pickExecReadyPodName(
         workload.kind ?? undefined,
         clusterResourceName,
         pods.map((pod) => ({ name: pod.name, phase: pod.phase })),
       );
+
+      if (soft) {
+        setShellPod((current) => {
+          if (current && pods.some((pod) => pod.name === current)) return current;
+          return preferred || pods[0]?.name || current;
+        });
+        const activePod = shellPodRef.current;
+        if (shellWantConnectRef.current && activePod) {
+          const selected = pods.find((pod) => pod.name === activePod);
+          const stillReady = selected
+            ? isExecReadyPhase(selected.phase)
+              || (workload.kind === 'Pod' && ((selected.phase ?? '').toLowerCase() === 'unknown' || selected.phase === ''))
+            : false;
+          if (!stillReady) {
+            setShellWantConnect(false);
+            setShellConnected(false);
+            shellSocketRef.current?.close();
+            const msg = execUnavailableMessage(
+              workload.kind,
+              pods.map((pod) => ({ name: pod.name, phase: pod.phase })),
+            );
+            setShellStatusMessage(msg);
+            shellTermRef.current?.writeln(msg.trimEnd());
+          }
+        }
+        return;
+      }
+
       if (!preferred) {
-        setShellPod('');
-        setShellOutput(
-          '[aether] No pod available to exec into. For VMs, ensure the virt-launcher pod is running.\n',
+        setShellWantConnect(false);
+        setShellPod(pods[0]?.name ?? '');
+        const msg = execUnavailableMessage(
+          workload.kind,
+          pods.map((pod) => ({ name: pod.name, phase: pod.phase })),
         );
+        setShellStatusMessage(msg);
+        shellTermRef.current?.clear();
+        shellTermRef.current?.write(msg);
         return;
       }
       setShellPod((current) => {
-        if (current && pods.some((pod) => pod.name === current)) return current;
+        if (current && pods.some((pod) => pod.name === current)) {
+          const selected = pods.find((pod) => pod.name === current);
+          if (selected && (isExecReadyPhase(selected.phase) || (workload.kind === 'Pod' && (selected.phase === 'Unknown' || selected.phase === '')))) {
+            return current;
+          }
+        }
         return preferred;
       });
+      setShellWantConnect(true);
+      setShellStatusMessage('');
+      shellTermRef.current?.clear();
     }
 
-    void resolvePods();
+    void resolvePods(false);
+    const interval = window.setInterval(() => void resolvePods(true), 10_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [
     shellOpen,
@@ -375,6 +441,8 @@ export default function WorkloadDetail({
     workload.kind,
     workload.cluster,
     workload.namespace,
+    // intentional: soft refresh reads latest want/pod via closure on each tick start;
+    // omit shellWantConnect/shellPod from deps so interval is not reset every keystroke/connect
   ]);
 
   useEffect(() => {
@@ -387,8 +455,34 @@ export default function WorkloadDetail({
       return; // reconnect after container state settles
     }
 
+    if (!shellWantConnect) {
+      shellSocketRef.current?.close();
+      shellSocketRef.current = null;
+      setShellConnected(false);
+      return;
+    }
+
+    const phaseOk = selected
+      ? isExecReadyPhase(selected.phase)
+        || (workload.kind === 'Pod' && ((selected.phase ?? '').toLowerCase() === 'unknown' || selected.phase === ''))
+        || (!canShellDiscovered && isExecReadyPhase(selected.phase))
+      : !canShellDiscovered;
+    if (!phaseOk) {
+      setShellWantConnect(false);
+      setShellConnected(false);
+      const msg = execUnavailableMessage(
+        workload.kind,
+        shellPods.map((pod) => ({ name: pod.name, phase: pod.phase })),
+      );
+      setShellStatusMessage(msg);
+      shellTermRef.current?.writeln(msg.trimEnd());
+      return;
+    }
+
     let cancelled = false;
     setShellConnected(false);
+    shellTermRef.current?.clear();
+    shellTermRef.current?.writeln(`[aether] Connecting to ${shellPod}…`);
 
     const params = new URLSearchParams({
       cluster: workload.cluster,
@@ -407,26 +501,29 @@ export default function WorkloadDetail({
       socket.onopen = () => {
         if (cancelled) return;
         setShellConnected(true);
+        setShellStatusMessage('');
         const target = shellContainer ? `${shellPod}/${shellContainer}` : shellPod;
-        setShellOutput((prev) => `${prev}[aether] Connected to ${target}\n`);
+        shellTermRef.current?.writeln(`[aether] Connected to ${target}`);
+        shellTermRef.current?.focus();
       };
 
       socket.onmessage = (event) => {
-        setShellOutput((prev) => prev + event.data);
+        const data = typeof event.data === 'string' ? event.data : '';
+        shellTermRef.current?.write(data);
       };
 
       socket.onclose = () => {
         if (cancelled) return;
         setShellConnected(false);
-        setShellOutput((prev) => `${prev}\n[aether] Connection closed\n`);
+        shellTermRef.current?.writeln('\r\n[aether] Connection closed');
       };
 
       socket.onerror = () => {
         if (cancelled) return;
-        setShellOutput((prev) => `${prev}\n[aether] Connection error\n`);
+        shellTermRef.current?.writeln('\r\n[aether] Connection error');
       };
     } catch {
-      setShellOutput('[aether] Failed to connect to shell\n');
+      shellTermRef.current?.writeln('[aether] Failed to connect to exec session');
     }
 
     return () => {
@@ -436,12 +533,15 @@ export default function WorkloadDetail({
     };
   }, [
     shellOpen,
+    shellWantConnect,
     shellPod,
     shellContainer,
     shellCommand,
     shellPods,
+    canShellDiscovered,
     workload.cluster,
     workload.namespace,
+    workload.kind,
   ]);
 
   useEffect(() => {
@@ -562,6 +662,15 @@ export default function WorkloadDetail({
   const servicePorts = clusterDetail && workload.kind === 'Service' ? manifestServicePorts(clusterDetail.manifest) : [];
   const observedImages = clusterDetail ? distinctPodImages(clusterDetail.pods) : [];
   const imageDrift = clusterDetail ? hasImageDrift(clusterDetail.pods) : false;
+  const selectedShellPod = shellPods.find((pod) => pod.name === shellPod);
+  const selectedPodExecReady = (() => {
+    if (!shellPod) return false;
+    if (!selectedShellPod) return !canShellDiscovered;
+    if (isExecReadyPhase(selectedShellPod.phase)) return true;
+    if (!canShellDiscovered) return true;
+    const phase = (selectedShellPod.phase ?? '').toLowerCase();
+    return workload.kind === 'Pod' && (phase === 'unknown' || phase === '');
+  })();
 
   const handleAction = async (action: string, replicas?: number) => {
     setActionLoading(action);
@@ -874,7 +983,7 @@ export default function WorkloadDetail({
           <span className="text-slate-300">Shortcuts:</span>{' '}
           <kbd className="text-slate-300">1–6</kbd> tabs · <kbd className="text-slate-300">l</kbd> logs ·{' '}
           <kbd className="text-slate-300">e</kbd> events · <kbd className="text-slate-300">o</kbd> overview ·{' '}
-          <kbd className="text-slate-300">s</kbd> shell · <kbd className="text-slate-300">?</kbd> toggle
+          <kbd className="text-slate-300">s</kbd> exec · <kbd className="text-slate-300">?</kbd> toggle
         </div>
       ) : null}
 
@@ -910,14 +1019,25 @@ export default function WorkloadDetail({
                   <button
                     data-testid="workload-shell-button"
                     onClick={() => {
-                      setShellOutput('');
+                      setShellStatusMessage('');
                       setShellPod('');
                       setShellContainer('');
+                      setShellWantConnect(false);
                       setShellOpen(true);
                     }}
                     className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
                   >
-                    Shell
+                    Exec
+                  </button>
+                ) : execDeniedByRole ? (
+                  <button
+                    type="button"
+                    data-testid="workload-shell-button-denied"
+                    disabled
+                    title="Exec requires Operator or Admin role"
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-slate-600/20 text-slate-500 border border-slate-600/30 cursor-not-allowed"
+                  >
+                    Exec
                   </button>
                 ) : null}
                 {['start', 'stop', 'restart', 'build', 'rollback', 'delete'].map(action => (
@@ -956,19 +1076,38 @@ export default function WorkloadDetail({
                 <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm text-blue-300">
                   This resource is discovered directly from Kubernetes. Aether can inspect it and execute native cluster actions from this panel.
                 </div>
+                {execDeniedByRole && shellableDiscovered ? (
+                  <div
+                    className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+                    data-testid="workload-exec-rbac-hint"
+                  >
+                    Exec is available for Operator and Admin roles. Your current role is read-only.
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap items-end gap-2">
                   {canShellDiscovered ? (
                     <button
                       data-testid="workload-shell-button"
                       onClick={() => {
-                        setShellOutput('');
+                        setShellStatusMessage('');
                         setShellPod('');
                         setShellContainer('');
+                        setShellWantConnect(false);
                         setShellOpen(true);
                       }}
                       className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
                     >
-                      Shell
+                      Exec
+                    </button>
+                  ) : execDeniedByRole && shellableDiscovered ? (
+                    <button
+                      type="button"
+                      data-testid="workload-shell-button-denied"
+                      disabled
+                      title="Exec requires Operator or Admin role"
+                      className="px-3 py-1.5 text-sm font-medium rounded bg-slate-600/20 text-slate-500 border border-slate-600/30 cursor-not-allowed"
+                    >
+                      Exec
                     </button>
                   ) : null}
                   <button
@@ -1142,16 +1281,17 @@ export default function WorkloadDetail({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setShellOutput('');
+                                  setShellStatusMessage('');
                                   setShellContainer('');
+                                  setShellWantConnect(false);
                                   setShellPod(pod.name);
                                   setShellOpen(true);
                                 }}
                                 className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400"
-                                title="Shell into this pod"
+                                title="Exec into this pod"
                                 data-testid={`workload-pod-shell-${pod.name}`}
                               >
-                                Shell
+                                Exec
                               </button>
                             ) : null}
                             {canMutate && workload.kind !== 'Pod' ? (
@@ -1937,7 +2077,7 @@ export default function WorkloadDetail({
       </div>
     </div>
 
-      {/* Shell Modal - Real WebSocket Terminal */}
+      {/* Exec Modal - xterm WebSocket terminal */}
       {shellOpen && (
         <div className={`fixed inset-0 flex items-center justify-center z-[60] ${shellFullscreen ? 'p-0' : ''}`}>
           <div className="glass-modal-backdrop absolute inset-0" aria-hidden />
@@ -1945,22 +2085,39 @@ export default function WorkloadDetail({
             <div className="flex items-center justify-between glass-divider-b glass-inset-surface px-5 py-3">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="font-medium" data-testid="workload-shell-title">
-                  Shell — {shellPod || workload.name}
+                  Exec — {shellPod || workload.name}
                 </div>
                 <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'glass-inset-surface text-slate-400'}`}>
-                  {shellConnected ? 'Connected' : 'Disconnected'}
+                  {shellConnected ? 'Connected' : shellWantConnect ? 'Connecting…' : 'Disconnected'}
                 </div>
-                {shellPods.length > 1 ? (
+                {shellPods.length > 0 ? (
                   <label className="flex items-center gap-1 text-xs text-slate-400">
                     Pod
                     <select
                       value={shellPod}
                       onChange={(e) => {
-                        setShellOutput('');
+                        const next = e.target.value;
+                        const selected = shellPods.find((pod) => pod.name === next);
                         setShellContainer('');
-                        setShellPod(e.target.value);
+                        setShellPod(next);
+                        const ready = selected
+                          ? isExecReadyPhase(selected.phase)
+                            || (workload.kind === 'Pod' && ((selected.phase ?? '').toLowerCase() === 'unknown' || selected.phase === ''))
+                          : false;
+                        setShellWantConnect(ready);
+                        if (!ready) {
+                          const msg = execUnavailableMessage(
+                            workload.kind,
+                            shellPods.map((pod) => ({ name: pod.name, phase: pod.phase })),
+                          );
+                          setShellStatusMessage(msg);
+                          shellTermRef.current?.clear();
+                          shellTermRef.current?.write(msg);
+                        } else {
+                          setShellStatusMessage('');
+                        }
                       }}
-                      className="glass-input !py-1 !px-2 text-xs max-w-[14rem]"
+                      className="glass-input !py-1 !px-2 text-xs max-w-[16rem]"
                       data-testid="workload-shell-pod-select"
                     >
                       {shellPods.map((pod) => (
@@ -1971,13 +2128,12 @@ export default function WorkloadDetail({
                     </select>
                   </label>
                 ) : null}
-                {(shellPods.find((pod) => pod.name === shellPod)?.containers.length ?? 0) > 1 ? (
+                {(shellPods.find((pod) => pod.name === shellPod)?.containers.length ?? 0) > 0 ? (
                   <label className="flex items-center gap-1 text-xs text-slate-400">
                     Container
                     <select
                       value={shellContainer}
                       onChange={(e) => {
-                        setShellOutput('');
                         setShellContainer(e.target.value);
                       }}
                       className="glass-input !py-1 !px-2 text-xs max-w-[10rem]"
@@ -1989,38 +2145,85 @@ export default function WorkloadDetail({
                     </select>
                   </label>
                 ) : null}
+                <label className="flex items-center gap-1 text-xs text-slate-400">
+                  Shell
+                  <select
+                    className="glass-input !py-1 !px-2 text-xs"
+                    value={shellCommand}
+                    onChange={(e) => {
+                      setShellCommand(e.target.value);
+                    }}
+                    data-testid="workload-shell-command-select"
+                  >
+                    <option value="/bin/sh">/bin/sh</option>
+                    <option value="/bin/bash">/bin/bash</option>
+                  </select>
+                </label>
               </div>
 
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => navigator.clipboard.writeText(shellOutput)}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShellStatusMessage('');
+                    setShellWantConnect(true);
+                  }}
+                  disabled={shellResolving || !shellPod || !selectedPodExecReady}
+                  className="text-xs px-3 py-1 rounded border border-emerald-700 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                  data-testid="workload-shell-connect"
+                >
+                  Connect
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    shellSocketRef.current?.close();
+                    setShellWantConnect(false);
+                    setShellConnected(false);
+                    shellTermRef.current?.writeln('\r\n[aether] Disconnected');
+                  }}
+                  disabled={!shellConnected && !shellWantConnect}
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300 disabled:opacity-50"
+                  data-testid="workload-shell-disconnect"
+                >
+                  Disconnect
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(shellTermRef.current?.getBufferText() ?? '');
+                  }}
                   className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
                 >
                   Copy
                 </button>
-                <button 
-                  onClick={() => setShellOutput('')}
+                <button
+                  type="button"
+                  onClick={() => shellTermRef.current?.clear()}
                   className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
                 >
                   Clear
                 </button>
-                <button 
+                <button
+                  type="button"
                   onClick={() => setShellFullscreen(!shellFullscreen)}
                   className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
                 >
                   {shellFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                 </button>
-                <button 
+                <button
+                  type="button"
                   onClick={() => {
                     shellSocketRef.current?.close();
                     setShellOpen(false);
                     setShellConnected(false);
-                    setShellOutput('');
+                    setShellWantConnect(false);
+                    setShellStatusMessage('');
                     setShellPod('');
                     setShellPods([]);
                     setShellContainer('');
                     setShellFullscreen(false);
-                  }} 
+                  }}
                   className="text-slate-400 hover:text-white text-xl leading-none ml-1"
                 >
                   ×
@@ -2029,58 +2232,40 @@ export default function WorkloadDetail({
             </div>
 
             <div className="p-4">
-              <div 
-                ref={(el) => {
-                  if (el) el.scrollTop = el.scrollHeight;
+              {!shellConnected && !shellWantConnect && /No Running pod|No pods found|No pod available/.test(shellStatusMessage) ? (
+                <div
+                  className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+                  data-testid="workload-shell-empty-state"
+                >
+                  <span>No Running pod for exec.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      shellSocketRef.current?.close();
+                      setShellOpen(false);
+                      setShellWantConnect(false);
+                      setActiveTab('logs');
+                    }}
+                    className="rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/25"
+                    data-testid="workload-shell-open-logs"
+                  >
+                    Open Logs
+                  </button>
+                </div>
+              ) : null}
+              <ExecTerminal
+                ref={shellTermRef}
+                interactive={shellConnected}
+                className={shellFullscreen ? 'glass-code-block-body h-[calc(100vh-7rem)] w-full overflow-hidden p-2 shadow-inner' : undefined}
+                onData={(data) => {
+                  if (shellSocketRef.current?.readyState === WebSocket.OPEN) {
+                    shellSocketRef.current.send(data);
+                  }
                 }}
-                data-testid="workload-shell-output"
-                className="glass-code-block-body h-[420px] overflow-auto whitespace-pre-wrap font-mono text-sm text-emerald-400 shadow-inner"
-              >
-                {shellOutput || (shellPod ? '[aether] Connecting to pod shell...\n' : '[aether] Resolving pod...\n')}
-              </div>
-
-              <div className="mt-4 flex gap-2 items-center">
-                <select 
-                  className="glass-select text-sm text-slate-400"
-                  value={shellCommand}
-                  onChange={(e) => {
-                    setShellOutput('');
-                    setShellCommand(e.target.value);
-                  }}
-                  data-testid="workload-shell-command-select"
-                >
-                  <option value="/bin/sh">/bin/sh</option>
-                  <option value="/bin/bash">/bin/bash</option>
-                </select>
-
-                <input
-                  value={shellInput}
-                  onChange={(e) => setShellInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && shellConnected && shellInput.trim()) {
-                      shellSocketRef.current?.send(shellInput + '\n');
-                      setShellOutput(prev => prev + `$ ${shellInput}\n`);
-                      setShellInput('');
-                    }
-                  }}
-                  className="glass-input flex-1 font-mono text-sm focus:border-emerald-600"
-                  placeholder="Type command and press Enter..."
-                  disabled={!shellConnected}
-                />
-                <button
-                  onClick={() => {
-                    if (shellConnected && shellInput.trim()) {
-                      shellSocketRef.current?.send(shellInput + '\n');
-                      setShellOutput(prev => prev + `$ ${shellInput}\n`);
-                      setShellInput('');
-                    }
-                  }}
-                  disabled={!shellConnected || !shellInput.trim()}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Send
-                </button>
-              </div>
+              />
+              <p className="mt-2 text-[11px] text-slate-500">
+                Type directly in the terminal. Ctrl+C / paste work when connected. Pod list refreshes every 10s.
+              </p>
             </div>
           </div>
         </div>

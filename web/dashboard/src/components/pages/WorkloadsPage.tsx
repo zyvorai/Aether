@@ -1127,7 +1127,12 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 const metaLabel = [w.kind, locationLabel || null].filter(Boolean).join(' · ');
                 const discovered = !isAetherManaged(w);
                 const showLogs = !discovered || hasClusterLogs(w.kind);
-                const showShell = discovered && canMutate && isShellableClusterKind(w.kind);
+                const showShell = discovered
+                  ? canMutate && isShellableClusterKind(w.kind)
+                  : canMutate;
+                const showShellDenied = discovered
+                  ? !canMutate && isShellableClusterKind(w.kind)
+                  : !canMutate;
                 const pinned = pinnedSet.has(w.name);
 
                 return (
@@ -1185,7 +1190,9 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                             <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
                           ) : null}
                           {showShell ? (
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Shell / exec"><Terminal size={14} /></button>
+                            <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Exec into pod"><Terminal size={14} /></button>
+                          ) : showShellDenied ? (
+                            <button type="button" disabled className="p-1.5 text-slate-600 cursor-not-allowed rounded" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
                           ) : null}
                         </>
                       ) : (
