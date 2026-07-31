@@ -43,7 +43,7 @@ export default function FabricPage() {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: workload.trim(), q: `Fabric analysis for ${workload.trim()}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: workload.trim(), q: `Fabric analysis for ${workload.trim()}` })}
             className="text-aether hover:underline"
             data-testid="fabric-context-zeus-link"
           >

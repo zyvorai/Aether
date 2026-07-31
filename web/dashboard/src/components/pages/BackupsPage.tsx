@@ -177,7 +177,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('copilot'), { workload: search.trim(), q: `Backup guidance for ${search.trim()}` })}
+              to={pathWithQuery(viewToPath('zeus'), { workload: search.trim(), q: `Backup guidance for ${search.trim()}` })}
               className="text-aether hover:underline"
               data-testid="backups-context-copilot-link"
             >

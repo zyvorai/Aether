@@ -714,7 +714,7 @@ function LegacyOverviewDetails({
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `Summarize ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `Summarize ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="overview-copilot-link"
           >

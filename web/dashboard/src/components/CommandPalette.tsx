@@ -469,7 +469,10 @@ export default function CommandPalette({
         searchText: `start run ${name}`,
         workloadName: name,
         run: async () => {
-          if (!canMutate) return;
+          if (!canMutate) {
+            paletteToast('Your role cannot start workloads', 'error');
+            return;
+          }
           const res = await apiPost(`/workloads/${name}/start`);
           paletteToast(
             res.success ? `Started "${name}"` : `Start failed: ${res.error ?? 'unknown error'}`,
@@ -510,7 +513,10 @@ export default function CommandPalette({
         searchText: `stop halt ${name}`,
         workloadName: name,
         run: async () => {
-          if (!canMutate) return;
+          if (!canMutate) {
+            paletteToast('Your role cannot stop workloads', 'error');
+            return;
+          }
           const res = await apiPost(`/workloads/${name}/stop`);
           paletteToast(
             res.success ? `Stopped "${name}"` : `Stop failed: ${res.error ?? 'unknown error'}`,

@@ -246,7 +246,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `Fleet guidance for ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `Fleet guidance for ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="fleet-context-copilot-link"
           >

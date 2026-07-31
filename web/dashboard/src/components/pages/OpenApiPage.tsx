@@ -169,7 +169,7 @@ export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `API usage for ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `API usage for ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="openapi-context-copilot-link"
           >

@@ -287,7 +287,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
                   <p className="text-xs text-slate-400">{t.reason}</p>
                   <button
                     type="button"
-                    onClick={() => navigate(pathWithQuery(viewToPath('copilot'), { workload: t.workload, q: `Fix security issue: ${t.reason}` }))}
+                    onClick={() => navigate(pathWithQuery(viewToPath('zeus'), { workload: t.workload, q: `Fix security issue: ${t.reason}` }))}
                     className="mt-2 text-xs text-aether hover:underline"
                   >
                     Fix with Copilot →

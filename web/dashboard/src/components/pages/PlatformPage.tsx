@@ -167,7 +167,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="platform-copilot-link"
           >

@@ -437,7 +437,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: workloadQuery.trim(), q: `Analyze ${workloadQuery.trim()}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: workloadQuery.trim(), q: `Analyze ${workloadQuery.trim()}` })}
             className="text-aether hover:underline"
             data-testid="ai-context-copilot-link"
           >

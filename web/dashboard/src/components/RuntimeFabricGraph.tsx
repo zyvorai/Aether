@@ -406,7 +406,7 @@ export function FabricPageContent() {
   const handleQuickAction = useCallback(
     (action: 'copilot' | 'migrate' | 'cost', workload: string) => {
       if (action === 'copilot') {
-        navigate(pathWithQuery(viewToPath('copilot'), { workload, q: `Analyze ${workload} on the fabric graph` }));
+        navigate(pathWithQuery(viewToPath('zeus'), { workload, q: `Analyze ${workload} on the fabric graph` }));
         return;
       }
       if (action === 'migrate') {

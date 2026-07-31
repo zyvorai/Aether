@@ -142,7 +142,7 @@ export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Placement guidance for ${workloadFocus}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: workloadFocus, q: `Placement guidance for ${workloadFocus}` })}
             className="text-aether hover:underline"
             data-testid="affinity-context-copilot-link"
           >

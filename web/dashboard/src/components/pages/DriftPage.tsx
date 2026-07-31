@@ -266,7 +266,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` })}
             className="text-aether hover:underline"
             data-testid="drift-context-copilot-link"
           >

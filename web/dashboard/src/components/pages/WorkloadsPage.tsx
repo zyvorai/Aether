@@ -937,7 +937,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
             className="text-aether hover:underline"
             data-testid="workloads-context-copilot-link"
           >

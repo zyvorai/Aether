@@ -273,7 +273,7 @@ export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: highlightWorkload, q: `Dependency graph for ${highlightWorkload}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: highlightWorkload, q: `Dependency graph for ${highlightWorkload}` })}
             className="text-aether hover:underline"
             data-testid="deps-context-copilot-link"
           >

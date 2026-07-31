@@ -128,7 +128,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('copilot'), { workload: search.trim(), q: `SLA status for ${search.trim()}` })}
+              to={pathWithQuery(viewToPath('zeus'), { workload: search.trim(), q: `SLA status for ${search.trim()}` })}
               className="text-aether hover:underline"
               data-testid="sla-context-copilot-link"
             >

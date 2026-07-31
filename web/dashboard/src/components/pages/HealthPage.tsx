@@ -228,7 +228,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('copilot'), { workload: workloadParam.trim(), q: `Why is ${workloadParam.trim()} unhealthy?` })}
+              to={pathWithQuery(viewToPath('zeus'), { workload: workloadParam.trim(), q: `Why is ${workloadParam.trim()} unhealthy?` })}
               className="text-aether hover:underline"
               data-testid="health-copilot-link"
             >

@@ -199,7 +199,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('copilot'), { workload: workloadFocus, q: `Risk summary for ${workloadFocus}` })}
+            to={pathWithQuery(viewToPath('zeus'), { workload: workloadFocus, q: `Risk summary for ${workloadFocus}` })}
             className="text-aether hover:underline"
             data-testid="intelligence-copilot-link"
           >

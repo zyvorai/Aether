@@ -867,7 +867,7 @@ export default function WorkloadDetail({
         break;
       case 'copilot':
         navigate(
-          pathWithQuery(viewToPath('copilot'), {
+          pathWithQuery(viewToPath('zeus'), {
             workload: workload.name,
             q: `Why is ${workload.name} failing?`,
           }),
@@ -1124,7 +1124,7 @@ export default function WorkloadDetail({
                     </>
                   )}
                   <Link
-                    to={pathWithQuery(viewToPath('copilot'), {
+                    to={pathWithQuery(viewToPath('zeus'), {
                       workload: workload.name,
                       q: `Diagnose ${workload.kind ?? 'workload'} ${clusterResourceName} in ${workload.namespace ?? 'default'}`,
                     })}
@@ -1710,7 +1710,7 @@ export default function WorkloadDetail({
                   {
                     label: 'Ops copilot',
                     slug: 'copilot',
-                    path: pathWithQuery(viewToPath('copilot'), {
+                    path: pathWithQuery(viewToPath('zeus'), {
                       workload: workload.name,
                       q: `Why is ${workload.name} unhealthy?`,
                     }),
