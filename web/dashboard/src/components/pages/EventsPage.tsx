@@ -9,6 +9,7 @@ import { apiFetchSettled } from '../../utils/api';
 import { formatTimestamp } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { useBufferedValue } from '../../hooks/useBufferedValue';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
@@ -27,6 +28,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
   const [severity, setSeverity] = useQueryParam('severity', 'all');
   const [category, setCategory] = useQueryParam('category', 'all');
   const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
+  const [bufferedWorkloadFilter, setBufferedWorkloadFilter] = useBufferedValue(workloadFilter, setWorkloadFilter);
   const [, setSearchParams] = useSearchParams();
 
   const clearFilters = () => {
@@ -263,8 +265,8 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             )}
             <input
               type="text"
-              value={workloadFilter}
-              onChange={(e) => setWorkloadFilter(e.target.value)}
+              value={bufferedWorkloadFilter}
+              onChange={(e) => setBufferedWorkloadFilter(e.target.value)}
               placeholder="Workload name…"
               className="glass-select min-w-[10rem]"
               aria-label="Workload filter"

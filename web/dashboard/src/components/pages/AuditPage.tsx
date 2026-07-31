@@ -9,6 +9,7 @@ import { apiFetch, apiFetchSettled } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import { useQueryParam } from '../../utils/urlState';
+import { useBufferedValue } from '../../hooks/useBufferedValue';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import StatCard from '../StatCard';
@@ -27,6 +28,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useQueryParam('q');
   const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
+  const [bufferedWorkloadFilter, setBufferedWorkloadFilter] = useBufferedValue(workloadFilter, setWorkloadFilter);
   const [resultFilter, setResultFilter] = useQueryParam('result');
 
   const load = useCallback(async () => {
@@ -213,8 +215,8 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
           <>
           <input
             type="text"
-            value={workloadFilter}
-            onChange={(e) => setWorkloadFilter(e.target.value)}
+            value={bufferedWorkloadFilter}
+            onChange={(e) => setBufferedWorkloadFilter(e.target.value)}
             placeholder="Filter by workload…"
             className="glass-select min-w-[10rem]"
           />

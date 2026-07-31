@@ -2,8 +2,9 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { RefreshCw, Search } from 'lucide-react';
+import { useBufferedValue } from '../hooks/useBufferedValue';
 
 interface PageToolbarProps {
   search?: string;
@@ -28,21 +29,7 @@ export default function PageToolbar({
   filters,
   actions,
 }: PageToolbarProps) {
-  // `search` is typically backed by the URL query string (useQueryParam), which round-trips
-  // through react-router's async setSearchParams. Binding the input directly to that prop
-  // means a re-render can land with a stale value mid-keystroke and stomp the DOM value,
-  // silently dropping characters on fast typing or paste. Buffer locally instead, and only
-  // resync from the prop when it changes for a reason other than our own last edit (e.g. a
-  // "clear filters" action or browser back/forward).
-  const [localSearch, setLocalSearch] = useState(search ?? '');
-  const lastPropagated = useRef(search ?? '');
-
-  useEffect(() => {
-    if ((search ?? '') !== lastPropagated.current) {
-      lastPropagated.current = search ?? '';
-      setLocalSearch(search ?? '');
-    }
-  }, [search]);
+  const [localSearch, setLocalSearch] = useBufferedValue(search ?? '', onSearchChange ?? (() => {}));
 
   return (
     <div className="glass-toolbar">
@@ -54,12 +41,7 @@ export default function PageToolbar({
               type="search"
               data-testid={searchTestId}
               value={localSearch}
-              onChange={(e) => {
-                const value = e.target.value;
-                lastPropagated.current = value;
-                setLocalSearch(value);
-                onSearchChange(value);
-              }}
+              onChange={(e) => setLocalSearch(e.target.value)}
               placeholder={searchPlaceholder}
               className="glass-input pl-9"
             />
