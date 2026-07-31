@@ -59,6 +59,25 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
+type ShellPod = { name: string; phase: string; containers: string[] };
+
+/** Structural equality for the 10s shell-pod poll — keeps the array reference
+ * stable when nothing actually changed, so it doesn't force the Exec/port-forward
+ * connect effect (which depends on it) to tear down and reconnect every tick. */
+function shellPodsEqual(a: ShellPod[], b: ShellPod[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((pod, i) => {
+    const other = b[i];
+    return (
+      other !== undefined
+      && pod.name === other.name
+      && pod.phase === other.phase
+      && pod.containers.length === other.containers.length
+      && pod.containers.every((c, ci) => c === other.containers[ci])
+    );
+  });
+}
+
 interface WorkloadDetailProps {
   workload: WorkloadResponse;
   onClose: () => void;
@@ -367,7 +386,7 @@ export default function WorkloadDetail({
       }
 
       if (cancelled) return;
-      setShellPods(pods);
+      setShellPods((current) => (shellPodsEqual(current, pods) ? current : pods));
       if (!soft) setShellResolving(false);
 
       const preferred = pickExecReadyPodName(
