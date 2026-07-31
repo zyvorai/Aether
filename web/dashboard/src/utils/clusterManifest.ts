@@ -87,6 +87,23 @@ export function manifestContainers(manifest: unknown): ContainerResources[] {
   return result;
 }
 
+/** First container's declared containerPort(s) — a better port-forward default
+ * than a generic guess for workloads with no Service to read a port from. */
+export function manifestContainerPorts(manifest: unknown): number[] {
+  const containers = containersFromSpec(asRecord(asRecord(manifest)?.spec));
+  if (!Array.isArray(containers)) return [];
+  const result: number[] = [];
+  for (const entry of containers) {
+    const ports = asRecord(entry)?.ports;
+    if (!Array.isArray(ports)) continue;
+    for (const portEntry of ports) {
+      const containerPort = asRecord(portEntry)?.containerPort;
+      if (typeof containerPort === 'number') result.push(containerPort);
+    }
+  }
+  return result;
+}
+
 export interface ServicePort {
   name?: string;
   port: number;

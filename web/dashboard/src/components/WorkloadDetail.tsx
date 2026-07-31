@@ -26,6 +26,7 @@ import {
   entriesSorted,
   hasImageDrift,
   manifestAnnotations,
+  manifestContainerPorts,
   manifestContainers,
   manifestLabels,
   manifestServicePorts,
@@ -628,6 +629,10 @@ export default function WorkloadDetail({
       }
       setPortForwardPod(clusterResourceName);
       return;
+    }
+    const containerPorts = manifestContainerPorts(clusterDetail.manifest);
+    if (containerPorts[0]) {
+      setPortForwardRemotePort((current) => (current === '8080' ? String(containerPorts[0]) : current));
     }
     if (!clusterDetail.pods.length) return;
     setPortForwardPod((current) => {
