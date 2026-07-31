@@ -441,7 +441,8 @@ function AetherDashboard() {
       case 'workloads':
         return (
           <WorkloadsPage
-            key={`${refreshKey}-${selectedWorkloadFromPalette ?? ''}`}
+            key={selectedWorkloadFromPalette ?? ''}
+            refreshKey={refreshKey}
             initialSelectedName={selectedWorkloadFromPalette}
             onClearInitialSelection={() => setSelectedWorkloadFromPalette(null)}
           />

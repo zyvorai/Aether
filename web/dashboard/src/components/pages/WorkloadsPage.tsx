@@ -41,6 +41,12 @@ import WorkloadCard from '../WorkloadCard';
 interface WorkloadsPageProps {
   initialSelectedName?: string | null;
   onClearInitialSelection?: () => void;
+  /** Bumped by App.tsx on workloadChanged/healthUpdate SSE events — triggers a
+   * data refresh. Deliberately NOT used as this page's React `key`: doing so
+   * would fully remount the page (and any open WorkloadDetail) on every such
+   * event, silently dropping in-progress Exec/port-forward sessions, open
+   * modals, and filters. */
+  refreshKey?: number;
 }
 
 function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
@@ -65,7 +71,7 @@ function openDeployModal(
   setDeployModal(true);
 }
 
-export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection }: WorkloadsPageProps) {
+export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKey }: WorkloadsPageProps) {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
@@ -147,7 +153,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: refetch in place on the SSE signal, without remounting the page (see refreshKey prop doc).
+  useEffect(() => { load(); }, [refreshKey]);
 
   // K8s-only clusters: avoid hiding discovered workloads when URL still has ?source=aether
   useEffect(() => {
