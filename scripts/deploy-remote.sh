@@ -387,7 +387,11 @@ else
     cd ${REMOTE_DIR}
     cat > Dockerfile.deploy <<'EOF'
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y ca-certificates curl openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates curl openssl && \
+    KUBECTL_VERSION=\"\$(curl -fsSL https://dl.k8s.io/release/stable.txt)\" && \
+    curl -fsSL -o /usr/local/bin/kubectl \"https://dl.k8s.io/release/\${KUBECTL_VERSION}/bin/linux/\$(dpkg --print-architecture)/kubectl\" && \
+    chmod +x /usr/local/bin/kubectl && \
+    rm -rf /var/lib/apt/lists/*
 COPY target/release/aether /usr/local/bin/aether
 RUN mkdir -p /var/lib/aether /tls
 EXPOSE 5090

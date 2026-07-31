@@ -380,7 +380,13 @@ fn kubectl_resource_name(kind: &str) -> Option<&'static str> {
 
 fn build_kubectl_command(context: &str) -> Command {
     let mut command = Command::new("kubectl");
-    command.arg("--context").arg(context);
+    // In-cluster deployments have no kubeconfig file (and thus no matching
+    // `--context` entry) — kubectl falls back to in-cluster ServiceAccount
+    // auth automatically when no context/kubeconfig is specified, the same
+    // way `client_for_context` uses `Client::try_default()` for this label.
+    if !crate::kubecluster::is_in_cluster_label(context) {
+        command.arg("--context").arg(context);
+    }
     command
 }
 
@@ -3048,6 +3054,12 @@ pub(crate) async fn api_cluster_port_forward_start(
         Err(error) => return err_internal::<ClusterPortForwardResponse>(error),
     };
 
+    let session_id = format!(
+        "pf-{}-{}",
+        chrono::Utc::now().timestamp_millis(),
+        local_port
+    );
+
     let mut command = build_kubectl_command(&request.cluster);
     command
         .arg("-n")
@@ -3057,14 +3069,35 @@ pub(crate) async fn api_cluster_port_forward_start(
         .arg(format!("{}:{}", local_port, request.remote_port))
         .arg("--address")
         .arg("127.0.0.1")
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
+        // Piped (not null) so real kubectl error output surfaces in our own logs
+        // instead of vanishing silently when the session dies unexpectedly.
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
         .kill_on_drop(true);
 
     let mut child = match command.spawn() {
         Ok(child) => child,
         Err(error) => return err_internal::<ClusterPortForwardResponse>(error),
     };
+
+    if let Some(stdout) = child.stdout.take() {
+        let sid = session_id.clone();
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stdout).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                tracing::info!("port-forward {sid} stdout: {line}");
+            }
+        });
+    }
+    if let Some(stderr) = child.stderr.take() {
+        let sid = session_id.clone();
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                tracing::warn!("port-forward {sid} stderr: {line}");
+            }
+        });
+    }
 
     sleep(Duration::from_millis(700)).await;
     match child.try_wait() {
@@ -3077,11 +3110,6 @@ pub(crate) async fn api_cluster_port_forward_start(
         Err(error) => return err_internal::<ClusterPortForwardResponse>(error),
     }
 
-    let session_id = format!(
-        "pf-{}-{}",
-        chrono::Utc::now().timestamp_millis(),
-        local_port
-    );
     let response = ClusterPortForwardResponse {
         session_id: session_id.clone(),
         cluster: request.cluster.clone(),
@@ -3096,7 +3124,7 @@ pub(crate) async fn api_cluster_port_forward_start(
     app_state.port_forwards.lock().await.insert(
         session_id.clone(),
         PortForwardSession {
-            id: session_id,
+            id: session_id.clone(),
             cluster: request.cluster,
             namespace: request.namespace,
             pod: target_name,
@@ -3105,6 +3133,35 @@ pub(crate) async fn api_cluster_port_forward_start(
             child,
         },
     );
+
+    // Reaper: an unrequested exit (crash, network drop, cluster-side reset) would
+    // otherwise leave a dead session silently registered as "running" forever.
+    {
+        let app_state = app_state.clone();
+        let sid = session_id.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(2));
+            loop {
+                interval.tick().await;
+                let mut sessions = app_state.port_forwards.lock().await;
+                let Some(session) = sessions.get_mut(&sid) else {
+                    break;
+                };
+                match session.child.try_wait() {
+                    Ok(Some(status)) => {
+                        tracing::warn!("port-forward {sid} exited unexpectedly: {status}");
+                        sessions.remove(&sid);
+                        break;
+                    }
+                    Ok(None) => {}
+                    Err(error) => {
+                        tracing::warn!("port-forward {sid} wait error: {error}");
+                        break;
+                    }
+                }
+            }
+        });
+    }
 
     created_json(response)
 }
