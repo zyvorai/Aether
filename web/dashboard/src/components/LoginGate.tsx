@@ -31,6 +31,8 @@ import {
 
 interface LoginGateProps {
   onAuthenticated: (username: string) => void;
+  /** Shown above the form, e.g. when the session was dropped by a server-side auth change. */
+  notice?: string;
 }
 
 const REMEMBER_USERNAME_KEY = 'aether_login_username';
@@ -71,7 +73,7 @@ function authErrorMessage(reason: 'network' | 'unauthorized' | 'rejected'): stri
   }
 }
 
-export default function LoginGate({ onAuthenticated }: LoginGateProps) {
+export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
   const { theme } = useTheme();
   const loginThemeClass = loginPageClass(theme);
   const [username, setUsername] = useState(() => {
@@ -243,6 +245,7 @@ export default function LoginGate({ onAuthenticated }: LoginGateProps) {
       }
       footer={<ZyvorFooter />}
     >
+      {notice ? <LoginError message={notice} /> : null}
       {providersLoading ? (
         <div className="mb-6 space-y-3" aria-hidden>
           <div className="h-11 rounded-xl glass-inset-surface animate-pulse" />

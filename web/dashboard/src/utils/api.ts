@@ -13,6 +13,21 @@ function withCreds(init?: RequestInit): RequestInit {
   return { credentials: 'include', ...init };
 }
 
+/**
+ * Fired when a data request comes back 401: the current session's credential (bearer
+ * token, cookie, or the open local-dev bypass) is no longer valid — e.g. the server just
+ * required auth for the first time because an RBAC key was created. App.tsx listens for
+ * this to drop back to the login screen instead of leaving every page stuck on a generic
+ * "could not load" error with no way to recover.
+ */
+export const UNAUTHORIZED_EVENT = 'aether-unauthorized';
+
+function notifyIfUnauthorized(res: Response): void {
+  if (res.status === 401) {
+    window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
+  }
+}
+
 /** Build-time optional dev default (VITE_AETHER_DEFAULT_API_KEY). Never set in production images. */
 export function getDevBootstrapApiKey(): string | undefined {
   const v = import.meta.env.VITE_AETHER_DEFAULT_API_KEY;
@@ -297,6 +312,7 @@ export async function apiLdapLogin(
 export async function apiFetch<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+    notifyIfUnauthorized(res);
     const json: ApiResponse<T> = await res.json();
     return json.success ? json.data : null;
   } catch {
@@ -312,6 +328,7 @@ export type FetchSettledResult<T> =
 export async function apiFetchSettled<T>(path: string): Promise<FetchSettledResult<T>> {
   try {
     const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+    notifyIfUnauthorized(res);
     const json: ApiResponse<T> = await res.json();
     if (json.success && json.data !== undefined && json.data !== null) {
       return { ok: true, data: json.data };
@@ -332,6 +349,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<ApiRespo
         body: JSON.stringify(body ?? {}),
       }),
     );
+    notifyIfUnauthorized(res);
     return await res.json();
   } catch (e) {
     return { success: false, data: null, error: String(e) };
@@ -353,6 +371,7 @@ export async function apiDelete(
       headers['X-Aether-Confirm'] = '1';
     }
     const res = await fetch(BASE + path, withCreds({ method: 'DELETE', headers }));
+    notifyIfUnauthorized(res);
     return await res.json();
   } catch (e) {
     return { success: false, data: null, error: String(e) };
@@ -370,6 +389,7 @@ export async function apiDeleteJson<T>(path: string, body: unknown): Promise<Api
         body: JSON.stringify(body),
       }),
     );
+    notifyIfUnauthorized(res);
     return await res.json();
   } catch (e) {
     return { success: false, data: null, error: String(e) };
@@ -386,6 +406,7 @@ export async function apiPut<T>(path: string, body?: unknown): Promise<ApiRespon
         body: body ? JSON.stringify(body) : undefined,
       }),
     );
+    notifyIfUnauthorized(res);
     return await res.json();
   } catch (e) {
     return { success: false, data: null, error: String(e) };
@@ -402,6 +423,7 @@ export async function apiPostRaw<T>(path: string, body: string, contentType = 't
         body,
       }),
     );
+    notifyIfUnauthorized(res);
     return await res.json();
   } catch (e) {
     return { success: false, data: null, error: String(e) };
@@ -411,6 +433,7 @@ export async function apiPostRaw<T>(path: string, body: string, contentType = 't
 export async function apiText(path: string): Promise<string> {
   try {
     const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+    notifyIfUnauthorized(res);
     return await res.text();
   } catch {
     return 'Failed to fetch';
@@ -420,6 +443,7 @@ export async function apiText(path: string): Promise<string> {
 export async function apiTextSettled(path: string): Promise<FetchSettledResult<string>> {
   try {
     const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+    notifyIfUnauthorized(res);
     if (!res.ok) return { ok: false, error: 'api' };
     return { ok: true, data: await res.text() };
   } catch {

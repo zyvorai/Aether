@@ -22,7 +22,7 @@ import { pathWithQuery } from './utils/urlState';
 import type { UniversalLinkResolveReport } from './types/api';
 import { syncMacOSLiveActivity, subscribeMacOSNavigate } from './utils/macosBridge';
 import { HERO_CONFIG } from './utils/dashboardNav';
-import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode, apiTryAuth } from './utils/api';
+import { apiFetch, getDevBootstrapApiKey, DEFAULT_DASHBOARD_USERNAME, apiTryCookieSession, getDashboardAuthMode, apiTryAuth, UNAUTHORIZED_EVENT } from './utils/api';
 import CommandPalette from './components/CommandPalette';
 import { pushRecentView } from './utils/recentViews';
 import LoginGate from './components/LoginGate';
@@ -84,6 +84,7 @@ function AetherDashboard() {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authBootstrapping, setAuthBootstrapping] = useState(true);
+  const [loginNotice, setLoginNotice] = useState<string | undefined>(undefined);
   const [username, setUsername] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
@@ -194,6 +195,22 @@ function AetherDashboard() {
     };
     void run();
   }, [searchParams, location.pathname, navigate]);
+
+  // A 401 from any API call means the session's credential is no longer valid — most
+  // commonly because an RBAC key was just created, which permanently ends the open
+  // local-dev bypass for every session, including the one that created the key. Drop back
+  // to the login screen instead of leaving every page stuck on a generic error with no
+  // way to recover.
+  useEffect(() => {
+    const onUnauthorized = () => {
+      if (!isAuthenticated) return;
+      sessionStorage.removeItem('aether_auth');
+      setLoginNotice('Session expired or no longer authorized — please sign in again.');
+      setIsAuthenticated(false);
+    };
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  }, [isAuthenticated]);
 
   // Real-time updates via SSE
   const { connected: sseConnected } = useEventStream('', (event) => {
@@ -415,7 +432,16 @@ function AetherDashboard() {
   }
 
   if (!isAuthenticated) {
-    return <LoginGate onAuthenticated={(u) => { setUsername(u); setIsAuthenticated(true); }} />;
+    return (
+      <LoginGate
+        notice={loginNotice}
+        onAuthenticated={(u) => {
+          setUsername(u);
+          setIsAuthenticated(true);
+          setLoginNotice(undefined);
+        }}
+      />
+    );
   }
 
   const hero = HERO_CONFIG[currentView];
