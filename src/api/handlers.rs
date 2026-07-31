@@ -2863,41 +2863,42 @@ async fn handle_cluster_exec_socket(
     socket: WebSocket,
     query: ClusterExecQuery,
 ) -> anyhow::Result<()> {
-    let mut command = build_kubectl_command(&query.cluster);
-    command
-        .arg("-n")
-        .arg(&query.namespace)
-        .arg("exec")
-        .arg("-i")
-        .arg(&query.pod);
+    // Native kube-rs exec over the Kubernetes API server's own WebSocket subresource —
+    // no `kubectl` binary required, and in-cluster auth (ServiceAccount token) is resolved
+    // the same way every other cluster feature resolves it via `client_for_cluster`.
+    let client = crate::kubecluster::client_for_cluster(&query.cluster).await?;
+    let pods: kube::Api<k8s_openapi::api::core::v1::Pod> =
+        kube::Api::namespaced(client, &query.namespace);
 
+    let mut attach_params = kube::api::AttachParams::interactive_tty();
     if let Some(container) = query.container.as_deref().filter(|value| !value.is_empty()) {
-        command.arg("-c").arg(container);
+        attach_params = attach_params.container(container);
     }
 
-    command.arg("--");
-    if let Some(shell) = query.command.as_deref().filter(|value| !value.is_empty()) {
-        command.arg(shell);
-    } else {
-        command.arg("/bin/sh");
-    }
+    let shell = query
+        .command
+        .as_deref()
+        .filter(|value| !value.is_empty())
+        .unwrap_or("/bin/sh");
 
-    command
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true);
+    let mut attached = pods
+        .exec(&query.pod, vec![shell], &attach_params)
+        .await
+        .with_context(|| format!("failed to exec into pod {}", query.pod))?;
 
-    let mut child = command.spawn()?;
-    let mut stdin = child.stdin.take().context("exec session missing stdin")?;
-    let stdout = child.stdout.take().context("exec session missing stdout")?;
-    let stderr = child.stderr.take().context("exec session missing stderr")?;
+    let mut stdin = attached
+        .stdin()
+        .context("exec session missing stdin")?;
+    let stdout = attached
+        .stdout()
+        .context("exec session missing stdout")?;
 
     let (mut ws_sender, mut ws_receiver) = socket.split();
     let (output_tx, mut output_rx) = mpsc::unbounded_channel::<String>();
 
+    // tty=true merges stderr into the pty's stdout stream server-side, so a single
+    // reader covers both (interactive_tty() leaves ap.stderr = false to match).
     tokio::spawn(read_child_stream_to_channel(stdout, output_tx.clone()));
-    tokio::spawn(read_child_stream_to_channel(stderr, output_tx.clone()));
 
     let writer = tokio::spawn(async move {
         while let Some(chunk) = output_rx.recv().await {
@@ -2923,7 +2924,8 @@ async fn handle_cluster_exec_socket(
         }
     }
 
-    let _ = child.kill().await;
+    drop(stdin);
+    attached.abort();
     let _ = writer.await;
     Ok(())
 }

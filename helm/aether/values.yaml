@@ -33,6 +33,7 @@ rbac:
         - pods
         - pods/log
         - pods/status
+        - pods/exec
         - services
         - configmaps
         - secrets
