@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Link2 } from 'lucide-react';
 import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
+import { copyToClipboard } from '../utils/clipboard';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
@@ -226,7 +227,7 @@ export default function WorkloadDetail({
     if (activeTab !== 'overview') params.tab = activeTab;
     const url = `${window.location.origin}${pathWithQuery(viewToPath('workloads'), params)}`;
     try {
-      await navigator.clipboard.writeText(url);
+      if (!(await copyToClipboard(url))) throw new Error('clipboard unavailable');
       setLinkCopied(true);
       window.setTimeout(() => setLinkCopied(false), 2000);
     } catch {
@@ -851,7 +852,7 @@ export default function WorkloadDetail({
     const text = manifestYamlText();
     if (!text) return;
     try {
-      await navigator.clipboard.writeText(text);
+      if (!(await copyToClipboard(text))) throw new Error('clipboard unavailable');
       setYamlCopied(true);
       window.setTimeout(() => setYamlCopied(false), 1500);
       toast('Manifest copied', 'success');
@@ -1269,7 +1270,7 @@ export default function WorkloadDetail({
                             <button
                               type="button"
                               onClick={() => {
-                                void navigator.clipboard.writeText(pod.name);
+                                void copyToClipboard(pod.name);
                                 toast(`Copied ${pod.name}`, 'success');
                               }}
                               className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-200"
@@ -1698,7 +1699,7 @@ export default function WorkloadDetail({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        void navigator.clipboard.writeText(cmds.map((c) => `# ${c.label}\n${c.command}`).join('\n\n'));
+                        void copyToClipboard(cmds.map((c) => `# ${c.label}\n${c.command}`).join('\n\n'));
                         setCopiedCmd('all');
                         window.setTimeout(() => setCopiedCmd(''), 1500);
                       }}
@@ -1723,7 +1724,7 @@ export default function WorkloadDetail({
                         <button
                           type="button"
                           onClick={() => {
-                            void navigator.clipboard.writeText(cmd.command);
+                            void copyToClipboard(cmd.command);
                             setCopiedCmd(cmd.label);
                             window.setTimeout(() => setCopiedCmd(''), 1500);
                           }}
@@ -2191,7 +2192,7 @@ export default function WorkloadDetail({
                 <button
                   type="button"
                   onClick={() => {
-                    void navigator.clipboard.writeText(shellTermRef.current?.getBufferText() ?? '');
+                    void copyToClipboard(shellTermRef.current?.getBufferText() ?? '');
                   }}
                   className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
                 >

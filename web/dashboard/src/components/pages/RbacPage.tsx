@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
 import { KeyRound, Shield, Trash2, Copy } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
+import { copyToClipboard } from '../../utils/clipboard';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
@@ -263,7 +264,7 @@ export default function RbacPage() {
               type="button"
               data-testid="rbac-copy-key"
               onClick={() => {
-                void navigator.clipboard.writeText(created.key);
+                void copyToClipboard(created.key);
                 setKeyCopied(true);
                 setTimeout(() => setKeyCopied(false), 2000);
               }}

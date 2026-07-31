@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Inbox, ChevronDown, ChevronRight, Trash2, Plus, Copy, KeyRound } from 'lucide-react';
 import { apiFetch, apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
+import { copyToClipboard } from '../../utils/clipboard';
 import { formatTimestamp } from '../../utils/formatters';
 import { useNavigate, Link } from 'react-router';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -126,7 +127,7 @@ export default function SecretsPage() {
 
   async function copyKeyName(key: string) {
     try {
-      await navigator.clipboard.writeText(key);
+      if (!(await copyToClipboard(key))) throw new Error('clipboard unavailable');
       toast(`Copied key name "${key}"`, 'success');
     } catch {
       toast('Could not copy to clipboard', 'error');

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Fingerprint, KeyRound, LogIn, Shield } from 'lucide-react';
 import { apiFetchAuthSettings, type AuthSettingsPayload } from '../utils/api';
+import { copyToClipboard } from '../utils/clipboard';
 import GlassSection from './GlassSection';
 import Badge from './Badge';
 import PageLoading from './PageLoading';
@@ -165,7 +166,7 @@ export default function IdentitySsoPanel() {
               type="button"
               className="login-btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
               data-testid="saml-metadata-copy"
-              onClick={() => void navigator.clipboard.writeText(metadataUrl)}
+              onClick={() => void copyToClipboard(metadataUrl)}
             >
               Copy metadata URL
             </button>

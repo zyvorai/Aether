@@ -13,6 +13,7 @@ import {
   Minimize2,
   ClipboardCheck,
 } from 'lucide-react';
+import { copyToClipboard } from '../utils/clipboard';
 import { countYamlLines, yamlEditorHeightPx } from '../utils/editorHeight';
 import YamlCodeEditor from './YamlCodeEditor';
 
@@ -92,7 +93,7 @@ export default function YamlInput({
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(value);
+      if (!(await copyToClipboard(value))) throw new Error('clipboard unavailable');
       setCopyHint('Copied');
       setTimeout(() => setCopyHint(null), 2000);
     } catch {

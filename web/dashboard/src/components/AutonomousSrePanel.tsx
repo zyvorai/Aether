@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { apiFetch } from '../utils/api';
+import { copyToClipboard } from '../utils/clipboard';
 import Badge, { SeverityBadge } from './Badge';
 import type { SreRunbookReport } from '../types/api';
 import GlassSection from './GlassSection';
@@ -28,7 +29,7 @@ export default function AutonomousSrePanel() {
   async function copyRunbook() {
     if (!report) return;
     try {
-      await navigator.clipboard.writeText(report.runbook_markdown);
+      if (!(await copyToClipboard(report.runbook_markdown))) throw new Error('clipboard unavailable');
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {

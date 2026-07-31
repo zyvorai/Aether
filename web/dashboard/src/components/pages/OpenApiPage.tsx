@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, Copy } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
+import { copyToClipboard } from '../../utils/clipboard';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
@@ -85,7 +86,7 @@ export default function OpenApiPage() {
 
   async function copyPath(path: string) {
     try {
-      await navigator.clipboard.writeText(path);
+      if (!(await copyToClipboard(path))) throw new Error('clipboard unavailable');
       setCopiedPath(path);
       setTimeout(() => setCopiedPath(null), 2000);
     } catch {

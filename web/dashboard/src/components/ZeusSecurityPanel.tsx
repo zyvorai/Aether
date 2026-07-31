@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, Loader2, RefreshCw, Shield } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
+import { copyToClipboard } from '../utils/clipboard';
 import Badge, { SeverityBadge } from './Badge';
 import type { SecurityCopilotReport, SecurityRemediateReport } from '../types/api';
 import GlassSection from './GlassSection';
@@ -28,7 +29,7 @@ export default function SecurityCopilotPanel() {
 
   async function copyYaml(workload: string, yaml: string) {
     try {
-      await navigator.clipboard.writeText(yaml);
+      if (!(await copyToClipboard(yaml))) throw new Error('clipboard unavailable');
       setCopied(workload);
       window.setTimeout(() => setCopied(null), 2000);
     } catch {

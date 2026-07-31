@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiFetch } from '../utils/api';
+import { copyToClipboard } from '../utils/clipboard';
 
 interface LogViewerProps {
   workloadName: string;
@@ -216,7 +217,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
         </button>
         <button
           type="button"
-          onClick={() => { void navigator.clipboard.writeText(filteredLogs.join('\n')); }}
+          onClick={() => { void copyToClipboard(filteredLogs.join('\n')); }}
           className="btn-secondary !px-3 !py-1.5 !text-xs"
           disabled={nonemptyFiltered.length === 0}
         >
