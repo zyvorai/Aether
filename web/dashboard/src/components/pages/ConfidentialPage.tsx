@@ -58,7 +58,7 @@ const CLI_IMAGE_COMMANDS = [
   'aether confidential image verify-digest <launch-digest>',
 ];
 
-export default function ConfidentialPage() {
+export default function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -110,7 +110,7 @@ export default function ConfidentialPage() {
       setIntel(intelRes.ok ? intelRes.data : null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

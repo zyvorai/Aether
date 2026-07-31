@@ -34,7 +34,7 @@ function ruleMatchesWorkload(
   );
 }
 
-export default function AlertsPage() {
+export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [workloadQuery] = useQueryParam('workload', '');
   const [status, setStatus] = useState<AlertsStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +86,7 @@ export default function AlertsPage() {
 
   useEffect(() => {
     void loadQueue();
-  }, []);
+  }, [refreshKey]);
 
   async function handleFlushQueue() {
     setFlushLoading(true);

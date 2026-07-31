@@ -30,7 +30,7 @@ function specPreview(spec: Record<string, unknown> | null): string {
   return workloadJsonToYaml(spec);
 }
 
-export default function TemplatesPage() {
+export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export default function TemplatesPage() {
       setTemplates(result.data);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

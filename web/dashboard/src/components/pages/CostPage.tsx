@@ -28,7 +28,7 @@ interface ChargebackReport {
   lines: { workload: string; owner: string; project: string; monthlyUsd: number }[];
 }
 
-export default function CostPage() {
+export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload');
   const [estimates, setEstimates] = useState<CostEstimate[]>([]);
@@ -42,7 +42,7 @@ export default function CostPage() {
     reload: reloadChargeback,
   } = useApiPage<ChargebackReport>(
     () => apiFetchSettled<ChargebackReport>('/cost/chargeback?provider=aws'),
-    [],
+    [refreshKey],
   );
 
   async function handleEstimate(yaml: string) {

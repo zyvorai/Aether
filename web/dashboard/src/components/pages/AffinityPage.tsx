@@ -27,7 +27,7 @@ const WORKLOAD_CLASSES = [
   'worker',
 ];
 
-export default function AffinityPage() {
+export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [affinityData, setAffinityData] = useState<Record<string, AffinityScore[]>>({});
   const [loading, setLoading] = useState(true);
@@ -66,7 +66,7 @@ export default function AffinityPage() {
       setLoadFailed(false);
       setAffinityData(merged);
     }
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void (async () => {

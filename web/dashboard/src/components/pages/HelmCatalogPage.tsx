@@ -26,7 +26,7 @@ const CATEGORY_ICONS: Record<string, typeof Database> = {
   Networking: Package,
 };
 
-export default function HelmCatalogPage() {
+export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
   const { canMutate } = useAuth();
   const [charts, setCharts] = useState<HelmCatalogChart[]>([]);
   const [clusters, setClusters] = useState<ClusterSummary | null>(null);
@@ -72,7 +72,7 @@ export default function HelmCatalogPage() {
       setInstallCluster(clusterRes.data.clusters[0].name);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

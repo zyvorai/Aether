@@ -25,7 +25,7 @@ interface ChargebackReport {
   lines: { workload: string; owner: string; project: string; monthlyUsd: number }[];
 }
 
-export default function MetricsPage() {
+export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState('');
   const [summary, setSummary] = useState<ObservabilitySummary | null>(null);
@@ -71,7 +71,7 @@ export default function MetricsPage() {
       setChargeback(chargebackRes.ok ? chargebackRes.data : null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

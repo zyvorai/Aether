@@ -26,7 +26,7 @@ interface BulkScanState {
   drifted: string[];
 }
 
-export default function DriftPage() {
+export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export default function DriftPage() {
     }
     setFleetDrift(fleetRes.ok ? fleetRes.data : null);
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

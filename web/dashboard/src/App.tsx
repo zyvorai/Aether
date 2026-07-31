@@ -425,19 +425,19 @@ function AetherDashboard() {
   function renderPage() {
     switch (currentView) {
       case 'overview':
-        return <OverviewPage key={refreshKey} username={username} onNavigate={handleNavigate} sseConnected={sseConnected} refreshKey={refreshKey} />;
+        return <OverviewPage username={username} onNavigate={handleNavigate} sseConnected={sseConnected} refreshKey={refreshKey} />;
       case 'fabric':
-        return <FabricPage key={refreshKey} />;
+        return <FabricPage />;
       case 'migrations':
-        return <MigrationsPage key={refreshKey} />;
+        return <MigrationsPage />;
       case 'observability':
-        return <ObservabilityPage key={refreshKey} />;
+        return <ObservabilityPage />;
       case 'labs':
-        return <LabsPage key={refreshKey} />;
+        return <LabsPage />;
       case 'settings':
-        return <SettingsPage key={refreshKey} />;
+        return <SettingsPage />;
       case 'applications':
-        return <ApplicationsPage key={refreshKey} />;
+        return <ApplicationsPage refreshKey={refreshKey} />;
       case 'workloads':
         return (
           <WorkloadsPage
@@ -448,80 +448,80 @@ function AetherDashboard() {
           />
         );
       case 'clusters':
-        return <ClustersPage key={refreshKey} />;
+        return <ClustersPage />;
       case 'fleet':
-        return <FleetPage key={refreshKey} />;
+        return <FleetPage refreshKey={refreshKey} />;
       case 'hosted':
-        return <HostedPage key={refreshKey} />;
+        return <HostedPage refreshKey={refreshKey} />;
       case 'activity':
-        return <ActivityMonitorPage key={refreshKey} />;
+        return <ActivityMonitorPage />;
       case 'security':
-        return <SecurityCenterPage key={refreshKey} />;
+        return <SecurityCenterPage refreshKey={refreshKey} />;
       case 'helm':
-        return <HelmCatalogPage key={refreshKey} />;
+        return <HelmCatalogPage refreshKey={refreshKey} />;
       case 'compose':
-        return <ComposePage key={refreshKey} />;
+        return <ComposePage />;
       case 'ai':
-        return <AIPage key={refreshKey} />;
+        return <AIPage refreshKey={refreshKey} />;
       case 'zeus':
       case 'copilot':
-        return <ZeusPage key={refreshKey} />;
+        return <ZeusPage />;
       case 'ai-providers':
-        return <AiProvidersPage key={refreshKey} />;
+        return <AiProvidersPage refreshKey={refreshKey} />;
       case 'cost':
-        return <CostPage key={refreshKey} />;
+        return <CostPage refreshKey={refreshKey} />;
       case 'affinity':
-        return <AffinityPage key={refreshKey} />;
+        return <AffinityPage refreshKey={refreshKey} />;
       case 'drift':
-        return <DriftPage key={refreshKey} />;
+        return <DriftPage refreshKey={refreshKey} />;
       case 'intelligence':
-        return <IntelligencePage key={refreshKey} />;
+        return <IntelligencePage refreshKey={refreshKey} />;
       case 'policy':
-        return <PolicyPage key={refreshKey} />;
+        return <PolicyPage refreshKey={refreshKey} />;
       case 'scheduler':
-        return <SchedulerPage key={refreshKey} />;
+        return <SchedulerPage refreshKey={refreshKey} />;
       case 'health':
-        return <HealthPage key={refreshKey} />;
+        return <HealthPage refreshKey={refreshKey} />;
       case 'events':
-        return <EventsPage key={refreshKey} />;
+        return <EventsPage refreshKey={refreshKey} />;
       case 'alerts':
-        return <AlertsPage key={refreshKey} />;
+        return <AlertsPage refreshKey={refreshKey} />;
       case 'platform':
-        return <PlatformPage key={refreshKey} />;
+        return <PlatformPage refreshKey={refreshKey} />;
       case 'sla':
-        return <SLAPage key={refreshKey} />;
+        return <SLAPage refreshKey={refreshKey} />;
       case 'deps':
-        return <DepsPage key={refreshKey} />;
+        return <DepsPage refreshKey={refreshKey} />;
       case 'envs':
-        return <EnvsPage key={refreshKey} />;
+        return <EnvsPage refreshKey={refreshKey} />;
       case 'secrets':
-        return <SecretsPage key={refreshKey} />;
+        return <SecretsPage refreshKey={refreshKey} />;
       case 'backups':
-        return <BackupsPage key={refreshKey} />;
+        return <BackupsPage refreshKey={refreshKey} />;
       case 'storage':
-        return <StoragePage key={refreshKey} />;
+        return <StoragePage refreshKey={refreshKey} />;
       case 'forge':
-        return <ForgePage key={refreshKey} />;
+        return <ForgePage refreshKey={refreshKey} />;
       case 'templates':
-        return <TemplatesPage key={refreshKey} />;
+        return <TemplatesPage refreshKey={refreshKey} />;
       case 'plugins':
-        return <PluginsPage key={refreshKey} />;
+        return <PluginsPage refreshKey={refreshKey} />;
       case 'rbac':
-        return <RbacPage key={refreshKey} />;
+        return <RbacPage refreshKey={refreshKey} />;
       case 'audit':
-        return <AuditPage key={refreshKey} />;
+        return <AuditPage refreshKey={refreshKey} />;
       case 'metrics':
-        return <MetricsPage key={refreshKey} />;
+        return <MetricsPage refreshKey={refreshKey} />;
       case 'gitops':
-        return <GitOpsPage key={refreshKey} />;
+        return <GitOpsPage refreshKey={refreshKey} />;
       case 'editor':
-        return <EditorPage key={refreshKey} />;
+        return <EditorPage />;
       case 'confidential':
-        return <ConfidentialPage key={refreshKey} />;
+        return <ConfidentialPage refreshKey={refreshKey} />;
       case 'openapi':
-        return <OpenApiPage key={refreshKey} />;
+        return <OpenApiPage refreshKey={refreshKey} />;
       default:
-        return <OverviewPage key={refreshKey} username={username} onNavigate={handleNavigate} sseConnected={sseConnected} />;
+        return <OverviewPage username={username} onNavigate={handleNavigate} sseConnected={sseConnected} />;
     }
   }
 

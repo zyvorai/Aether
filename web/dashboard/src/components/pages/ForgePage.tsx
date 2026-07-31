@@ -18,7 +18,7 @@ function num(v: unknown): string {
   return typeof v === 'number' ? String(v) : v == null ? '—' : String(v);
 }
 
-export default function ForgePage() {
+export default function ForgePage({ refreshKey }: { refreshKey?: number } = {}) {
   const [stats, setStats] = useState<ForgeStats | null>(null);
   const [nodes, setNodes] = useState<ForgeNode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,7 @@ export default function ForgePage() {
       setNodes(nodesRes.ok ? nodesRes.data : []);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

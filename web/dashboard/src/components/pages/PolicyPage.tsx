@@ -20,7 +20,7 @@ interface ServerOpaStatus {
   opa?: { configured?: boolean };
 }
 
-export default function PolicyPage() {
+export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -39,7 +39,7 @@ export default function PolicyPage() {
     reload: loadOpaStatus,
   } = useApiPage<ServerOpaStatus>(
     () => apiFetchSettled<ServerOpaStatus>('/server'),
-    [],
+    [refreshKey],
   );
 
   const opaConfigured = Boolean(serverStatus?.opa?.configured);

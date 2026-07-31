@@ -41,7 +41,7 @@ function stateTone(state: string): EntityStatusTone {
   return 'muted';
 }
 
-export default function StoragePage() {
+export default function StoragePage({ refreshKey }: { refreshKey?: number } = {}) {
   const [volumes, setVolumes] = useState<StorageVolume[]>([]);
   const [status, setStatus] = useState<StorageStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +61,7 @@ export default function StoragePage() {
       setStatus(statusRes.ok ? statusRes.data : null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

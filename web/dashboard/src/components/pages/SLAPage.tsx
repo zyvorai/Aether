@@ -17,7 +17,7 @@ import StatCard from '../StatCard';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { WorkloadResponse, SlaTarget } from '../../types/api';
 
-export default function SLAPage() {
+export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [slaData, setSlaData] = useState<Record<string, SlaTarget | null>>({});
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function SLAPage() {
     );
     setSlaData(results);
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

@@ -23,7 +23,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 type ViewMode = 'grid' | 'list';
 
-export default function ApplicationsPage() {
+export default function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const { workspace, setWorkspace } = useWorkspace();
@@ -49,7 +49,7 @@ export default function ApplicationsPage() {
       setWorkloads(res.data.filter(isK8sApplication));
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

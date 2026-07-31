@@ -43,7 +43,7 @@ function getTierTone(tier: string): EntityStatusTone {
   return 'muted';
 }
 
-export default function EnvsPage() {
+export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -76,7 +76,7 @@ export default function EnvsPage() {
       setEnvironments(result.data);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

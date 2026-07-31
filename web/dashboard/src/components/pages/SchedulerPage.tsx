@@ -21,7 +21,7 @@ import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 
-export default function SchedulerPage() {
+export default function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload');
   const [utilization, setUtilization] = useState<RuntimeUtilization[]>([]);
@@ -48,7 +48,7 @@ export default function SchedulerPage() {
       setSuggestions(s.ok ? s.data : []);
       setPlacements(p.ok ? p.data : []);
     }
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void (async () => {

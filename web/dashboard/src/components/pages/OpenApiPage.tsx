@@ -20,7 +20,7 @@ interface OpenApiDoc {
   paths?: Record<string, Record<string, { summary?: string; description?: string }>>;
 }
 
-export default function OpenApiPage() {
+export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [doc, setDoc] = useState<OpenApiDoc | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ export default function OpenApiPage() {
       setDoc(null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

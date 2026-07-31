@@ -350,7 +350,8 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
     setFailedEndpoints(failed);
     setTotalFailure(successCount === 0);
     setLoading(false);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey intentionally triggers a refetch in place (see App.tsx SSE handler), not a remount.
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

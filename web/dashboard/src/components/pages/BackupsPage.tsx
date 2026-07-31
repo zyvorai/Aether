@@ -23,7 +23,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function BackupsPage() {
+export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,7 @@ export default function BackupsPage() {
       setBackups(result.data);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

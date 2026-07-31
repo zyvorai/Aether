@@ -27,7 +27,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function HostedPage() {
+export default function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [tenants, setTenants] = useState<HostedTenant[]>([]);
   const [billing, setBilling] = useState<BillingSummary | null>(null);
   const [upgrades, setUpgrades] = useState<UpgradesStatus | null>(null);
@@ -64,7 +64,7 @@ export default function HostedPage() {
       setFederation(federationRes.ok ? federationRes.data : null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

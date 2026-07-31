@@ -43,7 +43,7 @@ interface ServerPayload {
   integrations?: Integrations;
 }
 
-export default function FleetPage() {
+export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -153,7 +153,7 @@ export default function FleetPage() {
       setPacketwolfFlows(null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

@@ -86,7 +86,7 @@ function formatSyncResult(raw: string | null): {
 
 const GITOPS_SYNC_STORAGE_KEY = 'aether-gitops-last-sync';
 
-export default function GitOpsPage() {
+export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload', '');
   const workloadFocus = workloadQuery.trim();
@@ -115,7 +115,7 @@ export default function GitOpsPage() {
       setData(result.data ?? { configured: false });
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

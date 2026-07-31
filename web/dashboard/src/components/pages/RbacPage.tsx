@@ -25,7 +25,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function RbacPage() {
+export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
   const { canAdmin } = useAuth();
   const [keys, setKeys] = useState<ApiKeySummary[]>([]);
   const [name, setName] = useState('');
@@ -51,7 +51,7 @@ export default function RbacPage() {
       setKeys(result.data);
     }
     setListLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

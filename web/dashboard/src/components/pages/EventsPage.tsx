@@ -18,7 +18,7 @@ import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { Event, EventSummary } from '../../types/api';
 
-export default function EventsPage() {
+export default function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [events, setEvents] = useState<Event[]>([]);
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +63,8 @@ export default function EventsPage() {
       setSummary(s.ok ? s.data : null);
     }
     setLoading(false);
-  }, [category, workloadFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey intentionally triggers a refetch in place, not a remount.
+  }, [category, workloadFilter, refreshKey]);
 
   useEffect(() => {
     void load();

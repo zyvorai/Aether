@@ -64,7 +64,7 @@ function workloadMatchesFocus(rowWorkload: string, focus: string): boolean {
   return rowWorkload.endsWith(`/${needle}`) || rowWorkload.split('/').includes(needle);
 }
 
-export default function IntelligencePage() {
+export default function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [tabParam, setTabParam] = useQueryParam('tab', 'predictions');
   const [workloadQuery] = useQueryParam('workload', '');
@@ -104,7 +104,7 @@ export default function IntelligencePage() {
       setEvolution(evo.ok ? evo.data : null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

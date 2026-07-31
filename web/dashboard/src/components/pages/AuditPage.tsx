@@ -19,7 +19,7 @@ import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { AuditResponse, AuditVerifyResponse } from '../../types/api';
 
-export default function AuditPage() {
+export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [audit, setAudit] = useState<AuditResponse | null>(null);
   const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -45,7 +45,7 @@ export default function AuditPage() {
       setVerify(verifyData.ok ? verifyData.data : null);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

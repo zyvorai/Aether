@@ -272,7 +272,7 @@ const STUDIO_TABS = [
   { id: 'analyze' as const, label: 'Analysis', icon: <Cpu size={16} /> },
 ];
 
-export default function AIPage() {
+export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [workloadsLoading, setWorkloadsLoading] = useState(true);
@@ -314,7 +314,7 @@ export default function AIPage() {
       setWorkloads(result.data);
     }
     setWorkloadsLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void loadWorkloads();

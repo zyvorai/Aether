@@ -38,7 +38,7 @@ interface ServerPayload {
   opa?: { configured?: boolean; enforce?: boolean };
 }
 
-export default function PlatformPage() {
+export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
   const { capabilities, ready, refreshPlatform } = useServerCapabilities();
@@ -68,7 +68,8 @@ export default function PlatformPage() {
     }
     setLoading(false);
     setRecLoading(false);
-  }, [refreshPlatform]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey intentionally triggers a refetch in place, not a remount.
+  }, [refreshPlatform, refreshKey]);
 
   const runConnectivityProbe = useCallback(async () => {
     setProbeLoading(true);

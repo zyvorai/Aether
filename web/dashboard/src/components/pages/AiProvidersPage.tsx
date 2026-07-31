@@ -71,7 +71,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function AiProvidersPage() {
+export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [draft, setDraft] = useState<ZeusProviderConfig>({ ...EMPTY, id: `provider-${Date.now()}` });
   const [apiKey, setApiKey] = useState('');
   const [tab, setTab] = useState<'providers' | 'local'>('providers');
@@ -83,7 +83,7 @@ export default function AiProvidersPage() {
     reload,
   } = useApiPage<ZeusProviderRegistry>(
     () => apiFetchSettled<ZeusProviderRegistry>('/zeus/providers'),
-    [],
+    [refreshKey],
   );
 
   const saveProvider = async () => {

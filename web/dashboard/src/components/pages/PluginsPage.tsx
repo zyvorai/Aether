@@ -20,7 +20,7 @@ import Modal from '../Modal';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { PluginInfo } from '../../types/api';
 
-export default function PluginsPage() {
+export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ export default function PluginsPage() {
       setPlugins(result.data);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

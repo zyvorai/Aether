@@ -119,7 +119,7 @@ function GraphVisual({
   return <p className="text-sm text-slate-500">No graph nodes to display.</p>;
 }
 
-export default function DepsPage() {
+export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload', '');
   const highlightWorkload = workloadQuery.trim() || undefined;
@@ -142,7 +142,7 @@ export default function DepsPage() {
       setGraph(result.data);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

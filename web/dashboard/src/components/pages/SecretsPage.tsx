@@ -25,7 +25,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function SecretsPage() {
+export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +52,7 @@ export default function SecretsPage() {
       setSecrets(result.data);
     }
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

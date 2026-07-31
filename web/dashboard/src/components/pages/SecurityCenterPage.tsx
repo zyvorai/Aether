@@ -18,7 +18,7 @@ import SecurityCopilotPanel from '../SecurityCopilotPanel';
 import SecurityPlatformPanel from '../SecurityPlatformPanel';
 import type { SecretSummary, ThreatReport, SbomMetadata, SignedImageManifest, RemediationPlan } from '../../types/api';
 
-export default function SecurityCenterPage() {
+export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,7 @@ export default function SecurityCenterPage() {
     setSignedImages(imagesRes.ok ? imagesRes.data : []);
     setPacketwolfStatus(pwRes.ok ? pwRes.data : null);
     setLoading(false);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();

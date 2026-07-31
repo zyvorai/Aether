@@ -45,7 +45,7 @@ function getHealthTone(health: string): EntityStatusTone {
   return 'muted';
 }
 
-export default function HealthPage() {
+export default function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<HealthSummary | null>(null);
   const [workloads, setWorkloads] = useState<ManagedWorkload[]>([]);
@@ -80,7 +80,7 @@ export default function HealthPage() {
     if (s.ok || w.ok) {
       markHealthReviewed();
     }
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     void load();
