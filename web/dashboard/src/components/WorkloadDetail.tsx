@@ -35,10 +35,7 @@ import LogViewer from './LogViewer';
 import FixItPanel, { type FixAction } from './FixItPanel';
 import ApplicationTopology from './ApplicationTopology';
 import AiTroubleshootPanel from './AiTroubleshootPanel';
-import Badge, { RuntimeBadge, SeverityBadge } from './Badge';
-import BarChart from './BarChart';
-import RadarChart from './RadarChart';
-import IntentDebugger from './IntentDebugger';
+import Badge, { SeverityBadge } from './Badge';
 import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
 import type {
   ClusterHealthSummary,
@@ -49,7 +46,6 @@ import type {
   ClusterTopMetric,
   Event,
   HelmRevisionEntry,
-  ScoringResult,
   WorkloadResponse,
 } from '../types/api';
 
@@ -95,69 +91,6 @@ function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' 
   if (s === 'error' || s === 'failed') return 'red';
   if (s === 'stopped' || s === 'exited') return 'muted';
   return 'yellow';
-}
-
-function ScoringResultsView({ data }: { data: ScoringResult }) {
-  const rec = data.scores.find((s) => s.runtime === data.recommended);
-  const radarDims = rec
-    ? [
-        { label: 'Cost', value: Math.min(rec.cost_score, 1) },
-        { label: 'Perf', value: Math.min(rec.performance_score, 1) },
-        { label: 'Reliability', value: Math.min(rec.reliability_score, 1) },
-        { label: 'Availability', value: Math.min(rec.availability_score, 1) },
-      ]
-    : [];
-
-  return (
-    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <span className="text-slate-500 text-xs">RECOMMENDED RUNTIME</span>
-        <div className="mt-1 flex items-center gap-2">
-          <RuntimeBadge runtime={data.recommended} />
-          <span className="text-lg font-semibold text-aether">{data.recommended}</span>
-        </div>
-        <div className="mt-3">
-          <span className="text-slate-500 text-xs">WORKLOAD CLASS</span>
-          <p className="text-white">{data.workload_class}</p>
-        </div>
-        <div className="mt-3">
-          <span className="text-slate-500 text-xs">CONFIDENCE</span>
-          <BarChart label="Confidence" percent={data.confidence * 100} />
-        </div>
-        {rec && (
-          <div className="mt-4 space-y-2">
-            <BarChart label="Cost" percent={rec.cost_score * 100} />
-            <BarChart label="Performance" percent={rec.performance_score * 100} />
-            <BarChart label="Reliability" percent={rec.reliability_score * 100} />
-            <BarChart label="Availability" percent={rec.availability_score * 100} />
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col items-center">
-        {radarDims.length >= 3 && <RadarChart dimensions={radarDims} />}
-        <div className="w-full mt-3 space-y-2">
-          {data.scores.map((s) => (
-            <div
-              key={s.runtime}
-              className={`rounded-lg border px-3 py-2 ${
-                s.runtime === data.recommended
-                  ? 'border-aether/30 bg-aether/5'
-                  : 'glass-divider glass-inset-surface'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <RuntimeBadge runtime={s.runtime} />
-                <span className={`text-sm font-medium ${s.runtime === data.recommended ? 'text-aether' : 'text-slate-300'}`}>
-                  {(s.total_score * 100).toFixed(0)}%
-                </span>
-              </div>
-              <BarChart label="Total score" percent={s.total_score * 100} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function WorkloadDetail({
@@ -232,10 +165,7 @@ export default function WorkloadDetail({
   shellWantConnectRef.current = shellWantConnect;
   shellPodRef.current = shellPod;
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
-  const [scoringData, setScoringData] = useState<ScoringResult | null>(null);
-  const [scoringError, setScoringError] = useState('');
   const [clusterDetail, setClusterDetail] = useState<ClusterResourceDetail | null>(null);
-  const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ version: number; path: string }>>([]);
@@ -1987,52 +1917,14 @@ export default function WorkloadDetail({
 
         {activeTab === 'scoring' && (
           <div className="text-sm text-slate-400">
-            {!scoringData && (
-              <>
-                <p>Run the AI scoring engine to compare runtimes for this workload.</p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setLoading(true);
-                    setScoringError('');
-                    const r = await apiPost<ScoringResult>('/ai/recommend', {});
-                    if (r.success && r.data) setScoringData(r.data);
-                    else setScoringError(r.error ?? 'Analysis failed');
-                    setLoading(false);
-                  }}
-                  disabled={loading}
-                  className="mt-2 px-3 py-1.5 bg-aether/20 text-aether rounded border border-aether/30 hover:bg-aether/40 disabled:opacity-50"
-                >
-                  {loading ? 'Analyzing...' : 'Analyze'}
-                </button>
-              </>
-            )}
-            {scoringError && <p className="mt-2 text-red-400">{scoringError}</p>}
-            {scoringData && (
-              <>
-                <div className="flex justify-end mb-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setLoading(true);
-                      setScoringError('');
-                      const r = await apiPost<ScoringResult>('/ai/recommend', {});
-                      if (r.success && r.data) setScoringData(r.data);
-                      else setScoringError(r.error ?? 'Analysis failed');
-                      setLoading(false);
-                    }}
-                    disabled={loading}
-                    className="text-xs text-aether hover:text-aether-light disabled:opacity-50"
-                  >
-                    {loading ? 'Analyzing...' : 'Re-analyze'}
-                  </button>
-                </div>
-                <ScoringResultsView data={scoringData} />
-              </>
-            )}
-            <div className="mt-6 glass-divider-t pt-4">
-              <IntentDebugger />
-            </div>
+            <p>
+              Runtime scoring evaluates a workload spec (YAML), which this panel does not have for{' '}
+              {workload.name} — only its live runtime status. Paste the spec on{' '}
+              <Link to={pathWithQuery(viewToPath('ai'), { workload: workload.name })} className="text-aether hover:underline">
+                AI Engine
+              </Link>{' '}
+              to compare runtime placements.
+            </p>
           </div>
         )}
 

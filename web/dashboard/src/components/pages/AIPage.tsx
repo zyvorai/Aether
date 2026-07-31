@@ -23,7 +23,6 @@ import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageTabs from '../PageTabs';
 import WorkloadSelect from '../WorkloadSelect';
-import IntentDebugger from '../IntentDebugger';
 import type { WorkloadResponse, ScoringResult, ScalingAdvice, RuntimeScore } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -555,10 +554,6 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <ScoringResultPanel result={recommendation} />
               </div>
             )}
-          </div>
-
-          <div className="glass-panel-card lg:col-span-2">
-            <IntentDebugger />
           </div>
 
           <div className="glass-panel-card">

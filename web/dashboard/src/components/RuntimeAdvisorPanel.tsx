@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { Target } from 'lucide-react';
 import { apiPost } from '../utils/api';
 import YamlInput from './YamlInput';
-import IntentDebugger from './IntentDebugger';
 import Badge, { RuntimeBadge } from './Badge';
 import BarChart from './BarChart';
 import type { ScoringResult, RuntimeScore } from '../types/api';
@@ -87,7 +86,6 @@ export default function RuntimeAdvisorPanel() {
           </div>
         ) : null}
       </GlassSection>
-      <IntentDebugger />
     </section>
   );
 }
