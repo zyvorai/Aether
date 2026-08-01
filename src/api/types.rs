@@ -419,6 +419,10 @@ pub(crate) struct ClusterHelmActionRequestBody {
     pub(crate) release: String,
     pub(crate) action: String,
     pub(crate) chart: Option<String>,
+    /// Repo URL for the chart (e.g. "https://charts.bitnami.com/bitnami"). When set on
+    /// install/upgrade, it's registered via `helm repo add` before the chart is resolved,
+    /// since a fresh environment has no repos configured yet.
+    pub(crate) repo: Option<String>,
     pub(crate) values_yaml: Option<String>,
     pub(crate) revision: Option<String>,
 }

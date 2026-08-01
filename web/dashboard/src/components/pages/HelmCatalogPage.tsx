@@ -113,6 +113,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
       release: releaseName,
       action: 'install',
       chart: selected.chart,
+      repo: selected.repo,
       values_yaml: yaml || undefined,
     });
     setInstalling(false);

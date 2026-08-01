@@ -1285,15 +1285,58 @@ pub async fn helm_history(
         .collect())
 }
 
-pub async fn helm_action(
-    cluster: &str,
-    namespace: &str,
-    release: &str,
-    action: &str,
-    chart: Option<&str>,
-    values_yaml: Option<&str>,
-    revision: Option<&str>,
-) -> Result<String> {
+/// Ensure a chart's repo (e.g. "bitnami" -> "https://charts.bitnami.com/bitnami") is
+/// registered with helm before an install/upgrade resolves "reponame/chart". A fresh
+/// environment has no repos configured, so without this every catalog install fails
+/// with "repo <name> not found" regardless of the actual chart/values being correct.
+async fn ensure_helm_repo(chart: &str, repo_url: &str) -> Result<()> {
+    let Some((repo_name, _)) = chart.split_once('/') else {
+        return Ok(());
+    };
+    let add_result = run_helm(vec![
+        "repo".to_string(),
+        "add".to_string(),
+        repo_name.to_string(),
+        repo_url.to_string(),
+    ])
+    .await;
+    if let Err(e) = add_result {
+        if !e.to_string().contains("already exists") {
+            return Err(e);
+        }
+    }
+    run_helm(vec![
+        "repo".to_string(),
+        "update".to_string(),
+        repo_name.to_string(),
+    ])
+    .await?;
+    Ok(())
+}
+
+pub struct HelmActionParams<'a> {
+    pub cluster: &'a str,
+    pub namespace: &'a str,
+    pub release: &'a str,
+    pub action: &'a str,
+    pub chart: Option<&'a str>,
+    /// Repo URL for the chart; registered via `helm repo add` before install/upgrade.
+    pub repo: Option<&'a str>,
+    pub values_yaml: Option<&'a str>,
+    pub revision: Option<&'a str>,
+}
+
+pub async fn helm_action(params: HelmActionParams<'_>) -> Result<String> {
+    let HelmActionParams {
+        cluster,
+        namespace,
+        release,
+        action,
+        chart,
+        repo,
+        values_yaml,
+        revision,
+    } = params;
     match action {
         "rollback" => {
             let rev = revision.context("revision is required for helm rollback")?;
@@ -1314,6 +1357,9 @@ pub async fn helm_action(
         }
         "upgrade" | "install" => {
             let chart = chart.context("chart is required for helm install/upgrade")?;
+            if let Some(repo_url) = repo {
+                ensure_helm_repo(chart, repo_url).await?;
+            }
             let mut args = if action == "install" {
                 vec![
                     "install".to_string(),

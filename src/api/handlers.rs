@@ -3597,15 +3597,16 @@ pub(crate) async fn api_cluster_helm_action(
         "{}:{}/HelmRelease:{}",
         request.cluster, request.namespace, request.release
     );
-    match crate::kubecluster::helm_action(
-        &request.cluster,
-        &request.namespace,
-        &request.release,
-        &request.action,
-        request.chart.as_deref(),
-        request.values_yaml.as_deref(),
-        request.revision.as_deref(),
-    )
+    match crate::kubecluster::helm_action(crate::kubecluster::HelmActionParams {
+        cluster: &request.cluster,
+        namespace: &request.namespace,
+        release: &request.release,
+        action: &request.action,
+        chart: request.chart.as_deref(),
+        repo: request.repo.as_deref(),
+        values_yaml: request.values_yaml.as_deref(),
+        revision: request.revision.as_deref(),
+    })
     .await
     {
         Ok(message) => {
