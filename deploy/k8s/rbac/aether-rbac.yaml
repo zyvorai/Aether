@@ -75,6 +75,23 @@ rules:
   - apiGroups: ["metrics.k8s.io"]
     resources: [pods, nodes]
     verbs: [get, list]
+  # PodDisruptionBudgets — created by most production-grade Helm charts in the
+  # Helm App Store catalog (e.g. bitnami/redis's redis-master PDB) regardless of
+  # whether HA is explicitly enabled in the install form.
+  - apiGroups: ["policy"]
+    resources: [poddisruptionbudgets]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # Roles/RoleBindings/ClusterRoles/ClusterRoleBindings — needed to install Helm
+  # App Store charts that provision their own RBAC (e.g. argo/argo-cd,
+  # ingress-nginx/ingress-nginx's controller ClusterRole).
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: [roles, rolebindings, clusterroles, clusterrolebindings]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # Admission webhooks — ingress-nginx/ingress-nginx registers a validating
+  # webhook for Ingress objects as part of its chart.
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: [validatingwebhookconfigurations, mutatingwebhookconfigurations]
+    verbs: [get, list, watch, create, update, patch, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
