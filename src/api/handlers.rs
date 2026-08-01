@@ -137,7 +137,14 @@ fn validate_api_name<T: serde::Serialize>(
     Ok(())
 }
 
-/// Validate that a spec_path does not contain path traversal sequences or absolute paths.
+/// Validate that a spec_path does not contain path traversal sequences.
+///
+/// spec_path is never taken directly from client input (CreateWorkloadRequest has no such
+/// field); it is always either the workload's pre-existing stored path or freshly computed
+/// via `workload_spec_file(&name)` — an absolute path under the aether home directory, whose
+/// `name` component is already constrained by `validate_api_name`. This guards against `..`
+/// segments reaching `Workload::from_file`/`std::fs::write`, not against absolute paths,
+/// which is exactly the shape `workload_spec_file` legitimately produces.
 fn validate_spec_path<T: serde::Serialize>(
     path: &std::path::Path,
 ) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
@@ -146,9 +153,6 @@ fn validate_spec_path<T: serde::Serialize>(
         return Err(err_bad_request(
             "spec_path contains path traversal sequence",
         ));
-    }
-    if path.is_absolute() {
-        return Err(err_bad_request("spec_path must be a relative path"));
     }
     Ok(())
 }
