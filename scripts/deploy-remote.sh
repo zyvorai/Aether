@@ -387,10 +387,16 @@ else
     cd ${REMOTE_DIR}
     cat > Dockerfile.deploy <<'EOF'
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y ca-certificates curl openssl && \
+RUN apt-get update && apt-get install -y ca-certificates curl openssl tar && \
     KUBECTL_VERSION=\"\$(curl -fsSL https://dl.k8s.io/release/stable.txt)\" && \
     curl -fsSL -o /usr/local/bin/kubectl \"https://dl.k8s.io/release/\${KUBECTL_VERSION}/bin/linux/\$(dpkg --print-architecture)/kubectl\" && \
     chmod +x /usr/local/bin/kubectl && \
+    ARCH=\"\$(dpkg --print-architecture)\" && \
+    HELM_VERSION=\"\$(curl -fsSL https://api.github.com/repos/helm/helm/releases/latest | grep -oP '\"tag_name\":\s*\"\K[^\"]+')\" && \
+    curl -fsSL \"https://get.helm.sh/helm-\${HELM_VERSION}-linux-\${ARCH}.tar.gz\" | tar -xz -C /tmp && \
+    mv \"/tmp/linux-\${ARCH}/helm\" /usr/local/bin/helm && \
+    chmod +x /usr/local/bin/helm && \
+    rm -rf \"/tmp/linux-\${ARCH}\" && \
     rm -rf /var/lib/apt/lists/*
 COPY target/release/aether /usr/local/bin/aether
 RUN mkdir -p /var/lib/aether /tls
