@@ -88,7 +88,13 @@ export default function MigrationPlannerPanel() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<WorkloadResponse[]>('/workloads').then((data) => setWorkloads(data ?? []));
+    apiFetch<WorkloadResponse[]>('/workloads').then((data) =>
+      // Migration planning only works for Aether-managed workloads (they have a stored
+      // spec to plan against); discovered cluster workloads have no spec_path and their
+      // slash-qualified "cluster/namespace/name" identifiers aren't valid workload names,
+      // so offering them here would always fail with "Could not load migration plan".
+      setWorkloads((data ?? []).filter((w) => w.source !== 'cluster')),
+    );
   }, []);
 
   const selected = useMemo(
@@ -141,6 +147,12 @@ export default function MigrationPlannerPanel() {
               onChange={setWorkload}
               placeholder="Select workload to migrate"
             />
+            {workloads.length === 0 ? (
+              <p className="mt-2 text-xs text-slate-500">
+                No Aether-managed workloads yet. Deploy one to plan a migration — discovered
+                cluster workloads aren't manageable by Aether until deployed through it.
+              </p>
+            ) : null}
           </div>
 
           {selected ? (
