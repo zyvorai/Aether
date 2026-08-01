@@ -489,10 +489,14 @@ ${AETHER_MANIFEST_EXTRA_ENV_YAML}
         resources:
           requests:
             cpu: 100m
-            memory: 128Mi
+            memory: 256Mi
           limits:
             cpu: '1'
-            memory: 512Mi
+            # helm repo add/update runs as a subprocess sharing this container's cgroup;
+            # parsing a large public index (e.g. Bitnami's) can spike well past 512Mi and
+            # OOM-kill the whole aether server, not just fail the one request. Confirmed
+            # live: installing a chart from the Helm App Store crashed the pod at 512Mi.
+            memory: 1Gi
 ${SVC_INGRESS_YAML}
 ${PDB_YAML_APPEND}
 YAML
