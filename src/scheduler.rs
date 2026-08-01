@@ -393,7 +393,20 @@ impl Scheduler {
             match crate::runtime::create_runtime(&runtime_kind).await {
                 Ok(rt) => match rt.capacity().await {
                     Ok(Some(cap)) => {
-                        let updated = RuntimeCapacity::from_probed(&cap, runtime_kind);
+                        // Merge into the existing entry (if any) so `current_workloads` and
+                        // other fields tracked by `schedule()`/placement decisions survive a
+                        // probe — `from_probed` alone would reset them to seed defaults every
+                        // time this runs, since it's built from `default_for(runtime)`.
+                        let updated = match self.capacities.get(&runtime_kind) {
+                            Some(existing) => RuntimeCapacity {
+                                total_cpu: cap.total_cpu,
+                                available_cpu: cap.available_cpu,
+                                total_memory_mb: cap.total_memory_mb,
+                                available_memory_mb: cap.available_memory_mb,
+                                ..existing.clone()
+                            },
+                            None => RuntimeCapacity::from_probed(&cap, runtime_kind),
+                        };
                         self.update_capacity(updated);
                         tracing::info!(
                             "Probed live capacity for {}: {:.1} CPU, {} MB memory",

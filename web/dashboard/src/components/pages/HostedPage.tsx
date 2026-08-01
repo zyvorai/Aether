@@ -249,7 +249,10 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
             <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
               <Users size={16} /> Tenants
             </div>
-            <div className="text-2xl font-semibold text-slate-100">{billing.tenants.length}</div>
+            {/* billing.tenants always has >=1 entry (a synthetic "self-hosted" line when no
+                real tenants exist, for usage metering) — using the real tenant count here
+                keeps this stat consistent with the Tenants list rendered below. */}
+            <div className="text-2xl font-semibold text-slate-100">{tenants.length}</div>
           </div>
           <div className="glass-panel-card py-3 px-4">
             <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">

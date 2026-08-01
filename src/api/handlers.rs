@@ -3665,7 +3665,12 @@ pub(crate) async fn api_scheduler_utilization() -> impl IntoResponse {
 
     let path = Scheduler::default_path();
     match Scheduler::load(&path) {
-        Ok(scheduler) => {
+        Ok(mut scheduler) => {
+            // Scheduler::load falls back to seed/simulation defaults when scheduler.json
+            // doesn't exist yet; probe real runtime capacity so utilization reflects the
+            // live fleet instead of the same static 75%-utilized numbers for every runtime.
+            scheduler.probe_capacities().await;
+            let _ = scheduler.save(&path);
             let utils = scheduler.utilization_summary();
             (
                 StatusCode::OK,

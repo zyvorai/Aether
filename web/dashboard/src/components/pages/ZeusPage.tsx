@@ -9,7 +9,6 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiPost } from '../../utils/api';
-import CopilotPlatformPanel from '../CopilotPlatformPanel';
 import ZeusPlatformPanel from '../ZeusPlatformPanel';
 import ZeusPromptLibrary from '../ZeusPromptLibrary';
 
@@ -408,7 +407,6 @@ export default function ZeusPage() {
 
       <ZeusPromptLibrary />
       <ZeusPlatformPanel />
-      <CopilotPlatformPanel />
       </section>
     </div>
   );

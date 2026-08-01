@@ -3605,7 +3605,18 @@ async fn run_helm(args: Vec<String>) -> Result<Vec<u8>> {
 }
 
 fn cpu_to_millicores(value: &str) -> i64 {
-    if let Some(raw) = value.strip_suffix('m') {
+    // metrics.k8s.io PodMetrics reports usage.cpu in nanocores ("123456n") for anything
+    // under ~1 full core, which is most idle/low-usage containers — without this branch
+    // every such value silently parsed to 0, making fleet-wide CPU usage read as 0m.
+    if let Some(raw) = value.strip_suffix('n') {
+        raw.parse::<f64>()
+            .map(|nanocores| (nanocores / 1_000_000.0).round() as i64)
+            .unwrap_or(0)
+    } else if let Some(raw) = value.strip_suffix('u') {
+        raw.parse::<f64>()
+            .map(|microcores| (microcores / 1000.0).round() as i64)
+            .unwrap_or(0)
+    } else if let Some(raw) = value.strip_suffix('m') {
         raw.parse::<i64>().unwrap_or(0)
     } else {
         value
@@ -3712,5 +3723,19 @@ mod inventory_tests {
             Some("launcher-pending")
         );
         assert!(pick_running_or_first_pod(&[]).is_none());
+    }
+
+    #[test]
+    fn cpu_to_millicores_handles_nanocores() {
+        assert_eq!(cpu_to_millicores("123456789n"), 123);
+        assert_eq!(cpu_to_millicores("500000n"), 1);
+        assert_eq!(cpu_to_millicores("0n"), 0);
+    }
+
+    #[test]
+    fn cpu_to_millicores_handles_microcores_millicores_and_cores() {
+        assert_eq!(cpu_to_millicores("1500u"), 2);
+        assert_eq!(cpu_to_millicores("250m"), 250);
+        assert_eq!(cpu_to_millicores("2"), 2000);
     }
 }

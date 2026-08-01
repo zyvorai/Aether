@@ -132,15 +132,18 @@ pub async fn build_sre_runbook(state_path: &Path) -> anyhow::Result<SreRunbookRe
         items: autonomy.recommendations.clone(),
     });
 
+    let total_savings_usd = cost
+        .recommendations
+        .iter()
+        .map(|r| r.savings_monthly_usd)
+        .sum::<f64>()
+        .max(0.0); // a net-negative or -0.0 sum must not render as "$-0/mo savings"
     let summary = format!(
         "Fleet health {:.0}% · {} issues · {} healing actions · ${:.0}/mo savings potential",
         briefing.fleet_health_pct,
         briefing.issues.len(),
         healer.would_execute.len(),
-        cost.recommendations
-            .iter()
-            .map(|r| r.savings_monthly_usd)
-            .sum::<f64>()
+        total_savings_usd
     );
 
     let mut md = format!("# Aether SRE Runbook\n\n{summary}\n\n");
