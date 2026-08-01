@@ -1466,7 +1466,7 @@ pub(crate) async fn api_cost_chargeback(
 pub(crate) async fn list_backups(Query(page): Query<PaginationQuery>) -> impl IntoResponse {
     let manager = backup::BackupManager::new(backup::BackupManager::default_dir());
 
-    match manager.list_backups() {
+    match manager.list_backups_detailed() {
         Ok(mut backups) => {
             let total = backups.len();
             let use_page = page.limit.is_some() || page.offset.is_some();
@@ -1480,7 +1480,7 @@ pub(crate) async fn list_backups(Query(page): Query<PaginationQuery>) -> impl In
                     Err(e) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<Vec<PathBuf>>::error(e.to_string())),
+                            Json(ApiResponse::<Vec<backup::BackupSummary>>::error(e.to_string())),
                         )
                             .into_response();
                     }
@@ -1499,7 +1499,7 @@ pub(crate) async fn list_backups(Query(page): Query<PaginationQuery>) -> impl In
                 Json(ApiResponse::success(backups)).into_response()
             }
         }
-        Err(e) => err_internal::<Vec<PathBuf>>(e).into_response(),
+        Err(e) => err_internal::<Vec<backup::BackupSummary>>(e).into_response(),
     }
 }
 

@@ -262,6 +262,19 @@ impl Backup {
     }
 }
 
+/// Backup summary for API listings — mirrors the dashboard's `BackupInfo` type
+/// (web/dashboard/src/types/api.ts). `list_backups()` returns bare paths for internal
+/// path-based operations; this pairs each path with the metadata clients need to display.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BackupSummary {
+    pub path: String,
+    pub filename: String,
+    pub workload_count: usize,
+    pub created_at: String,
+    pub aether_version: String,
+    pub description: Option<String>,
+}
+
 /// Backup manager for creating and managing backups
 pub struct BackupManager {
     backup_dir: PathBuf,
@@ -345,6 +358,38 @@ impl BackupManager {
 
         backups.sort();
         Ok(backups)
+    }
+
+    /// List backups enriched with their metadata (name, timestamp, description, ...) for API
+    /// responses — `list_backups()` alone returns bare paths, which is fine for internal
+    /// path-based operations (cleanup, restore) but leaves API clients with nothing to
+    /// display. Backups that fail to parse (corrupted/foreign files) are logged and skipped
+    /// rather than failing the whole listing.
+    pub fn list_backups_detailed(&self) -> Result<Vec<BackupSummary>> {
+        let paths = self.list_backups()?;
+        let mut summaries = Vec::with_capacity(paths.len());
+        for path in paths {
+            match self.get_backup_info(&path) {
+                Ok(metadata) => {
+                    let filename = path
+                        .file_name()
+                        .map(|f| f.to_string_lossy().into_owned())
+                        .unwrap_or_default();
+                    summaries.push(BackupSummary {
+                        path: path.to_string_lossy().into_owned(),
+                        filename,
+                        workload_count: metadata.workload_count,
+                        created_at: metadata.created_at,
+                        aether_version: metadata.aether_version,
+                        description: metadata.description,
+                    });
+                }
+                Err(e) => {
+                    tracing::warn!("Skipping unreadable backup {}: {}", path.display(), e);
+                }
+            }
+        }
+        Ok(summaries)
     }
 
     /// Get backup info without loading full content.
@@ -596,6 +641,53 @@ mod tests {
         // Delete
         manager.delete_backup(&path).unwrap();
         assert!(!path.exists());
+    }
+
+    #[test]
+    fn test_list_backups_detailed_includes_metadata() {
+        let dir = tempdir().unwrap();
+        let manager = BackupManager::new(dir.path().to_path_buf());
+
+        let mut state = StateStore::new();
+        state.upsert("test".to_string(), create_test_workload_state());
+
+        manager
+            .create_backup(
+                &state,
+                Some("smoke-test".to_string()),
+                Some("a test description".to_string()),
+            )
+            .unwrap();
+
+        let summaries = manager.list_backups_detailed().unwrap();
+        assert_eq!(summaries.len(), 1);
+        let summary = &summaries[0];
+        assert_eq!(summary.filename, "smoke-test.json");
+        assert_eq!(summary.workload_count, 1);
+        assert_eq!(summary.description.as_deref(), Some("a test description"));
+        assert!(!summary.aether_version.is_empty());
+        assert!(!summary.created_at.is_empty());
+        assert!(summary.path.ends_with("smoke-test.json"));
+    }
+
+    #[test]
+    fn test_list_backups_detailed_skips_unreadable_files() {
+        let dir = tempdir().unwrap();
+        let manager = BackupManager::new(dir.path().to_path_buf());
+        manager.ensure_backup_dir().unwrap();
+
+        // A non-backup JSON file should be skipped, not fail the whole listing.
+        fs::write(dir.path().join("not-a-backup.json"), "{\"garbage\": true}").unwrap();
+
+        let mut state = StateStore::new();
+        state.upsert("test".to_string(), create_test_workload_state());
+        manager
+            .create_backup(&state, Some("valid".to_string()), None)
+            .unwrap();
+
+        let summaries = manager.list_backups_detailed().unwrap();
+        assert_eq!(summaries.len(), 1);
+        assert_eq!(summaries[0].filename, "valid.json");
     }
 
     #[test]
