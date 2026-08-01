@@ -1260,17 +1260,15 @@ pub async fn helm_history(
     namespace: &str,
     release: &str,
 ) -> Result<Vec<HelmRevisionEntry>> {
-    let output = run_helm(vec![
-        "history".to_string(),
-        release.to_string(),
-        "--kube-context".to_string(),
-        cluster.to_string(),
+    let mut args = vec!["history".to_string(), release.to_string()];
+    args.extend(helm_context_args(cluster));
+    args.extend([
         "-n".to_string(),
         namespace.to_string(),
         "-o".to_string(),
         "json".to_string(),
-    ])
-    .await?;
+    ]);
+    let output = run_helm(args).await?;
     let entries: Vec<HelmHistoryEntry> = serde_json::from_slice(&output)?;
     Ok(entries
         .into_iter()
@@ -1326,6 +1324,19 @@ pub struct HelmActionParams<'a> {
     pub revision: Option<&'a str>,
 }
 
+/// Args to select the target cluster for a helm subprocess call. The in-cluster label
+/// (the default, single-cluster deployment) has no kubeconfig file on disk at all — the
+/// Rust kube client auto-detects in-cluster auth instead, and passing `--kube-context`
+/// to the external helm binary in that case fails with "context ... does not exist"
+/// (confirmed live). Only pass it for a genuine named kubeconfig context (multi-cluster).
+fn helm_context_args(cluster: &str) -> Vec<String> {
+    if is_in_cluster_label(cluster) {
+        Vec::new()
+    } else {
+        vec!["--kube-context".to_string(), cluster.to_string()]
+    }
+}
+
 pub async fn helm_action(params: HelmActionParams<'_>) -> Result<String> {
     let HelmActionParams {
         cluster,
@@ -1340,16 +1351,14 @@ pub async fn helm_action(params: HelmActionParams<'_>) -> Result<String> {
     match action {
         "rollback" => {
             let rev = revision.context("revision is required for helm rollback")?;
-            run_helm(vec![
+            let mut args = vec![
                 "rollback".to_string(),
                 release.to_string(),
                 rev.to_string(),
-                "--kube-context".to_string(),
-                cluster.to_string(),
-                "-n".to_string(),
-                namespace.to_string(),
-            ])
-            .await?;
+            ];
+            args.extend(helm_context_args(cluster));
+            args.extend(["-n".to_string(), namespace.to_string()]);
+            run_helm(args).await?;
             Ok(format!(
                 "rolled back Helm release {} to revision {}",
                 release, rev
@@ -1373,12 +1382,8 @@ pub async fn helm_action(params: HelmActionParams<'_>) -> Result<String> {
                     chart.to_string(),
                 ]
             };
-            args.extend([
-                "--kube-context".to_string(),
-                cluster.to_string(),
-                "-n".to_string(),
-                namespace.to_string(),
-            ]);
+            args.extend(helm_context_args(cluster));
+            args.extend(["-n".to_string(), namespace.to_string()]);
             if action == "install" {
                 args.push("--create-namespace".to_string());
             }
@@ -3776,5 +3781,19 @@ mod inventory_tests {
         assert_eq!(cpu_to_millicores("1500u"), 2);
         assert_eq!(cpu_to_millicores("250m"), 250);
         assert_eq!(cpu_to_millicores("2"), 2000);
+    }
+
+    #[test]
+    fn helm_context_args_omits_kube_context_for_in_cluster_label() {
+        assert!(helm_context_args("active-client").is_empty());
+        assert!(helm_context_args("in-cluster").is_empty());
+    }
+
+    #[test]
+    fn helm_context_args_passes_kube_context_for_named_cluster() {
+        assert_eq!(
+            helm_context_args("staging-eu"),
+            vec!["--kube-context".to_string(), "staging-eu".to_string()],
+        );
     }
 }
