@@ -73,7 +73,10 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
       setName('');
       setRole('viewer');
       toast(`API key "${response.data.name}" created`, 'success');
-      void load();
+      // Don't reload the list yet: creating the very first key ends the local-dev open-auth
+      // bypass, so an immediate background refetch here can 401 and boot the whole app back
+      // to the login screen before the user has read/copied the plaintext key below — which
+      // is shown exactly once. Reload once they've dismissed this modal instead.
     } else {
       toast(response.error ?? 'Failed to create API key', 'error');
     }
@@ -253,7 +256,14 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
       </section>
 
 
-      <Modal isOpen={created !== null} onClose={() => setCreated(null)} title={`New API key: ${created?.name ?? ''}`}>
+      <Modal
+        isOpen={created !== null}
+        onClose={() => {
+          setCreated(null);
+          void load();
+        }}
+        title={`New API key: ${created?.name ?? ''}`}
+      >
         {created && (
           <div className="space-y-4" data-testid="rbac-created-key">
             <p className="text-sm text-slate-400">This plaintext key is only returned once. Store it before closing.</p>
