@@ -41,21 +41,24 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
   const scannedWorkloadRef = useRef<string | null>(null);
   const workloadFocus = workloadParam.trim() || undefined;
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     setLoading(true);
     setLoadFailed(false);
-    const [result, fleetRes] = await Promise.all([
-      apiFetchSettled<WorkloadResponse[]>('/workloads'),
-      apiFetchSettled<FleetDriftSummary>('/fleet/drift'),
-    ]);
-    if (!result.ok) {
-      setLoadFailed(true);
-      setWorkloads([]);
-    } else {
-      setWorkloads(result.data);
-    }
-    setFleetDrift(fleetRes.ok ? fleetRes.data : null);
-    setLoading(false);
+    // Fire both requests concurrently, but update state as each settles independently —
+    // /fleet/drift is typically much faster than /workloads (which lists every discovered
+    // cluster resource), and there's no reason to hold its summary hostage to the slower call.
+    void apiFetchSettled<FleetDriftSummary>('/fleet/drift').then((fleetRes) => {
+      setFleetDrift(fleetRes.ok ? fleetRes.data : null);
+    });
+    return apiFetchSettled<WorkloadResponse[]>('/workloads').then((result) => {
+      if (!result.ok) {
+        setLoadFailed(true);
+        setWorkloads([]);
+      } else {
+        setWorkloads(result.data);
+      }
+      setLoading(false);
+    });
   }, [refreshKey]);
 
   useEffect(() => {
@@ -137,7 +140,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
     w.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading && workloads.length === 0 && !loadFailed) {
+  if (loading && workloads.length === 0 && !loadFailed && !fleetDrift) {
     return <PageLoading rows={4} />;
   }
 
@@ -298,7 +301,9 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
         </div>
       ) : null}
 
-      {workloads.length === 0 ? (
+      {workloads.length === 0 && loading ? (
+        <PageLoading rows={2} />
+      ) : workloads.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to check for drift" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

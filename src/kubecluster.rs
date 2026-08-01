@@ -336,63 +336,56 @@ fn default_cluster_display_name() -> String {
 }
 
 async fn list_workloads_for_client(client: &Client, cluster: &str) -> Result<Vec<ClusterWorkload>> {
-    let mut workloads = Vec::new();
-    workloads.extend(
+    // These 7 listings are independent read-only API calls; running them concurrently
+    // instead of sequentially turns total latency from sum-of-7 into max-of-7.
+    let (deployments, statefulsets, daemonsets, jobs, cronjobs, pods, vmis) = tokio::join!(
         list_kind::<Deployment>(
             client,
             cluster,
             "Deployment",
             workload_status_deployment,
             "/spec/template/spec/containers/0/image",
-        )
-        .await?,
-    );
-    workloads.extend(
+        ),
         list_kind::<StatefulSet>(
             client,
             cluster,
             "StatefulSet",
             workload_status_statefulset,
             "/spec/template/spec/containers/0/image",
-        )
-        .await?,
-    );
-    workloads.extend(
+        ),
         list_kind::<DaemonSet>(
             client,
             cluster,
             "DaemonSet",
             workload_status_daemonset,
             "/spec/template/spec/containers/0/image",
-        )
-        .await?,
-    );
-    workloads.extend(
+        ),
         list_kind::<Job>(
             client,
             cluster,
             "Job",
             workload_status_job,
             "/spec/template/spec/containers/0/image",
-        )
-        .await?,
-    );
-    workloads.extend(
+        ),
         list_kind::<CronJob>(
             client,
             cluster,
             "CronJob",
             workload_status_cronjob,
             "/spec/jobTemplate/spec/template/spec/containers/0/image",
-        )
-        .await?,
+        ),
+        list_standalone_pod_workloads(client, cluster),
+        list_kubevirt_vmis(client, cluster),
     );
-    workloads.extend(list_standalone_pod_workloads(client, cluster).await?);
-    workloads.extend(
-        list_kubevirt_vmis(client, cluster)
-            .await
-            .unwrap_or_default(),
-    );
+
+    let mut workloads = Vec::new();
+    workloads.extend(deployments?);
+    workloads.extend(statefulsets?);
+    workloads.extend(daemonsets?);
+    workloads.extend(jobs?);
+    workloads.extend(cronjobs?);
+    workloads.extend(pods?);
+    workloads.extend(vmis.unwrap_or_default());
     Ok(workloads)
 }
 
