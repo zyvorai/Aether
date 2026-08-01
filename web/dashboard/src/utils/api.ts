@@ -22,8 +22,27 @@ function withCreds(init?: RequestInit): RequestInit {
  */
 export const UNAUTHORIZED_EVENT = 'aether-unauthorized';
 
+/**
+ * Suppresses the unauthorized-redirect while a one-time secret (e.g. a freshly created RBAC
+ * key's plaintext value) is on screen. Several independent background pollers run at the app
+ * root regardless of which page is open (ServerCapabilitiesContext's 12s /server refresh, the
+ * SSE stream, etc.) — any one of them can 401 within seconds of the very action that ended the
+ * local-dev auth bypass, which would otherwise boot the whole app back to the login screen and
+ * take the modal showing that secret down with it before the user can copy it. A counter (not
+ * a boolean) so nested/concurrent suppressions can't accidentally re-enable each other early.
+ */
+let unauthorizedSuppressionCount = 0;
+
+export function suppressUnauthorizedRedirect(): void {
+  unauthorizedSuppressionCount += 1;
+}
+
+export function allowUnauthorizedRedirect(): void {
+  unauthorizedSuppressionCount = Math.max(0, unauthorizedSuppressionCount - 1);
+}
+
 function notifyIfUnauthorized(res: Response): void {
-  if (res.status === 401) {
+  if (res.status === 401 && unauthorizedSuppressionCount === 0) {
     window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
   }
 }

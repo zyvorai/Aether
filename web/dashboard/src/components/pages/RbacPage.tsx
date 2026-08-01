@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
 import { KeyRound, Shield, Trash2, Copy } from 'lucide-react';
-import { apiFetchSettled, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost, suppressUnauthorizedRedirect, allowUnauthorizedRedirect } from '../../utils/api';
 import { copyToClipboard } from '../../utils/clipboard';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -56,6 +56,16 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Creating the very first key ends the local-dev open-auth bypass; several background
+  // pollers run at the app root regardless of page (ServerCapabilitiesContext's 12s /server
+  // refresh, SSE, etc.) and any one of them can 401 within seconds, which would otherwise
+  // boot the whole app back to the login screen and take this one-time-secret modal with it.
+  useEffect(() => {
+    if (!created) return;
+    suppressUnauthorizedRedirect();
+    return () => allowUnauthorizedRedirect();
+  }, [created]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
