@@ -1088,22 +1088,42 @@ pub(crate) async fn delete_workload(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let mut state = app_state.state.write().await;
+    let workload = match lookup_workload::<String>(&app_state, &name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
 
-    match state.remove(&name) {
-        Some(_) => {
-            // Persist to disk
-            if let Err(e) = persist_workload_api(&app_state, &state).await {
-                return err_internal::<String>(e);
-            }
+    let rt = match make_runtime::<String>(&workload.runtime).await {
+        Ok(r) => r,
+        Err(e) => return e,
+    };
 
-            (
-                StatusCode::OK,
-                Json(ApiResponse::success(format!("Workload {} deleted", name))),
-            )
-        }
-        None => err_not_found::<String>(format!("Workload {} not found", name)),
+    // Tear down the actual runtime resources (Deployment/Service/HPA, container, VM, ...)
+    // before forgetting about the workload — otherwise a successful-looking delete leaves
+    // real infrastructure running, orphaned and untracked.
+    if let Err(e) = rt.delete(&workload.instance).await {
+        return err_internal::<String>(e);
     }
+
+    let mut state = app_state.state.write().await;
+    state.remove(&name);
+    if let Err(e) = persist_workload_api(&app_state, &state).await {
+        return err_internal::<String>(e);
+    }
+    drop(state);
+
+    emit_sse(
+        &app_state,
+        &ServerEvent::WorkloadChanged {
+            name: name.clone(),
+            action: "deleted".to_string(),
+        },
+    );
+
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(format!("Workload {} deleted", name))),
+    )
 }
 
 /// GET /api/workloads/:name/logs - Get workload logs
