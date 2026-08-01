@@ -54,8 +54,12 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
   }, [refreshKey]);
 
   useEffect(() => {
+    // Don't refetch while the just-created key's modal is open: a background reload here
+    // (e.g. the SSE-driven refreshKey bump) that 401s would set loadFailed and its early
+    // return below would blank out the one-time-secret modal along with the rest of the page.
+    if (created) return;
     void load();
-  }, [load]);
+  }, [load, created]);
 
   // Creating the very first key ends the local-dev open-auth bypass; several background
   // pollers run at the app root regardless of page (ServerCapabilitiesContext's 12s /server
