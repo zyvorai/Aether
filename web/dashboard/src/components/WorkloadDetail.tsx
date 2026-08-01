@@ -165,6 +165,7 @@ export default function WorkloadDetail({
   shellWantConnectRef.current = shellWantConnect;
   shellPodRef.current = shellPod;
   const [driftData, setDriftData] = useState<Record<string, unknown> | null>(null);
+  const [driftFailed, setDriftFailed] = useState(false);
   const [clusterDetail, setClusterDetail] = useState<ClusterResourceDetail | null>(null);
   const [actionLoading, setActionLoading] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
@@ -262,8 +263,10 @@ export default function WorkloadDetail({
 
   useEffect(() => {
     if (activeTab === 'drift' && isAetherManaged) {
+      setDriftFailed(false);
       apiFetch<Record<string, unknown>>(`/drift/${workload.name}`).then(r => {
         if (r) setDriftData(r);
+        else setDriftFailed(true);
       });
     }
   }, [activeTab, isAetherManaged, workload.name]);
@@ -1892,6 +1895,8 @@ export default function WorkloadDetail({
           <div>
             {!isAetherManaged ? (
               <p className="text-slate-500">Drift analysis is currently available only for Aether-managed workloads.</p>
+            ) : driftFailed ? (
+              <p className="text-red-400">Could not load drift data for {workload.name}. Check that the server can read its stored spec.</p>
             ) : driftData ? (
               <div>
                 <div className={`text-sm font-medium mb-2 ${(driftData as Record<string, unknown>).has_drift ? 'text-orange-400' : 'text-emerald-400'}`}>

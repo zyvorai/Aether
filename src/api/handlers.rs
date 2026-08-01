@@ -1002,15 +1002,30 @@ async fn deploy_workload_spec(
         );
     }
 
+    // Persist the submitted spec to disk so spec_path is a real, readable file — every
+    // handler that inspects a running workload (drift check, migration advice, AI profile,
+    // rollback, build) loads the spec straight from workload_state.spec_path. A sentinel
+    // path here means those all fail with "No such file or directory" for any workload
+    // deployed through the API/dashboard instead of `aether run -s <file>`.
+    let spec_path = workload_spec_file(&name);
+    if let Some(parent) = spec_path.parent() {
+        if let Err(e) = std::fs::create_dir_all(parent) {
+            return Err(err_internal(format!("create specs dir: {}", e)));
+        }
+    }
+    match serde_yaml::to_string(&request.spec) {
+        Ok(yaml) => {
+            if let Err(e) = std::fs::write(&spec_path, yaml) {
+                return Err(err_internal(format!("write workload spec: {}", e)));
+            }
+        }
+        Err(e) => return Err(err_internal(format!("serialize workload spec: {}", e))),
+    }
+
     let mut state = app_state.state.write().await;
     state.upsert(
         name.clone(),
-        WorkloadState::new(
-            name.clone(),
-            runtime_kind,
-            instance,
-            PathBuf::from("api_created"),
-        ),
+        WorkloadState::new(name.clone(), runtime_kind, instance, spec_path),
     );
 
     if let Err(e) = persist_workload_api(app_state, &state).await {
