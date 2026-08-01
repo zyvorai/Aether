@@ -487,7 +487,14 @@ pub fn execute_finops_agent(
     req: &FinOpsExecuteRequest,
 ) -> FinOpsExecuteReport {
     let patches = FinOpsEngine::build_cost_patches(workloads);
-    let savings: f64 = patches.iter().map(|p| p.savings_monthly_usd).sum();
+    // Rust's `Sum for f64` yields -0.0 (not +0.0) for an empty iterator, which some
+    // formatters (Rust's `{:.0}`, unlike JS's `toFixed`) render with the sign intact —
+    // clamp so an empty patch set never serializes a "-0" savings figure to any consumer.
+    let savings: f64 = patches
+        .iter()
+        .map(|p| p.savings_monthly_usd)
+        .sum::<f64>()
+        .max(0.0);
     let apply = FinOpsEngine::apply_cost_patches(&patches, req.dry_run, policy);
     let schedule = req
         .schedule
@@ -832,5 +839,17 @@ mod tests {
     fn multicloud_compare_has_rows() {
         let r = build_multicloud_cost_compare(&[]);
         assert_eq!(r.rows.len(), 3);
+    }
+
+    #[test]
+    fn execute_finops_agent_empty_fleet_never_reports_negative_zero_savings() {
+        let policy = crate::intelligence::policy::AutonomyPolicy::default();
+        let req = FinOpsExecuteRequest {
+            dry_run: true,
+            schedule: None,
+        };
+        let report = execute_finops_agent(&[], &policy, &req);
+        assert_eq!(report.savings_monthly_usd, 0.0);
+        assert!(!report.savings_monthly_usd.is_sign_negative());
     }
 }
