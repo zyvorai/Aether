@@ -23,6 +23,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
   const [workloadFocus] = useQueryParam('workload');
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [threats, setThreats] = useState<ThreatReport | null>(null);
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [hardening, setHardening] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
     if (!threatsRes.ok && !secretsRes.ok) {
       setLoadFailed(true);
       setLoading(false);
+      setHasLoadedOnce(true);
       return;
     }
     setThreats(threatsRes.ok ? threatsRes.data : null);
@@ -53,6 +55,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
     setSignedImages(imagesRes.ok ? imagesRes.data : []);
     setPacketwolfStatus(pwRes.ok ? pwRes.data : null);
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -91,7 +94,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
     }
   }
 
-  if (loading) return <PageLoading label="Loading security center…" />;
+  if (loading && !hasLoadedOnce) return <PageLoading label="Loading security center…" />;
   if (loadFailed) return <PageLoadError title="Security center unavailable" onRetry={() => void load()} />;
 
   const criticalThreats = threats?.threats.filter((t) => t.severity === 'critical' || t.severity === 'high') ?? [];
@@ -287,7 +290,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
                   <p className="text-xs text-slate-400">{t.reason}</p>
                   <button
                     type="button"
-                    onClick={() => navigate(pathWithQuery(viewToPath('zeus'), { workload: t.workload, q: `Fix security issue: ${t.reason}` }))}
+                    onClick={() => navigate(pathWithQuery(viewToPath('zyra'), { workload: t.workload, q: `Fix security issue: ${t.reason}` }))}
                     className="mt-2 text-xs text-aether hover:underline"
                   >
                     Fix with Copilot →

@@ -1578,7 +1578,7 @@ pub(crate) async fn tui_command() -> Result<()> {
 
 pub(crate) async fn ask_command(initial_message: Option<String>) -> Result<()> {
     use aether::rbac::Role;
-    use aether::zeus::agent::{tool_context, ZeusAgent};
+    use aether::zyra::agent::{tool_context, ZyraAgent};
     use std::io::{self, Write};
     use std::sync::Arc;
     use tokio::sync::RwLock;
@@ -1586,7 +1586,7 @@ pub(crate) async fn ask_command(initial_message: Option<String>) -> Result<()> {
     let state_path = StateStore::default_path();
     let state = Arc::new(RwLock::new(StateStore::load(&state_path)?));
     let ctx = tool_context(state, state_path, Role::Operator);
-    let agent = ZeusAgent::new();
+    let agent = ZyraAgent::new();
     let mut session_id: Option<String> = None;
 
     if let Some(msg) = initial_message.filter(|m| !m.trim().is_empty()) {
@@ -1605,7 +1605,7 @@ pub(crate) async fn ask_command(initial_message: Option<String>) -> Result<()> {
 
     output::info("Ask Zyra — Aether AI ops assistant. Type 'exit' or Ctrl+D to quit.");
     loop {
-        print!("zeus> ");
+        print!("zyra> ");
         io::stdout().flush()?;
         let mut line = String::new();
         if io::stdin().read_line(&mut line)? == 0 {

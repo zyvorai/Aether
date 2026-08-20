@@ -2,13 +2,13 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus agent marketplace — installable specialist agents.
+//! Zyra agent marketplace — installable specialist agents.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusMarketplaceAgent {
+pub struct ZyraMarketplaceAgent {
     pub id: String,
     pub name: String,
     pub description: String,
@@ -19,24 +19,24 @@ pub struct ZeusMarketplaceAgent {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusMarketplaceReport {
+pub struct ZyraMarketplaceReport {
     pub generated_at: String,
-    pub agents: Vec<ZeusMarketplaceAgent>,
+    pub agents: Vec<ZyraMarketplaceAgent>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ZeusInstalledAgents {
+pub struct ZyraInstalledAgents {
     pub agent_ids: Vec<String>,
 }
 
 fn installed_path() -> PathBuf {
-    crate::resources::aether_path("zeus-agents.json")
+    crate::resources::aether_path("zyra-agents.json")
 }
 
-pub fn load_installed() -> ZeusInstalledAgents {
+pub fn load_installed() -> ZyraInstalledAgents {
     let path = installed_path();
     if !path.exists() {
-        return ZeusInstalledAgents::default();
+        return ZyraInstalledAgents::default();
     }
     std::fs::read_to_string(path)
         .ok()
@@ -44,7 +44,7 @@ pub fn load_installed() -> ZeusInstalledAgents {
         .unwrap_or_default()
 }
 
-fn save_installed(inst: &ZeusInstalledAgents) -> anyhow::Result<()> {
+fn save_installed(inst: &ZyraInstalledAgents) -> anyhow::Result<()> {
     let path = installed_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -53,7 +53,7 @@ fn save_installed(inst: &ZeusInstalledAgents) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn catalog() -> Vec<ZeusMarketplaceAgent> {
+fn catalog() -> Vec<ZyraMarketplaceAgent> {
     vec![
         mp(
             "aws-expert",
@@ -94,31 +94,31 @@ fn catalog() -> Vec<ZeusMarketplaceAgent> {
     ]
 }
 
-fn mp(id: &str, name: &str, description: &str, category: &str) -> ZeusMarketplaceAgent {
-    ZeusMarketplaceAgent {
+fn mp(id: &str, name: &str, description: &str, category: &str) -> ZyraMarketplaceAgent {
+    ZyraMarketplaceAgent {
         id: id.into(),
         name: name.into(),
         description: description.into(),
         category: category.into(),
         required_provider: None,
         installed: false,
-        system_prompt: format!("You are Zeus {name}. {description}"),
+        system_prompt: format!("You are Zyra {name}. {description}"),
     }
 }
 
-pub fn build_marketplace() -> ZeusMarketplaceReport {
+pub fn build_marketplace() -> ZyraMarketplaceReport {
     let installed = load_installed();
     let mut agents = catalog();
     for a in &mut agents {
         a.installed = installed.agent_ids.iter().any(|id| id == &a.id);
     }
-    ZeusMarketplaceReport {
+    ZyraMarketplaceReport {
         generated_at: crate::resources::now_rfc3339(),
         agents,
     }
 }
 
-pub fn install_agent(id: &str) -> anyhow::Result<ZeusMarketplaceReport> {
+pub fn install_agent(id: &str) -> anyhow::Result<ZyraMarketplaceReport> {
     let mut installed = load_installed();
     if !installed.agent_ids.iter().any(|x| x == id) {
         installed.agent_ids.push(id.to_string());
@@ -127,7 +127,7 @@ pub fn install_agent(id: &str) -> anyhow::Result<ZeusMarketplaceReport> {
     Ok(build_marketplace())
 }
 
-pub fn uninstall_agent(id: &str) -> anyhow::Result<ZeusMarketplaceReport> {
+pub fn uninstall_agent(id: &str) -> anyhow::Result<ZyraMarketplaceReport> {
     let mut installed = load_installed();
     installed.agent_ids.retain(|x| x != id);
     save_installed(&installed)?;

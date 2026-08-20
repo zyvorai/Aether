@@ -759,7 +759,7 @@ export type AppView =
   | 'clusters'
   | 'compose'
   | 'ai'
-  | 'zeus'
+  | 'zyra'
   | 'copilot'
   | 'ai-providers'
   | 'cost'

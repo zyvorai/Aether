@@ -26,7 +26,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'applications', path: '/applications', label: 'Applications', breadcrumb: 'Applications', subtitle: 'Manage Kubernetes apps like an operating system — not like YAML', group: 'primary', paletteLabel: 'Applications' },
   { view: 'workloads', path: '/workloads', label: 'Workloads', breadcrumb: 'Workloads', subtitle: 'Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3', group: 'primary', paletteLabel: 'Workloads' },
   { view: 'ai', path: '/ai', label: 'AI Engine', breadcrumb: 'AI Engine', subtitle: 'Intent scoring, runtime recommendations & migration planning', group: 'intelligence', paletteLabel: 'AI Engine' },
-  { view: 'zeus', path: '/zeus', label: 'Zeus', breadcrumb: 'Zeus', subtitle: 'AI infrastructure operating layer — multi-LLM, multi-agent intelligence', group: 'intelligence', paletteLabel: 'Zeus' },
+  { view: 'zyra', path: '/zyra', label: 'Zyra', breadcrumb: 'Zyra', subtitle: 'AI infrastructure operating layer — multi-LLM, multi-agent intelligence', group: 'intelligence', paletteLabel: 'Zyra' },
   { view: 'ai-providers', path: '/settings/ai-providers', label: 'AI Providers', breadcrumb: 'AI Providers', subtitle: 'Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints', group: 'resources', paletteLabel: 'AI Providers' },
   { view: 'cost', path: '/cost', label: 'Cost Estimation', breadcrumb: 'Cost Estimation', subtitle: 'Resource cost projections across runtimes', group: 'intelligence', paletteLabel: 'FinOps' },
   { view: 'affinity', path: '/affinity', label: 'Runtime Affinity', breadcrumb: 'Runtime Affinity', subtitle: 'Workload class affinity and runtime fit', group: 'intelligence', paletteLabel: 'Affinity' },

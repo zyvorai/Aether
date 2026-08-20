@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus — AI infrastructure operating layer with multi-LLM routing and tool calling.
+//! Zyra — AI infrastructure operating layer with multi-LLM routing and tool calling.
 
 pub mod agent;
 pub mod agents;
@@ -18,5 +18,5 @@ pub mod tools;
 
 pub mod provider;
 
-pub use agent::ZeusAgent;
-pub use session::ZeusSessionStore;
+pub use agent::ZyraAgent;
+pub use session::ZyraSessionStore;

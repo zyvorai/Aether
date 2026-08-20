@@ -22,7 +22,7 @@ import { useQueryParam } from '../utils/urlState';
 import { useZyraChat } from '../hooks/useZyraChat';
 import type { AgentStatusEntry } from '../types/api';
 
-interface ZeusRailProps {
+interface ZyraRailProps {
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
 }
@@ -89,7 +89,7 @@ function agentStatusDot(status: string): string {
   return 'glass-status-dot-muted';
 }
 
-export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedChange }: ZeusRailProps) {
+export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedChange }: ZyraRailProps) {
   const location = useLocation();
   const [workloadParam] = useQueryParam('workload', '');
   const [internalCollapsed, setInternalCollapsed] = useState(false);
@@ -141,7 +141,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
   if (collapsed) {
     return (
       <aside
-        className={`zeus-rail-glass relative ${railVisibility} w-12 shrink-0 flex-col items-center border-l py-4`}
+        className={`zyra-rail-glass relative ${railVisibility} w-12 shrink-0 flex-col items-center border-l py-4`}
         data-testid="copilot-rail-collapsed"
       >
         <button
@@ -159,7 +159,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
 
   return (
     <aside
-      className={`zeus-rail-glass relative ${railVisibility} w-[min(380px,30vw)] shrink-0 flex-col border-l`}
+      className={`zyra-rail-glass relative ${railVisibility} w-[min(380px,30vw)] shrink-0 flex-col border-l`}
       data-testid="copilot-rail"
     >
       <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
@@ -167,7 +167,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
           <Sparkles className="h-4 w-4 text-[#c084fc]" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-white">Zeus</div>
+          <div className="text-sm font-semibold text-white">Zyra</div>
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
             Infrastructure OS assistant
           </div>
@@ -185,8 +185,8 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
           type="button"
           onClick={() => setCollapsed(true)}
           className="rounded-lg p-1.5 text-slate-500 transition glass-inset-hover hover:text-slate-200"
-          title="Collapse zeus"
-          aria-label="Collapse zeus"
+          title="Collapse zyra"
+          aria-label="Collapse zyra"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -206,8 +206,8 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
                   key={agent.id}
                   type="button"
                   onClick={() => setSelectedAgent(active ? null : agent.id)}
-                  className={`zeus-agent-chip ${active ? 'zeus-agent-chip-active' : ''}`}
-                  data-testid={`zeus-agent-${agent.id}`}
+                  className={`zyra-agent-chip ${active ? 'zyra-agent-chip-active' : ''}`}
+                  data-testid={`zyra-agent-${agent.id}`}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${agentStatusDot(agent.status)}`} />
@@ -245,8 +245,8 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
                     key={prompt}
                     type="button"
                     onClick={() => void send(prompt)}
-                    className="zeus-prompt-chip"
-                    data-testid={`zeus-prompt-${prompt.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
+                    className="zyra-prompt-chip"
+                    data-testid={`zyra-prompt-${prompt.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
                   >
                     {prompt}
                   </button>
@@ -327,13 +327,13 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
 }
 
 /** Mobile/tablet toggle button shown below xl breakpoint */
-export function ZeusRailToggle({ onClick }: { onClick: () => void }) {
+export function ZyraRailToggle({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-aether-ai/40 bg-gradient-to-r from-aether to-aether-ai px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-aether-ai/25 backdrop-blur-xl xl:hidden"
-      data-testid="zeus-rail-mobile-toggle"
+      data-testid="zyra-rail-mobile-toggle"
     >
       <Bot className="h-4 w-4" />
       Ask Aether

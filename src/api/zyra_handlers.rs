@@ -2,22 +2,22 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus API handlers.
+//! Zyra API handlers.
 
 use super::handlers::{err_bad_request, ok_json};
 use super::types::{ApiResponse, AppState};
-use crate::zeus::agent::{tool_context, ZeusAgent};
-use crate::zeus::diagnose::{DiagnoseRequest, DiagnoseResponse};
-use crate::zeus::marketplace::{build_marketplace, install_agent, uninstall_agent};
-use crate::zeus::memory::{
-    purge_memory, read_memory_settings, read_zeus_memory, save_memory_settings, ZeusMemorySettings,
+use crate::zyra::agent::{tool_context, ZyraAgent};
+use crate::zyra::diagnose::{DiagnoseRequest, DiagnoseResponse};
+use crate::zyra::marketplace::{build_marketplace, install_agent, uninstall_agent};
+use crate::zyra::memory::{
+    purge_memory, read_memory_settings, read_zyra_memory, save_memory_settings, ZyraMemorySettings,
 };
-use crate::zeus::prompts::{
-    delete_prompt, export_yaml, import_yaml, list_prompts, upsert_prompt, ZeusPrompt,
+use crate::zyra::prompts::{
+    delete_prompt, export_yaml, import_yaml, list_prompts, upsert_prompt, ZyraPrompt,
 };
-use crate::zeus::providers::{
+use crate::zyra::providers::{
     build_provider_status, delete_provider, list_providers_public, test_provider, upsert_provider,
-    ZeusProviderConfig, ZeusProviderRegistry,
+    ZyraProviderConfig, ZyraProviderRegistry,
 };
 use axum::extract::{Path, State as AxumState};
 use axum::http::{HeaderValue, StatusCode};
@@ -26,18 +26,18 @@ use axum::Json;
 use serde::Deserialize;
 use std::sync::LazyLock;
 
-static ZEUS: LazyLock<ZeusAgent> = LazyLock::new(ZeusAgent::new);
+static ZYRA: LazyLock<ZyraAgent> = LazyLock::new(ZyraAgent::new);
 
 fn with_deprecation(resp: Response) -> Response {
     let mut resp = resp;
-    if let Ok(v) = HeaderValue::from_str("use /api/zeus/*") {
+    if let Ok(v) = HeaderValue::from_str("use /api/zyra/*") {
         resp.headers_mut().insert("Deprecation", v);
     }
     resp
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct ZeusChatRequest {
+pub(crate) struct ZyraChatRequest {
     pub message: String,
     pub session_id: Option<String>,
     pub confirm_action_id: Option<String>,
@@ -45,13 +45,13 @@ pub(crate) struct ZeusChatRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct ZeusBatchConfirmRequest {
+pub(crate) struct ZyraBatchConfirmRequest {
     pub session_id: String,
     pub action_ids: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct ZeusRouteRequest {
+pub(crate) struct ZyraRouteRequest {
     pub message: String,
     pub agent_focus: Option<String>,
 }
@@ -73,7 +73,7 @@ pub(crate) struct TroubleshootRequest {
     pub cluster: Option<String>,
     pub namespace: Option<String>,
     pub kind: Option<String>,
-    pub include_zeus_summary: Option<bool>,
+    pub include_zyra_summary: Option<bool>,
     #[serde(alias = "include_copilot_summary")]
     pub include_copilot_summary: Option<bool>,
 }
@@ -81,7 +81,7 @@ pub(crate) struct TroubleshootRequest {
 #[derive(Debug, Deserialize)]
 pub(crate) struct ProviderUpsertBody {
     #[serde(flatten)]
-    pub config: ZeusProviderConfig,
+    pub config: ZyraProviderConfig,
     pub api_key: Option<String>,
 }
 
@@ -95,7 +95,7 @@ pub(crate) struct MarketplaceInstallBody {
     pub agent_id: String,
 }
 
-pub(crate) async fn api_zeus_troubleshoot(
+pub(crate) async fn api_zyra_troubleshoot(
     AxumState(app_state): AxumState<AppState>,
     Json(req): Json<TroubleshootRequest>,
 ) -> impl IntoResponse {
@@ -109,7 +109,7 @@ pub(crate) async fn api_zeus_troubleshoot(
         namespace: req.namespace.clone(),
         kind: req.kind.clone(),
     };
-    let mut report = match crate::zeus::diagnose::diagnose_workload(&diagnose_req, &store).await {
+    let mut report = match crate::zyra::diagnose::diagnose_workload(&diagnose_req, &store).await {
         Ok(r) => r,
         Err(e) => {
             return (
@@ -126,7 +126,7 @@ pub(crate) async fn api_zeus_troubleshoot(
     drop(store);
 
     let include = req
-        .include_zeus_summary
+        .include_zyra_summary
         .or(req.include_copilot_summary)
         .unwrap_or(true);
     if include {
@@ -139,25 +139,25 @@ pub(crate) async fn api_zeus_troubleshoot(
             "Summarize this workload diagnosis in 2-3 sentences with root cause and recommended fix:\n{}",
             serde_json::to_string_pretty(&report).unwrap_or_default()
         );
-        if let Ok(resp) = ZEUS.chat(&prompt, None, None, None, &ctx).await {
+        if let Ok(resp) = ZYRA.chat(&prompt, None, None, None, &ctx).await {
             report
                 .evidence
-                .insert(0, format!("Zeus summary: {}", resp.reply));
+                .insert(0, format!("Zyra summary: {}", resp.reply));
         }
     }
     ok_json(report).into_response()
 }
 
-pub(crate) async fn api_zeus_troubleshoot_fleet(
+pub(crate) async fn api_zyra_troubleshoot_fleet(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl IntoResponse {
     let store = app_state.state.read().await;
-    ok_json(crate::zeus::diagnose::diagnose_fleet(&store, 12).await).into_response()
+    ok_json(crate::zyra::diagnose::diagnose_fleet(&store, 12).await).into_response()
 }
 
-pub(crate) async fn api_zeus_chat(
+pub(crate) async fn api_zyra_chat(
     AxumState(app_state): AxumState<AppState>,
-    Json(req): Json<ZeusChatRequest>,
+    Json(req): Json<ZyraChatRequest>,
 ) -> impl IntoResponse {
     if req.message.trim().is_empty() {
         return err_bad_request::<serde_json::Value>("message is required").into_response();
@@ -167,7 +167,7 @@ pub(crate) async fn api_zeus_chat(
         app_state.state_path.clone(),
         crate::rbac::Role::Admin,
     );
-    match ZEUS
+    match ZYRA
         .chat(
             &req.message,
             req.session_id.as_deref(),
@@ -190,24 +190,24 @@ pub(crate) async fn api_zeus_chat(
     }
 }
 
-pub(crate) async fn api_zeus_session(Path(id): Path<String>) -> impl IntoResponse {
-    match ZEUS.get_session(&id) {
+pub(crate) async fn api_zyra_session(Path(id): Path<String>) -> impl IntoResponse {
+    match ZYRA.get_session(&id) {
         Some(s) => ok_json(s).into_response(),
         None => err_bad_request::<serde_json::Value>("session not found").into_response(),
     }
 }
 
-pub(crate) async fn api_zeus_confirm(
+pub(crate) async fn api_zyra_confirm(
     AxumState(app_state): AxumState<AppState>,
     Path(action_id): Path<String>,
-    Json(req): Json<ZeusChatRequest>,
+    Json(req): Json<ZyraChatRequest>,
 ) -> impl IntoResponse {
     let ctx = tool_context(
         app_state.state.clone(),
         app_state.state_path.clone(),
         crate::rbac::Role::Operator,
     );
-    match ZEUS
+    match ZYRA
         .chat(
             "confirm action",
             req.session_id.as_deref(),
@@ -230,9 +230,9 @@ pub(crate) async fn api_zeus_confirm(
     }
 }
 
-pub(crate) async fn api_zeus_confirm_batch(
+pub(crate) async fn api_zyra_confirm_batch(
     AxumState(app_state): AxumState<AppState>,
-    Json(req): Json<ZeusBatchConfirmRequest>,
+    Json(req): Json<ZyraBatchConfirmRequest>,
 ) -> impl IntoResponse {
     if req.session_id.trim().is_empty() || req.action_ids.is_empty() {
         return err_bad_request::<serde_json::Value>("session_id and action_ids required")
@@ -243,7 +243,7 @@ pub(crate) async fn api_zeus_confirm_batch(
         app_state.state_path.clone(),
         crate::rbac::Role::Operator,
     );
-    match ZEUS
+    match ZYRA
         .confirm_batch(&req.session_id, &req.action_ids, &ctx)
         .await
     {
@@ -260,21 +260,21 @@ pub(crate) async fn api_zeus_confirm_batch(
     }
 }
 
-pub(crate) async fn api_zeus_insights(
+pub(crate) async fn api_zyra_insights(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl IntoResponse {
-    match crate::intelligence::zeus_os::build_zeus_insights(&app_state.state_path).await {
+    match crate::intelligence::zyra_os::build_zyra_insights(&app_state.state_path).await {
         Ok(r) => ok_json(r).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_intelligence_zeus_memory() -> impl IntoResponse {
-    ok_json(read_zeus_memory()).into_response()
+pub(crate) async fn api_intelligence_zyra_memory() -> impl IntoResponse {
+    ok_json(read_zyra_memory()).into_response()
 }
 
-pub(crate) async fn api_intelligence_zeus_memory_settings(
-    Json(settings): Json<ZeusMemorySettings>,
+pub(crate) async fn api_intelligence_zyra_memory_settings(
+    Json(settings): Json<ZyraMemorySettings>,
 ) -> impl IntoResponse {
     match save_memory_settings(&settings) {
         Ok(()) => ok_json(read_memory_settings()).into_response(),
@@ -282,39 +282,39 @@ pub(crate) async fn api_intelligence_zeus_memory_settings(
     }
 }
 
-pub(crate) async fn api_intelligence_zeus_memory_purge() -> impl IntoResponse {
+pub(crate) async fn api_intelligence_zyra_memory_purge() -> impl IntoResponse {
     match purge_memory() {
         Ok(()) => ok_json(serde_json::json!({"purged": true})).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_intelligence_zeus_route(
-    Json(req): Json<ZeusRouteRequest>,
+pub(crate) async fn api_intelligence_zyra_route(
+    Json(req): Json<ZyraRouteRequest>,
 ) -> impl IntoResponse {
-    ok_json(crate::zeus::routing::route_message(
+    ok_json(crate::zyra::routing::route_message(
         &req.message,
         req.agent_focus.as_deref(),
     ))
     .into_response()
 }
 
-pub(crate) async fn api_intelligence_zeus_llm_status() -> impl IntoResponse {
+pub(crate) async fn api_intelligence_zyra_llm_status() -> impl IntoResponse {
     ok_json(build_provider_status()).into_response()
 }
 
-pub(crate) async fn api_intelligence_zeus_voice_lab() -> impl IntoResponse {
-    ok_json(crate::intelligence::zeus_os::build_voice_zeus_lab()).into_response()
+pub(crate) async fn api_intelligence_zyra_voice_lab() -> impl IntoResponse {
+    ok_json(crate::intelligence::zyra_os::build_voice_zyra_lab()).into_response()
 }
 
-pub(crate) async fn api_intelligence_zeus_runbook(
+pub(crate) async fn api_intelligence_zyra_runbook(
     Json(req): Json<RunbookAuthorBody>,
 ) -> impl IntoResponse {
     if req.prompt.trim().is_empty() {
         return err_bad_request::<serde_json::Value>("prompt is required").into_response();
     }
-    ok_json(crate::intelligence::zeus_os::author_runbook(
-        &crate::intelligence::zeus_os::RunbookAuthorRequest {
+    ok_json(crate::intelligence::zyra_os::author_runbook(
+        &crate::intelligence::zyra_os::RunbookAuthorRequest {
             prompt: req.prompt,
             workload: req.workload,
         },
@@ -322,13 +322,13 @@ pub(crate) async fn api_intelligence_zeus_runbook(
     .into_response()
 }
 
-pub(crate) async fn api_intelligence_zeus_policy_explain(
+pub(crate) async fn api_intelligence_zyra_policy_explain(
     AxumState(app_state): AxumState<AppState>,
     Json(req): Json<PolicyExplainerBody>,
 ) -> impl IntoResponse {
-    match crate::intelligence::zeus_os::explain_policy_violations(
+    match crate::intelligence::zyra_os::explain_policy_violations(
         &app_state.state_path,
-        &crate::intelligence::zeus_os::PolicyExplainerRequest {
+        &crate::intelligence::zyra_os::PolicyExplainerRequest {
             workload: req.workload,
         },
     ) {
@@ -337,22 +337,22 @@ pub(crate) async fn api_intelligence_zeus_policy_explain(
     }
 }
 
-pub(crate) async fn api_intelligence_zeus_audit() -> impl IntoResponse {
-    ok_json(crate::intelligence::zeus_os::read_zeus_audit(50)).into_response()
+pub(crate) async fn api_intelligence_zyra_audit() -> impl IntoResponse {
+    ok_json(crate::intelligence::zyra_os::read_zyra_audit(50)).into_response()
 }
 
-pub(crate) async fn api_intelligence_zeus_rbac_scopes() -> impl IntoResponse {
-    ok_json(crate::intelligence::zeus_os::build_zeus_rbac_scopes(
+pub(crate) async fn api_intelligence_zyra_rbac_scopes() -> impl IntoResponse {
+    ok_json(crate::intelligence::zyra_os::build_zyra_rbac_scopes(
         crate::rbac::Role::Admin,
     ))
     .into_response()
 }
 
-pub(crate) async fn api_zeus_providers_list() -> impl IntoResponse {
+pub(crate) async fn api_zyra_providers_list() -> impl IntoResponse {
     ok_json(list_providers_public()).into_response()
 }
 
-pub(crate) async fn api_zeus_providers_upsert(
+pub(crate) async fn api_zyra_providers_upsert(
     Json(body): Json<ProviderUpsertBody>,
 ) -> impl IntoResponse {
     match upsert_provider(body.config, body.api_key.as_deref()) {
@@ -361,59 +361,59 @@ pub(crate) async fn api_zeus_providers_upsert(
     }
 }
 
-pub(crate) async fn api_zeus_providers_delete(Path(id): Path<String>) -> impl IntoResponse {
+pub(crate) async fn api_zyra_providers_delete(Path(id): Path<String>) -> impl IntoResponse {
     match delete_provider(&id) {
         Ok(deleted) => ok_json(serde_json::json!({"deleted": deleted})).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_zeus_providers_test(Path(id): Path<String>) -> impl IntoResponse {
+pub(crate) async fn api_zyra_providers_test(Path(id): Path<String>) -> impl IntoResponse {
     match test_provider(&id).await {
         Ok(r) => ok_json(r).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_zeus_providers_status() -> impl IntoResponse {
+pub(crate) async fn api_zyra_providers_status() -> impl IntoResponse {
     ok_json(build_provider_status()).into_response()
 }
 
-pub(crate) async fn api_zeus_providers_save_registry(
-    Json(reg): Json<ZeusProviderRegistry>,
+pub(crate) async fn api_zyra_providers_save_registry(
+    Json(reg): Json<ZyraProviderRegistry>,
 ) -> impl IntoResponse {
-    match crate::zeus::providers::registry::save_registry(&reg) {
+    match crate::zyra::providers::registry::save_registry(&reg) {
         Ok(()) => ok_json(list_providers_public()).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_zeus_prompts_list() -> impl IntoResponse {
+pub(crate) async fn api_zyra_prompts_list() -> impl IntoResponse {
     ok_json(list_prompts()).into_response()
 }
 
-pub(crate) async fn api_zeus_prompts_upsert(Json(prompt): Json<ZeusPrompt>) -> impl IntoResponse {
+pub(crate) async fn api_zyra_prompts_upsert(Json(prompt): Json<ZyraPrompt>) -> impl IntoResponse {
     match upsert_prompt(prompt) {
         Ok(p) => ok_json(p).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_zeus_prompts_delete(Path(id): Path<String>) -> impl IntoResponse {
+pub(crate) async fn api_zyra_prompts_delete(Path(id): Path<String>) -> impl IntoResponse {
     match delete_prompt(&id) {
         Ok(deleted) => ok_json(serde_json::json!({"deleted": deleted})).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_zeus_prompts_export() -> impl IntoResponse {
+pub(crate) async fn api_zyra_prompts_export() -> impl IntoResponse {
     match export_yaml() {
         Ok(yaml) => ok_json(serde_json::json!({"yaml": yaml})).into_response(),
         Err(e) => err_bad_request::<serde_json::Value>(&e.to_string()).into_response(),
     }
 }
 
-pub(crate) async fn api_zeus_prompts_import(
+pub(crate) async fn api_zyra_prompts_import(
     Json(body): Json<PromptImportBody>,
 ) -> impl IntoResponse {
     match import_yaml(&body.yaml) {
@@ -422,11 +422,11 @@ pub(crate) async fn api_zeus_prompts_import(
     }
 }
 
-pub(crate) async fn api_zeus_marketplace() -> impl IntoResponse {
+pub(crate) async fn api_zyra_marketplace() -> impl IntoResponse {
     ok_json(build_marketplace()).into_response()
 }
 
-pub(crate) async fn api_zeus_marketplace_install(
+pub(crate) async fn api_zyra_marketplace_install(
     Json(body): Json<MarketplaceInstallBody>,
 ) -> impl IntoResponse {
     match install_agent(&body.agent_id) {
@@ -435,7 +435,7 @@ pub(crate) async fn api_zeus_marketplace_install(
     }
 }
 
-pub(crate) async fn api_zeus_marketplace_uninstall(
+pub(crate) async fn api_zyra_marketplace_uninstall(
     Json(body): Json<MarketplaceInstallBody>,
 ) -> impl IntoResponse {
     match uninstall_agent(&body.agent_id) {
@@ -444,42 +444,42 @@ pub(crate) async fn api_zeus_marketplace_uninstall(
     }
 }
 
-pub(crate) async fn api_zeus_agents_list() -> impl IntoResponse {
-    ok_json(crate::zeus::agents::all_agents()).into_response()
+pub(crate) async fn api_zyra_agents_list() -> impl IntoResponse {
+    ok_json(crate::zyra::agents::all_agents()).into_response()
 }
 
 // Deprecated /api/copilot/* aliases
 pub(crate) async fn api_copilot_chat(
     state: AxumState<AppState>,
-    req: Json<ZeusChatRequest>,
+    req: Json<ZyraChatRequest>,
 ) -> impl IntoResponse {
-    with_deprecation(api_zeus_chat(state, req).await.into_response())
+    with_deprecation(api_zyra_chat(state, req).await.into_response())
 }
 
 pub(crate) async fn api_copilot_troubleshoot(
     state: AxumState<AppState>,
     req: Json<TroubleshootRequest>,
 ) -> impl IntoResponse {
-    with_deprecation(api_zeus_troubleshoot(state, req).await.into_response())
+    with_deprecation(api_zyra_troubleshoot(state, req).await.into_response())
 }
 
 pub(crate) async fn api_copilot_troubleshoot_fleet(
     state: AxumState<AppState>,
 ) -> impl IntoResponse {
-    with_deprecation(api_zeus_troubleshoot_fleet(state).await.into_response())
+    with_deprecation(api_zyra_troubleshoot_fleet(state).await.into_response())
 }
 
 pub(crate) async fn api_copilot_session(id: Path<String>) -> impl IntoResponse {
-    with_deprecation(api_zeus_session(id).await.into_response())
+    with_deprecation(api_zyra_session(id).await.into_response())
 }
 
 pub(crate) async fn api_copilot_confirm(
     state: AxumState<AppState>,
     action_id: Path<String>,
-    req: Json<ZeusChatRequest>,
+    req: Json<ZyraChatRequest>,
 ) -> impl IntoResponse {
     with_deprecation(
-        api_zeus_confirm(state, action_id, req)
+        api_zyra_confirm(state, action_id, req)
             .await
             .into_response(),
     )
@@ -487,33 +487,33 @@ pub(crate) async fn api_copilot_confirm(
 
 pub(crate) async fn api_copilot_confirm_batch(
     state: AxumState<AppState>,
-    req: Json<ZeusBatchConfirmRequest>,
+    req: Json<ZyraBatchConfirmRequest>,
 ) -> impl IntoResponse {
-    with_deprecation(api_zeus_confirm_batch(state, req).await.into_response())
+    with_deprecation(api_zyra_confirm_batch(state, req).await.into_response())
 }
 
 pub(crate) async fn api_intelligence_copilot_memory() -> impl IntoResponse {
-    with_deprecation(api_intelligence_zeus_memory().await.into_response())
+    with_deprecation(api_intelligence_zyra_memory().await.into_response())
 }
 
 pub(crate) async fn api_intelligence_copilot_route(
-    req: Json<ZeusRouteRequest>,
+    req: Json<ZyraRouteRequest>,
 ) -> impl IntoResponse {
-    with_deprecation(api_intelligence_zeus_route(req).await.into_response())
+    with_deprecation(api_intelligence_zyra_route(req).await.into_response())
 }
 
 pub(crate) async fn api_intelligence_copilot_llm_status() -> impl IntoResponse {
-    with_deprecation(api_intelligence_zeus_llm_status().await.into_response())
+    with_deprecation(api_intelligence_zyra_llm_status().await.into_response())
 }
 
 pub(crate) async fn api_intelligence_copilot_voice_lab() -> impl IntoResponse {
-    with_deprecation(api_intelligence_zeus_voice_lab().await.into_response())
+    with_deprecation(api_intelligence_zyra_voice_lab().await.into_response())
 }
 
 pub(crate) async fn api_intelligence_copilot_runbook(
     req: Json<RunbookAuthorBody>,
 ) -> impl IntoResponse {
-    with_deprecation(api_intelligence_zeus_runbook(req).await.into_response())
+    with_deprecation(api_intelligence_zyra_runbook(req).await.into_response())
 }
 
 pub(crate) async fn api_intelligence_copilot_policy_explain(
@@ -521,16 +521,16 @@ pub(crate) async fn api_intelligence_copilot_policy_explain(
     req: Json<PolicyExplainerBody>,
 ) -> impl IntoResponse {
     with_deprecation(
-        api_intelligence_zeus_policy_explain(state, req)
+        api_intelligence_zyra_policy_explain(state, req)
             .await
             .into_response(),
     )
 }
 
 pub(crate) async fn api_intelligence_copilot_audit() -> impl IntoResponse {
-    with_deprecation(api_intelligence_zeus_audit().await.into_response())
+    with_deprecation(api_intelligence_zyra_audit().await.into_response())
 }
 
 pub(crate) async fn api_intelligence_copilot_rbac_scopes() -> impl IntoResponse {
-    with_deprecation(api_intelligence_zeus_rbac_scopes().await.into_response())
+    with_deprecation(api_intelligence_zyra_rbac_scopes().await.into_response())
 }

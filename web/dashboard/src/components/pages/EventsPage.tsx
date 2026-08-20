@@ -24,6 +24,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [search, setSearch] = useQueryParam('q');
   const [severity, setSeverity] = useQueryParam('severity', 'all');
   const [category, setCategory] = useQueryParam('category', 'all');
@@ -65,6 +66,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
       setSummary(s.ok ? s.data : null);
     }
     setLoading(false);
+    setHasLoadedOnce(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey intentionally triggers a refetch in place, not a remount.
   }, [category, workloadFilter, refreshKey]);
 
@@ -90,7 +92,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
     });
   }, [events, search, severity]);
 
-  if (loading && events.length === 0 && !loadFailed) {
+  if (loading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading rows={5} />;
   }
 
@@ -134,7 +136,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('zeus'), { workload: workloadFilter.trim(), q: `Explain recent events for ${workloadFilter.trim()}` })}
+              to={pathWithQuery(viewToPath('zyra'), { workload: workloadFilter.trim(), q: `Explain recent events for ${workloadFilter.trim()}` })}
               className="text-aether hover:underline"
               data-testid="events-copilot-link"
             >
@@ -220,6 +222,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="glass-select"
+              style={{ width: 'auto', minWidth: '9rem' }}
               aria-label="Category filter"
               data-testid="events-category-filter"
             >
@@ -268,7 +271,8 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
               value={bufferedWorkloadFilter}
               onChange={(e) => setBufferedWorkloadFilter(e.target.value)}
               placeholder="Workload name…"
-              className="glass-select min-w-[10rem]"
+              className="glass-select"
+              style={{ width: 'auto', minWidth: '10rem' }}
               aria-label="Workload filter"
               data-testid="events-workload-filter"
             />
@@ -276,6 +280,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
               value={severity}
               onChange={(e) => setSeverity(e.target.value)}
               className="glass-select"
+              style={{ width: 'auto', minWidth: '9rem' }}
               aria-label="Severity filter"
               data-testid="events-severity-filter"
             >

@@ -25,6 +25,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [discovering, setDiscovering] = useState(false);
   const [discoverSummary, setDiscoverSummary] = useState<string | null>(null);
   const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
@@ -45,6 +46,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
       setPlugins(result.data);
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -104,11 +106,11 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
     });
   }, [plugins, runtimeFilter, search]);
 
-  if (loading && plugins.length === 0 && !loadFailed) {
+  if (loading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading rows={4} />;
   }
 
-  if (loadFailed) {
+  if (loadFailed && plugins.length === 0) {
     return <PageLoadError title="Plugins unavailable" onRetry={() => void load()} />;
   }
 
@@ -160,7 +162,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('zeus'), { workload: search.trim(), q: `Plugin guidance for ${search.trim()}` })}
+              to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `Plugin guidance for ${search.trim()}` })}
               className="text-aether hover:underline"
               data-testid="plugins-context-copilot-link"
             >
@@ -190,6 +192,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             value={runtimeFilter}
             onChange={(e) => setRuntimeFilter(e.target.value)}
             className="glass-select"
+            style={{ width: 'auto', minWidth: '9rem' }}
             aria-label="Runtime filter"
             data-testid="plugins-runtime-filter"
           >

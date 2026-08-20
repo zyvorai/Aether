@@ -64,7 +64,9 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
     } else {
       setServer(serverRes.ok ? serverRes.data : null);
       setRecommendations(recRes.ok ? (recRes.data.items ?? []) : []);
-      await refreshPlatform();
+      // Fire-and-forget: refreshes the shared navbar/context capabilities, but this
+      // page's own loading state must not hang on a second, independent network call.
+      void refreshPlatform();
     }
     setLoading(false);
     setRecLoading(false);
@@ -167,11 +169,11 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="platform-copilot-link"
           >
-            Zeus →
+            Zyra →
           </Link>
           {' · '}
           <Link

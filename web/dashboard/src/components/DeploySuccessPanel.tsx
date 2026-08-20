@@ -83,7 +83,7 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
           Metrics
         </Link>
         <Link
-          to={pathWithQuery(viewToPath('zeus'), { workload: name, q: `Why is ${name} unhealthy?` })}
+          to={pathWithQuery(viewToPath('zyra'), { workload: name, q: `Why is ${name} unhealthy?` })}
           className={linkClass}
           data-testid="deploy-success-copilot-link"
         >

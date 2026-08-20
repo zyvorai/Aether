@@ -7,7 +7,7 @@ import { Sparkles, Zap } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { useQueryParam } from '../utils/urlState';
 
-export interface ZeusInsightsReport {
+export interface ZyraInsightsReport {
   generated_at: string;
   summary: string;
   drift_workloads: number;
@@ -17,18 +17,18 @@ export interface ZeusInsightsReport {
   suggested_actions: string[];
 }
 
-interface ZeusContextBarProps {
+interface ZyraContextBarProps {
   onAskZyra?: (prompt: string) => void;
   refreshKey?: number;
 }
 
-export default function ZeusContextBar({ onAskZyra, refreshKey = 0 }: ZeusContextBarProps) {
+export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContextBarProps) {
   const [workload] = useQueryParam('workload', '');
-  const [insights, setInsights] = useState<ZeusInsightsReport | null>(null);
+  const [insights, setInsights] = useState<ZyraInsightsReport | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    apiFetch<ZeusInsightsReport>('/zeus/insights').then((data) => {
+    apiFetch<ZyraInsightsReport>('/zyra/insights').then((data) => {
       if (!cancelled) setInsights(data);
     });
     return () => {
@@ -41,13 +41,13 @@ export default function ZeusContextBar({ onAskZyra, refreshKey = 0 }: ZeusContex
   return (
     <div
       className="border-b border-aether/20 bg-aether/[0.06] px-4 py-2 backdrop-blur-md lg:px-6"
-      data-testid="zeus-context-bar"
+      data-testid="zyra-context-bar"
     >
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <Sparkles className="h-4 w-4 shrink-0 text-aether" aria-hidden />
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-aether/90">Zeus</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-aether/90">Zyra</p>
             <p className="truncate text-sm text-slate-200">{insights.summary}</p>
           </div>
           {workload.trim() ? (
@@ -71,7 +71,7 @@ export default function ZeusContextBar({ onAskZyra, refreshKey = 0 }: ZeusContex
             type="button"
             onClick={() => onAskZyra?.('Summarize fleet health and recommend next actions')}
             className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-xs text-slate-300 hover:border-aether/30 hover:text-white"
-            data-testid="zeus-context-explain"
+            data-testid="zyra-context-explain"
           >
             <Zap className="h-3 w-3" />
             Ask Zyra

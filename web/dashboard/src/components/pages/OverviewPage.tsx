@@ -242,6 +242,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKeySummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [failedEndpoints, setFailedEndpoints] = useState<OverviewEndpoint[]>([]);
   const [totalFailure, setTotalFailure] = useState(false);
   const [specValidated, setSpecValidated] = useState(() => hasValidatedSpec());
@@ -350,6 +351,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
     setFailedEndpoints(failed);
     setTotalFailure(successCount === 0);
     setLoading(false);
+    setHasLoadedOnce(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey intentionally triggers a refetch in place (see App.tsx SSE handler), not a remount.
   }, [refreshKey]);
 
@@ -357,7 +359,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
     void load();
   }, [load]);
 
-  if (loading) {
+  if (loading && !hasLoadedOnce) {
     return (
       <div className="space-y-8">
         <div className="command-center-shell animate-pulse p-8">
@@ -714,7 +716,7 @@ function LegacyOverviewDetails({
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `Summarize ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Summarize ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="overview-copilot-link"
           >

@@ -38,7 +38,7 @@ Universal runtime portability — place and move apps across Podman/K8s/KubeVirt
 | Command Center | `/` |
 | Fabric | `/fabric` |
 | Migrations | `/migrations` |
-| Zeus | `/zeus` |
+| Zyra | `/zyra` |
 | Settings | `/settings` |
 
 ---

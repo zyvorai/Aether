@@ -100,7 +100,13 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
   );
 
   const loadAllPods = useCallback(async () => {
-    await Promise.all(hubbleApps.map((app) => fetchPodsForApp(app)));
+    // Batch rather than firing one request per app at once — with dozens of apps that
+    // starves the browser's per-origin connection pool and stalls the page (see SLAPage).
+    const CONCURRENCY = 8;
+    for (let i = 0; i < hubbleApps.length; i += CONCURRENCY) {
+      const batch = hubbleApps.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map((app) => fetchPodsForApp(app)));
+    }
     setExpandedApps(new Set(hubbleApps.map((a) => a.name)));
   }, [hubbleApps, fetchPodsForApp]);
 
@@ -246,7 +252,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `Fleet guidance for ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Fleet guidance for ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="fleet-context-copilot-link"
           >

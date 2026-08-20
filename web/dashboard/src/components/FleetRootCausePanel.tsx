@@ -119,7 +119,7 @@ export default function FleetRootCausePanel() {
                 <Link to={pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'logs' })} className="text-aether hover:underline">
                   View logs →
                 </Link>
-                <Link to={pathWithQuery(viewToPath('zeus'), { workload: row.workload, q: `Fix ${row.workload}` })} className="text-aether hover:underline">
+                <Link to={pathWithQuery(viewToPath('zyra'), { workload: row.workload, q: `Fix ${row.workload}` })} className="text-aether hover:underline">
                   Ask copilot →
                 </Link>
               </div>

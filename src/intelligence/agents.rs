@@ -68,38 +68,38 @@ pub async fn build_agent_registry(state_path: &Path) -> anyhow::Result<AgentRegi
     let agents = vec![
         entry(
             "sre",
-            "Zeus SRE",
+            "Zyra SRE",
             healer.would_execute.len() as u32,
             "observability",
         ),
-        entry("architect", "Zeus Architect", migrate_candidates, "ai"),
+        entry("architect", "Zyra Architect", migrate_candidates, "ai"),
         entry(
             "devops",
-            "Zeus DevOps",
+            "Zyra DevOps",
             remediation.actions.len() as u32,
             "gitops",
         ),
-        entry("kubernetes", "Zeus Kubernetes", at_risk, "clusters"),
+        entry("kubernetes", "Zyra Kubernetes", at_risk, "clusters"),
         entry(
             "security",
-            "Zeus Security",
+            "Zyra Security",
             threats.threats.len() as u32,
             "security",
         ),
         entry(
             "cost",
-            "Zeus Cost Optimizer",
+            "Zyra Cost Optimizer",
             cost.recommendations.len() as u32,
             "cost",
         ),
         entry(
             "observability",
-            "Zeus Observability",
+            "Zyra Observability",
             at_risk,
             "observability",
         ),
-        entry("ai_engineer", "Zeus AI Engineer", 0, "confidential"),
-        entry("database", "Zeus Database Expert", 0, "workloads"),
+        entry("ai_engineer", "Zyra AI Engineer", 0, "confidential"),
+        entry("database", "Zyra Database Expert", 0, "workloads"),
     ];
 
     Ok(AgentRegistryReport {

@@ -2,5 +2,5 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Deprecated — use `crate::zeus`.
-pub use crate::zeus::*;
+//! Deprecated — use `crate::zyra`.
+pub use crate::zyra::*;

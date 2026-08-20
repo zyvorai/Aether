@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router';
 import { Link2 } from 'lucide-react';
 import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { copyToClipboard } from '../utils/clipboard';
+import { formatTimestamp } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
@@ -37,6 +38,7 @@ import ApplicationTopology from './ApplicationTopology';
 import AiTroubleshootPanel from './AiTroubleshootPanel';
 import Badge, { SeverityBadge } from './Badge';
 import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
+import Modal from './Modal';
 import type {
   ClusterHealthSummary,
   ClusterPortForwardSession,
@@ -168,6 +170,7 @@ export default function WorkloadDetail({
   const [driftFailed, setDriftFailed] = useState(false);
   const [clusterDetail, setClusterDetail] = useState<ClusterResourceDetail | null>(null);
   const [actionLoading, setActionLoading] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ version: number; path: string }>>([]);
   const [snapshotsLoading, setSnapshotsLoading] = useState(false);
@@ -870,7 +873,7 @@ export default function WorkloadDetail({
         break;
       case 'copilot':
         navigate(
-          pathWithQuery(viewToPath('zeus'), {
+          pathWithQuery(viewToPath('zyra'), {
             workload: workload.name,
             q: `Why is ${workload.name} failing?`,
           }),
@@ -1001,7 +1004,7 @@ export default function WorkloadDetail({
                 {['start', 'stop', 'restart', 'build', 'rollback', 'delete'].map(action => (
                   <button
                     key={action}
-                    onClick={() => handleAction(action)}
+                    onClick={() => (action === 'delete' ? setConfirmDelete(true) : handleAction(action))}
                     disabled={!!actionLoading}
                     className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
                       action === 'delete'
@@ -1127,7 +1130,7 @@ export default function WorkloadDetail({
                     </>
                   )}
                   <Link
-                    to={pathWithQuery(viewToPath('zeus'), {
+                    to={pathWithQuery(viewToPath('zyra'), {
                       workload: workload.name,
                       q: `Diagnose ${workload.kind ?? 'workload'} ${clusterResourceName} in ${workload.namespace ?? 'default'}`,
                     })}
@@ -1151,7 +1154,7 @@ export default function WorkloadDetail({
                     </Link>
                   ) : null}
                   <button
-                    onClick={() => handleAction('delete')}
+                    onClick={() => setConfirmDelete(true)}
                     disabled={!!actionLoading}
                     className="px-3 py-1.5 text-sm font-medium rounded bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30 disabled:opacity-50"
                   >
@@ -1166,7 +1169,7 @@ export default function WorkloadDetail({
               <div><span className="text-slate-500">Runtime</span><p className="text-white">{workload.runtime}</p></div>
               <div><span className="text-slate-500">Image</span><p className="text-white font-mono text-xs">{workload.image}</p></div>
               <div><span className="text-slate-500">Status</span><p className="text-white">{workload.status}</p></div>
-              <div><span className="text-slate-500">Created</span><p className="text-white">{workload.created_at?.slice(0, 19)}</p></div>
+              <div><span className="text-slate-500">Created</span><p className="text-white">{workload.created_at ? formatTimestamp(workload.created_at) : ''}</p></div>
               {workload.cluster && <div><span className="text-slate-500">Cluster</span><p className="text-white">{workload.cluster}</p></div>}
               {workload.namespace && <div><span className="text-slate-500">Namespace</span><p className="text-white">{workload.namespace}</p></div>}
               {workload.kind && <div><span className="text-slate-500">Kind</span><p className="text-white">{workload.kind}</p></div>}
@@ -1458,7 +1461,7 @@ export default function WorkloadDetail({
                               {event.type_}
                             </span>
                             <span className="font-medium text-slate-200">{event.reason}</span>
-                            <span className="ml-auto text-slate-600">{event.timestamp?.slice(0, 19)}</span>
+                            <span className="ml-auto text-slate-600">{event.timestamp ? formatTimestamp(event.timestamp) : ''}</span>
                           </div>
                           <p className="mt-0.5 truncate text-[11px] text-slate-400" title={event.message}>{event.message}</p>
                         </div>
@@ -1504,7 +1507,7 @@ export default function WorkloadDetail({
                       <span className="font-mono text-slate-300">#{rev.revision}</span>
                       <span>{rev.chart}</span>
                       <span className={rev.status === 'deployed' ? 'text-emerald-400' : ''}>{rev.status}</span>
-                      <span className="ml-auto text-slate-600">{rev.updated?.slice(0, 19)}</span>
+                      <span className="ml-auto text-slate-600">{rev.updated ? formatTimestamp(rev.updated) : ''}</span>
                     </div>
                   ))}
                 </div>
@@ -1713,7 +1716,7 @@ export default function WorkloadDetail({
                   {
                     label: 'Ops copilot',
                     slug: 'copilot',
-                    path: pathWithQuery(viewToPath('zeus'), {
+                    path: pathWithQuery(viewToPath('zyra'), {
                       workload: workload.name,
                       q: `Why is ${workload.name} unhealthy?`,
                     }),
@@ -1988,7 +1991,7 @@ export default function WorkloadDetail({
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-slate-200">{ev.title}</div>
                       <div className="text-xs text-slate-500 mt-0.5">{ev.message}</div>
-                      <div className="text-xs text-slate-600 mt-1">{ev.timestamp?.slice(0, 19)}</div>
+                      <div className="text-xs text-slate-600 mt-1">{ev.timestamp ? formatTimestamp(ev.timestamp) : ''}</div>
                     </div>
                   </div>
                 ))}
@@ -2192,6 +2195,26 @@ export default function WorkloadDetail({
           </div>
         </div>
       )}
+      <Modal isOpen={confirmDelete} onClose={() => setConfirmDelete(false)} title="Confirm Delete">
+        <p className="text-sm text-slate-300 mb-6">
+          Are you sure you want to delete "{workload.name}"? This cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={() => setConfirmDelete(false)} className="btn-secondary">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmDelete(false);
+              void handleAction('delete');
+            }}
+            className="btn-danger"
+          >
+            Delete
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

@@ -601,6 +601,9 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const stoppedCount = workloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length;
 
   const filterSelectClass = 'glass-select';
+  // .glass-select applies width:100% and wins the cascade over w-* utility classes in
+  // this build's stylesheet ordering, so override width inline instead.
+  const filterSelectStyle = { width: 'auto', minWidth: '9rem' } as const;
 
   return (
     <div className="overflow-x-hidden">
@@ -642,21 +645,21 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         refreshing={loading}
         filters={
           <>
-            <select value={sourceFilterVal} onChange={(e) => setSourceFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-source-filter">
+            <select value={sourceFilterVal} onChange={(e) => setSourceFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-source-filter">
               <option value="all">All sources</option>
               <option value="aether">Aether managed</option>
               <option value="cluster">Kubernetes discovered</option>
             </select>
-            <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-kind-filter">
+            <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-kind-filter">
               {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
             </select>
-            <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-cluster-filter">
+            <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-cluster-filter">
               {clusters.map((cluster) => <option key={cluster} value={cluster}>{cluster === 'all' ? 'All clusters' : cluster}</option>)}
             </select>
-            <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-namespace-filter">
+            <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-namespace-filter">
               {namespaces.map((namespace) => <option key={namespace} value={namespace}>{namespace === 'all' ? 'All namespaces' : namespace}</option>)}
             </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterSelectClass} data-testid="workloads-status-filter">
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-status-filter">
               <option value="all">All statuses</option>
               <option value="running">Running</option>
               <option value="stopped">Stopped</option>
@@ -937,7 +940,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
             className="text-aether hover:underline"
             data-testid="workloads-context-copilot-link"
           >

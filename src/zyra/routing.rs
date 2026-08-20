@@ -2,9 +2,9 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus intelligent routing — task classification and provider/agent selection.
+//! Zyra intelligent routing — task classification and provider/agent selection.
 
-use crate::zeus::providers::{ZeusProviderKind, ZeusProviderRegistry};
+use crate::zyra::providers::{ZyraProviderKind, ZyraProviderRegistry};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub struct RoutingDecision {
     pub agent_id: String,
     pub agent_label: String,
     pub task_class: TaskClass,
-    pub provider_kind: ZeusProviderKind,
+    pub provider_kind: ZyraProviderKind,
     pub model_hint: String,
     pub confidence: f64,
     pub rationale: String,
@@ -67,12 +67,12 @@ pub fn route_agent(
     agent_override: Option<&str>,
 ) -> (String, String, f64, Vec<String>) {
     if let Some(id) = agent_override.filter(|s| !s.is_empty() && *s != "auto") {
-        let persona = crate::zeus::agents::get_agent(id);
+        let persona = crate::zyra::agents::get_agent(id);
         return (persona.id, persona.label, 0.95, persona.suggested_prompts);
     }
     let lower = message.to_lowercase();
     if lower.contains("architect") || lower.contains("design") || lower.contains("placement") {
-        let p = crate::zeus::agents::get_agent("architect");
+        let p = crate::zyra::agents::get_agent("architect");
         return (p.id, p.label, 0.9, p.suggested_prompts);
     }
     if lower.contains("devops")
@@ -81,7 +81,7 @@ pub fn route_agent(
         || lower.contains("gitops")
         || lower.contains("drift")
     {
-        let p = crate::zeus::agents::get_agent("devops");
+        let p = crate::zyra::agents::get_agent("devops");
         return (p.id, p.label, 0.88, p.suggested_prompts);
     }
     if lower.contains("kubernetes")
@@ -89,15 +89,15 @@ pub fn route_agent(
         || lower.contains("pod")
         || lower.contains("cluster")
     {
-        let p = crate::zeus::agents::get_agent("kubernetes");
+        let p = crate::zyra::agents::get_agent("kubernetes");
         return (p.id, p.label, 0.87, p.suggested_prompts);
     }
     if lower.contains("security") || lower.contains("threat") || lower.contains("policy") {
-        let p = crate::zeus::agents::get_agent("security");
+        let p = crate::zyra::agents::get_agent("security");
         return (p.id, p.label, 0.9, p.suggested_prompts);
     }
     if lower.contains("cost") || lower.contains("finops") || lower.contains("savings") {
-        let p = crate::zeus::agents::get_agent("cost");
+        let p = crate::zyra::agents::get_agent("cost");
         return (p.id, p.label, 0.92, p.suggested_prompts);
     }
     if lower.contains("observability")
@@ -105,7 +105,7 @@ pub fn route_agent(
         || lower.contains("metric")
         || lower.contains("trace")
     {
-        let p = crate::zeus::agents::get_agent("observability");
+        let p = crate::zyra::agents::get_agent("observability");
         return (p.id, p.label, 0.86, p.suggested_prompts);
     }
     if lower.contains("database")
@@ -113,7 +113,7 @@ pub fn route_agent(
         || lower.contains("mysql")
         || lower.contains("redis")
     {
-        let p = crate::zeus::agents::get_agent("database");
+        let p = crate::zyra::agents::get_agent("database");
         return (p.id, p.label, 0.85, p.suggested_prompts);
     }
     if lower.contains("llm")
@@ -121,21 +121,21 @@ pub fn route_agent(
         || lower.contains("inference")
         || lower.contains("model")
     {
-        let p = crate::zeus::agents::get_agent("ai_engineer");
+        let p = crate::zyra::agents::get_agent("ai_engineer");
         return (p.id, p.label, 0.84, p.suggested_prompts);
     }
-    let p = crate::zeus::agents::get_agent("sre");
+    let p = crate::zyra::agents::get_agent("sre");
     (p.id, p.label, 0.75, p.suggested_prompts)
 }
 
-pub fn preferred_provider_kind(task: TaskClass) -> ZeusProviderKind {
+pub fn preferred_provider_kind(task: TaskClass) -> ZyraProviderKind {
     match task {
-        TaskClass::Infrastructure => ZeusProviderKind::Anthropic,
-        TaskClass::CodeGeneration => ZeusProviderKind::Openai,
-        TaskClass::SecurityAnalysis => ZeusProviderKind::Openai,
-        TaskClass::Research => ZeusProviderKind::Gemini,
-        TaskClass::LongContext => ZeusProviderKind::Anthropic,
-        TaskClass::FastResponse => ZeusProviderKind::Ollama,
+        TaskClass::Infrastructure => ZyraProviderKind::Anthropic,
+        TaskClass::CodeGeneration => ZyraProviderKind::Openai,
+        TaskClass::SecurityAnalysis => ZyraProviderKind::Openai,
+        TaskClass::Research => ZyraProviderKind::Gemini,
+        TaskClass::LongContext => ZyraProviderKind::Anthropic,
+        TaskClass::FastResponse => ZyraProviderKind::Ollama,
     }
 }
 
@@ -145,11 +145,11 @@ pub fn route_message(message: &str, agent_override: Option<&str>) -> RoutingDeci
         route_agent(message, agent_override);
     let provider_kind = preferred_provider_kind(task);
     let model_hint = match provider_kind {
-        ZeusProviderKind::Anthropic => "claude-sonnet-4-20250514".into(),
-        ZeusProviderKind::Openai => "gpt-4o-mini".into(),
-        ZeusProviderKind::Gemini => "gemini-2.0-flash".into(),
-        ZeusProviderKind::Xai => "grok-2".into(),
-        ZeusProviderKind::Ollama => "llama3.2".into(),
+        ZyraProviderKind::Anthropic => "claude-sonnet-4-20250514".into(),
+        ZyraProviderKind::Openai => "gpt-4o-mini".into(),
+        ZyraProviderKind::Gemini => "gemini-2.0-flash".into(),
+        ZyraProviderKind::Xai => "grok-2".into(),
+        ZyraProviderKind::Ollama => "llama3.2".into(),
         _ => "default".into(),
     };
     let rationale = format!("Classified as {:?}, routed to {}", task, agent_label);
@@ -167,8 +167,8 @@ pub fn route_message(message: &str, agent_override: Option<&str>) -> RoutingDeci
 
 pub fn resolve_provider_for_routing(
     decision: &RoutingDecision,
-    reg: &ZeusProviderRegistry,
-) -> ZeusProviderKind {
+    reg: &ZyraProviderRegistry,
+) -> ZyraProviderKind {
     let preferred = decision.provider_kind;
     if reg
         .providers
@@ -181,7 +181,7 @@ pub fn resolve_provider_for_routing(
         .iter()
         .find(|p| p.enabled)
         .map(|p| p.kind)
-        .unwrap_or(ZeusProviderKind::Openai)
+        .unwrap_or(ZyraProviderKind::Openai)
 }
 
 #[cfg(test)]

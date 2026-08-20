@@ -11,7 +11,7 @@ use crate::intelligence::security::SecurityEngine;
 use crate::rbac::Role;
 use crate::spec::Workload;
 use crate::state::StateStore;
-use crate::zeus::policy::{role_allows_tool, tool_risk};
+use crate::zyra::policy::{role_allows_tool, tool_risk};
 use serde_json::json;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -258,7 +258,7 @@ pub async fn execute_tool(
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| anyhow::anyhow!("workload required"))?;
             let store = ctx.state.read().await;
-            let req = crate::zeus::diagnose::DiagnoseRequest {
+            let req = crate::zyra::diagnose::DiagnoseRequest {
                 workload: workload.into(),
                 cluster: args
                     .get("cluster")
@@ -273,7 +273,7 @@ pub async fn execute_tool(
                     .and_then(|v| v.as_str())
                     .map(str::to_string),
             };
-            let report = crate::zeus::diagnose::diagnose_workload(&req, &store).await?;
+            let report = crate::zyra::diagnose::diagnose_workload(&req, &store).await?;
             Ok(serde_json::to_value(report)?)
         }
         "gitops_status" => {
@@ -338,7 +338,7 @@ pub async fn execute_tool(
             let prompt = args.get("prompt").and_then(|v| v.as_str()).unwrap_or("");
             Ok(serde_json::json!({
                 "kind": kind,
-                "artifact": format!("# Generated {kind}\n# {prompt}\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: zeus-generated\n"),
+                "artifact": format!("# Generated {kind}\n# {prompt}\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: zyra-generated\n"),
             }))
         }
         "exec_command" => {
@@ -353,7 +353,7 @@ pub async fn execute_tool(
             let title = args
                 .get("title")
                 .and_then(|v| v.as_str())
-                .unwrap_or("Zeus incident");
+                .unwrap_or("Zyra incident");
             Ok(serde_json::json!({
                 "status": "pending_approval",
                 "ticket": title,
@@ -365,7 +365,7 @@ pub async fn execute_tool(
             Ok(serde_json::json!({
                 "status": "pending_approval",
                 "pull_request": title,
-                "branch": args.get("branch").and_then(|v| v.as_str()).unwrap_or("zeus/auto"),
+                "branch": args.get("branch").and_then(|v| v.as_str()).unwrap_or("zyra/auto"),
             }))
         }
         other => anyhow::bail!("unknown tool: {other}"),

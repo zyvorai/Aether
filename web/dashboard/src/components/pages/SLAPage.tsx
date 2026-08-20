@@ -42,12 +42,19 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
     const wl = result.data;
     setWorkloads(wl);
     const results: Record<string, SlaTarget | null> = {};
-    await Promise.all(
-      wl.map(async (w) => {
-        const sla = await apiFetch<SlaTarget>(`/sla/${w.name}`);
-        results[w.name] = sla;
-      })
-    );
+    // Fetch in small concurrent batches rather than firing one request per workload
+    // at once — with dozens of workloads that starves the browser's per-origin
+    // connection pool and stalls the whole page for many seconds.
+    const CONCURRENCY = 8;
+    for (let i = 0; i < wl.length; i += CONCURRENCY) {
+      const batch = wl.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        batch.map(async (w) => {
+          const sla = await apiFetch<SlaTarget>(`/sla/${w.name}`);
+          results[w.name] = sla;
+        })
+      );
+    }
     setSlaData(results);
     setLoading(false);
   }, [refreshKey]);
@@ -128,7 +135,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('zeus'), { workload: search.trim(), q: `SLA status for ${search.trim()}` })}
+              to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `SLA status for ${search.trim()}` })}
               className="text-aether hover:underline"
               data-testid="sla-context-copilot-link"
             >

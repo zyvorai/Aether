@@ -9,8 +9,8 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiPost } from '../../utils/api';
-import ZeusPlatformPanel from '../ZeusPlatformPanel';
-import ZeusPromptLibrary from '../ZeusPromptLibrary';
+import ZyraPlatformPanel from '../ZyraPlatformPanel';
+import ZyraPromptLibrary from '../ZyraPromptLibrary';
 
 interface ToolResult {
   tool: string;
@@ -40,7 +40,7 @@ const SUGGESTIONS = [
   'Generate a security hardening plan',
 ];
 
-export default function ZeusPage() {
+export default function ZyraPage() {
   const [workloadParam] = useQueryParam('workload', '');
   const [qParam, setQParam] = useQueryParam('q', '');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -78,7 +78,7 @@ export default function ZeusPage() {
           reply: string;
           tool_results: ToolResult[];
           pending_actions: PendingAction[];
-        }>('/zeus/chat', {
+        }>('/zyra/chat', {
           message: trimmed,
           session_id: sessionId,
           confirm_action_id: confirmActionId,
@@ -98,7 +98,7 @@ export default function ZeusPage() {
         } else {
           setMessages((m) => [
             ...m,
-            { role: 'assistant', content: res.error ?? 'Zeus request failed' },
+            { role: 'assistant', content: res.error ?? 'Zyra request failed' },
           ]);
         }
       } catch (e) {
@@ -128,7 +128,7 @@ export default function ZeusPage() {
         confirmed: string[];
         skipped: string[];
         errors: string[];
-      }>('/zeus/confirm-batch', {
+      }>('/zyra/confirm-batch', {
         session_id: sessionId,
         action_ids: pending.map((a) => a.id),
       });
@@ -156,13 +156,13 @@ export default function ZeusPage() {
   return (
     <div className="flex h-[calc(100vh-12rem)] min-h-[480px] flex-col gap-4">
       <WorkloadContextBanner
-        testId="zeus-workload-context"
+        testId="zyra-workload-context"
         workload={workloadFocus}
-        description="Zeus context for workload"
+        description="Zyra context for workload"
       >
         <WorkloadScopedCrossLinks
           workload={workloadFocus}
-          prefix="zeus"
+          prefix="zyra"
           showDrift
           showAudit
           showGitops
@@ -174,7 +174,7 @@ export default function ZeusPage() {
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: workloadFocus, tab: 'predictions' })}
               className="text-aether hover:underline"
-              data-testid="zeus-context-intelligence-link"
+              data-testid="zyra-context-intelligence-link"
             >
               Intelligence →
             </Link>
@@ -182,7 +182,7 @@ export default function ZeusPage() {
             <Link
               to={pathWithQuery(viewToPath('fabric'), { workload: workloadFocus })}
               className="text-aether hover:underline"
-              data-testid="zeus-context-fabric-link"
+              data-testid="zyra-context-fabric-link"
             >
               Fabric →
             </Link>
@@ -190,7 +190,7 @@ export default function ZeusPage() {
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
               className="text-aether hover:underline"
-              data-testid="zeus-editor-link"
+              data-testid="zyra-editor-link"
             >
               Editor →
             </Link>
@@ -198,7 +198,7 @@ export default function ZeusPage() {
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
               className="text-aether hover:underline"
-              data-testid="zeus-context-openapi-link"
+              data-testid="zyra-context-openapi-link"
             >
               OpenAPI →
             </Link>
@@ -206,7 +206,7 @@ export default function ZeusPage() {
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
               className="text-aether hover:underline"
-              data-testid="zeus-context-policy-link"
+              data-testid="zyra-context-policy-link"
             >
               Policy →
             </Link>
@@ -214,7 +214,7 @@ export default function ZeusPage() {
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
               className="text-aether hover:underline"
-              data-testid="zeus-context-secrets-link"
+              data-testid="zyra-context-secrets-link"
             >
               Secrets →
             </Link>
@@ -222,13 +222,13 @@ export default function ZeusPage() {
         ) : null}
       </WorkloadContextBanner>
       <section className="overview-section-shell mb-6 flex min-h-0 flex-1 flex-col p-4 sm:p-6">
-      <div className="zeus-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
+      <div className="zyra-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
         <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
             <Bot className="h-4 w-4 text-aether-ai" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-white">AI Ops Zeus</h2>
+            <h2 className="text-sm font-semibold text-white">AI Ops Zyra</h2>
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
               Infrastructure agent
             </p>
@@ -236,7 +236,7 @@ export default function ZeusPage() {
           {messages.length > 0 && (
             <button
               type="button"
-              data-testid="zeus-clear-chat"
+              data-testid="zyra-clear-chat"
               onClick={() => {
                 setMessages([]);
                 setSessionId(null);
@@ -253,7 +253,7 @@ export default function ZeusPage() {
           <Link
             to={viewToPath('intelligence')}
             className="text-xs text-aether hover:underline"
-            data-testid="zeus-intelligence-link"
+            data-testid="zyra-intelligence-link"
           >
             Intelligence reports →
           </Link>
@@ -264,7 +264,7 @@ export default function ZeusPage() {
                 : viewToPath('health')
             }
             className="text-xs text-aether hover:underline ml-3"
-            data-testid="zeus-health-link"
+            data-testid="zyra-health-link"
           >
             Health monitor →
           </Link>
@@ -273,21 +273,21 @@ export default function ZeusPage() {
               <Link
                 to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
                 className="text-xs text-aether hover:underline ml-3"
-                data-testid="zeus-trust-link"
+                data-testid="zyra-trust-link"
               >
                 Trust tab →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('alerts'), { workload: workloadFocus })}
                 className="text-xs text-aether hover:underline ml-3"
-                data-testid="zeus-alerts-link"
+                data-testid="zyra-alerts-link"
               >
                 Alert rules →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('events'), { workload: workloadFocus })}
                 className="text-xs text-aether hover:underline ml-3"
-                data-testid="zeus-events-link"
+                data-testid="zyra-events-link"
               >
                 Events →
               </Link>
@@ -313,7 +313,7 @@ export default function ZeusPage() {
                       setInput(s);
                       void send(s);
                     }}
-                    className="zeus-prompt-chip"
+                    className="zyra-prompt-chip"
                   >
                     {s}
                   </button>
@@ -336,13 +336,13 @@ export default function ZeusPage() {
           ))}
 
           {pending.length > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-sm" data-testid="zeus-pending-actions">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-sm" data-testid="zyra-pending-actions">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-amber-200">Actions awaiting confirmation</p>
                 {pending.length > 1 ? (
                   <button
                     type="button"
-                    data-testid="zeus-confirm-batch"
+                    data-testid="zyra-confirm-batch"
                     onClick={() => void confirmBatch()}
                     className="rounded-lg bg-amber-600 px-2 py-1 text-xs text-white hover:bg-amber-500"
                   >
@@ -368,14 +368,14 @@ export default function ZeusPage() {
           {loading && (
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-aether-ai" />
-              Zeus is thinking…
+              Zyra is thinking…
             </div>
           )}
           <div ref={bottomRef} />
         </div>
 
         <form
-          className="zeus-chat-input-bar relative z-[1] flex gap-2 glass-divider-t/50 p-3"
+          className="zyra-chat-input-bar relative z-[1] flex gap-2 glass-divider-t/50 p-3"
           onSubmit={(e) => {
             e.preventDefault();
             void send(input);
@@ -388,14 +388,14 @@ export default function ZeusPage() {
               setQParam(e.target.value);
             }}
             placeholder="Ask Aether anything…"
-            aria-label="Message Zeus"
+            aria-label="Message Zyra"
             data-testid="copilot-input"
             className="glass-input min-w-0 flex-1 text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
           <button
             type="submit"
-            data-testid="zeus-send-button"
+            data-testid="zyra-send-button"
             disabled={loading || !input.trim()}
             className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-aether to-aether-ai px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-aether-ai/20 transition hover:opacity-90 disabled:opacity-50"
           >
@@ -405,8 +405,8 @@ export default function ZeusPage() {
         </form>
       </div>
 
-      <ZeusPromptLibrary />
-      <ZeusPlatformPanel />
+      <ZyraPromptLibrary />
+      <ZyraPlatformPanel />
       </section>
     </div>
   );

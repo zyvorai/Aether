@@ -1,4 +1,4 @@
-# Zeus
+# Zyra
 
 ## Purpose
 
@@ -12,12 +12,12 @@ AI infrastructure operating layer — multi-LLM, multi-agent intelligence
 
 ## How to get there
 
-- Route / id: `/zeus`
-- Nav: **Intelligence → Zeus** (sidebar, command palette, or desktop nav)
+- Route / id: `/zyra`
+- Nav: **Intelligence → Zyra** (sidebar, command palette, or desktop nav)
 
 ## What you can do
 
-1. Open `/zeus` and wait for live data from Aether.
+1. Open `/zyra` and wait for live data from Aether.
 2. Use filters and search when the page provides them.
 3. Drill into a row or card for detail, then jump to related surfaces.
 4. For mutating actions: review impact, role gates, and confirmation dialogs first.

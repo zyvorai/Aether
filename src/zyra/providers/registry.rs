@@ -2,11 +2,11 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Encrypted Zeus LLM provider registry.
+//! Encrypted Zyra LLM provider registry.
 
 use crate::secrets::SecretStore;
-use crate::zeus::provider::{LlmProvider, RuleBasedProvider};
-use crate::zeus::providers::adapters::{
+use crate::zyra::provider::{LlmProvider, RuleBasedProvider};
+use crate::zyra::providers::adapters::{
     AnthropicProvider, GeminiProvider, OllamaProvider, OpenAiCompatibleProvider,
 };
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ use std::sync::OnceLock;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum ZeusProviderKind {
+pub enum ZyraProviderKind {
     Openai,
     Anthropic,
     Gemini,
@@ -30,7 +30,7 @@ pub enum ZeusProviderKind {
     Llama,
 }
 
-impl ZeusProviderKind {
+impl ZyraProviderKind {
     pub fn label(&self) -> &'static str {
         match self {
             Self::Openai => "OpenAI",
@@ -64,9 +64,9 @@ impl ZeusProviderKind {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusProviderConfig {
+pub struct ZyraProviderConfig {
     pub id: String,
-    pub kind: ZeusProviderKind,
+    pub kind: ZyraProviderKind,
     pub display_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub api_key_secret_ref: Option<String>,
@@ -84,17 +84,17 @@ pub struct ZeusProviderConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ZeusProviderRegistry {
+pub struct ZyraProviderRegistry {
     pub default_provider_id: Option<String>,
     pub air_gapped: bool,
-    pub providers: Vec<ZeusProviderConfig>,
+    pub providers: Vec<ZyraProviderConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusProviderStatusReport {
+pub struct ZyraProviderStatusReport {
     pub active_provider: String,
     pub active_model: String,
-    pub providers: Vec<ZeusProviderConfig>,
+    pub providers: Vec<ZyraProviderConfig>,
     pub fallback_rule_based: bool,
     pub air_gapped: bool,
 }
@@ -107,7 +107,7 @@ pub struct ProviderTestReport {
 }
 
 fn registry_path() -> PathBuf {
-    crate::resources::aether_path("zeus-providers.json")
+    crate::resources::aether_path("zyra-providers.json")
 }
 
 const API_KEY_FIELD: &str = "api_key";
@@ -129,14 +129,14 @@ fn save_secret_store(store: &SecretStore) -> anyhow::Result<()> {
     store.save(&path)
 }
 
-pub fn load_registry() -> ZeusProviderRegistry {
+pub fn load_registry() -> ZyraProviderRegistry {
     let path = registry_path();
     if !path.exists() {
         return bootstrap_from_env();
     }
     match std::fs::read_to_string(&path) {
         Ok(raw) => {
-            let mut reg: ZeusProviderRegistry = serde_json::from_str(&raw).unwrap_or_default();
+            let mut reg: ZyraProviderRegistry = serde_json::from_str(&raw).unwrap_or_default();
             if let Ok(store) = secret_store() {
                 for p in &mut reg.providers {
                     p.api_key_configured = p
@@ -155,7 +155,7 @@ pub fn load_registry() -> ZeusProviderRegistry {
     }
 }
 
-pub fn save_registry(reg: &ZeusProviderRegistry) -> anyhow::Result<()> {
+pub fn save_registry(reg: &ZyraProviderRegistry) -> anyhow::Result<()> {
     let path = registry_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -164,16 +164,16 @@ pub fn save_registry(reg: &ZeusProviderRegistry) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn bootstrap_from_env() -> ZeusProviderRegistry {
+fn bootstrap_from_env() -> ZyraProviderRegistry {
     let mut providers = Vec::new();
     if std::env::var("OPENAI_API_KEY")
         .ok()
         .filter(|s| !s.is_empty())
         .is_some()
     {
-        providers.push(ZeusProviderConfig {
+        providers.push(ZyraProviderConfig {
             id: "env-openai".into(),
-            kind: ZeusProviderKind::Openai,
+            kind: ZyraProviderKind::Openai,
             display_name: "OpenAI (env)".into(),
             api_key_secret_ref: None,
             base_url: std::env::var("AETHER_OPENAI_BASE_URL").ok(),
@@ -191,9 +191,9 @@ fn bootstrap_from_env() -> ZeusProviderRegistry {
         .filter(|s| !s.is_empty())
         .is_some()
     {
-        providers.push(ZeusProviderConfig {
+        providers.push(ZyraProviderConfig {
             id: "env-anthropic".into(),
-            kind: ZeusProviderKind::Anthropic,
+            kind: ZyraProviderKind::Anthropic,
             display_name: "Anthropic (env)".into(),
             api_key_secret_ref: None,
             base_url: None,
@@ -214,9 +214,9 @@ fn bootstrap_from_env() -> ZeusProviderRegistry {
             .map(|s| s.eq_ignore_ascii_case("ollama"))
             .unwrap_or(false)
     {
-        providers.push(ZeusProviderConfig {
+        providers.push(ZyraProviderConfig {
             id: "env-ollama".into(),
-            kind: ZeusProviderKind::Ollama,
+            kind: ZyraProviderKind::Ollama,
             display_name: "Ollama (env)".into(),
             api_key_secret_ref: None,
             base_url: Some(
@@ -231,27 +231,27 @@ fn bootstrap_from_env() -> ZeusProviderRegistry {
             api_key_configured: false,
         });
     }
-    ZeusProviderRegistry {
+    ZyraProviderRegistry {
         default_provider_id: providers.first().map(|p| p.id.clone()),
         air_gapped: false,
         providers,
     }
 }
 
-pub fn list_providers_public() -> ZeusProviderRegistry {
+pub fn list_providers_public() -> ZyraProviderRegistry {
     load_registry()
 }
 
 pub fn upsert_provider(
-    mut config: ZeusProviderConfig,
+    mut config: ZyraProviderConfig,
     api_key: Option<&str>,
-) -> anyhow::Result<ZeusProviderConfig> {
+) -> anyhow::Result<ZyraProviderConfig> {
     let mut reg = load_registry();
     if let Some(key) = api_key.filter(|k| !k.is_empty()) {
-        let secret_name = format!("zeus-provider-{}", config.id);
+        let secret_name = format!("zyra-provider-{}", config.id);
         let mut store = secret_store().unwrap_or_else(|_| SecretStore::new());
         if store.get_secret(&secret_name).is_none() {
-            store.create_secret(&secret_name, "zeus");
+            store.create_secret(&secret_name, "zyra");
         }
         store.set(&secret_name, API_KEY_FIELD, key)?;
         save_secret_store(&store)?;
@@ -282,7 +282,7 @@ pub fn delete_provider(id: &str) -> anyhow::Result<bool> {
     Ok(reg.providers.len() < before)
 }
 
-fn resolve_api_key(config: &ZeusProviderConfig) -> Option<String> {
+fn resolve_api_key(config: &ZyraProviderConfig) -> Option<String> {
     if let Some(ref r) = config.api_key_secret_ref {
         if let Ok(store) = secret_store() {
             if let Ok(v) = store.get(r, API_KEY_FIELD) {
@@ -291,25 +291,25 @@ fn resolve_api_key(config: &ZeusProviderConfig) -> Option<String> {
         }
     }
     match config.kind {
-        ZeusProviderKind::Openai | ZeusProviderKind::Azure => std::env::var("OPENAI_API_KEY").ok(),
-        ZeusProviderKind::Anthropic => std::env::var("ANTHROPIC_API_KEY").ok(),
-        ZeusProviderKind::Gemini => std::env::var("GEMINI_API_KEY")
+        ZyraProviderKind::Openai | ZyraProviderKind::Azure => std::env::var("OPENAI_API_KEY").ok(),
+        ZyraProviderKind::Anthropic => std::env::var("ANTHROPIC_API_KEY").ok(),
+        ZyraProviderKind::Gemini => std::env::var("GEMINI_API_KEY")
             .or_else(|_| std::env::var("GOOGLE_API_KEY"))
             .ok(),
-        ZeusProviderKind::Xai => std::env::var("XAI_API_KEY").ok(),
-        ZeusProviderKind::Deepseek => std::env::var("DEEPSEEK_API_KEY").ok(),
-        ZeusProviderKind::Mistral => std::env::var("MISTRAL_API_KEY").ok(),
+        ZyraProviderKind::Xai => std::env::var("XAI_API_KEY").ok(),
+        ZyraProviderKind::Deepseek => std::env::var("DEEPSEEK_API_KEY").ok(),
+        ZyraProviderKind::Mistral => std::env::var("MISTRAL_API_KEY").ok(),
         _ => None,
     }
 }
 
-pub fn build_provider(config: &ZeusProviderConfig) -> Option<Box<dyn LlmProvider>> {
+pub fn build_provider(config: &ZyraProviderConfig) -> Option<Box<dyn LlmProvider>> {
     let api_key = resolve_api_key(config);
     let base = config
         .base_url
         .clone()
         .or_else(|| config.kind.default_base_url().map(String::from))?;
-    let model = if config.kind == ZeusProviderKind::Azure {
+    let model = if config.kind == ZyraProviderKind::Azure {
         config
             .deployment_name
             .clone()
@@ -319,7 +319,7 @@ pub fn build_provider(config: &ZeusProviderConfig) -> Option<Box<dyn LlmProvider
     };
 
     match config.kind {
-        ZeusProviderKind::Anthropic => {
+        ZyraProviderKind::Anthropic => {
             let key = api_key?;
             Some(Box::new(AnthropicProvider {
                 api_key: key,
@@ -327,7 +327,7 @@ pub fn build_provider(config: &ZeusProviderConfig) -> Option<Box<dyn LlmProvider
                 base_url: base,
             }))
         }
-        ZeusProviderKind::Gemini => {
+        ZyraProviderKind::Gemini => {
             let key = api_key?;
             Some(Box::new(GeminiProvider {
                 api_key: key,
@@ -335,19 +335,19 @@ pub fn build_provider(config: &ZeusProviderConfig) -> Option<Box<dyn LlmProvider
                 base_url: base,
             }))
         }
-        ZeusProviderKind::Ollama => Some(Box::new(OllamaProvider {
+        ZyraProviderKind::Ollama => Some(Box::new(OllamaProvider {
             base_url: base,
             model,
         })),
-        ZeusProviderKind::Openai
-        | ZeusProviderKind::Azure
-        | ZeusProviderKind::Xai
-        | ZeusProviderKind::Vllm
-        | ZeusProviderKind::OpenaiCompatible
-        | ZeusProviderKind::Deepseek
-        | ZeusProviderKind::Mistral
-        | ZeusProviderKind::Qwen
-        | ZeusProviderKind::Llama => {
+        ZyraProviderKind::Openai
+        | ZyraProviderKind::Azure
+        | ZyraProviderKind::Xai
+        | ZyraProviderKind::Vllm
+        | ZyraProviderKind::OpenaiCompatible
+        | ZyraProviderKind::Deepseek
+        | ZyraProviderKind::Mistral
+        | ZyraProviderKind::Qwen
+        | ZyraProviderKind::Llama => {
             let key = api_key.unwrap_or_default();
             Some(Box::new(OpenAiCompatibleProvider {
                 api_key: key,
@@ -359,7 +359,7 @@ pub fn build_provider(config: &ZeusProviderConfig) -> Option<Box<dyn LlmProvider
     }
 }
 
-pub fn provider_from_registry(preferred_kind: Option<ZeusProviderKind>) -> Box<dyn LlmProvider> {
+pub fn provider_from_registry(preferred_kind: Option<ZyraProviderKind>) -> Box<dyn LlmProvider> {
     let reg = load_registry();
     let mut candidates: Vec<_> = reg
         .providers
@@ -369,9 +369,9 @@ pub fn provider_from_registry(preferred_kind: Option<ZeusProviderKind>) -> Box<d
             if reg.air_gapped {
                 matches!(
                     p.kind,
-                    ZeusProviderKind::Ollama
-                        | ZeusProviderKind::Vllm
-                        | ZeusProviderKind::OpenaiCompatible
+                    ZyraProviderKind::Ollama
+                        | ZyraProviderKind::Vllm
+                        | ZyraProviderKind::OpenaiCompatible
                 )
             } else {
                 true
@@ -406,7 +406,7 @@ pub fn provider_from_registry(preferred_kind: Option<ZeusProviderKind>) -> Box<d
     Box::new(RuleBasedProvider)
 }
 
-pub fn build_provider_status() -> ZeusProviderStatusReport {
+pub fn build_provider_status() -> ZyraProviderStatusReport {
     let reg = load_registry();
     let active = reg
         .default_provider_id
@@ -419,12 +419,12 @@ pub fn build_provider_status() -> ZeusProviderStatusReport {
                 || !p.api_key_configured
                     && !matches!(
                         p.kind,
-                        ZeusProviderKind::Ollama
-                            | ZeusProviderKind::Vllm
-                            | ZeusProviderKind::OpenaiCompatible
+                        ZyraProviderKind::Ollama
+                            | ZyraProviderKind::Vllm
+                            | ZyraProviderKind::OpenaiCompatible
                     )
         });
-    ZeusProviderStatusReport {
+    ZyraProviderStatusReport {
         active_provider: active
             .map(|p| p.display_name.clone())
             .unwrap_or_else(|| "rule-based".into()),
@@ -447,7 +447,7 @@ pub async fn test_provider(id: &str) -> anyhow::Result<ProviderTestReport> {
     let provider = build_provider(cfg).ok_or_else(|| anyhow::anyhow!("provider not configured"))?;
     let resp = provider
         .chat(
-            &[crate::zeus::provider::ChatMessage {
+            &[crate::zyra::provider::ChatMessage {
                 role: "user".into(),
                 content: "Reply with OK".into(),
             }],
@@ -479,8 +479,8 @@ mod tests {
 
     #[test]
     fn provider_kind_labels() {
-        assert_eq!(ZeusProviderKind::Openai.label(), "OpenAI");
-        assert_eq!(ZeusProviderKind::Anthropic.label(), "Anthropic");
+        assert_eq!(ZyraProviderKind::Openai.label(), "OpenAI");
+        assert_eq!(ZyraProviderKind::Anthropic.label(), "Anthropic");
     }
 
     #[test]

@@ -841,7 +841,7 @@ export default function ClustersPage() {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: workloadFocus, q: `Cluster context for ${workloadFocus}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Cluster context for ${workloadFocus}` })}
             className="text-aether hover:underline"
             data-testid="clusters-context-copilot-link"
           >

@@ -4,18 +4,18 @@
 
 import { Sparkles } from 'lucide-react';
 
-interface ZeusActionCardProps {
+interface ZyraActionCardProps {
   title: string;
   summary: string;
   actions?: { label: string; onClick: () => void }[];
   testId?: string;
 }
 
-export default function ZeusActionCard({ title, summary, actions = [], testId }: ZeusActionCardProps) {
+export default function ZyraActionCard({ title, summary, actions = [], testId }: ZyraActionCardProps) {
   return (
     <div
       className="rounded-xl border border-aether/25 bg-aether/[0.06] p-4 backdrop-blur-sm"
-      data-testid={testId ?? 'zeus-action-card'}
+      data-testid={testId ?? 'zyra-action-card'}
     >
       <div className="flex items-start gap-3">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-aether" />

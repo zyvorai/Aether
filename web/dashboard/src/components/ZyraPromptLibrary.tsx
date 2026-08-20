@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Download, Play, Store } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
 
-interface ZeusPrompt {
+interface ZyraPrompt {
   id: string;
   title: string;
   category: string;
@@ -20,31 +20,31 @@ interface MarketplaceAgent {
   installed: boolean;
 }
 
-export default function ZeusPromptLibrary() {
-  const [prompts, setPrompts] = useState<ZeusPrompt[]>([]);
+export default function ZyraPromptLibrary() {
+  const [prompts, setPrompts] = useState<ZyraPrompt[]>([]);
   const [marketplace, setMarketplace] = useState<MarketplaceAgent[]>([]);
 
   useEffect(() => {
-    void apiFetch<{ prompts: ZeusPrompt[] }>('/zeus/prompts').then((lib) => {
+    void apiFetch<{ prompts: ZyraPrompt[] }>('/zyra/prompts').then((lib) => {
       if (lib?.prompts) setPrompts(lib.prompts);
     });
-    void apiFetch<{ agents: MarketplaceAgent[] }>('/zeus/marketplace').then((m) => {
+    void apiFetch<{ agents: MarketplaceAgent[] }>('/zyra/marketplace').then((m) => {
       if (m?.agents) setMarketplace(m.agents);
     });
   }, []);
 
   const runPrompt = (body: string) => {
-    window.dispatchEvent(new CustomEvent('zeus-send', { detail: { message: body } }));
+    window.dispatchEvent(new CustomEvent('zyra-send', { detail: { message: body } }));
   };
 
   const install = async (id: string) => {
-    await apiPost('/zeus/marketplace/install', { agent_id: id });
-    const m = await apiFetch<{ agents: MarketplaceAgent[] }>('/zeus/marketplace');
+    await apiPost('/zyra/marketplace/install', { agent_id: id });
+    const m = await apiFetch<{ agents: MarketplaceAgent[] }>('/zyra/marketplace');
     if (m?.agents) setMarketplace(m.agents);
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2" data-testid="zeus-prompt-library">
+    <div className="grid gap-6 lg:grid-cols-2" data-testid="zyra-prompt-library">
       <div>
         <h3 className="mb-3 text-sm font-semibold text-white">Prompt Library</h3>
         <div className="space-y-2">
@@ -54,7 +54,7 @@ export default function ZeusPromptLibrary() {
               <p className="mt-1 text-xs text-slate-500">{p.body}</p>
               <button type="button" className="btn-secondary mt-2 text-xs" onClick={() => runPrompt(p.body)}>
                 <Play className="mr-1 inline h-3 w-3" />
-                Run with Zeus
+                Run with Zyra
               </button>
             </div>
           ))}

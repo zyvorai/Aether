@@ -28,6 +28,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useWorkloadOrSearchFilter();
@@ -48,6 +49,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
       setBackups(result.data);
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
     void load();
   }
 
-  if (loading && backups.length === 0 && !loadFailed) {
+  if (loading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading rows={4} />;
   }
 
@@ -177,7 +179,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('zeus'), { workload: search.trim(), q: `Backup guidance for ${search.trim()}` })}
+              to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `Backup guidance for ${search.trim()}` })}
               className="text-aether hover:underline"
               data-testid="backups-context-copilot-link"
             >

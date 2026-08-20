@@ -6,9 +6,8 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Navbar from './Navbar';
 import Breadcrumb from './Breadcrumb';
 import PageHeader, { type HeaderPill } from './PageHeader';
-import Footer from './Footer';
-import ZeusRail, { ZeusRailToggle } from './ZeusRail';
-import ZeusContextBar from './ZeusContextBar';
+import ZyraRail, { ZyraRailToggle } from './ZyraRail';
+import ZyraContextBar from './ZyraContextBar';
 import AgentStatusDock from './AgentStatusDock';
 import CriticalIssueNotifier from './CriticalIssueNotifier';
 import LiveActivityDock from './LiveActivityDock';
@@ -47,7 +46,7 @@ const SELF_MASTHEAD_VIEWS: ReadonlySet<AppView> = new Set<AppView>([
   'overview',
   'fabric',
   'workloads',
-  'zeus',
+  'zyra',
   'copilot',
 ]);
 
@@ -121,16 +120,16 @@ export default function DashboardShell({
     () => buildHeroBadges(capabilities?.version, capabilities, ready, sseConnected),
     [capabilities, ready, sseConnected],
   );
-  const isZeusView = currentView === 'zeus' || currentView === 'copilot';
-  const [zeusCollapsed, setZeusCollapsed] = useState(() => !isZeusView);
-  const [mobileZeusOpen, setMobileZeusOpen] = useState(false);
+  const isZyraView = currentView === 'zyra' || currentView === 'copilot';
+  const [zyraCollapsed, setZyraCollapsed] = useState(() => !isZyraView);
+  const [mobileZyraOpen, setMobileZyraOpen] = useState(false);
   const showSharedHeader = !SELF_MASTHEAD_VIEWS.has(currentView);
 
-  // Reclaim horizontal space on every view except the Zeus workspace, where the
+  // Reclaim horizontal space on every view except the Zyra workspace, where the
   // rail IS the primary surface.
   useEffect(() => {
-    setZeusCollapsed(!isZeusView);
-  }, [currentView, isZeusView]);
+    setZyraCollapsed(!isZyraView);
+  }, [currentView, isZyraView]);
 
   return (
     <div className={shellClass}>
@@ -151,7 +150,7 @@ export default function DashboardShell({
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
       />
-      <ZeusContextBar refreshKey={refreshKey} />
+      <ZyraContextBar refreshKey={refreshKey} />
       <ViewerBanner />
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
@@ -169,23 +168,22 @@ export default function DashboardShell({
           ) : null}
           {children}
         </main>
-        <ZeusRail collapsed={zeusCollapsed} onCollapsedChange={setZeusCollapsed} />
+        <ZyraRail collapsed={zyraCollapsed} onCollapsedChange={setZyraCollapsed} />
       </div>
-      <ZeusRailToggle onClick={() => setMobileZeusOpen(true)} />
-      {mobileZeusOpen ? (
+      <ZyraRailToggle onClick={() => setMobileZyraOpen(true)} />
+      {mobileZyraOpen ? (
         <div className="fixed inset-0 z-50 xl:hidden">
           <button
             type="button"
             className="glass-modal-backdrop absolute inset-0"
-            aria-label="Close Zeus"
-            onClick={() => setMobileZeusOpen(false)}
+            aria-label="Close Zyra"
+            onClick={() => setMobileZyraOpen(false)}
           />
           <div className="absolute inset-y-0 right-0 flex w-full max-w-md">
-            <ZeusRail collapsed={false} onCollapsedChange={() => setMobileZeusOpen(false)} />
+            <ZyraRail collapsed={false} onCollapsedChange={() => setMobileZyraOpen(false)} />
           </div>
         </div>
       ) : null}
-      <Footer />
       <LiveActivityDock />
       <AgentStatusDock />
       <CriticalIssueNotifier refreshKey={refreshKey} />

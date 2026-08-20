@@ -1,21 +1,21 @@
 import { test, expect } from './fixtures';
 
-test.describe('Zeus smoke', () => {
-  test('zeus agents API', async ({ request }) => {
-    const res = await request.get('/api/zeus/agents');
+test.describe('Zyra smoke', () => {
+  test('zyra agents API', async ({ request }) => {
+    const res = await request.get('/api/zyra/agents');
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(Array.isArray(body.data)).toBe(true);
   });
 
-  test('zeus providers status', async ({ request }) => {
-    const res = await request.get('/api/zeus/providers/status');
+  test('zyra providers status', async ({ request }) => {
+    const res = await request.get('/api/zyra/providers/status');
     expect(res.ok()).toBeTruthy();
   });
 
-  test('zeus insights', async ({ request }) => {
-    const res = await request.get('/api/zeus/insights');
+  test('zyra insights', async ({ request }) => {
+    const res = await request.get('/api/zyra/insights');
     expect(res.ok()).toBeTruthy();
   });
 
@@ -29,8 +29,8 @@ test.describe('Zeus smoke', () => {
     expect([200, 500, 502, 503, 504]).toContain(res.status());
   });
 
-  test('zeus marketplace', async ({ request }) => {
-    const res = await request.get('/api/zeus/marketplace');
+  test('zyra marketplace', async ({ request }) => {
+    const res = await request.get('/api/zyra/marketplace');
     expect(res.ok()).toBeTruthy();
   });
 });

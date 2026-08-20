@@ -100,7 +100,7 @@ export default function SettingsPage() {
             {
               view: 'ai-providers',
               title: 'AI Providers',
-              description: 'Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints for Zeus.',
+              description: 'Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints for Zyra.',
               icon: <Bot className="h-5 w-5" />,
             },
             {

@@ -66,7 +66,7 @@ export function useZyraChat(context?: ZyraChatContext) {
           reply: string;
           tool_results: ZyraToolResult[];
           pending_actions: ZyraPendingAction[];
-        }>('/zeus/chat', {
+        }>('/zyra/chat', {
           message: buildContextualMessage(trimmed, context),
           session_id: sessionId,
           confirm_action_id: confirmActionId,
@@ -87,7 +87,7 @@ export function useZyraChat(context?: ZyraChatContext) {
         } else {
           setMessages((m) => [
             ...m,
-            { role: 'assistant', content: res.error ?? 'Zeus request failed' },
+            { role: 'assistant', content: res.error ?? 'Zyra request failed' },
           ]);
         }
       } catch (e) {
@@ -119,7 +119,7 @@ export function useZyraChat(context?: ZyraChatContext) {
         confirmed: string[];
         skipped: string[];
         errors: string[];
-      }>('/zeus/confirm-batch', {
+      }>('/zyra/confirm-batch', {
         session_id: sessionId,
         action_ids: pending.map((a) => a.id),
       });

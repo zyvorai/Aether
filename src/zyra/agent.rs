@@ -2,26 +2,26 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus agent loop.
+//! Zyra agent loop.
 
-use crate::intelligence::zeus_os::{append_zeus_audit, ZeusAuditEntry};
+use crate::intelligence::zyra_os::{append_zyra_audit, ZyraAuditEntry};
 use crate::rbac::Role;
 use crate::state::StateStore;
-use crate::zeus::agents::agent_system_prompt;
-use crate::zeus::memory::write_session_memory;
-use crate::zeus::policy::{role_allows_execute, tool_risk};
-use crate::zeus::provider::{ChatMessage, LlmProvider};
-use crate::zeus::providers::{load_registry, provider_from_registry};
-use crate::zeus::routing::{resolve_provider_for_routing, route_message, RoutingDecision};
-use crate::zeus::session::{PendingAction, ZeusSession, ZeusSessionStore};
-use crate::zeus::tools::{execute_tool, tools_openai_schema, ToolContext};
+use crate::zyra::agents::agent_system_prompt;
+use crate::zyra::memory::write_session_memory;
+use crate::zyra::policy::{role_allows_execute, tool_risk};
+use crate::zyra::provider::{ChatMessage, LlmProvider};
+use crate::zyra::providers::{load_registry, provider_from_registry};
+use crate::zyra::routing::{resolve_provider_for_routing, route_message, RoutingDecision};
+use crate::zyra::session::{PendingAction, ZyraSession, ZyraSessionStore};
+use crate::zyra::tools::{execute_tool, tools_openai_schema, ToolContext};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusChatResponse {
+pub struct ZyraChatResponse {
     pub session_id: String,
     pub reply: String,
     pub tool_results: Vec<ToolResultSummary>,
@@ -34,14 +34,14 @@ pub struct ToolResultSummary {
     pub summary: String,
 }
 
-pub struct ZeusAgent {
-    sessions: ZeusSessionStore,
+pub struct ZyraAgent {
+    sessions: ZyraSessionStore,
 }
 
-impl ZeusAgent {
+impl ZyraAgent {
     pub fn new() -> Self {
         Self {
-            sessions: ZeusSessionStore::default(),
+            sessions: ZyraSessionStore::default(),
         }
     }
 
@@ -58,7 +58,7 @@ impl ZeusAgent {
         confirm_action_id: Option<&str>,
         agent_focus: Option<&str>,
         ctx: &ToolContext,
-    ) -> anyhow::Result<ZeusChatResponse> {
+    ) -> anyhow::Result<ZyraChatResponse> {
         let routing = route_message(message, agent_focus);
         let provider = self.resolve_provider(&routing);
 
@@ -92,7 +92,7 @@ impl ZeusAgent {
                         role: "assistant".into(),
                         content: format!("Executed {}: {}", action.tool, result),
                     });
-                    let _ = append_zeus_audit(ZeusAuditEntry {
+                    let _ = append_zyra_audit(ZyraAuditEntry {
                         timestamp: crate::resources::now_rfc3339(),
                         session_id: session.id.clone(),
                         action: "confirm".into(),
@@ -115,7 +115,7 @@ impl ZeusAgent {
 
         for tc in &llm_resp.tool_calls {
             let risk = tool_risk(&tc.name);
-            if risk == crate::zeus::policy::ToolRisk::Mutate {
+            if risk == crate::zyra::policy::ToolRisk::Mutate {
                 let pa = PendingAction {
                     id: tc.id.clone(),
                     tool: tc.name.clone(),
@@ -175,7 +175,7 @@ impl ZeusAgent {
                 "provider_kind": format!("{:?}", routing.provider_kind),
             }),
         );
-        let _ = append_zeus_audit(ZeusAuditEntry {
+        let _ = append_zyra_audit(ZyraAuditEntry {
             timestamp: crate::resources::now_rfc3339(),
             session_id: session.id.clone(),
             action: "chat".into(),
@@ -187,7 +187,7 @@ impl ZeusAgent {
             model: Some(routing.model_hint.clone()),
         });
 
-        Ok(ZeusChatResponse {
+        Ok(ZyraChatResponse {
             session_id: session.id,
             reply,
             tool_results,
@@ -195,7 +195,7 @@ impl ZeusAgent {
         })
     }
 
-    pub fn get_session(&self, id: &str) -> Option<ZeusSession> {
+    pub fn get_session(&self, id: &str) -> Option<ZyraSession> {
         self.sessions.get(id)
     }
 
@@ -204,7 +204,7 @@ impl ZeusAgent {
         session_id: &str,
         action_ids: &[String],
         ctx: &ToolContext,
-    ) -> anyhow::Result<crate::intelligence::zeus_os::BatchConfirmReport> {
+    ) -> anyhow::Result<crate::intelligence::zyra_os::BatchConfirmReport> {
         let mut session = self
             .sessions
             .get(session_id)
@@ -229,7 +229,7 @@ impl ZeusAgent {
                                 content: format!("Executed {}: {}", action.tool, result),
                             });
                             confirmed.push(action_id.clone());
-                            let _ = append_zeus_audit(ZeusAuditEntry {
+                            let _ = append_zyra_audit(ZyraAuditEntry {
                                 timestamp: crate::resources::now_rfc3339(),
                                 session_id: session.id.clone(),
                                 action: "batch_confirm".into(),
@@ -254,7 +254,7 @@ impl ZeusAgent {
         session.updated_at = crate::resources::now_rfc3339();
         self.sessions.save(session);
 
-        Ok(crate::intelligence::zeus_os::BatchConfirmReport {
+        Ok(crate::intelligence::zyra_os::BatchConfirmReport {
             session_id: session_id.to_string(),
             confirmed,
             skipped,
@@ -263,7 +263,7 @@ impl ZeusAgent {
     }
 }
 
-impl Default for ZeusAgent {
+impl Default for ZyraAgent {
     fn default() -> Self {
         Self::new()
     }

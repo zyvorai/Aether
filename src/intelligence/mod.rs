@@ -43,7 +43,7 @@ pub mod sre;
 pub mod sre_os;
 pub mod store;
 pub mod twin;
-pub mod zeus_os;
+pub mod zyra_os;
 
 pub use actions::{build_next_actions, NextAction, NextActionsReport};
 pub use agents::{build_agent_registry, AgentRegistryReport, AgentStatusEntry};
@@ -210,12 +210,12 @@ pub use sre_os::{
 };
 pub use store::IntelligenceStore;
 pub use twin::{DigitalTwinEngine, TwinSimulateReport, TwinSimulateRequest};
-pub use zeus_os::{
-    append_zeus_audit, author_runbook, build_llm_provider_status, build_voice_zeus_lab,
-    build_zeus_insights, build_zeus_rbac_scopes, explain_policy_violations, read_zeus_audit,
-    read_zeus_memory, route_zeus_agent, write_zeus_memory_entry, BatchConfirmReport,
+pub use zyra_os::{
+    append_zyra_audit, author_runbook, build_llm_provider_status, build_voice_zyra_lab,
+    build_zyra_insights, build_zyra_rbac_scopes, explain_policy_violations, read_zyra_audit,
+    read_zyra_memory, route_zyra_agent, write_zyra_memory_entry, BatchConfirmReport,
     LlmProviderStatusReport, MultiAgentRouteReport, PolicyExplainerReport, PolicyExplainerRequest,
-    RunbookAuthorReport, RunbookAuthorRequest, VoiceZeusLabReport, ZeusAuditEntry, ZeusAuditReport,
-    ZeusInsightsReport, ZeusMemoryEntry, ZeusMemoryReport, ZeusMemorySettings,
-    ZeusRbacScopesReport, ZeusToolScope,
+    RunbookAuthorReport, RunbookAuthorRequest, VoiceZyraLabReport, ZyraAuditEntry, ZyraAuditReport,
+    ZyraInsightsReport, ZyraMemoryEntry, ZyraMemoryReport, ZyraMemorySettings,
+    ZyraRbacScopesReport, ZyraToolScope,
 };

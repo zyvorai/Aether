@@ -188,7 +188,7 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
       <dl className="space-y-0">
         <DetailRow label="Workload" value={data.name} />
         <DetailRow label="Classification" value={String(data.classification).replace(/([A-Z])/g, ' $1').trim()} />
-        <DetailRow label="Optimization score" value={formatPercent(data.optimization_score, 0)} />
+        <DetailRow label="Optimization score" value={`${data.optimization_score.toFixed(0)}%`} />
         {ra && (
           <>
             <DetailRow label="Overall efficiency" value={formatPercent(ra.overall_efficiency, 0)} />
@@ -231,7 +231,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
         {data.health_assessment && (
           <>
             <DetailRow label="Health" value={String(data.health_assessment.status)} />
-            <DetailRow label="Health score" value={formatPercent(data.health_assessment.score, 0)} />
+            <DetailRow label="Health score" value={`${data.health_assessment.score.toFixed(0)}%`} />
           </>
         )}
       </dl>
@@ -437,7 +437,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: workloadQuery.trim(), q: `Analyze ${workloadQuery.trim()}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: workloadQuery.trim(), q: `Analyze ${workloadQuery.trim()}` })}
             className="text-aether hover:underline"
             data-testid="ai-context-copilot-link"
           >

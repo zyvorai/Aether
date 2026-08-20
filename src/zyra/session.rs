@@ -4,13 +4,13 @@
 
 //! Copilot session store.
 
-use crate::zeus::provider::ChatMessage;
+use crate::zyra::provider::ChatMessage;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusSession {
+pub struct ZyraSession {
     pub id: String,
     pub messages: Vec<ChatMessage>,
     pub pending_actions: Vec<PendingAction>,
@@ -27,12 +27,12 @@ pub struct PendingAction {
 }
 
 #[derive(Clone, Default)]
-pub struct ZeusSessionStore {
-    inner: Arc<Mutex<HashMap<String, ZeusSession>>>,
+pub struct ZyraSessionStore {
+    inner: Arc<Mutex<HashMap<String, ZyraSession>>>,
 }
 
-impl ZeusSessionStore {
-    pub fn get_or_create(&self, session_id: Option<&str>) -> ZeusSession {
+impl ZyraSessionStore {
+    pub fn get_or_create(&self, session_id: Option<&str>) -> ZyraSession {
         let mut map = self.inner.lock().unwrap();
         let id = session_id
             .map(|s| s.to_string())
@@ -41,7 +41,7 @@ impl ZeusSessionStore {
             return sess.clone();
         }
         let now = crate::resources::now_rfc3339();
-        let sess = ZeusSession {
+        let sess = ZyraSession {
             id: id.clone(),
             messages: Vec::new(),
             pending_actions: Vec::new(),
@@ -52,12 +52,12 @@ impl ZeusSessionStore {
         sess
     }
 
-    pub fn save(&self, session: ZeusSession) {
+    pub fn save(&self, session: ZyraSession) {
         let mut map = self.inner.lock().unwrap();
         map.insert(session.id.clone(), session);
     }
 
-    pub fn get(&self, id: &str) -> Option<ZeusSession> {
+    pub fn get(&self, id: &str) -> Option<ZyraSession> {
         self.inner.lock().unwrap().get(id).cloned()
     }
 }

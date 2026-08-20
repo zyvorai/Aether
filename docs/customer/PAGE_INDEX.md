@@ -21,7 +21,7 @@ Regenerate: `node scripts/customer-docs/generate-page-index.mjs`
 |------|-------|---------|-------|
 | Migrations | `/migrations` | AI migration planner with risk analysis and strategy | [Open](pages/intelligence/migrations.md) |
 | AI Engine | `/ai` | Intent scoring, runtime recommendations & migration planning | [Open](pages/intelligence/ai.md) |
-| Zeus | `/zeus` | AI infrastructure operating layer — multi-LLM, multi-agent intelligence | [Open](pages/intelligence/zeus.md) |
+| Zyra | `/zyra` | AI infrastructure operating layer — multi-LLM, multi-agent intelligence | [Open](pages/intelligence/zyra.md) |
 | Cost Estimation | `/cost` | Resource cost projections across runtimes | [Open](pages/intelligence/cost.md) |
 | Runtime Affinity | `/affinity` | Workload class affinity and runtime fit | [Open](pages/intelligence/affinity.md) |
 | Drift Detection | `/drift` | Configuration drift & desired-state reconciliation | [Open](pages/intelligence/drift.md) |

@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus prompt library.
+//! Zyra prompt library.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -18,7 +18,7 @@ pub enum PromptCategory {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusPrompt {
+pub struct ZyraPrompt {
     pub id: String,
     pub title: String,
     pub category: PromptCategory,
@@ -29,30 +29,30 @@ pub struct ZeusPrompt {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ZeusPromptLibrary {
-    pub prompts: Vec<ZeusPrompt>,
+pub struct ZyraPromptLibrary {
+    pub prompts: Vec<ZyraPrompt>,
 }
 
 fn prompts_path() -> PathBuf {
-    crate::resources::aether_path("zeus-prompts.json")
+    crate::resources::aether_path("zyra-prompts.json")
 }
 
-pub fn load_prompts() -> ZeusPromptLibrary {
+pub fn load_prompts() -> ZyraPromptLibrary {
     let path = prompts_path();
     if !path.exists() {
-        return ZeusPromptLibrary {
+        return ZyraPromptLibrary {
             prompts: default_prompts(),
         };
     }
     std::fs::read_to_string(path)
         .ok()
         .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_else(|| ZeusPromptLibrary {
+        .unwrap_or_else(|| ZyraPromptLibrary {
             prompts: default_prompts(),
         })
 }
 
-fn save_prompts(lib: &ZeusPromptLibrary) -> anyhow::Result<()> {
+fn save_prompts(lib: &ZyraPromptLibrary) -> anyhow::Result<()> {
     let path = prompts_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -61,10 +61,10 @@ fn save_prompts(lib: &ZeusPromptLibrary) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn default_prompts() -> Vec<ZeusPrompt> {
+fn default_prompts() -> Vec<ZyraPrompt> {
     let now = crate::resources::now_rfc3339();
     vec![
-        ZeusPrompt {
+        ZyraPrompt {
             id: "infra-health".into(),
             title: "Fleet health summary".into(),
             category: PromptCategory::Infrastructure,
@@ -73,7 +73,7 @@ fn default_prompts() -> Vec<ZeusPrompt> {
             created_at: now.clone(),
             updated_at: now.clone(),
         },
-        ZeusPrompt {
+        ZyraPrompt {
             id: "sec-scan".into(),
             title: "Security threat scan".into(),
             category: PromptCategory::Security,
@@ -82,7 +82,7 @@ fn default_prompts() -> Vec<ZeusPrompt> {
             created_at: now.clone(),
             updated_at: now.clone(),
         },
-        ZeusPrompt {
+        ZyraPrompt {
             id: "k8s-diagnose".into(),
             title: "Diagnose crashing pods".into(),
             category: PromptCategory::Kubernetes,
@@ -94,11 +94,11 @@ fn default_prompts() -> Vec<ZeusPrompt> {
     ]
 }
 
-pub fn list_prompts() -> ZeusPromptLibrary {
+pub fn list_prompts() -> ZyraPromptLibrary {
     load_prompts()
 }
 
-pub fn upsert_prompt(mut prompt: ZeusPrompt) -> anyhow::Result<ZeusPrompt> {
+pub fn upsert_prompt(mut prompt: ZyraPrompt) -> anyhow::Result<ZyraPrompt> {
     let mut lib = load_prompts();
     prompt.updated_at = crate::resources::now_rfc3339();
     if prompt.created_at.is_empty() {
@@ -126,8 +126,8 @@ pub fn export_yaml() -> anyhow::Result<String> {
     Ok(serde_yaml::to_string(&lib.prompts)?)
 }
 
-pub fn import_yaml(raw: &str) -> anyhow::Result<ZeusPromptLibrary> {
-    let imported: Vec<ZeusPrompt> = serde_yaml::from_str(raw)?;
+pub fn import_yaml(raw: &str) -> anyhow::Result<ZyraPromptLibrary> {
+    let imported: Vec<ZyraPrompt> = serde_yaml::from_str(raw)?;
     let mut lib = load_prompts();
     for p in imported {
         if let Some(existing) = lib.prompts.iter_mut().find(|e| e.id == p.id) {

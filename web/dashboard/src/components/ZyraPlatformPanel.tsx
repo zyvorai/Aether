@@ -7,7 +7,7 @@ import { Bot, Loader2, Mic, RefreshCw, Shield, Sparkles } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
 import GlassSection from './GlassSection';
 
-interface ZeusMemoryReport {
+interface ZyraMemoryReport {
   entries: Array<{
     session_id: string;
     summary: string;
@@ -39,7 +39,7 @@ interface MultiAgentRoute {
   suggested_prompts: string[];
 }
 
-interface ZeusAuditReport {
+interface ZyraAuditReport {
   entries: Array<{
     timestamp: string;
     session_id: string;
@@ -50,7 +50,7 @@ interface ZeusAuditReport {
   }>;
 }
 
-interface ZeusRbacScopes {
+interface ZyraRbacScopes {
   role: string;
   can_execute_mutations: boolean;
   tools: Array<{ name: string; risk: string; allowed_roles: string[] }>;
@@ -66,16 +66,16 @@ interface RunbookAuthorReport {
   markdown: string;
 }
 
-export default function ZeusPlatformPanel() {
+export default function ZyraPlatformPanel() {
   const [tab, setTab] = useState<
     'memory' | 'route' | 'llm' | 'voice' | 'runbook' | 'policy' | 'audit' | 'rbac'
   >('memory');
   const [loading, setLoading] = useState(true);
-  const [memory, setMemory] = useState<ZeusMemoryReport | null>(null);
+  const [memory, setMemory] = useState<ZyraMemoryReport | null>(null);
   const [llm, setLlm] = useState<LlmProviderStatus | null>(null);
   const [voice, setVoice] = useState<VoiceLab | null>(null);
-  const [audit, setAudit] = useState<ZeusAuditReport | null>(null);
-  const [rbac, setRbac] = useState<ZeusRbacScopes | null>(null);
+  const [audit, setAudit] = useState<ZyraAuditReport | null>(null);
+  const [rbac, setRbac] = useState<ZyraRbacScopes | null>(null);
   const [routeMessage, setRouteMessage] = useState('Find cost savings across the fleet');
   const [route, setRoute] = useState<MultiAgentRoute | null>(null);
   const [runbookPrompt, setRunbookPrompt] = useState('Restart unhealthy pods safely');
@@ -85,11 +85,11 @@ export default function ZeusPlatformPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     const [mem, llmStatus, voiceLab, auditTrail, scopes] = await Promise.all([
-      apiFetch<ZeusMemoryReport>('/intelligence/zeus/memory'),
-      apiFetch<LlmProviderStatus>('/intelligence/zeus/llm-status'),
-      apiFetch<VoiceLab>('/intelligence/zeus/voice-lab'),
-      apiFetch<ZeusAuditReport>('/intelligence/zeus/audit'),
-      apiFetch<ZeusRbacScopes>('/intelligence/zeus/rbac-scopes'),
+      apiFetch<ZyraMemoryReport>('/intelligence/zyra/memory'),
+      apiFetch<LlmProviderStatus>('/intelligence/zyra/llm-status'),
+      apiFetch<VoiceLab>('/intelligence/zyra/voice-lab'),
+      apiFetch<ZyraAuditReport>('/intelligence/zyra/audit'),
+      apiFetch<ZyraRbacScopes>('/intelligence/zyra/rbac-scopes'),
     ]);
     setMemory(mem);
     setLlm(llmStatus);
@@ -104,21 +104,21 @@ export default function ZeusPlatformPanel() {
   }, [load]);
 
   async function routeAgent() {
-    const res = await apiPost<MultiAgentRoute>('/intelligence/zeus/route', {
+    const res = await apiPost<MultiAgentRoute>('/intelligence/zyra/route', {
       message: routeMessage.trim(),
     });
     if (res.success) setRoute(res.data ?? null);
   }
 
   async function authorRunbook() {
-    const res = await apiPost<RunbookAuthorReport>('/intelligence/zeus/runbook', {
+    const res = await apiPost<RunbookAuthorReport>('/intelligence/zyra/runbook', {
       prompt: runbookPrompt.trim(),
     });
     if (res.success) setRunbook(res.data ?? null);
   }
 
   async function explainPolicy() {
-    const res = await apiPost<PolicyExplainerReport>('/intelligence/zeus/policy-explain', {});
+    const res = await apiPost<PolicyExplainerReport>('/intelligence/zyra/policy-explain', {});
     if (res.success) setPolicy(res.data ?? null);
   }
 
@@ -136,8 +136,8 @@ export default function ZeusPlatformPanel() {
   return (
     <GlassSection
       accent="purple"
-      testId="zeus-platform-panel"
-      title="Zeus Platform"
+      testId="zyra-platform-panel"
+      title="Zyra Platform"
       subtitle="Memory, multi-agent routing, LLM status, runbooks, policy explain, audit, RBAC"
       icon={<Bot className="h-5 w-5 text-violet-400" />}
       actions={
@@ -167,12 +167,12 @@ export default function ZeusPlatformPanel() {
       </div>
 
       {tab === 'memory' ? (
-        <div data-testid="zeus-memory-panel">
+        <div data-testid="zyra-memory-panel">
           <p className="mb-3 text-xs text-slate-500">
             Persisted: {memory?.persisted ? 'yes' : 'no'} · {memory?.entries.length ?? 0} session(s)
           </p>
           {!memory?.entries.length ? (
-            <p className="text-sm text-slate-500">No zeus memory yet — chat to populate session summaries.</p>
+            <p className="text-sm text-slate-500">No zyra memory yet — chat to populate session summaries.</p>
           ) : (
             <ul className="space-y-2">
               {memory.entries.map((e) => (
@@ -188,19 +188,19 @@ export default function ZeusPlatformPanel() {
       ) : null}
 
       {tab === 'route' ? (
-        <div data-testid="zeus-route-panel">
+        <div data-testid="zyra-route-panel">
           <div className="mb-3 flex flex-wrap gap-2">
             <input
               value={routeMessage}
               onChange={(e) => setRouteMessage(e.target.value)}
               className="glass-input min-w-[240px] flex-1"
-              data-testid="zeus-route-input"
+              data-testid="zyra-route-input"
             />
             <button
               type="button"
               onClick={() => void routeAgent()}
               className="rounded-lg bg-violet-600 px-3 py-2 text-xs text-white hover:bg-violet-500"
-              data-testid="zeus-route-button"
+              data-testid="zyra-route-button"
             >
               Route agent
             </button>
@@ -224,7 +224,7 @@ export default function ZeusPlatformPanel() {
       ) : null}
 
       {tab === 'llm' ? (
-        <div data-testid="zeus-llm-panel" className="space-y-2 text-sm">
+        <div data-testid="zyra-llm-panel" className="space-y-2 text-sm">
           <p>
             Active provider: <span className="font-medium text-violet-200">{llm?.active_provider ?? '—'}</span>
           </p>
@@ -240,10 +240,10 @@ export default function ZeusPlatformPanel() {
       ) : null}
 
       {tab === 'voice' ? (
-        <div data-testid="zeus-voice-lab-panel" className="space-y-2 text-sm">
+        <div data-testid="zyra-voice-lab-panel" className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-violet-200">
             <Mic className="h-4 w-4" />
-            Voice zeus lab ({voice?.status ?? '—'})
+            Voice zyra lab ({voice?.status ?? '—'})
           </div>
           <p className="text-slate-400">{voice?.hint}</p>
           <p className="text-xs text-slate-500">Sample: {voice?.sample_transcript}</p>
@@ -251,19 +251,19 @@ export default function ZeusPlatformPanel() {
       ) : null}
 
       {tab === 'runbook' ? (
-        <div data-testid="zeus-runbook-panel">
+        <div data-testid="zyra-runbook-panel">
           <div className="mb-3 flex flex-wrap gap-2">
             <input
               value={runbookPrompt}
               onChange={(e) => setRunbookPrompt(e.target.value)}
               className="glass-input min-w-[240px] flex-1"
-              data-testid="zeus-runbook-input"
+              data-testid="zyra-runbook-input"
             />
             <button
               type="button"
               onClick={() => void authorRunbook()}
               className="inline-flex items-center gap-1 rounded-lg bg-violet-600 px-3 py-2 text-xs text-white hover:bg-violet-500"
-              data-testid="zeus-runbook-button"
+              data-testid="zyra-runbook-button"
             >
               <Sparkles className="h-3.5 w-3.5" />
               Author
@@ -280,12 +280,12 @@ export default function ZeusPlatformPanel() {
       ) : null}
 
       {tab === 'policy' ? (
-        <div data-testid="zeus-policy-panel">
+        <div data-testid="zyra-policy-panel">
           <button
             type="button"
             onClick={() => void explainPolicy()}
             className="mb-3 inline-flex items-center gap-1 rounded-lg border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-violet-500/40"
-            data-testid="zeus-policy-button"
+            data-testid="zyra-policy-button"
           >
             <Shield className="h-3.5 w-3.5" />
             Explain violations
@@ -310,9 +310,9 @@ export default function ZeusPlatformPanel() {
       ) : null}
 
       {tab === 'audit' ? (
-        <div data-testid="zeus-audit-panel">
+        <div data-testid="zyra-audit-panel">
           {!audit?.entries.length ? (
-            <p className="text-sm text-slate-500">No zeus audit entries yet.</p>
+            <p className="text-sm text-slate-500">No zyra audit entries yet.</p>
           ) : (
             <ul className="max-h-64 space-y-2 overflow-y-auto">
               {audit.entries.map((e, i) => (
@@ -329,7 +329,7 @@ export default function ZeusPlatformPanel() {
       ) : null}
 
       {tab === 'rbac' ? (
-        <div data-testid="zeus-rbac-panel">
+        <div data-testid="zyra-rbac-panel">
           <p className="mb-2 text-sm text-slate-300">
             Role: {rbac?.role ?? '—'} · Mutations: {rbac?.can_execute_mutations ? 'allowed' : 'denied'}
           </p>

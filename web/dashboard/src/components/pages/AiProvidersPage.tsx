@@ -24,7 +24,7 @@ type ProviderKind =
   | 'qwen'
   | 'llama';
 
-interface ZeusProviderConfig {
+interface ZyraProviderConfig {
   id: string;
   kind: ProviderKind;
   display_name: string;
@@ -37,10 +37,10 @@ interface ZeusProviderConfig {
   api_key_configured?: boolean;
 }
 
-interface ZeusProviderRegistry {
+interface ZyraProviderRegistry {
   default_provider_id?: string;
   air_gapped: boolean;
-  providers: ZeusProviderConfig[];
+  providers: ZyraProviderConfig[];
 }
 
 const KIND_OPTIONS: { value: ProviderKind; label: string }[] = [
@@ -58,7 +58,7 @@ const KIND_OPTIONS: { value: ProviderKind; label: string }[] = [
   { value: 'llama', label: 'Meta Llama' },
 ];
 
-const EMPTY: ZeusProviderConfig = {
+const EMPTY: ZyraProviderConfig = {
   id: '',
   kind: 'openai',
   display_name: '',
@@ -72,7 +72,7 @@ function toast(message: string, type: 'success' | 'error') {
 }
 
 export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
-  const [draft, setDraft] = useState<ZeusProviderConfig>({ ...EMPTY, id: `provider-${Date.now()}` });
+  const [draft, setDraft] = useState<ZyraProviderConfig>({ ...EMPTY, id: `provider-${Date.now()}` });
   const [apiKey, setApiKey] = useState('');
   const [tab, setTab] = useState<'providers' | 'local'>('providers');
 
@@ -81,8 +81,8 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
     loading,
     error,
     reload,
-  } = useApiPage<ZeusProviderRegistry>(
-    () => apiFetchSettled<ZeusProviderRegistry>('/zeus/providers'),
+  } = useApiPage<ZyraProviderRegistry>(
+    () => apiFetchSettled<ZyraProviderRegistry>('/zyra/providers'),
     [refreshKey],
   );
 
@@ -91,7 +91,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
       toast('Display name is required', 'error');
       return;
     }
-    const res = await apiPost<ZeusProviderConfig>('/zeus/providers', {
+    const res = await apiPost<ZyraProviderConfig>('/zyra/providers', {
       ...draft,
       api_key: apiKey || undefined,
     });
@@ -105,12 +105,12 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
   };
 
   const testProvider = async (id: string) => {
-    const res = await apiPost<{ ok: boolean; message: string }>(`/zeus/providers/${id}/test`, {});
+    const res = await apiPost<{ ok: boolean; message: string }>(`/zyra/providers/${id}/test`, {});
     toast(res.data?.message ?? res.error ?? 'Test complete', res.data?.ok ? 'success' : 'error');
   };
 
   const removeProvider = async (id: string) => {
-    const res = await apiDelete(`/zeus/providers/${id}`);
+    const res = await apiDelete(`/zyra/providers/${id}`);
     if (res.success) {
       toast('Provider removed', 'success');
       void reload();
@@ -120,7 +120,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
   const toggleAirGapped = async (enabled: boolean) => {
     if (!registry) return;
     const next = { ...registry, air_gapped: enabled };
-    const res = await apiPost<ZeusProviderRegistry>('/zeus/providers/registry', next);
+    const res = await apiPost<ZyraProviderRegistry>('/zyra/providers/registry', next);
     if (res.success && res.data) void reload();
   };
 
@@ -149,7 +149,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
                 type="checkbox"
                 checked={registry?.air_gapped ?? false}
                 onChange={(e) => void toggleAirGapped(e.target.checked)}
-                data-testid="zeus-air-gapped-toggle"
+                data-testid="zyra-air-gapped-toggle"
               />
               Air-gapped mode — only local providers (Ollama, vLLM, OpenAI-compatible on-prem)
             </label>
@@ -168,7 +168,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
               aria-label="Provider display name"
               value={draft.display_name}
               onChange={(e) => setDraft({ ...draft, display_name: e.target.value })}
-              data-testid="zeus-provider-name"
+              data-testid="zyra-provider-name"
             />
             <select
               className="input-field w-full"
@@ -189,7 +189,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              data-testid="zeus-provider-api-key"
+              data-testid="zyra-provider-api-key"
             />
             <input
               className="input-field w-full"
@@ -218,7 +218,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
               aria-label="Model name"
               value={draft.default_model}
               onChange={(e) => setDraft({ ...draft, default_model: e.target.value })}
-              data-testid="zeus-provider-model"
+              data-testid="zyra-provider-model"
             />
             <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={() => void saveProvider()}>
               <Plus className="h-4 w-4" />

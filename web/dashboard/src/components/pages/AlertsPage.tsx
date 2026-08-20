@@ -204,7 +204,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             </Link>
             {' · '}
             <Link
-              to={pathWithQuery(viewToPath('zeus'), { workload: workloadFocus, q: `Explain alerts for ${workloadFocus}` })}
+              to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Explain alerts for ${workloadFocus}` })}
               className="text-aether hover:underline"
               data-testid="alerts-context-copilot-link"
             >

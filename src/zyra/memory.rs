@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus scoped memory system.
+//! Zyra scoped memory system.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -27,7 +27,7 @@ pub enum MemoryKind {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusMemoryEntry {
+pub struct ZyraMemoryEntry {
     pub id: String,
     pub scope: MemoryScope,
     pub scope_id: Option<String>,
@@ -41,7 +41,7 @@ pub struct ZeusMemoryEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ZeusMemorySettings {
+pub struct ZyraMemorySettings {
     pub enabled: bool,
     pub project_scoped: bool,
     pub team_scoped: bool,
@@ -49,24 +49,24 @@ pub struct ZeusMemorySettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ZeusMemoryReport {
-    pub entries: Vec<ZeusMemoryEntry>,
-    pub settings: ZeusMemorySettings,
+pub struct ZyraMemoryReport {
+    pub entries: Vec<ZyraMemoryEntry>,
+    pub settings: ZyraMemorySettings,
     pub persisted: bool,
 }
 
 fn memory_path() -> PathBuf {
-    crate::resources::aether_path("zeus-memory.json")
+    crate::resources::aether_path("zyra-memory.json")
 }
 
 fn settings_path() -> PathBuf {
-    crate::resources::aether_path("zeus-memory-settings.json")
+    crate::resources::aether_path("zyra-memory-settings.json")
 }
 
-pub fn read_memory_settings() -> ZeusMemorySettings {
+pub fn read_memory_settings() -> ZyraMemorySettings {
     let path = settings_path();
     if !path.exists() {
-        return ZeusMemorySettings {
+        return ZyraMemorySettings {
             enabled: true,
             project_scoped: true,
             team_scoped: false,
@@ -79,7 +79,7 @@ pub fn read_memory_settings() -> ZeusMemorySettings {
         .unwrap_or_default()
 }
 
-pub fn save_memory_settings(settings: &ZeusMemorySettings) -> anyhow::Result<()> {
+pub fn save_memory_settings(settings: &ZyraMemorySettings) -> anyhow::Result<()> {
     let path = settings_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -88,11 +88,11 @@ pub fn save_memory_settings(settings: &ZeusMemorySettings) -> anyhow::Result<()>
     Ok(())
 }
 
-pub fn read_zeus_memory() -> ZeusMemoryReport {
+pub fn read_zyra_memory() -> ZyraMemoryReport {
     let settings = read_memory_settings();
     let path = memory_path();
     if !path.exists() {
-        return ZeusMemoryReport {
+        return ZyraMemoryReport {
             entries: Vec::new(),
             settings,
             persisted: false,
@@ -100,12 +100,12 @@ pub fn read_zeus_memory() -> ZeusMemoryReport {
     }
     match std::fs::read_to_string(&path) {
         Ok(raw) => {
-            let mut report: ZeusMemoryReport = serde_json::from_str(&raw).unwrap_or_default();
+            let mut report: ZyraMemoryReport = serde_json::from_str(&raw).unwrap_or_default();
             report.settings = settings;
             report.persisted = true;
             report
         }
-        Err(_) => ZeusMemoryReport {
+        Err(_) => ZyraMemoryReport {
             entries: Vec::new(),
             settings,
             persisted: false,
@@ -113,12 +113,12 @@ pub fn read_zeus_memory() -> ZeusMemoryReport {
     }
 }
 
-pub fn write_zeus_memory_entry(entry: ZeusMemoryEntry) -> anyhow::Result<ZeusMemoryReport> {
+pub fn write_zyra_memory_entry(entry: ZyraMemoryEntry) -> anyhow::Result<ZyraMemoryReport> {
     let settings = read_memory_settings();
     if !settings.enabled {
-        return Ok(read_zeus_memory());
+        return Ok(read_zyra_memory());
     }
-    let mut report = read_zeus_memory();
+    let mut report = read_zyra_memory();
     if let Some(existing) = report.entries.iter_mut().find(|e| e.id == entry.id) {
         *existing = entry;
     } else {
@@ -140,8 +140,8 @@ pub fn write_session_memory(
     session_id: &str,
     summary: &str,
     fleet_context: serde_json::Value,
-) -> anyhow::Result<ZeusMemoryReport> {
-    write_zeus_memory_entry(ZeusMemoryEntry {
+) -> anyhow::Result<ZyraMemoryReport> {
+    write_zyra_memory_entry(ZyraMemoryEntry {
         id: format!("session-{session_id}"),
         scope: MemoryScope::Session,
         scope_id: Some(session_id.to_string()),
@@ -155,8 +155,8 @@ pub fn write_session_memory(
     })
 }
 
-pub fn memory_for_context(scope_id: Option<&str>, team_id: Option<&str>) -> Vec<ZeusMemoryEntry> {
-    let report = read_zeus_memory();
+pub fn memory_for_context(scope_id: Option<&str>, team_id: Option<&str>) -> Vec<ZyraMemoryEntry> {
+    let report = read_zyra_memory();
     if !report.settings.enabled {
         return Vec::new();
     }

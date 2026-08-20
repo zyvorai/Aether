@@ -2,44 +2,44 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Deprecated — re-exports from zeus_os.
-pub use super::zeus_os::*;
+//! Deprecated — re-exports from zyra_os.
+pub use super::zyra_os::*;
 
 // Legacy type aliases
-pub type CopilotMemoryEntry = crate::zeus::memory::ZeusMemoryEntry;
-pub type CopilotMemoryReport = crate::zeus::memory::ZeusMemoryReport;
-pub type CopilotAuditEntry = super::zeus_os::ZeusAuditEntry;
-pub type CopilotAuditReport = super::zeus_os::ZeusAuditReport;
-pub type CopilotRbacScopesReport = super::zeus_os::ZeusRbacScopesReport;
-pub type CopilotToolScope = super::zeus_os::ZeusToolScope;
-pub type VoiceCopilotLabReport = super::zeus_os::VoiceZeusLabReport;
+pub type CopilotMemoryEntry = crate::zyra::memory::ZyraMemoryEntry;
+pub type CopilotMemoryReport = crate::zyra::memory::ZyraMemoryReport;
+pub type CopilotAuditEntry = super::zyra_os::ZyraAuditEntry;
+pub type CopilotAuditReport = super::zyra_os::ZyraAuditReport;
+pub type CopilotRbacScopesReport = super::zyra_os::ZyraRbacScopesReport;
+pub type CopilotToolScope = super::zyra_os::ZyraToolScope;
+pub type VoiceCopilotLabReport = super::zyra_os::VoiceZyraLabReport;
 
-pub fn read_copilot_memory() -> super::zeus_os::ZeusMemoryReport {
-    crate::zeus::memory::read_zeus_memory()
+pub fn read_copilot_memory() -> super::zyra_os::ZyraMemoryReport {
+    crate::zyra::memory::read_zyra_memory()
 }
 
 pub fn write_copilot_memory_entry(
     entry: CopilotMemoryEntry,
 ) -> anyhow::Result<CopilotMemoryReport> {
-    crate::zeus::memory::write_zeus_memory_entry(entry)
+    crate::zyra::memory::write_zyra_memory_entry(entry)
 }
 
 pub fn append_copilot_audit(entry: CopilotAuditEntry) -> anyhow::Result<()> {
-    super::zeus_os::append_zeus_audit(entry)
+    super::zyra_os::append_zyra_audit(entry)
 }
 
 pub fn read_copilot_audit(limit: usize) -> CopilotAuditReport {
-    super::zeus_os::read_zeus_audit(limit)
+    super::zyra_os::read_zyra_audit(limit)
 }
 
-pub fn route_copilot_agent(message: &str) -> super::zeus_os::MultiAgentRouteReport {
-    super::zeus_os::route_zeus_agent(message)
+pub fn route_copilot_agent(message: &str) -> super::zyra_os::MultiAgentRouteReport {
+    super::zyra_os::route_zyra_agent(message)
 }
 
 pub fn build_copilot_rbac_scopes(role: crate::rbac::Role) -> CopilotRbacScopesReport {
-    super::zeus_os::build_zeus_rbac_scopes(role)
+    super::zyra_os::build_zyra_rbac_scopes(role)
 }
 
 pub fn build_voice_copilot_lab() -> VoiceCopilotLabReport {
-    super::zeus_os::build_voice_zeus_lab()
+    super::zyra_os::build_voice_zyra_lab()
 }

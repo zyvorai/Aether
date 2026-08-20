@@ -9,7 +9,7 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { apiFetchSettled, apiPost } from '../../utils/api';
-import { formatPercent, formatUSD } from '../../utils/formatters';
+import { formatPercent, formatTimestamp, formatUSD } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -199,7 +199,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: workloadFocus, q: `Risk summary for ${workloadFocus}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Risk summary for ${workloadFocus}` })}
             className="text-aether hover:underline"
             data-testid="intelligence-copilot-link"
           >
@@ -253,7 +253,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard
             title="Fleet risk"
-            value={predictions ? formatPercent(predictions.fleet_risk_score * 100, 1) : '—'}
+            value={predictions ? formatPercent(predictions.fleet_risk_score, 1) : '—'}
             color="purple"
             compact
             isEmpty={!predictions}
@@ -267,7 +267,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           />
           <StatCard
             title="Cost saves"
-            value={cost ? formatPercent(cost.total_potential_savings_pct, 1) : '—'}
+            value={cost ? `${cost.total_potential_savings_pct.toFixed(1)}%` : '—'}
             color="green"
             compact
             isEmpty={!cost}
@@ -305,10 +305,10 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                 <div>
                   <p className="text-sm text-slate-400">Fleet risk score</p>
                   <p className="text-2xl font-semibold text-slate-100">
-                    {formatPercent(predictions.fleet_risk_score * 100, 1)}
+                    {formatPercent(predictions.fleet_risk_score, 1)}
                   </p>
                 </div>
-                <p className="text-xs text-slate-500 ml-auto">Generated {predictions.generated_at}</p>
+                <p className="text-xs text-slate-500 ml-auto">Generated {formatTimestamp(predictions.generated_at)}</p>
               </div>
               {predictions.predictions.length === 0 ? (
                 <EmptyState icon={<Inbox size={40} />} title="No predictions" description="No workloads in state store yet." />
@@ -343,7 +343,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                         </Link>
                         <Badge text={row.risk_level} variant={riskVariant(row.risk_level)} />
                       </div>
-                      <p className="text-xs text-slate-500 mb-3">Risk score {formatPercent(row.risk_score * 100, 1)}</p>
+                      <p className="text-xs text-slate-500 mb-3">Risk score {formatPercent(row.risk_score, 1)}</p>
                       {row.predictions.length > 0 && (
                         <ul className="space-y-2 text-sm">
                           {row.predictions.map((sig, i) => (
@@ -353,7 +353,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                                 <span className="text-xs text-slate-500">{sig.horizon}</span>
                               </div>
                               <p className="text-xs text-slate-400 mt-1">{sig.reason}</p>
-                              <p className="text-xs text-aether mt-1">{formatPercent(sig.probability * 100, 0)} probability</p>
+                              <p className="text-xs text-aether mt-1">{formatPercent(sig.probability, 0)} probability</p>
                             </li>
                           ))}
                         </ul>
@@ -408,7 +408,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                   </Link>
                 </div>
                 <p className="text-sm text-slate-300">{t.reason}</p>
-                <p className="text-xs text-slate-500 mt-2">Score {t.score.toFixed(2)} · {t.detected_at}</p>
+                <p className="text-xs text-slate-500 mt-2">Score {t.score.toFixed(2)} · {formatTimestamp(t.detected_at)}</p>
               </div>
             ))
           ) : (
@@ -424,7 +424,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
               <div className="glass-panel-card">
                 <p className="text-sm text-slate-400">Total potential savings</p>
                 <p className="text-2xl font-semibold text-emerald-400">
-                  {formatPercent(cost.total_potential_savings_pct, 1)}
+                  {cost.total_potential_savings_pct.toFixed(1)}%
                 </p>
               </div>
               {cost.recommendations.length === 0 ? (
@@ -451,7 +451,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                       >
                         {rec.workload}
                       </Link>
-                      <Badge text={`${formatPercent(rec.savings_pct, 0)} savings`} variant="green" />
+                      <Badge text={`${rec.savings_pct.toFixed(0)}% savings`} variant="green" />
                       <Badge text={rec.risk} variant={riskVariant(rec.risk)} />
                     </div>
                     <p className="text-sm text-slate-300">
@@ -507,12 +507,12 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                     {row.workload}
                   </Link>
                   {row.auto_eligible && <Badge text="auto-eligible" variant="green" />}
-                  <Badge text={`${formatPercent(row.improvement_pct, 0)} improvement`} variant="blue" />
+                  <Badge text={`${row.improvement_pct.toFixed(0)}% improvement`} variant="blue" />
                 </div>
                 <p className="text-sm text-slate-300">
                   {row.current_runtime} → {row.recommended_runtime}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Confidence {formatPercent(row.confidence * 100, 0)}</p>
+                <p className="text-xs text-slate-500 mt-1">Confidence {formatPercent(row.confidence, 0)}</p>
                 {row.reasons.length > 0 && (
                   <ul className="mt-2 space-y-1 text-xs text-slate-400">
                     {row.reasons.map((r) => (

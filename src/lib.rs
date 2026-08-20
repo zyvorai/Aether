@@ -17,10 +17,10 @@ pub mod backup_remote;
 pub mod completions;
 pub mod compose;
 pub mod config;
-pub mod zeus;
-#[deprecated(note = "use crate::zeus")]
+pub mod zyra;
+#[deprecated(note = "use crate::zyra")]
 pub mod copilot {
-    pub use crate::zeus::*;
+    pub use crate::zyra::*;
 }
 pub mod autoscale;
 pub mod certs;

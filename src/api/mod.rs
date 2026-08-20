@@ -19,7 +19,7 @@ mod ops_handlers;
 mod platform_recommendations;
 mod security_handlers;
 mod types;
-mod zeus_handlers;
+mod zyra_handlers;
 
 pub use types::ApiConfig;
 
@@ -49,7 +49,7 @@ use tokio::sync::{broadcast, Mutex, RwLock};
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use types::AppState;
-use zeus_handlers::*;
+use zyra_handlers::*;
 
 /// Monotonic id generator for `x-request-id` when the client does not supply one.
 static HTTP_REQUEST_SEQ: AtomicU64 = AtomicU64::new(1);
@@ -1456,92 +1456,92 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/remediation/execute",
             post(api_intelligence_remediation_execute),
         )
-        .route("/api/zeus/chat", post(api_zeus_chat))
-        .route("/api/zeus/troubleshoot", post(api_zeus_troubleshoot))
+        .route("/api/zyra/chat", post(api_zyra_chat))
+        .route("/api/zyra/troubleshoot", post(api_zyra_troubleshoot))
         .route(
-            "/api/zeus/troubleshoot/fleet",
-            get(api_zeus_troubleshoot_fleet),
+            "/api/zyra/troubleshoot/fleet",
+            get(api_zyra_troubleshoot_fleet),
         )
-        .route("/api/zeus/sessions/:id", get(api_zeus_session))
-        .route("/api/zeus/confirm/:action_id", post(api_zeus_confirm))
-        .route("/api/zeus/confirm-batch", post(api_zeus_confirm_batch))
-        .route("/api/zeus/insights", get(api_zeus_insights))
+        .route("/api/zyra/sessions/:id", get(api_zyra_session))
+        .route("/api/zyra/confirm/:action_id", post(api_zyra_confirm))
+        .route("/api/zyra/confirm-batch", post(api_zyra_confirm_batch))
+        .route("/api/zyra/insights", get(api_zyra_insights))
         .route(
-            "/api/zeus/providers",
-            get(api_zeus_providers_list).post(api_zeus_providers_upsert),
+            "/api/zyra/providers",
+            get(api_zyra_providers_list).post(api_zyra_providers_upsert),
         )
-        .route("/api/zeus/providers/status", get(api_zeus_providers_status))
+        .route("/api/zyra/providers/status", get(api_zyra_providers_status))
         .route(
-            "/api/zeus/providers/registry",
-            post(api_zeus_providers_save_registry),
-        )
-        .route(
-            "/api/zeus/providers/:id",
-            axum::routing::delete(api_zeus_providers_delete),
+            "/api/zyra/providers/registry",
+            post(api_zyra_providers_save_registry),
         )
         .route(
-            "/api/zeus/providers/:id/test",
-            post(api_zeus_providers_test),
+            "/api/zyra/providers/:id",
+            axum::routing::delete(api_zyra_providers_delete),
         )
         .route(
-            "/api/zeus/prompts",
-            get(api_zeus_prompts_list).post(api_zeus_prompts_upsert),
-        )
-        .route("/api/zeus/prompts/export", get(api_zeus_prompts_export))
-        .route("/api/zeus/prompts/import", post(api_zeus_prompts_import))
-        .route(
-            "/api/zeus/prompts/:id",
-            axum::routing::delete(api_zeus_prompts_delete),
-        )
-        .route("/api/zeus/marketplace", get(api_zeus_marketplace))
-        .route(
-            "/api/zeus/marketplace/install",
-            post(api_zeus_marketplace_install),
+            "/api/zyra/providers/:id/test",
+            post(api_zyra_providers_test),
         )
         .route(
-            "/api/zeus/marketplace/uninstall",
-            post(api_zeus_marketplace_uninstall),
+            "/api/zyra/prompts",
+            get(api_zyra_prompts_list).post(api_zyra_prompts_upsert),
         )
-        .route("/api/zeus/agents", get(api_zeus_agents_list))
+        .route("/api/zyra/prompts/export", get(api_zyra_prompts_export))
+        .route("/api/zyra/prompts/import", post(api_zyra_prompts_import))
         .route(
-            "/api/intelligence/zeus/memory",
-            get(api_intelligence_zeus_memory),
+            "/api/zyra/prompts/:id",
+            axum::routing::delete(api_zyra_prompts_delete),
         )
+        .route("/api/zyra/marketplace", get(api_zyra_marketplace))
         .route(
-            "/api/intelligence/zeus/memory/settings",
-            post(api_intelligence_zeus_memory_settings),
-        )
-        .route(
-            "/api/intelligence/zeus/memory/purge",
-            post(api_intelligence_zeus_memory_purge),
+            "/api/zyra/marketplace/install",
+            post(api_zyra_marketplace_install),
         )
         .route(
-            "/api/intelligence/zeus/route",
-            post(api_intelligence_zeus_route),
+            "/api/zyra/marketplace/uninstall",
+            post(api_zyra_marketplace_uninstall),
+        )
+        .route("/api/zyra/agents", get(api_zyra_agents_list))
+        .route(
+            "/api/intelligence/zyra/memory",
+            get(api_intelligence_zyra_memory),
         )
         .route(
-            "/api/intelligence/zeus/llm-status",
-            get(api_intelligence_zeus_llm_status),
+            "/api/intelligence/zyra/memory/settings",
+            post(api_intelligence_zyra_memory_settings),
         )
         .route(
-            "/api/intelligence/zeus/voice-lab",
-            get(api_intelligence_zeus_voice_lab),
+            "/api/intelligence/zyra/memory/purge",
+            post(api_intelligence_zyra_memory_purge),
         )
         .route(
-            "/api/intelligence/zeus/runbook",
-            post(api_intelligence_zeus_runbook),
+            "/api/intelligence/zyra/route",
+            post(api_intelligence_zyra_route),
         )
         .route(
-            "/api/intelligence/zeus/policy-explain",
-            post(api_intelligence_zeus_policy_explain),
+            "/api/intelligence/zyra/llm-status",
+            get(api_intelligence_zyra_llm_status),
         )
         .route(
-            "/api/intelligence/zeus/audit",
-            get(api_intelligence_zeus_audit),
+            "/api/intelligence/zyra/voice-lab",
+            get(api_intelligence_zyra_voice_lab),
         )
         .route(
-            "/api/intelligence/zeus/rbac-scopes",
-            get(api_intelligence_zeus_rbac_scopes),
+            "/api/intelligence/zyra/runbook",
+            post(api_intelligence_zyra_runbook),
+        )
+        .route(
+            "/api/intelligence/zyra/policy-explain",
+            post(api_intelligence_zyra_policy_explain),
+        )
+        .route(
+            "/api/intelligence/zyra/audit",
+            get(api_intelligence_zyra_audit),
+        )
+        .route(
+            "/api/intelligence/zyra/rbac-scopes",
+            get(api_intelligence_zyra_rbac_scopes),
         )
         .route("/api/copilot/chat", post(api_copilot_chat))
         .route("/api/copilot/troubleshoot", post(api_copilot_troubleshoot))

@@ -2,13 +2,13 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus specialist agent personas.
+//! Zyra specialist agent personas.
 
-use crate::zeus::routing::TaskClass;
+use crate::zyra::routing::TaskClass;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusAgentPersona {
+pub struct ZyraAgentPersona {
     pub id: String,
     pub label: String,
     pub description: String,
@@ -18,14 +18,14 @@ pub struct ZeusAgentPersona {
     pub tools: Vec<String>,
 }
 
-pub fn all_agents() -> Vec<ZeusAgentPersona> {
+pub fn all_agents() -> Vec<ZyraAgentPersona> {
     vec![
         persona(
             "auto",
             "Auto",
-            "Zeus automatically selects the best specialist.",
+            "Zyra automatically selects the best specialist.",
             TaskClass::Infrastructure,
-            "You are Zeus, the AI infrastructure operating layer. Route tasks to the right tools.",
+            "You are Zyra, the AI infrastructure operating layer. Route tasks to the right tools.",
             vec![
                 "Summarize fleet health".into(),
                 "What needs attention today?".into(),
@@ -34,10 +34,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "architect",
-            "Zeus Architect",
+            "Zyra Architect",
             "Designs infrastructure and runtime placement.",
             TaskClass::Infrastructure,
-            "You are Zeus Architect. Design optimal infrastructure, placement, and migration paths.",
+            "You are Zyra Architect. Design optimal infrastructure, placement, and migration paths.",
             vec![
                 "Recommend runtime placement".into(),
                 "Design a multi-region architecture".into(),
@@ -46,10 +46,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "devops",
-            "Zeus DevOps",
+            "Zyra DevOps",
             "Handles CI/CD, GitOps, and deployments.",
             TaskClass::CodeGeneration,
-            "You are Zeus DevOps. Focus on GitOps, drift, deployments, and CI/CD pipelines.",
+            "You are Zyra DevOps. Focus on GitOps, drift, deployments, and CI/CD pipelines.",
             vec![
                 "Check GitOps drift".into(),
                 "Generate deployment plan".into(),
@@ -58,10 +58,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "kubernetes",
-            "Zeus Kubernetes",
+            "Zyra Kubernetes",
             "Manages clusters, pods, and workloads.",
             TaskClass::Infrastructure,
-            "You are Zeus Kubernetes. Diagnose cluster issues, pods, and workload health.",
+            "You are Zyra Kubernetes. Diagnose cluster issues, pods, and workload health.",
             vec![
                 "Why are pods crashing?".into(),
                 "Show cluster summary".into(),
@@ -70,10 +70,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "security",
-            "Zeus Security",
+            "Zyra Security",
             "Threat detection and policy analysis.",
             TaskClass::SecurityAnalysis,
-            "You are Zeus Security. Scan threats, policy violations, and attestation failures.",
+            "You are Zyra Security. Scan threats, policy violations, and attestation failures.",
             vec![
                 "Scan fleet for threats".into(),
                 "Explain policy violations".into(),
@@ -82,10 +82,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "sre",
-            "Zeus SRE",
+            "Zyra SRE",
             "Incident response and reliability.",
             TaskClass::Infrastructure,
-            "You are Zeus SRE. Diagnose incidents, health issues, and healing actions.",
+            "You are Zyra SRE. Diagnose incidents, health issues, and healing actions.",
             vec![
                 "Run fleet health diagnosis".into(),
                 "Which workloads need healing?".into(),
@@ -94,10 +94,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "cost",
-            "Zeus Cost Optimizer",
+            "Zyra Cost Optimizer",
             "Cloud cost analysis and FinOps.",
             TaskClass::Research,
-            "You are Zeus Cost Optimizer. Find savings, chargeback, and placement cost wins.",
+            "You are Zyra Cost Optimizer. Find savings, chargeback, and placement cost wins.",
             vec![
                 "Find workloads wasting resources".into(),
                 "Predict cost next month".into(),
@@ -106,10 +106,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "observability",
-            "Zeus Observability",
+            "Zyra Observability",
             "Logs, metrics, and traces.",
             TaskClass::LongContext,
-            "You are Zeus Observability. Analyze metrics, logs, events, and SLA violations.",
+            "You are Zyra Observability. Analyze metrics, logs, events, and SLA violations.",
             vec![
                 "Query latency metrics".into(),
                 "Show recent critical events".into(),
@@ -118,10 +118,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "ai_engineer",
-            "Zeus AI Engineer",
+            "Zyra AI Engineer",
             "LLM deployment and confidential compute.",
             TaskClass::CodeGeneration,
-            "You are Zeus AI Engineer. GPU placement, confidential migration, and inference workloads.",
+            "You are Zyra AI Engineer. GPU placement, confidential migration, and inference workloads.",
             vec![
                 "Plan confidential migration".into(),
                 "Score GPU placement".into(),
@@ -130,10 +130,10 @@ pub fn all_agents() -> Vec<ZeusAgentPersona> {
         ),
         persona(
             "database",
-            "Zeus Database Expert",
+            "Zyra Database Expert",
             "Database optimization and scaling.",
             TaskClass::Infrastructure,
-            "You are Zeus Database Expert. Optimize database workloads, resources, and scaling.",
+            "You are Zyra Database Expert. Optimize database workloads, resources, and scaling.",
             vec![
                 "Recommend database scaling".into(),
                 "Analyze resource saturation".into(),
@@ -151,8 +151,8 @@ fn persona(
     system_prompt: &str,
     suggested_prompts: Vec<String>,
     tools: Vec<&str>,
-) -> ZeusAgentPersona {
-    ZeusAgentPersona {
+) -> ZyraAgentPersona {
+    ZyraAgentPersona {
         id: id.into(),
         label: label.into(),
         description: description.into(),
@@ -163,7 +163,7 @@ fn persona(
     }
 }
 
-pub fn get_agent(id: &str) -> ZeusAgentPersona {
+pub fn get_agent(id: &str) -> ZyraAgentPersona {
     all_agents()
         .into_iter()
         .find(|a| a.id == id)

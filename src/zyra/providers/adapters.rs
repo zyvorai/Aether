@@ -2,9 +2,9 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! LLM provider adapters for Zeus.
+//! LLM provider adapters for Zyra.
 
-use crate::zeus::provider::{ChatMessage, LlmProvider, LlmResponse, ToolCallRequest};
+use crate::zyra::provider::{ChatMessage, LlmProvider, LlmResponse, ToolCallRequest};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 

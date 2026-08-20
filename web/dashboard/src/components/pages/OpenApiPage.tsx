@@ -127,6 +127,7 @@ export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
             className="glass-select"
+            style={{ width: 'auto', minWidth: '9rem' }}
             aria-label="HTTP method filter"
             data-testid="openapi-method-filter"
           >
@@ -169,7 +170,7 @@ export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: focusedWorkload, q: `API usage for ${focusedWorkload}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `API usage for ${focusedWorkload}` })}
             className="text-aether hover:underline"
             data-testid="openapi-context-copilot-link"
           >

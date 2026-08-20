@@ -2,9 +2,9 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Pluggable LLM providers for Zeus.
+//! Pluggable LLM providers for Zyra.
 
-use crate::zeus::providers::provider_from_registry;
+use crate::zyra::providers::provider_from_registry;
 use anyhow::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};

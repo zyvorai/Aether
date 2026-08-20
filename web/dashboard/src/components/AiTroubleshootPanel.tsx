@@ -71,7 +71,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
         break;
       default:
         navigate(
-          pathWithQuery(viewToPath('zeus'), {
+          pathWithQuery(viewToPath('zyra'), {
             workload: workload.name,
             q: `How do I fix ${workload.name}?`,
           }),

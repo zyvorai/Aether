@@ -261,7 +261,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           </Link>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('zeus'), { workload: workloadQuery.trim(), q: `Confidential posture for ${workloadQuery.trim()}` })}
+            to={pathWithQuery(viewToPath('zyra'), { workload: workloadQuery.trim(), q: `Confidential posture for ${workloadQuery.trim()}` })}
             className="text-aether hover:underline"
             data-testid="confidential-context-copilot-link"
           >

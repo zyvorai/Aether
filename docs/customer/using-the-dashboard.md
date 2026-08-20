@@ -9,7 +9,7 @@ Aether is organized by navigation groups (sidebar, desktop nav, or CLI command g
 | Command Center | `/` |
 | Fabric | `/fabric` |
 | Migrations | `/migrations` |
-| Zeus | `/zeus` |
+| Zyra | `/zyra` |
 | Settings | `/settings` |
 
 ## Browse vs act

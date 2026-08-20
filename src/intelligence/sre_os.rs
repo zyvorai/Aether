@@ -13,7 +13,7 @@ use crate::intelligence::remediation;
 use crate::intelligence::sre::build_sre_runbook;
 use crate::sla::{observation_from_health, ErrorBudget, SlaEngine, SlaReport, SlaTarget};
 use crate::state::StateStore;
-use crate::zeus::diagnose::{diagnose_fleet, FleetRootCauseEntry};
+use crate::zyra::diagnose::{diagnose_fleet, FleetRootCauseEntry};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

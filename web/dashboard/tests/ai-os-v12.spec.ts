@@ -68,13 +68,13 @@ test.describe('AI Infrastructure OS v12 — Copilot & LLM', () => {
     expect(res.status()).toBe(400);
   });
 
-  test('zeus platform panel on zeus page', async ({ page }) => {
-    await page.goto('/zeus');
-    await expect(page.getByTestId('zeus-platform-panel')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('zeus-memory-panel')).toBeVisible();
-    await page.getByTestId('zeus-platform-panel').getByRole('button', { name: 'Agents' }).click();
-    await expect(page.getByTestId('zeus-route-panel')).toBeVisible();
-    await page.getByTestId('zeus-route-button').click();
-    await expect(page.getByTestId('zeus-route-panel')).toContainText(/agent|cost|finops/i, { timeout: 10_000 });
+  test('zyra platform panel on zyra page', async ({ page }) => {
+    await page.goto('/zyra');
+    await expect(page.getByTestId('zyra-platform-panel')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('zyra-memory-panel')).toBeVisible();
+    await page.getByTestId('zyra-platform-panel').getByRole('button', { name: 'Agents' }).click();
+    await expect(page.getByTestId('zyra-route-panel')).toBeVisible();
+    await page.getByTestId('zyra-route-button').click();
+    await expect(page.getByTestId('zyra-route-panel')).toContainText(/agent|cost|finops/i, { timeout: 10_000 });
   });
 });
