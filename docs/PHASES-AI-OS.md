@@ -107,7 +107,7 @@
 | 69 | LLM intent parsing | Optional OpenAI/Anthropic backend | **Ship** |
 | 70 | Copilot runbook author | NL → markdown runbooks | **Ship** |
 | 71 | Copilot policy explainer | OPA violation plain English | **Ship** |
-| 72 | Ask Zeus in terminal | `aether ask` TUI mode (alias `copilot`) | **Ship** |
+| 72 | Ask Zyra in terminal | `aether ask` TUI mode (alias `copilot`) | **Ship** |
 | 73 | Copilot audit trail | All NL actions logged | **Ship** |
 | 74 | Copilot RBAC scopes | Role-limited tool access | **Ship** |
 

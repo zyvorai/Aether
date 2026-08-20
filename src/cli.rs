@@ -196,7 +196,7 @@ pub(crate) enum Commands {
     /// Launch interactive TUI dashboard (k9s-style real-time monitoring)
     Tui,
 
-    /// Ask Zeus — interactive AI ops assistant in the terminal
+    /// Ask Zyra — interactive AI ops assistant in the terminal
     #[command(visible_alias = "copilot")]
     Ask {
         /// Optional initial question (non-interactive single turn)

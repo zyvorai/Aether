@@ -19,7 +19,7 @@ import {
 import { apiFetch } from '../utils/api';
 import { isMacOSShell } from '../utils/macosBridge';
 import { useQueryParam } from '../utils/urlState';
-import { useZeusChat } from '../hooks/useZeusChat';
+import { useZyraChat } from '../hooks/useZyraChat';
 import type { AgentStatusEntry } from '../types/api';
 
 interface ZeusRailProps {
@@ -107,7 +107,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
     send,
     confirmAction,
     clearChat,
-  } = useZeusChat({
+  } = useZyraChat({
     route: location.pathname,
     workload: workloadParam,
     agentFocus: selectedAgent,
@@ -149,7 +149,7 @@ export default function ZeusRail({ collapsed: controlledCollapsed, onCollapsedCh
           onClick={() => setCollapsed(false)}
           className="rounded-xl border border-aether-ai/30 bg-aether-ai/10 p-2 text-[#c084fc] transition hover:bg-aether-ai/20"
           title="Open Ask Aether"
-          aria-label="Open Ask Aether zeus"
+          aria-label="Open Ask Aether"
         >
           <Bot className="h-5 w-5" />
         </button>

@@ -1603,7 +1603,7 @@ pub(crate) async fn ask_command(initial_message: Option<String>) -> Result<()> {
         return Ok(());
     }
 
-    output::info("Ask Zeus — Aether AI ops assistant. Type 'exit' or Ctrl+D to quit.");
+    output::info("Ask Zyra — Aether AI ops assistant. Type 'exit' or Ctrl+D to quit.");
     loop {
         print!("zeus> ");
         io::stdout().flush()?;

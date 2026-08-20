@@ -5,23 +5,23 @@
 import { useCallback, useState } from 'react';
 import { apiPost } from '../utils/api';
 
-export interface ZeusChatMessage {
+export interface ZyraChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export interface ZeusPendingAction {
+export interface ZyraPendingAction {
   id: string;
   tool: string;
   description: string;
 }
 
-export interface ZeusToolResult {
+export interface ZyraToolResult {
   tool: string;
   summary: string;
 }
 
-export interface ZeusChatContext {
+export interface ZyraChatContext {
   route?: string;
   workload?: string;
   agentFocus?: string | null;
@@ -35,7 +35,7 @@ const QUICK_PROMPTS = [
   'Predict cost next month',
 ];
 
-function buildContextualMessage(text: string, context?: ZeusChatContext): string {
+function buildContextualMessage(text: string, context?: ZyraChatContext): string {
   const parts: string[] = [];
   if (context?.route) parts.push(`[Route: ${context.route}]`);
   if (context?.workload?.trim()) parts.push(`[Workload: ${context.workload.trim()}]`);
@@ -44,12 +44,12 @@ function buildContextualMessage(text: string, context?: ZeusChatContext): string
   return `${parts.join(' ')}\n\n${text}`;
 }
 
-export function useZeusChat(context?: ZeusChatContext) {
-  const [messages, setMessages] = useState<ZeusChatMessage[]>([]);
+export function useZyraChat(context?: ZyraChatContext) {
+  const [messages, setMessages] = useState<ZyraChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [pending, setPending] = useState<ZeusPendingAction[]>([]);
+  const [pending, setPending] = useState<ZyraPendingAction[]>([]);
 
   const send = useCallback(
     async (text: string, confirmActionId?: string) => {
@@ -64,8 +64,8 @@ export function useZeusChat(context?: ZeusChatContext) {
         const res = await apiPost<{
           session_id: string;
           reply: string;
-          tool_results: ZeusToolResult[];
-          pending_actions: ZeusPendingAction[];
+          tool_results: ZyraToolResult[];
+          pending_actions: ZyraPendingAction[];
         }>('/zeus/chat', {
           message: buildContextualMessage(trimmed, context),
           session_id: sessionId,

@@ -199,9 +199,9 @@ _A k9s-level view of the fleet — metrics, events, audit, drift, cost, and SLA 
 
 ## 7. AI Ops & Autonomy
 
-_Ask Zeus, the terminal and dashboard AI assistant, plus an intelligence layer that predicts, heals, and advises._
+_Ask Zyra, the terminal and dashboard AI assistant, plus an intelligence layer that predicts, heals, and advises._
 
-- **Ask Zeus Copilot** — An interactive AI ops assistant in the terminal and a permanent dashboard rail for natural-language questions. — _Ask the platform what's wrong and what to do about it._
+- **Ask Zyra Copilot** — An interactive AI ops assistant in the terminal and a permanent dashboard rail for natural-language questions. — _Ask the platform what's wrong and what to do about it._
   - **How:** CLI: `aether ask "why is my-app unhealthy?"`; Web UI: Copilot rail (xl+) or full-page `/copilot`.
 - **Predictive Scaling** — Recommend scaling actions and forecast capacity from observed workload behavior. — _Size ahead of demand instead of reacting to alerts._
   - **How:** CLI: `aether scaling-advice`; Web UI: AI Engine page.
@@ -284,7 +284,7 @@ _Slot Aether into your platform — GPU, storage, GitOps, packaging, plugins, ed
 2. **Author a spec** — Start from a template (aether template rest-api) or an example workload, then aether validate --spec workload.yaml.
 3. **Decide & deploy** — Run aether decide --spec workload.yaml --explain to see the ranked runtime, then aether run --spec workload.yaml.
 4. **Migrate with confidence** — Move a live workload with aether migrate my-app kubevirt --strategy blue-green, with rollback on failure.
-5. **Open the dashboard** — Run aether serve and browse http://localhost:5090 for the web UI, Command Center, and Ask Zeus copilot.
+5. **Open the dashboard** — Run aether serve and browse http://localhost:5090 for the web UI, Command Center, and Ask Zyra copilot.
 
 > **Good to know:** Aether's portability guarantees are strongest for stateless and container-image workloads: migration rebuilds the app image for the target runtime and updates workload state atomically, but persistent volume data is not automatically carried across runtimes and blue-green connection draining is capped at ~30s. Integrations are optional and mostly read-only — Forge (GPU) and Atlas (storage) are off unless configured, and the hosted multi-tenant control plane ships today as a foundation with fleet federation still maturing. Confidential computing requires compatible TEE hardware (AMD SEV-SNP / Intel TDX) and a Kata/KubeVirt confidential runtime, and several AI autonomy panels are opt-in Labs previews that depend on an external or Forge-hosted LLM.
 

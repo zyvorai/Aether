@@ -152,7 +152,7 @@ export default function CommandPalette({
       },
       {
         id: `workload-${name}-zeus`,
-        label: `Ask Zeus about: ${name}`,
+        label: `Ask Zyra about: ${name}`,
         category: 'workload-action' as const,
         searchText: `copilot ask health ${name} workload`,
         workloadName: name,
@@ -647,7 +647,7 @@ export default function CommandPalette({
       },
       {
         id: 'action-zeus-health',
-        label: 'Ask Zeus about fleet health',
+        label: 'Ask Zyra about fleet health',
         category: 'action',
         searchText: 'copilot health unhealthy workloads fleet fleet health ask',
         run: () =>

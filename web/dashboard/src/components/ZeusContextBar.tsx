@@ -18,11 +18,11 @@ export interface ZeusInsightsReport {
 }
 
 interface ZeusContextBarProps {
-  onAskZeus?: (prompt: string) => void;
+  onAskZyra?: (prompt: string) => void;
   refreshKey?: number;
 }
 
-export default function ZeusContextBar({ onAskZeus, refreshKey = 0 }: ZeusContextBarProps) {
+export default function ZeusContextBar({ onAskZyra, refreshKey = 0 }: ZeusContextBarProps) {
   const [workload] = useQueryParam('workload', '');
   const [insights, setInsights] = useState<ZeusInsightsReport | null>(null);
 
@@ -61,7 +61,7 @@ export default function ZeusContextBar({ onAskZeus, refreshKey = 0 }: ZeusContex
             <button
               key={action}
               type="button"
-              onClick={() => onAskZeus?.(action)}
+              onClick={() => onAskZyra?.(action)}
               className="rounded-lg border border-aether/25 bg-aether/10 px-2.5 py-1 text-xs text-aether hover:border-aether/40"
             >
               {action}
@@ -69,12 +69,12 @@ export default function ZeusContextBar({ onAskZeus, refreshKey = 0 }: ZeusContex
           ))}
           <button
             type="button"
-            onClick={() => onAskZeus?.('Summarize fleet health and recommend next actions')}
+            onClick={() => onAskZyra?.('Summarize fleet health and recommend next actions')}
             className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-xs text-slate-300 hover:border-aether/30 hover:text-white"
             data-testid="zeus-context-explain"
           >
             <Zap className="h-3 w-3" />
-            Ask Zeus
+            Ask Zyra
           </button>
         </div>
       </div>

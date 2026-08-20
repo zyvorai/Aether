@@ -227,7 +227,7 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Voice copilot lab | `GET /api/intelligence/copilot/voice-lab` | Lab |
 | Runbook author | `POST /api/intelligence/copilot/runbook` | Ship |
 | Policy explainer | `POST /api/intelligence/copilot/policy-explain` | Ship |
-| Ask Zeus (terminal) | `aether ask` CLI REPL (alias `copilot`) | Ship |
+| Ask Zyra (terminal) | `aether ask` CLI REPL (alias `copilot`) | Ship |
 | Copilot audit trail | `GET /api/intelligence/copilot/audit` | Ship |
 | Copilot RBAC scopes | `GET /api/intelligence/copilot/rbac-scopes` | Ship |
 | Copilot platform panel | `/copilot` `CopilotPlatformPanel` | Ship |
