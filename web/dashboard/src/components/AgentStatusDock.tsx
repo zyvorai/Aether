@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Bot, DollarSign, GitBranch, HeartPulse, Rocket, Shield } from 'lucide-react';
 import { apiFetch } from '../utils/api';
@@ -41,7 +41,17 @@ function agentStatusDot(status: AgentCard['status']): string {
 export default function AgentStatusDock() {
   const navigate = useNavigate();
   const [agents, setAgents] = useState<AgentCard[]>([]);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const dockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (collapsed) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (dockRef.current && !dockRef.current.contains(e.target as Node)) setCollapsed(true);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [collapsed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,18 +83,19 @@ export default function AgentStatusDock() {
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-40 hidden lg:block xl:bottom-6 xl:left-6"
+      ref={dockRef}
+      className="fixed bottom-4 right-4 z-40 hidden lg:block xl:bottom-6 xl:right-6"
       data-testid="agent-status-dock"
     >
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="glass-dropdown-surface mb-2 rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 transition hover:border-aether/30 hover:text-blue-200"
+        className="glass-dropdown-surface mb-2 ml-auto block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 transition hover:border-aether/30 hover:text-blue-200"
       >
         {collapsed ? 'Show agents' : 'Hide agents'}
       </button>
       {!collapsed ? (
-        <div className="overview-section-shell grid max-w-sm grid-cols-2 gap-2 p-3">
+        <div className="overview-section-shell grid max-h-[60vh] max-w-sm grid-cols-2 gap-2 overflow-y-auto p-3">
           {agents.map((agent) => {
             const Icon = agent.icon;
             return (

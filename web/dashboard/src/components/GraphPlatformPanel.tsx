@@ -34,7 +34,7 @@ type Tab = 'impact' | 'blast' | 'threats' | 'search' | 'snapshots' | 'cmdb' | 'p
 export default function GraphPlatformPanel() {
   const [tab, setTab] = useState<Tab>('impact');
   const [loading, setLoading] = useState(true);
-  const [workload, setWorkload] = useState('api');
+  const [workload, setWorkload] = useState('');
   const [searchQ, setSearchQ] = useState('');
   const [impact, setImpact] = useState<GraphImpactReport | null>(null);
   const [blast, setBlast] = useState<BlastRadiusReport | null>(null);

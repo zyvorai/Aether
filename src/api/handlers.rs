@@ -541,7 +541,7 @@ pub(crate) async fn api_auth_me(
         {
             return ok_json(AuthStatusResponse {
                 authenticated: true,
-                username: "local-dev".to_string(),
+                username: "admin".to_string(),
                 role: "admin".to_string(),
             });
         }

@@ -339,6 +339,18 @@ export async function apiFetch<T>(path: string): Promise<T | null> {
   }
 }
 
+/** Like apiFetch, but keeps the server's error message instead of collapsing it to null. */
+export async function apiFetchWithError<T>(path: string): Promise<{ data: T | null; error: string | null }> {
+  try {
+    const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+    notifyIfUnauthorized(res);
+    const json: ApiResponse<T> = await res.json();
+    return json.success ? { data: json.data, error: null } : { data: null, error: json.error };
+  } catch {
+    return { data: null, error: 'Network error' };
+  }
+}
+
 export type FetchSettledResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: 'network' | 'api' };

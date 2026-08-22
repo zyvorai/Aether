@@ -142,7 +142,14 @@
       radial-gradient(circle at top right, rgba(99, 164, 255, 0.06), transparent 40%);
     border: 1px solid rgba(148, 163, 184, 0.12);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
-    animation: page-rise 420ms ease-out both;
+    /* No `both`/`forwards`: once this finishes, the animation must stop being
+       "in effect" entirely. Chromium reports the computed `transform` of a
+       held (fill-mode both/forwards) animation as a resolved matrix even when
+       the `to` keyframe literally says `none` — so a held animation still
+       makes this a containing block for `position: fixed` descendants
+       (breaking every modal/overlay rendered inside .page-frame), even
+       though `transform: none` looks like a no-op in the keyframe source. */
+    animation: page-rise 420ms ease-out;
   }
 
   .page-frame::before {
@@ -352,7 +359,7 @@
     }
     to {
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: none;
     }
   }
 
@@ -367,7 +374,7 @@
 
   .workload-card-rise,
   .card-rise {
-    animation: page-rise 0.45s ease-out both;
+    animation: page-rise 0.45s ease-out;
   }
 
   .page-masthead,

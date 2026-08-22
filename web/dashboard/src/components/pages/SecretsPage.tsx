@@ -30,6 +30,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [search, setSearch] = useWorkloadOrSearchFilter();
   const [expandedSecret, setExpandedSecret] = useState<string | null>(null);
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
@@ -52,6 +53,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
       setSecrets(result.data);
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -134,7 +136,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
     }
   }
 
-  if (loading && secrets.length === 0 && !loadFailed) {
+  if (loading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading rows={5} />;
   }
 

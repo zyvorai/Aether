@@ -185,7 +185,9 @@ export default function SecurityPlatformPanel() {
             {(score?.points ?? []).map((p) => (
               <div
                 key={p.label}
-                className="flex-1 rounded-t bg-red-500/50"
+                className={`flex-1 rounded-t ${
+                  p.score >= 80 ? 'bg-emerald-500/50' : p.score >= 50 ? 'bg-amber-500/50' : 'bg-red-500/50'
+                }`}
                 style={{ height: `${Math.max(8, p.score)}%` }}
                 title={`${p.label}: ${p.score.toFixed(1)}`}
               />

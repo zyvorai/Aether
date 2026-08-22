@@ -64,7 +64,7 @@ export default function MultiCloudPanel() {
                 </div>
                 <p className="mt-2 text-xs text-slate-500">{cluster.server ?? 'local context'}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
-                  <span>Score {formatPercent(cluster.score * 100, 0)}</span>
+                  <span>Score {formatPercent(cluster.score, 0)}</span>
                   {cluster.anomaly_count > 0 ? <span className="text-amber-300">{cluster.anomaly_count} anomalies</span> : null}
                 </div>
               </div>

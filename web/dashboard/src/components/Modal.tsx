@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -74,8 +75,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
   const isYaml = size === 'yaml';
   const isWide = size === 'wide' || isYaml;
 
-  return (
-    <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center p-4">
+  return createPortal(
+    <div
+      className={`fixed inset-0 z-50 flex animate-fade-in justify-center overflow-y-auto p-4 ${
+        isWide ? 'items-start pt-8 sm:pt-12' : 'items-center'
+      }`}
+    >
       <div className="glass-modal-backdrop" onClick={onClose} aria-hidden />
 
       <div
@@ -83,9 +88,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`glass-modal-panel animate-scale-in shadow-2xl ${
-          isYaml ? 'max-h-[92vh] min-h-[min(720px,92vh)]' : 'max-h-[85vh]'
-        } ${isWide ? 'max-w-[min(96rem,calc(100vw-2rem))] max-sm:max-w-[calc(100vw-1rem)] max-sm:rounded-none max-sm:max-h-[100dvh]' : 'max-w-2xl max-sm:max-w-[calc(100vw-1rem)]'}`}
+        className={`glass-modal-panel animate-scale-in shadow-2xl max-h-[85vh] ${
+          isWide ? 'max-w-[min(96rem,calc(100vw-2rem))] max-sm:max-w-[calc(100vw-1rem)] max-sm:rounded-none max-sm:max-h-[100dvh]' : 'max-w-2xl max-sm:max-w-[calc(100vw-1rem)]'
+        }`}
       >
         <div className="flex shrink-0 items-center justify-between glass-divider-b px-6 py-4">
           <div>
@@ -103,11 +108,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
         </div>
 
         <div
-          className={`px-6 py-5 ${isYaml ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'overflow-y-auto'}`}
+          className={`px-6 py-5 ${isYaml ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : 'overflow-y-auto'}`}
         >
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

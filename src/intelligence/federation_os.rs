@@ -448,15 +448,24 @@ pub async fn build_migration_wave(state_path: &Path) -> anyhow::Result<Migration
         }
     }
 
-    let plan = plan_fleet_migration(
-        &FleetMigrationRequest {
-            workloads: names,
+    let plan = if specs.is_empty() {
+        crate::migration::fleet::FleetMigrationPlan {
             target_cluster: target.clone(),
-            strategy: Some("rolling".into()),
-            replicate_volumes: Some(true),
-        },
-        &specs,
-    )?;
+            strategy: "rolling".into(),
+            items: Vec::new(),
+            warnings: vec!["no Aether-managed workloads available to plan a migration wave".into()],
+        }
+    } else {
+        plan_fleet_migration(
+            &FleetMigrationRequest {
+                workloads: names,
+                target_cluster: target.clone(),
+                strategy: Some("rolling".into()),
+                replicate_volumes: Some(true),
+            },
+            &specs,
+        )?
+    };
 
     Ok(MigrationWaveReport {
         generated_at: crate::resources::now_rfc3339(),

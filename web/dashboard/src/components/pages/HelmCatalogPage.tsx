@@ -32,6 +32,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
   const [clusters, setClusters] = useState<ClusterSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [selected, setSelected] = useState<HelmCatalogChart | null>(null);
@@ -64,6 +65,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
     if (!catalogRes.ok) {
       setLoadFailed(true);
       setLoading(false);
+      setHasLoadedOnce(true);
       return;
     }
     setCharts(catalogRes.data);
@@ -72,6 +74,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
       setInstallCluster(clusterRes.data.clusters[0].name);
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -120,7 +123,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
     setInstallMsg(res.success ? (res.data ?? 'Install triggered') : (res.error ?? 'Install failed'));
   }
 
-  if (loading) return <PageLoading label="Loading Helm catalog…" />;
+  if (loading && !hasLoadedOnce) return <PageLoading label="Loading Helm catalog…" />;
   if (loadFailed) return <PageLoadError title="Helm catalog unavailable" onRetry={() => void load()} />;
 
   return (

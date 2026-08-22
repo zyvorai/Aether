@@ -31,6 +31,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selected, setSelected] = useState<WorkloadResponse | null>(null);
@@ -49,6 +50,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
       setWorkloads(res.data.filter(isK8sApplication));
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -106,7 +108,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
     }
   }
 
-  if (loading) return <PageLoading label="Loading applications…" />;
+  if (loading && !hasLoadedOnce) return <PageLoading label="Loading applications…" />;
   if (loadFailed) {
     return (
       <PageLoadError

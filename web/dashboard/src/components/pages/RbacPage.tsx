@@ -33,6 +33,7 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
   const [search, setSearch] = useQueryParam('q');
@@ -51,6 +52,7 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
       setKeys(result.data);
     }
     setListLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -108,11 +110,11 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
     }
   }
 
-  if (listLoading && keys.length === 0 && !loadFailed) {
+  if (listLoading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading rows={5} />;
   }
 
-  if (loadFailed) {
+  if (loadFailed && keys.length === 0) {
     return <PageLoadError title="RBAC keys unavailable" onRetry={() => void load()} />;
   }
 

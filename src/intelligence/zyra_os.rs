@@ -2,22 +2,22 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Zeus & LLM platform — Era G (phases 65–74).
+//! Zyra & LLM platform — Era G (phases 65–74).
 
 use crate::intelligence::intent_os::{scan_intent_violations, IntentViolationsReport};
 use crate::rbac::Role;
-use crate::zeus::policy::{role_allows_tool, tool_risk, ToolRisk};
-use crate::zeus::tools::tools_openai_schema;
+use crate::zyra::policy::{role_allows_tool, tool_risk, ToolRisk};
+use crate::zyra::tools::tools_openai_schema;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-fn zeus_audit_path() -> PathBuf {
-    crate::resources::aether_path("zeus-audit.jsonl")
+fn zyra_audit_path() -> PathBuf {
+    crate::resources::aether_path("zyra-audit.jsonl")
 }
 
 #[allow(dead_code)]
-fn zeus_memory_path() -> PathBuf {
-    crate::resources::aether_path("zeus-memory.json")
+fn zyra_memory_path() -> PathBuf {
+    crate::resources::aether_path("zyra-memory.json")
 }
 
 // ── Phase 65: Batch confirm ───────────────────────────────────────────────────
@@ -33,27 +33,27 @@ pub struct BatchConfirmReport {
 // ── Phase 66: Voice copilot (Lab) ─────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VoiceZeusLabReport {
+pub struct VoiceZyraLabReport {
     pub status: String,
     pub hint: String,
     pub supported: bool,
     pub sample_transcript: String,
 }
 
-pub fn build_voice_zeus_lab() -> VoiceZeusLabReport {
-    VoiceZeusLabReport {
+pub fn build_voice_zyra_lab() -> VoiceZyraLabReport {
+    VoiceZyraLabReport {
         status: "lab".into(),
-        hint: "Use browser SpeechRecognition in the dashboard or pipe audio transcripts to POST /api/zeus/chat.".into(),
+        hint: "Use browser SpeechRecognition in the dashboard or pipe audio transcripts to POST /api/zyra/chat.".into(),
         supported: true,
         sample_transcript: "Why is the web workload unhealthy?".into(),
     }
 }
 
-// ── Phase 67: Zeus memory (delegates to zeus::memory) ───────────────────────
+// ── Phase 67: Zyra memory (delegates to zyra::memory) ───────────────────────
 
-pub use crate::zeus::memory::{
-    read_zeus_memory, write_zeus_memory_entry, MemoryKind, MemoryScope, ZeusMemoryEntry,
-    ZeusMemoryReport, ZeusMemorySettings,
+pub use crate::zyra::memory::{
+    read_zyra_memory, write_zyra_memory_entry, MemoryKind, MemoryScope, ZyraMemoryEntry,
+    ZyraMemoryReport, ZyraMemorySettings,
 };
 
 pub fn snapshot_fleet_memory(_state_path: &Path) -> serde_json::Value {
@@ -70,8 +70,8 @@ pub struct MultiAgentRouteReport {
     pub suggested_prompts: Vec<String>,
 }
 
-pub fn route_zeus_agent(message: &str) -> MultiAgentRouteReport {
-    let d = crate::zeus::routing::route_message(message, None);
+pub fn route_zyra_agent(message: &str) -> MultiAgentRouteReport {
+    let d = crate::zyra::routing::route_message(message, None);
     MultiAgentRouteReport {
         agent: d.agent_id,
         label: d.agent_label,
@@ -93,17 +93,17 @@ pub struct LlmProviderStatusReport {
 }
 
 pub fn build_llm_provider_status() -> LlmProviderStatusReport {
-    let status = crate::zeus::providers::build_provider_status();
+    let status = crate::zyra::providers::build_provider_status();
     LlmProviderStatusReport {
         active_provider: status.active_provider,
         openai_configured: status.providers.iter().any(|p| {
-            p.enabled && matches!(p.kind, crate::zeus::providers::ZeusProviderKind::Openai)
+            p.enabled && matches!(p.kind, crate::zyra::providers::ZyraProviderKind::Openai)
         }),
         anthropic_configured: status.providers.iter().any(|p| {
-            p.enabled && matches!(p.kind, crate::zeus::providers::ZeusProviderKind::Anthropic)
+            p.enabled && matches!(p.kind, crate::zyra::providers::ZyraProviderKind::Anthropic)
         }),
         ollama_configured: status.providers.iter().any(|p| {
-            p.enabled && matches!(p.kind, crate::zeus::providers::ZeusProviderKind::Ollama)
+            p.enabled && matches!(p.kind, crate::zyra::providers::ZyraProviderKind::Ollama)
         }),
         model: status.active_model,
         fallback_rule_based: status.fallback_rule_based,
@@ -202,10 +202,10 @@ pub fn explain_policy_violations(
     })
 }
 
-// ── Phase 73: Zeus audit trail ─────────────────────────────────────────────
+// ── Phase 73: Zyra audit trail ─────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusAuditEntry {
+pub struct ZyraAuditEntry {
     pub timestamp: String,
     pub session_id: String,
     pub action: String,
@@ -221,55 +221,55 @@ pub struct ZeusAuditEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusAuditReport {
-    pub entries: Vec<ZeusAuditEntry>,
+pub struct ZyraAuditReport {
+    pub entries: Vec<ZyraAuditEntry>,
 }
 
-pub fn append_zeus_audit(entry: ZeusAuditEntry) -> anyhow::Result<()> {
-    if let Some(parent) = zeus_audit_path().parent() {
+pub fn append_zyra_audit(entry: ZyraAuditEntry) -> anyhow::Result<()> {
+    if let Some(parent) = zyra_audit_path().parent() {
         std::fs::create_dir_all(parent)?;
     }
     use std::io::Write;
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open(zeus_audit_path())?;
+        .open(zyra_audit_path())?;
     writeln!(file, "{}", serde_json::to_string(&entry)?)?;
     Ok(())
 }
 
-pub fn read_zeus_audit(limit: usize) -> ZeusAuditReport {
-    let path = zeus_audit_path();
+pub fn read_zyra_audit(limit: usize) -> ZyraAuditReport {
+    let path = zyra_audit_path();
     if !path.exists() {
-        return ZeusAuditReport {
+        return ZyraAuditReport {
             entries: Vec::new(),
         };
     }
     let raw = std::fs::read_to_string(path).unwrap_or_default();
-    let mut entries: Vec<ZeusAuditEntry> = raw
+    let mut entries: Vec<ZyraAuditEntry> = raw
         .lines()
         .filter_map(|line| serde_json::from_str(line).ok())
         .collect();
     if entries.len() > limit {
         entries = entries.split_off(entries.len() - limit);
     }
-    ZeusAuditReport { entries }
+    ZyraAuditReport { entries }
 }
 
 // ── Phase 74: RBAC scopes ─────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusToolScope {
+pub struct ZyraToolScope {
     pub name: String,
     pub risk: String,
     pub allowed_roles: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusRbacScopesReport {
+pub struct ZyraRbacScopesReport {
     pub role: String,
     pub can_execute_mutations: bool,
-    pub tools: Vec<ZeusToolScope>,
+    pub tools: Vec<ZyraToolScope>,
 }
 
 fn roles_for_risk(risk: ToolRisk) -> Vec<String> {
@@ -285,14 +285,14 @@ fn roles_for_risk(risk: ToolRisk) -> Vec<String> {
     }
 }
 
-pub fn build_zeus_rbac_scopes(role: Role) -> ZeusRbacScopesReport {
+pub fn build_zyra_rbac_scopes(role: Role) -> ZyraRbacScopesReport {
     let schema = tools_openai_schema();
     let mut tools = Vec::new();
     if let Some(arr) = schema.as_array() {
         for item in arr {
             if let Some(name) = item.pointer("/function/name").and_then(|v| v.as_str()) {
                 let risk = tool_risk(name);
-                tools.push(ZeusToolScope {
+                tools.push(ZyraToolScope {
                     name: name.to_string(),
                     risk: format!("{risk:?}"),
                     allowed_roles: roles_for_risk(risk),
@@ -301,17 +301,17 @@ pub fn build_zeus_rbac_scopes(role: Role) -> ZeusRbacScopesReport {
         }
     }
     tools.sort_by(|a, b| a.name.cmp(&b.name));
-    ZeusRbacScopesReport {
+    ZyraRbacScopesReport {
         role: format!("{role:?}"),
         can_execute_mutations: role_allows_tool(&role, ToolRisk::Mutate),
         tools,
     }
 }
 
-// ── Zeus insights aggregator ──────────────────────────────────────────────────
+// ── Zyra insights aggregator ──────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ZeusInsightsReport {
+pub struct ZyraInsightsReport {
     pub generated_at: String,
     pub summary: String,
     pub drift_workloads: usize,
@@ -321,7 +321,7 @@ pub struct ZeusInsightsReport {
     pub suggested_actions: Vec<String>,
 }
 
-pub async fn build_zeus_insights(state_path: &Path) -> anyhow::Result<ZeusInsightsReport> {
+pub async fn build_zyra_insights(state_path: &Path) -> anyhow::Result<ZyraInsightsReport> {
     let snap = crate::intelligence::context::build_context_snapshot(state_path).await?;
     let pairs: Vec<(crate::spec::Workload, crate::state::WorkloadState)> = {
         let store = crate::state::StateStore::load(state_path)?;
@@ -359,11 +359,11 @@ pub async fn build_zeus_insights(state_path: &Path) -> anyhow::Result<ZeusInsigh
         actions.push(format!("Save ${savings:.0}/mo via FinOps recommendations"));
     }
     let summary = if actions.is_empty() {
-        "Fleet looks healthy — no urgent Zeus actions.".into()
+        "Fleet looks healthy — no urgent Zyra actions.".into()
     } else {
         actions.join(" · ")
     };
-    Ok(ZeusInsightsReport {
+    Ok(ZyraInsightsReport {
         generated_at: crate::resources::now_rfc3339(),
         summary,
         drift_workloads: snap.drift_summary.workloads_with_drift,
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn route_cost_agent() {
-        let r = route_zeus_agent("Find cost savings across the fleet");
+        let r = route_zyra_agent("Find cost savings across the fleet");
         assert_eq!(r.agent, "cost");
     }
 

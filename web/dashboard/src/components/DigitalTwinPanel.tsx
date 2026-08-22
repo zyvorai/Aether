@@ -111,9 +111,9 @@ export default function DigitalTwinPanel() {
             <TwinSnapshotCard title="Projected" snapshot={report.projected} highlight />
           </div>
           <div className="grid gap-3 sm:grid-cols-4">
-            <DeltaCard label="Risk Δ" value={formatPercent(report.deltas.risk_delta * 100, 1)} />
-            <DeltaCard label="CPU Δ" value={formatPercent(report.deltas.cpu_util_delta * 100, 1)} />
-            <DeltaCard label="Memory Δ" value={formatPercent(report.deltas.memory_util_delta * 100, 1)} />
+            <DeltaCard label="Risk Δ" value={formatPercent(report.deltas.risk_delta, 1)} />
+            <DeltaCard label="CPU Δ" value={formatPercent(report.deltas.cpu_util_delta, 1)} />
+            <DeltaCard label="Memory Δ" value={formatPercent(report.deltas.memory_util_delta, 1)} />
             <DeltaCard label="Cost Δ" value={formatUSD(report.deltas.cost_delta_usd)} />
           </div>
           <ul className="space-y-2">
@@ -151,7 +151,7 @@ function TwinSnapshotCard({
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <dt className="text-slate-500">Risk</dt>
-          <dd className="text-white">{formatPercent(snapshot.fleet_risk_score * 100, 0)}</dd>
+          <dd className="text-white">{formatPercent(snapshot.fleet_risk_score, 0)}</dd>
         </div>
         <div>
           <dt className="text-slate-500">Saturation</dt>
@@ -159,11 +159,11 @@ function TwinSnapshotCard({
         </div>
         <div>
           <dt className="text-slate-500">CPU util</dt>
-          <dd className="text-white">{formatPercent(snapshot.avg_cpu_utilization * 100, 0)}</dd>
+          <dd className="text-white">{formatPercent(snapshot.avg_cpu_utilization, 0)}</dd>
         </div>
         <div>
           <dt className="text-slate-500">Memory util</dt>
-          <dd className="text-white">{formatPercent(snapshot.avg_memory_utilization * 100, 0)}</dd>
+          <dd className="text-white">{formatPercent(snapshot.avg_memory_utilization, 0)}</dd>
         </div>
         <div className="col-span-2">
           <dt className="text-slate-500">Est. monthly cost</dt>

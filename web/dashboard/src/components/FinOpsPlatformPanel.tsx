@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DollarSign, Leaf, Loader2, RefreshCw, TrendingUp } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
-import { formatPercent, formatUSD } from '../utils/formatters';
+import { formatUSD } from '../utils/formatters';
 import GlassSection from './GlassSection';
 
 interface ChargebackAutomation {
@@ -234,7 +234,7 @@ export default function FinOpsPlatformPanel() {
             {(spot?.entries ?? []).slice(0, 5).map((e) => (
               <li key={e.workload} className="rounded border glass-divider px-2 py-1">
                 <span className="font-mono text-slate-200">{e.workload}</span>
-                {e.eligible ? ` · save ${formatPercent(e.savings_pct, 0)}` : ' · not eligible'} — {e.reason}
+                {e.eligible ? ` · save ${e.savings_pct.toFixed(0)}%` : ' · not eligible'} — {e.reason}
               </li>
             ))}
           </ul>
@@ -255,7 +255,7 @@ export default function FinOpsPlatformPanel() {
       {tab === 'anomalies' ? (
         <div data-testid="finops-anomalies-panel">
           {anomalies?.alert ? (
-            <p className="text-sm text-amber-300">Spend alert: fleet {formatPercent(anomalies.fleet_delta_pct, 1)} vs baseline</p>
+            <p className="text-sm text-amber-300">Spend alert: fleet {anomalies.fleet_delta_pct.toFixed(1)}% vs baseline</p>
           ) : (
             <p className="text-sm text-slate-500">No cost anomalies detected.</p>
           )}
@@ -271,7 +271,7 @@ export default function FinOpsPlatformPanel() {
       {tab === 'multicloud' ? (
         <div data-testid="finops-multicloud-panel" className="space-y-2 text-sm">
           <p className="text-emerald-300">
-            Recommended: {multicloud?.recommended_provider ?? '—'} (save {formatPercent(multicloud?.savings_vs_worst_pct ?? 0, 0)} vs worst)
+            Recommended: {multicloud?.recommended_provider ?? '—'} (save {(multicloud?.savings_vs_worst_pct ?? 0).toFixed(0)}% vs worst)
           </p>
           {(multicloud?.rows ?? []).map((r) => (
             <div key={r.provider} className="flex justify-between text-xs text-slate-400">

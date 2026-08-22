@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight, DollarSign, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { apiFetch, apiPost } from '../utils/api';
-import { formatPercent, formatUSD } from '../utils/formatters';
+import { formatUSD } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import Badge from './Badge';
 import type { CostApplyReport, CostOptimizeReport } from '../types/api';
@@ -120,7 +120,7 @@ export default function CostIntelligencePanel() {
         </div>
         <div className="glass-metric-card">
           <div className="text-2xl font-semibold text-white">
-            {formatPercent(report?.total_potential_savings_pct ?? 0, 1)}
+            {(report?.total_potential_savings_pct ?? 0).toFixed(1)}%
           </div>
           <div className="text-xs text-slate-500">Fleet savings potential</div>
         </div>
@@ -151,7 +151,7 @@ export default function CostIntelligencePanel() {
                 </div>
                 <p className="mt-1 text-sm text-slate-400">{rec.reason}</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {rec.current_runtime} → {rec.suggested_runtime} · save {formatPercent(rec.savings_pct, 0)}
+                  {rec.current_runtime} → {rec.suggested_runtime} · save {rec.savings_pct.toFixed(0)}%
                 </p>
               </div>
               <div className="text-right">

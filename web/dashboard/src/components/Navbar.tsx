@@ -77,7 +77,7 @@ function authSessionLabel(): { mode: string; preview: string } {
   const mode = getDashboardAuthMode();
   const token = getAuthToken();
   if (mode === 'cookie') {
-    return { mode: 'Session', preview: 'OIDC cookie' };
+    return { mode: 'Session', preview: 'Cookie session' };
   }
   if (mode === 'dev') {
     return { mode: 'Bearer', preview: 'Dev bootstrap' };

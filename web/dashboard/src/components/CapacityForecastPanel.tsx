@@ -110,7 +110,7 @@ export default function CapacityForecastPanel() {
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Fleet risk</p>
           <div className="flex items-end gap-2">
             <span className="text-3xl font-semibold text-white">
-              {formatPercent((predictions?.fleet_risk_score ?? 0) * 100, 0)}
+              {formatPercent(predictions?.fleet_risk_score ?? 0, 0)}
             </span>
             <TrendingUp className="mb-1 h-4 w-4 text-amber-400" />
           </div>

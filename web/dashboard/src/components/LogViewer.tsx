@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { apiFetch } from '../utils/api';
+import { apiFetchWithError } from '../utils/api';
 import { copyToClipboard } from '../utils/clipboard';
 
 interface LogViewerProps {
@@ -59,13 +59,17 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
       if (previous) {
         path = withParam(path, 'previous', 'true');
       }
-      const resp = await apiFetch<string>(path);
+      const { data: resp, error } = await apiFetchWithError<string>(path);
       if (typeof resp === 'string') {
         // Empty string is a valid response (completed pods with no output).
         setLogs(resp.length > 0 ? resp.split('\n') : []);
         setFetchError('');
       } else if (resp == null) {
-        setFetchError('Failed to load logs from the API.');
+        setFetchError(
+          error && /no pods found/i.test(error)
+            ? "No pods found for this workload — they've likely already been cleaned up by Kubernetes."
+            : error || 'Failed to load logs from the API.',
+        );
       } else {
         setLogs([String(resp)]);
         setFetchError('');

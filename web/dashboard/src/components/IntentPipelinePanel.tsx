@@ -174,7 +174,7 @@ export default function IntentPipelinePanel() {
               <div className="text-xs text-slate-500">Recommended runtime</div>
             </div>
             <div className="glass-metric-card">
-              <div className="text-lg font-semibold text-white">{formatPercent(report.confidence * 100, 0)}</div>
+              <div className="text-lg font-semibold text-white">{formatPercent(report.confidence, 0)}</div>
               <div className="text-xs text-slate-500">Confidence</div>
             </div>
             <div className="glass-metric-card">

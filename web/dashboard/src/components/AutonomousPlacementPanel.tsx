@@ -120,12 +120,12 @@ export default function AutonomousPlacementPanel() {
                   {row.auto_eligible ? <Badge text="auto-eligible" variant="green" /> : null}
                 </div>
                 <p className="mt-1 text-sm text-slate-400">
-                  {row.current_runtime} → {row.recommended_runtime} · +{formatPercent(row.improvement_pct, 0)} improvement
+                  {row.current_runtime} → {row.recommended_runtime} · +{row.improvement_pct.toFixed(0)}% improvement
                 </p>
                 <p className="mt-1 text-xs text-slate-500">{row.reasons[0] ?? 'Scoring engine recommendation'}</p>
               </div>
               <div className="text-right text-sm text-slate-400">
-                {formatPercent(row.confidence * 100, 0)} conf.
+                {formatPercent(row.confidence, 0)} conf.
               </div>
             </li>
           ))}

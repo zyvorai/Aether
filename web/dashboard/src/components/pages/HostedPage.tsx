@@ -36,6 +36,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
   const [planningFederation, setPlanningFederation] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [plan, setPlan] = useState('free');
@@ -64,6 +65,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
       setFederation(federationRes.ok ? federationRes.data : null);
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -144,7 +146,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
     }
   }
 
-  if (loading && tenants.length === 0 && !loadFailed) {
+  if (loading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading label="Loading hosted control plane…" />;
   }
 

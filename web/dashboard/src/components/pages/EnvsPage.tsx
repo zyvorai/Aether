@@ -47,6 +47,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [workloadParam] = useQueryParam('workload');
   const [search, setSearch] = useWorkloadOrSearchFilter();
   const workloadFocus = workloadParam.trim();
@@ -76,6 +77,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
       setEnvironments(result.data);
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -153,7 +155,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
     }
   }
 
-  if (loading && environments.length === 0 && !loadFailed) {
+  if (loading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading rows={5} />;
   }
 
