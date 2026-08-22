@@ -68,12 +68,28 @@ spec:
             secretKeyRef:
               name: {{ .Values.apiKey.existingSecret }}
               key: {{ .Values.apiKey.secretKey }}
-        {{- else if .Values.apiKey.value }}
+        {{- else }}
         - name: AETHER_API_KEY
           valueFrom:
             secretKeyRef:
               name: {{ include "aether.fullname" . }}-secrets
               key: api-key
+        {{- end }}
+        {{- /* src/secrets.rs falls back to a low-entropy key derived from the pod's
+               HOSTNAME (predictable/visible to anyone with pod-list RBAC) whenever this
+               is unset — always source it from the auto-generated Secret. */}}
+        {{- if .Values.secretKey.existingSecret }}
+        - name: AETHER_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretKey.existingSecret }}
+              key: {{ .Values.secretKey.secretKey }}
+        {{- else }}
+        - name: AETHER_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "aether.fullname" . }}-secrets
+              key: encryption-key
         {{- end }}
         {{- if .Values.postgresql.enabled }}
         - name: AETHER_STATE_DATABASE_URL

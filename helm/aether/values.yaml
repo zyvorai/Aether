@@ -115,8 +115,22 @@ apiServer:
     - --port=5090
 
 apiKey:
+  # Empty value = auto-generated (random, 64 chars) on first install, preserved across
+  # upgrades (see templates/secret.yaml). Without this, src/api/mod.rs allows all
+  # requests when no API key/RBAC/OIDC is configured — the chart used to leave this
+  # entirely unset by default, so a fresh install ran with no authentication at all.
   existingSecret: ""
   secretKey: api-key
+  value: ""
+
+secretKey:
+  # Encrypts values in src/secrets.rs's on-disk secret store (stored credentials, not
+  # just a login/API token). Empty = auto-generated (random, 32 chars) on first install,
+  # preserved across upgrades. Without this, the app derives a key from the pod's
+  # HOSTNAME — predictable/visible to anyone with pod-list RBAC in the namespace, not a
+  # meaningfully private seed in a Kubernetes deployment.
+  existingSecret: ""
+  secretKey: encryption-key
   value: ""
 
 postgresql:
