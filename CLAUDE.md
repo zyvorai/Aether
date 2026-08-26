@@ -99,4 +99,4 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 ## Default Ports
 
 - API server: `5090` (configurable via `--port`)
-- Brand color: iPhone 17 "Cosmic Orange" `#f77e2d` / RGB `(247, 126, 45)`
+- Brand color: Zyvor orange `#cc420a` light / `#ff5a15` dark (per `zyvor-web/design-reference/v3-latest/zyvor.css` — the real Zyvor design system, not an approximation)

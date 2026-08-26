@@ -631,8 +631,9 @@ export default function Navbar({
   return (
     <nav className={`overflow-visible ${navbarShellClass()}`}>
       <div className="dash-content min-w-0">
-        {/* Row 1: brand + utilities (always fits viewport) */}
-        <div className="flex min-w-0 items-center justify-between gap-2 py-2 sm:py-2.5">
+        {/* Row 1: brand + utilities (always fits viewport). min-h-nav matches
+            the 44px Apple-anatomy nav height from the Zyvor design reference. */}
+        <div className="flex min-h-[var(--nav-h)] min-w-0 items-center justify-between gap-2 py-2 sm:py-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"

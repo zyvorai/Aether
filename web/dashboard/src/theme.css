@@ -3,38 +3,42 @@
 /* https://zyvor.dev · info@zyvor.dev */
 
 /*
-  Design tokens for the Apple.com / zyvor.dev chrome + Console.app density
-  redesign. --brand is #f77e2d — Apple's iPhone 17 Pro "Cosmic Orange"
-  (announced Sept 2025) — used identically in light and dark mode. Unlike
-  the previous brand color, Cosmic Orange already has strong contrast
-  against both a white canvas and a near-black one, so it doesn't need a
-  separate per-theme tint the way a darker orange would.
+  Design tokens aligned to the real Zyvor design system
+  (zyvor-web/design-reference/v3-latest/zyvor.css — "Light theme ·
+  Apple-anatomy navigation · Zyvor orange accent"). Neutrals (canvas/
+  surface/hairline/ink/slate/muted), the orange tiers (zy-500/600/700/
+  tint), and the 44px sticky translucent nav spec are taken directly
+  from that reference rather than approximated. Light values are the
+  reference's own; dark values are derived (the reference is light-only)
+  using the more vivid zy-500 tier for --brand, which already has good
+  contrast on a near-black canvas.
 */
 
 :root {
-  --canvas: #fbfbfd;
+  --canvas: #ffffff;
   --page: #ffffff;
-  --sunken: #f5f5f7;
+  --sunken: #f5f6f8;
   --raised: #ffffff;
-  --hover: rgba(0, 0, 0, 0.04);
-  --selected: rgba(247, 126, 45, 0.08);
-  --rule: rgba(0, 0, 0, 0.08);
-  --rule-strong: rgba(0, 0, 0, 0.14);
-  --ink: #1d1d1f;
-  --ink-2: #4a4a4e;
-  --ink-3: #86868b;
-  --brand: #f77e2d;
-  --brand-rgb: 247 126 45;
+  --hover: rgba(20, 22, 26, 0.05);
+  --selected: #fff1e9;
+  --rule: #e3e6ea;
+  --rule-strong: rgba(20, 22, 26, 0.16);
+  --ink: #14161a;
+  --ink-2: #5b6472;
+  --ink-3: #6e7684;
+  --brand: #cc420a;
+  --brand-rgb: 204 66 10;
   --brand-ink: #ffffff;
-  --brand-wash: rgba(247, 126, 45, 0.1);
-  --red: #d70015;
-  --amber: #b25000;
-  --green: #0a7d3c;
-  --scrim: rgba(0, 0, 0, 0.35);
+  --brand-wash: #fff1e9;
+  --red: #b3261e;
+  --amber: #8a5a00;
+  --green: #0f7b4f;
+  --scrim: rgba(20, 22, 26, 0.35);
   --glass: rgba(255, 255, 255, 0.72);
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, system-ui, sans-serif;
-  --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --shadow: 0 8px 24px rgba(20, 22, 26, 0.08), 0 2px 6px rgba(20, 22, 26, 0.04);
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --nav-h: 44px;
   color-scheme: light;
 }
 
@@ -46,22 +50,23 @@
     --sunken: #131316;
     --raised: #1c1c1e;
     --hover: rgba(255, 255, 255, 0.06);
-    --selected: rgba(247, 126, 45, 0.16);
+    --selected: rgba(255, 90, 21, 0.16);
     --rule: rgba(255, 255, 255, 0.1);
     --rule-strong: rgba(255, 255, 255, 0.16);
     --ink: #f5f5f7;
     --ink-2: #c7c7cc;
     --ink-3: #8e8e93;
-    --brand: #f77e2d;
-    --brand-rgb: 247 126 45;
+    --brand: #ff5a15;
+    --brand-rgb: 255 90 21;
     --brand-ink: #ffffff;
-    --brand-wash: rgba(247, 126, 45, 0.16);
+    --brand-wash: rgba(255, 90, 21, 0.16);
     --red: #ff453a;
     --amber: #ff9f0a;
     --green: #32d74b;
     --scrim: rgba(0, 0, 0, 0.55);
     --glass: rgba(28, 28, 30, 0.72);
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --nav-h: 44px;
     color-scheme: dark;
   }
 }
@@ -73,22 +78,23 @@
   --sunken: #131316;
   --raised: #1c1c1e;
   --hover: rgba(255, 255, 255, 0.06);
-  --selected: rgba(247, 126, 45, 0.16);
+  --selected: rgba(255, 90, 21, 0.16);
   --rule: rgba(255, 255, 255, 0.1);
   --rule-strong: rgba(255, 255, 255, 0.16);
   --ink: #f5f5f7;
   --ink-2: #c7c7cc;
   --ink-3: #8e8e93;
-  --brand: #f77e2d;
-  --brand-rgb: 247 126 45;
+  --brand: #ff5a15;
+  --brand-rgb: 255 90 21;
   --brand-ink: #ffffff;
-  --brand-wash: rgba(247, 126, 45, 0.16);
+  --brand-wash: rgba(255, 90, 21, 0.16);
   --red: #ff453a;
   --amber: #ff9f0a;
   --green: #32d74b;
   --scrim: rgba(0, 0, 0, 0.55);
   --glass: rgba(28, 28, 30, 0.72);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --nav-h: 44px;
   color-scheme: dark;
 }
 
