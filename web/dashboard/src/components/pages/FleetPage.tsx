@@ -22,6 +22,7 @@ import FleetIntelligenceBrief from '../FleetIntelligenceBrief';
 import MultiCloudPanel from '../MultiCloudPanel';
 import FederationPlatformPanel from '../FederationPlatformPanel';
 import StatCard from '../StatCard';
+import { categoricalDotClass } from '../../utils/categoricalColor';
 import type {
   ClusterPodSummary,
   ClusterResourceDetail,
@@ -513,7 +514,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                   key={c.name}
                   index={i}
                   testId={`fleet-cluster-${c.name}`}
-                  icon={<Server size={18} />}
+                  icon={<Server size={18} className={categoricalDotClass(c.name).replace('bg-', 'text-')} />}
                   statusTone={c.reachable ? 'green' : 'red'}
                   pulse={c.reachable}
                   title={c.name}

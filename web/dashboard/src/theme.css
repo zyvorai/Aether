@@ -30,15 +30,35 @@
   --brand-rgb: 204 66 10;
   --brand-ink: #ffffff;
   --brand-wash: #fff1e9;
-  --red: #b3261e;
-  --amber: #8a5a00;
-  --green: #0f7b4f;
+  --red: #c7361f;
+  --amber: #9a6a00;
+  --green: #5e7a4e;
   --scrim: rgba(20, 22, 26, 0.35);
   --glass: rgba(255, 255, 255, 0.72);
   --shadow: 0 8px 24px rgba(20, 22, 26, 0.08), 0 2px 6px rgba(20, 22, 26, 0.04);
   --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --nav-h: 44px;
+
+  /* iPhone 17 categorical palette — for non-semantic, non-brand accents only
+     (runtime badges, nav-group dots, cluster/namespace chips). Cosmic Orange
+     is already --brand; Silver/White/Space Black are skipped as accents
+     since they duplicate the ink/canvas neutrals. Same value in both themes
+     — these sit on small washed/translucent surfaces, not full pages, so
+     they don't need per-theme tuning. Sage/Mist Blue/Lavender/Light Gold are
+     deepened from Apple's pale physical-finish hexes (#A9B689/#96AED1/
+     #DFCEEA/#FFFCF5) for badge-text contrast; Deep Blue is used as-is. */
+  --iphone-deep-blue: #32374a;
+  --iphone-deep-blue-rgb: 50 55 74;
+  --iphone-sage: #7a9068;
+  --iphone-sage-rgb: 122 144 104;
+  --iphone-mist-blue: #6b8fb5;
+  --iphone-mist-blue-rgb: 107 143 181;
+  --iphone-lavender: #9b7fb0;
+  --iphone-lavender-rgb: 155 127 176;
+  --iphone-gold: #b8860b;
+  --iphone-gold-rgb: 184 134 11;
+
   color-scheme: light;
 }
 
@@ -60,9 +80,9 @@
     --brand-rgb: 255 90 21;
     --brand-ink: #ffffff;
     --brand-wash: rgba(255, 90, 21, 0.16);
-    --red: #ff453a;
-    --amber: #ff9f0a;
-    --green: #32d74b;
+    --red: #ff6b4a;
+    --amber: #e0a815;
+    --green: #8fb37a;
     --scrim: rgba(0, 0, 0, 0.55);
     --glass: rgba(28, 28, 30, 0.72);
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
@@ -88,15 +108,23 @@
   --brand-rgb: 255 90 21;
   --brand-ink: #ffffff;
   --brand-wash: rgba(255, 90, 21, 0.16);
-  --red: #ff453a;
-  --amber: #ff9f0a;
-  --green: #32d74b;
+  --red: #ff6b4a;
+  --amber: #e0a815;
+  --green: #8fb37a;
   --scrim: rgba(0, 0, 0, 0.55);
   --glass: rgba(28, 28, 30, 0.72);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   --nav-h: 44px;
   color-scheme: dark;
 }
+
+/* Accent override — chosen via the picker in Navbar.tsx, applied as
+   data-accent on <html> alongside data-theme. Declared last so it wins
+   the cascade over both theme blocks above regardless of light/dark. */
+[data-accent='deepblue'] { --brand: #32374a; --brand-rgb: 50 55 74; --brand-ink: #ffffff; --brand-wash: rgba(50, 55, 74, 0.14); --selected: rgba(50, 55, 74, 0.12); }
+[data-accent='sage'] { --brand: #7a9068; --brand-rgb: 122 144 104; --brand-ink: #ffffff; --brand-wash: rgba(122, 144, 104, 0.14); --selected: rgba(122, 144, 104, 0.12); }
+[data-accent='mistblue'] { --brand: #6b8fb5; --brand-rgb: 107 143 181; --brand-ink: #ffffff; --brand-wash: rgba(107, 143, 181, 0.14); --selected: rgba(107, 143, 181, 0.12); }
+[data-accent='lavender'] { --brand: #9b7fb0; --brand-rgb: 155 127 176; --brand-ink: #ffffff; --brand-wash: rgba(155, 127, 176, 0.14); --selected: rgba(155, 127, 176, 0.12); }
 
 .data-row {
   height: 34px;

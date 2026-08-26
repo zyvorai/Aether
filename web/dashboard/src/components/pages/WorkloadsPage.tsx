@@ -26,6 +26,7 @@ import { getPinnedWorkloads, togglePinnedWorkload } from '../../utils/pinnedWork
 import { downloadTextFile, workloadsToCsv } from '../../utils/workloadCsv';
 import Badge, { RuntimeBadge } from '../Badge';
 import SegmentedControl from '../ui/SegmentedControl';
+import { categoricalDotClass } from '../../utils/categoricalColor';
 import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import Modal from '../Modal';
 import YamlInput from '../YamlInput';
@@ -914,14 +915,15 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                   key={namespace}
                   type="button"
                   onClick={() => setNamespaceFilter(active ? 'all' : namespace)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
                     active
                       ? 'border-brand-wash bg-brand-wash text-brand'
                       : 'border-rule text-ink-3 hover:text-ink-2'
                   }`}
                 >
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${categoricalDotClass(namespace)}`} aria-hidden />
                   {namespace}
-                  <span className="ml-1 opacity-70">{count}</span>
+                  <span className="opacity-70">{count}</span>
                 </button>
               );
             })

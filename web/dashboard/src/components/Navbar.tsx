@@ -55,7 +55,7 @@ import { ZYVOR_HELP } from '../config/zyvorHelp';
 import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
 import { useProView } from '../hooks/useProView';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, ACCENT_OPTIONS } from '../contexts/ThemeContext';
 import { dropdownItemClass, dropdownSurfaceClass, navbarShellClass } from '../utils/themeSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
@@ -63,7 +63,7 @@ import { filterNavViews, partitionNavViews, type AnnotatedNavItem } from '../uti
 import { AI_OS_NAV, isAiOsNavActive } from '../utils/aiOsNav';
 import { getClusterContext } from '../utils/clusterContext';
 import { getRecentViews } from '../utils/recentViews';
-import { getViewMeta } from '../utils/dashboardNav';
+import { getViewMeta, NAV_GROUP_COLOR, type NavGroup } from '../utils/dashboardNav';
 import { getAuthToken, getDashboardAuthMode } from '../utils/api';
 import { isMacOSShell } from '../utils/macosBridge';
 import PlatformHealthChip from './PlatformHealthChip';
@@ -255,6 +255,7 @@ function Dropdown({
           isActive || open ? 'nav-pill-active' : 'nav-pill'
         }`}
       >
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${NAV_GROUP_COLOR[group.label.toLowerCase() as NavGroup] ?? 'bg-ink-3'}`} aria-hidden />
         {group.label}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -457,7 +458,7 @@ export default function Navbar({
   lastRefreshed,
   sseConnected,
 }: NavbarProps) {
-  const { resolvedTheme, toggleDarkLight } = useTheme();
+  const { resolvedTheme, toggleDarkLight, accent, setAccent } = useTheme();
   const { role } = useAuth();
   const [proView, setProView] = useProView();
   const { capabilities, gitopsConfigured } = useServerCapabilities();
@@ -677,6 +678,23 @@ export default function Navbar({
             >
               {resolvedTheme === 'dark' ? <Sun className="h-3.5 w-3.5" aria-hidden /> : <Moon className="h-3.5 w-3.5" aria-hidden />}
             </button>
+            <div className="hidden lg:flex shrink-0 items-center gap-1 rounded-xl border border-rule px-1.5 py-1" role="radiogroup" aria-label="Accent color">
+              {ACCENT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={accent === opt.value}
+                  onClick={() => setAccent(opt.value)}
+                  title={opt.label}
+                  className={`h-3.5 w-3.5 shrink-0 rounded-full ${opt.swatchClass} transition-transform hover:scale-110 ${
+                    accent === opt.value ? 'ring-2 ring-offset-1 ring-offset-page ring-ink-2' : ''
+                  }`}
+                >
+                  <span className="sr-only">{opt.label}</span>
+                </button>
+              ))}
+            </div>
             <PlatformHealthChip sseConnected={sseConnected ?? false} />
             {onOpenHelp ? (
               <div className="relative hidden sm:block shrink-0" ref={helpRef}>
@@ -898,7 +916,8 @@ export default function Navbar({
             {filteredMobileNavGroups.map((group) => (
               group.items.length === 0 ? null : (
               <div key={group.label}>
-                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3">
+                <div className="flex items-center gap-1.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3">
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${NAV_GROUP_COLOR[group.label.toLowerCase() as NavGroup] ?? 'bg-ink-3'}`} aria-hidden />
                   {group.label}
                 </div>
                 <div className="space-y-0.5">
@@ -1006,6 +1025,21 @@ export default function Navbar({
                 {resolvedTheme === 'dark' ? <Sun className="h-4 w-4 shrink-0" aria-hidden /> : <Moon className="h-4 w-4 shrink-0" aria-hidden />}
                 {resolvedTheme === 'dark' ? 'Light appearance' : 'Dark appearance'}
               </button>
+              <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-rule px-2 py-2" role="radiogroup" aria-label="Accent color">
+                {ACCENT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={accent === opt.value}
+                    onClick={() => setAccent(opt.value)}
+                    title={opt.label}
+                    className={`h-4 w-4 shrink-0 rounded-full ${opt.swatchClass} ${accent === opt.value ? 'ring-2 ring-offset-1 ring-offset-page ring-ink-2' : ''}`}
+                  >
+                    <span className="sr-only">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={() => {

@@ -18,6 +18,10 @@
           if (theme === 'light' || theme === 'dark') {
             document.documentElement.setAttribute('data-theme', theme);
           }
+          var accent = localStorage.getItem('aether-accent');
+          if (accent === 'deepblue' || accent === 'sage' || accent === 'mistblue' || accent === 'lavender') {
+            document.documentElement.setAttribute('data-accent', accent);
+          }
         } catch (e) {}
       })();
     </script>

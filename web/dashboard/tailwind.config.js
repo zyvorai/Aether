@@ -27,6 +27,11 @@ export default {
         success: 'var(--green)',
         scrim: 'var(--scrim)',
         glass: 'var(--glass)',
+        deepblue: 'rgb(var(--iphone-deep-blue-rgb) / <alpha-value>)',
+        sage: 'rgb(var(--iphone-sage-rgb) / <alpha-value>)',
+        mistblue: 'rgb(var(--iphone-mist-blue-rgb) / <alpha-value>)',
+        lavender: 'rgb(var(--iphone-lavender-rgb) / <alpha-value>)',
+        gold: 'rgb(var(--iphone-gold-rgb) / <alpha-value>)',
         aether: {
           DEFAULT: '#3B82F6',
           light: '#60A5FA',
