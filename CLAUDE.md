@@ -99,4 +99,4 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 ## Default Ports
 
 - API server: `5090` (configurable via `--port`)
-- Brand color: Dark Orange `#d35400` / RGB `(211, 84, 0)`
+- Brand color: iPhone 17 "Cosmic Orange" `#f77e2d` / RGB `(247, 126, 45)`

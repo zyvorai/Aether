@@ -4,11 +4,11 @@
 
 /*
   Design tokens for the Apple.com / zyvor.dev chrome + Console.app density
-  redesign. --brand is #d35400 in light mode (CLAUDE.md canonical value,
-  kept exactly). In dark mode --brand shifts to #ff9f0a — the same brand
-  hue lifted for legibility on near-black surfaces, the way Apple's own
-  system accent colors shift between light/dark. This is a deliberate
-  dark-mode *tint* of the CLAUDE.md value, not a divergence from it.
+  redesign. --brand is #f77e2d — Apple's iPhone 17 Pro "Cosmic Orange"
+  (announced Sept 2025) — used identically in light and dark mode. Unlike
+  the previous brand color, Cosmic Orange already has strong contrast
+  against both a white canvas and a near-black one, so it doesn't need a
+  separate per-theme tint the way a darker orange would.
 */
 
 :root {
@@ -17,16 +17,16 @@
   --sunken: #f5f5f7;
   --raised: #ffffff;
   --hover: rgba(0, 0, 0, 0.04);
-  --selected: rgba(211, 84, 0, 0.08);
+  --selected: rgba(247, 126, 45, 0.08);
   --rule: rgba(0, 0, 0, 0.08);
   --rule-strong: rgba(0, 0, 0, 0.14);
   --ink: #1d1d1f;
   --ink-2: #4a4a4e;
   --ink-3: #86868b;
-  --brand: #d35400;
-  --brand-rgb: 211 84 0;
+  --brand: #f77e2d;
+  --brand-rgb: 247 126 45;
   --brand-ink: #ffffff;
-  --brand-wash: rgba(211, 84, 0, 0.1);
+  --brand-wash: rgba(247, 126, 45, 0.1);
   --red: #d70015;
   --amber: #b25000;
   --green: #0a7d3c;
@@ -46,16 +46,16 @@
     --sunken: #131316;
     --raised: #1c1c1e;
     --hover: rgba(255, 255, 255, 0.06);
-    --selected: rgba(255, 159, 10, 0.14);
+    --selected: rgba(247, 126, 45, 0.16);
     --rule: rgba(255, 255, 255, 0.1);
     --rule-strong: rgba(255, 255, 255, 0.16);
     --ink: #f5f5f7;
     --ink-2: #c7c7cc;
     --ink-3: #8e8e93;
-    --brand: #ff9f0a;
-    --brand-rgb: 255 159 10;
-    --brand-ink: #1c1c1e;
-    --brand-wash: rgba(255, 159, 10, 0.14);
+    --brand: #f77e2d;
+    --brand-rgb: 247 126 45;
+    --brand-ink: #ffffff;
+    --brand-wash: rgba(247, 126, 45, 0.16);
     --red: #ff453a;
     --amber: #ff9f0a;
     --green: #32d74b;
@@ -73,16 +73,16 @@
   --sunken: #131316;
   --raised: #1c1c1e;
   --hover: rgba(255, 255, 255, 0.06);
-  --selected: rgba(255, 159, 10, 0.14);
+  --selected: rgba(247, 126, 45, 0.16);
   --rule: rgba(255, 255, 255, 0.1);
   --rule-strong: rgba(255, 255, 255, 0.16);
   --ink: #f5f5f7;
   --ink-2: #c7c7cc;
   --ink-3: #8e8e93;
-  --brand: #ff9f0a;
-  --brand-rgb: 255 159 10;
-  --brand-ink: #1c1c1e;
-  --brand-wash: rgba(255, 159, 10, 0.14);
+  --brand: #f77e2d;
+  --brand-rgb: 247 126 45;
+  --brand-ink: #ffffff;
+  --brand-wash: rgba(247, 126, 45, 0.16);
   --red: #ff453a;
   --amber: #ff9f0a;
   --green: #32d74b;
