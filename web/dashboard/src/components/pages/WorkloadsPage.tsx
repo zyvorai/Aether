@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Play, Square, Trash2, FileText, ClipboardCheck, Inbox, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download, LayoutGrid, List } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
@@ -25,6 +25,8 @@ import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../
 import { getPinnedWorkloads, togglePinnedWorkload } from '../../utils/pinnedWorkloads';
 import { downloadTextFile, workloadsToCsv } from '../../utils/workloadCsv';
 import Badge, { RuntimeBadge } from '../Badge';
+import SegmentedControl from '../ui/SegmentedControl';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import Modal from '../Modal';
 import YamlInput from '../YamlInput';
 import ValidateResultPanel from '../ValidateResultPanel';
@@ -605,18 +607,144 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   // this build's stylesheet ordering, so override width inline instead.
   const filterSelectStyle = { width: 'auto', minWidth: '9rem' } as const;
 
+  const workloadColumns: DataTableColumn<WorkloadResponse>[] = [
+    {
+      key: 'select',
+      header: '',
+      width: 28,
+      render: (w) =>
+        isAetherManaged(w) ? (
+          <input
+            type="checkbox"
+            checked={selectedNames.has(w.name)}
+            onChange={(e) => {
+              e.stopPropagation();
+              toggleSelect(w.name);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Select ${w.name}`}
+          />
+        ) : null,
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      sortValue: (w) => w.name,
+      render: (w) => {
+        const shortName = clusterResourceName(w.name);
+        const locationLabel = [w.cluster, w.namespace].filter(Boolean).join('/');
+        const metaLabel = [w.kind, locationLabel || null].filter(Boolean).join(' · ');
+        const pinned = pinnedSet.has(w.name);
+        return (
+          <div className="flex min-w-0 items-start gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePin(w.name);
+              }}
+              className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-brand' : 'text-ink-3 hover:text-ink-2'}`}
+              title={pinned ? 'Unpin workload' : 'Pin workload'}
+            >
+              <Star size={13} className={pinned ? 'fill-current' : ''} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openWorkloadDetail(w, 'overview');
+              }}
+              className="block w-full min-w-0 truncate text-left text-ink hover:text-brand"
+              title={w.name}
+            >
+              <span className="block truncate">{shortName}</span>
+              {metaLabel ? (
+                <span className="mt-0.5 block truncate text-[11px] font-normal text-ink-3" title={metaLabel}>
+                  {metaLabel}
+                </span>
+              ) : null}
+            </button>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'runtime',
+      header: 'Runtime',
+      width: 110,
+      render: (w) => <RuntimeBadge runtime={w.runtime} />,
+    },
+    {
+      key: 'image',
+      header: 'Image',
+      width: 220,
+      render: (w) => (
+        <code className="block truncate rounded bg-sunken px-2 py-1 text-xs text-ink-2" title={w.image}>
+          {w.image}
+        </code>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      width: 110,
+      sortValue: (w) => w.status,
+      render: (w) => <Badge text={w.status} variant={getStatusVariant(w.status)} />,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: 140,
+      render: (w) => {
+        const discovered = !isAetherManaged(w);
+        const showLogs = !discovered || hasClusterLogs(w.kind);
+        const showShell = discovered ? canMutate && isShellableClusterKind(w.kind) : canMutate;
+        const showShellDenied = discovered ? !canMutate && isShellableClusterKind(w.kind) : !canMutate;
+        const stop = (e: MouseEvent) => e.stopPropagation();
+        return (
+          <div className="flex flex-nowrap items-center gap-0.5" onClick={stop}>
+            {discovered ? (
+              <>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Info"><Info size={14} /></button>
+                {showLogs ? (
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Logs"><FileText size={14} /></button>
+                ) : null}
+                {showShell ? (
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Exec into pod"><Terminal size={14} /></button>
+                ) : showShellDenied ? (
+                  <button type="button" disabled className="cursor-not-allowed rounded p-1.5 text-ink-3 opacity-40" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Logs"><FileText size={14} /></button>
+                {canMutate ? (
+                  <>
+                    <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Start"><Play size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Stop"><Square size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-danger" title="Delete"><Trash2 size={14} /></button>
+                  </>
+                ) : null}
+              </>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="overflow-x-hidden">
       {!selectedWorkload ? (
         <section className="workloads-masthead mb-5 px-5 py-5 sm:px-6 sm:py-6" data-testid="workloads-masthead">
           <div className="relative z-[1] flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
-              <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-aether">
-                <span className="h-1.5 w-1.5 rounded-full bg-aether platform-pulse" />
+              <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand platform-pulse" />
                 Runtime inventory
               </div>
-              <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Workloads</h2>
-              <p className="mt-1.5 max-w-xl text-sm text-slate-400">
+              <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-3xl">Workloads</h2>
+              <p className="mt-1.5 max-w-xl text-sm text-ink-3">
                 Cards-first ops deck — open Info, stream Logs, or Exec without leaving the grid.
               </p>
             </div>
@@ -821,31 +949,16 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-1.5" data-testid="workloads-status-chips">
-        {(
-          [
-            { id: 'all', label: 'All', count: workloads.length },
-            { id: 'running', label: 'Running', count: runningCount },
-            { id: 'stopped', label: 'Stopped', count: stoppedCount },
-          ] as const
-        ).map((chip) => {
-          const active = statusFilter === chip.id;
-          return (
-            <button
-              key={chip.id}
-              type="button"
-              onClick={() => setStatusFilter(chip.id)}
-              className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
-                active
-                  ? 'bg-aether/20 text-aether border border-aether/40'
-                  : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
-              }`}
-            >
-              {chip.label}
-              <span className="ml-1 opacity-70">{chip.count}</span>
-            </button>
-          );
-        })}
+      <div className="mb-4 flex flex-wrap items-center gap-2" data-testid="workloads-status-chips">
+        <SegmentedControl
+          value={statusFilter as 'all' | 'running' | 'stopped'}
+          onChange={(id) => setStatusFilter(id)}
+          items={[
+            { key: 'all', label: 'All', count: workloads.length },
+            { key: 'running', label: 'Running', count: runningCount },
+            { key: 'stopped', label: 'Stopped', count: stoppedCount },
+          ]}
+        />
         {namespaces.length > 2
           ? namespaces.slice(0, 10).filter((n) => n !== 'all').map((namespace) => {
               const count = workloads.filter((w) => w.namespace === namespace).length;
@@ -855,10 +968,10 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                   key={namespace}
                   type="button"
                   onClick={() => setNamespaceFilter(active ? 'all' : namespace)}
-                  className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                  className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
                     active
-                      ? 'bg-aether/20 text-aether border border-aether/40'
-                      : 'glass-inset-surface text-slate-500 border glass-divider hover:text-slate-200'
+                      ? 'border-brand-wash bg-brand-wash text-brand'
+                      : 'border-rule text-ink-3 hover:text-ink-2'
                   }`}
                 >
                   {namespace}
@@ -1105,125 +1218,30 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           ))}
         </div>
       ) : (
-        <div className="glass-table-shell overflow-x-auto" data-testid="workloads-table">
-          <table className="w-full min-w-0 border-collapse">
-            <thead>
-              <tr className="glass-divider-b">
-                <th scope="col" className="w-10 py-3 px-2">
-                  <input
-                    type="checkbox"
-                    aria-label="Select all"
-                    checked={filteredWorkloads.length > 0 && filteredWorkloads.every((w) => selectedNames.has(w.name))}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedNames(new Set(filteredWorkloads.map((w) => w.name)));
-                      } else {
-                        setSelectedNames(new Set());
-                      }
-                    }}
-                  />
-                </th>
-                <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3">Name</th>
-                <th scope="col" className="hidden text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 md:table-cell">Runtime</th>
-                <th scope="col" className="hidden text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3 lg:table-cell">Image</th>
-                <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3">Status</th>
-                <th scope="col" className="text-left text-xs uppercase tracking-wider text-slate-400 py-3 px-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayWorkloads.map((w) => {
-                const shortName = clusterResourceName(w.name);
-                const locationLabel = [w.cluster, w.namespace].filter(Boolean).join('/');
-                const metaLabel = [w.kind, locationLabel || null].filter(Boolean).join(' · ');
-                const discovered = !isAetherManaged(w);
-                const showLogs = !discovered || hasClusterLogs(w.kind);
-                const showShell = discovered
-                  ? canMutate && isShellableClusterKind(w.kind)
-                  : canMutate;
-                const showShellDenied = discovered
-                  ? !canMutate && isShellableClusterKind(w.kind)
-                  : !canMutate;
-                const pinned = pinnedSet.has(w.name);
-
-                return (
-                <tr key={w.name} className="glass-table-row glass-inset-hover transition-colors">
-                  <td className="py-3 px-2 align-top">
-                    {!discovered && (
-                      <input
-                        type="checkbox"
-                        checked={selectedNames.has(w.name)}
-                        onChange={() => toggleSelect(w.name)}
-                        aria-label={`Select ${w.name}`}
-                      />
-                    )}
-                  </td>
-                  <td className="py-3 px-3 font-medium text-slate-200 align-top min-w-0">
-                    <div className="flex items-start gap-1.5 min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => togglePin(w.name)}
-                        className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-aether' : 'text-slate-600 hover:text-slate-300'}`}
-                        title={pinned ? 'Unpin workload' : 'Pin workload'}
-                      >
-                        <Star size={13} className={pinned ? 'fill-current' : ''} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openWorkloadDetail(w, 'overview')}
-                        className="hover:text-aether transition-colors text-left w-full min-w-0 block"
-                        title={w.name}
-                      >
-                        <span className="block truncate">{shortName}</span>
-                        {metaLabel ? (
-                          <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500" title={metaLabel}>
-                            {metaLabel}
-                          </span>
-                        ) : null}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="hidden py-3 px-3 align-top md:table-cell"><RuntimeBadge runtime={w.runtime} /></td>
-                  <td className="hidden py-3 px-3 align-top lg:table-cell min-w-0">
-                    <code className="text-xs glass-inset-surface px-2 py-1 rounded text-slate-300 block truncate" title={w.image}>
-                      {w.image}
-                    </code>
-                  </td>
-                  <td className="py-3 px-3 align-top whitespace-nowrap">
-                    <Badge text={w.status} variant={getStatusVariant(w.status)} />
-                  </td>
-                  <td className="py-3 px-3 align-top">
-                    <div className="flex flex-nowrap items-center gap-0.5">
-                      {discovered ? (
-                        <>
-                          <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded transition-colors" title="Info"><Info size={14} /></button>
-                          {showLogs ? (
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
-                          ) : null}
-                          {showShell ? (
-                            <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Exec into pod"><Terminal size={14} /></button>
-                          ) : showShellDenied ? (
-                            <button type="button" disabled className="p-1.5 text-slate-600 cursor-not-allowed rounded" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
-                          ) : null}
-                        </>
-                      ) : (
-                        <>
-                          <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Logs"><FileText size={14} /></button>
-                          {canMutate ? (
-                            <>
-                              <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors" title="Start"><Play size={14} /></button>
-                              <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors" title="Stop"><Square size={14} /></button>
-                              <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 size={14} /></button>
-                            </>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div data-testid="workloads-table">
+          {canMutate && filteredWorkloads.some((w) => isAetherManaged(w)) ? (
+            <div className="mb-2 flex items-center gap-2 text-[11.5px] text-ink-3">
+              <input
+                type="checkbox"
+                aria-label="Select all"
+                checked={filteredWorkloads.filter((w) => isAetherManaged(w)).every((w) => selectedNames.has(w.name))}
+                onChange={(e) => {
+                  const managed = filteredWorkloads.filter((w) => isAetherManaged(w)).map((w) => w.name);
+                  setSelectedNames(e.target.checked ? new Set(managed) : new Set());
+                }}
+              />
+              Select all
+            </div>
+          ) : null}
+          <DataTable<WorkloadResponse>
+            items={displayWorkloads}
+            getId={(w) => w.name}
+            getStatus={(w) => w.status}
+            sortBySeverityDefault={false}
+            emptyTitle="No matching workloads"
+            emptyBody="Try adjusting your search or filters."
+            columns={workloadColumns}
+          />
         </div>
       )}
         </>

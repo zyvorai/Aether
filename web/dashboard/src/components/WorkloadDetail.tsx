@@ -884,7 +884,7 @@ export default function WorkloadDetail({
 
   return (
     <>
-    <div className="glass-panel-card mt-4 overflow-hidden p-0">
+    <div className="glass-panel-card animate-ac-slide mt-4 overflow-hidden p-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 glass-divider-b glass-inset-surface">
         <div className="flex items-center gap-3">
