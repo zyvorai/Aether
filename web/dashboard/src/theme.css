@@ -1,0 +1,101 @@
+/* Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved. */
+/* Proprietary software — see LICENSE in the repository root. */
+/* https://zyvor.dev · info@zyvor.dev */
+
+/*
+  Design tokens for the Apple.com / zyvor.dev chrome + Console.app density
+  redesign. --brand is #d35400 in light mode (CLAUDE.md canonical value,
+  kept exactly). In dark mode --brand shifts to #ff9f0a — the same brand
+  hue lifted for legibility on near-black surfaces, the way Apple's own
+  system accent colors shift between light/dark. This is a deliberate
+  dark-mode *tint* of the CLAUDE.md value, not a divergence from it.
+*/
+
+:root {
+  --canvas: #fbfbfd;
+  --page: #ffffff;
+  --sunken: #f5f5f7;
+  --raised: #ffffff;
+  --hover: rgba(0, 0, 0, 0.04);
+  --selected: rgba(211, 84, 0, 0.08);
+  --rule: rgba(0, 0, 0, 0.08);
+  --rule-strong: rgba(0, 0, 0, 0.14);
+  --ink: #1d1d1f;
+  --ink-2: #4a4a4e;
+  --ink-3: #86868b;
+  --brand: #d35400;
+  --brand-ink: #ffffff;
+  --brand-wash: rgba(211, 84, 0, 0.1);
+  --red: #d70015;
+  --amber: #b25000;
+  --green: #0a7d3c;
+  --scrim: rgba(0, 0, 0, 0.35);
+  --glass: rgba(255, 255, 255, 0.72);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+/* System preference, only when the user hasn't explicitly picked light */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --canvas: #000000;
+    --page: #1c1c1e;
+    --sunken: #131316;
+    --raised: #1c1c1e;
+    --hover: rgba(255, 255, 255, 0.06);
+    --selected: rgba(255, 159, 10, 0.14);
+    --rule: rgba(255, 255, 255, 0.1);
+    --rule-strong: rgba(255, 255, 255, 0.16);
+    --ink: #f5f5f7;
+    --ink-2: #c7c7cc;
+    --ink-3: #8e8e93;
+    --brand: #ff9f0a;
+    --brand-ink: #1c1c1e;
+    --brand-wash: rgba(255, 159, 10, 0.14);
+    --red: #ff453a;
+    --amber: #ff9f0a;
+    --green: #32d74b;
+    --scrim: rgba(0, 0, 0, 0.55);
+    --glass: rgba(28, 28, 30, 0.72);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+
+/* Explicit manual toggle to dark, regardless of OS preference */
+:root[data-theme='dark'] {
+  --canvas: #000000;
+  --page: #1c1c1e;
+  --sunken: #131316;
+  --raised: #1c1c1e;
+  --hover: rgba(255, 255, 255, 0.06);
+  --selected: rgba(255, 159, 10, 0.14);
+  --rule: rgba(255, 255, 255, 0.1);
+  --rule-strong: rgba(255, 255, 255, 0.16);
+  --ink: #f5f5f7;
+  --ink-2: #c7c7cc;
+  --ink-3: #8e8e93;
+  --brand: #ff9f0a;
+  --brand-ink: #1c1c1e;
+  --brand-wash: rgba(255, 159, 10, 0.14);
+  --red: #ff453a;
+  --amber: #ff9f0a;
+  --green: #32d74b;
+  --scrim: rgba(0, 0, 0, 0.55);
+  --glass: rgba(28, 28, 30, 0.72);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+.data-row {
+  height: 34px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ac-slide,
+  .animate-ac-lift {
+    animation: none !important;
+  }
+}

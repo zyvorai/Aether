@@ -12,7 +12,6 @@ import { useToast } from './components/Toast';
 import { useEventStream } from './hooks/useEventStream';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useSequenceShortcuts } from './hooks/useSequenceShortcut';
-import { useTheme } from './contexts/ThemeContext';
 import { appShellClass } from './utils/themeSurface';
 import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
@@ -74,7 +73,6 @@ import HostedPage from './components/pages/HostedPage';
 import OpenApiPage from './components/pages/OpenApiPage';
 
 function AetherDashboard() {
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -446,7 +444,7 @@ function AetherDashboard() {
 
   const hero = HERO_CONFIG[currentView];
 
-  const shellClass = appShellClass(theme);
+  const shellClass = appShellClass();
 
   function renderPage() {
     switch (currentView) {

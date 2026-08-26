@@ -10,11 +10,11 @@ export interface HeaderPill {
 }
 
 const pillTone: Record<NonNullable<HeaderPill['tone']>, string> = {
-  brand: 'border-aether/25 bg-aether/10 text-aether',
+  brand: 'border-brand-wash bg-brand-wash text-brand',
   ok: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
   warn: 'border-amber-500/25 bg-amber-500/10 text-amber-200',
   info: 'border-sky-500/25 bg-sky-500/10 text-sky-200',
-  muted: 'glass-divider glass-inset-surface text-slate-400',
+  muted: 'border-rule bg-hover text-ink-3',
 };
 
 interface PageHeaderProps {
@@ -43,20 +43,20 @@ export default function PageHeader({
       <div className="relative z-[1] flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 items-start gap-3">
           {icon ? (
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent text-aether">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-rule bg-brand-wash text-brand">
               {icon}
             </div>
           ) : null}
           <div className="min-w-0">
             {eyebrow ? (
-              <div className="mb-1 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-aether">
-                <span className="h-1.5 w-1.5 rounded-full bg-aether platform-pulse" />
+              <div className="mb-1 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand platform-pulse" />
                 {eyebrow}
               </div>
             ) : null}
-            <h2 className="truncate text-xl font-semibold tracking-tight text-white sm:text-2xl">{title}</h2>
+            <h2 className="truncate text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">{title}</h2>
             {subtitle ? (
-              <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-slate-400">{subtitle}</p>
+              <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-ink-3">{subtitle}</p>
             ) : null}
           </div>
         </div>

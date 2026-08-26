@@ -34,7 +34,8 @@ import {
   ChevronDown,
   Menu,
   X,
-  Palette,
+  Sun,
+  Moon,
   FileText,
   Server,
   Command,
@@ -54,8 +55,8 @@ import { ZYVOR_HELP } from '../config/zyvorHelp';
 import type { HelpTab } from './HelpDialog';
 import type { AppView } from '../types/api';
 import { useProView } from '../hooks/useProView';
-import { useTheme, type AppTheme } from '../contexts/ThemeContext';
-import { THEME_OPTIONS, dropdownItemClass, dropdownSurfaceClass, navbarShellClass, themeSelectClass } from '../utils/themeSurface';
+import { useTheme } from '../contexts/ThemeContext';
+import { dropdownItemClass, dropdownSurfaceClass, navbarShellClass } from '../utils/themeSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import { filterNavViews, partitionNavViews, type AnnotatedNavItem } from '../utils/navCapabilities';
@@ -188,7 +189,6 @@ function Dropdown({
   isActive,
   currentView,
   onNavigate,
-  theme,
 }: {
   group: DropdownGroup;
   ready: AnnotatedNavItem<DropdownItem>[];
@@ -196,7 +196,6 @@ function Dropdown({
   isActive: boolean;
   currentView: AppView;
   onNavigate: (view: AppView) => void;
-  theme: AppTheme;
 }) {
   const [open, setOpen] = useState(false);
   const hoverRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -268,7 +267,7 @@ function Dropdown({
         >
           <div
             role="menu"
-            className={`w-56 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
+            className={`w-56 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass()}`}
           >
             {ready.map((item) => (
               <button
@@ -279,7 +278,7 @@ function Dropdown({
                   onNavigate(item.view);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${dropdownItemClass(currentView === item.view, theme)}`}
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${dropdownItemClass(currentView === item.view)}`}
               >
                 <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
                   {item.icon}
@@ -301,7 +300,7 @@ function Dropdown({
                       onNavigate('platform');
                       setOpen(false);
                     }}
-                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm opacity-50 transition-colors hover:opacity-80 ${dropdownItemClass(false, theme)}`}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm opacity-50 transition-colors hover:opacity-80 ${dropdownItemClass(false)}`}
                   >
                     <span className="text-slate-500">{item.icon}</span>
                     <span className="flex flex-col items-start gap-0.5 text-left">
@@ -322,7 +321,6 @@ function Dropdown({
 }
 
 function AccountMenu({
-  theme,
   username,
   role,
   authModeLabel,
@@ -330,7 +328,6 @@ function AccountMenu({
   clusterCtx,
   onLogout,
 }: {
-  theme: AppTheme;
   username: string;
   role: string;
   authModeLabel: string;
@@ -368,7 +365,7 @@ function AccountMenu({
       </button>
       {open && (
         <div
-          className={`absolute right-0 top-full z-50 mt-1.5 w-64 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass(theme)}`}
+          className={`absolute right-0 top-full z-50 mt-1.5 w-64 animate-scale-in rounded-xl border py-2 shadow-xl ${dropdownSurfaceClass()}`}
           role="menu"
         >
           <div className="px-3 py-2 glass-table-row">
@@ -398,7 +395,7 @@ function AccountMenu({
               setOpen(false);
               onLogout();
             }}
-            className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
+            className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false)}`}
           >
             <LogOut className="h-4 w-4 shrink-0" />
             Sign out
@@ -460,7 +457,7 @@ export default function Navbar({
   lastRefreshed,
   sseConnected,
 }: NavbarProps) {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, toggleDarkLight } = useTheme();
   const { role } = useAuth();
   const [proView, setProView] = useProView();
   const { capabilities, gitopsConfigured } = useServerCapabilities();
@@ -626,14 +623,13 @@ export default function Navbar({
           isActive={group.items.some((item) => item.view === currentView)}
           currentView={currentView}
           onNavigate={onNavigate}
-          theme={theme}
         />
       ))}
     </>
   );
 
   return (
-    <nav className={`sticky top-0 z-40 overflow-visible border-b ${navbarShellClass(theme)}`}>
+    <nav className={`overflow-visible ${navbarShellClass()}`}>
       <div className="dash-content min-w-0">
         {/* Row 1: brand + utilities (always fits viewport) */}
         <div className="flex min-w-0 items-center justify-between gap-2 py-2 sm:py-2.5">
@@ -671,21 +667,15 @@ export default function Navbar({
                 Classic
               </label>
             ) : null}
-            <label className="hidden lg:flex items-center gap-1 shrink-0" title="Theme">
-              <Palette className="w-3.5 h-3.5 shrink-0 text-slate-500" aria-hidden />
-              <select
-                aria-label="Theme"
-                value={theme}
-                onChange={(e) => setTheme(e.target.value as AppTheme)}
-                className={`max-w-[6.5rem] cursor-pointer rounded-xl border px-1.5 py-1.5 text-xs outline-none transition ${themeSelectClass(theme)}`}
-              >
-                {THEME_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <button
+              type="button"
+              onClick={toggleDarkLight}
+              aria-label={resolvedTheme === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'}
+              title={resolvedTheme === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'}
+              className="hidden lg:flex shrink-0 items-center justify-center rounded-xl border border-rule p-1.5 text-ink-2 transition-colors hover:bg-hover hover:text-ink"
+            >
+              {resolvedTheme === 'dark' ? <Sun className="h-3.5 w-3.5" aria-hidden /> : <Moon className="h-3.5 w-3.5" aria-hidden />}
+            </button>
             <PlatformHealthChip sseConnected={sseConnected ?? false} />
             {onOpenHelp ? (
               <div className="relative hidden sm:block shrink-0" ref={helpRef}>
@@ -709,7 +699,7 @@ export default function Navbar({
                 </button>
                 {helpMenuOpen && (
                   <div
-                    className={`absolute right-0 top-full z-50 mt-1.5 min-w-[12.5rem] animate-scale-in rounded-xl border py-1.5 shadow-xl ${dropdownSurfaceClass(theme)}`}
+                    className={`absolute right-0 top-full z-50 mt-1.5 min-w-[12.5rem] animate-scale-in rounded-xl border py-1.5 shadow-xl ${dropdownSurfaceClass()}`}
                     role="menu"
                   >
                     <button
@@ -719,7 +709,7 @@ export default function Navbar({
                         setHelpMenuOpen(false);
                         onOpenHelp('shortcuts');
                       }}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false)}`}
                     >
                       <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
                       Keyboard shortcuts
@@ -732,7 +722,7 @@ export default function Navbar({
                         setHelpMenuOpen(false);
                         onOpenHelp('about');
                       }}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false)}`}
                     >
                       <Info className="h-4 w-4 shrink-0" aria-hidden />
                       About
@@ -743,7 +733,7 @@ export default function Navbar({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false)}`}
                     >
                       <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
                       Help &amp; documentation
@@ -755,7 +745,7 @@ export default function Navbar({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setHelpMenuOpen(false)}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false, theme)}`}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${dropdownItemClass(false)}`}
                     >
                       <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
                       Contact support
@@ -791,7 +781,6 @@ export default function Navbar({
             </button>
             <TenantSwitcher />
             <AccountMenu
-              theme={theme}
               username={username}
               role={role}
               authModeLabel={authModeLabel}
@@ -1008,21 +997,14 @@ export default function Navbar({
             ) : null}
 
             <div className="flex flex-wrap items-center gap-2 glass-divider-t/60 pt-2">
-              <label className="flex items-center gap-2 flex-1 min-w-[8rem]">
-                <Palette className="w-4 h-4 text-slate-500 shrink-0" aria-hidden />
-                <select
-                  aria-label="Theme"
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value as AppTheme)}
-                  className={`flex-1 cursor-pointer rounded-xl border px-2 py-2 text-xs outline-none ${themeSelectClass(theme)}`}
-                >
-                  {THEME_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <button
+                type="button"
+                onClick={toggleDarkLight}
+                className="flex flex-1 min-w-[8rem] items-center gap-2 rounded-xl border border-rule px-2 py-2 text-xs text-ink-2 transition-colors hover:bg-hover hover:text-ink"
+              >
+                {resolvedTheme === 'dark' ? <Sun className="h-4 w-4 shrink-0" aria-hidden /> : <Moon className="h-4 w-4 shrink-0" aria-hidden />}
+                {resolvedTheme === 'dark' ? 'Light appearance' : 'Dark appearance'}
+              </button>
               <button
                 type="button"
                 onClick={() => {

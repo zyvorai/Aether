@@ -1174,13 +1174,14 @@ export default function CommandPalette({
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div className="glass-modal-backdrop fixed inset-0" onClick={onClose} />
+      <div className="fixed inset-0 backdrop-blur-sm" style={{ background: 'var(--scrim)' }} onClick={onClose} />
       <div
-        className="glass-modal-panel relative w-full max-w-xl overflow-hidden shadow-2xl"
+        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-rule shadow-ambient"
+        style={{ background: 'var(--glass)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`flex items-center px-4 py-4 border-b ${'glass-divider'}`}>
-          <span className="text-slate-500 mr-2 text-sm font-mono">{'>'}</span>
+        <div className="flex items-center border-b border-rule px-4 py-4">
+          <span className="mr-2 font-mono text-sm text-ink-3">{'>'}</span>
           <input
             ref={inputRef}
             type="text"
@@ -1189,15 +1190,15 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pages, workloads, and actions…"
-            className={`flex-1 bg-transparent text-sm outline-none ${'text-white placeholder-slate-500'}`}
+            className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
             autoComplete="off"
           />
-          <kbd className={`text-xs px-1.5 py-0.5 rounded border ${'text-slate-500 glass-inset-surface/90 glass-divider'}`}>ESC</kbd>
+          <kbd className="rounded border border-rule px-1.5 py-0.5 text-xs text-ink-3">ESC</kbd>
         </div>
 
         <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">
           {filtered.length === 0 ? (
-            <div data-testid="command-palette-empty" className="px-4 py-8 text-center text-slate-500 text-sm">
+            <div data-testid="command-palette-empty" className="px-4 py-8 text-center text-sm text-ink-3">
               No results found
             </div>
           ) : (
@@ -1207,7 +1208,7 @@ export default function CommandPalette({
               return (
                 <div key={cmd.id}>
                   {showCategory ? (
-                    <div className="px-4 pt-2 pb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <div className="px-4 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-ink-3">
                       {categoryLabels[cmd.category]}
                     </div>
                   ) : null}
@@ -1217,15 +1218,13 @@ export default function CommandPalette({
                     onClick={() => void executeCommand(cmd)}
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}
-                    className={`w-full px-4 py-2 flex items-center gap-3 text-sm text-left transition-colors ${
-                      i === selectedIndex
-                        ? 'bg-aether/20 text-aether'
-                        : 'text-slate-300 glass-inset-hover'
+                    className={`flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors ${
+                      i === selectedIndex ? 'bg-brand-wash text-brand' : 'text-ink-2 hover:bg-hover'
                     }`}
                   >
                     <span className="flex-1 truncate">{cmd.label}</span>
-                    {cmd.view ? <span className="text-xs text-slate-600 shrink-0">Navigate</span> : null}
-                    {cmd.workloadTab ? <span className="text-xs text-slate-600 shrink-0">{cmd.workloadTab}</span> : null}
+                    {cmd.view ? <span className="shrink-0 text-xs text-ink-3">Navigate</span> : null}
+                    {cmd.workloadTab ? <span className="shrink-0 text-xs text-ink-3">{cmd.workloadTab}</span> : null}
                   </button>
                 </div>
               );
@@ -1233,7 +1232,7 @@ export default function CommandPalette({
           )}
         </div>
 
-        <div className={`px-4 py-3 border-t flex flex-wrap items-center gap-x-4 gap-y-1 text-xs ${'glass-divider text-slate-500'}`}>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-rule px-4 py-3 text-xs text-ink-3">
           <span>{isMac ? '⌘K' : 'Ctrl+K'} open</span>
           <span>↑↓ navigate</span>
           <span>Enter select</span>

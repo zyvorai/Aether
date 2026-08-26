@@ -17,8 +17,6 @@ import {
   Container,
 } from 'lucide-react';
 import { apiTryAuth, apiLdapLogin, DEFAULT_DASHBOARD_USERNAME, apiFetchAuthProviders } from '../utils/api';
-import { useTheme } from '../contexts/ThemeContext';
-import { loginPageClass } from '../utils/themeSurface';
 import { ZyvorFooter } from './ZyvorBrand';
 import {
   PremiumLoginShell,
@@ -74,8 +72,6 @@ function authErrorMessage(reason: 'network' | 'unauthorized' | 'rejected'): stri
 }
 
 export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
-  const { theme } = useTheme();
-  const loginThemeClass = loginPageClass(theme);
   const [username, setUsername] = useState(() => {
     try {
       return localStorage.getItem(REMEMBER_USERNAME_KEY) ?? DEFAULT_DASHBOARD_USERNAME;
@@ -213,7 +209,6 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
   return (
     <PremiumLoginShell
       accent="cyan"
-      pageThemeClass={loginThemeClass}
       productName="Aether"
       productSubtitle="Universal runtime control plane"
       logo={logo}

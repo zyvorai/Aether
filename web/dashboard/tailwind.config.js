@@ -8,6 +8,25 @@ export default {
   theme: {
     extend: {
       colors: {
+        canvas: 'var(--canvas)',
+        page: 'var(--page)',
+        sunken: 'var(--sunken)',
+        raised: 'var(--raised)',
+        hover: 'var(--hover)',
+        selected: 'var(--selected)',
+        rule: 'var(--rule)',
+        'rule-strong': 'var(--rule-strong)',
+        ink: 'var(--ink)',
+        'ink-2': 'var(--ink-2)',
+        'ink-3': 'var(--ink-3)',
+        brand: 'var(--brand)',
+        'brand-ink': 'var(--brand-ink)',
+        'brand-wash': 'var(--brand-wash)',
+        danger: 'var(--red)',
+        warn: 'var(--amber)',
+        success: 'var(--green)',
+        scrim: 'var(--scrim)',
+        glass: 'var(--glass)',
         aether: {
           DEFAULT: '#3B82F6',
           light: '#60A5FA',
@@ -23,11 +42,20 @@ export default {
           glow: 'rgba(168, 85, 247, 0.28)',
         },
       },
+      fontFamily: {
+        sans: ['var(--sans)'],
+        mono: ['var(--mono)'],
+      },
+      boxShadow: {
+        ambient: 'var(--shadow)',
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
         'slide-right': 'slideRight 0.3s ease-out',
+        'ac-slide': 'acSlide 0.26s cubic-bezier(0.32, 0.72, 0, 1)',
+        'ac-lift': 'acLift 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
       },
       keyframes: {
         fadeIn: {
@@ -45,6 +73,14 @@ export default {
         slideRight: {
           from: { opacity: '0', transform: 'translateX(100%)' },
           to: { opacity: '1', transform: 'translateX(0)' },
+        },
+        acSlide: {
+          from: { transform: 'translateX(14px)', opacity: '0' },
+          to: { transform: 'none', opacity: '1' },
+        },
+        acLift: {
+          from: { transform: 'translateY(8px) scale(0.985)', opacity: '0' },
+          to: { transform: 'none', opacity: '1' },
         },
       },
     },

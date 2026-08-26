@@ -1,32 +1,24 @@
-
+@import './theme.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    color-scheme: dark;
-  }
-
   html {
-    @apply bg-slate-950;
+    background: var(--canvas);
   }
 
   body {
-    @apply text-slate-100 antialiased;
-    background-color: #0a0d12;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 12% -8%, rgba(59, 130, 246, 0.14), transparent 42%),
-      radial-gradient(ellipse 60% 40% at 88% 4%, rgba(168, 85, 247, 0.12), transparent 38%),
-      radial-gradient(ellipse 50% 35% at 50% 100%, rgba(59, 130, 246, 0.06), transparent 48%),
-      linear-gradient(180deg, #0a0d12 0%, #11151c 38%, #161b24 100%);
+    color: var(--ink);
+    background: var(--canvas);
+    @apply antialiased;
   }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-slate-700 rounded; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-600; }
+  ::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
 }
 
 @layer components {
@@ -382,11 +374,10 @@
     position: relative;
     overflow: hidden;
     border-radius: 1.25rem;
-    border: 1px solid rgba(140, 160, 190, 0.16);
-    background:
-      radial-gradient(ellipse 80% 120% at 0% 0%, rgba(211, 84, 0, 0.18), transparent 55%),
-      radial-gradient(ellipse 70% 100% at 100% 10%, rgba(56, 189, 248, 0.1), transparent 50%),
-      linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+    border: 1px solid var(--rule);
+    background: var(--glass);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
 
   .page-masthead::after,
@@ -395,330 +386,11 @@
     position: absolute;
     inset: auto -10% -40% 40%;
     height: 140%;
-    background: radial-gradient(circle, rgba(211, 84, 0, 0.12), transparent 60%);
+    background: radial-gradient(circle, var(--brand-wash), transparent 60%);
     filter: blur(28px);
     pointer-events: none;
   }
 
-  .dashboard-steel {
-    background:
-      radial-gradient(circle at top center, rgba(120, 140, 160, 0.12), transparent 32%),
-      linear-gradient(180deg, #06080d 0%, #0b1017 42%, #101722 72%, #0b1018 100%);
-  }
-
-  .nav-steel-select {
-    background: linear-gradient(180deg, #141a22 0%, #0e141c 100%);
-    border-color: rgba(140, 160, 190, 0.22);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
-
-  .dashboard-aurora {
-    background:
-      radial-gradient(ellipse 120% 80% at 10% -10%, rgba(56, 189, 248, 0.22), transparent 45%),
-      radial-gradient(ellipse 90% 60% at 90% 0%, rgba(167, 139, 250, 0.24), transparent 42%),
-      radial-gradient(ellipse 70% 50% at 50% 100%, rgba(16, 185, 129, 0.14), transparent 50%),
-      linear-gradient(180deg, #040812 0%, #070b18 35%, #0a1020 100%);
-  }
-
-  .navbar-aurora {
-    background: rgba(4, 8, 18, 0.82);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow:
-      0 10px 40px rgba(76, 29, 149, 0.18),
-      inset 0 1px 0 rgba(167, 139, 250, 0.08);
-  }
-
-  .nav-aurora-select {
-    background: linear-gradient(180deg, rgba(76, 29, 149, 0.35) 0%, rgba(15, 23, 42, 0.92) 100%);
-    border-color: rgba(167, 139, 250, 0.28);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  }
-
-  @keyframes aurora-shift {
-    0%, 100% { opacity: 0.55; transform: translateX(0) scale(1); }
-    50% { opacity: 0.85; transform: translateX(2%) scale(1.02); }
-  }
-
-  .aurora-orb {
-    filter: blur(72px);
-    animation: aurora-shift 14s ease-in-out infinite;
-  }
-
-}
-
-/* ── Theme shells (class toggled on <html> via ThemeContext) ── */
-
-.steel-theme {
-  color-scheme: dark;
-}
-
-.steel-theme body {
-  background-color: #0b1017;
-  color: #d7dde5;
-}
-
-.aurora-theme {
-  color-scheme: dark;
-}
-
-.aurora-theme html {
-  @apply bg-[#040812];
-}
-
-.aurora-theme body {
-  color: #e2e8f0;
-  background-color: #040812;
-  background-image:
-    radial-gradient(ellipse 100% 80% at 15% -5%, rgba(34, 211, 238, 0.20), transparent 42%),
-    radial-gradient(ellipse 80% 60% at 85% 5%, rgba(192, 132, 252, 0.22), transparent 40%),
-    radial-gradient(ellipse 60% 50% at 50% 110%, rgba(52, 211, 153, 0.12), transparent 48%),
-    linear-gradient(180deg, #040812 0%, #060a14 40%, #0a1020 100%);
-}
-
-.aurora-theme .app-shell,
-.aurora-theme .dashboard-aurora {
-  background:
-    radial-gradient(ellipse 120% 80% at 10% -10%, rgba(56, 189, 248, 0.16), transparent 45%),
-    radial-gradient(ellipse 90% 60% at 90% 0%, rgba(167, 139, 250, 0.18), transparent 42%),
-    linear-gradient(180deg, rgba(4, 8, 18, 0.92), rgba(10, 16, 32, 0.98));
-}
-
-.aurora-theme .dash-card,
-.aurora-theme .dash-card-flush {
-  background:
-    linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%),
-    radial-gradient(circle at top left, rgba(167, 139, 250, 0.12), transparent 38%);
-  border-color: rgba(167, 139, 250, 0.18);
-  box-shadow: 0 18px 50px rgba(30, 10, 60, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.aurora-theme .dash-card:hover {
-  border-color: rgba(34, 211, 238, 0.28);
-  box-shadow: 0 22px 64px rgba(30, 10, 60, 0.42), 0 0 0 1px rgba(34, 211, 238, 0.08);
-}
-
-.aurora-theme .dash-breadcrumb {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(8, 12, 24, 0.88));
-  border-color: rgba(167, 139, 250, 0.14);
-}
-
-.aurora-theme .page-frame {
-  background:
-    linear-gradient(180deg, rgba(4, 8, 18, 0.55), rgba(4, 8, 18, 0.22)),
-    radial-gradient(circle at top right, rgba(34, 211, 238, 0.08), transparent 40%);
-  border-color: rgba(167, 139, 250, 0.14);
-}
-
-.aurora-theme .nav-pill-active {
-  background: linear-gradient(180deg, rgba(167, 139, 250, 0.22), rgba(34, 211, 238, 0.10));
-  color: #e9d5ff;
-  border: 1px solid rgba(167, 139, 250, 0.32);
-}
-
-.aurora-theme .nav-pill:hover {
-  border-color: rgba(34, 211, 238, 0.18);
-  background: rgba(30, 41, 59, 0.72);
-}
-
-.aurora-theme .premium-divider {
-  background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.45), rgba(34, 211, 238, 0.35), transparent);
-}
-
-.aurora-theme .stat-card-orange {
-  background: radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.30), transparent 35%), linear-gradient(135deg, #1e1033 0%, #172554 100%);
-}
-
-.aurora-theme .stat-card-blue {
-  background: radial-gradient(circle at 90% 10%, rgba(34, 211, 238, 0.32), transparent 35%), linear-gradient(135deg, #0f172a 0%, #312e81 100%);
-}
-
-.aurora-theme .stat-card-purple {
-  background: radial-gradient(circle at 90% 10%, rgba(192, 132, 252, 0.35), transparent 35%), linear-gradient(135deg, #2e1065 0%, #0f172a 100%);
-}
-
-.steel-theme .dash-breadcrumb {
-  background: linear-gradient(180deg, rgba(20, 26, 34, 0.85), rgba(14, 18, 26, 0.92));
-  border-color: rgba(140, 160, 190, 0.16);
-}
-
-.steel-theme .dash-card,
-.steel-theme .dash-card-flush {
-  background: linear-gradient(165deg, rgba(20, 26, 34, 0.94) 0%, rgba(12, 16, 22, 0.98) 100%);
-  border-color: rgba(140, 160, 190, 0.14);
-}
-
-.steel-theme .bg-\[\#0B0E14\],
-.steel-theme .bg-\[\#11151C\] {
-  background-color: rgba(8, 12, 18, 0.95) !important;
-}
-
-.steel-theme .border-slate-800\/60,
-.steel-theme .border-slate-800\/80 {
-  border-color: rgba(140, 160, 190, 0.2) !important;
-}
-
-.steel-theme .command-center-shell,
-.steel-theme .overview-section-shell,
-.steel-theme .glass-panel-card,
-.steel-theme .copilot-rail-glass,
-.steel-theme .glass-table-shell,
-.steel-theme .glass-drawer,
-.steel-theme .glass-modal-panel,
-.steel-theme .glass-code-block,
-.steel-theme .glass-empty-state,
-.steel-theme .glass-toolbar,
-.steel-theme .surface-panel,
-.steel-theme .surface-panel-soft,
-.steel-theme .glass-inset-surface {
-  border-color: rgba(140, 160, 190, 0.16);
-  background:
-    linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(14, 18, 26, 0.98) 100%);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.steel-theme .glass-divider,
-.steel-theme .glass-divider-b,
-.steel-theme .glass-divider-t {
-  border-color: rgba(140, 160, 190, 0.14);
-}
-
-.steel-theme .glass-nav-item:hover {
-  background: rgba(14, 18, 26, 0.82);
-}
-
-.steel-theme .glass-progress-track {
-  background: rgba(14, 18, 26, 0.78);
-}
-
-.steel-theme .hub-link-card {
-  border-color: rgba(140, 160, 190, 0.14);
-  background: rgba(14, 18, 26, 0.72);
-}
-
-.steel-theme .hub-link-card:hover {
-  border-color: rgba(93, 144, 247, 0.28);
-  background: rgba(59, 130, 246, 0.08);
-}
-
-.steel-theme .glass-input,
-.steel-theme .glass-select {
-  border-color: rgba(140, 160, 190, 0.22);
-  background: rgba(8, 12, 18, 0.82);
-}
-
-.steel-theme .glass-dropdown-surface {
-  border-color: rgba(140, 160, 190, 0.18);
-  background: rgba(11, 16, 23, 0.94);
-}
-
-.steel-theme .glass-metric-card {
-  border-color: rgba(140, 160, 190, 0.14);
-  background: rgba(14, 18, 26, 0.72);
-}
-
-.steel-theme .quick-link-chip {
-  border-color: rgba(140, 160, 190, 0.18);
-  background: rgba(14, 18, 26, 0.65);
-}
-
-.steel-theme .tab-chip-active {
-  border-color: rgba(59, 130, 246, 0.35);
-  background: rgba(59, 130, 246, 0.12);
-  color: #93c5fd;
-}
-
-.steel-theme .navbar-blur {
-  background: rgba(11, 16, 23, 0.88);
-  border-color: rgba(140, 160, 190, 0.12);
-}
-
-.aurora-theme .command-center-shell,
-.aurora-theme .overview-section-shell,
-.aurora-theme .glass-panel-card,
-.aurora-theme .copilot-rail-glass,
-.aurora-theme .glass-table-shell,
-.aurora-theme .glass-drawer,
-.aurora-theme .glass-modal-panel,
-.aurora-theme .glass-code-block,
-.aurora-theme .glass-empty-state,
-.aurora-theme .glass-toolbar,
-.aurora-theme .surface-panel,
-.aurora-theme .surface-panel-soft,
-.aurora-theme .glass-inset-surface {
-  border-color: rgba(167, 139, 250, 0.2);
-  background:
-    linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%),
-    radial-gradient(circle at top left, rgba(167, 139, 250, 0.1), transparent 40%);
-  box-shadow: 0 18px 50px rgba(30, 10, 60, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.aurora-theme .glass-divider,
-.aurora-theme .glass-divider-b,
-.aurora-theme .glass-divider-t {
-  border-color: rgba(167, 139, 250, 0.16);
-}
-
-.aurora-theme .glass-nav-item:hover {
-  background: rgba(15, 23, 42, 0.72);
-}
-
-.aurora-theme .glass-progress-track {
-  background: rgba(8, 12, 24, 0.78);
-}
-
-.aurora-theme .hub-link-card {
-  border-color: rgba(167, 139, 250, 0.16);
-  background: rgba(8, 12, 24, 0.72);
-}
-
-.aurora-theme .hub-link-card:hover {
-  border-color: rgba(167, 139, 250, 0.28);
-  background: rgba(167, 139, 250, 0.08);
-}
-
-.aurora-theme .glass-input,
-.aurora-theme .glass-select {
-  border-color: rgba(167, 139, 250, 0.22);
-  background: rgba(8, 12, 24, 0.78);
-}
-
-.aurora-theme .glass-dropdown-surface {
-  border-color: rgba(167, 139, 250, 0.2);
-  background: rgba(8, 12, 24, 0.94);
-}
-
-.aurora-theme .glass-metric-card {
-  border-color: rgba(167, 139, 250, 0.16);
-  background: rgba(8, 12, 24, 0.72);
-}
-
-.aurora-theme .quick-link-chip {
-  border-color: rgba(167, 139, 250, 0.2);
-  background: rgba(15, 23, 42, 0.55);
-}
-
-.aurora-theme .quick-link-chip:hover {
-  border-color: rgba(34, 211, 238, 0.28);
-}
-
-.aurora-theme .tab-chip-active {
-  border-color: rgba(167, 139, 250, 0.35);
-  background: linear-gradient(180deg, rgba(167, 139, 250, 0.18), rgba(34, 211, 238, 0.08));
-  color: #e9d5ff;
-}
-
-.aurora-theme .btn-primary {
-  background: linear-gradient(to right, #7c3aed, #0891b2);
-}
-
-.aurora-theme .section-label-purple {
-  color: #c084fc !important;
-}
-
-.aurora-theme .navbar-blur {
-  background: rgba(4, 8, 18, 0.82);
-  border-color: rgba(167, 139, 250, 0.14);
 }
 
   .command-center-shell {
@@ -1213,7 +885,7 @@
 
   .glass-modal-backdrop {
     @apply absolute inset-0 backdrop-blur-md;
-    background: rgba(10, 13, 18, 0.82);
+    background: var(--scrim);
   }
 
   .glass-code-block {
