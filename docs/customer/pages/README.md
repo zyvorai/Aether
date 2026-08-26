@@ -17,7 +17,6 @@ Every route is also listed in the [complete page index](../PAGE_INDEX.md).
 | [Migrations](intelligence/migrations.md) | AI migration planner with risk analysis and strategy |
 | [Policy Check](intelligence/policy.md) | Validate workloads against policy rules |
 | [Security Center](intelligence/security.md) | Threats, secrets, policies, and hardening |
-| [Zeus](intelligence/zeus.md) | AI infrastructure operating layer — multi-LLM, multi-agent intelligence |
 | [Zyra](intelligence/zyra.md) | AI infrastructure operating layer — multi-LLM, multi-agent intelligence |
 
 ## Operations
@@ -71,4 +70,4 @@ Every route is also listed in the [complete page index](../PAGE_INDEX.md).
 
 ---
 
-45 guides. Regenerate: `node scripts/customer-docs/generate-guide-index.mjs`.
+44 guides. Regenerate: `node scripts/customer-docs/generate-guide-index.mjs`.

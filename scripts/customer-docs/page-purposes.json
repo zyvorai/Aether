@@ -8,7 +8,7 @@
   "/applications": "Manage Kubernetes apps like an operating system \u2014 not like YAML",
   "/workloads": "Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3",
   "/ai": "Intent scoring, runtime recommendations & migration planning",
-  "/zeus": "AI infrastructure operating layer \u2014 multi-LLM, multi-agent intelligence",
+  "/zyra": "AI infrastructure operating layer \u2014 multi-LLM, multi-agent intelligence",
   "/settings/ai-providers": "Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints",
   "/cost": "Resource cost projections across runtimes",
   "/affinity": "Workload class affinity and runtime fit",
