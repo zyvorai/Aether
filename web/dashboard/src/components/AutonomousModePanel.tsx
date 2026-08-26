@@ -43,7 +43,7 @@ export default function AutonomousModePanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -57,7 +57,7 @@ export default function AutonomousModePanel() {
               text={report.autonomy_enabled ? 'Agents armed' : 'Recommend only'}
               variant={report.autonomy_enabled ? 'green' : 'yellow'}
             />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-3">
               AETHER_AUTO_RESTART={report.env.aether_auto_restart ? '1' : '0'} · AETHER_AUTO_RECONCILE=
               {report.env.aether_auto_reconcile ? '1' : '0'}
             </span>
@@ -67,38 +67,38 @@ export default function AutonomousModePanel() {
             <div className="glass-metric-card">
               <ShieldCheck className="mb-2 h-4 w-4 text-emerald-400" />
               <Badge text={policy?.auto_restart ? 'On' : 'Off'} variant={tierVariant(!!policy?.auto_restart)} />
-              <div className="mt-2 text-xs text-slate-500">Auto restart</div>
+              <div className="mt-2 text-xs text-ink-3">Auto restart</div>
             </div>
             <div className="glass-metric-card">
               <Badge
                 text={policy?.auto_reconcile_drift ? 'On' : 'Off'}
                 variant={tierVariant(!!policy?.auto_reconcile_drift)}
               />
-              <div className="mt-2 text-xs text-slate-500">Drift reconcile</div>
+              <div className="mt-2 text-xs text-ink-3">Drift reconcile</div>
             </div>
             <div className="glass-metric-card">
-              <div className="text-sm font-medium text-white">{policy?.auto_migrate ?? 'recommend'}</div>
-              <div className="mt-2 text-xs text-slate-500">Migration agent</div>
+              <div className="text-sm font-medium text-ink">{policy?.auto_migrate ?? 'recommend'}</div>
+              <div className="mt-2 text-xs text-ink-3">Migration agent</div>
             </div>
             <div className="glass-metric-card">
-              <div className="text-sm font-medium text-white">{policy?.auto_evolve ?? 'recommend'}</div>
-              <div className="mt-2 text-xs text-slate-500">Evolution agent</div>
+              <div className="text-sm font-medium text-ink">{policy?.auto_evolve ?? 'recommend'}</div>
+              <div className="mt-2 text-xs text-ink-3">Evolution agent</div>
             </div>
           </div>
 
           {report.workload_overrides.length > 0 ? (
             <div className="mb-6">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Workload overrides</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Workload overrides</p>
               <ul className="space-y-2">
                 {report.workload_overrides.map((row) => (
-                  <li key={row.workload} className="rounded-xl border glass-divider px-3 py-2 text-sm text-slate-300">
+                  <li key={row.workload} className="rounded-xl border glass-divider px-3 py-2 text-sm text-ink-2">
                     <Link
                       to={`${viewToPath('workloads')}?workload=${encodeURIComponent(row.workload)}`}
-                      className="font-medium text-aether hover:underline"
+                      className="font-medium text-brand hover:underline"
                     >
                       {row.workload}
                     </Link>
-                    <span className="text-slate-500">
+                    <span className="text-ink-3">
                       {' '}
                       · heal {row.healing} · migrate {row.migration} · evolve {row.evolution}
                     </span>
@@ -110,14 +110,14 @@ export default function AutonomousModePanel() {
 
           <ul className="space-y-2">
             {report.recommendations.map((line) => (
-              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
+              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
                 {line}
               </li>
             ))}
           </ul>
         </>
       ) : loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-ink-3">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading autonomy policy…
         </div>

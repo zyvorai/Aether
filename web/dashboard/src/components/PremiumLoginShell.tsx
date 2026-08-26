@@ -159,7 +159,7 @@ export function PremiumLoginShell({
             <div className="login-fade-in flex items-center gap-4 mb-8">
               <div className="login-logo-ring">{logo}</div>
               <div>
-                <span className="text-4xl font-bold tracking-tight text-white block">{productName}</span>
+                <span className="text-4xl font-bold tracking-tight text-ink block">{productName}</span>
                 {productSubtitle ? (
                   <span className="text-xs font-medium uppercase tracking-[0.28em] text-sky-300/80 mt-0.5 block">
                     {productSubtitle}
@@ -167,10 +167,10 @@ export function PremiumLoginShell({
                 ) : null}
               </div>
             </div>
-            <h2 className="login-fade-in login-fade-in-d1 text-4xl xl:text-[2.75rem] font-extrabold text-white leading-[1.08] mb-4 max-w-xl">
+            <h2 className="login-fade-in login-fade-in-d1 text-4xl xl:text-[2.75rem] font-extrabold text-ink leading-[1.08] mb-4 max-w-xl">
               {heroHeadline}
             </h2>
-            <p className="login-fade-in login-fade-in-d2 text-lg text-slate-300/90 max-w-lg leading-relaxed">
+            <p className="login-fade-in login-fade-in-d2 text-lg text-ink-2 max-w-lg leading-relaxed">
               {heroSubheadline}
             </p>
             {pills.length > 0 ? (
@@ -208,13 +208,13 @@ export function PremiumLoginShell({
                     {f.icon}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white flex items-center gap-2">
+                    <div className="text-sm font-semibold text-ink flex items-center gap-2">
                       {f.title}
                       {f.highlight ? (
                         <Sparkles className="w-3.5 h-3.5 text-amber-300/90 shrink-0" aria-hidden />
                       ) : null}
                     </div>
-                    <p className="text-xs mt-1 text-slate-400 leading-relaxed">{f.description}</p>
+                    <p className="text-xs mt-1 text-ink-2 leading-relaxed">{f.description}</p>
                   </div>
                 </div>
               ))}
@@ -232,13 +232,13 @@ export function PremiumLoginShell({
           <div className="w-full max-w-[420px] relative z-10">
             <div className="lg:hidden text-center mb-8">
               <div className="login-logo-ring inline-block mb-4">{logo}</div>
-              <h1 className="text-2xl font-bold text-white">{productName}</h1>
-              <p className="text-sm mt-1 text-slate-400">{mobileSubtitle ?? productSubtitle ?? panelSubtitle}</p>
+              <h1 className="text-2xl font-bold text-ink">{productName}</h1>
+              <p className="text-sm mt-1 text-ink-2">{mobileSubtitle ?? productSubtitle ?? panelSubtitle}</p>
             </div>
 
             <div className="hidden lg:block mb-8">
-              <h2 className="text-2xl font-bold mb-1 text-white">{panelTitle}</h2>
-              <p className="text-sm text-slate-400">{panelSubtitle}</p>
+              <h2 className="text-2xl font-bold mb-1 text-ink">{panelTitle}</h2>
+              <p className="text-sm text-ink-2">{panelSubtitle}</p>
             </div>
 
             <div className={`login-glass login-glass-border rounded-2xl p-8 shadow-2xl ${formClassName}`.trim()}>
@@ -246,7 +246,7 @@ export function PremiumLoginShell({
             </div>
 
             {panelHint ? (
-              <p className="text-xs text-center mt-4 max-w-sm mx-auto leading-relaxed text-slate-500">{panelHint}</p>
+              <p className="text-xs text-center mt-4 max-w-sm mx-auto leading-relaxed text-ink-3">{panelHint}</p>
             ) : null}
           </div>
         </main>
@@ -276,7 +276,7 @@ export function LoginField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-2">
+      <label htmlFor={id} className="block text-sm font-medium text-ink-2 mb-2">
         {label}
       </label>
       <div className="relative group">{children}</div>
@@ -319,14 +319,14 @@ export function LoginRemember({
         onChange={(e) => onChange(e.target.checked)}
         className="h-4 w-4 rounded glass-divider/80 bg-transparent accent-blue-500"
       />
-      <span className="text-sm text-slate-400">{label}</span>
+      <span className="text-sm text-ink-2">{label}</span>
     </label>
   );
 }
 
 export function LoginDivider({ label = 'or' }: { label?: string }) {
   return (
-    <div className="relative py-3 mt-4 text-center text-xs uppercase tracking-[0.22em] text-slate-500">
+    <div className="relative py-3 mt-4 text-center text-xs uppercase tracking-[0.22em] text-ink-3">
       <span className="relative glass-inset-surface px-2">{label}</span>
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 glass-divider-t" />
     </div>

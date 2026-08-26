@@ -121,7 +121,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="events-openapi-link"
             >
               OpenAPI →
@@ -129,7 +129,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('audit'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="events-audit-link"
             >
               Audit →
@@ -137,7 +137,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: workloadFilter.trim(), q: `Explain recent events for ${workloadFilter.trim()}` })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="events-copilot-link"
             >
               Copilot →
@@ -145,7 +145,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="events-context-secrets-link"
             >
               Secrets →
@@ -153,7 +153,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="events-context-policy-link"
             >
               Policy →
@@ -161,7 +161,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="events-context-editor-link"
             >
               Editor →
@@ -187,7 +187,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
                 ? pathWithQuery(viewToPath('alerts'), { workload: workloadFilter.trim() })
                 : viewToPath('alerts')
             }
-            className="text-xs text-aether hover:underline self-end mb-1"
+            className="text-xs text-brand hover:underline self-end mb-1"
             data-testid="events-alerts-link"
           >
             Alert channels →
@@ -198,7 +198,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
                 workload: workloadFilter.trim(),
                 tab: 'trust',
               })}
-              className="text-xs text-aether hover:underline self-end mb-1 ml-3"
+              className="text-xs text-brand hover:underline self-end mb-1 ml-3"
               data-testid="events-trust-link"
             >
               Trust &amp; attestation →
@@ -234,33 +234,33 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
               <option value="health">Health</option>
             </select>
             {category === 'drift' && (
-              <Link to={viewToPath('drift')} className="text-xs text-aether hover:underline self-center">
+              <Link to={viewToPath('drift')} className="text-xs text-brand hover:underline self-center">
                 Open drift page →
               </Link>
             )}
             {category === 'policy' && (
-              <Link to={viewToPath('policy')} className="text-xs text-aether hover:underline self-center" data-testid="events-policy-link">
+              <Link to={viewToPath('policy')} className="text-xs text-brand hover:underline self-center" data-testid="events-policy-link">
                 Open policy check →
               </Link>
             )}
             {category === 'intent-violation' && (
               <Link
                 to={viewToPath('ai')}
-                className="text-xs text-aether hover:underline self-center"
+                className="text-xs text-brand hover:underline self-center"
                 data-testid="events-intent-link"
               >
                 AI intent debugger →
               </Link>
             )}
             {category === 'sla' && (
-              <Link to={viewToPath('sla')} className="text-xs text-aether hover:underline self-center" data-testid="events-sla-link">
+              <Link to={viewToPath('sla')} className="text-xs text-brand hover:underline self-center" data-testid="events-sla-link">
                 SLA compliance →
               </Link>
             )}
             {category === 'health' && (
               <Link
                 to={viewToPath('health')}
-                className="text-xs text-aether hover:underline self-center"
+                className="text-xs text-brand hover:underline self-center"
                 data-testid="events-health-link"
               >
                 Health monitor →
@@ -295,7 +295,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
                 type="button"
                 data-testid="events-clear-filters"
                 onClick={clearFilters}
-                className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-400 hover:text-aether hover:border-aether/40"
+                className="rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:text-brand hover:border-brand/40"
               >
                 Clear filters
               </button>
@@ -318,23 +318,23 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
                   <Badge text={ev.category} variant="muted" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-200">{ev.title}</div>
-                  <div className="text-xs text-slate-400 mt-1">{ev.message}</div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">
+                  <div className="text-sm font-medium text-ink">{ev.title}</div>
+                  <div className="text-xs text-ink-2 mt-1">{ev.message}</div>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-ink-3 flex-wrap">
                     <span>{formatTimestamp(ev.timestamp)}</span>
                     {ev.workload ? (
                       <span>
                         Workload:{' '}
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: ev.workload })}
-                          className="text-aether hover:underline"
+                          className="text-brand hover:underline"
                         >
                           {ev.workload}
                         </Link>
                       </span>
                     ) : null}
                     {ev.workload && ev.category === 'drift' ? (
-                      <Link to={viewToPath('drift')} className="text-aether hover:underline">
+                      <Link to={viewToPath('drift')} className="text-brand hover:underline">
                         Open drift page
                       </Link>
                     ) : null}

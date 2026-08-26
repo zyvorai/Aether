@@ -52,7 +52,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
 
   if (!showBlock) {
     return (
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-ink-3">
         Select runtime Kubernetes, Kata, or KubeVirt to configure confidential computing.
       </p>
     );
@@ -60,7 +60,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
 
   return (
     <div className="space-y-3">
-      <label className="flex items-center gap-2 text-sm text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-ink-2">
         <input
           type="checkbox"
           checked={state.confidentialEnabled ?? false}
@@ -72,7 +72,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
       {state.confidentialEnabled && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 pl-0 sm:pl-2">
           <div>
-            <label className="mb-1 block text-xs text-slate-500">TEE</label>
+            <label className="mb-1 block text-xs text-ink-3">TEE</label>
             <select
               value={state.confidentialTee ?? 'sev-snp'}
               onChange={(e) => {
@@ -91,7 +91,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
           </div>
           {showKata && (
             <div>
-              <label className="mb-1 block text-xs text-slate-500">Security profile</label>
+              <label className="mb-1 block text-xs text-ink-3">Security profile</label>
               <select
                 value={state.confidentialSecurityProfile ?? ''}
                 onChange={(e) => onChange('confidentialSecurityProfile', e.target.value)}
@@ -108,7 +108,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
           )}
           {showKata && !state.confidentialSecurityProfile && (
             <div>
-              <label className="mb-1 block text-xs text-slate-500">Kata runtime class</label>
+              <label className="mb-1 block text-xs text-ink-3">Kata runtime class</label>
               <select
                 value={state.confidentialKataRuntime ?? 'kata-clh-snp'}
                 onChange={(e) =>
@@ -127,7 +127,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             </div>
           )}
           <div>
-            <label className="mb-1 block text-xs text-slate-500">Attestation policy</label>
+            <label className="mb-1 block text-xs text-ink-3">Attestation policy</label>
             <select
               value={state.attestationPolicy ?? 'strict'}
               onChange={(e) =>
@@ -140,7 +140,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-slate-500">Region lock</label>
+            <label className="mb-1 block text-xs text-ink-3">Region lock</label>
             <input
               type="text"
               value={state.confidentialRegionLock ?? ''}
@@ -149,7 +149,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
               className="glass-input"
             />
           </div>
-          <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
+          <label className="flex items-end gap-2 pb-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={state.attestationRequired !== false}
@@ -158,7 +158,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             />
             Require attestation before deploy
           </label>
-          <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
+          <label className="flex items-end gap-2 pb-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={state.confidentialVtpm !== false}
@@ -167,7 +167,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             />
             vTPM
           </label>
-          <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
+          <label className="flex items-end gap-2 pb-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={state.confidentialEncryptedState !== false}
@@ -176,7 +176,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             />
             Encrypted state
           </label>
-          <label className="flex items-end gap-2 pb-2 text-sm text-slate-300">
+          <label className="flex items-end gap-2 pb-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={state.confidentialDebugAllowed === true}
@@ -186,7 +186,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             Allow debug
           </label>
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs text-slate-500">Attest-gated secret names (comma or newline)</label>
+            <label className="mb-1 block text-xs text-ink-3">Attest-gated secret names (comma or newline)</label>
             <textarea
               value={state.confidentialSecretNames ?? ''}
               onChange={(e) => onChange('confidentialSecretNames', e.target.value)}
@@ -196,7 +196,7 @@ export default function ConfidentialFormFields({ runtime, state, onChange }: Con
             />
           </div>
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs text-slate-500">Launch digest (from signed catalog)</label>
+            <label className="mb-1 block text-xs text-ink-3">Launch digest (from signed catalog)</label>
             <input
               type="text"
               value={state.imageDigest ?? ''}

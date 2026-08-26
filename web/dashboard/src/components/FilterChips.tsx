@@ -28,8 +28,8 @@ export default function FilterChips({ chips, active, onSelect, testId, className
             onClick={() => onSelect(chip.id)}
             className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
               isActive
-                ? 'border border-aether/40 bg-aether/20 text-aether'
-                : 'glass-inset-surface border glass-divider text-slate-400 hover:text-slate-200'
+                ? 'border border-brand/40 bg-brand/20 text-brand'
+                : 'glass-inset-surface border glass-divider text-ink-2 hover:text-ink'
             }`}
           >
             {chip.label}

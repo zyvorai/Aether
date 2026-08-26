@@ -180,17 +180,17 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
       <div className="mb-6 glass-context-banner" data-testid="fleet-hub-context">
         Fleet
         {' · '}
-        <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="fleet-context-orchestrator-link">
+        <Link to={viewToPath('health')} className="text-brand hover:underline" data-testid="fleet-context-orchestrator-link">
           Orchestrator →
         </Link>
         {' · '}
-        <Link to={viewToPath('intelligence')} className="text-aether hover:underline" data-testid="fleet-context-intelligence-link">
+        <Link to={viewToPath('intelligence')} className="text-brand hover:underline" data-testid="fleet-context-intelligence-link">
           Intelligence →
         </Link>
         {' · '}
         <Link
           to={`${viewToPath('fleet')}?tab=edge`}
-          className="text-aether hover:underline"
+          className="text-brand hover:underline"
           data-testid="fleet-context-edge-link"
         >
           Edge →
@@ -213,7 +213,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fleet-clusters-scoped-link"
           >
             Clusters →
@@ -221,7 +221,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fleet-openapi-link"
           >
             OpenAPI →
@@ -229,7 +229,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fleet-context-policy-link"
           >
             Policy →
@@ -237,7 +237,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fleet-context-secrets-link"
           >
             Secrets →
@@ -245,7 +245,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fleet-context-editor-link"
           >
             Editor →
@@ -253,7 +253,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Fleet guidance for ${focusedWorkload}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fleet-context-copilot-link"
           >
             Copilot →
@@ -261,7 +261,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={viewToPath('hosted')}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fleet-context-hosted-link"
           >
             Hosted SaaS →
@@ -279,7 +279,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 : viewToPath('clusters'),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
         >
           Cluster browser →
         </button>
@@ -293,7 +293,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 : viewToPath('metrics'),
             )
           }
-          className="text-xs text-aether hover:underline ml-3"
+          className="text-xs text-brand hover:underline ml-3"
         >
           Metrics &amp; chargeback →
         </button>
@@ -307,7 +307,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 : viewToPath('scheduler'),
             )
           }
-          className="text-xs text-aether hover:underline ml-3"
+          className="text-xs text-brand hover:underline ml-3"
         >
           Placement scheduler →
         </button>
@@ -321,7 +321,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 : viewToPath('drift'),
             )
           }
-          className="text-xs text-aether hover:underline ml-3"
+          className="text-xs text-brand hover:underline ml-3"
         >
           Drift detection →
         </button>
@@ -335,7 +335,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 : viewToPath('confidential'),
             )
           }
-          className="text-xs text-aether hover:underline ml-3"
+          className="text-xs text-brand hover:underline ml-3"
         >
           Confidential fleet →
         </button>
@@ -349,7 +349,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 : viewToPath('health'),
             )
           }
-          className="text-xs text-aether hover:underline ml-3"
+          className="text-xs text-brand hover:underline ml-3"
         >
           Health monitor →
         </button>
@@ -363,7 +363,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 : viewToPath('events'),
             )
           }
-          className="text-xs text-aether hover:underline ml-3"
+          className="text-xs text-brand hover:underline ml-3"
         >
           Events feed →
         </button>
@@ -385,16 +385,16 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
 
       {activeTab === 'edge' ? (
         <div className="glass-panel-card mb-6" data-testid="fleet-edge-panel">
-          <h2 className="text-lg font-semibold text-slate-100 mb-4">Edge sites</h2>
+          <h2 className="text-lg font-semibold text-ink mb-4">Edge sites</h2>
           {edgeAgents.length === 0 ? (
-            <p className="text-sm text-slate-500">No edge agents registered. Run <code className="text-slate-400">aether edge-agent</code> at remote sites.</p>
+            <p className="text-sm text-ink-3">No edge agents registered. Run <code className="text-ink-2">aether edge-agent</code> at remote sites.</p>
           ) : (
             <div className="space-y-3">
               {edgeAgents.map((a) => (
                 <div key={a.site} className="rounded-lg border glass-divider p-3 flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-slate-100">{a.site}</div>
-                    <div className="text-xs text-slate-500">{a.kube_context ?? 'default context'} · queue depth {a.queue_depth}</div>
+                    <div className="text-sm font-medium text-ink">{a.site}</div>
+                    <div className="text-xs text-ink-3">{a.kube_context ?? 'default context'} · queue depth {a.queue_depth}</div>
                   </div>
                   <Badge text={a.online ? 'online' : 'stale'} variant={a.online ? 'green' : 'yellow'} />
                 </div>
@@ -407,7 +407,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
       {activeTab === 'placement' ? (
         <div className="glass-panel-card mb-6" data-testid="fleet-placement-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
-            <h2 className="text-lg font-semibold text-slate-100">Federation placement</h2>
+            <h2 className="text-lg font-semibold text-ink">Federation placement</h2>
             <button
               type="button"
               data-testid="fleet-placement-run"
@@ -419,13 +419,13 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                 setPlacementPlan(res.success ? (res.data as FederationPlan) : null);
                 setPlacementLoading(false);
               }}
-              className="rounded-lg bg-aether px-3 py-1.5 text-sm text-white disabled:opacity-50"
+              className="rounded-lg bg-brand px-3 py-1.5 text-sm text-white disabled:opacity-50"
             >
               {placementLoading ? 'Planning…' : 'Plan for focused workload'}
             </button>
           </div>
           {!focusedWorkload ? (
-            <p className="text-sm text-slate-500">Add <code className="text-slate-400">?workload=name</code> to plan federation placement.</p>
+            <p className="text-sm text-ink-3">Add <code className="text-ink-2">?workload=name</code> to plan federation placement.</p>
           ) : placementPlan ? (
             <div>
               {placementPlan.anomaly_signals_configured ? (
@@ -447,10 +447,10 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                     badge={<Badge text={c.reachable ? 'reachable' : 'down'} variant={c.reachable ? 'green' : 'red'} />}
                     body={
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
                           Score {c.score.toFixed(1)}
                         </span>
-                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
                           {c.anomaly_count ?? 0} anomalies
                         </span>
                       </div>
@@ -460,7 +460,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
               </CardGrid>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">Run placement plan to rank clusters for {focusedWorkload}.</p>
+            <p className="text-sm text-ink-3">Run placement plan to rank clusters for {focusedWorkload}.</p>
           )}
         </div>
       ) : null}
@@ -498,9 +498,9 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
       <div className="glass-panel-card mb-6">
         <h2 className="panel-title mb-4">Registered clusters</h2>
         {clusters.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-ink-3">
             No clusters in kubeconfig inventory. Configure kubeconfig on the API server or open{' '}
-            <button type="button" onClick={() => navigate(viewToPath('clusters'))} className="text-aether hover:underline">
+            <button type="button" onClick={() => navigate(viewToPath('clusters'))} className="text-brand hover:underline">
               Cluster Browser
             </button>
             .
@@ -521,7 +521,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                   badge={<Badge text={c.reachable ? 'reachable' : 'unreachable'} variant={c.reachable ? 'green' : 'red'} />}
                   onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
                   body={
-                    <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-slate-400" title={c.server ?? undefined}>
+                    <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2" title={c.server ?? undefined}>
                       {c.server ?? '—'}
                     </code>
                   }
@@ -530,7 +530,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
             </CardGrid>
           </div>
         )}
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-4 text-xs text-ink-3">
           Backend: {summary?.backend ?? '—'}
           {summary?.summary_note ? ` · ${summary.summary_note}` : ''}
         </p>
@@ -540,7 +540,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="panel-title">Hubble flow links</h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-ink-3 mt-1">
               Per-pod deep links into Hubble UI. Expand an application to see individual pod flows.
             </p>
           </div>
@@ -555,7 +555,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
           )}
         </div>
         {hubbleApps.length === 0 ? (
-          <p className="text-sm text-slate-500">No Kubernetes applications with Hubble URLs discovered.</p>
+          <p className="text-sm text-ink-3">No Kubernetes applications with Hubble URLs discovered.</p>
         ) : (
           <div className="space-y-2">
             {hubbleApps.map((app) => {
@@ -575,12 +575,12 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                     className="w-full flex items-center gap-3 px-4 py-3 text-left glass-inset-hover"
                   >
                     {expanded ? (
-                      <ChevronDown size={16} className="text-slate-500 shrink-0" />
+                      <ChevronDown size={16} className="text-ink-3 shrink-0" />
                     ) : (
-                      <ChevronRight size={16} className="text-slate-500 shrink-0" />
+                      <ChevronRight size={16} className="text-ink-3 shrink-0" />
                     )}
-                    <span className="font-medium text-slate-100 flex-1">{shortName}</span>
-                    <span className="text-xs text-slate-500">{app.cluster} · {ns}</span>
+                    <span className="font-medium text-ink flex-1">{shortName}</span>
+                    <span className="text-xs text-ink-3">{app.cluster} · {ns}</span>
                     {nsHref && (
                       <a
                         href={nsHref}
@@ -596,9 +596,9 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                   {expanded && (
                     <div className="glass-divider-t px-4 py-3 glass-panel-card">
                       {loadingPods ? (
-                        <p className="text-xs text-slate-500">Loading pods…</p>
+                        <p className="text-xs text-ink-3">Loading pods…</p>
                       ) : pods.length === 0 ? (
-                        <p className="text-xs text-slate-500">No pods found for this application.</p>
+                        <p className="text-xs text-ink-3">No pods found for this application.</p>
                       ) : (
                         <div className="space-y-2">
                           {pods.map((pod) => (
@@ -607,8 +607,8 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border glass-divider px-3 py-2"
                             >
                               <div className="min-w-0">
-                                <span className="text-sm font-mono text-slate-200">{pod.name}</span>
-                                <span className="text-xs text-slate-500 ml-2">
+                                <span className="text-sm font-mono text-ink">{pod.name}</span>
+                                <span className="text-xs text-ink-3 ml-2">
                                   {pod.phase} · {pod.ready}/{pod.total_containers} ready
                                   {pod.restarts > 0 ? ` · ${pod.restarts} restarts` : ''}
                                 </span>
@@ -639,7 +639,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
 
       <div className="glass-panel-card">
         <h2 className="panel-title mb-4">Network observability</h2>
-        <p className="text-sm text-slate-500 mb-4">
+        <p className="text-sm text-ink-3 mb-4">
           Deep Hubble flow queries and PacketWolf east-west verification are integrated via env URLs on the control plane.
         </p>
         {packetwolfStatus?.configured ? (
@@ -647,10 +647,10 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium text-cyan-200">PacketWolf bridge</span>
               <Badge text={packetwolfStatus.reachable ? 'live' : 'offline'} variant={packetwolfStatus.reachable ? 'green' : 'yellow'} />
-              {packetwolfStatus.version ? <span className="text-xs text-slate-400">v{packetwolfStatus.version}</span> : null}
+              {packetwolfStatus.version ? <span className="text-xs text-ink-2">v{packetwolfStatus.version}</span> : null}
             </div>
             {packetwolfFlows ? (
-              <pre className="mt-2 text-xs text-slate-400 overflow-auto">{JSON.stringify(packetwolfFlows, null, 2)}</pre>
+              <pre className="mt-2 text-xs text-ink-2 overflow-auto">{JSON.stringify(packetwolfFlows, null, 2)}</pre>
             ) : null}
             {packetwolfStatus.hint ? <p className="mt-2 text-xs text-amber-300">{packetwolfStatus.hint}</p> : null}
           </div>
@@ -661,7 +661,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
               href={integrations.grafana_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm text-aether hover:bg-aether/20"
+              className="inline-flex items-center gap-2 rounded-xl border border-brand/40 bg-brand/10 px-4 py-2 text-sm text-brand hover:bg-brand/20"
             >
               Grafana <ExternalLink size={14} />
             </a>
@@ -671,7 +671,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
               href={integrations.prometheus_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
             >
               Prometheus <ExternalLink size={14} />
             </a>
@@ -686,8 +686,8 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
               Hubble UI <ExternalLink size={14} />
             </a>
           ) : (
-            <span className="text-sm text-slate-500 self-center">
-              Set <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code> for Hubble
+            <span className="text-sm text-ink-3 self-center">
+              Set <code className="text-ink-2">AETHER_HUBBLE_UI_URL</code> for Hubble
             </span>
           )}
           {integrations.packetwolf_url ? (
@@ -700,14 +700,14 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
               PacketWolf <ExternalLink size={14} />
             </a>
           ) : (
-            <span className="text-sm text-slate-500 self-center">
-              Set <code className="text-slate-400">AETHER_PACKETWOLF_URL</code> for PacketWolf
+            <span className="text-sm text-ink-3 self-center">
+              Set <code className="text-ink-2">AETHER_PACKETWOLF_URL</code> for PacketWolf
             </span>
           )}
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-300 glass-inset-hover"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink-2 glass-inset-hover"
           >
             Platform & HA settings
           </button>

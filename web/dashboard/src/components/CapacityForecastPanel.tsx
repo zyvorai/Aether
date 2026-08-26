@@ -23,7 +23,7 @@ function UtilBar({ label, value }: { label: string; value: number }) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="text-slate-500">{label}</span>
+        <span className="text-ink-3">{label}</span>
         <span className={utilTone(value)}>{pct}%</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full glass-inset-surface">
@@ -87,7 +87,7 @@ export default function CapacityForecastPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -96,37 +96,37 @@ export default function CapacityForecastPanel() {
     >
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 glass-panel-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Runtime utilization</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">Runtime utilization</p>
           <UtilBar label="Fleet CPU (avg)" value={avgCpu} />
           <UtilBar label="Fleet memory (avg)" value={avgMem} />
           {utilization.slice(0, 3).map((u) => (
-            <div key={u.runtime} className="text-xs text-slate-500">
+            <div key={u.runtime} className="text-xs text-ink-3">
               {u.runtime}: {Math.round(u.cpu_utilization * 100)}% CPU · {u.workload_count}/{u.max_workloads} workloads
             </div>
           ))}
         </div>
 
         <div className="space-y-3 glass-panel-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Fleet risk</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">Fleet risk</p>
           <div className="flex items-end gap-2">
-            <span className="text-3xl font-semibold text-white">
+            <span className="text-3xl font-semibold text-ink">
               {formatPercent(predictions?.fleet_risk_score ?? 0, 0)}
             </span>
             <TrendingUp className="mb-1 h-4 w-4 text-amber-400" />
           </div>
           {topRisks.length === 0 ? (
-            <p className="text-sm text-slate-500">No elevated workload risks detected.</p>
+            <p className="text-sm text-ink-3">No elevated workload risks detected.</p>
           ) : (
             <ul className="space-y-2">
               {topRisks.map((row) => (
                 <li key={row.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                   <Link
                     to={`${viewToPath('workloads')}?workload=${encodeURIComponent(row.workload)}`}
-                    className="font-medium text-aether hover:underline"
+                    className="font-medium text-brand hover:underline"
                   >
                     {row.workload}
                   </Link>
-                  <p className="text-xs text-slate-500">{row.predictions[0]?.reason ?? row.risk_level}</p>
+                  <p className="text-xs text-ink-3">{row.predictions[0]?.reason ?? row.risk_level}</p>
                 </li>
               ))}
             </ul>
@@ -134,9 +134,9 @@ export default function CapacityForecastPanel() {
         </div>
 
         <div className="space-y-3 glass-panel-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Saturation horizon</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">Saturation horizon</p>
           {(briefing?.capacity_risks ?? []).length === 0 ? (
-            <p className="text-sm text-slate-500">No capacity saturation signals in the next 30 days.</p>
+            <p className="text-sm text-ink-3">No capacity saturation signals in the next 30 days.</p>
           ) : (
             <ul className="space-y-2">
               {briefing!.capacity_risks.map((risk) => (

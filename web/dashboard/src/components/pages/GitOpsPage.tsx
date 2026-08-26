@@ -205,13 +205,13 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
   function GitOpsFileCell({ filePath }: { filePath: string }) {
     const workloadName = workloadNameFromGitOpsPath(filePath);
     if (!workloadName) {
-      return <span className="font-mono text-xs text-slate-300">{filePath}</span>;
+      return <span className="font-mono text-xs text-ink-2">{filePath}</span>;
     }
     return (
       <button
         type="button"
         onClick={() => openWorkloadFromPath(filePath)}
-        className="font-mono text-xs text-aether hover:underline text-left"
+        className="font-mono text-xs text-brand hover:underline text-left"
         title={`Open workload ${workloadName}`}
       >
         {filePath}
@@ -232,19 +232,19 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
       <div className="mb-2 glass-context-banner" data-testid="gitops-hub-context">
         GitOps
         {' · '}
-        <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="gitops-hub-orchestrator-link">
+        <Link to={viewToPath('health')} className="text-brand hover:underline" data-testid="gitops-hub-orchestrator-link">
           Orchestrator →
         </Link>
         {' · '}
-        <Link to={viewToPath('intelligence')} className="text-aether hover:underline" data-testid="gitops-hub-intelligence-link">
+        <Link to={viewToPath('intelligence')} className="text-brand hover:underline" data-testid="gitops-hub-intelligence-link">
           Intelligence →
         </Link>
         {' · '}
-        <Link to={`${viewToPath('fleet')}?tab=edge`} className="text-aether hover:underline" data-testid="gitops-hub-edge-link">
+        <Link to={`${viewToPath('fleet')}?tab=edge`} className="text-brand hover:underline" data-testid="gitops-hub-edge-link">
           Edge →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="gitops-hub-hosted-link">
+        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="gitops-hub-hosted-link">
           Hosted SaaS →
         </Link>
       </div>
@@ -289,7 +289,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-platform-link"
           >
             Platform →
@@ -297,7 +297,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-context-fleet-link"
           >
             Fleet →
@@ -305,7 +305,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={viewToPath('hosted')}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-context-hosted-link"
           >
             Hosted SaaS →
@@ -313,7 +313,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-openapi-link"
           >
             OpenAPI →
@@ -321,7 +321,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-context-policy-link"
           >
             Policy →
@@ -329,7 +329,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-secrets-link"
           >
             Secrets →
@@ -337,7 +337,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-context-editor-link"
           >
             Editor →
@@ -345,7 +345,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-context-compose-link"
           >
             Compose →
@@ -353,7 +353,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="gitops-context-fleet-link"
           >
             Fleet →
@@ -365,36 +365,36 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
 
       <div className="glass-panel-card" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
-          <GitBranch className="w-5 h-5 text-aether" />
-          <h2 className="text-lg font-semibold text-slate-100">GitOps reconciliation</h2>
+          <GitBranch className="w-5 h-5 text-brand" />
+          <h2 className="text-lg font-semibold text-ink">GitOps reconciliation</h2>
           {data?.configured !== false && <Badge text="CONFIGURED" variant="green" />}
           {data?.configured === false && <Badge text="NOT CONFIGURED" variant="muted" />}
         </div>
         {loading ? (
-          <p className="text-sm text-slate-500">Loading gitops status…</p>
+          <p className="text-sm text-ink-3">Loading gitops status…</p>
         ) : data?.configured === false ? (
           <div className="space-y-4">
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-sm text-ink-2 leading-relaxed">
               {data.hint ?? 'GitOps is not configured on this server.'}
             </p>
             <form onSubmit={(e) => void initGitOps(e)} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
               <div className="sm:col-span-2">
-                <label className="block text-xs text-slate-500 mb-1">Repository URL</label>
+                <label className="block text-xs text-ink-3 mb-1">Repository URL</label>
                 <input
                   type="url"
                   value={initRepo}
                   onChange={(e) => setInitRepo(e.target.value)}
                   placeholder="https://github.com/org/aether-workloads.git"
-                  className="glass-input text-slate-100"
+                  className="glass-input text-ink"
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Branch</label>
+                <label className="block text-xs text-ink-3 mb-1">Branch</label>
                 <input
                   type="text"
                   value={initBranch}
                   onChange={(e) => setInitBranch(e.target.value)}
-                  className="glass-input text-slate-100"
+                  className="glass-input text-ink"
                 />
               </div>
               <div className="flex items-end">
@@ -407,19 +407,19 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                 </button>
               </div>
             </form>
-            {initMessage && <p className="text-sm text-slate-400">{initMessage}</p>}
+            {initMessage && <p className="text-sm text-ink-2">{initMessage}</p>}
           </div>
         ) : (
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <dt className="text-xs uppercase tracking-wider text-slate-500 mb-1">Repository</dt>
-              <dd className="text-slate-200 break-all">
+              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Repository</dt>
+              <dd className="text-ink break-all">
                 {data?.repo_url && /^https?:\/\//i.test(data.repo_url) ? (
                   <a
                     href={data.repo_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-aether hover:underline"
+                    className="inline-flex items-center gap-1.5 text-brand hover:underline"
                     data-testid="gitops-repo-external-link"
                   >
                     {data.repo_url}
@@ -431,18 +431,18 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
               </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-slate-500 mb-1">Branch</dt>
-              <dd className="text-slate-200">{data?.branch ?? '—'}</dd>
+              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Branch</dt>
+              <dd className="text-ink">{data?.branch ?? '—'}</dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-slate-500 mb-1">Last sync</dt>
-              <dd className="text-slate-200">
+              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Last sync</dt>
+              <dd className="text-ink">
                 {data?.last_sync ? formatTimestamp(data.last_sync) : '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-slate-500 mb-1">Status</dt>
-              <dd className="text-slate-200">
+              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Status</dt>
+              <dd className="text-ink">
                 {typeof data?.status === 'string'
                   ? data.status
                   : data?.status
@@ -462,7 +462,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                 : viewToPath('drift'),
             )
           }
-          className="mt-4 mr-4 text-xs text-aether hover:underline"
+          className="mt-4 mr-4 text-xs text-brand hover:underline"
         >
           Drift detection →
         </button>
@@ -476,7 +476,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                 : viewToPath('policy'),
             )
           }
-          className="mt-4 text-xs text-aether hover:underline"
+          className="mt-4 text-xs text-brand hover:underline"
         >
           Policy check →
         </button>
@@ -484,13 +484,13 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
 
       {syncResult && (
         <div className="glass-panel-card" data-testid="gitops-sync-result">
-          <h3 className="text-sm font-semibold text-slate-100 mb-3">Last sync result</h3>
-          <p className="text-sm text-slate-300 mb-3">{parsedSync.summary}</p>
+          <h3 className="text-sm font-semibold text-ink mb-3">Last sync result</h3>
+          <p className="text-sm text-ink-2 mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (
             <div className="mb-4 glass-table-shell overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-ink-3">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2 pr-4">Confidential</th>
@@ -529,13 +529,13 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                           }
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-slate-300">
+                      <td className="py-2 pr-4 font-mono text-xs text-ink-2">
                         <GitOpsFileCell filePath={c.file_path} />
                       </td>
                       <td className="py-2 pr-4">
                         <Badge text={confidentialLabel} variant={confidentialVariant} />
                       </td>
-                      <td className="py-2 font-mono text-xs text-slate-500 truncate max-w-[12rem]" title={c.commit}>
+                      <td className="py-2 font-mono text-xs text-ink-3 truncate max-w-[12rem]" title={c.commit}>
                         {c.commit.slice(0, 12)}
                       </td>
                     </tr>
@@ -548,21 +548,21 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
             <div className="mb-4 glass-table-shell overflow-x-auto">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-2 px-4 pt-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
                   Confidential compliance
                 </h4>
                 <button
                   type="button"
                   data-testid="gitops-confidential-link"
                   onClick={() => navigate(viewToPath('confidential'))}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                 >
                   Open confidential page →
                 </button>
               </div>
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-ink-3">
                     <th className="py-2 pr-4">Workload</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2 pr-4">GitOps issues</th>
@@ -574,7 +574,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                     .filter((row) => row.confidential_enabled)
                     .map((row) => (
                       <tr key={row.file_path} className="glass-table-row align-top">
-                        <td className="py-2 pr-4 text-slate-200">
+                        <td className="py-2 pr-4 text-ink">
                           {row.workload ? (
                             <button
                               type="button"
@@ -586,7 +586,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                                   }),
                                 )
                               }
-                              className="text-aether hover:underline"
+                              className="text-brand hover:underline"
                               data-testid={`gitops-confidential-row-${row.workload}`}
                             >
                               {row.workload}
@@ -595,7 +595,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                             '—'
                           )}
                         </td>
-                        <td className="py-2 pr-4 font-mono text-xs text-slate-400">{row.file_path}</td>
+                        <td className="py-2 pr-4 font-mono text-xs text-ink-2">{row.file_path}</td>
                         <td className="py-2 pr-4 text-xs text-amber-200/90">
                           {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}
                         </td>
@@ -620,8 +620,8 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                 .filter(([key]) => key !== 'changes' && key !== 'confidential_compliance')
                 .map(([key, value]) => (
                   <div key={key} className="flex gap-2">
-                    <dt className="text-slate-500 shrink-0">{key}:</dt>
-                    <dd className="text-slate-300 break-all">
+                    <dt className="text-ink-3 shrink-0">{key}:</dt>
+                    <dd className="text-ink-2 break-all">
                       {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                     </dd>
                   </div>
@@ -635,8 +635,8 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
 
       <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
         <div data-testid="gitops-sync-confirm">
-        <p className="text-sm text-slate-300 mb-4">
-          Pull from <span className="font-mono text-aether">{data?.repo_url ?? 'repository'}</span> and apply
+        <p className="text-sm text-ink-2 mb-4">
+          Pull from <span className="font-mono text-brand">{data?.repo_url ?? 'repository'}</span> and apply
           detected YAML changes. Review the diff preview below before syncing.
         </p>
         <div
@@ -644,16 +644,16 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           data-testid="gitops-diff-preview"
         >
           {previewLoading ? (
-            <p className="text-sm text-slate-500">Loading pending changes…</p>
+            <p className="text-sm text-ink-3">Loading pending changes…</p>
           ) : previewError ? (
             <p className="text-sm text-red-400">{previewError}</p>
           ) : previewChanges.length === 0 ? (
-            <p className="text-sm text-slate-500">No YAML changes detected in the latest commit.</p>
+            <p className="text-sm text-ink-3">No YAML changes detected in the latest commit.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-ink-3">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2">Commit</th>
@@ -674,10 +674,10 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
                           }
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-slate-300">
+                      <td className="py-2 pr-4 font-mono text-xs text-ink-2">
                         <GitOpsFileCell filePath={c.file_path} />
                       </td>
-                      <td className="py-2 font-mono text-xs text-slate-500 truncate max-w-[12rem]" title={c.commit}>
+                      <td className="py-2 font-mono text-xs text-ink-3 truncate max-w-[12rem]" title={c.commit}>
                         {c.commit.slice(0, 12)}
                       </td>
                     </tr>

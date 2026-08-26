@@ -133,7 +133,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="audit-openapi-link"
             >
               OpenAPI →
@@ -141,7 +141,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="audit-rbac-link"
             >
               RBAC →
@@ -149,7 +149,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="audit-secrets-link"
             >
               Secrets →
@@ -157,7 +157,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="audit-context-policy-link"
             >
               Policy →
@@ -165,7 +165,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="audit-context-editor-link"
             >
               Editor →
@@ -173,7 +173,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: workloadFilter.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="audit-context-gitops-link"
             >
               GitOps →
@@ -194,7 +194,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
                 type="button"
                 data-testid="audit-export-json"
                 onClick={() => downloadExport('json')}
-                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 JSON
@@ -203,7 +203,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
                 type="button"
                 data-testid="audit-export-csv"
                 onClick={() => downloadExport('csv')}
-                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 CSV
@@ -225,7 +225,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
               type="button"
               data-testid="audit-clear-filters"
               onClick={() => setResultFilter('')}
-              className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-400 hover:text-aether"
+              className="rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:text-brand"
             >
               Clear result filter
             </button>
@@ -241,7 +241,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
               ? pathWithQuery(viewToPath('events'), { workload: workloadFilter.trim() })
               : viewToPath('events')
           }
-          className="text-aether hover:underline"
+          className="text-brand hover:underline"
           data-testid="audit-events-link"
         >
           View events feed →
@@ -250,7 +250,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
           <WorkloadScopedCrossLinks workload={workloadFilter} prefix="audit" />
         ) : null}
         {' · '}
-        <Link to={viewToPath('rbac')} className="text-aether hover:underline" data-testid="audit-footer-rbac-link">
+        <Link to={viewToPath('rbac')} className="text-brand hover:underline" data-testid="audit-footer-rbac-link">
           API access control →
         </Link>
       </div>
@@ -278,10 +278,10 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
 
       {verify && (
         <div className="glass-panel-card mb-6" data-testid="audit-verify-panel">
-          <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">Integrity verification</div>
+          <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">Integrity verification</div>
           <div className="flex items-center gap-3 flex-wrap">
             <Badge text={verify.integrity} variant={verify.integrity === 'VERIFIED' ? 'green' : 'red'} />
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-ink-2">
               {verify.verified} of {verify.total} events verified successfully
             </span>
             <button
@@ -289,7 +289,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
               data-testid="audit-reverify"
               onClick={() => void reVerify()}
               disabled={verifying}
-              className="ml-auto rounded-lg border glass-divider px-3 py-1 text-xs text-slate-300 hover:border-aether/40 disabled:opacity-50"
+              className="ml-auto rounded-lg border glass-divider px-3 py-1 text-xs text-ink-2 hover:border-brand/40 disabled:opacity-50"
             >
               {verifying ? 'Verifying…' : 'Re-verify integrity'}
             </button>
@@ -301,7 +301,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
                   <div className="font-medium text-red-300">
                     {event.action} on {event.workload}
                   </div>
-                  <div className="mt-1 text-xs text-slate-500">{formatTimestamp(event.timestamp)}</div>
+                  <div className="mt-1 text-xs text-ink-3">{formatTimestamp(event.timestamp)}</div>
                 </div>
               ))}
             </div>
@@ -315,24 +315,24 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
         <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting your search" />
       ) : (
         <div className="glass-panel-card">
-          <h2 className="text-lg font-semibold text-slate-100 mb-4">Recent events</h2>
+          <h2 className="text-lg font-semibold text-ink mb-4">Recent events</h2>
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filteredEvents.map((ev) => (
               <div key={ev.id} className="glass-panel-card flex items-start gap-3 p-4">
                 <Badge text={ev.result} variant={ev.result.toLowerCase() === 'success' ? 'green' : 'red'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-slate-200">{ev.action}</span>
-                    <span className="text-xs text-slate-500">on</span>
+                    <span className="text-sm font-medium text-ink">{ev.action}</span>
+                    <span className="text-xs text-ink-3">on</span>
                     <Link
                       to={pathWithQuery(viewToPath('workloads'), { workload: ev.workload })}
-                      className="text-sm text-aether hover:underline"
+                      className="text-sm text-brand hover:underline"
                     >
                       {ev.workload}
                     </Link>
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">{ev.message}</div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">
+                  <div className="text-xs text-ink-2 mt-1">{ev.message}</div>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-ink-3 flex-wrap">
                     <span>{formatTimestamp(ev.timestamp)}</span>
                     {ev.runtime && <span>Runtime: {ev.runtime}</span>}
                   </div>

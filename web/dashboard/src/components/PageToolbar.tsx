@@ -36,7 +36,7 @@ export default function PageToolbar({
       <div className="flex flex-1 flex-wrap items-center gap-2 min-w-0">
         {onSearchChange !== undefined && (
           <div className="relative flex-1 min-w-[12rem] max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-aether/70" aria-hidden />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand/70" aria-hidden />
             <input
               type="search"
               data-testid={searchTestId}
@@ -56,7 +56,7 @@ export default function PageToolbar({
             data-testid={refreshTestId}
             onClick={onRefresh}
             disabled={refreshing}
-            className="interactive-lift inline-flex items-center gap-2 rounded-xl border border-aether/20 bg-aether/10 px-3 py-2.5 text-sm font-medium text-aether transition hover:bg-aether/15 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+            className="interactive-lift inline-flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/10 px-3 py-2.5 text-sm font-medium text-brand transition hover:bg-brand/15 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh

@@ -96,7 +96,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-editor-link"
             >
               Editor →
@@ -104,7 +104,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-drift-link"
             >
               Drift →
@@ -112,7 +112,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-secrets-link"
             >
               Secrets →
@@ -120,7 +120,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('alerts'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-context-alerts-link"
             >
               Alerts →
@@ -128,7 +128,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-context-policy-link"
             >
               Policy →
@@ -136,7 +136,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `SLA status for ${search.trim()}` })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-context-copilot-link"
             >
               Copilot →
@@ -144,7 +144,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-context-platform-link"
             >
               Platform →
@@ -152,7 +152,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="sla-context-openapi-link"
             >
               OpenAPI →
@@ -170,7 +170,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {canMutate && (
         <div className="glass-panel-card mb-6">
-          <h3 className="text-sm font-semibold text-slate-200 mb-3">Add SLA target</h3>
+          <h3 className="text-sm font-semibold text-ink mb-3">Add SLA target</h3>
           <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3" data-testid="sla-add-form">
             <input
               type="text"
@@ -196,13 +196,13 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
               {adding ? 'Adding…' : 'Add target'}
             </button>
           </form>
-          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="mt-3 inline-flex text-xs text-aether hover:underline">
+          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="mt-3 inline-flex text-xs text-brand hover:underline">
             SLA events →
           </Link>
-          <Link to={viewToPath('health')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline">
+          <Link to={viewToPath('health')} className="mt-3 ml-4 inline-flex text-xs text-brand hover:underline">
             Open health monitor →
           </Link>
-          <Link to={viewToPath('scheduler')} className="mt-3 ml-4 inline-flex text-xs text-aether hover:underline" data-testid="sla-scheduler-link">
+          <Link to={viewToPath('scheduler')} className="mt-3 ml-4 inline-flex text-xs text-brand hover:underline" data-testid="sla-scheduler-link">
             Placement scheduler →
           </Link>
         </div>
@@ -229,10 +229,10 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             const sla = slaData[w.name];
             return (
               <div key={w.name} className="glass-panel-card">
-                <h2 className="text-lg font-semibold text-slate-100 mb-4">
+                <h2 className="text-lg font-semibold text-ink mb-4">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name })}
-                    className="hover:text-aether"
+                    className="hover:text-brand"
                   >
                     {w.name}
                   </Link>
@@ -240,56 +240,56 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
                 {sla ? (
                   <dl className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <dt className="text-slate-400">Uptime target</dt>
+                      <dt className="text-ink-2">Uptime target</dt>
                       <dd className="text-emerald-400 font-medium">{sla.uptime_target_pct}%</dd>
                     </div>
                     {sla.max_latency_ms !== null && (
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Max latency</dt>
-                        <dd className="text-slate-200">{sla.max_latency_ms}ms</dd>
+                        <dt className="text-ink-2">Max latency</dt>
+                        <dd className="text-ink">{sla.max_latency_ms}ms</dd>
                       </div>
                     )}
                     {sla.max_error_rate_pct !== null && (
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Max error rate</dt>
-                        <dd className="text-slate-200">{sla.max_error_rate_pct}%</dd>
+                        <dt className="text-ink-2">Max error rate</dt>
+                        <dd className="text-ink">{sla.max_error_rate_pct}%</dd>
                       </div>
                     )}
                     {sla.max_restarts_per_day !== null && (
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Max restarts/day</dt>
-                        <dd className="text-slate-200">{sla.max_restarts_per_day}</dd>
+                        <dt className="text-ink-2">Max restarts/day</dt>
+                        <dd className="text-ink">{sla.max_restarts_per_day}</dd>
                       </div>
                     )}
                   </dl>
                 ) : (
-                  <p className="text-sm text-slate-500">No SLA configured</p>
+                  <p className="text-sm text-ink-3">No SLA configured</p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-3 text-xs">
                   <Link
                     to={pathWithQuery(viewToPath('health'), { workload: w.name })}
-                    className="text-aether hover:underline"
+                    className="text-brand hover:underline"
                     data-testid={`sla-health-link-${w.name}`}
                   >
                     Health →
                   </Link>
                   <Link
                     to={pathWithQuery(viewToPath('events'), { workload: w.name, category: 'sla' })}
-                    className="text-aether hover:underline"
+                    className="text-brand hover:underline"
                     data-testid={`sla-events-link-${w.name}`}
                   >
                     SLA events →
                   </Link>
                   <Link
                     to={pathWithQuery(viewToPath('alerts'), { workload: w.name })}
-                    className="text-aether hover:underline"
+                    className="text-brand hover:underline"
                     data-testid={`sla-alerts-link-${w.name}`}
                   >
                     Alerts →
                   </Link>
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name, tab: 'trust' })}
-                    className="text-aether hover:underline"
+                    className="text-brand hover:underline"
                     data-testid={`sla-trust-link-${w.name}`}
                   >
                     Trust →

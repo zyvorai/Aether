@@ -129,10 +129,10 @@ export default function StoragePage({ refreshKey }: { refreshKey?: number } = {}
                       badge={state === '—' ? undefined : <Badge text={state} variant={stateVariant(state)} />}
                       body={
                         <div className="flex flex-wrap gap-1.5">
-                          <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                          <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
                             PVC {field(v, ['pvc', 'pvc_name'])}
                           </span>
-                          <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                          <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
                             {typeof v.size_bytes === 'number' ? formatBytes(v.size_bytes) : '—'}
                           </span>
                         </div>

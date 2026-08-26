@@ -168,7 +168,7 @@ export default function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="compose-deps-link"
           >
             Dependencies →
@@ -176,7 +176,7 @@ export default function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="compose-editor-link"
           >
             Editor →
@@ -184,7 +184,7 @@ export default function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('templates'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="compose-templates-link"
           >
             Templates →
@@ -192,7 +192,7 @@ export default function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="compose-secrets-link"
           >
             Secrets →
@@ -200,7 +200,7 @@ export default function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="compose-policy-link"
           >
             Policy →
@@ -208,7 +208,7 @@ export default function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="compose-context-gitops-link"
           >
             GitOps →
@@ -216,7 +216,7 @@ export default function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('envs'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="compose-context-envs-link"
           >
             Environments →
@@ -226,10 +226,10 @@ export default function ComposePage() {
 
       <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
       <div>
-        <h2 className="text-lg font-semibold text-slate-100">Compose import</h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Validate dependency order and deploy a stack. Use <code className="text-aether/90">spec_yaml</code> for inline
-          workloads or <code className="text-aether/90">spec</code> for file paths on the server.
+        <h2 className="text-lg font-semibold text-ink">Compose import</h2>
+        <p className="text-sm text-ink-3 mt-1">
+          Validate dependency order and deploy a stack. Use <code className="text-brand/90">spec_yaml</code> for inline
+          workloads or <code className="text-brand/90">spec</code> for file paths on the server.
         </p>
       </div>
 
@@ -250,18 +250,18 @@ export default function ComposePage() {
               <div className="mt-4 space-y-4" data-testid="compose-validate-result">
                 <div className="flex items-center gap-3">
                   <Badge text={result.valid ? 'VALID' : 'INVALID'} variant={result.valid ? 'green' : 'red'} />
-                  <span className="text-sm text-slate-400">{result.workload_count ?? 0} workloads</span>
+                  <span className="text-sm text-ink-2">{result.workload_count ?? 0} workloads</span>
                 </div>
                 {result.deploy_order && result.deploy_order.length > 0 ? (
                   <div>
-                    <h4 className="text-xs uppercase tracking-wider text-slate-500 mb-2">Deploy order</h4>
-                    <ol className="space-y-1 text-sm text-slate-300">
+                    <h4 className="text-xs uppercase tracking-wider text-ink-3 mb-2">Deploy order</h4>
+                    <ol className="space-y-1 text-sm text-ink-2">
                       {result.deploy_order.map((item, index) => (
                         <li key={`${item}-${index}`} className="flex items-center gap-2">
-                          <span className="text-aether font-mono text-xs">{index + 1}.</span>
+                          <span className="text-brand font-mono text-xs">{index + 1}.</span>
                           <Link
                             to={pathWithQuery(viewToPath('workloads'), { workload: item })}
-                            className="text-aether hover:underline"
+                            className="text-brand hover:underline"
                           >
                             {item}
                           </Link>
@@ -274,7 +274,7 @@ export default function ComposePage() {
                   <div className="flex flex-wrap gap-3">
                     <Link
                       to={viewToPath('deps')}
-                      className="inline-flex items-center self-center text-xs text-aether hover:underline"
+                      className="inline-flex items-center self-center text-xs text-brand hover:underline"
                       data-testid="compose-deps-link"
                     >
                       Dependency graph →

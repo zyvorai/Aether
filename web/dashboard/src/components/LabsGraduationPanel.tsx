@@ -117,7 +117,7 @@ export default function LabsGraduationPanel() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-400">
+        <div className="flex items-center gap-2 text-sm text-ink-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading lab graduation…
         </div>
@@ -125,7 +125,7 @@ export default function LabsGraduationPanel() {
 
       {!loading && tab === 'overview' && overview ? (
         <div data-testid="labs-overview-panel">
-          <p className="text-sm text-slate-400 mb-3">
+          <p className="text-sm text-ink-2 mb-3">
             <Sparkles className="inline h-4 w-4 text-aether-ai mr-1" />
             {overview.graduated_count} features graduated · graph export {graphNodes} nodes
           </p>
@@ -135,7 +135,7 @@ export default function LabsGraduationPanel() {
                 key={f.phase}
                 className="flex items-center justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2"
               >
-                <span className="text-slate-200">
+                <span className="text-ink">
                   Phase {f.phase}: {f.name}
                 </span>
                 <span className="text-xs text-emerald-400 uppercase">{f.status}</span>
@@ -151,28 +151,28 @@ export default function LabsGraduationPanel() {
             Generate Terraform v2
           </button>
           {terraform ? (
-            <pre className="glass-panel-card overflow-x-auto p-3 text-xs text-slate-300 font-mono max-h-48">
+            <pre className="glass-panel-card overflow-x-auto p-3 text-xs text-ink-2 font-mono max-h-48">
               {terraform.hcl.slice(0, 400)}…
             </pre>
           ) : (
-            <p className="text-sm text-slate-500">Click to generate OpenTofu-ready HCL from intent pipeline.</p>
+            <p className="text-sm text-ink-3">Click to generate OpenTofu-ready HCL from intent pipeline.</p>
           )}
         </div>
       ) : null}
 
       {!loading && tab === 'community' && community ? (
         <div data-testid="labs-community-panel" className="space-y-3">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-2">
             {community.built_in_count} built-in · {community.community.length} community ·{' '}
             {community.imported_count} imported
           </p>
           <button type="button" onClick={() => void importCommunityTemplate()} className="btn-secondary text-xs">
             Import sample template
           </button>
-          <ul className="space-y-1 text-sm text-slate-300">
+          <ul className="space-y-1 text-sm text-ink-2">
             {community.community.slice(0, 5).map((c) => (
               <li key={c.id}>
-                {c.title} <span className="text-slate-500">★ {c.stars}</span>
+                {c.title} <span className="text-ink-3">★ {c.stars}</span>
               </li>
             ))}
           </ul>
@@ -181,11 +181,11 @@ export default function LabsGraduationPanel() {
 
       {!loading && tab === 'carbon' && carbon ? (
         <div data-testid="labs-carbon-panel">
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-ink-2">
             Fleet carbon: <strong>{carbon.fleet_carbon_kg_monthly.toFixed(2)}</strong> kg CO₂e / month
           </p>
           {carbon.workloads.length > 0 ? (
-            <ul className="mt-2 text-xs text-slate-500 space-y-1">
+            <ul className="mt-2 text-xs text-ink-3 space-y-1">
               {carbon.workloads.slice(0, 4).map((w) => (
                 <li key={w.workload}>
                   {w.workload}: {w.carbon_kg_monthly.toFixed(2)} kg/mo
@@ -193,17 +193,17 @@ export default function LabsGraduationPanel() {
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-slate-500 mt-2">Deploy workloads to see per-line carbon estimates.</p>
+            <p className="text-xs text-ink-3 mt-2">Deploy workloads to see per-line carbon estimates.</p>
           )}
         </div>
       ) : null}
 
       {!loading && tab === 'voice' ? (
         <div data-testid="labs-voice-panel">
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-ink-2">
             Web Speech API: {voiceSupported ? 'supported in this browser' : 'check browser compatibility'}
           </p>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-ink-3 mt-2">
             Use microphone input in Copilot or pipe transcripts to POST /api/copilot/chat.
           </p>
         </div>

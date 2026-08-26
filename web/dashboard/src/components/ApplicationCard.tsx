@@ -23,7 +23,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
       : tone === 'critical'
         ? 'border-red-500/40 hover:border-red-500/60'
         : tone === 'stopped'
-          ? 'glass-divider hover:border-aether/30'
+          ? 'glass-divider hover:border-brand/30'
           : 'border-amber-500/30 hover:border-amber-500/50';
 
   const statusVariant =
@@ -37,17 +37,17 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
       <button type="button" onClick={onOpen} className="w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-base font-semibold text-slate-100 truncate">{applicationLabel(app)}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h3 className="text-base font-semibold text-ink truncate">{applicationLabel(app)}</h3>
+            <p className="text-xs text-ink-3 mt-0.5">
               {workspaceLabel(app.namespace)}
               {app.cluster ? ` · ${app.cluster}` : ''}
             </p>
           </div>
           <Badge text={app.status} variant={statusVariant} />
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-ink-2">
           <div className="flex items-center gap-1.5">
-            <Layers size={14} className="text-aether shrink-0" />
+            <Layers size={14} className="text-brand shrink-0" />
             <span className="truncate">{app.kind ?? 'Application'}</span>
           </div>
           <div className="flex items-center gap-1.5 truncate">
@@ -60,14 +60,14 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex items-center gap-1 rounded-lg bg-aether/15 px-2.5 py-1.5 text-xs font-medium text-aether hover:bg-aether/25"
+          className="inline-flex items-center gap-1 rounded-lg bg-brand/15 px-2.5 py-1.5 text-xs font-medium text-brand hover:bg-brand/25"
         >
           <Rocket size={12} /> Open
         </button>
         <button
           type="button"
           onClick={onLogs}
-          className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-slate-300"
+          className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-ink-2"
         >
           <FileText size={12} /> Logs
         </button>
@@ -75,7 +75,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
           <button
             type="button"
             onClick={onScale}
-            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-slate-300"
+            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-ink-2"
           >
             <Layers size={12} /> Scale
           </button>
@@ -84,7 +84,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
           <button
             type="button"
             onClick={onRestart}
-            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-slate-300"
+            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-ink-2"
           >
             <RefreshCw size={12} /> Restart
           </button>

@@ -81,7 +81,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
             }`}
           >
             <div className="flex items-center justify-between gap-2 mb-3">
-              <span className="font-medium text-slate-100">{est.provider}</span>
+              <span className="font-medium text-ink">{est.provider}</span>
               {est.provider === cheapest && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   Cheapest
@@ -90,26 +90,26 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
             </div>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">CPU / month</dt>
-                <dd className="text-slate-200">{formatUSD(est.cpu_cost_monthly)}</dd>
+                <dt className="text-ink-3">CPU / month</dt>
+                <dd className="text-ink">{formatUSD(est.cpu_cost_monthly)}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Memory / month</dt>
-                <dd className="text-slate-200">{formatUSD(est.memory_cost_monthly)}</dd>
+                <dt className="text-ink-3">Memory / month</dt>
+                <dd className="text-ink">{formatUSD(est.memory_cost_monthly)}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Storage / month</dt>
-                <dd className="text-slate-200">{formatUSD(est.storage_cost_monthly)}</dd>
+                <dt className="text-ink-3">Storage / month</dt>
+                <dd className="text-ink">{formatUSD(est.storage_cost_monthly)}</dd>
               </div>
               <div className="flex justify-between gap-4 font-medium">
-                <dt className="text-slate-400">Total / month</dt>
-                <dd className={est.provider === cheapest ? 'text-emerald-400' : 'text-slate-100'}>
+                <dt className="text-ink-2">Total / month</dt>
+                <dd className={est.provider === cheapest ? 'text-emerald-400' : 'text-ink'}>
                   {formatUSD(est.total_monthly)}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Hourly</dt>
-                <dd className="text-slate-400">{formatUSD(est.total_hourly)}</dd>
+                <dt className="text-ink-3">Hourly</dt>
+                <dd className="text-ink-2">{formatUSD(est.total_hourly)}</dd>
               </div>
             </dl>
           </div>
@@ -121,19 +121,19 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
     <div className="mb-6 glass-context-banner" data-testid="cost-hub-context">
       FinOps
       {' · '}
-      <Link to={viewToPath('intelligence')} className="text-aether hover:underline" data-testid="cost-context-intelligence-hub-link">
+      <Link to={viewToPath('intelligence')} className="text-brand hover:underline" data-testid="cost-context-intelligence-hub-link">
         Intelligence →
       </Link>
       {' · '}
-      <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="cost-context-hosted-link">
+      <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="cost-context-hosted-link">
         Hosted SaaS →
       </Link>
       {' · '}
-      <Link to={viewToPath('migrations')} className="text-aether hover:underline" data-testid="cost-context-migrations-link">
+      <Link to={viewToPath('migrations')} className="text-brand hover:underline" data-testid="cost-context-migrations-link">
         Migrations →
       </Link>
       {' · '}
-      <Link to={viewToPath('platform')} className="text-aether hover:underline" data-testid="cost-context-platform-hub-link">
+      <Link to={viewToPath('platform')} className="text-brand hover:underline" data-testid="cost-context-platform-hub-link">
         Platform →
       </Link>
     </div>
@@ -155,7 +155,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('scheduler'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="cost-scheduler-scoped-link"
           >
             Scheduler →
@@ -163,7 +163,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'cost' })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="cost-intelligence-link"
           >
             Intelligence →
@@ -171,7 +171,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('affinity'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="cost-context-affinity-link"
           >
             Affinity →
@@ -179,7 +179,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="cost-context-platform-link"
           >
             Platform →
@@ -187,7 +187,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="cost-context-drift-link"
           >
             Drift →
@@ -195,7 +195,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="cost-context-secrets-link"
           >
             Secrets →
@@ -213,7 +213,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : chargeback ? (
         <div className="glass-panel-card" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-            <h2 className="text-lg font-semibold text-slate-100">Fleet chargeback</h2>
+            <h2 className="text-lg font-semibold text-ink">Fleet chargeback</h2>
             <button
               type="button"
               data-testid="cost-fleet-metrics-link"
@@ -224,25 +224,25 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
                     : viewToPath('metrics'),
                 )
               }
-              className="text-xs text-aether hover:underline"
+              className="text-xs text-brand hover:underline"
             >
               Full report on Metrics →
             </button>
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { tab: 'cost' })}
-              className="text-xs text-aether hover:underline"
+              className="text-xs text-brand hover:underline"
             >
               Cost optimize →
             </Link>
             <Link
               to={viewToPath('scheduler')}
-              className="text-xs text-aether hover:underline"
+              className="text-xs text-brand hover:underline"
               data-testid="cost-scheduler-link"
             >
               Placement scheduler →
             </Link>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-2">
             {chargeback.pricingSource} · {chargeback.region} · fleet {formatUSD(chargeback.totalMonthlyUsd)}/mo
             · {chargeback.lines.length} workload line(s)
           </p>
@@ -251,16 +251,16 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
               {chargeback.lines.map((line) => (
                 <li
                   key={line.workload}
-                  className={`flex flex-wrap items-center justify-between gap-2 ${workloadQuery.trim() === line.workload ? 'rounded-lg border border-aether/40 bg-aether/5 px-2 py-1' : ''}`}
+                  className={`flex flex-wrap items-center justify-between gap-2 ${workloadQuery.trim() === line.workload ? 'rounded-lg border border-brand/40 bg-brand/5 px-2 py-1' : ''}`}
                   data-testid={workloadQuery.trim() === line.workload ? 'cost-workload-highlight' : undefined}
                 >
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: line.workload })}
-                    className="text-aether hover:underline font-mono text-xs"
+                    className="text-brand hover:underline font-mono text-xs"
                   >
                     {line.workload}
                   </Link>
-                  <span className="text-slate-500">{formatUSD(line.monthlyUsd)}/mo</span>
+                  <span className="text-ink-3">{formatUSD(line.monthlyUsd)}/mo</span>
                 </li>
               ))}
             </ul>

@@ -48,7 +48,7 @@ export default function FleetRootCausePanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-sm text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-sm text-ink-2 hover:border-brand/40"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Scan fleet
@@ -56,7 +56,7 @@ export default function FleetRootCausePanel() {
       }
     >
       {loading && !report ? (
-        <div className="flex items-center gap-2 py-8 text-sm text-slate-500">
+        <div className="flex items-center gap-2 py-8 text-sm text-ink-3">
           <Loader2 className="h-4 w-4 animate-spin" />
           Correlating logs, events, and health signals…
         </div>
@@ -81,11 +81,11 @@ export default function FleetRootCausePanel() {
                   <button
                     type="button"
                     onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: row.workload }))}
-                    className="text-left text-base font-semibold text-white hover:text-aether"
+                    className="text-left text-base font-semibold text-ink hover:text-brand"
                   >
                     {row.workload}
                   </button>
-                  <p className="mt-1 text-sm text-slate-400">{row.summary}</p>
+                  <p className="mt-1 text-sm text-ink-2">{row.summary}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge text={row.health_level} variant={row.health_level === 'failing' ? 'red' : 'yellow'} />
@@ -95,20 +95,20 @@ export default function FleetRootCausePanel() {
 
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-slate-500">Likely cause</div>
+                  <div className="text-[10px] uppercase tracking-wider text-ink-3">Likely cause</div>
                   <div className="mt-1 flex items-center gap-2 text-sm font-medium text-amber-100">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
                     {row.likely_cause}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-slate-500">Recommendation</div>
-                  <p className="mt-1 text-sm text-slate-300">{row.recommendation}</p>
+                  <div className="text-[10px] uppercase tracking-wider text-ink-3">Recommendation</div>
+                  <p className="mt-1 text-sm text-ink-2">{row.recommendation}</p>
                 </div>
               </div>
 
               {row.evidence.length > 0 ? (
-                <ul className="mt-3 space-y-1 glass-divider-t/60 pt-3 text-xs text-slate-500">
+                <ul className="mt-3 space-y-1 glass-divider-t/60 pt-3 text-xs text-ink-3">
                   {row.evidence.slice(0, 4).map((ev) => (
                     <li key={ev}>• {ev}</li>
                   ))}
@@ -116,10 +116,10 @@ export default function FleetRootCausePanel() {
               ) : null}
 
               <div className="mt-3 flex flex-wrap gap-3 text-xs">
-                <Link to={pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'logs' })} className="text-aether hover:underline">
+                <Link to={pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'logs' })} className="text-brand hover:underline">
                   View logs →
                 </Link>
-                <Link to={pathWithQuery(viewToPath('zyra'), { workload: row.workload, q: `Fix ${row.workload}` })} className="text-aether hover:underline">
+                <Link to={pathWithQuery(viewToPath('zyra'), { workload: row.workload, q: `Fix ${row.workload}` })} className="text-brand hover:underline">
                   Ask copilot →
                 </Link>
               </div>

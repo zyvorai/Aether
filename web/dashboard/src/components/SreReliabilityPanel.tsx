@@ -151,7 +151,7 @@ export default function SreReliabilityPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -173,7 +173,7 @@ export default function SreReliabilityPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-rose-500/40 bg-rose-500/10 text-rose-200' : 'glass-divider text-slate-400'
+              tab === t.id ? 'border-rose-500/40 bg-rose-500/10 text-rose-200' : 'glass-divider text-ink-2'
             }`}
           >
             {t.label}
@@ -186,12 +186,12 @@ export default function SreReliabilityPanel() {
           {(timeline?.entries ?? []).slice(0, 12).map((e) => (
             <li key={e.id} className="rounded-lg border glass-divider px-3 py-2 text-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <Clock className="h-3.5 w-3.5 text-slate-500" />
-                <span className="text-xs text-slate-500">{e.timestamp}</span>
+                <Clock className="h-3.5 w-3.5 text-ink-3" />
+                <span className="text-xs text-ink-3">{e.timestamp}</span>
                 <Badge text={e.severity} variant={e.severity === 'critical' ? 'red' : 'muted'} />
-                <span className="font-medium text-white">{e.title}</span>
+                <span className="font-medium text-ink">{e.title}</span>
               </div>
-              <p className="mt-1 text-xs text-slate-400">{e.detail}</p>
+              <p className="mt-1 text-xs text-ink-2">{e.detail}</p>
             </li>
           ))}
         </ul>
@@ -200,12 +200,12 @@ export default function SreReliabilityPanel() {
       {tab === 'budget' ? (
         <ul className="space-y-2" data-testid="error-budget-panel">
           {(budgets?.entries ?? []).slice(0, 8).map((e) => (
-            <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
+            <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Activity className="h-3.5 w-3.5" />
-                <span className="font-medium text-white">{e.workload}</span>
+                <span className="font-medium text-ink">{e.workload}</span>
                 <Badge text={e.status} variant={e.status.includes('VIOLATED') ? 'red' : 'green'} />
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-ink-3">
                   {e.error_budget.consumed_pct.toFixed(0)}% budget consumed · burn {e.burn_rate.toFixed(2)}/day
                 </span>
               </div>
@@ -216,13 +216,13 @@ export default function SreReliabilityPanel() {
 
       {tab === 'postmortem' ? (
         <div data-testid="postmortem-panel">
-          <p className="mb-3 text-sm font-medium text-white">{postmortem?.title}</p>
+          <p className="mb-3 text-sm font-medium text-ink">{postmortem?.title}</p>
           {(postmortem?.sections ?? []).map((s) => (
             <div key={s.heading} className="mb-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{s.heading}</h3>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{s.heading}</h3>
               <ul className="space-y-1">
                 {s.bullets.map((b) => (
-                  <li key={b} className="text-sm text-slate-400">
+                  <li key={b} className="text-sm text-ink-2">
                     {b}
                   </li>
                 ))}
@@ -245,10 +245,10 @@ export default function SreReliabilityPanel() {
           <ul className="space-y-2">
             {(onCall?.channels ?? []).map((c) => (
               <li key={c.provider} className="flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-sm">
-                <Phone className="h-4 w-4 text-slate-400" />
-                <span className="text-white">{c.provider}</span>
+                <Phone className="h-4 w-4 text-ink-2" />
+                <span className="text-ink">{c.provider}</span>
                 <Badge text={c.configured ? 'linked' : 'missing'} variant={c.configured ? 'green' : 'muted'} />
-                <span className="text-xs text-slate-500">{c.env_hint}</span>
+                <span className="text-xs text-ink-3">{c.env_hint}</span>
               </li>
             ))}
           </ul>
@@ -259,10 +259,10 @@ export default function SreReliabilityPanel() {
         <ol className="space-y-2" data-testid="escalation-panel">
           {(escalation?.policies ?? []).map((p) => (
             <li key={p.order} className="rounded-lg border glass-divider px-3 py-2 text-sm">
-              <span className="font-medium text-white">
+              <span className="font-medium text-ink">
                 {p.order}. {p.agent}
               </span>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-2">
                 {p.trigger} → {p.action}
               </p>
             </li>
@@ -277,7 +277,7 @@ export default function SreReliabilityPanel() {
           </p>
           <ul className="space-y-2">
             {(mttr?.entries ?? []).slice(0, 6).map((e) => (
-              <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
+              <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
                 {e.workload}: {e.incidents} incidents · avg {e.avg_recovery_minutes.toFixed(0)} min
               </li>
             ))}
@@ -290,9 +290,9 @@ export default function SreReliabilityPanel() {
           {(chaos?.experiments ?? []).slice(0, 6).map((e) => (
             <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border glass-divider px-3 py-2 text-sm">
               <div>
-                <span className="font-medium text-white">{e.label}</span>
+                <span className="font-medium text-ink">{e.label}</span>
                 <Badge text={e.risk} variant={e.risk === 'high' ? 'red' : 'yellow'} />
-                <p className="text-xs text-slate-500">{e.description}</p>
+                <p className="text-xs text-ink-3">{e.description}</p>
               </div>
               <button
                 type="button"
@@ -313,10 +313,10 @@ export default function SreReliabilityPanel() {
             <li key={s.id} className="rounded-lg border glass-divider px-3 py-2 text-sm">
               <div className="mb-2 flex items-center gap-2">
                 <Zap className="h-4 w-4 text-violet-400" />
-                <span className="font-medium text-white">{s.title}</span>
+                <span className="font-medium text-ink">{s.title}</span>
                 <Badge text={`${s.duration_minutes}m`} variant="muted" />
               </div>
-              <ul className="ml-6 list-disc text-xs text-slate-400">
+              <ul className="ml-6 list-disc text-xs text-ink-2">
                 {s.steps.map((step) => (
                   <li key={step}>{step}</li>
                 ))}
@@ -327,7 +327,7 @@ export default function SreReliabilityPanel() {
       ) : null}
 
       {!loading && tab === 'timeline' && !(timeline?.entries.length ?? 0) ? (
-        <p className="flex items-center gap-2 text-sm text-slate-500">
+        <p className="flex items-center gap-2 text-sm text-ink-3">
           <AlertTriangle className="h-4 w-4" />
           No incidents in timeline yet.
         </p>
@@ -335,8 +335,8 @@ export default function SreReliabilityPanel() {
 
       {!loading && tab === 'postmortem' && postmortem ? (
         <details className="mt-4">
-          <summary className="cursor-pointer text-sm text-aether">View markdown</summary>
-          <pre className="mt-2 max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-slate-300">
+          <summary className="cursor-pointer text-sm text-brand">View markdown</summary>
+          <pre className="mt-2 max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-ink-2">
             {postmortem.markdown}
           </pre>
         </details>

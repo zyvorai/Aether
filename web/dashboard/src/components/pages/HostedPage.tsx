@@ -159,19 +159,19 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
       <div className="mb-6 glass-context-banner" data-testid="hosted-hub-context">
         Hosted control plane
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="hosted-context-fleet-link">
+        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="hosted-context-fleet-link">
           Fleet →
         </Link>
         {' · '}
-        <Link to={viewToPath('platform')} className="text-aether hover:underline" data-testid="hosted-context-platform-link">
+        <Link to={viewToPath('platform')} className="text-brand hover:underline" data-testid="hosted-context-platform-link">
           Platform →
         </Link>
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="hosted-context-federation-link">
+        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="hosted-context-federation-link">
           Federation →
         </Link>
         {' · '}
-        <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="hosted-context-settings-link">
+        <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="hosted-context-settings-link">
           Identity & SSO →
         </Link>
       </div>
@@ -182,7 +182,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
             <div>
               <p className="section-label">Managed federation</p>
               <h2 className="section-title flex items-center gap-2">
-                <Globe2 size={18} className="text-aether" />
+                <Globe2 size={18} className="text-brand" />
                 {federation.federation_enabled ? 'Federation active' : 'Single-cluster mode'}
               </h2>
               <p className="section-subtitle">
@@ -212,10 +212,10 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-slate-500">Set AETHER_FEDERATION_CLUSTERS to enable multi-cluster placement.</p>
+            <p className="mt-4 text-sm text-ink-3">Set AETHER_FEDERATION_CLUSTERS to enable multi-cluster placement.</p>
           )}
           {federationPlan && (
-            <p className="mt-4 text-sm text-slate-300" data-testid="hosted-federation-plan-result">
+            <p className="mt-4 text-sm text-ink-2" data-testid="hosted-federation-plan-result">
               Recommended: {federationPlan.recommended_cluster ?? 'none'} ({federationPlan.recommended_runtime})
             </p>
           )}
@@ -232,8 +232,8 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
               <h2 className="section-title">Version {upgrades.current_version}</h2>
               <p className="section-subtitle">{upgrades.notes}</p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <Rocket size={16} className="text-aether" />
+            <div className="flex items-center gap-2 text-sm text-ink-2">
+              <Rocket size={16} className="text-brand" />
               Channel: {upgrades.channel}
               {upgrades.upgrade_available ? (
                 <Badge variant="yellow" text="Upgrade available" />
@@ -248,25 +248,25 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
       {billing && (
         <section className="overview-section-shell mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8" data-testid="hosted-billing-panel">
           <div className="glass-panel-card py-3 px-4">
-            <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+            <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
               <Users size={16} /> Tenants
             </div>
             {/* billing.tenants always has >=1 entry (a synthetic "self-hosted" line when no
                 real tenants exist, for usage metering) — using the real tenant count here
                 keeps this stat consistent with the Tenants list rendered below. */}
-            <div className="text-2xl font-semibold text-slate-100">{tenants.length}</div>
+            <div className="text-2xl font-semibold text-ink">{tenants.length}</div>
           </div>
           <div className="glass-panel-card py-3 px-4">
-            <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+            <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
               <Building2 size={16} /> Workloads
             </div>
-            <div className="text-2xl font-semibold text-slate-100">{billing.total_workloads}</div>
+            <div className="text-2xl font-semibold text-ink">{billing.total_workloads}</div>
           </div>
           <div className="glass-panel-card py-3 px-4">
-            <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+            <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
               <CreditCard size={16} /> Period
             </div>
-            <div className="text-2xl font-semibold text-slate-100">{billing.period}</div>
+            <div className="text-2xl font-semibold text-ink">{billing.period}</div>
           </div>
         </section>
       )}
@@ -335,7 +335,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
               subtitle={t.slug}
               badge={<Badge variant={t.active ? 'green' : 'muted'} text={t.active ? 'Active' : 'Inactive'} />}
               body={
-                <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] capitalize text-slate-300">
+                <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] capitalize text-ink-2">
                   Plan: {t.plan}
                 </span>
               }
@@ -343,7 +343,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
                 <>
                   <button
                     type="button"
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                     onClick={() => {
                       setActiveTenantId(t.slug);
                       toast(`Active tenant: ${t.slug}`, 'success');
@@ -357,7 +357,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
                       data-testid="hosted-upgrade-button"
                       disabled={upgradingId === t.id}
                       onClick={() => void handleUpgrade(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-aether/15 hover:text-aether disabled:opacity-50"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-brand/15 hover:text-brand disabled:opacity-50"
                     >
                       {upgradingId === t.id ? '…' : 'Upgrade'}
                     </button>
@@ -367,7 +367,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
                       type="button"
                       data-testid="hosted-stripe-checkout-button"
                       onClick={() => void handleStripeCheckout(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                     >
                       Stripe
                     </button>
@@ -377,7 +377,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
                       type="button"
                       data-testid="hosted-stripe-portal-button"
                       onClick={() => void handleStripePortal(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                     >
                       Portal
                     </button>

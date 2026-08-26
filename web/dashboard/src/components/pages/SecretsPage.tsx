@@ -146,8 +146,8 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
 
   return (
     <div>
-      <p className="glass-context-banner mb-4 text-sm text-slate-500">
-        Secrets stored with <code className="text-slate-400">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.{' '}
+      <p className="glass-context-banner mb-4 text-sm text-ink-3">
+        Secrets stored with <code className="text-ink-2">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.{' '}
         <button
           type="button"
           data-testid="secrets-rbac-link"
@@ -158,7 +158,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
                 : viewToPath('rbac'),
             )
           }
-          className="text-aether hover:underline"
+          className="text-brand hover:underline"
         >
           API access control →
         </button>
@@ -167,7 +167,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
           type="button"
           data-testid="secrets-confidential-link"
           onClick={() => navigate(viewToPath('confidential'))}
-          className="text-aether hover:underline"
+          className="text-brand hover:underline"
         >
           Confidential computing →
         </button>
@@ -179,7 +179,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="secrets-editor-link"
             >
               Editor →
@@ -187,7 +187,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('backups'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="secrets-backups-link"
             >
               Backups →
@@ -195,7 +195,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="secrets-context-rbac-link"
             >
               RBAC →
@@ -203,7 +203,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="secrets-context-policy-link"
             >
               Policy →
@@ -211,7 +211,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('confidential'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="secrets-context-confidential-link"
             >
               Confidential →
@@ -219,7 +219,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="secrets-context-gitops-link"
             >
               GitOps →
@@ -227,7 +227,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('templates'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="secrets-context-templates-link"
             >
               Templates →
@@ -277,19 +277,19 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
                 body={
                   <>
                     <div className="flex flex-wrap gap-1.5">
-                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">{s.key_count} keys</span>
-                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-400">{formatTimestamp(s.updated_at)}</span>
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{s.key_count} keys</span>
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{formatTimestamp(s.updated_at)}</span>
                     </div>
                     {expanded && secretDetail ? (
                       <div className="mt-3 space-y-2 rounded-lg border glass-divider glass-inset-surface p-3">
                         <div className="flex flex-wrap gap-1.5">
                           {secretDetail.keys.map((key) => (
-                            <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-[11px] text-slate-300">
+                            <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-[11px] text-ink-2">
                               {key}
                               <button
                                 type="button"
                                 onClick={() => void copyKeyName(key)}
-                                className="text-slate-500 hover:text-aether"
+                                className="text-ink-3 hover:text-brand"
                                 title="Copy key name"
                                 data-testid={`secrets-copy-key-${key}`}
                               >
@@ -298,9 +298,9 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
                             </span>
                           ))}
                         </div>
-                        <p className="text-[11px] text-slate-500">Created {formatTimestamp(secretDetail.created_at)}</p>
+                        <p className="text-[11px] text-ink-3">Created {formatTimestamp(secretDetail.created_at)}</p>
                         {secretDetail.rotation_policy ? (
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[11px] text-ink-2">
                             Rotate every {secretDetail.rotation_policy.interval_days}d · max age {secretDetail.rotation_policy.max_age_days}d · notify {secretDetail.rotation_policy.notify_before_days}d before
                           </p>
                         ) : null}
@@ -313,10 +313,10 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
                     <button
                       type="button"
                       onClick={() => void handleExpand(s.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                     >
                       {detailLoading === s.name ? (
-                        <span className="h-3 w-3 animate-spin rounded-full border-b border-aether" />
+                        <span className="h-3 w-3 animate-spin rounded-full border-b border-brand" />
                       ) : expanded ? (
                         <ChevronDown size={13} />
                       ) : (
@@ -327,7 +327,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(s.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-red-500/15 hover:text-red-300"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-red-500/15 hover:text-red-300"
                     >
                       <Trash2 size={13} />
                       Delete
@@ -345,7 +345,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create secret">
         <div data-testid="secrets-create-modal" className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs text-slate-500">Name</label>
+            <label className="mb-1 block text-xs text-ink-3">Name</label>
             <input
               type="text"
               value={createName}
@@ -354,7 +354,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-slate-500">Namespace</label>
+            <label className="mb-1 block text-xs text-ink-3">Namespace</label>
             <input
               type="text"
               value={createNamespace}
@@ -363,7 +363,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-slate-500">Keys (KEY=value per line)</label>
+            <label className="mb-1 block text-xs text-ink-3">Keys (KEY=value per line)</label>
             <textarea
               value={createKeys}
               onChange={(e) => setCreateKeys(e.target.value)}
@@ -373,7 +373,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 glass-inset-surface glass-inset-hover text-slate-200 rounded-lg text-sm">
+          <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 glass-inset-surface glass-inset-hover text-ink rounded-lg text-sm">
             Cancel
           </button>
           <button
@@ -389,14 +389,14 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
 
       <Modal isOpen={confirmDelete !== null} onClose={() => setConfirmDelete(null)} title="Confirm delete">
         <div data-testid="secrets-delete-confirm">
-        <p className="text-sm text-slate-300 mb-6">
+        <p className="text-sm text-ink-2 mb-6">
           Are you sure you want to delete secret &quot;{confirmDelete}&quot;? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={() => setConfirmDelete(null)}
-            className="px-4 py-2 glass-inset-surface glass-inset-hover text-slate-200 rounded-lg text-sm font-medium"
+            className="px-4 py-2 glass-inset-surface glass-inset-hover text-ink rounded-lg text-sm font-medium"
           >
             Cancel
           </button>

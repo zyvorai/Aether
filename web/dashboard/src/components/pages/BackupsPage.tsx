@@ -109,19 +109,19 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
       <div className="mb-6 glass-context-banner" data-testid="backups-hub-context">
         Backups hub
         {' · '}
-        <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="backups-context-settings-link">
+        <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="backups-context-settings-link">
           Settings →
         </Link>
         {' · '}
-        <Link to={viewToPath('audit')} className="text-aether hover:underline" data-testid="backups-context-audit-link">
+        <Link to={viewToPath('audit')} className="text-brand hover:underline" data-testid="backups-context-audit-link">
           Audit →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="backups-context-hosted-link">
+        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="backups-context-hosted-link">
           Hosted SaaS →
         </Link>
         {' · '}
-        <Link to={viewToPath('migrations')} className="text-aether hover:underline" data-testid="backups-context-migrations-link">
+        <Link to={viewToPath('migrations')} className="text-brand hover:underline" data-testid="backups-context-migrations-link">
           Migrations →
         </Link>
       </div>
@@ -132,7 +132,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="backups-editor-link"
             >
               Editor →
@@ -140,7 +140,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="backups-drift-link"
             >
               Drift →
@@ -148,7 +148,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="backups-secrets-link"
             >
               Secrets →
@@ -156,7 +156,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="backups-context-rbac-link"
             >
               RBAC →
@@ -164,7 +164,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="backups-context-gitops-link"
             >
               GitOps →
@@ -172,7 +172,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="backups-context-policy-link"
             >
               Policy →
@@ -180,7 +180,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `Backup guidance for ${search.trim()}` })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="backups-context-copilot-link"
             >
               Copilot →
@@ -201,7 +201,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
                 : viewToPath('audit'),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
         >
           View restore audit trail →
         </button>
@@ -215,7 +215,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
                 : viewToPath('platform'),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
         >
           Remote backup config →
         </button>
@@ -258,10 +258,10 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
               onClick={() => setRestoreOpen(b.filename)}
               body={
                 <>
-                  {b.description ? <p className="line-clamp-2 text-[12px] text-slate-400">{b.description}</p> : null}
+                  {b.description ? <p className="line-clamp-2 text-[12px] text-ink-2">{b.description}</p> : null}
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">{b.workload_count} workloads</span>
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">v{b.aether_version}</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{b.workload_count} workloads</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">v{b.aether_version}</span>
                   </div>
                 </>
               }
@@ -269,7 +269,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
                 <button
                   type="button"
                   onClick={() => setRestoreOpen(b.filename)}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-emerald-500/15 hover:text-emerald-300"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-emerald-500/15 hover:text-emerald-300"
                 >
                   <RotateCcw size={13} />
                   Restore
@@ -298,7 +298,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
             className="glass-input"
           />
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 rounded-lg text-sm text-slate-300 glass-inset-hover">
+            <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 rounded-lg text-sm text-ink-2 glass-inset-hover">
               Cancel
             </button>
             <button
@@ -315,10 +315,10 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
 
       <Modal isOpen={restoreOpen !== null} onClose={() => setRestoreOpen(null)} title="Restore backup">
         <div data-testid="backup-restore-modal">
-        <p className="text-sm text-slate-300 mb-4">
-          Restore state from <code className="text-slate-400">{restoreOpen}</code>. This replaces current workloads unless merge is enabled.
+        <p className="text-sm text-ink-2 mb-4">
+          Restore state from <code className="text-ink-2">{restoreOpen}</code>. This replaces current workloads unless merge is enabled.
         </p>
-        <label className="flex items-center gap-2 text-sm text-slate-300 mb-6">
+        <label className="flex items-center gap-2 text-sm text-ink-2 mb-6">
           <input
             type="checkbox"
             checked={restoreMerge}
@@ -328,7 +328,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
           Merge workloads not already present
         </label>
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => setRestoreOpen(null)} className="px-4 py-2 rounded-lg text-sm text-slate-300 glass-inset-hover">
+          <button type="button" onClick={() => setRestoreOpen(null)} className="px-4 py-2 rounded-lg text-sm text-ink-2 glass-inset-hover">
             Cancel
           </button>
           <button

@@ -13,13 +13,13 @@ export interface RibbonItem {
 }
 
 const valueTone: Record<RibbonTone, string> = {
-  white: 'text-white',
+  white: 'text-ink',
   emerald: 'text-emerald-300',
   amber: 'text-amber-200',
   violet: 'text-violet-200',
   sky: 'text-sky-200',
   red: 'text-red-300',
-  aether: 'text-aether',
+  aether: 'text-brand',
 };
 
 const hoverTone: Record<RibbonTone, string> = {
@@ -29,7 +29,7 @@ const hoverTone: Record<RibbonTone, string> = {
   violet: 'hover:bg-violet-500/5',
   sky: 'hover:bg-sky-500/5',
   red: 'hover:bg-red-500/5',
-  aether: 'hover:bg-aether/5',
+  aether: 'hover:bg-brand/5',
 };
 
 interface StatRibbonProps {
@@ -57,7 +57,7 @@ export default function StatRibbon({ items, columns, testId, className }: StatRi
         const tone = item.tone ?? 'white';
         const inner = (
           <>
-            <div className="text-[10px] uppercase tracking-wider text-slate-500">{item.label}</div>
+            <div className="text-[10px] uppercase tracking-wider text-ink-3">{item.label}</div>
             <div className={`mt-0.5 text-xl font-semibold tabular-nums ${valueTone[tone]}`}>{item.value}</div>
           </>
         );

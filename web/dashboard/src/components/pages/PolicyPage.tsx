@@ -80,11 +80,11 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
     <div className="space-y-4" data-testid="policy-check-result">
       <div className="flex items-center gap-3">
         <Badge text={result.passed ? 'PASSED' : 'FAILED'} variant={result.passed ? 'green' : 'red'} />
-        <span className="text-sm text-slate-400">{result.policies_evaluated} policies evaluated</span>
+        <span className="text-sm text-ink-2">{result.policies_evaluated} policies evaluated</span>
       </div>
       {result.violations.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
+          <h4 className="text-sm font-medium text-ink-2 mb-2 flex items-center gap-2">
             <AlertCircle size={16} className="text-red-400" />
             Violations ({result.violations.length})
           </h4>
@@ -92,11 +92,11 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
             {result.violations.map((v, i) => (
               <div key={i} className="bg-red-500/5 border border-red-500/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-slate-200 text-sm">{v.policy}</span>
+                  <span className="font-medium text-ink text-sm">{v.policy}</span>
                   <SeverityBadge severity={v.severity} />
                 </div>
-                <div className="text-sm text-slate-300">{v.message}</div>
-                <div className="flex gap-4 text-xs text-slate-500 mt-1">
+                <div className="text-sm text-ink-2">{v.message}</div>
+                <div className="flex gap-4 text-xs text-ink-3 mt-1">
                   <span>Rule: {v.rule}</span>
                   <span>Field: {v.field}</span>
                 </div>
@@ -107,15 +107,15 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
       )}
       {result.warnings.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
+          <h4 className="text-sm font-medium text-ink-2 mb-2 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-400" />
             Warnings ({result.warnings.length})
           </h4>
           <div className="space-y-2">
             {result.warnings.map((w, i) => (
               <div key={i} className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
-                <div className="font-medium text-slate-200 text-sm mb-1">{w.policy}</div>
-                <div className="text-sm text-slate-300">{w.message}</div>
+                <div className="font-medium text-ink text-sm mb-1">{w.policy}</div>
+                <div className="text-sm text-ink-2">{w.message}</div>
                 <div className="text-xs text-amber-400 mt-1">{w.suggestion}</div>
               </div>
             ))}
@@ -145,7 +145,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="policy-editor-link"
           >
             Editor →
@@ -153,7 +153,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="policy-openapi-link"
           >
             OpenAPI →
@@ -161,7 +161,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="policy-secrets-link"
           >
             Secrets →
@@ -169,7 +169,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="policy-context-rbac-link"
           >
             RBAC →
@@ -177,7 +177,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="policy-context-audit-link"
           >
             Audit →
@@ -185,7 +185,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="policy-context-compose-link"
           >
             Compose →
@@ -204,7 +204,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
                 : viewToPath('drift'),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="policy-context-drift-link"
         >
           Drift detection →
@@ -218,7 +218,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
                 : pathWithQuery(viewToPath('workloads'), { validate: '1' }),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="policy-validate-link"
         >
           Validate workloads →
@@ -232,7 +232,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
                 : viewToPath('platform'),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="policy-platform-link"
         >
           Platform &amp; HA →
@@ -241,13 +241,13 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
       {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
         <div
           data-testid="policy-opa-setup-banner"
-          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border glass-divider/80 glass-panel-card/60 px-4 py-3 text-sm text-slate-300"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border glass-divider/80 glass-panel-card/60 px-4 py-3 text-sm text-ink-2"
         >
           <span>OPA is not configured — built-in policy check works below; enable OPA admission on Platform &amp; HA.</span>
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="rounded-lg border border-aether/40 bg-aether/10 px-3 py-1 text-xs font-medium text-aether hover:bg-aether/20"
+            className="rounded-lg border border-brand/40 bg-brand/10 px-3 py-1 text-xs font-medium text-brand hover:bg-brand/20"
           >
             Open Platform
           </button>
@@ -264,14 +264,14 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
 
       {opaConfigured && (
         <div className="glass-panel-card mb-6">
-          <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
-            <ShieldCheck size={20} className="text-aether" />
+          <h2 className="text-lg font-semibold text-ink mb-2 flex items-center gap-2">
+            <ShieldCheck size={20} className="text-brand" />
             OPA admission (live)
           </h2>
-          <p className="text-sm text-slate-500 mb-4">
+          <p className="text-sm text-ink-3 mb-4">
             Evaluates Kubernetes manifest JSON against the OPA server configured via{' '}
-            <code className="text-slate-400">AETHER_OPA_URL</code>. With{' '}
-            <code className="text-slate-400">AETHER_OPA_ENFORCE=1</code>, cluster apply is blocked on deny.
+            <code className="text-ink-2">AETHER_OPA_URL</code>. With{' '}
+            <code className="text-ink-2">AETHER_OPA_ENFORCE=1</code>, cluster apply is blocked on deny.
           </p>
           <textarea
             value={opaManifest}
@@ -293,7 +293,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
             <div className="mt-4" data-testid="policy-opa-result">
               <Badge text={opaResult.allowed ? 'ALLOWED' : 'DENIED'} variant={opaResult.allowed ? 'green' : 'red'} />
               {opaResult.denials.length > 0 && (
-                <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                <ul className="mt-3 space-y-2 text-sm text-ink-2">
                   {opaResult.denials.map((d) => (
                     <li key={d} className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
                       {d}

@@ -27,19 +27,19 @@ export default function MigrationsPage() {
     <div className="mb-6 glass-context-banner" data-testid="migrations-hub-context">
       Migrations
       {' · '}
-      <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="migrations-context-orchestrator-link">
+      <Link to={viewToPath('health')} className="text-brand hover:underline" data-testid="migrations-context-orchestrator-link">
         Orchestrator →
       </Link>
       {' · '}
-      <Link to={viewToPath('security')} className="text-aether hover:underline" data-testid="migrations-context-security-link">
+      <Link to={viewToPath('security')} className="text-brand hover:underline" data-testid="migrations-context-security-link">
         Security →
       </Link>
       {' · '}
-      <Link to={viewToPath('gitops')} className="text-aether hover:underline" data-testid="migrations-context-gitops-link">
+      <Link to={viewToPath('gitops')} className="text-brand hover:underline" data-testid="migrations-context-gitops-link">
         GitOps →
       </Link>
       {' · '}
-      <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="migrations-context-hosted-link">
+      <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="migrations-context-hosted-link">
         Hosted SaaS →
       </Link>
     </div>
@@ -54,7 +54,7 @@ export default function MigrationsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fabric'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="mig-context-fabric-link"
           >
             Fabric →
@@ -62,7 +62,7 @@ export default function MigrationsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="mig-context-fleet-link"
           >
             Fleet →
@@ -70,7 +70,7 @@ export default function MigrationsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="mig-context-drift-link"
           >
             Drift →

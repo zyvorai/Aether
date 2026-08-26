@@ -132,8 +132,8 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
     if (lower.includes('error') || lower.includes('fatal') || lower.includes('panic')) return 'text-red-400';
     if (lower.includes('warn')) return 'text-orange-400';
     if (lower.includes('info')) return 'text-green-400';
-    if (lower.includes('debug') || lower.includes('trace')) return 'text-slate-500';
-    return 'text-slate-300';
+    if (lower.includes('debug') || lower.includes('trace')) return 'text-ink-3';
+    return 'text-ink-2';
   };
 
   const emptyMessage = fetchError
@@ -154,7 +154,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
           className="glass-input min-w-[12rem] flex-1"
         />
         {containers.length > 1 ? (
-          <label className="flex items-center gap-1 text-xs text-slate-400">
+          <label className="flex items-center gap-1 text-xs text-ink-2">
             Container
             <select
               value={container}
@@ -169,7 +169,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
             </select>
           </label>
         ) : null}
-        <label className="flex items-center gap-1 text-xs text-slate-400">
+        <label className="flex items-center gap-1 text-xs text-ink-2">
           Tail
           <select
             value={tail}
@@ -236,7 +236,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
         >
           Download
         </button>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-ink-3">
           {nonemptyFiltered.length} lines
           {lastUpdated ? ` · ${new Date(lastUpdated).toLocaleTimeString()}` : ''}
         </span>
@@ -250,11 +250,11 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
           data-testid="log-viewer-body"
         >
           {nonemptyFiltered.length === 0 ? (
-            <span className="text-slate-500" data-testid="log-viewer-empty">{emptyMessage}</span>
+            <span className="text-ink-3" data-testid="log-viewer-empty">{emptyMessage}</span>
           ) : (
             filteredLogs.map((line, i) => (
               <div key={i} className="flex">
-                <span className="mr-2 w-12 shrink-0 select-none border-r glass-divider pr-2 text-right text-slate-600">
+                <span className="mr-2 w-12 shrink-0 select-none border-r glass-divider pr-2 text-right text-ink-3">
                   {i + 1}
                 </span>
                 <span className={`${getLineColor(line)} ${wrap ? 'min-w-0 break-words' : ''}`}>{line}</span>
@@ -266,7 +266,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
           <button
             type="button"
             onClick={jumpToBottom}
-            className="absolute bottom-3 right-3 rounded-full glass-inset-surface px-3 py-1.5 text-xs text-slate-200 shadow-lg hover:text-aether"
+            className="absolute bottom-3 right-3 rounded-full glass-inset-surface px-3 py-1.5 text-xs text-ink shadow-lg hover:text-brand"
             data-testid="log-jump-bottom"
           >
             ↓ Jump to latest

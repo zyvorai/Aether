@@ -249,7 +249,7 @@ export default function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="editor-banner-gitops-link"
           >
             GitOps →
@@ -257,7 +257,7 @@ export default function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('backups'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="editor-banner-backups-link"
           >
             Backups →
@@ -265,7 +265,7 @@ export default function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('templates'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="editor-banner-templates-link"
           >
             Templates →
@@ -273,7 +273,7 @@ export default function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="editor-banner-policy-link"
           >
             Policy →
@@ -283,11 +283,11 @@ export default function EditorPage() {
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <FileText className="w-6 h-6 text-aether" />
+          <FileText className="w-6 h-6 text-brand" />
           <div>
-            <h2 className="text-lg font-semibold text-slate-100">Visual workload editor</h2>
-            <p className="text-sm text-slate-500">Design workloads without writing YAML by hand</p>
-            <Link to={viewToPath('templates')} className="text-xs text-aether hover:underline" data-testid="editor-templates-link">
+            <h2 className="text-lg font-semibold text-ink">Visual workload editor</h2>
+            <p className="text-sm text-ink-3">Design workloads without writing YAML by hand</p>
+            <Link to={viewToPath('templates')} className="text-xs text-brand hover:underline" data-testid="editor-templates-link">
               Browse templates →
             </Link>
             {workloadQuery.trim() && form.name === workloadQuery ? (
@@ -295,7 +295,7 @@ export default function EditorPage() {
                 {' · '}
                 <Link
                   to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="editor-policy-link"
                 >
                   Policy check →
@@ -303,7 +303,7 @@ export default function EditorPage() {
                 {' · '}
                 <Link
                   to={pathWithQuery(viewToPath('gitops'), { workload: workloadQuery.trim() })}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="editor-gitops-link"
                 >
                   GitOps →
@@ -315,7 +315,7 @@ export default function EditorPage() {
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-slate-300"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-ink-2"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? 'Hide' : 'Show'} YAML
@@ -324,7 +324,7 @@ export default function EditorPage() {
           <button
             type="button"
             onClick={() => (yamlEditMode ? disableYamlEdit() : enableYamlEdit())}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-slate-300"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-ink-2"
           >
             <Pencil className="w-4 h-4" />
             {yamlEditMode ? 'Sync from form' : 'Edit YAML directly'}
@@ -335,10 +335,10 @@ export default function EditorPage() {
       <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
         <div className="glass-panel-card space-y-6">
           <div>
-            <h3 className="text-sm font-medium text-slate-400 mb-3">Basic information</h3>
+            <h3 className="text-sm font-medium text-ink-2 mb-3">Basic information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Name</label>
+                <label className="block text-xs text-ink-3 mb-1">Name</label>
                 <input
                   type="text"
                   value={form.name}
@@ -347,7 +347,7 @@ export default function EditorPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Image</label>
+                <label className="block text-xs text-ink-3 mb-1">Image</label>
                 <input
                   type="text"
                   value={form.image}
@@ -360,7 +360,7 @@ export default function EditorPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Runtime</label>
+              <label className="block text-xs text-ink-3 mb-1">Runtime</label>
               <select
                 value={form.runtime}
                 onChange={(e) => handleChange('runtime', e.target.value)}
@@ -374,7 +374,7 @@ export default function EditorPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Replicas</label>
+              <label className="block text-xs text-ink-3 mb-1">Replicas</label>
               <input
                 type="number"
                 value={form.replicas}
@@ -386,10 +386,10 @@ export default function EditorPage() {
 
           {(form.runtime === 'kubernetes' || form.runtime === 'kata') && (
             <div>
-              <h3 className="text-sm font-medium text-slate-400 mb-3">Kubernetes</h3>
+              <h3 className="text-sm font-medium text-ink-2 mb-3">Kubernetes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Namespace</label>
+                  <label className="block text-xs text-ink-3 mb-1">Namespace</label>
                   <input
                     type="text"
                     value={form.k8sNamespace}
@@ -398,7 +398,7 @@ export default function EditorPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Service account</label>
+                  <label className="block text-xs text-ink-3 mb-1">Service account</label>
                   <input
                     type="text"
                     value={form.k8sServiceAccount}
@@ -407,7 +407,7 @@ export default function EditorPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs text-slate-500 mb-1">Node selector (key=value)</label>
+                  <label className="block text-xs text-ink-3 mb-1">Node selector (key=value)</label>
                   <input
                     type="text"
                     value={form.k8sNodeSelector}
@@ -417,7 +417,7 @@ export default function EditorPage() {
                   />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm text-slate-300 mt-3">
+              <label className="flex items-center gap-2 text-sm text-ink-2 mt-3">
                 <input
                   type="checkbox"
                   checked={form.networkDenyAllIngress}
@@ -426,7 +426,7 @@ export default function EditorPage() {
                 />
                 Deny all ingress (network policy)
               </label>
-              <label className="flex items-center gap-2 text-sm text-slate-300 mt-3">
+              <label className="flex items-center gap-2 text-sm text-ink-2 mt-3">
                 <input
                   type="checkbox"
                   checked={form.showAdvancedK8s}
@@ -438,7 +438,7 @@ export default function EditorPage() {
               {form.showAdvancedK8s && (
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border glass-divider p-4">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Workload kind</label>
+                    <label className="block text-xs text-ink-3 mb-1">Workload kind</label>
                     <select
                       value={form.k8sWorkloadKind}
                       onChange={(e) => handleChange('k8sWorkloadKind', e.target.value)}
@@ -452,7 +452,7 @@ export default function EditorPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">PDB minAvailable</label>
+                    <label className="block text-xs text-ink-3 mb-1">PDB minAvailable</label>
                     <input
                       type="text"
                       value={form.k8sPdbMinAvailable}
@@ -461,7 +461,7 @@ export default function EditorPage() {
                       className="glass-input"
                     />
                   </div>
-                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sVpaEnabled}
@@ -470,7 +470,7 @@ export default function EditorPage() {
                     />
                     Vertical Pod Autoscaler (VPA)
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sKedaEnabled}
@@ -479,7 +479,7 @@ export default function EditorPage() {
                     />
                     KEDA ScaledObject
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sCertManagerEnabled}
@@ -488,7 +488,7 @@ export default function EditorPage() {
                     />
                     cert-manager Certificate (requires Ingress host)
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sGatewayEnabled}
@@ -513,7 +513,7 @@ export default function EditorPage() {
                         placeholder="Gateway host"
                         className="glass-input"
                       />
-                      <label className="flex items-center gap-2 text-sm text-slate-300 md:col-span-2">
+                      <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
                         <input
                           type="checkbox"
                           checked={form.k8sGatewayProvision}
@@ -530,8 +530,8 @@ export default function EditorPage() {
           )}
 
           <div>
-            <h3 className="text-sm font-medium text-slate-400 mb-3">Scaling & ingress</h3>
-            <label className="flex items-center gap-2 text-sm text-slate-300 mb-3">
+            <h3 className="text-sm font-medium text-ink-2 mb-3">Scaling & ingress</h3>
+            <label className="flex items-center gap-2 text-sm text-ink-2 mb-3">
               <input
                 type="checkbox"
                 checked={form.scalingEnabled}
@@ -543,7 +543,7 @@ export default function EditorPage() {
             {form.scalingEnabled && (
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Min replicas</label>
+                  <label className="block text-xs text-ink-3 mb-1">Min replicas</label>
                   <input
                     type="number"
                     value={form.scalingMin}
@@ -552,7 +552,7 @@ export default function EditorPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Max replicas</label>
+                  <label className="block text-xs text-ink-3 mb-1">Max replicas</label>
                   <input
                     type="number"
                     value={form.scalingMax}
@@ -562,7 +562,7 @@ export default function EditorPage() {
                 </div>
               </div>
             )}
-            <label className="flex items-center gap-2 text-sm text-slate-300 mb-3">
+            <label className="flex items-center gap-2 text-sm text-ink-2 mb-3">
               <input
                 type="checkbox"
                 checked={form.ingressEnabled}
@@ -601,10 +601,10 @@ export default function EditorPage() {
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-slate-400 mb-3">Resources</h3>
+            <h3 className="text-sm font-medium text-ink-2 mb-3">Resources</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-slate-500 mb-1">CPU</label>
+                <label className="block text-xs text-ink-3 mb-1">CPU</label>
                 <input
                   type="text"
                   value={form.cpu}
@@ -613,7 +613,7 @@ export default function EditorPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Memory</label>
+                <label className="block text-xs text-ink-3 mb-1">Memory</label>
                 <input
                   type="text"
                   value={form.memory}
@@ -625,7 +625,7 @@ export default function EditorPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Intent</label>
+            <label className="block text-xs text-ink-3 mb-1">Intent</label>
             <select
               value={form.intent}
               onChange={(e) => handleChange('intent', e.target.value)}
@@ -640,16 +640,16 @@ export default function EditorPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Environment (KEY=VALUE per line)</label>
+            <label className="block text-xs text-ink-3 mb-1">Environment (KEY=VALUE per line)</label>
             <textarea
               value={form.env}
               onChange={(e) => handleChange('env', e.target.value)}
               rows={3}
-              className="glass-input font-mono text-slate-100"
+              className="glass-input font-mono text-ink"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={form.healthCheck}
@@ -670,7 +670,7 @@ export default function EditorPage() {
           )}
 
           {exportPath && (
-            <p className="text-xs text-slate-500 mt-2">Helm output: <code className="text-aether/90">{exportPath}</code></p>
+            <p className="text-xs text-ink-3 mt-2">Helm output: <code className="text-brand/90">{exportPath}</code></p>
           )}
 
           <div className="flex flex-wrap gap-3 pt-4 glass-divider-t">
@@ -701,7 +701,7 @@ export default function EditorPage() {
               data-testid="editor-export-helm"
               onClick={() => void handleHelmExport()}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-slate-300 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-ink-2 disabled:opacity-50"
             >
               {exporting ? 'Exporting…' : 'Export Helm chart'}
             </button>
@@ -713,7 +713,7 @@ export default function EditorPage() {
                 setResult(null);
                 setValidateResult(null);
               }}
-              className="px-5 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-slate-300"
+              className="px-5 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-ink-2"
             >
               Reset
             </button>
@@ -722,7 +722,7 @@ export default function EditorPage() {
 
         {showPreview && (
           <div className="glass-panel-card flex min-h-0 flex-col">
-            <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
+            <div className="mb-3 flex items-center gap-2 text-sm text-ink-2">
               <Eye className="h-4 w-4" /> Live YAML preview
             </div>
             <div className="min-h-0 flex-1" data-testid="editor-yaml-preview">

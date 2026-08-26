@@ -115,7 +115,7 @@ export function ZyvorFooter({ className = '', hostOs }: FooterProps) {
       </div>
       {hostOs ? (
         <div
-          className="mt-1 text-[11px] text-slate-500"
+          className="mt-1 text-[11px] text-ink-3"
           title="Daemon host operating system"
         >
           {hostOs}

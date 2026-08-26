@@ -889,11 +889,11 @@ export default function WorkloadDetail({
       <div className="flex items-center justify-between px-4 py-3 glass-divider-b glass-inset-surface">
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-ink">
               {isKubeWorkload ? applicationLabel(workload) : workload.name}
             </h3>
             {isKubeWorkload && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-3">
                 Application · {workspaceLabel(workload.namespace)}
                 {workload.kind ? ` · ${workload.kind}` : ''}
               </p>
@@ -914,7 +914,7 @@ export default function WorkloadDetail({
               }
             />
           ) : null}
-          <span className="text-sm text-slate-400">{workload.runtime}</span>
+          <span className="text-sm text-ink-2">{workload.runtime}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -935,16 +935,16 @@ export default function WorkloadDetail({
             <Link2 className="h-3.5 w-3.5" />
             {linkCopied ? 'Copied' : 'Share link'}
           </button>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close">&times;</button>
+          <button type="button" onClick={onClose} className="text-ink-2 hover:text-ink text-xl leading-none" aria-label="Close">&times;</button>
         </div>
       </div>
 
       {showShortcuts ? (
-        <div className="px-4 py-2 text-xs text-slate-400 glass-divider-b glass-inset-surface" data-testid="workload-shortcuts-hint">
-          <span className="text-slate-300">Shortcuts:</span>{' '}
-          <kbd className="text-slate-300">1–6</kbd> tabs · <kbd className="text-slate-300">l</kbd> logs ·{' '}
-          <kbd className="text-slate-300">e</kbd> events · <kbd className="text-slate-300">o</kbd> overview ·{' '}
-          <kbd className="text-slate-300">s</kbd> exec · <kbd className="text-slate-300">?</kbd> toggle
+        <div className="px-4 py-2 text-xs text-ink-2 glass-divider-b glass-inset-surface" data-testid="workload-shortcuts-hint">
+          <span className="text-ink-2">Shortcuts:</span>{' '}
+          <kbd className="text-ink-2">1–6</kbd> tabs · <kbd className="text-ink-2">l</kbd> logs ·{' '}
+          <kbd className="text-ink-2">e</kbd> events · <kbd className="text-ink-2">o</kbd> overview ·{' '}
+          <kbd className="text-ink-2">s</kbd> exec · <kbd className="text-ink-2">?</kbd> toggle
         </div>
       ) : null}
 
@@ -996,7 +996,7 @@ export default function WorkloadDetail({
                     data-testid="workload-shell-button-denied"
                     disabled
                     title="Exec requires Operator or Admin role"
-                    className="px-3 py-1.5 text-sm font-medium rounded bg-slate-600/20 text-slate-500 border border-slate-600/30 cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-slate-600/20 text-ink-3 border border-slate-600/30 cursor-not-allowed"
                   >
                     Exec
                   </button>
@@ -1011,7 +1011,7 @@ export default function WorkloadDetail({
                         ? 'bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30'
                         : action === 'rollback'
                           ? 'bg-amber-600/20 text-amber-300 hover:bg-amber-600/40 border border-amber-600/30'
-                        : 'glass-inset-surface text-slate-300 hover:bg-white/[0.08] border glass-divider'
+                        : 'glass-inset-surface text-ink-2 hover:bg-white/[0.08] border glass-divider'
                     } disabled:opacity-50`}
                   >
                     {actionLoading === action ? '...' : action.charAt(0).toUpperCase() + action.slice(1)}
@@ -1021,13 +1021,13 @@ export default function WorkloadDetail({
                   <button
                     type="button"
                     onClick={() => onMigrate(workload.name)}
-                    className="px-3 py-1.5 text-sm font-medium rounded bg-aether/15 text-aether hover:bg-aether/25 border border-aether/30 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-brand/15 text-brand hover:bg-brand/25 border border-brand/30 transition-colors"
                   >
                     Migrate
                   </button>
                 ) : null}
                 {buildResult ? (
-                  <p data-testid="workload-build-result" className="w-full text-xs text-slate-400 mt-1">
+                  <p data-testid="workload-build-result" className="w-full text-xs text-ink-2 mt-1">
                     Build: {buildResult}
                   </p>
                 ) : null}
@@ -1066,7 +1066,7 @@ export default function WorkloadDetail({
                       data-testid="workload-shell-button-denied"
                       disabled
                       title="Exec requires Operator or Admin role"
-                      className="px-3 py-1.5 text-sm font-medium rounded bg-slate-600/20 text-slate-500 border border-slate-600/30 cursor-not-allowed"
+                      className="px-3 py-1.5 text-sm font-medium rounded bg-slate-600/20 text-ink-3 border border-slate-600/30 cursor-not-allowed"
                     >
                       Exec
                     </button>
@@ -1074,14 +1074,14 @@ export default function WorkloadDetail({
                   <button
                     onClick={() => handleAction('restart')}
                     disabled={!!actionLoading}
-                    className="px-3 py-1.5 text-sm font-medium rounded glass-inset-surface text-slate-300 hover:bg-white/[0.08] border glass-divider disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm font-medium rounded glass-inset-surface text-ink-2 hover:bg-white/[0.08] border glass-divider disabled:opacity-50"
                   >
                     {actionLoading === 'restart' ? '...' : 'Restart'}
                   </button>
                   {isScalableClusterWorkload && (
                     <>
                       <div>
-                        <label className="mb-1 block text-xs text-slate-500">Replicas</label>
+                        <label className="mb-1 block text-xs text-ink-3">Replicas</label>
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
@@ -1091,7 +1091,7 @@ export default function WorkloadDetail({
                               void handleAction('scale', next);
                             }}
                             disabled={!!actionLoading}
-                            className="rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
+                            className="rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-ink-2 hover:bg-white/[0.08] disabled:opacity-50"
                             title="Scale down by 1"
                             data-testid="workload-scale-down"
                           >
@@ -1102,7 +1102,7 @@ export default function WorkloadDetail({
                             min={0}
                             value={replicasInput}
                             onChange={(e) => setReplicasInput(e.target.value)}
-                            className="w-16 rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-white text-center"
+                            className="w-16 rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-ink text-center"
                           />
                           <button
                             type="button"
@@ -1112,7 +1112,7 @@ export default function WorkloadDetail({
                               void handleAction('scale', next);
                             }}
                             disabled={!!actionLoading}
-                            className="rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-slate-300 hover:bg-white/[0.08] disabled:opacity-50"
+                            className="rounded border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-ink-2 hover:bg-white/[0.08] disabled:opacity-50"
                             title="Scale up by 1"
                             data-testid="workload-scale-up"
                           >
@@ -1147,7 +1147,7 @@ export default function WorkloadDetail({
                         kind: workload.kind,
                         workload: workload.name,
                       })}
-                      className="px-3 py-1.5 text-sm font-medium rounded glass-inset-surface text-slate-300 hover:bg-white/[0.08] border glass-divider transition-colors"
+                      className="px-3 py-1.5 text-sm font-medium rounded glass-inset-surface text-ink-2 hover:bg-white/[0.08] border glass-divider transition-colors"
                       data-testid="workload-open-clusters-link"
                     >
                       Open in Clusters
@@ -1166,20 +1166,20 @@ export default function WorkloadDetail({
 
             {/* Info Grid */}
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-slate-500">Runtime</span><p className="text-white">{workload.runtime}</p></div>
-              <div><span className="text-slate-500">Image</span><p className="text-white font-mono text-xs">{workload.image}</p></div>
-              <div><span className="text-slate-500">Status</span><p className="text-white">{workload.status}</p></div>
-              <div><span className="text-slate-500">Created</span><p className="text-white">{workload.created_at ? formatTimestamp(workload.created_at) : ''}</p></div>
-              {workload.cluster && <div><span className="text-slate-500">Cluster</span><p className="text-white">{workload.cluster}</p></div>}
-              {workload.namespace && <div><span className="text-slate-500">Namespace</span><p className="text-white">{workload.namespace}</p></div>}
-              {workload.kind && <div><span className="text-slate-500">Kind</span><p className="text-white">{workload.kind}</p></div>}
-              <div><span className="text-slate-500">Source</span><p className="text-white capitalize">{workload.source ?? 'aether'}</p></div>
+              <div><span className="text-ink-3">Runtime</span><p className="text-ink">{workload.runtime}</p></div>
+              <div><span className="text-ink-3">Image</span><p className="text-ink font-mono text-xs">{workload.image}</p></div>
+              <div><span className="text-ink-3">Status</span><p className="text-ink">{workload.status}</p></div>
+              <div><span className="text-ink-3">Created</span><p className="text-ink">{workload.created_at ? formatTimestamp(workload.created_at) : ''}</p></div>
+              {workload.cluster && <div><span className="text-ink-3">Cluster</span><p className="text-ink">{workload.cluster}</p></div>}
+              {workload.namespace && <div><span className="text-ink-3">Namespace</span><p className="text-ink">{workload.namespace}</p></div>}
+              {workload.kind && <div><span className="text-ink-3">Kind</span><p className="text-ink">{workload.kind}</p></div>}
+              <div><span className="text-ink-3">Source</span><p className="text-ink capitalize">{workload.source ?? 'aether'}</p></div>
               {!isAetherManaged && clusterHealth ? (
                 <div className="col-span-2" data-testid="workload-health-summary">
-                  <span className="text-slate-500">Cluster health</span>
-                  <p className="text-white">
+                  <span className="text-ink-3">Cluster health</span>
+                  <p className="text-ink">
                     {clusterHealth.summary}{' '}
-                    <span className="text-slate-400">
+                    <span className="text-ink-2">
                       ({clusterHealth.ready_pods}/{clusterHealth.total_pods} ready
                       {clusterHealth.warning_events > 0 ? ` · ${clusterHealth.warning_events} warnings` : ''})
                     </span>
@@ -1201,11 +1201,11 @@ export default function WorkloadDetail({
 
             {!isAetherManaged && clusterDetail && clusterDetail.pods.length > 0 ? (
               <div className="mt-4" data-testid="workload-pod-info">
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Pods</h4>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Pods</h4>
                 <div className="overflow-x-auto rounded-lg border glass-divider">
                   <table className="w-full min-w-[28rem] text-left text-xs">
                     <thead>
-                      <tr className="glass-inset-surface text-slate-500">
+                      <tr className="glass-inset-surface text-ink-3">
                         <th className="px-3 py-2 font-medium">Name</th>
                         <th className="px-3 py-2 font-medium">Phase</th>
                         <th className="px-3 py-2 font-medium">Ready</th>
@@ -1218,14 +1218,14 @@ export default function WorkloadDetail({
                     <tbody>
                       {clusterDetail.pods.map((pod) => (
                         <tr key={pod.name} className="glass-divider-t">
-                          <td className="px-3 py-2 font-mono text-slate-200">{pod.name}</td>
-                          <td className="px-3 py-2 text-slate-300">{pod.phase}</td>
-                          <td className="px-3 py-2 text-slate-300">{pod.ready}/{pod.total_containers}</td>
-                          <td className={`px-3 py-2 ${pod.restarts > 5 ? 'text-amber-400 font-medium' : 'text-slate-300'}`}>{pod.restarts}</td>
-                          <td className="px-3 py-2 text-slate-400 truncate max-w-[10rem]" title={(pod.images?.length ? pod.images : pod.containers ?? []).join(', ')}>
+                          <td className="px-3 py-2 font-mono text-ink">{pod.name}</td>
+                          <td className="px-3 py-2 text-ink-2">{pod.phase}</td>
+                          <td className="px-3 py-2 text-ink-2">{pod.ready}/{pod.total_containers}</td>
+                          <td className={`px-3 py-2 ${pod.restarts > 5 ? 'text-amber-400 font-medium' : 'text-ink-2'}`}>{pod.restarts}</td>
+                          <td className="px-3 py-2 text-ink-2 truncate max-w-[10rem]" title={(pod.images?.length ? pod.images : pod.containers ?? []).join(', ')}>
                             {(pod.images?.length ? pod.images : pod.containers ?? []).join(', ') || '—'}
                           </td>
-                          <td className="px-3 py-2 text-slate-400">{pod.node ?? '—'}</td>
+                          <td className="px-3 py-2 text-ink-2">{pod.node ?? '—'}</td>
                           <td className="px-3 py-2 text-right whitespace-nowrap">
                             <button
                               type="button"
@@ -1233,7 +1233,7 @@ export default function WorkloadDetail({
                                 void copyToClipboard(pod.name);
                                 toast(`Copied ${pod.name}`, 'success');
                               }}
-                              className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-200"
+                              className="rounded px-1.5 py-0.5 text-[11px] text-ink-3 transition-colors hover:bg-white/5 hover:text-ink"
                               title="Copy pod name"
                             >
                               Copy
@@ -1248,7 +1248,7 @@ export default function WorkloadDetail({
                                   setShellPod(pod.name);
                                   setShellOpen(true);
                                 }}
-                                className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400"
+                                className="rounded px-1.5 py-0.5 text-[11px] text-ink-3 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400"
                                 title="Exec into this pod"
                                 data-testid={`workload-pod-shell-${pod.name}`}
                               >
@@ -1260,7 +1260,7 @@ export default function WorkloadDetail({
                                 type="button"
                                 onClick={() => void handleDeletePod(pod.name)}
                                 disabled={!!actionLoading}
-                                className="rounded px-1.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                                className="rounded px-1.5 py-0.5 text-[11px] text-ink-3 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                                 title="Delete pod (controller recreates it)"
                                 data-testid={`workload-pod-delete-${pod.name}`}
                               >
@@ -1278,7 +1278,7 @@ export default function WorkloadDetail({
 
             {!isAetherManaged && clusterDetail && clusterDetail.conditions.length > 0 ? (
               <div className="mt-4" data-testid="workload-conditions">
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Conditions</h4>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Conditions</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {clusterDetail.conditions.map((condition) => (
                     <span
@@ -1302,12 +1302,12 @@ export default function WorkloadDetail({
               <div className="mt-4 grid gap-4 sm:grid-cols-2" data-testid="workload-ownership">
                 {(clusterDetail.owner_references?.length ?? 0) > 0 ? (
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Owned by</h4>
-                    <ul className="space-y-1 text-xs text-slate-300">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Owned by</h4>
+                    <ul className="space-y-1 text-xs text-ink-2">
                       {clusterDetail.owner_references!.map((owner) => (
                         <li key={`${owner.kind}/${owner.name}`} className="font-mono">
                           {owner.kind}/{owner.name}
-                          {owner.controller ? <span className="ml-1 text-slate-500">(controller)</span> : null}
+                          {owner.controller ? <span className="ml-1 text-ink-3">(controller)</span> : null}
                         </li>
                       ))}
                     </ul>
@@ -1315,8 +1315,8 @@ export default function WorkloadDetail({
                 ) : null}
                 {(clusterDetail.owned_resources?.length ?? 0) > 0 ? (
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Owns</h4>
-                    <ul className="max-h-28 space-y-1 overflow-auto text-xs text-slate-300">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Owns</h4>
+                    <ul className="max-h-28 space-y-1 overflow-auto text-xs text-ink-2">
                       {clusterDetail.owned_resources!.slice(0, 12).map((child) => (
                         <li key={`${child.kind}/${child.name}`} className="font-mono">
                           {child.kind}/{child.name}
@@ -1330,30 +1330,30 @@ export default function WorkloadDetail({
 
             {!isAetherManaged && (imageDrift || observedImages.length > 0 || containerResources.length > 0) ? (
               <details className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-manifest-insights">
-                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-ink-3">
                   Labels, resources &amp; images
                   {imageDrift ? <span className="ml-2 text-amber-400 normal-case tracking-normal">drift</span> : null}
                 </summary>
                 <div className="mt-3 space-y-3">
                 {(imageDrift || observedImages.length > 0) ? (
                   <div data-testid="workload-image-drift">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">
                       Images{imageDrift ? <span className="ml-2 text-amber-400 normal-case tracking-normal">· drift detected</span> : null}
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {(observedImages.length > 0 ? observedImages : containerResources.map((c) => c.image).filter(Boolean) as string[]).map((image) => (
-                        <code key={image} className="rounded glass-inset-surface px-2 py-1 text-[11px] text-slate-300">{image}</code>
+                        <code key={image} className="rounded glass-inset-surface px-2 py-1 text-[11px] text-ink-2">{image}</code>
                       ))}
                     </div>
                   </div>
                 ) : null}
                 {containerResources.length > 0 ? (
                   <div data-testid="workload-resources">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Resources</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Resources</h4>
                     <div className="overflow-x-auto rounded-lg border glass-divider">
                       <table className="w-full min-w-[24rem] text-left text-xs">
                         <thead>
-                          <tr className="glass-inset-surface text-slate-500">
+                          <tr className="glass-inset-surface text-ink-3">
                             <th className="px-3 py-2 font-medium">Container</th>
                             <th className="px-3 py-2 font-medium">Requests</th>
                             <th className="px-3 py-2 font-medium">Limits</th>
@@ -1362,11 +1362,11 @@ export default function WorkloadDetail({
                         <tbody>
                           {containerResources.map((container) => (
                             <tr key={container.name} className="glass-divider-t">
-                              <td className="px-3 py-2 font-mono text-slate-200">{container.name}</td>
-                              <td className="px-3 py-2 text-slate-300">
+                              <td className="px-3 py-2 font-mono text-ink">{container.name}</td>
+                              <td className="px-3 py-2 text-ink-2">
                                 {[container.requests.cpu, container.requests.memory].filter(Boolean).join(' / ') || '—'}
                               </td>
-                              <td className="px-3 py-2 text-slate-300">
+                              <td className="px-3 py-2 text-ink-2">
                                 {[container.limits.cpu, container.limits.memory].filter(Boolean).join(' / ') || '—'}
                               </td>
                             </tr>
@@ -1380,12 +1380,12 @@ export default function WorkloadDetail({
                   <div className="grid gap-4 sm:grid-cols-2">
                     {labelEntries.length > 0 ? (
                       <div data-testid="workload-labels">
-                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Labels</h4>
+                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Labels</h4>
                         <div className="max-h-28 space-y-1 overflow-auto text-[11px]">
                           {labelEntries.map(([key, value]) => (
                             <div key={key} className="flex gap-2 font-mono">
-                              <span className="shrink-0 text-slate-500">{key}=</span>
-                              <span className="truncate text-slate-300" title={value}>{value}</span>
+                              <span className="shrink-0 text-ink-3">{key}=</span>
+                              <span className="truncate text-ink-2" title={value}>{value}</span>
                             </div>
                           ))}
                         </div>
@@ -1393,12 +1393,12 @@ export default function WorkloadDetail({
                     ) : null}
                     {annotationEntries.length > 0 ? (
                       <div data-testid="workload-annotations">
-                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Annotations</h4>
+                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Annotations</h4>
                         <div className="max-h-28 space-y-1 overflow-auto text-[11px]">
                           {annotationEntries.slice(0, 20).map(([key, value]) => (
                             <div key={key} className="flex gap-2 font-mono">
-                              <span className="shrink-0 text-slate-500">{key}=</span>
-                              <span className="truncate text-slate-300" title={value}>{value}</span>
+                              <span className="shrink-0 text-ink-3">{key}=</span>
+                              <span className="truncate text-ink-2" title={value}>{value}</span>
                             </div>
                           ))}
                         </div>
@@ -1413,7 +1413,7 @@ export default function WorkloadDetail({
             {!isAetherManaged && (clusterMetrics.length > 0 || clusterEvents.length > 0) ? (
               <div className="mt-4" data-testid="workload-live-ops">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Live ops</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-3">Live ops</span>
                   <button
                     type="button"
                     onClick={() => setOpsAutoRefresh((v) => !v)}
@@ -1427,11 +1427,11 @@ export default function WorkloadDetail({
                 <div className="grid gap-4 lg:grid-cols-2">
                 {clusterMetrics.length > 0 ? (
                   <div data-testid="workload-live-metrics">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Live usage</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Live usage</h4>
                     <div className="overflow-x-auto rounded-lg border glass-divider">
                       <table className="w-full min-w-[16rem] text-left text-xs">
                         <thead>
-                          <tr className="glass-inset-surface text-slate-500">
+                          <tr className="glass-inset-surface text-ink-3">
                             <th className="px-3 py-2 font-medium">Pod</th>
                             <th className="px-3 py-2 font-medium">CPU</th>
                             <th className="px-3 py-2 font-medium">Memory</th>
@@ -1440,9 +1440,9 @@ export default function WorkloadDetail({
                         <tbody>
                           {clusterMetrics.map((metric) => (
                             <tr key={metric.name} className="glass-divider-t">
-                              <td className="px-3 py-2 font-mono text-slate-200 truncate max-w-[12rem]" title={metric.name}>{metric.name}</td>
-                              <td className="px-3 py-2 text-slate-300">{metric.cpu}</td>
-                              <td className="px-3 py-2 text-slate-300">{metric.memory}</td>
+                              <td className="px-3 py-2 font-mono text-ink truncate max-w-[12rem]" title={metric.name}>{metric.name}</td>
+                              <td className="px-3 py-2 text-ink-2">{metric.cpu}</td>
+                              <td className="px-3 py-2 text-ink-2">{metric.memory}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1452,7 +1452,7 @@ export default function WorkloadDetail({
                 ) : null}
                 {clusterEvents.length > 0 ? (
                   <div data-testid="workload-recent-events">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Recent cluster events</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Recent cluster events</h4>
                     <div className="max-h-40 space-y-1.5 overflow-auto rounded-lg border glass-divider p-2">
                       {clusterEvents.map((event, index) => (
                         <div key={`${event.timestamp}-${event.reason}-${index}`} className="rounded glass-inset-surface px-2.5 py-1.5">
@@ -1460,10 +1460,10 @@ export default function WorkloadDetail({
                             <span className={event.type_ === 'Warning' ? 'text-amber-400' : 'text-emerald-400'}>
                               {event.type_}
                             </span>
-                            <span className="font-medium text-slate-200">{event.reason}</span>
-                            <span className="ml-auto text-slate-600">{event.timestamp ? formatTimestamp(event.timestamp) : ''}</span>
+                            <span className="font-medium text-ink">{event.reason}</span>
+                            <span className="ml-auto text-ink-3">{event.timestamp ? formatTimestamp(event.timestamp) : ''}</span>
                           </div>
-                          <p className="mt-0.5 truncate text-[11px] text-slate-400" title={event.message}>{event.message}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-ink-2" title={event.message}>{event.message}</p>
                         </div>
                       ))}
                     </div>
@@ -1476,7 +1476,7 @@ export default function WorkloadDetail({
             {!isAetherManaged && workload.kind === 'HelmRelease' && helmHistory.length > 0 ? (
               <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-helm-history">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Helm revisions</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">Helm revisions</h4>
                   {canMutate ? (
                     <div className="flex items-center gap-2">
                       <select
@@ -1503,11 +1503,11 @@ export default function WorkloadDetail({
                 </div>
                 <div className="max-h-32 overflow-auto text-xs">
                   {helmHistory.slice(0, 8).map((rev) => (
-                    <div key={rev.revision} className="flex flex-wrap gap-2 glass-divider-t py-1 text-slate-400">
-                      <span className="font-mono text-slate-300">#{rev.revision}</span>
+                    <div key={rev.revision} className="flex flex-wrap gap-2 glass-divider-t py-1 text-ink-2">
+                      <span className="font-mono text-ink-2">#{rev.revision}</span>
                       <span>{rev.chart}</span>
                       <span className={rev.status === 'deployed' ? 'text-emerald-400' : ''}>{rev.status}</span>
-                      <span className="ml-auto text-slate-600">{rev.updated ? formatTimestamp(rev.updated) : ''}</span>
+                      <span className="ml-auto text-ink-3">{rev.updated ? formatTimestamp(rev.updated) : ''}</span>
                     </div>
                   ))}
                 </div>
@@ -1517,11 +1517,11 @@ export default function WorkloadDetail({
             {!isAetherManaged && isRolloutClusterKind(workload.kind) ? (
               <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-rollout">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Rollout</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">Rollout</h4>
                   {rollout ? (
-                    <span className="text-xs text-slate-400">{rollout.status || 'unknown'}</span>
+                    <span className="text-xs text-ink-2">{rollout.status || 'unknown'}</span>
                   ) : (
-                    <span className="text-xs text-slate-600">Loading…</span>
+                    <span className="text-xs text-ink-3">Loading…</span>
                   )}
                 </div>
                 {canMutate ? (
@@ -1543,8 +1543,8 @@ export default function WorkloadDetail({
                 {rollout && rollout.history.length > 0 ? (
                   <div className="mt-3 max-h-28 overflow-auto text-xs">
                     {rollout.history.slice(0, 5).map((rev) => (
-                      <div key={rev.revision} className="flex gap-2 glass-divider-t py-1 text-slate-400">
-                        <span className="font-mono text-slate-300">#{rev.revision}</span>
+                      <div key={rev.revision} className="flex gap-2 glass-divider-t py-1 text-ink-2">
+                        <span className="font-mono text-ink-2">#{rev.revision}</span>
                         <span className="truncate">{rev.change_cause || '—'}</span>
                       </div>
                     ))}
@@ -1555,7 +1555,7 @@ export default function WorkloadDetail({
 
             {!isAetherManaged && canMutate && canPortForwardClusterKind(workload.kind) && (workload.kind === 'Service' || (clusterDetail?.pods.length ?? 0) > 0 || portForwardPod) ? (
               <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-port-forward">
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Port forward</h4>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Port forward</h4>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
                   <select
                     value={workload.kind === 'Service' ? clusterResourceName : portForwardPod}
@@ -1652,7 +1652,7 @@ export default function WorkloadDetail({
               if (cmds.length === 0) return null;
               return (
                 <details className="mt-4" data-testid="workload-kubectl">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wider text-ink-3">
                     <span>Run in your terminal</span>
                     <button
                       type="button"
@@ -1663,7 +1663,7 @@ export default function WorkloadDetail({
                         setCopiedCmd('all');
                         window.setTimeout(() => setCopiedCmd(''), 1500);
                       }}
-                      className="rounded px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-slate-400 transition-colors hover:bg-white/5 hover:text-aether"
+                      className="rounded px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-ink-2 transition-colors hover:bg-white/5 hover:text-brand"
                       data-testid="workload-kubectl-copy-all"
                     >
                       {copiedCmd === 'all' ? 'Copied all' : 'Copy all'}
@@ -1675,10 +1675,10 @@ export default function WorkloadDetail({
                         key={cmd.label}
                         className="flex items-center gap-2 rounded-lg glass-inset-surface px-3 py-2"
                       >
-                        <span className="w-24 shrink-0 text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                        <span className="w-24 shrink-0 text-[11px] font-medium uppercase tracking-wider text-ink-3">
                           {cmd.label}
                         </span>
-                        <code className="min-w-0 flex-1 truncate font-mono text-xs text-slate-300" title={cmd.command}>
+                        <code className="min-w-0 flex-1 truncate font-mono text-xs text-ink-2" title={cmd.command}>
                           {cmd.command}
                         </code>
                         <button
@@ -1688,7 +1688,7 @@ export default function WorkloadDetail({
                             setCopiedCmd(cmd.label);
                             window.setTimeout(() => setCopiedCmd(''), 1500);
                           }}
-                          className="shrink-0 rounded px-2 py-1 text-[11px] text-slate-400 transition-colors hover:bg-white/5 hover:text-aether"
+                          className="shrink-0 rounded px-2 py-1 text-[11px] text-ink-2 transition-colors hover:bg-white/5 hover:text-brand"
                         >
                           {copiedCmd === cmd.label ? 'Copied' : 'Copy'}
                         </button>
@@ -1700,7 +1700,7 @@ export default function WorkloadDetail({
             })() : null}
 
             <details className="mt-4" data-testid="workload-quick-links">
-              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-ink-3">
                 Related pages
               </summary>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -1750,7 +1750,7 @@ export default function WorkloadDetail({
                   key={link.label}
                   href={link.path}
                   data-testid={`workload-link-${link.slug}`}
-                  className="rounded-lg border glass-divider px-2.5 py-1 text-xs text-slate-300 hover:border-aether/40 hover:text-aether transition-colors"
+                  className="rounded-lg border glass-divider px-2.5 py-1 text-xs text-ink-2 hover:border-brand/40 hover:text-brand transition-colors"
                 >
                   {link.label}
                 </a>
@@ -1760,16 +1760,16 @@ export default function WorkloadDetail({
 
             {isAetherManaged ? (
               <div className="mt-4 glass-drawer p-3" data-testid="workload-snapshots">
-                <h4 className="mb-2 text-sm font-semibold text-slate-200">Snapshots</h4>
+                <h4 className="mb-2 text-sm font-semibold text-ink">Snapshots</h4>
                 {snapshotsLoading ? (
-                  <p className="text-xs text-slate-500">Loading snapshots…</p>
+                  <p className="text-xs text-ink-3">Loading snapshots…</p>
                 ) : snapshots.length === 0 ? (
-                  <p className="text-xs text-slate-500">No snapshots yet — snapshots are created before migrations and updates.</p>
+                  <p className="text-xs text-ink-3">No snapshots yet — snapshots are created before migrations and updates.</p>
                 ) : (
                   <ul className="space-y-2">
                     {snapshots.map((snap) => (
                       <li key={snap.version} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                        <span className="font-mono text-xs text-slate-400 truncate" title={snap.path}>
+                        <span className="font-mono text-xs text-ink-2 truncate" title={snap.path}>
                           v{snap.version}
                         </span>
                         {canMutate ? (
@@ -1791,25 +1791,25 @@ export default function WorkloadDetail({
 
             {isKubeWorkload && (
               <div className="mt-4 glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-slate-200">Network policies</h4>
+                <h4 className="mb-3 text-sm font-semibold text-ink">Network policies</h4>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
-                    <dt className="text-slate-500">NetworkPolicy</dt>
-                    <dd className="font-mono text-xs text-slate-200">{networkPolicyName}</dd>
+                    <dt className="text-ink-3">NetworkPolicy</dt>
+                    <dd className="font-mono text-xs text-ink">{networkPolicyName}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="text-slate-500">Cilium CNP</dt>
-                    <dd className="font-mono text-xs text-slate-200">{ciliumPolicyName}</dd>
+                    <dt className="text-ink-3">Cilium CNP</dt>
+                    <dd className="font-mono text-xs text-ink">{ciliumPolicyName}</dd>
                   </div>
                 </dl>
                 <a
                   href={clusterBrowseNetworkPath}
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-aether hover:underline"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
                 >
                   Browse cluster network policies
                   <Link2 className="h-3.5 w-3.5" />
                 </a>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-ink-3">
                   Names follow Aether deploy conventions when <code>network.networkPolicy</code> or{' '}
                   <code>network.ciliumNetworkPolicy</code> is set in the workload spec.
                 </p>
@@ -1834,30 +1834,30 @@ export default function WorkloadDetail({
         {activeTab === 'manifest' && (
           <div className="space-y-4">
             {isAetherManaged ? (
-              <p className="text-slate-500">Manifest inspection is currently available for Kubernetes resources discovered directly from the cluster.</p>
+              <p className="text-ink-3">Manifest inspection is currently available for Kubernetes resources discovered directly from the cluster.</p>
             ) : !clusterDetail ? (
-              <p className="text-slate-500">Loading Kubernetes resource details...</p>
+              <p className="text-ink-3">Loading Kubernetes resource details...</p>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><span className="text-slate-500">API Version</span><p className="text-white">{clusterDetail.api_version ?? 'unknown'}</p></div>
-                  <div><span className="text-slate-500">Pods</span><p className="text-white">{clusterDetail.pods.length}</p></div>
+                  <div><span className="text-ink-3">API Version</span><p className="text-ink">{clusterDetail.api_version ?? 'unknown'}</p></div>
+                  <div><span className="text-ink-3">Pods</span><p className="text-ink">{clusterDetail.pods.length}</p></div>
                 </div>
 
                 {clusterDetail.conditions.length > 0 && (
                   <div className="glass-drawer p-3">
-                    <h4 className="mb-3 text-sm font-semibold text-slate-200">Conditions</h4>
+                    <h4 className="mb-3 text-sm font-semibold text-ink">Conditions</h4>
                     <div className="space-y-2">
                       {clusterDetail.conditions.map((condition) => (
                         <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-slate-100">{condition.type_}</span>
+                            <span className="font-medium text-ink">{condition.type_}</span>
                             <span className={condition.status === 'True' ? 'text-emerald-400' : 'text-amber-400'}>
                               {condition.status}
                             </span>
                           </div>
-                          {condition.reason && <div className="mt-1 text-xs text-slate-400">{condition.reason}</div>}
-                          {condition.message && <div className="mt-1 text-xs text-slate-500">{condition.message}</div>}
+                          {condition.reason && <div className="mt-1 text-xs text-ink-2">{condition.reason}</div>}
+                          {condition.message && <div className="mt-1 text-xs text-ink-3">{condition.message}</div>}
                         </div>
                       ))}
                     </div>
@@ -1866,17 +1866,17 @@ export default function WorkloadDetail({
 
                 {clusterDetail.pods.length > 0 && (
                   <div className="glass-drawer p-3">
-                    <h4 className="mb-3 text-sm font-semibold text-slate-200">Pods</h4>
+                    <h4 className="mb-3 text-sm font-semibold text-ink">Pods</h4>
                     <div className="space-y-2">
                       {clusterDetail.pods.map((pod) => (
                         <div key={pod.name} className="grid grid-cols-5 gap-3 glass-table-row rounded-md px-3 py-2 text-sm">
                           <div className="col-span-2">
-                            <div className="text-slate-100">{pod.name}</div>
-                            <div className="text-xs text-slate-500">{pod.node ?? 'node unknown'}</div>
+                            <div className="text-ink">{pod.name}</div>
+                            <div className="text-xs text-ink-3">{pod.node ?? 'node unknown'}</div>
                           </div>
-                          <div className="text-slate-300">{pod.phase}</div>
-                          <div className="text-slate-300">{pod.ready}/{pod.total_containers} ready</div>
-                          <div className="text-slate-300">{pod.restarts} restarts</div>
+                          <div className="text-ink-2">{pod.phase}</div>
+                          <div className="text-ink-2">{pod.ready}/{pod.total_containers} ready</div>
+                          <div className="text-ink-2">{pod.restarts} restarts</div>
                         </div>
                       ))}
                     </div>
@@ -1884,7 +1884,7 @@ export default function WorkloadDetail({
                 )}
 
                 <div className="glass-drawer p-3">
-                  <h4 className="mb-3 text-sm font-semibold text-slate-200">Manifest</h4>
+                  <h4 className="mb-3 text-sm font-semibold text-ink">Manifest</h4>
                   <pre className="glass-code-block-body max-h-96 overflow-auto text-xs">
                     {JSON.stringify(clusterDetail.manifest, null, 2)}
                   </pre>
@@ -1897,7 +1897,7 @@ export default function WorkloadDetail({
         {activeTab === 'drift' && (
           <div>
             {!isAetherManaged ? (
-              <p className="text-slate-500">Drift analysis is currently available only for Aether-managed workloads.</p>
+              <p className="text-ink-3">Drift analysis is currently available only for Aether-managed workloads.</p>
             ) : driftFailed ? (
               <p className="text-red-400">Could not load drift data for {workload.name}. Check that the server can read its stored spec.</p>
             ) : driftData ? (
@@ -1912,23 +1912,23 @@ export default function WorkloadDetail({
                     <span className={`font-medium ${d.severity === 'Critical' ? 'text-red-400' : d.severity === 'Warning' ? 'text-orange-400' : 'text-blue-400'}`}>
                       [{d.severity}]
                     </span>
-                    {' '}<span className="text-slate-300">{d.field}</span>
-                    <div className="text-slate-500 mt-1">Expected: {d.expected} | Actual: {d.actual}</div>
+                    {' '}<span className="text-ink-2">{d.field}</span>
+                    <div className="text-ink-3 mt-1">Expected: {d.expected} | Actual: {d.actual}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500">Loading drift data...</p>
+              <p className="text-ink-3">Loading drift data...</p>
             )}
           </div>
         )}
 
         {activeTab === 'scoring' && (
-          <div className="text-sm text-slate-400">
+          <div className="text-sm text-ink-2">
             <p>
               Runtime scoring evaluates a workload spec (YAML), which this panel does not have for{' '}
               {workload.name} — only its live runtime status. Paste the spec on{' '}
-              <Link to={pathWithQuery(viewToPath('ai'), { workload: workload.name })} className="text-aether hover:underline">
+              <Link to={pathWithQuery(viewToPath('ai'), { workload: workload.name })} className="text-brand hover:underline">
                 AI Engine
               </Link>{' '}
               to compare runtime placements.
@@ -1945,53 +1945,53 @@ export default function WorkloadDetail({
             <div className="mb-3 flex flex-wrap gap-3 text-xs" data-testid="workload-events-cross-links">
               <Link
                 to={pathWithQuery(viewToPath('events'), { workload: workload.name })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="workload-events-events-link"
               >
                 Full events feed →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('alerts'), { workload: workload.name })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="workload-events-alerts-link"
               >
                 Alert rules →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('health'), { workload: workload.name })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="workload-events-health-link"
               >
                 Health monitor →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('drift'), { workload: workload.name })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="workload-events-drift-link"
               >
                 Drift →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="workload-events-trust-link"
               >
                 Trust &amp; attestation →
               </Link>
             </div>
             {eventsLoading ? (
-              <p className="text-slate-500">Loading events...</p>
+              <p className="text-ink-3">Loading events...</p>
             ) : events.length === 0 ? (
-              <p className="text-slate-500">No events recorded for this workload.</p>
+              <p className="text-ink-3">No events recorded for this workload.</p>
             ) : (
               <div className="space-y-2 max-h-96 overflow-auto">
                 {events.map((ev, i) => (
                   <div key={`${ev.timestamp}-${i}`} className="flex items-start gap-3 glass-drawer p-3">
                     <SeverityBadge severity={ev.severity} />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-slate-200">{ev.title}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">{ev.message}</div>
-                      <div className="text-xs text-slate-600 mt-1">{ev.timestamp ? formatTimestamp(ev.timestamp) : ''}</div>
+                      <div className="font-medium text-ink">{ev.title}</div>
+                      <div className="text-xs text-ink-3 mt-0.5">{ev.message}</div>
+                      <div className="text-xs text-ink-3 mt-1">{ev.timestamp ? formatTimestamp(ev.timestamp) : ''}</div>
                     </div>
                   </div>
                 ))}
@@ -2012,11 +2012,11 @@ export default function WorkloadDetail({
                 <div className="font-medium" data-testid="workload-shell-title">
                   Exec — {shellPod || workload.name}
                 </div>
-                <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'glass-inset-surface text-slate-400'}`}>
+                <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'glass-inset-surface text-ink-2'}`}>
                   {shellConnected ? 'Connected' : shellWantConnect ? 'Connecting…' : 'Disconnected'}
                 </div>
                 {shellPods.length > 0 ? (
-                  <label className="flex items-center gap-1 text-xs text-slate-400">
+                  <label className="flex items-center gap-1 text-xs text-ink-2">
                     Pod
                     <select
                       value={shellPod}
@@ -2054,7 +2054,7 @@ export default function WorkloadDetail({
                   </label>
                 ) : null}
                 {(shellPods.find((pod) => pod.name === shellPod)?.containers.length ?? 0) > 0 ? (
-                  <label className="flex items-center gap-1 text-xs text-slate-400">
+                  <label className="flex items-center gap-1 text-xs text-ink-2">
                     Container
                     <select
                       value={shellContainer}
@@ -2070,7 +2070,7 @@ export default function WorkloadDetail({
                     </select>
                   </label>
                 ) : null}
-                <label className="flex items-center gap-1 text-xs text-slate-400">
+                <label className="flex items-center gap-1 text-xs text-ink-2">
                   Shell
                   <select
                     className="glass-input !py-1 !px-2 text-xs"
@@ -2108,7 +2108,7 @@ export default function WorkloadDetail({
                     shellTermRef.current?.writeln('\r\n[aether] Disconnected');
                   }}
                   disabled={!shellConnected && !shellWantConnect}
-                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300 disabled:opacity-50"
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-ink-2 disabled:opacity-50"
                   data-testid="workload-shell-disconnect"
                 >
                   Disconnect
@@ -2118,21 +2118,21 @@ export default function WorkloadDetail({
                   onClick={() => {
                     void copyToClipboard(shellTermRef.current?.getBufferText() ?? '');
                   }}
-                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-ink-2"
                 >
                   Copy
                 </button>
                 <button
                   type="button"
                   onClick={() => shellTermRef.current?.clear()}
-                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-ink-2"
                 >
                   Clear
                 </button>
                 <button
                   type="button"
                   onClick={() => setShellFullscreen(!shellFullscreen)}
-                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-slate-300"
+                  className="text-xs px-3 py-1 rounded glass-inset-surface glass-inset-hover text-ink-2"
                 >
                   {shellFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                 </button>
@@ -2149,7 +2149,7 @@ export default function WorkloadDetail({
                     setShellContainer('');
                     setShellFullscreen(false);
                   }}
-                  className="text-slate-400 hover:text-white text-xl leading-none ml-1"
+                  className="text-ink-2 hover:text-ink text-xl leading-none ml-1"
                 >
                   ×
                 </button>
@@ -2188,7 +2188,7 @@ export default function WorkloadDetail({
                   }
                 }}
               />
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-[11px] text-ink-3">
                 Type directly in the terminal. Ctrl+C / paste work when connected. Pod list refreshes every 10s.
               </p>
             </div>
@@ -2196,7 +2196,7 @@ export default function WorkloadDetail({
         </div>
       )}
       <Modal isOpen={confirmDelete} onClose={() => setConfirmDelete(false)} title="Confirm Delete">
-        <p className="text-sm text-slate-300 mb-6">
+        <p className="text-sm text-ink-2 mb-6">
           Are you sure you want to delete "{workload.name}"? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">

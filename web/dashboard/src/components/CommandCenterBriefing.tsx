@@ -51,7 +51,7 @@ function severityTone(severity: string): string {
   const s = severity.toLowerCase();
   if (s === 'critical' || s === 'high') return 'border-red-500/30 bg-red-500/10 text-red-200';
   if (s === 'medium') return 'border-amber-500/30 bg-amber-500/10 text-amber-200';
-  return 'glass-panel-card text-slate-300';
+  return 'glass-panel-card text-ink-2';
 }
 
 function contextualSubtitle(issueCount: number, fleetHealth: number): string {
@@ -127,16 +127,16 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-aether" aria-hidden />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-aether">Command Center</p>
+            <Sparkles className="h-4 w-4 text-brand" aria-hidden />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">Command Center</p>
           </div>
-          <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{briefing.greeting}</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{briefing.greeting}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <p className="max-w-2xl text-sm leading-relaxed text-slate-400">
+            <p className="max-w-2xl text-sm leading-relaxed text-ink-2">
               {contextualSubtitle(issueCount, briefing.fleet_health_pct)}
             </p>
             {clusterContext ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-aether/25 bg-aether/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
                 {clusterContext.clusterCount > 0
                   ? `${clusterContext.clusterCount} cluster${clusterContext.clusterCount === 1 ? '' : 's'} · ${clusterContext.connected ? 'Live' : 'Offline'}`
                   : clusterContext.mode ?? 'Local mode · No kubeconfig'}
@@ -146,7 +146,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
         </div>
         <div className="live-intelligence-badge">
           <span className="live-intelligence-dot" />
-          <span className="text-xs font-medium text-slate-200">Live Intelligence</span>
+          <span className="text-xs font-medium text-ink">Live Intelligence</span>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           value={
             <>
               {formatUSD(briefing.potential_savings_usd)}
-              <span className="ml-1 text-sm font-normal text-slate-500">/mo</span>
+              <span className="ml-1 text-sm font-normal text-ink-3">/mo</span>
             </>
           }
           icon={<DollarSign className="h-3.5 w-3.5" />}
@@ -228,7 +228,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           <button
             type="button"
             onClick={() => onNavigate('fabric')}
-            className="inline-flex items-center gap-1 text-xs font-medium text-amber-200 hover:text-white"
+            className="inline-flex items-center gap-1 text-xs font-medium text-amber-200 hover:text-ink"
           >
             Open Fabric
             <ArrowRight className="h-3.5 w-3.5" />
@@ -238,7 +238,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
 
       {briefing.issues.length > 0 ? (
         <div className="mt-8 space-y-3">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Active signals</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-3">Active signals</h3>
           <div className="grid gap-2 lg:grid-cols-2">
             {briefing.issues.slice(0, 4).map((issue, i) => (
               <div

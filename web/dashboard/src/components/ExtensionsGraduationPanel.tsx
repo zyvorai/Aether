@@ -91,7 +91,7 @@ export default function ExtensionsGraduationPanel() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-400">
+        <div className="flex items-center gap-2 text-sm text-ink-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading extensions…
         </div>
@@ -99,14 +99,14 @@ export default function ExtensionsGraduationPanel() {
 
       {!loading && tab === 'overview' && overview ? (
         <div data-testid="extensions-overview-panel">
-          <p className="text-sm text-slate-400 mb-3">
+          <p className="text-sm text-ink-2 mb-3">
             {overview.graduated_count} features · chaos live{' '}
             {overview.chaos_live_enabled ? 'enabled' : 'dry-run only'}
           </p>
           <ul className="space-y-2 text-sm">
             {overview.features.slice(0, 6).map((f) => (
               <li key={f.phase} className="flex justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2">
-                <span className="text-slate-200">Phase {f.phase}: {f.name}</span>
+                <span className="text-ink">Phase {f.phase}: {f.name}</span>
                 <span className="text-xs text-emerald-400 uppercase">{f.status}</span>
               </li>
             ))}
@@ -119,7 +119,7 @@ export default function ExtensionsGraduationPanel() {
           <ul className="space-y-2 text-sm">
             {(chaos.catalog.experiments ?? []).slice(0, 4).map((e) => (
               <li key={e.id} className="flex items-center justify-between rounded-xl border glass-divider px-3 py-2">
-                <span className="text-slate-200">{e.label}</span>
+                <span className="text-ink">{e.label}</span>
                 <button type="button" onClick={() => void runChaos(e.id)} className="btn-secondary text-xs">
                   Dry-run
                 </button>
@@ -139,8 +139,8 @@ export default function ExtensionsGraduationPanel() {
       ) : null}
 
       {!loading && tab === 'native' && native ? (
-        <div data-testid="extensions-native-panel" className="flex items-center gap-3 text-sm text-slate-300">
-          <Apple className="h-5 w-5 text-slate-400" />
+        <div data-testid="extensions-native-panel" className="flex items-center gap-3 text-sm text-ink-2">
+          <Apple className="h-5 w-5 text-ink-2" />
           Spotlight {native.spotlight_items} items · {native.shortcuts_count} Shortcuts
         </div>
       ) : null}

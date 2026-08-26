@@ -90,14 +90,14 @@ export default function LiveLabsPanel() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-400">
+        <div className="flex items-center gap-2 text-sm text-ink-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading live labs…
         </div>
       ) : null}
 
       {!loading && tab === 'runner' && runner && overview ? (
-        <div data-testid="live-labs-runner-panel" className="text-sm text-slate-300 space-y-2">
+        <div data-testid="live-labs-runner-panel" className="text-sm text-ink-2 space-y-2">
           <p>
             Era {overview.era} · {overview.feature_count} features · live{' '}
             {overview.labs_live_enabled ? 'on' : 'off'} · kubeconfig{' '}
@@ -109,9 +109,9 @@ export default function LiveLabsPanel() {
           <p>
             Script: <code className="text-sky-300">{runner.script}</code>
           </p>
-          <p className="text-slate-400">{runner.hint}</p>
+          <p className="text-ink-2">{runner.hint}</p>
           {smoke ? (
-            <ul className="mt-2 space-y-1 text-xs text-slate-500">
+            <ul className="mt-2 space-y-1 text-xs text-ink-3">
               {smoke.steps.map((s) => (
                 <li key={s.id}>
                   {s.id}: {s.script}
@@ -123,14 +123,14 @@ export default function LiveLabsPanel() {
       ) : null}
 
       {!loading && tab === 'fixtures' ? (
-        <div data-testid="live-labs-fixtures-panel" className="text-sm text-slate-300 space-y-2">
+        <div data-testid="live-labs-fixtures-panel" className="text-sm text-ink-2 space-y-2">
           <p>
             Kubernetes lab specs: {k8sSpecs} · Confidential specs: {confidentialSpecs}
           </p>
-          <p className="text-slate-400">
+          <p className="text-ink-2">
             Kind fixture: <code className="text-sky-300">scripts/kind-playwright-fixture.sh</code>
           </p>
-          <p className="text-slate-400">
+          <p className="text-ink-2">
             Post-deploy: <code className="text-sky-300">scripts/post-deploy-verify.sh</code>
           </p>
         </div>
@@ -144,8 +144,8 @@ export default function LiveLabsPanel() {
                 key={j.id}
                 className="flex flex-col rounded-xl border glass-divider glass-panel-card px-3 py-2"
               >
-                <span className="text-slate-200">{j.description}</span>
-                <span className="text-xs text-slate-500 font-mono mt-1">{j.command}</span>
+                <span className="text-ink">{j.description}</span>
+                <span className="text-xs text-ink-3 font-mono mt-1">{j.command}</span>
               </li>
             ))}
           </ul>

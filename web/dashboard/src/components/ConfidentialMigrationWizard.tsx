@@ -80,7 +80,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
 
   if (workloads.length === 0) {
     return (
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-ink-3">
         Deploy a confidential workload first, then plan encrypted Phase 6 migration here.
       </p>
     );
@@ -90,7 +90,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-xs text-slate-500">Workload</label>
+          <label className="mb-1 block text-xs text-ink-3">Workload</label>
           <select
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
@@ -104,7 +104,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-slate-500">Target runtime</label>
+          <label className="mb-1 block text-xs text-ink-3">Target runtime</label>
           <select
             value={target}
             onChange={(e) => setTarget(e.target.value as (typeof TARGETS)[number])}
@@ -120,7 +120,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
       </div>
 
       {loading && (
-        <p className="text-sm text-slate-500 flex items-center gap-2">
+        <p className="text-sm text-ink-3 flex items-center gap-2">
           <Loader2 size={14} className="animate-spin" /> Loading migration plan…
         </p>
       )}
@@ -138,9 +138,9 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
               <Badge text="blockers present" variant="yellow" />
             )}
           </div>
-          <p className="text-xs text-slate-400 font-mono break-all">{plan.encrypted_migration_uri}</p>
+          <p className="text-xs text-ink-2 font-mono break-all">{plan.encrypted_migration_uri}</p>
           {plan.phases.length > 0 && (
-            <ol className="text-xs text-slate-500 space-y-1 list-decimal list-inside">
+            <ol className="text-xs text-ink-3 space-y-1 list-decimal list-inside">
               {plan.phases.map((phase) => (
                 <li key={phase}>{phase}</li>
               ))}
@@ -154,17 +154,17 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
             </ul>
           )}
           {plan.hyper2kvm_hints.length > 0 && (
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-ink-3">
               <span className="block mb-1">External hypervisor hints:</span>
               {plan.hyper2kvm_hints.map((h) => (
-                <code key={h} className="block text-slate-400 break-all">
+                <code key={h} className="block text-ink-2 break-all">
                   {h}
                 </code>
               ))}
             </div>
           )}
           {status && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-ink-3">
               Last migration: {status.phase} · cutover_ready={String(status.cutover_ready)}
               {status.error ? ` · ${status.error}` : ''}
             </p>
@@ -182,7 +182,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
             )}
           </button>
           {plan.blockers.length > 0 && (
-            <p className="text-xs text-slate-600">Resolve blockers before starting migration.</p>
+            <p className="text-xs text-ink-3">Resolve blockers before starting migration.</p>
           )}
         </div>
       )}

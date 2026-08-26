@@ -16,10 +16,10 @@ export default function BarChart({ label, percent, detail }: BarChartProps) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-300">{label}</span>
+        <span className="text-sm text-ink-2">{label}</span>
         <div className="flex items-center gap-2">
-          {detail && <span className="text-xs text-slate-500">{detail}</span>}
-          <span className="text-sm font-medium text-slate-200">{clamped.toFixed(1)}%</span>
+          {detail && <span className="text-xs text-ink-3">{detail}</span>}
+          <span className="text-sm font-medium text-ink">{clamped.toFixed(1)}%</span>
         </div>
       </div>
       <div className="h-2.5 rounded-full overflow-hidden border glass-divider glass-panel-card">

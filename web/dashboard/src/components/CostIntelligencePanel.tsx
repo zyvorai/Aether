@@ -100,13 +100,13 @@ export default function CostIntelligencePanel() {
           >
             Dry-run right-size
           </button>
-          <Link to={viewToPath('intelligence') + '?tab=cost'} className="text-xs text-aether hover:underline">
+          <Link to={viewToPath('intelligence') + '?tab=cost'} className="text-xs text-brand hover:underline">
             Full report →
           </Link>
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -116,22 +116,22 @@ export default function CostIntelligencePanel() {
         <div className="glass-metric-card">
           <DollarSign className="mb-2 h-4 w-4 text-emerald-400" />
           <div className="text-2xl font-semibold text-emerald-300">{formatUSD(totalSavings)}</div>
-          <div className="text-xs text-slate-500">Potential savings / mo</div>
+          <div className="text-xs text-ink-3">Potential savings / mo</div>
         </div>
         <div className="glass-metric-card">
-          <div className="text-2xl font-semibold text-white">
+          <div className="text-2xl font-semibold text-ink">
             {(report?.total_potential_savings_pct ?? 0).toFixed(1)}%
           </div>
-          <div className="text-xs text-slate-500">Fleet savings potential</div>
+          <div className="text-xs text-ink-3">Fleet savings potential</div>
         </div>
         <div className="glass-metric-card">
-          <div className="text-2xl font-semibold text-white">{report?.recommendations.length ?? 0}</div>
-          <div className="text-xs text-slate-500">Optimization opportunities</div>
+          <div className="text-2xl font-semibold text-ink">{report?.recommendations.length ?? 0}</div>
+          <div className="text-xs text-ink-3">Optimization opportunities</div>
         </div>
       </div>
 
       {!report?.recommendations.length ? (
-        <p className="text-sm text-slate-500">No cost optimizations identified — fleet placement looks efficient.</p>
+        <p className="text-sm text-ink-3">No cost optimizations identified — fleet placement looks efficient.</p>
       ) : (
         <ul className="space-y-3">
           {report.recommendations.slice(0, 5).map((rec) => (
@@ -143,14 +143,14 @@ export default function CostIntelligencePanel() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
                     to={`${viewToPath('workloads')}?workload=${encodeURIComponent(rec.workload)}`}
-                    className="font-medium text-aether hover:underline"
+                    className="font-medium text-brand hover:underline"
                   >
                     {rec.workload}
                   </Link>
                   <Badge text={`${rec.risk} risk`} variant={riskVariant(rec.risk)} />
                 </div>
-                <p className="mt-1 text-sm text-slate-400">{rec.reason}</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-sm text-ink-2">{rec.reason}</p>
+                <p className="mt-1 text-xs text-ink-3">
                   {rec.current_runtime} → {rec.suggested_runtime} · save {rec.savings_pct.toFixed(0)}%
                 </p>
               </div>
@@ -158,7 +158,7 @@ export default function CostIntelligencePanel() {
                 <div className="text-lg font-semibold text-emerald-300">{formatUSD(rec.savings_monthly_usd)}</div>
                 <Link
                   to={`${viewToPath('migrations')}?workload=${encodeURIComponent(rec.workload)}`}
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-aether hover:underline"
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-brand hover:underline"
                 >
                   Plan migration <ArrowRight className="h-3 w-3" />
                 </Link>

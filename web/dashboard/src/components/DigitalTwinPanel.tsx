@@ -52,7 +52,7 @@ export default function DigitalTwinPanel() {
           type="button"
           onClick={() => void runSimulation()}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-60"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           Run simulation
@@ -61,7 +61,7 @@ export default function DigitalTwinPanel() {
     >
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <label className="block text-sm">
-          <span className="mb-1 block text-xs text-slate-500">Scope</span>
+          <span className="mb-1 block text-xs text-ink-3">Scope</span>
           <select
             value={workload}
             onChange={(e) => setWorkload(e.target.value)}
@@ -76,7 +76,7 @@ export default function DigitalTwinPanel() {
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-xs text-slate-500">Scale factor ({scale.toFixed(1)}×)</span>
+          <span className="mb-1 block text-xs text-ink-3">Scale factor ({scale.toFixed(1)}×)</span>
           <input
             type="range"
             min={1}
@@ -88,7 +88,7 @@ export default function DigitalTwinPanel() {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-xs text-slate-500">Target runtime (optional)</span>
+          <span className="mb-1 block text-xs text-ink-3">Target runtime (optional)</span>
           <select
             value={targetRuntime}
             onChange={(e) => setTargetRuntime(e.target.value)}
@@ -118,14 +118,14 @@ export default function DigitalTwinPanel() {
           </div>
           <ul className="space-y-2">
             {report.recommendations.map((line) => (
-              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
+              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
                 {line}
               </li>
             ))}
           </ul>
         </div>
       ) : loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-ink-3">
           <Loader2 className="h-4 w-4 animate-spin" />
           Simulating…
         </div>
@@ -147,27 +147,27 @@ function TwinSnapshotCard({
     <div
       className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'glass-divider glass-panel-card'}`}
     >
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-3">{title}</p>
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>
-          <dt className="text-slate-500">Risk</dt>
-          <dd className="text-white">{formatPercent(snapshot.fleet_risk_score, 0)}</dd>
+          <dt className="text-ink-3">Risk</dt>
+          <dd className="text-ink">{formatPercent(snapshot.fleet_risk_score, 0)}</dd>
         </div>
         <div>
-          <dt className="text-slate-500">Saturation</dt>
-          <dd className="text-white">{snapshot.saturation_days}d</dd>
+          <dt className="text-ink-3">Saturation</dt>
+          <dd className="text-ink">{snapshot.saturation_days}d</dd>
         </div>
         <div>
-          <dt className="text-slate-500">CPU util</dt>
-          <dd className="text-white">{formatPercent(snapshot.avg_cpu_utilization, 0)}</dd>
+          <dt className="text-ink-3">CPU util</dt>
+          <dd className="text-ink">{formatPercent(snapshot.avg_cpu_utilization, 0)}</dd>
         </div>
         <div>
-          <dt className="text-slate-500">Memory util</dt>
-          <dd className="text-white">{formatPercent(snapshot.avg_memory_utilization, 0)}</dd>
+          <dt className="text-ink-3">Memory util</dt>
+          <dd className="text-ink">{formatPercent(snapshot.avg_memory_utilization, 0)}</dd>
         </div>
         <div className="col-span-2">
-          <dt className="text-slate-500">Est. monthly cost</dt>
-          <dd className="text-white">{formatUSD(snapshot.estimated_monthly_cost_usd)}</dd>
+          <dt className="text-ink-3">Est. monthly cost</dt>
+          <dd className="text-ink">{formatUSD(snapshot.estimated_monthly_cost_usd)}</dd>
         </div>
       </dl>
     </div>
@@ -177,8 +177,8 @@ function TwinSnapshotCard({
 function DeltaCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="glass-panel-card px-3 py-2">
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className="text-lg font-semibold text-white">{value}</div>
+      <div className="text-xs text-ink-3">{label}</div>
+      <div className="text-lg font-semibold text-ink">{value}</div>
     </div>
   );
 }

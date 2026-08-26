@@ -130,7 +130,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-slate-400">
+          <label className="flex items-center gap-2 text-xs text-ink-2">
             <input
               type="checkbox"
               checked={proView}
@@ -151,7 +151,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
 
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <div className="flex flex-wrap gap-2 items-center flex-1">
-          <span className="text-xs text-slate-500 uppercase tracking-wide mr-1">Workspace</span>
+          <span className="text-xs text-ink-3 uppercase tracking-wide mr-1">Workspace</span>
           {workspaces.map((ws) => (
             <button
               key={ws}
@@ -165,7 +165,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
             <input
               type="search"
               value={search}
@@ -177,7 +177,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-aether text-aether' : 'glass-divider text-slate-400'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-brand text-brand' : 'glass-divider text-ink-2'}`}
             aria-label="Grid view"
           >
             <Grid3X3 size={16} />
@@ -185,7 +185,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-aether text-aether' : 'glass-divider text-slate-400'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-brand text-brand' : 'glass-divider text-ink-2'}`}
             aria-label="List view"
           >
             <LayoutList size={16} />
@@ -225,7 +225,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
         <div className="glass-panel-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-slate-500 glass-divider-b">
+              <tr className="text-left text-xs text-ink-3 glass-divider-b">
                 <th className="p-3">Application</th>
                 <th className="p-3">Workspace</th>
                 <th className="p-3">Status</th>
@@ -236,15 +236,15 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
             <tbody>
               {filtered.map((app) => (
                 <tr key={`${app.cluster}-${app.namespace}-${app.name}`} className="glass-divider-b glass-inset-hover">
-                  <td className="p-3 font-medium text-slate-100">{app.name}</td>
-                  <td className="p-3 text-slate-400">{workspaceLabel(app.namespace)}</td>
-                  <td className="p-3 text-slate-300">{app.status}</td>
-                  <td className="p-3 text-slate-400">{app.kind ?? 'Application'}</td>
+                  <td className="p-3 font-medium text-ink">{app.name}</td>
+                  <td className="p-3 text-ink-2">{workspaceLabel(app.namespace)}</td>
+                  <td className="p-3 text-ink-2">{app.status}</td>
+                  <td className="p-3 text-ink-2">{app.kind ?? 'Application'}</td>
                   <td className="p-3">
-                    <button type="button" onClick={() => openApp(app)} className="text-aether text-xs hover:underline mr-3">
+                    <button type="button" onClick={() => openApp(app)} className="text-brand text-xs hover:underline mr-3">
                       Open
                     </button>
-                    <button type="button" onClick={() => openApp(app, 'logs')} className="text-slate-400 text-xs hover:underline">
+                    <button type="button" onClick={() => openApp(app, 'logs')} className="text-ink-2 text-xs hover:underline">
                       Logs
                     </button>
                   </td>

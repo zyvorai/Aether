@@ -151,7 +151,7 @@ export default function SecurityPlatformPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether-ai/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-aether-ai/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -166,7 +166,7 @@ export default function SecurityPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-red-500/40 bg-red-500/10 text-red-200' : 'glass-divider text-slate-400'
+              tab === t.id ? 'border-red-500/40 bg-red-500/10 text-red-200' : 'glass-divider text-ink-2'
             }`}
           >
             {t.label}
@@ -176,7 +176,7 @@ export default function SecurityPlatformPanel() {
 
       {tab === 'score' ? (
         <div data-testid="security-score-panel" className="space-y-2 text-sm">
-          <p className="text-slate-300">
+          <p className="text-ink-2">
             Fleet security score: <span className="font-semibold text-emerald-300">{score?.current_score.toFixed(1) ?? '—'}</span>
             {' · '}
             {score?.trend_direction ?? '—'}
@@ -197,18 +197,18 @@ export default function SecurityPlatformPanel() {
       ) : null}
 
       {tab === 'sbom' ? (
-        <div data-testid="security-sbom-drift-panel" className="text-sm text-slate-300">
+        <div data-testid="security-sbom-drift-panel" className="text-sm text-ink-2">
           {sbom?.drift_detected ? (
             <p className="text-amber-300">{sbom.alerts.length} SBOM drift alert(s)</p>
           ) : (
             <p className="text-emerald-400">No SBOM drift detected</p>
           )}
-          <p className="text-xs text-slate-500 mt-1">{sbom?.current_component_count ?? 0} components tracked</p>
+          <p className="text-xs text-ink-3 mt-1">{sbom?.current_component_count ?? 0} components tracked</p>
         </div>
       ) : null}
 
       {tab === 'confidential' ? (
-        <div data-testid="security-confidential-panel" className="text-sm text-slate-300">
+        <div data-testid="security-confidential-panel" className="text-sm text-ink-2">
           <p>
             {confidential?.workload_count ?? 0} confidential workload(s) ·{' '}
             {confidential?.attestation_passed ?? 0} attested · avg trust{' '}
@@ -219,8 +219,8 @@ export default function SecurityPlatformPanel() {
 
       {tab === 'zerotrust' ? (
         <div data-testid="security-zerotrust-panel" className="space-y-2 text-sm">
-          <p className="text-slate-300">Rollout: {(wizard?.completion_pct ?? 0).toFixed(0)}% complete</p>
-          <ul className="space-y-1 text-xs text-slate-400">
+          <p className="text-ink-2">Rollout: {(wizard?.completion_pct ?? 0).toFixed(0)}% complete</p>
+          <ul className="space-y-1 text-xs text-ink-2">
             {(wizard?.steps ?? []).map((s) => (
               <li key={s.id}>
                 {s.ready ? '✓' : '○'} {s.title} ({s.workloads.length} workload(s))
@@ -250,11 +250,11 @@ export default function SecurityPlatformPanel() {
             </button>
           </div>
           {!hunt?.findings.length ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-ink-3">
               {hunt?.configured ? 'No findings for query.' : 'Run hunt to query Aether + PacketWolf.'}
             </p>
           ) : (
-            <ul className="space-y-1 text-xs text-slate-400">
+            <ul className="space-y-1 text-xs text-ink-2">
               {hunt.findings.map((f, i) => (
                 <li key={`${f.source}-${i}`} className="flex gap-2">
                   <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-400" />
@@ -270,8 +270,8 @@ export default function SecurityPlatformPanel() {
 
       {tab === 'compliance' ? (
         <div data-testid="security-compliance-panel" className="text-sm">
-          <p className="text-slate-400 mb-2">{compliance?.framework ?? '—'}</p>
-          <ul className="space-y-1 text-xs text-slate-400">
+          <p className="text-ink-2 mb-2">{compliance?.framework ?? '—'}</p>
+          <ul className="space-y-1 text-xs text-ink-2">
             {(compliance?.sections ?? []).map((s) => (
               <li key={s.control} className="flex justify-between gap-2">
                 <span>{s.control}</span>

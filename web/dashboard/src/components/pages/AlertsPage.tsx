@@ -189,7 +189,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="alerts-context-policy-link"
             >
               Policy →
@@ -197,7 +197,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="alerts-openapi-link"
             >
               OpenAPI →
@@ -205,7 +205,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Explain alerts for ${workloadFocus}` })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="alerts-context-copilot-link"
             >
               Copilot →
@@ -213,7 +213,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="alerts-context-secrets-link"
             >
               Secrets →
@@ -221,7 +221,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="alerts-context-rbac-link"
             >
               RBAC →
@@ -244,7 +244,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
               ? pathWithQuery(viewToPath('events'), { workload: workloadFocus })
               : viewToPath('events')
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="alerts-events-link"
         >
           View events feed →
@@ -252,7 +252,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
         {' · '}
         <Link
           to={workloadFocus ? pathWithQuery(viewToPath('policy'), { workload: workloadFocus }) : viewToPath('policy')}
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="alerts-policy-link"
         >
           Policy check →
@@ -262,7 +262,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
-              className="text-xs text-aether hover:underline"
+              className="text-xs text-brand hover:underline"
               data-testid="alerts-trust-link"
             >
               Trust & attestation →
@@ -276,8 +276,8 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
         <div className="glass-panel-card">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <Radio className="text-aether" size={20} />
-              <h2 className="text-lg font-semibold text-slate-100">Notification channels</h2>
+              <Radio className="text-brand" size={20} />
+              <h2 className="text-lg font-semibold text-ink">Notification channels</h2>
             </div>
             <button
               type="button"
@@ -289,9 +289,9 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
             </button>
           </div>
           {channels.length === 0 && !showAddChannel && (
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-ink-3 mb-4">
               No channels configured.{' '}
-              <Link to={viewToPath('platform')} className="text-aether hover:underline">
+              <Link to={viewToPath('platform')} className="text-brand hover:underline">
                 Configure audit webhooks on Platform →
               </Link>
             </p>
@@ -354,22 +354,22 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
                   className="glass-panel-card px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-slate-100">{ch.name}</span>
+                    <span className="font-medium text-ink">{ch.name}</span>
                     <div className="flex items-center gap-2">
                       <Badge text={ch.enabled ? 'enabled' : 'disabled'} variant={ch.enabled ? 'green' : 'muted'} />
                       <button
                         type="button"
                         onClick={() => void handleDeleteChannel(ch.name)}
                         disabled={channelDeleting === ch.name}
-                        className="p-1.5 text-slate-500 hover:text-red-400 rounded"
+                        className="p-1.5 text-ink-3 hover:text-red-400 rounded"
                         title="Remove channel"
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-400 mt-1 capitalize">{ch.channel_type}</p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-sm text-ink-2 mt-1 capitalize">{ch.channel_type}</p>
+                  <p className="text-xs text-ink-3 mt-1">
                     Min severity: {ch.min_severity}
                     {ch.categories.length > 0 ? ` · categories: ${ch.categories.join(', ')}` : ''}
                   </p>
@@ -383,14 +383,14 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <BellRing className="text-amber-400" size={20} />
-              <h2 className="text-lg font-semibold text-slate-100">Alert rules</h2>
+              <h2 className="text-lg font-semibold text-ink">Alert rules</h2>
             </div>
-            <Link to={viewToPath('events')} className="text-xs text-aether hover:underline" data-testid="alerts-rules-events-link">
+            <Link to={viewToPath('events')} className="text-xs text-brand hover:underline" data-testid="alerts-rules-events-link">
               Events feed →
             </Link>
           </div>
           {rules.length === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-ink-3">
               {workloadFocus
                 ? `No alert rules mention "${workloadFocus}". Check the events feed for delivery history.`
                 : 'No alert rules configured.'}
@@ -403,12 +403,12 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
                   className="glass-panel-card px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-medium text-slate-100">{rule.name}</span>
+                    <span className="font-medium text-ink">{rule.name}</span>
                     <div className="flex items-center gap-2 flex-wrap">
                       {rule.workload ? (
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: rule.workload, tab: 'trust' })}
-                          className="text-xs font-mono text-aether hover:underline"
+                          className="text-xs font-mono text-brand hover:underline"
                           data-testid={`alerts-rule-workload-${rule.workload}`}
                         >
                           {rule.workload}
@@ -417,8 +417,8 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
                       <Badge text={rule.enabled ? 'on' : 'off'} variant={rule.enabled ? 'green' : 'muted'} />
                     </div>
                   </div>
-                  <p className="text-sm text-slate-400 mt-1">{rule.condition}</p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-sm text-ink-2 mt-1">{rule.condition}</p>
+                  <p className="text-xs text-ink-3 mt-1">
                     Severity {rule.severity} · cooldown {rule.cooldown_seconds}s
                     {rule.last_triggered ? ` · last: ${rule.last_triggered}` : ''}
                   </p>
@@ -432,10 +432,10 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
       <div className="glass-panel-card mt-6">
         <div className="flex items-center gap-3 mb-4">
           <Send className="text-blue-400" size={20} />
-          <h2 className="text-lg font-semibold text-slate-100">Test webhook</h2>
+          <h2 className="text-lg font-semibold text-ink">Test webhook</h2>
         </div>
-        <p className="text-sm text-slate-500 mb-4">
-          Emits a test event through the selected channel (same as <code className="text-slate-400">aether webhook test</code>).
+        <p className="text-sm text-ink-3 mb-4">
+          Emits a test event through the selected channel (same as <code className="text-ink-2">aether webhook test</code>).
         </p>
         <div className="flex flex-wrap gap-3 items-center">
           <select
@@ -463,7 +463,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
 
       <div className="glass-panel-card mt-6" data-testid="alerts-webhook-queue">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-slate-100">Webhook retry queue</h2>
+          <h2 className="text-lg font-semibold text-ink">Webhook retry queue</h2>
           <button
             type="button"
             data-testid="alerts-flush-queue"
@@ -475,7 +475,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
           </button>
         </div>
         {queue.length === 0 ? (
-          <p className="text-sm text-slate-500">No pending webhook deliveries.</p>
+          <p className="text-sm text-ink-3">No pending webhook deliveries.</p>
         ) : (
           <CardGrid columns="compact">
             {queue.map((item, i) => (
@@ -488,7 +488,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
                 titleTooltip={item.url}
                 subtitle={`${item.method} · next ${item.next_attempt_at.slice(0, 19)}`}
                 body={
-                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
                     Attempts {item.attempts}/{item.max_attempts}
                   </span>
                 }

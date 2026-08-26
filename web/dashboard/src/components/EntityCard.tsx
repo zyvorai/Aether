@@ -62,18 +62,18 @@ export default function EntityCard({
       style={{ animationDelay: cardRiseDelay(index) }}
       className={`card-rise group relative flex flex-col overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-0.5 ${
         selected
-          ? 'border-aether/45 bg-gradient-to-br from-aether/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
-          : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-aether/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
+          ? 'border-brand/45 bg-gradient-to-br from-aether/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
+          : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-brand/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
       }`}
     >
       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accentTone[statusTone]}`} aria-hidden />
-      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-aether/10 blur-3xl transition duration-500 group-hover:bg-aether/20" aria-hidden />
+      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-brand/10 blur-3xl transition duration-500 group-hover:bg-brand/20" aria-hidden />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-60" aria-hidden />
 
       <div className="relative flex h-full flex-col p-4">
         <div className="mb-3 flex items-start gap-3">
           {icon ? (
-            <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent text-slate-300 transition group-hover:text-aether">
+            <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent text-ink-2 transition group-hover:text-brand">
               {icon}
               {pulse ? (
                 <span className={`absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] platform-pulse ${dotTone[statusTone]}`} />
@@ -88,10 +88,10 @@ export default function EntityCard({
                 className="min-w-0 flex-1 text-left"
                 disabled={!onClick}
               >
-                <h3 className="truncate text-base font-semibold tracking-tight text-white transition group-hover:text-aether" title={titleTooltip ?? title}>
+                <h3 className="truncate text-base font-semibold tracking-tight text-ink transition group-hover:text-brand" title={titleTooltip ?? title}>
                   {title}
                 </h3>
-                {subtitle ? <p className="mt-0.5 truncate text-[11px] text-slate-500">{subtitle}</p> : null}
+                {subtitle ? <p className="mt-0.5 truncate text-[11px] text-ink-3">{subtitle}</p> : null}
               </button>
               {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>

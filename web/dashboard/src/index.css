@@ -26,8 +26,8 @@
 
   .btn-primary {
     @apply rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity;
-    background: linear-gradient(to right, #3B82F6, #2563EB);
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
+    background: var(--brand);
+    box-shadow: var(--shadow);
   }
 
   .btn-primary:hover {
@@ -44,21 +44,21 @@
 
   .btn-danger {
     @apply rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200;
-    border-color: rgba(248, 113, 113, 0.3);
-    background: rgba(248, 113, 113, 0.1);
-    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--red);
   }
 
   .btn-danger:hover {
-    border-color: rgba(248, 113, 113, 0.45);
-    background: rgba(248, 113, 113, 0.16);
-    color: #fecaca;
+    border-color: rgba(239, 68, 68, 0.45);
+    background: rgba(239, 68, 68, 0.16);
+    color: var(--red);
   }
 
   .glass-context-banner {
     @apply mb-6 rounded-2xl border px-4 py-3 backdrop-blur-sm;
-    border-color: rgba(59, 130, 246, 0.2);
-    background: rgba(17, 21, 28, 0.72);
+    border-color: var(--brand-wash);
+    background: var(--sunken);
   }
 
   .section-label-purple {
@@ -70,52 +70,42 @@
   }
 
   .section-label-neutral {
-    color: #94a3b8 !important;
+    color: var(--ink-3) !important;
   }
 
   .app-shell {
-    background:
-      radial-gradient(circle at 8% 8%, rgba(99, 164, 255, 0.12), transparent 28%),
-      radial-gradient(circle at 94% 18%, rgba(45, 212, 191, 0.10), transparent 30%),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.98)),
-      linear-gradient(120deg, rgba(99, 164, 255, 0.08), transparent 45%);
+    background: var(--canvas);
   }
 
   .surface-panel {
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.88) 0%, rgba(17, 21, 28, 0.82) 100%);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    box-shadow:
-      0 16px 48px rgba(2, 6, 23, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
 
   .surface-panel-soft {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(15, 23, 42, 0.58));
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.22);
+    background: var(--sunken);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
 
   .glass-toolbar {
     @apply mb-6 flex flex-col gap-3 rounded-[20px] border p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
-    border-color: rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.88) 0%, rgba(17, 21, 28, 0.82) 100%);
-    box-shadow:
-      0 16px 48px rgba(2, 6, 23, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border-color: var(--rule);
+    background: var(--raised);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
 
   .glass-footer {
     @apply mt-auto border-t backdrop-blur-xl;
-    border-color: rgba(148, 163, 184, 0.12);
-    background: rgba(17, 21, 28, 0.72);
+    border-color: var(--rule);
+    background: var(--raised);
   }
 
   .steel-grid {
@@ -129,11 +119,8 @@
     @apply rounded-[28px] p-4 sm:p-6 lg:p-8;
     position: relative;
     overflow: hidden;
-    background:
-      linear-gradient(180deg, rgba(2, 6, 23, 0.48), rgba(2, 6, 23, 0.18)),
-      radial-gradient(circle at top right, rgba(99, 164, 255, 0.06), transparent 40%);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    background: var(--canvas);
+    border: 1px solid var(--rule);
     /* No `both`/`forwards`: once this finishes, the animation must stop being
        "in effect" entirely. Chromium reports the computed `transform` of a
        held (fill-mode both/forwards) animation as a resolved matrix even when
@@ -162,45 +149,37 @@
 
   .dash-breadcrumb {
     border-radius: 1rem;
-    border: 1px solid rgba(148, 163, 184, 0.1);
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.55), rgba(9, 14, 24, 0.72));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--rule);
+    background: var(--raised);
+    box-shadow: var(--shadow);
   }
 
   .dash-card {
     @apply rounded-[28px] p-6;
     position: relative;
     overflow: hidden;
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.90) 0%, rgba(17, 21, 28, 0.94) 100%);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    box-shadow:
-      0 18px 50px rgba(2, 6, 23, 0.32),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   }
 
   .dash-card:hover {
-    border-color: rgba(59, 130, 246, 0.22);
-    box-shadow:
-      0 22px 56px rgba(2, 6, 23, 0.36),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border-color: var(--rule-strong);
   }
 
   .dash-card-flush {
     @apply rounded-2xl overflow-hidden;
     position: relative;
-    background:
-      linear-gradient(165deg, rgba(15, 23, 42, 0.90) 0%, rgba(9, 14, 24, 0.97) 100%),
-      radial-gradient(circle at top left, rgba(99, 164, 255, 0.06), transparent 34%);
-    border: 1px solid rgba(148, 163, 184, 0.13);
-    box-shadow: 0 18px 50px rgba(2, 6, 23, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
   }
 
   .dash-card-flush table thead {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.42));
+    background: var(--sunken);
   }
 
   .dash-card-flush table tbody tr {
@@ -208,8 +187,8 @@
   }
 
   .dash-card-flush table tbody tr:hover {
-    background: rgba(30, 41, 59, 0.38);
-    box-shadow: inset 3px 0 0 rgba(99, 164, 255, 0.55);
+    background: var(--hover);
+    box-shadow: inset 3px 0 0 var(--brand);
   }
 
   /** Wide shell: same horizontal rail as HyperSDK-style dashboards (nav / hero / body / footer). */
@@ -218,45 +197,46 @@
   }
 
   .nav-pill-active {
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.08));
-    color: #dbeafe;
-    border: 1px solid rgba(59, 130, 246, 0.28);
+    background: var(--brand-wash);
+    color: var(--brand);
+    border: 1px solid var(--brand-wash);
   }
 
   .nav-pill {
-    color: #94a3b8;
+    color: var(--ink-3);
     border: 1px solid transparent;
   }
 
   .nav-pill:hover {
-    color: #e2e8f0;
-    background: rgba(30, 41, 59, 0.68);
-    border-color: rgba(148, 163, 184, 0.12);
+    color: var(--ink);
+    background: var(--hover);
+    border-color: var(--rule);
   }
 
   .metric-glow {
-    box-shadow: 0 0 0 1px rgba(99, 164, 255, 0.14), 0 16px 42px rgba(59, 130, 246, 0.14);
+    box-shadow: var(--shadow);
   }
 
-  .stat-card-orange { background: radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.26), transparent 35%), linear-gradient(135deg, #111827 0%, #172554 100%); }
-  .stat-card-green { background: radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.25), transparent 35%), linear-gradient(135deg, #052e2b 0%, #0f172a 100%); }
-  .stat-card-red { background: radial-gradient(circle at 90% 10%, rgba(248, 113, 113, 0.26), transparent 35%), linear-gradient(135deg, #3a1020 0%, #111827 100%); }
-  .stat-card-blue { background: radial-gradient(circle at 90% 10%, rgba(96, 165, 250, 0.28), transparent 35%), linear-gradient(135deg, #0f172a 0%, #172554 100%); }
-  .stat-card-purple { background: radial-gradient(circle at 90% 10%, rgba(168, 85, 247, 0.30), transparent 35%), linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); }
-  .stat-card-yellow { background: radial-gradient(circle at 90% 10%, rgba(245, 158, 11, 0.28), transparent 35%), linear-gradient(135deg, #3b2805 0%, #111827 100%); }
+  .stat-card-orange { background: var(--raised); }
+  .stat-card-green { background: var(--raised); }
+  .stat-card-red { background: var(--raised); }
+  .stat-card-blue { background: var(--raised); }
+  .stat-card-purple { background: var(--raised); }
+  .stat-card-yellow { background: var(--raised); }
 
   .card-metal {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(9, 14, 24, 0.98) 100%);
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: var(--raised);
+    border: 1px solid var(--rule);
   }
 
   .card-glow:hover {
-    box-shadow: 0 0 20px rgba(99, 164, 255, 0.08), 0 18px 42px rgba(2, 6, 23, 0.45);
+    box-shadow: var(--shadow);
   }
 
   .premium-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(99, 164, 255, 0.35), rgba(45, 212, 191, 0.22), transparent);
+    background: linear-gradient(90deg, transparent, var(--brand), transparent);
+    opacity: 0.4;
   }
 
   .hero-orb {
@@ -310,7 +290,7 @@
       165deg,
       rgba(59, 130, 246, 0.08) 0%,
       rgba(168, 85, 247, 0.06) 48%,
-      rgba(17, 21, 28, 0.88) 100%
+      var(--raised) 100%
     );
   }
 
@@ -323,7 +303,7 @@
     position: sticky;
     left: 0;
     z-index: 1;
-    background: rgba(17, 21, 28, 0.96);
+    background: var(--raised);
   }
 
   .zeus-chat-input-bar {
@@ -333,7 +313,7 @@
   }
 
   .skeleton {
-    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background: linear-gradient(90deg, var(--sunken) 25%, var(--rule-strong) 50%, var(--sunken) 75%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;
     border-radius: 0.5rem;
@@ -397,12 +377,9 @@
     position: relative;
     overflow: hidden;
     border-radius: 28px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.92) 0%, rgba(17, 21, 28, 0.88) 48%, rgba(14, 18, 26, 0.94) 100%);
-    box-shadow:
-      0 24px 64px rgba(2, 6, 23, 0.42),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--rule);
+    background: var(--raised);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
   }
@@ -446,14 +423,11 @@
 
   .glass-metric-card {
     @apply relative overflow-hidden rounded-2xl border p-5 transition-all duration-200;
-    border-color: rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.88) 0%, rgba(17, 21, 28, 0.72) 100%);
+    border-color: var(--rule);
+    background: var(--raised);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.04),
-      0 12px 32px rgba(2, 6, 23, 0.24);
+    box-shadow: var(--shadow);
   }
 
   .glass-metric-shine {
@@ -472,23 +446,21 @@
     align-items: center;
     justify-content: center;
     border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(148, 163, 184, 0.8);
+    border: 1px solid var(--rule);
+    background: var(--sunken);
+    color: var(--ink-3);
     transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
   }
 
   .glass-metric-card:hover {
     transform: translateY(-2px);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      0 20px 48px rgba(2, 6, 23, 0.32);
+    box-shadow: var(--shadow);
   }
 
   .glass-metric-card:hover .glass-metric-icon-wrap {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.07);
+    color: var(--ink);
+    border-color: var(--rule-strong);
+    background: var(--hover);
   }
 
   .glass-metric-accent-blue {
@@ -586,18 +558,17 @@
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    background: rgba(17, 21, 28, 0.88);
+    border: 1px solid var(--rule-strong);
+    background: var(--raised);
     font-size: 0.6875rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--ink-3);
   }
 
   .copilot-rail-glass {
-    background:
-      linear-gradient(180deg, rgba(17, 21, 28, 0.96) 0%, rgba(14, 18, 26, 0.98) 100%);
-    border-color: rgba(148, 163, 184, 0.10);
-    box-shadow: -16px 0 48px rgba(2, 6, 23, 0.32);
+    background: var(--raised);
+    border-color: var(--rule);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
   }
@@ -614,8 +585,8 @@
 
   .copilot-agent-chip {
     @apply rounded-xl border px-2.5 py-1.5 text-left transition-all duration-200;
-    border-color: rgba(148, 163, 184, 0.12);
-    background: rgba(17, 21, 28, 0.72);
+    border-color: var(--rule);
+    background: var(--sunken);
   }
 
   .copilot-agent-chip:hover {
@@ -631,9 +602,9 @@
 
   .copilot-prompt-chip {
     @apply rounded-xl border px-3 py-2.5 text-left text-xs transition-all duration-200;
-    border-color: rgba(148, 163, 184, 0.12);
-    background: rgba(17, 21, 28, 0.65);
-    color: #cbd5e1;
+    border-color: var(--rule);
+    background: var(--sunken);
+    color: var(--ink-2);
   }
 
   .copilot-prompt-chip:hover {
@@ -647,12 +618,9 @@
     position: relative;
     overflow: hidden;
     border-radius: 28px;
-    border: 1px solid rgba(148, 163, 184, 0.10);
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.78) 0%, rgba(17, 21, 28, 0.72) 100%);
-    box-shadow:
-      0 16px 48px rgba(2, 6, 23, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--rule);
+    background: var(--raised);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
@@ -674,33 +642,33 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.2em;
-    color: #3b82f6;
+    color: var(--brand);
   }
 
   .overview-section-header .section-title {
     margin-top: 0.375rem;
     font-size: 1.125rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--ink);
   }
 
   .overview-section-header .section-subtitle {
     margin-top: 0.25rem;
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--ink-3);
   }
 
   .quick-link-chip {
     @apply rounded-xl border px-3 py-2 text-sm transition-all duration-200;
-    border-color: rgba(148, 163, 184, 0.12);
-    background: rgba(17, 21, 28, 0.65);
-    color: #cbd5e1;
+    border-color: var(--rule);
+    background: var(--sunken);
+    color: var(--ink-2);
   }
 
   .quick-link-chip:hover {
-    border-color: rgba(59, 130, 246, 0.32);
-    background: rgba(59, 130, 246, 0.08);
-    color: #dbeafe;
+    border-color: var(--brand);
+    background: var(--brand-wash);
+    color: var(--brand);
     transform: translateY(-1px);
   }
 
@@ -708,28 +676,22 @@
     @apply rounded-[28px] p-6;
     position: relative;
     overflow: hidden;
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.90) 0%, rgba(17, 21, 28, 0.94) 100%);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    box-shadow:
-      0 18px 50px rgba(2, 6, 23, 0.32),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     transition: border-color 180ms ease, box-shadow 180ms ease;
   }
 
   .glass-panel-card:hover {
-    border-color: rgba(59, 130, 246, 0.20);
-    box-shadow:
-      0 22px 56px rgba(2, 6, 23, 0.36),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border-color: var(--rule-strong);
   }
 
   .glass-panel-card .panel-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--ink);
   }
 
   .stat-card-empty {
@@ -768,80 +730,77 @@
 
   .glass-status-dot-muted {
     @apply rounded-full;
-    background: rgba(148, 163, 184, 0.55);
+    background: var(--ink-3);
   }
 
   .hub-link-card {
     @apply rounded-2xl border p-5 transition-all duration-200;
-    border-color: rgba(148, 163, 184, 0.12);
-    background: rgba(17, 21, 28, 0.72);
+    border-color: var(--rule);
+    background: var(--raised);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
 
   .hub-link-card:hover {
-    border-color: rgba(59, 130, 246, 0.30);
-    background: rgba(59, 130, 246, 0.06);
+    border-color: var(--brand);
+    background: var(--brand-wash);
     transform: translateY(-2px);
-    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.28);
+    box-shadow: var(--shadow);
   }
 
   .tab-chip {
     @apply rounded-xl border px-3 py-1.5 text-sm transition-all duration-200;
-    border-color: rgba(148, 163, 184, 0.14);
-    background: rgba(17, 21, 28, 0.65);
-    color: #94a3b8;
+    border-color: var(--rule);
+    background: var(--sunken);
+    color: var(--ink-3);
   }
 
   .tab-chip:hover {
-    border-color: rgba(59, 130, 246, 0.28);
-    color: #cbd5e1;
+    border-color: var(--rule-strong);
+    color: var(--ink-2);
   }
 
   .tab-chip-active {
-    border-color: rgba(59, 130, 246, 0.38) !important;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.08)) !important;
-    color: #fff !important;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.12);
+    border-color: var(--brand) !important;
+    background: var(--brand-wash) !important;
+    color: var(--brand) !important;
   }
 
   .glass-input,
   .glass-select {
-    @apply w-full rounded-xl border px-3 py-2.5 text-sm text-slate-100 outline-none transition;
-    border-color: rgba(148, 163, 184, 0.18);
-    background: rgba(10, 13, 18, 0.72);
+    @apply w-full rounded-xl border px-3 py-2.5 text-sm text-ink outline-none transition;
+    border-color: var(--rule-strong);
+    background: var(--sunken);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 
   .glass-input::placeholder {
-    color: #64748b;
+    color: var(--ink-3);
   }
 
   .glass-input:focus,
   .glass-select:focus {
-    border-color: rgba(59, 130, 246, 0.45);
-    background: rgba(10, 13, 18, 0.88);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+    border-color: var(--brand);
+    background: var(--raised);
+    box-shadow: 0 0 0 2px var(--brand-wash);
   }
 
   .glass-table-shell {
     @apply overflow-hidden rounded-2xl border;
-    border-color: rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.82) 0%, rgba(17, 21, 28, 0.78) 100%);
+    border-color: var(--rule);
+    background: var(--raised);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
   .glass-table-row {
     @apply border-b transition-colors;
-    border-color: rgba(148, 163, 184, 0.08);
+    border-color: var(--rule);
   }
 
   .glass-table-row:hover {
-    background: rgba(59, 130, 246, 0.06);
+    background: var(--hover);
   }
 
   .glass-table-row:last-child {
@@ -862,23 +821,19 @@
 
   .glass-drawer {
     @apply rounded-2xl border p-4;
-    border-color: rgba(148, 163, 184, 0.14);
-    background:
-      linear-gradient(165deg, rgba(17, 21, 28, 0.94) 0%, rgba(14, 18, 26, 0.98) 100%);
+    border-color: var(--rule);
+    background: var(--sunken);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.32);
+    box-shadow: var(--shadow);
   }
 
   .glass-modal-panel {
     @apply relative flex w-full flex-col overflow-hidden;
     border-radius: 28px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.94) 0%, rgba(17, 21, 28, 0.98) 100%);
-    box-shadow:
-      0 24px 64px rgba(2, 6, 23, 0.48),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--rule);
+    background: var(--raised);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
   }
@@ -890,42 +845,40 @@
 
   .glass-code-block {
     @apply overflow-hidden rounded-xl border;
-    border-color: rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(17, 21, 28, 0.92) 0%, rgba(11, 14, 20, 0.98) 100%);
+    border-color: var(--rule);
+    background: var(--sunken);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 
   .glass-code-block-header {
     @apply border-b px-4 py-2;
-    border-color: rgba(148, 163, 184, 0.10);
-    background: rgba(17, 21, 28, 0.72);
+    border-color: var(--rule);
+    background: var(--raised);
   }
 
   .glass-code-block-body {
-    @apply overflow-x-auto p-4 font-mono text-sm leading-relaxed text-slate-300;
-    background: rgba(8, 11, 16, 0.88);
+    @apply overflow-x-auto p-4 font-mono text-sm leading-relaxed text-ink-2;
+    background: var(--sunken);
   }
 
   .glass-empty-state {
     @apply relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border px-6 py-16 text-center;
-    border-color: rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(22, 27, 36, 0.72) 0%, rgba(17, 21, 28, 0.68) 100%);
+    border-color: var(--rule);
+    background: var(--raised);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
 
   .glass-dropdown-surface {
     @apply rounded-xl border backdrop-blur-xl;
-    border-color: rgba(148, 163, 184, 0.16);
-    background: rgba(17, 21, 28, 0.92);
-    box-shadow: 0 16px 48px rgba(2, 6, 23, 0.36);
+    border-color: var(--rule-strong);
+    background: var(--raised);
+    box-shadow: var(--shadow);
   }
 
   .glass-divider {
-    border-color: rgba(148, 163, 184, 0.12);
+    border-color: var(--rule);
   }
 
   .glass-divider-b {
@@ -937,9 +890,8 @@
   }
 
   .glass-inset-surface {
-    border-color: rgba(148, 163, 184, 0.12);
-    background:
-      linear-gradient(165deg, rgba(17, 21, 28, 0.88) 0%, rgba(11, 14, 20, 0.94) 100%);
+    border-color: var(--rule);
+    background: var(--sunken);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -954,17 +906,17 @@
 
   .glass-nav-item {
     @apply rounded-xl transition-colors duration-200;
-    color: #94a3b8;
+    color: var(--ink-3);
   }
 
   .glass-nav-item:hover {
-    background: rgba(17, 21, 28, 0.72);
-    color: #f1f5f9;
+    background: var(--hover);
+    color: var(--ink);
   }
 
   .glass-progress-track {
     @apply overflow-hidden rounded-full;
-    background: rgba(17, 21, 28, 0.72);
+    background: var(--rule);
   }
 
   .glass-row-hover {
@@ -980,7 +932,7 @@
   }
 
   .glass-inset-hover:hover {
-    background: rgba(17, 21, 28, 0.88);
+    background: var(--hover);
   }
 
 .fabric-edge-animate {

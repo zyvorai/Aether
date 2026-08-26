@@ -49,18 +49,18 @@ export default function CommandMetricCard({
       <div className="glass-metric-shine" aria-hidden />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-3">
             {icon}
             {label}
           </div>
           <div
-            className={`text-3xl font-semibold tracking-tight ${isEmpty ? 'text-slate-500' : 'text-white'}`}
+            className={`text-3xl font-semibold tracking-tight ${isEmpty ? 'text-ink-3' : 'text-ink'}`}
             data-testid={valueTestId}
           >
             {value}
           </div>
           {hint ? (
-            <p className="mt-2 text-xs text-slate-500 transition group-hover:text-slate-400">{hint}</p>
+            <p className="mt-2 text-xs text-ink-3 transition group-hover:text-ink-2">{hint}</p>
           ) : null}
         </div>
         <div className="glass-metric-icon-wrap">{icon}</div>

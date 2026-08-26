@@ -31,7 +31,7 @@ function TrustBar({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100);
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-xs text-slate-400">
+      <div className="flex justify-between text-xs text-ink-2">
         <span>{label}</span>
         <span>{pct}%</span>
       </div>
@@ -238,7 +238,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
               workload: workloadQuery.trim(),
               tab: 'predictions',
             })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-intelligence-link"
           >
             Intelligence →
@@ -246,7 +246,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-rbac-link"
           >
             RBAC →
@@ -254,7 +254,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-secrets-link"
           >
             Secrets →
@@ -262,7 +262,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadQuery.trim(), q: `Confidential posture for ${workloadQuery.trim()}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-context-copilot-link"
           >
             Copilot →
@@ -270,7 +270,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-context-policy-link"
           >
             Policy →
@@ -278,7 +278,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('audit'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-context-audit-link"
           >
             Audit →
@@ -286,7 +286,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-context-platform-link"
           >
             Platform →
@@ -294,7 +294,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="confidential-context-fleet-link"
           >
             Fleet →
@@ -310,11 +310,11 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
         >
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-                <Lock className="w-5 h-5 text-aether" />
+              <h2 className="text-lg font-semibold text-ink flex items-center gap-2">
+                <Lock className="w-5 h-5 text-brand" />
                 Integration
               </h2>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-ink-3 mt-1">
                 {integration?.mode === 'composite'
                   ? 'Composite deployment — Aether delegates attestation to standalone Ragnarok.'
                   : 'Embedded mode — confidential logic runs inside aether serve.'}
@@ -331,7 +331,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
               target="_blank"
               rel="noreferrer"
               data-testid="confidential-ragnarok-link"
-              className="inline-flex items-center gap-2 text-sm text-aether hover:underline"
+              className="inline-flex items-center gap-2 text-sm text-brand hover:underline"
             >
               Open Ragnarok VM console
               <ExternalLink className="w-3.5 h-3.5" />
@@ -340,7 +340,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           {integration?.mode === 'composite' && filteredFleet.length > 0 && (
             <p
               data-testid="confidential-ragnarok-attestation-summary"
-              className="mt-3 text-sm text-slate-400"
+              className="mt-3 text-sm text-ink-2"
             >
               Ragnarok attestation: {attestedFleetCount}/{filteredFleet.length} workloads attested
             </p>
@@ -348,18 +348,18 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
         </div>
 
         <div className="glass-panel-card">
-          <h2 className="text-sm font-medium uppercase tracking-wider text-slate-400 mb-3">Host TEE</h2>
+          <h2 className="text-sm font-medium uppercase tracking-wider text-ink-2 mb-3">Host TEE</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-400">SEV device</span>
+              <span className="text-ink-2">SEV device</span>
               <Badge text={host?.sev_device ? 'yes' : 'no'} variant={host?.sev_device ? 'green' : 'muted'} />
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">SEV-SNP</span>
+              <span className="text-ink-2">SEV-SNP</span>
               <Badge text={host?.sev_snp ? 'yes' : 'no'} variant={host?.sev_snp ? 'green' : 'muted'} />
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Intel TDX</span>
+              <span className="text-ink-2">Intel TDX</span>
               <Badge text={host?.tdx ? 'yes' : 'no'} variant={host?.tdx ? 'green' : 'muted'} />
             </div>
           </div>
@@ -368,8 +368,8 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
 
       {sovereign && (sovereign.offline_attestation || sovereign.region_lock) && (
         <div className="glass-panel-card mb-6">
-          <h2 className="text-lg font-semibold text-slate-100 mb-2">Sovereign mode</h2>
-          <div className="flex flex-wrap gap-3 text-sm text-slate-400">
+          <h2 className="text-lg font-semibold text-ink mb-2">Sovereign mode</h2>
+          <div className="flex flex-wrap gap-3 text-sm text-ink-2">
             {sovereign.offline_attestation && (
               <span className="px-2 py-1 rounded glass-inset-surface border glass-divider">Offline attestation</span>
             )}
@@ -382,15 +382,15 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
               <span className="px-2 py-1 rounded glass-inset-surface border glass-divider">BYOK signing active</span>
             )}
           </div>
-          <p className="text-xs text-slate-600 mt-2">
-            CLI: <code className="text-slate-400">aether --spec workload.yaml confidential sovereign-check</code>
+          <p className="text-xs text-ink-3 mt-2">
+            CLI: <code className="text-ink-2">aether --spec workload.yaml confidential sovereign-check</code>
           </p>
         </div>
       )}
 
       {kata && (
         <div className="glass-panel-card mb-6">
-          <h2 className="text-lg font-semibold text-slate-100 mb-2">Kata / Confidential Containers</h2>
+          <h2 className="text-lg font-semibold text-ink mb-2">Kata / Confidential Containers</h2>
           <div className="flex flex-wrap gap-2 mb-3">
             <Badge text={kata.hypervisor} variant="muted" />
             <Badge
@@ -398,18 +398,18 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
               variant={kata.placement_ready ? 'green' : 'yellow'}
             />
           </div>
-          <p className="text-xs text-slate-500 mb-2">RuntimeClasses: {kata.supported_runtime_classes.join(', ')}</p>
-          <p className="text-xs text-slate-500 mb-2">Requires: {kata.operator_requirements.join(' · ')}</p>
+          <p className="text-xs text-ink-3 mb-2">RuntimeClasses: {kata.supported_runtime_classes.join(', ')}</p>
+          <p className="text-xs text-ink-3 mb-2">Requires: {kata.operator_requirements.join(' · ')}</p>
           {kata.notes.map((n) => (
-            <p key={n} className="text-xs text-slate-600">{n}</p>
+            <p key={n} className="text-xs text-ink-3">{n}</p>
           ))}
         </div>
       )}
 
       {fleetTrust.length > 0 && (
         <div className="glass-panel-card mb-6">
-          <h2 className="text-lg font-semibold text-slate-100 mb-2">Fleet trust scores</h2>
-          <p className="text-sm text-slate-500 mb-4">
+          <h2 className="text-lg font-semibold text-ink mb-2">Fleet trust scores</h2>
+          <p className="text-sm text-ink-3 mb-4">
             Composite trust from attestation, network policy, and firmware exposure across confidential workloads.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -428,12 +428,12 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                     }),
                   )
                 }
-                className={`text-left rounded-lg border glass-panel-card p-3 hover:border-aether/40 transition-colors ${
-                  focused ? 'border-aether/50 ring-1 ring-aether/30' : 'glass-divider'
+                className={`text-left rounded-lg border glass-panel-card p-3 hover:border-brand/40 transition-colors ${
+                  focused ? 'border-brand/50 ring-1 ring-aether/30' : 'glass-divider'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="font-medium text-slate-100">{row.workload}</span>
+                  <span className="font-medium text-ink">{row.workload}</span>
                   <Badge
                     text={`${Math.round(row.composite * 100)}%`}
                     variant={row.composite >= 0.8 ? 'green' : row.composite >= 0.5 ? 'yellow' : 'red'}
@@ -450,8 +450,8 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
 
       {intel && intel.workloads.length > 0 && (
         <div className="glass-panel-card mb-6">
-          <h2 className="text-lg font-semibold text-slate-100 mb-2">AI confidential intelligence</h2>
-          <p className="text-sm text-slate-500 mb-3">
+          <h2 className="text-lg font-semibold text-ink mb-2">AI confidential intelligence</h2>
+          <p className="text-sm text-ink-3 mb-3">
             Fleet trust avg {Math.round(intel.fleet_trust_avg * 100)}% · {intel.critical_count} high-risk workload(s)
           </p>
           <div className="space-y-2 max-h-48 overflow-auto">
@@ -463,7 +463,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                     onClick={() =>
                       navigate(pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'trust' }))
                     }
-                    className="text-slate-200 hover:text-aether text-left"
+                    className="text-ink hover:text-brand text-left"
                   >
                     {row.workload}
                   </button>
@@ -472,7 +472,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                     variant={row.risk_level === 'low' ? 'green' : row.risk_level === 'medium' ? 'yellow' : 'red'}
                   />
                 </div>
-                <p className="text-xs text-slate-500 mt-1">{row.summary}</p>
+                <p className="text-xs text-ink-3 mt-1">{row.summary}</p>
               </div>
             ))}
           </div>
@@ -480,30 +480,30 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
       )}
 
       <div className="glass-panel-card mb-6" data-testid="confidential-migration-wizard">
-        <h2 className="text-lg font-semibold text-slate-100 mb-2 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-ink mb-2 flex items-center gap-2">
           <Terminal className="w-5 h-5" />
           Encrypted migration (Phase 6)
         </h2>
-        <p className="text-sm text-slate-500 mb-4">
+        <p className="text-sm text-ink-3 mb-4">
           Plan and start confidential-blue-green migration from the dashboard. Example spec:{' '}
-          <code className="text-slate-400">examples/confidential-migrate-kubevirt.yaml</code>
+          <code className="text-ink-2">examples/confidential-migrate-kubevirt.yaml</code>
         </p>
         <ConfidentialMigrationWizard workloads={filteredFleet} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <div className="glass-panel-card" data-testid="confidential-fleet-panel">
-          <h2 className="text-lg font-semibold text-slate-100 mb-1 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-ink mb-1 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
             Confidential workloads
           </h2>
-          <p className="text-sm text-slate-500 mb-4">
-            Workloads with <code className="text-slate-400">confidential.enabled</code> — runtime, TEE, and image catalog status
+          <p className="text-sm text-ink-3 mb-4">
+            Workloads with <code className="text-ink-2">confidential.enabled</code> — runtime, TEE, and image catalog status
           </p>
           <button
             type="button"
             onClick={() => navigate(viewToPath('gitops'))}
-            className="mb-4 mr-4 text-xs text-aether hover:underline"
+            className="mb-4 mr-4 text-xs text-brand hover:underline"
           >
             GitOps confidential sync →
           </button>
@@ -511,7 +511,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
             type="button"
             data-testid="confidential-secrets-link"
             onClick={() => navigate(viewToPath('secrets'))}
-            className="mb-4 mr-4 text-xs text-aether hover:underline"
+            className="mb-4 mr-4 text-xs text-brand hover:underline"
           >
             Secrets vault →
           </button>
@@ -519,7 +519,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
             type="button"
             data-testid="confidential-policy-link"
             onClick={() => navigate(viewToPath('policy'))}
-            className="mb-4 text-xs text-aether hover:underline"
+            className="mb-4 text-xs text-brand hover:underline"
           >
             Policy check →
           </button>
@@ -545,13 +545,13 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                   }
                   className={`w-full text-left p-3 rounded-lg border glass-panel-card transition-colors ${
                     workloadQuery.trim() === row.workload
-                      ? 'border-aether/60 ring-1 ring-aether/30'
-                      : 'glass-divider hover:border-aether/40'
+                      ? 'border-brand/60 ring-1 ring-aether/30'
+                      : 'glass-divider hover:border-brand/40'
                   }`}
                   data-testid={workloadQuery.trim() === row.workload ? 'confidential-workload-highlight' : undefined}
                 >
                   <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                    <span className="font-medium text-slate-100">{row.workload}</span>
+                    <span className="font-medium text-ink">{row.workload}</span>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge text={runtimeLabel(row.runtime)} variant="muted" />
                       <Badge text={row.tee} variant="muted" />
@@ -575,15 +575,15 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                   </div>
                   {row.image_digest ? (
                     <div className="flex items-center gap-2 mb-2 text-xs">
-                      <span className="text-slate-500 shrink-0">Launch digest</span>
-                      <code className="text-slate-400 truncate font-mono">{row.image_digest}</code>
+                      <span className="text-ink-3 shrink-0">Launch digest</span>
+                      <code className="text-ink-2 truncate font-mono">{row.image_digest}</code>
                       <Badge
                         text={row.image_in_catalog ? 'in catalog' : 'not in catalog'}
                         variant={row.image_in_catalog ? 'green' : 'red'}
                       />
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-600 mb-2">No launch digest in spec</p>
+                    <p className="text-xs text-ink-3 mb-2">No launch digest in spec</p>
                   )}
                   <TrustBar label="Attestation" value={row.trust.attestation_score} />
                 </button>
@@ -594,17 +594,17 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
 
         <div className="glass-panel-card space-y-5">
           <div>
-            <h2 className="text-lg font-semibold text-slate-100 mb-1">Measured images</h2>
-            <p className="text-sm text-slate-500 mb-4">
-              Catalog entries from <code className="text-slate-400">aether confidential image list</code>
+            <h2 className="text-lg font-semibold text-ink mb-1">Measured images</h2>
+            <p className="text-sm text-ink-3 mb-4">
+              Catalog entries from <code className="text-ink-2">aether confidential image list</code>
             </p>
             {images.length === 0 ? (
-              <p className="text-sm text-slate-500">No measured images registered yet.</p>
+              <p className="text-sm text-ink-3">No measured images registered yet.</p>
             ) : (
               <div className="overflow-auto max-h-[14rem]">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-slate-500 glass-divider-b">
+                    <tr className="text-left text-ink-3 glass-divider-b">
                       <th className="pb-2 pr-3">Name</th>
                       <th className="pb-2 pr-3">Launch digest</th>
                       <th className="pb-2">Signed</th>
@@ -613,11 +613,11 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                   <tbody>
                     {images.map((img) => (
                       <tr key={img.name} className="glass-divider-b">
-                        <td className="py-2 pr-3 text-slate-200">{img.name}</td>
-                        <td className="py-2 pr-3 font-mono text-xs text-slate-400 truncate max-w-[12rem]">
+                        <td className="py-2 pr-3 text-ink">{img.name}</td>
+                        <td className="py-2 pr-3 font-mono text-xs text-ink-2 truncate max-w-[12rem]">
                           {img.launch_digest ?? img.image_hash}
                         </td>
-                        <td className="py-2 text-slate-500 text-xs">{img.signed_at}</td>
+                        <td className="py-2 text-ink-3 text-xs">{img.signed_at}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -627,8 +627,8 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           </div>
 
           <div className="glass-divider-t/60 pt-4">
-            <h3 className="text-sm font-medium text-slate-300 mb-2">Sign measured image</h3>
-            <p className="text-xs text-slate-500 mb-3">
+            <h3 className="text-sm font-medium text-ink-2 mb-2">Sign measured image</h3>
+            <p className="text-xs text-ink-3 mb-3">
               Registers a qcow2 on the Aether host path into the measured image catalog.
             </p>
             <form onSubmit={(e) => void handleSignImage(e)} className="space-y-2">
@@ -638,14 +638,14 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                   value={signName}
                   onChange={(e) => setSignName(e.target.value)}
                   placeholder="Catalog name"
-                  className="glass-input px-3 py-1.5 text-sm text-slate-200"
+                  className="glass-input px-3 py-1.5 text-sm text-ink"
                 />
                 <input
                   type="text"
                   value={signPath}
                   onChange={(e) => setSignPath(e.target.value)}
                   placeholder="/path/on/host/disk.qcow2"
-                  className="glass-input px-3 py-1.5 text-sm font-mono text-slate-200"
+                  className="glass-input px-3 py-1.5 text-sm font-mono text-ink"
                 />
               </div>
               <input
@@ -653,7 +653,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                 value={signKey}
                 onChange={(e) => setSignKey(e.target.value)}
                 placeholder="Signing key id"
-                className="w-full glass-input px-3 py-1.5 text-sm font-mono text-slate-200"
+                className="w-full glass-input px-3 py-1.5 text-sm font-mono text-ink"
               />
               <button
                 type="submit"
@@ -663,25 +663,25 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                 {signBusy ? 'Signing…' : 'Sign image'}
               </button>
             </form>
-            {signMessage && <p className="mt-2 text-xs text-slate-400">{signMessage}</p>}
+            {signMessage && <p className="mt-2 text-xs text-ink-2">{signMessage}</p>}
           </div>
 
           <div className="glass-divider-t/60 pt-4" data-testid="confidential-verify-form">
-            <h3 className="text-sm font-medium text-slate-300 mb-2">Verify image file (host path)</h3>
+            <h3 className="text-sm font-medium text-ink-2 mb-2">Verify image file (host path)</h3>
             <form onSubmit={(e) => void handleVerifyFile(e)} className="space-y-2 mb-4">
               <input
                 type="text"
                 value={verifyName}
                 onChange={(e) => setVerifyName(e.target.value)}
                 placeholder="Catalog image name"
-                className="w-full px-3 py-1.5 text-sm glass-input text-slate-200"
+                className="w-full px-3 py-1.5 text-sm glass-input text-ink"
               />
               <input
                 type="text"
                 value={verifyPath}
                 onChange={(e) => setVerifyPath(e.target.value)}
                 placeholder="/path/on/server/disk.qcow2"
-                className="w-full px-3 py-1.5 text-sm glass-input text-slate-200 font-mono"
+                className="w-full px-3 py-1.5 text-sm glass-input text-ink font-mono"
               />
               <button
                 type="submit"
@@ -694,10 +694,10 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           </div>
 
           <div className="glass-divider-t/60 pt-4">
-            <h3 className="text-sm font-medium text-slate-300 mb-2">Verify launch digest</h3>
-            <p className="text-xs text-slate-500 mb-3">
+            <h3 className="text-sm font-medium text-ink-2 mb-2">Verify launch digest</h3>
+            <p className="text-xs text-ink-3 mb-3">
               Dashboard equivalent of{' '}
-              <code className="text-slate-400">aether confidential image verify-digest</code>
+              <code className="text-ink-2">aether confidential image verify-digest</code>
             </p>
             <form onSubmit={(e) => void handleVerifyDigest(e)} className="flex gap-2">
               <input
@@ -705,7 +705,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                 value={verifyDigest}
                 onChange={(e) => setVerifyDigest(e.target.value)}
                 placeholder="sha256:… or launch digest"
-                className="flex-1 min-w-0 px-3 py-1.5 text-sm glass-input text-slate-200 font-mono"
+                className="flex-1 min-w-0 px-3 py-1.5 text-sm glass-input text-ink font-mono"
               />
               <button
                 type="submit"
@@ -727,18 +727,18 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           </div>
 
           <div className="glass-divider-t/60 pt-4">
-            <h3 className="text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
+            <h3 className="text-sm font-medium text-ink-2 mb-2 flex items-center gap-2">
               <Terminal className="w-4 h-4" />
               Image CLI (host paths)
             </h3>
-            <p className="text-xs text-slate-500 mb-2">
+            <p className="text-xs text-ink-3 mb-2">
               File verify still requires host paths — use CLI or POST{' '}
-              <code className="text-slate-400">/api/confidential/images/verify</code> with a path.
+              <code className="text-ink-2">/api/confidential/images/verify</code> with a path.
             </p>
             <ul className="space-y-1">
               {CLI_IMAGE_COMMANDS.map((cmd) => (
                 <li key={cmd}>
-                  <code className="text-xs text-slate-400 break-all">{cmd}</code>
+                  <code className="text-xs text-ink-2 break-all">{cmd}</code>
                 </li>
               ))}
             </ul>
@@ -748,7 +748,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
 
       </section>
 
-      <p className="text-xs text-slate-600">
+      <p className="text-xs text-ink-3">
         See docs/guides/security/RAGNAROK-AND-AETHER.md for composite bundle setup (RAGNAROK_URL).
       </p>
     </div>

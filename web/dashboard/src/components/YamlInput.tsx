@@ -122,7 +122,7 @@ export default function YamlInput({
   const toolbarBtn = 'quick-link-chip text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40';
 
   const textareaClass =
-    'glass-input font-mono leading-relaxed text-slate-300 placeholder-slate-600 resize-y p-4';
+    'glass-input font-mono leading-relaxed text-ink-2 placeholder-slate-600 resize-y p-4';
 
   return (
     <div className={isEditor ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-3'}>
@@ -152,8 +152,8 @@ export default function YamlInput({
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {editorLoading ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border glass-divider glass-inset-surface">
-                <Loader2 className="w-6 h-6 animate-spin text-aether" />
-                <span className="ml-2 text-sm text-slate-400">Loading template…</span>
+                <Loader2 className="w-6 h-6 animate-spin text-brand" />
+                <span className="ml-2 text-sm text-ink-2">Loading template…</span>
               </div>
             ) : null}
             <YamlCodeEditor
@@ -258,7 +258,7 @@ function EditorToolbar({
         {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         {expanded ? 'Collapse' : 'Expand'}
       </button>
-      <span className="ml-auto text-xs text-slate-500">
+      <span className="ml-auto text-xs text-ink-3">
         {lineCount} lines
         {expanded ? ' · expanded' : ' · fit to content'}
       </span>

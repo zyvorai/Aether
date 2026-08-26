@@ -22,7 +22,7 @@ const TABS: { id: HelpTab; label: string; icon: React.ReactNode }[] = [
 
 function Kbd({ children }: { children: string }) {
   return (
-    <kbd className="min-w-[1.5rem] rounded border glass-divider/80 glass-inset-surface px-1.5 py-0.5 text-center text-xs font-mono text-slate-300 shadow-sm">
+    <kbd className="min-w-[1.5rem] rounded border glass-divider/80 glass-inset-surface px-1.5 py-0.5 text-center text-xs font-mono text-ink-2 shadow-sm">
       {children}
     </kbd>
   );
@@ -48,11 +48,11 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between glass-divider-b/40 px-5 py-4">
-          <h2 className="text-lg font-semibold text-slate-100">Help</h2>
+          <h2 className="text-lg font-semibold text-ink">Help</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition glass-inset-hover hover:text-slate-100"
+            className="rounded-lg p-1.5 text-ink-2 transition glass-inset-hover hover:text-ink"
             aria-label="Close help"
           >
             <X className="w-4 h-4" />
@@ -81,11 +81,11 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
               <ul className="m-0 list-none space-y-3">
                 {helpShortcuts.map((s) => (
                   <li key={s.description} className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-slate-300">{s.description}</span>
+                    <span className="text-sm text-ink-2">{s.description}</span>
                     <div className="flex shrink-0 items-center gap-1">
                       {s.keys.map((k, i) => (
                         <span key={`${s.description}-${k}-${i}`} className="flex items-center gap-1">
-                          {i > 0 && <span className="text-xs text-slate-600">+</span>}
+                          {i > 0 && <span className="text-xs text-ink-3">+</span>}
                           <Kbd>{k}</Kbd>
                         </span>
                       ))}
@@ -93,17 +93,17 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 space-y-1 glass-divider-t pt-3 text-xs text-slate-500">
+              <p className="mt-4 space-y-1 glass-divider-t pt-3 text-xs text-ink-3">
                 <span>
                   Sequence shortcuts use two letters in order (wait under half a second between keys). Shortcuts are
                   disabled while focus is in a field.
                 </span>
                 <span className="block">
                   Share a workload with URL params, e.g.{' '}
-                  <span className="font-mono text-slate-400">/workloads?workload=my-app&amp;tab=logs</span>.
+                  <span className="font-mono text-ink-2">/workloads?workload=my-app&amp;tab=logs</span>.
                 </span>
                 <span className="block">
-                  Open <strong className="text-slate-400">Help → About</strong> for product info and documentation
+                  Open <strong className="text-ink-2">Help → About</strong> for product info and documentation
                   links.
                 </span>
               </p>

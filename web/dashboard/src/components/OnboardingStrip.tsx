@@ -102,7 +102,7 @@ export default function OnboardingStrip({
             {completed}/{steps.length} steps complete — follow the checklist to stand up your first workload.
           </p>
         </div>
-        <span className="rounded-full border border-aether/30 bg-aether/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
+        <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
           New platform
         </span>
       </div>
@@ -118,30 +118,30 @@ export default function OnboardingStrip({
                   : ''
               }`}
             >
-              <span className="mt-0.5 shrink-0 text-xs font-mono text-slate-500">
+              <span className="mt-0.5 shrink-0 text-xs font-mono text-ink-3">
                 {index + 1}
               </span>
               {step.done ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" aria-hidden />
               ) : (
-                <Circle className="h-4 w-4 shrink-0 mt-0.5 text-slate-500" aria-hidden />
+                <Circle className="h-4 w-4 shrink-0 mt-0.5 text-ink-3" aria-hidden />
               )}
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-slate-200">
+                <span className="block text-sm font-medium text-ink">
                   {step.label}
                 </span>
-                <span className="block text-xs mt-1 text-slate-500">
+                <span className="block text-xs mt-1 text-ink-3">
                   {step.description}
                 </span>
               </span>
               {step.id === 'validate' ? (
-                <ClipboardCheck className="hidden sm:block h-4 w-4 shrink-0 text-slate-600" aria-hidden />
+                <ClipboardCheck className="hidden sm:block h-4 w-4 shrink-0 text-ink-3" aria-hidden />
               ) : null}
               {step.id === 'deploy' ? (
-                <Rocket className="hidden sm:block h-4 w-4 shrink-0 text-slate-600" aria-hidden />
+                <Rocket className="hidden sm:block h-4 w-4 shrink-0 text-ink-3" aria-hidden />
               ) : null}
               {step.id === 'health' ? (
-                <HeartPulse className="hidden sm:block h-4 w-4 shrink-0 text-slate-600" aria-hidden />
+                <HeartPulse className="hidden sm:block h-4 w-4 shrink-0 text-ink-3" aria-hidden />
               ) : null}
             </button>
           </li>

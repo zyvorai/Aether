@@ -167,7 +167,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
           <Sparkles className="h-4 w-4 text-[#c084fc]" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-white">Zyra</div>
+          <div className="text-sm font-semibold text-ink">Zyra</div>
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
             Infrastructure OS assistant
           </div>
@@ -176,7 +176,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
           <button
             type="button"
             onClick={clearChat}
-            className="rounded-lg border glass-divider px-2 py-1 text-[10px] text-slate-400 transition hover:border-aether/30 hover:text-slate-200"
+            className="rounded-lg border glass-divider px-2 py-1 text-[10px] text-ink-2 transition hover:border-brand/30 hover:text-ink"
           >
             Clear
           </button>
@@ -184,7 +184,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
         <button
           type="button"
           onClick={() => setCollapsed(true)}
-          className="rounded-lg p-1.5 text-slate-500 transition glass-inset-hover hover:text-slate-200"
+          className="rounded-lg p-1.5 text-ink-3 transition glass-inset-hover hover:text-ink"
           title="Collapse zyra"
           aria-label="Collapse zyra"
         >
@@ -194,7 +194,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
 
       {agents.length > 0 ? (
         <div className="relative z-[1] glass-table-row px-3 py-3">
-          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-3">
             Agent focus
           </p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -211,13 +211,13 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
                 >
                   <div className="flex items-center gap-2">
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${agentStatusDot(agent.status)}`} />
-                    <Icon className="h-3 w-3 shrink-0 text-slate-400" />
-                    <span className="truncate text-[11px] font-medium text-slate-200">{agent.label}</span>
+                    <Icon className="h-3 w-3 shrink-0 text-ink-2" />
+                    <span className="truncate text-[11px] font-medium text-ink">{agent.label}</span>
                   </div>
                   {agent.pending_count > 0 ? (
                     <div className="mt-1 pl-3.5 text-[10px] text-amber-400/90">{agent.pending_count} pending</div>
                   ) : (
-                    <div className="mt-1 truncate pl-3.5 text-[10px] text-slate-500">{agent.detail}</div>
+                    <div className="mt-1 truncate pl-3.5 text-[10px] text-ink-3">{agent.detail}</div>
                   )}
                 </button>
               );
@@ -230,13 +230,13 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
         {messages.length === 0 ? (
           <div className="space-y-4">
             <div className="rounded-2xl border border-aether-ai/15 glass-inset-surface px-3 py-3 backdrop-blur-sm">
-              <p className="text-xs leading-relaxed text-slate-400">
+              <p className="text-xs leading-relaxed text-ink-2">
                 Not a chatbot — an infrastructure co-pilot. Ask about health, cost, migrations, security, or
                 capacity.
               </p>
             </div>
             <div>
-              <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-3">
                 Suggested questions
               </p>
               <div className="flex flex-col gap-1.5">
@@ -262,7 +262,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
             className={`max-w-full rounded-2xl px-3 py-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
               msg.role === 'user'
                 ? 'ml-6 border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
-                : 'mr-2 border glass-divider glass-inset-surface text-slate-200'
+                : 'mr-2 border glass-divider glass-inset-surface text-ink'
             }`}
           >
             {msg.content}
@@ -275,7 +275,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
               Awaiting confirmation
             </p>
             {pending.map((a) => (
-              <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-[10px] text-slate-300">
+              <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-[10px] text-ink-2">
                 <span className="min-w-0 truncate">{a.description}</span>
                 <button
                   type="button"
@@ -290,7 +290,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
         ) : null}
 
         {loading ? (
-          <div className="flex items-center gap-2 px-1 text-[10px] text-slate-500">
+          <div className="flex items-center gap-2 px-1 text-[10px] text-ink-3">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-aether-ai" />
             Thinking…
           </div>

@@ -38,8 +38,8 @@ export default function NavPreferencesPanel() {
           data-testid="classic-nav-toggle"
         />
         <span>
-          <span className="block text-sm font-medium text-slate-200">Classic CloudOS navigation</span>
-          <span className="mt-1 block text-xs text-slate-500">
+          <span className="block text-sm font-medium text-ink">Classic CloudOS navigation</span>
+          <span className="mt-1 block text-xs text-ink-3">
             {inShell
               ? 'The macOS app always uses the 12-section AI OS layout.'
               : 'Reloads the dashboard with legacy Pro/CloudOS navigation and table-first pages.'}

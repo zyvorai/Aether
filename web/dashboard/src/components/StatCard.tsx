@@ -42,14 +42,14 @@ export default function StatCard({ title, value, color, icon, isEmpty, compact }
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-70" />
       <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-opacity group-hover:opacity-100" />
       {icon && (
-        <div className="absolute right-4 top-4 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-slate-300/70 transition-colors group-hover:text-white">
+        <div className="absolute right-4 top-4 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-ink-2 transition-colors group-hover:text-ink">
           {icon}
         </div>
       )}
-      <p className="relative mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+      <p className="relative mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-2">
         {title}
       </p>
-      <p className={`relative font-semibold tracking-tight ${empty ? 'text-slate-500' : 'text-white'} ${compact ? 'stat-value text-2xl' : 'text-3xl'}`}>
+      <p className={`relative font-semibold tracking-tight ${empty ? 'text-ink-3' : 'text-ink'} ${compact ? 'stat-value text-2xl' : 'text-3xl'}`}>
         {value}
       </p>
       {!compact ? <div className="premium-divider relative mt-4 opacity-70" /> : null}

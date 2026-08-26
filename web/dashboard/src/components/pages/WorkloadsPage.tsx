@@ -121,9 +121,9 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(() => {
     try {
-      return localStorage.getItem('aether_workloads_view') === 'table' ? 'table' : 'cards';
+      return localStorage.getItem('aether_workloads_view') === 'cards' ? 'cards' : 'table';
     } catch {
-      return 'cards';
+      return 'table';
     }
   });
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -735,33 +735,31 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   return (
     <div className="overflow-x-hidden">
-      {!selectedWorkload ? (
-        <section className="workloads-masthead mb-5 px-5 py-5 sm:px-6 sm:py-6" data-testid="workloads-masthead">
-          <div className="relative z-[1] flex flex-wrap items-end justify-between gap-4">
-            <div className="min-w-0">
-              <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand platform-pulse" />
-                Runtime inventory
-              </div>
-              <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-3xl">Workloads</h2>
-              <p className="mt-1.5 max-w-xl text-sm text-ink-3">
-                Cards-first ops deck — open Info, stream Logs, or Exec without leaving the grid.
-              </p>
+      <section className="workloads-masthead mb-5 px-5 py-5 sm:px-6 sm:py-6" data-testid="workloads-masthead">
+        <div className="relative z-[1] flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand platform-pulse" />
+              Runtime inventory
             </div>
-            <div className="flex flex-wrap gap-2 text-[11px]">
-              <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-300">
-                {runningCount} running
-              </span>
-              <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-sky-300">
-                {clusterDiscoveredCount} discovered
-              </span>
-              <span className="rounded-full border border-violet-500/25 bg-violet-500/10 px-3 py-1 text-violet-200">
-                {aetherManagedCount} managed
-              </span>
-            </div>
+            <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-3xl">Workloads</h2>
+            <p className="mt-1.5 max-w-xl text-sm text-ink-3">
+              The list is home. Open a row to inspect it beside the list — everything else lives behind ⌘K.
+            </p>
           </div>
-        </section>
-      ) : null}
+          <div className="flex flex-wrap gap-2 text-[11px]">
+            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-300">
+              {runningCount} running
+            </span>
+            <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-sky-300">
+              {clusterDiscoveredCount} discovered
+            </span>
+            <span className="rounded-full border border-violet-500/25 bg-violet-500/10 px-3 py-1 text-violet-200">
+              {aetherManagedCount} managed
+            </span>
+          </div>
+        </div>
+      </section>
 
       <PageToolbar
         search={search}
@@ -797,8 +795,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               onClick={() => setPinnedOnly((v) => !v)}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                 pinnedOnly
-                  ? 'bg-aether/20 text-aether border border-aether/40'
-                  : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
+                  ? 'bg-brand/20 text-brand border border-brand/40'
+                  : 'glass-inset-surface text-ink-2 border glass-divider hover:text-ink'
               }`}
               title="Show pinned workloads only"
               data-testid="workloads-pinned-filter"
@@ -846,63 +844,11 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         }
       />
 
-      {selectedWorkload ? (
+      <div className="flex items-start gap-4">
         <div
-          ref={detailRef}
-          className="mb-4 scroll-mt-4 grid gap-4 lg:grid-cols-[minmax(16rem,18rem)_minmax(0,1fr)]"
-          data-testid="workloads-detail-anchor"
+          className={selectedWorkload ? 'hidden min-w-0 flex-1 lg:block' : 'min-w-0 flex-1'}
+          data-testid="workloads-list-column"
         >
-          <aside className="hidden max-h-[calc(100vh-7rem)] flex-col gap-2 overflow-y-auto rounded-2xl border glass-divider p-2 lg:flex" data-testid="workloads-side-rail">
-            <div className="sticky top-0 z-[1] mb-1 flex items-center justify-between gap-2 rounded-xl glass-inset-surface px-2 py-2">
-              <button
-                type="button"
-                onClick={closeWorkloadDetail}
-                className="text-[11px] text-slate-400 hover:text-aether"
-                data-testid="workloads-back-to-list"
-              >
-                ← Inventory
-              </button>
-              <span className="text-[10px] text-slate-600">{displayWorkloads.length}</span>
-            </div>
-            {displayWorkloads.map((w) => (
-              <WorkloadCard
-                key={w.name}
-                workload={w}
-                pinned={pinnedSet.has(w.name)}
-                selected={w.name === selectedWorkload.name}
-                compact
-                canMutate={canMutate}
-                onOpen={(tab = 'overview', openShell = false) => openWorkloadDetail(w, tab, openShell)}
-                onTogglePin={() => togglePin(w.name)}
-              />
-            ))}
-          </aside>
-          <div className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 lg:hidden">
-              <button
-                type="button"
-                onClick={closeWorkloadDetail}
-                className="btn-secondary !px-3 !py-1.5 !text-xs"
-              >
-                ← Back to inventory
-              </button>
-            </div>
-            <WorkloadDetail
-              key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
-              workload={selectedWorkload}
-              initialTab={detailInitialTab}
-              initialShellOpen={detailInitialShell}
-              canMutate={canMutate}
-              onClose={closeWorkloadDetail}
-              onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
-              onAction={() => load()}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {!selectedWorkload ? (
-        <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-1.5" data-testid="workloads-kind-chips">
           {(kinds.length > 2 ? kinds : ['all']).map((kind) => {
@@ -917,8 +863,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                 onClick={() => setKindFilter(kind)}
                 className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                   active
-                    ? 'bg-aether/20 text-aether border border-aether/40'
-                    : 'glass-inset-surface text-slate-400 border glass-divider hover:text-slate-200'
+                    ? 'bg-brand/20 text-brand border border-brand/40'
+                    : 'glass-inset-surface text-ink-2 border glass-divider hover:text-ink'
                 }`}
               >
                 {kind === 'all' ? 'All' : kind}
@@ -931,7 +877,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <button
             type="button"
             onClick={() => setViewModePersist('cards')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-aether/20 text-aether' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-brand/20 text-brand' : 'text-ink-2 hover:text-ink'}`}
             title="Card view"
           >
             <LayoutGrid size={14} />
@@ -940,7 +886,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           <button
             type="button"
             onClick={() => setViewModePersist('table')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-aether/20 text-aether' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-brand/20 text-brand' : 'text-ink-2 hover:text-ink'}`}
             title="Table view"
           >
             <List size={14} />
@@ -998,7 +944,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-platform-link"
           >
             Platform →
@@ -1006,7 +952,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-clusters-link"
           >
             Clusters →
@@ -1014,7 +960,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-openapi-link"
           >
             OpenAPI →
@@ -1022,7 +968,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-rbac-link"
           >
             RBAC →
@@ -1030,7 +976,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-context-policy-link"
           >
             Policy →
@@ -1038,7 +984,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-context-secrets-link"
           >
             Secrets →
@@ -1046,7 +992,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-context-editor-link"
           >
             Editor →
@@ -1054,7 +1000,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-context-copilot-link"
           >
             Copilot →
@@ -1062,7 +1008,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-context-compose-link"
           >
             Compose →
@@ -1070,7 +1016,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-context-deps-link"
           >
             Dependencies →
@@ -1078,7 +1024,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: workloadParam.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="workloads-context-gitops-link"
           >
             GitOps →
@@ -1087,14 +1033,14 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
       ) : null}
 
       {sourceFilterVal !== 'all' ? (
-        <div className="glass-context-banner mb-4 text-sm text-slate-400">
-          Showing <span className="text-slate-200">{filteredWorkloads.length}</span> of{' '}
-          <span className="text-slate-200">{workloads.length}</span> workloads
+        <div className="glass-context-banner mb-4 text-sm text-ink-2">
+          Showing <span className="text-ink">{filteredWorkloads.length}</span> of{' '}
+          <span className="text-ink">{workloads.length}</span> workloads
           {sourceFilterVal === 'aether' ? ' (Aether managed only)' : ' (Kubernetes discovered only)'}.
           {sourceFilterVal === 'aether' && clusterDiscoveredCount > 0 ? (
             <>
               {' '}
-              <button type="button" onClick={() => setSourceFilter('cluster')} className="text-aether hover:underline">
+              <button type="button" onClick={() => setSourceFilter('cluster')} className="text-brand hover:underline">
                 View {clusterDiscoveredCount} discovered
               </button>
             </>
@@ -1102,13 +1048,13 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           {sourceFilterVal === 'cluster' && aetherManagedCount > 0 ? (
             <>
               {' '}
-              <button type="button" onClick={() => setSourceFilter('aether')} className="text-aether hover:underline">
+              <button type="button" onClick={() => setSourceFilter('aether')} className="text-brand hover:underline">
                 View {aetherManagedCount} Aether-managed
               </button>
             </>
           ) : null}
           {' · '}
-          <button type="button" onClick={() => setSourceFilter('all')} className="text-aether hover:underline">
+          <button type="button" onClick={() => setSourceFilter('all')} className="text-brand hover:underline">
             show all
           </button>
         </div>
@@ -1116,38 +1062,38 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
       <section className="mb-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border glass-divider sm:grid-cols-3 xl:grid-cols-6" data-testid="workloads-stats">
         <button type="button" onClick={() => { setStatusFilter('all'); setSourceFilter('all'); }} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-white/[0.03]">
-          <div className="text-[10px] uppercase tracking-wider text-slate-500">Total</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-white">{workloads.length}</div>
+          <div className="text-[10px] uppercase tracking-wider text-ink-3">Total</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-ink">{workloads.length}</div>
         </button>
         <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-emerald-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-slate-500">Running</div>
+          <div className="text-[10px] uppercase tracking-wider text-ink-3">Running</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-emerald-300">{runningCount}</div>
         </button>
         <button type="button" onClick={() => setStatusFilter('stopped')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-amber-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-slate-500">Stopped</div>
+          <div className="text-[10px] uppercase tracking-wider text-ink-3">Stopped</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-amber-200">{stoppedCount}</div>
         </button>
         <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-violet-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-slate-500">Aether</div>
+          <div className="text-[10px] uppercase tracking-wider text-ink-3">Aether</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-violet-200">{aetherManagedCount}</div>
         </button>
         <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-sky-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-slate-500">Discovered</div>
+          <div className="text-[10px] uppercase tracking-wider text-ink-3">Discovered</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-sky-200">{clusterDiscoveredCount}</div>
         </button>
         <div className="glass-inset-surface px-3 py-3">
-          <div className="text-[10px] uppercase tracking-wider text-slate-500">Namespaces</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-white">{namespaces.filter((namespace) => namespace !== 'all').length}</div>
+          <div className="text-[10px] uppercase tracking-wider text-ink-3">Namespaces</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-ink">{namespaces.filter((namespace) => namespace !== 'all').length}</div>
         </div>
       </section>
 
       {selectedNames.size > 0 && canMutate && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-aether/30 bg-aether/5 px-4 py-3" data-testid="workloads-bulk-bar">
-          <span className="text-sm text-slate-300">{selectedNames.size} selected</span>
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-brand/30 bg-brand/5 px-4 py-3" data-testid="workloads-bulk-bar">
+          <span className="text-sm text-ink-2">{selectedNames.size} selected</span>
           <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Start all</button>
           <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">Stop all</button>
           <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-500">Delete all</button>
-          <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200">Clear</button>
+          <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-ink-2 hover:text-ink">Clear</button>
         </div>
       )}
 
@@ -1244,15 +1190,43 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
           />
         </div>
       )}
-        </>
-      ) : null}
+        </div>
+
+        {selectedWorkload ? (
+          <aside
+            ref={detailRef}
+            className="animate-ac-slide w-full shrink-0 scroll-mt-4 lg:w-[45%] lg:min-w-[430px]"
+            data-testid="workloads-detail-anchor"
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 lg:hidden">
+              <button
+                type="button"
+                onClick={closeWorkloadDetail}
+                className="btn-secondary !px-3 !py-1.5 !text-xs"
+              >
+                ← Back to inventory
+              </button>
+            </div>
+            <WorkloadDetail
+              key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
+              workload={selectedWorkload}
+              initialTab={detailInitialTab}
+              initialShellOpen={detailInitialShell}
+              canMutate={canMutate}
+              onClose={closeWorkloadDetail}
+              onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
+              onAction={() => load()}
+            />
+          </aside>
+        ) : null}
+      </div>
 
       <Modal
         isOpen={bulkConfirmDelete}
         onClose={() => setBulkConfirmDelete(false)}
         title="Confirm bulk delete"
       >
-        <p className="text-sm text-slate-300 mb-6">
+        <p className="text-sm text-ink-2 mb-6">
           Delete {selectedNames.size} selected workload(s)? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
@@ -1270,7 +1244,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         onClose={() => setConfirmAction(null)}
         title={confirmAction?.type === 'delete' ? 'Confirm Delete' : 'Confirm Stop'}
       >
-        <p className="text-sm text-slate-300 mb-6">
+        <p className="text-sm text-ink-2 mb-6">
           {confirmAction?.type === 'delete'
             ? `Are you sure you want to delete "${confirmAction.name}"?`
             : `Stop workload "${confirmAction?.name}"?`}
@@ -1306,7 +1280,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         size="wide"
       >
         <div data-testid="workloads-migrate-modal">
-        <p className="text-sm text-slate-400 mb-4">Select target runtime to load migration advice:</p>
+        <p className="text-sm text-ink-2 mb-4">Select target runtime to load migration advice:</p>
         <div className="grid grid-cols-2 gap-3 mb-6">
           {runtimes.map((rt) => (
             <button
@@ -1316,8 +1290,8 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               disabled={adviceLoading || actionLoading !== null}
               className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors capitalize ${
                 migrateTarget === rt
-                  ? 'border-aether/50 bg-aether/10 text-aether'
-                  : 'glass-inset-surface glass-inset-hover glass-divider text-slate-200'
+                  ? 'border-brand/50 bg-brand/10 text-brand'
+                  : 'glass-inset-surface glass-inset-hover glass-divider text-ink'
               }`}
             >
               {adviceLoading && migrateTarget === rt ? 'Loading advice…' : rt}
@@ -1327,34 +1301,34 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
         {migrateAdvice && migrateTarget && (
           <div className="glass-panel-card p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-slate-100">
+            <h4 className="text-sm font-semibold text-ink">
               Advice: {migrateAdvice.source_runtime} → {migrateAdvice.target_runtime}
             </h4>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-slate-500">Strategy</span>
-                <p className="text-slate-200">{migrateAdvice.recommended_strategy}</p>
+                <span className="text-ink-3">Strategy</span>
+                <p className="text-ink">{migrateAdvice.recommended_strategy}</p>
               </div>
               <div>
-                <span className="text-slate-500">Risk</span>
-                <p className="text-slate-200">{migrateAdvice.risk_level}</p>
+                <span className="text-ink-3">Risk</span>
+                <p className="text-ink">{migrateAdvice.risk_level}</p>
               </div>
               <div>
-                <span className="text-slate-500">Est. downtime</span>
-                <p className="text-slate-200">{migrateAdvice.estimated_downtime_secs}s</p>
+                <span className="text-ink-3">Est. downtime</span>
+                <p className="text-ink">{migrateAdvice.estimated_downtime_secs}s</p>
               </div>
               {migrateAdvice.timing && (
                 <div>
-                  <span className="text-slate-500">Timing</span>
-                  <p className="text-slate-200">{migrateAdvice.timing.recommendation}</p>
+                  <span className="text-ink-3">Timing</span>
+                  <p className="text-ink">{migrateAdvice.timing.recommendation}</p>
                 </div>
               )}
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wider text-slate-500 mb-2 block">Migration strategy</span>
+              <span className="text-xs uppercase tracking-wider text-ink-3 mb-2 block">Migration strategy</span>
               <div className="flex flex-wrap gap-2">
                 {(['immediate', 'blue-green', 'rolling', 'confidential-blue-green'] as const).map((s) => (
-                  <label key={s} className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <label key={s} className="inline-flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
                     <input
                       type="radio"
                       name="migrate-strategy"
@@ -1374,7 +1348,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               )}
               {confidentialMigrationPlan && (
                 <div className="mt-3 p-3 rounded-lg glass-inset-surface border glass-divider text-xs space-y-2">
-                  <p className="text-slate-400 font-mono break-all">
+                  <p className="text-ink-2 font-mono break-all">
                     Channel: {confidentialMigrationPlan.encrypted_migration_uri}
                   </p>
                   {confidentialMigrationPlan.blockers.length > 0 ? (
@@ -1390,7 +1364,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               )}
             </div>
             {migrateAdvice.reasons.length > 0 && (
-              <ul className="text-xs text-slate-400 space-y-1">
+              <ul className="text-xs text-ink-2 space-y-1">
                 {migrateAdvice.reasons.map((r, i) => (
                   <li key={i}>+ {r}</li>
                 ))}
@@ -1407,7 +1381,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
               type="button"
               onClick={() => migrateModal && migrateTarget && handleMigrate(migrateModal, migrateTarget, migrateStrategy)}
               disabled={actionLoading !== null}
-              className="w-full py-3 bg-aether hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-white"
+              className="w-full py-3 bg-brand hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-white"
             >
               {actionLoading ? 'Starting migration…' : `Start migration to ${migrateTarget}`}
             </button>

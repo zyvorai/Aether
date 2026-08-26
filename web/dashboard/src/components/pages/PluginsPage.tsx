@@ -123,7 +123,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="plugins-editor-link"
             >
               Editor →
@@ -131,7 +131,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="plugins-secrets-link"
             >
               Secrets →
@@ -139,7 +139,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="plugins-drift-link"
             >
               Drift →
@@ -147,7 +147,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="plugins-context-platform-link"
             >
               Platform →
@@ -155,7 +155,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="plugins-context-gitops-link"
             >
               GitOps →
@@ -163,7 +163,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `Plugin guidance for ${search.trim()}` })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="plugins-context-copilot-link"
             >
               Copilot →
@@ -171,7 +171,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="plugins-context-openapi-link"
             >
               OpenAPI →
@@ -222,19 +222,19 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
           type="button"
           data-testid="plugins-scheduler-link"
           onClick={() => navigate(viewToPath('scheduler'))}
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
         >
           Placement scheduler →
         </button>
       </div>
 
       {discoverSummary && (
-        <div data-testid="plugins-discover-summary" className="glass-panel-card mb-6 text-sm text-slate-300">
+        <div data-testid="plugins-discover-summary" className="glass-panel-card mb-6 text-sm text-ink-2">
           {discoverSummary}
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="ml-3 text-xs text-aether hover:underline"
+            className="ml-3 text-xs text-brand hover:underline"
           >
             Platform integrations →
           </button>
@@ -243,7 +243,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
 
       {canMutate && (
         <div className="glass-panel-card mb-6">
-          <h3 className="text-sm font-semibold text-slate-200 mb-2">Register plugin manifest</h3>
+          <h3 className="text-sm font-semibold text-ink mb-2">Register plugin manifest</h3>
           <form onSubmit={(e) => void handleRegister(e)} className="space-y-3" data-testid="plugins-register-form">
             <textarea
               value={registerJson}
@@ -256,7 +256,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
               Register
             </button>
           </form>
-          {registerMsg && <p className="mt-2 text-xs text-slate-400">{registerMsg}</p>}
+          {registerMsg && <p className="mt-2 text-xs text-ink-2">{registerMsg}</p>}
         </div>
       )}
 
@@ -281,11 +281,11 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
                       <Badge key={c} text={c} variant="blue" />
                     ))}
                     {p.capabilities.length > 6 ? (
-                      <span className="text-[11px] text-slate-500">+{p.capabilities.length - 6}</span>
+                      <span className="text-[11px] text-ink-3">+{p.capabilities.length - 6}</span>
                     ) : null}
                   </div>
                 ) : (
-                  <p className="text-[12px] text-slate-500">No declared capabilities</p>
+                  <p className="text-[12px] text-ink-3">No declared capabilities</p>
                 )
               }
               footer={
@@ -293,7 +293,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
                   <button
                     type="button"
                     onClick={() => setSelectedPlugin(p)}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                   >
                     <Search size={13} />
                     Inspect
@@ -302,7 +302,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
                     <button
                       type="button"
                       onClick={() => void handleRemove(p.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-red-500/15 hover:text-red-300"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-red-500/15 hover:text-red-300"
                     >
                       <Trash2 size={13} />
                       Remove
@@ -326,21 +326,21 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
           <div className="space-y-4" data-testid="plugins-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="glass-panel-card px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500">Runtime</div>
-                <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.runtime_kind}</div>
+                <div className="text-xs uppercase tracking-wider text-ink-3">Runtime</div>
+                <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.runtime_kind}</div>
               </div>
               <div className="glass-panel-card px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500">Version</div>
-                <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.version}</div>
+                <div className="text-xs uppercase tracking-wider text-ink-3">Version</div>
+                <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.version}</div>
               </div>
               <div className="glass-panel-card px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500">Capabilities</div>
-                <div className="mt-2 text-sm font-medium text-slate-100">{selectedPlugin.capabilities.length}</div>
+                <div className="text-xs uppercase tracking-wider text-ink-3">Capabilities</div>
+                <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.capabilities.length}</div>
               </div>
             </div>
             <div>
-              <div className="mb-2 text-sm font-medium text-slate-200">Command</div>
-              <code className="block glass-input text-slate-300 font-mono">
+              <div className="mb-2 text-sm font-medium text-ink">Command</div>
+              <code className="block glass-input text-ink-2 font-mono">
                 {selectedPlugin.command}
               </code>
             </div>

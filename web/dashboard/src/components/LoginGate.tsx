@@ -279,7 +279,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
                 <button
                   type="button"
                   onClick={() => setShowLdapPassword((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2 transition-colors"
                   aria-label={showLdapPassword ? 'Hide password' : 'Show password'}
                 >
                   {showLdapPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -365,7 +365,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             <button
               type="button"
               onClick={() => setShowToken((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2 transition-colors"
               aria-label={showToken ? 'Hide token' : 'Show token'}
             >
               {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

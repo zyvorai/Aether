@@ -83,31 +83,31 @@ export default function MacOSPlatformPanel() {
       testId="macos-platform-panel"
       title="macOS Native OS"
       subtitle="Tray sparkline, dock badge, Spotlight, offline cache, deep links"
-      icon={<Apple className="h-5 w-5 text-slate-200" />}
+      icon={<Apple className="h-5 w-5 text-ink" />}
       actions={<div className="flex gap-2">
           <Badge text={inShell ? 'Tauri shell' : 'Web only'} variant={inShell ? 'green' : 'muted'} />
-          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300">
+          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
         </div>}
     ><div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="glass-metric-card" data-testid="tray-sparkline-panel">
           <div className="font-mono text-2xl text-emerald-300">{sparkline?.sparkline ?? '▁▁▁▁'}</div>
-          <div className="text-xs text-slate-500">Tray sparkline · {sparkline?.fleet_health_pct.toFixed(0) ?? 0}%</div>
+          <div className="text-xs text-ink-3">Tray sparkline · {sparkline?.fleet_health_pct.toFixed(0) ?? 0}%</div>
         </div>
         <div className="glass-metric-card" data-testid="dock-badge-panel">
-          <div className="text-2xl font-semibold text-white">{dock?.issue_count ?? 0}</div>
-          <div className="text-xs text-slate-500">Dock badge issues</div>
+          <div className="text-2xl font-semibold text-ink">{dock?.issue_count ?? 0}</div>
+          <div className="text-xs text-ink-3">Dock badge issues</div>
         </div>
         <div className="glass-metric-card" data-testid="offline-cache-panel">
-          <div className="flex items-center gap-2 text-sm text-slate-300">
+          <div className="flex items-center gap-2 text-sm text-ink-2">
             <WifiOff className="h-4 w-4" />
             {offline?.cached ? 'Briefing cached' : 'No offline cache'}
           </div>
           <button
             type="button"
             onClick={() => void refreshOfflineCache()}
-            className="mt-2 text-xs text-aether hover:underline"
+            className="mt-2 text-xs text-brand hover:underline"
           >
             Refresh cache
           </button>
@@ -116,11 +116,11 @@ export default function MacOSPlatformPanel() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
             <Sparkles className="h-4 w-4 text-violet-400" />
             Live Activity (Lab)
           </h3>
-          <ul className="space-y-1 text-sm text-slate-400" data-testid="live-activity-panel">
+          <ul className="space-y-1 text-sm text-ink-2" data-testid="live-activity-panel">
             {(live?.active ?? []).map((a) => (
               <li key={a.workload}>
                 {a.workload} · {a.progress_pct}% · {a.detail}
@@ -130,11 +130,11 @@ export default function MacOSPlatformPanel() {
         </div>
 
         <div>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
             <Search className="h-4 w-4 text-cyan-400" />
             Spotlight index
           </h3>
-          <ul className="max-h-32 space-y-1 overflow-auto text-sm text-slate-400" data-testid="spotlight-index-panel">
+          <ul className="max-h-32 space-y-1 overflow-auto text-sm text-ink-2" data-testid="spotlight-index-panel">
             {(spotlight?.items ?? []).slice(0, 6).map((item) => (
               <li key={item.id}>
                 {item.title} — {item.deep_link}
@@ -144,11 +144,11 @@ export default function MacOSPlatformPanel() {
         </div>
 
         <div>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
             <Bell className="h-4 w-4 text-amber-400" />
             Shortcuts (Lab)
           </h3>
-          <ul className="space-y-1 text-sm text-slate-400">
+          <ul className="space-y-1 text-sm text-ink-2">
             {(shortcuts?.shortcuts ?? []).map((s) => (
               <li key={s.name}>
                 {s.phrase} → {s.url}
@@ -158,11 +158,11 @@ export default function MacOSPlatformPanel() {
         </div>
 
         <div>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
             <Link2 className="h-4 w-4 text-blue-400" />
             Universal links
           </h3>
-          <ul className="space-y-1 text-sm text-slate-400" data-testid="universal-links-panel">
+          <ul className="space-y-1 text-sm text-ink-2" data-testid="universal-links-panel">
             {(links?.routes ?? []).slice(0, 6).map((r) => (
               <li key={r.path}>
                 aether://{r.path} → /{r.view}
@@ -173,7 +173,7 @@ export default function MacOSPlatformPanel() {
       </div>
 
       <div className="mt-6">
-        <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
           <Download className="h-4 w-4" />
           Release pipeline
         </h3>
@@ -183,7 +183,7 @@ export default function MacOSPlatformPanel() {
             variant={pipeline?.notarization_ready ? 'green' : 'yellow'}
           />
         </div>
-        <ul className="space-y-1 text-xs text-slate-500">
+        <ul className="space-y-1 text-xs text-ink-3">
           {(pipeline?.steps ?? []).map((s) => (
             <li key={s.id}>
               {s.label}: {s.status}
@@ -193,7 +193,7 @@ export default function MacOSPlatformPanel() {
       </div>
 
       <div className="mt-4">
-        <h3 className="mb-2 text-sm font-medium text-white">Menu extras (Lab)</h3>
+        <h3 className="mb-2 text-sm font-medium text-ink">Menu extras (Lab)</h3>
         <div className="flex flex-wrap gap-2">
           {(menuExtras?.toggles ?? []).map((t) => (
             <Badge key={t.id} text={`${t.label}: ${t.enabled ? 'on' : 'off'}`} variant="muted" />

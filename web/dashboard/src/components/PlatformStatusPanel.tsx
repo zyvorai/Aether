@@ -39,7 +39,7 @@ function toneClasses(tone: TileTone): { ring: string; dot: string; text: string 
       return {
         ring: 'glass-divider/30 glass-inset-surface',
         dot: 'glass-status-dot-muted',
-        text: 'text-slate-400',
+        text: 'text-ink-2',
       };
   }
 }
@@ -64,14 +64,14 @@ function StatusTile({
     >
       <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl transition-opacity group-hover:opacity-80" />
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 glass-inset-surface text-aether">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 glass-inset-surface text-brand">
           {icon}
         </div>
         <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} title={value} />
       </div>
-      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-3">{label}</p>
       <p className={`mt-1 text-sm font-semibold ${c.text}`}>{value}</p>
-      <p className="mt-1 text-xs leading-relaxed text-slate-500">{detail}</p>
+      <p className="mt-1 text-xs leading-relaxed text-ink-3">{detail}</p>
     </div>
   );
 }
@@ -91,10 +91,10 @@ export default function PlatformStatusPanel({ platform, ready, sseConnected, loa
 
   if (!platform) {
     return (
-      <section className="overview-section-shell mb-8 p-6 text-sm text-slate-400">
-        <p className="font-medium text-slate-300">Platform status unavailable</p>
+      <section className="overview-section-shell mb-8 p-6 text-sm text-ink-2">
+        <p className="font-medium text-ink-2">Platform status unavailable</p>
         <p className="mt-1 text-xs leading-relaxed">
-          Could not load <code className="text-slate-300">/api/server</code>. Check that the API is running and your
+          Could not load <code className="text-ink-2">/api/server</code>. Check that the API is running and your
           session is valid, then refresh the page.
         </p>
       </section>

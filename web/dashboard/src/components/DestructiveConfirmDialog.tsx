@@ -40,9 +40,9 @@ export default function DestructiveConfirmDialog({
 
   return (
     <Modal isOpen={isOpen} onClose={close} title={title}>
-      <p className="mb-4 text-sm text-slate-300">
+      <p className="mb-4 text-sm text-ink-2">
         {description ?? 'This action cannot be undone.'} Type{' '}
-        <span className="font-mono text-slate-100">{resourceName}</span> to confirm.
+        <span className="font-mono text-ink">{resourceName}</span> to confirm.
       </p>
       <input
         value={typed}
@@ -50,13 +50,13 @@ export default function DestructiveConfirmDialog({
         placeholder={resourceName}
         onChange={(e) => setTyped(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-full rounded-lg border border-slate-700/80 bg-slate-900/60 px-3 py-2 font-mono text-[12.5px] text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+        className="w-full rounded-lg border border-rule-strong bg-sunken px-3 py-2 font-mono text-[12.5px] text-ink outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
       />
       <div className="mt-5 flex justify-end gap-2.5">
         <button
           type="button"
           onClick={close}
-          className="rounded-full border border-slate-700/80 px-4 py-1.5 text-[13px] text-slate-300 hover:bg-slate-800/60"
+          className="rounded-full border border-rule-strong px-4 py-1.5 text-[13px] text-ink-2 hover:bg-hover"
         >
           Cancel
         </button>

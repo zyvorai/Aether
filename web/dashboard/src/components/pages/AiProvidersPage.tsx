@@ -144,7 +144,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
 
         {tab === 'local' ? (
           <div className="space-y-4 rounded-xl border border-white/10 p-4">
-            <label className="flex items-center gap-3 text-sm text-slate-200">
+            <label className="flex items-center gap-3 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={registry?.air_gapped ?? false}
@@ -153,7 +153,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
               />
               Air-gapped mode — only local providers (Ollama, vLLM, OpenAI-compatible on-prem)
             </label>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-ink-3">
               Supports Ollama, vLLM, LM Studio, Open WebUI, and Hugging Face TGI via OpenAI-compatible endpoints.
             </p>
           </div>
@@ -161,7 +161,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
 
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-3 rounded-xl border border-white/10 p-4">
-            <h3 className="text-sm font-medium text-slate-200">Add provider</h3>
+            <h3 className="text-sm font-medium text-ink">Add provider</h3>
             <input
               className="input-field w-full"
               placeholder="Display name"
@@ -230,8 +230,8 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
             {(registry?.providers ?? []).map((p) => (
               <div key={p.id} className="flex items-center justify-between rounded-xl border border-white/10 p-3">
                 <div>
-                  <p className="text-sm font-medium text-white">{p.display_name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm font-medium text-ink">{p.display_name}</p>
+                  <p className="text-xs text-ink-3">
                     {p.kind} · {p.default_model}
                     {p.api_key_configured ? ' · key configured' : ''}
                   </p>

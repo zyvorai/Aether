@@ -133,7 +133,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="metrics-cost-link"
             >
               Cost →
@@ -141,7 +141,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="metrics-platform-link"
             >
               Platform →
@@ -149,7 +149,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="metrics-drift-link"
             >
               Drift →
@@ -157,7 +157,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: search.trim(), tab: 'predictions' })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="metrics-context-intelligence-link"
             >
               Intelligence →
@@ -165,7 +165,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('alerts'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="metrics-context-alerts-link"
             >
               Alerts →
@@ -173,7 +173,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('scheduler'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="metrics-context-scheduler-link"
             >
               Scheduler →
@@ -181,7 +181,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="metrics-context-openapi-link"
             >
               OpenAPI →
@@ -200,7 +200,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
       {!prometheusUrl && !summary?.prometheus_configured ? (
         <div
           data-testid="metrics-prom-setup-banner"
-          className="glass-context-banner mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-300"
+          className="glass-context-banner mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-2"
         >
           <span>Prometheus is not linked — set Prometheus URL on Platform &amp; HA for live query explorer and external links.</span>
           <button
@@ -238,13 +238,13 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
               <dl className="space-y-2 text-sm">
                 {runtimeEntries.map(([runtime, count]) => (
                   <div key={runtime} className="flex justify-between">
-                    <dt className="text-slate-400">{runtime}</dt>
-                    <dd className="text-slate-200 font-mono">{Math.round(count)}</dd>
+                    <dt className="text-ink-2">{runtime}</dt>
+                    <dd className="text-ink font-mono">{Math.round(count)}</dd>
                   </div>
                 ))}
               </dl>
             ) : (
-              <p className="text-sm text-slate-500">No running workload gauges reported yet.</p>
+              <p className="text-sm text-ink-3">No running workload gauges reported yet.</p>
             )}
           </div>
           <div className="glass-panel-card">
@@ -252,51 +252,51 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             {summary.cluster_metrics ? (
               <dl className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">Scope</dt>
-                  <dd className="text-slate-200">{summary.cluster_metrics.scope}</dd>
+                  <dt className="text-ink-2">Scope</dt>
+                  <dd className="text-ink">{summary.cluster_metrics.scope}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">Pods measured</dt>
-                  <dd className="text-slate-200">{summary.cluster_metrics.pod_count}</dd>
+                  <dt className="text-ink-2">Pods measured</dt>
+                  <dd className="text-ink">{summary.cluster_metrics.pod_count}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">Memory</dt>
-                  <dd className="text-slate-200">{summary.cluster_metrics.total_memory_mib} Mi</dd>
+                  <dt className="text-ink-2">Memory</dt>
+                  <dd className="text-ink">{summary.cluster_metrics.total_memory_mib} Mi</dd>
                 </div>
               </dl>
             ) : (
-              <p className="text-sm text-slate-500 mb-4">Pass <code>cluster=</code> to <code>/api/observability/summary</code> for cluster metrics.</p>
+              <p className="text-sm text-ink-3 mb-4">Pass <code>cluster=</code> to <code>/api/observability/summary</code> for cluster metrics.</p>
             )}
             {summary.cilium ? (
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">CNI</dt>
-                  <dd className="text-slate-200">{summary.cilium.cni}</dd>
+                  <dt className="text-ink-2">CNI</dt>
+                  <dd className="text-ink">{summary.cilium.cni}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">Egress mode</dt>
-                  <dd className="text-slate-200">{summary.cilium.egress_mode}</dd>
+                  <dt className="text-ink-2">Egress mode</dt>
+                  <dd className="text-ink">{summary.cilium.egress_mode}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">metrics-server</dt>
-                  <dd className="text-slate-200">{summary.cilium.metrics_server ? 'ok' : 'missing'}</dd>
+                  <dt className="text-ink-2">metrics-server</dt>
+                  <dd className="text-ink">{summary.cilium.metrics_server ? 'ok' : 'missing'}</dd>
                 </div>
               </dl>
             ) : (
-              <p className="text-sm text-slate-500">Cilium status unavailable from active cluster.</p>
+              <p className="text-sm text-ink-3">Cilium status unavailable from active cluster.</p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
-                className="rounded-xl border glass-divider px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40 hover:text-aether"
+                className="rounded-xl border glass-divider px-3 py-1.5 text-xs text-ink-2 hover:border-brand/40 hover:text-brand"
                 data-testid="metrics-cluster-browser-link"
               >
                 Open cluster browser (network)
               </button>
             </div>
             {summary.prometheus_configured && (
-              <p className="mt-3 text-xs text-slate-500">
+              <p className="mt-3 text-xs text-ink-3">
                 Prometheus linked — whitelisted queries via <code>/api/observability/prometheus/query</code>
               </p>
             )}
@@ -308,7 +308,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
       {chargeback && (
         <div className="glass-panel-card mb-6" data-testid="metrics-chargeback-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="text-lg font-semibold text-slate-100">Chargeback (showback)</h2>
+            <h2 className="text-lg font-semibold text-ink">Chargeback (showback)</h2>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -320,7 +320,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
                       : viewToPath('fleet'),
                   )
                 }
-                className="text-xs text-aether hover:underline"
+                className="text-xs text-brand hover:underline"
               >
                 Fleet overview →
               </button>
@@ -334,7 +334,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
                       : viewToPath('cost'),
                   )
                 }
-                className="text-xs text-aether hover:underline"
+                className="text-xs text-brand hover:underline"
               >
                 Cost estimator →
               </button>
@@ -348,7 +348,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
                       : viewToPath('workloads'),
                   )
                 }
-                className="text-xs text-aether hover:underline"
+                className="text-xs text-brand hover:underline"
               >
                 All workloads →
               </button>
@@ -357,7 +357,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
                 type="button"
                 data-testid="metrics-chargeback-export"
                 onClick={downloadChargebackCsv}
-                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-1.5 text-xs text-slate-300 hover:border-aether/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-1.5 text-xs text-ink-2 hover:border-brand/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export CSV
@@ -365,14 +365,14 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
             ) : null}
             </div>
           </div>
-          <p className="text-sm text-slate-400 mb-4">
+          <p className="text-sm text-ink-2 mb-4">
             {chargeback.pricingSource} pricing · {chargeback.region} · fleet ${chargeback.totalMonthlyUsd.toFixed(2)}/mo
             · spot ${chargeback.totalSpotMonthlyUsd.toFixed(2)}/mo · 36-mo TCO ${chargeback.tco36MonthsUsd.toFixed(0)}
           </p>
           {chargeback.lines.length > 0 ? (
             <div className="glass-table-shell overflow-x-auto">
-              <table className="w-full text-sm text-left text-slate-300">
-                <thead className="text-xs uppercase text-slate-500 glass-divider-b">
+              <table className="w-full text-sm text-left text-ink-2">
+                <thead className="text-xs uppercase text-ink-3 glass-divider-b">
                   <tr>
                     <th className="py-2 pr-4">Workload</th>
                     <th className="py-2 pr-4">Owner</th>
@@ -389,7 +389,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
                           onClick={() =>
                             navigate(pathWithQuery(viewToPath('workloads'), { workload: line.workload }))
                           }
-                          className="text-aether hover:underline"
+                          className="text-brand hover:underline"
                         >
                           {line.workload}
                         </button>
@@ -403,21 +403,21 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
               </table>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">No deployed workloads with readable specs for chargeback.</p>
+            <p className="text-sm text-ink-3">No deployed workloads with readable specs for chargeback.</p>
           )}
         </div>
       )}
 
       {(grafanaUrl || prometheusUrl) && (
         <div className="glass-panel-card mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
-          <p className="text-sm text-slate-400">External observability stack linked to this API.</p>
+          <p className="text-sm text-ink-2">External observability stack linked to this API.</p>
           <div className="flex flex-wrap gap-3">
             {grafanaUrl && (
               <a
                 href={grafanaUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm text-aether hover:bg-aether/20"
+                className="inline-flex items-center gap-2 rounded-xl border border-brand/40 bg-brand/10 px-4 py-2 text-sm text-brand hover:bg-brand/20"
               >
                 Open Grafana <ExternalLink size={14} />
               </a>
@@ -427,7 +427,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
                 href={prometheusUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
+                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
               >
                 Prometheus <ExternalLink size={14} />
               </a>
@@ -438,15 +438,15 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
 
       {summary?.prometheus_configured && (
         <div className="glass-panel-card mb-6">
-          <h2 className="text-lg font-semibold text-slate-100 mb-3">Prometheus query explorer</h2>
-          <p className="text-sm text-slate-500 mb-4">Instant queries via the whitelisted API proxy.</p>
+          <h2 className="text-lg font-semibold text-ink mb-3">Prometheus query explorer</h2>
+          <p className="text-sm text-ink-3 mb-4">Instant queries via the whitelisted API proxy.</p>
           <form onSubmit={(e) => void runPromQuery(e)} className="flex flex-wrap gap-3 mb-4" data-testid="metrics-prometheus-query">
             <input
               type="text"
               value={promQuery}
               onChange={(e) => setPromQuery(e.target.value)}
               placeholder="e.g. aether_workloads_running or up"
-              className="flex-1 min-w-[200px] glass-input font-mono text-slate-100"
+              className="flex-1 min-w-[200px] glass-input font-mono text-ink"
             />
             <button
               type="submit"
@@ -465,24 +465,24 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
       <div className="glass-panel-card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="panel-title">Prometheus metrics</h2>
-          <span className="text-xs text-slate-500">{lineCount} metric lines</span>
+          <span className="text-xs text-ink-3">{lineCount} metric lines</span>
         </div>
         <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>
       </div>
 
       {search.trim() ? (
         <footer
-          className="mt-6 flex flex-wrap gap-3 text-xs text-slate-500"
+          className="mt-6 flex flex-wrap gap-3 text-xs text-ink-3"
           data-testid="metrics-scoped-footer"
         >
           <span>Scoped links for {search.trim()}:</span>
-          <Link to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })} className="text-aether hover:underline">
+          <Link to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })} className="text-brand hover:underline">
             Cost
           </Link>
-          <Link to={pathWithQuery(viewToPath('health'), { workload: search.trim() })} className="text-aether hover:underline">
+          <Link to={pathWithQuery(viewToPath('health'), { workload: search.trim() })} className="text-brand hover:underline">
             Health
           </Link>
-          <Link to={pathWithQuery(viewToPath('fleet'), { workload: search.trim() })} className="text-aether hover:underline">
+          <Link to={pathWithQuery(viewToPath('fleet'), { workload: search.trim() })} className="text-brand hover:underline">
             Fleet
           </Link>
         </footer>

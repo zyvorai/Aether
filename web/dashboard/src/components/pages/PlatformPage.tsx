@@ -117,19 +117,19 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
       <div className="mb-6 glass-context-banner" data-testid="platform-hub-context">
         Platform
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="platform-context-fleet-hub-link">
+        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="platform-context-fleet-hub-link">
           Fleet →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="platform-context-hosted-hub-link">
+        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="platform-context-hosted-hub-link">
           Hosted SaaS →
         </Link>
         {' · '}
-        <Link to={viewToPath('security')} className="text-aether hover:underline" data-testid="platform-context-security-hub-link">
+        <Link to={viewToPath('security')} className="text-brand hover:underline" data-testid="platform-context-security-hub-link">
           Security →
         </Link>
         {' · '}
-        <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="platform-context-settings-hub-link">
+        <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="platform-context-settings-hub-link">
           Settings →
         </Link>
       </div>
@@ -146,7 +146,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-clusters-link"
           >
             Clusters →
@@ -154,7 +154,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-rbac-link"
           >
             RBAC →
@@ -162,7 +162,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-openapi-link"
           >
             OpenAPI →
@@ -170,7 +170,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-copilot-link"
           >
             Zyra →
@@ -178,7 +178,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-policy-link"
           >
             Policy →
@@ -186,7 +186,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: focusedWorkload, tab: 'predictions' })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-intelligence-link"
           >
             Intelligence →
@@ -194,7 +194,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-secrets-link"
           >
             Secrets →
@@ -202,7 +202,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-fleet-link"
           >
             Fleet →
@@ -210,7 +210,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={viewToPath('hosted')}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-context-hosted-link"
           >
             Hosted SaaS →
@@ -218,7 +218,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-editor-link"
           >
             Editor →
@@ -226,7 +226,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="platform-deps-link"
           >
             Dependencies →
@@ -250,31 +250,31 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-panel-card" data-testid="platform-runtime-panel">
           <div className="flex items-center gap-3 mb-4">
-            <Server className="text-aether" size={20} />
-            <h2 className="text-lg font-semibold text-slate-100">Runtime</h2>
+            <Server className="text-brand" size={20} />
+            <h2 className="text-lg font-semibold text-ink">Runtime</h2>
           </div>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-slate-500">API version</dt>
-              <dd className="text-slate-200 font-mono">{server?.version ?? platform?.version ?? '—'}</dd>
+              <dt className="text-ink-3">API version</dt>
+              <dd className="text-ink font-mono">{server?.version ?? platform?.version ?? '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">HA mode</dt>
+              <dt className="text-ink-3">HA mode</dt>
               <dd><Badge text={server?.ha_mode ?? platform?.haMode ?? 'single'} variant="blue" /></dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">System ready</dt>
+              <dt className="text-ink-3">System ready</dt>
               <dd>
                 <Badge text={systemReady ? 'ready' : 'degraded'} variant={systemReady ? 'green' : 'red'} />
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">State backend</dt>
-              <dd className="text-slate-200">{platform?.persistence ?? '—'}</dd>
+              <dt className="text-ink-3">State backend</dt>
+              <dd className="text-ink">{platform?.persistence ?? '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Embedded UI build</dt>
-              <dd className="text-slate-400 font-mono text-xs">{server?.embedded_ui_build ?? '—'}</dd>
+              <dt className="text-ink-3">Embedded UI build</dt>
+              <dd className="text-ink-2 font-mono text-xs">{server?.embedded_ui_build ?? '—'}</dd>
             </div>
           </dl>
         </div>
@@ -282,11 +282,11 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
         <div className="glass-panel-card">
           <div className="flex items-center gap-3 mb-4">
             <Shield className="text-emerald-400" size={20} />
-            <h2 className="text-lg font-semibold text-slate-100">Policy & integrations</h2>
+            <h2 className="text-lg font-semibold text-ink">Policy & integrations</h2>
           </div>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between items-center">
-              <dt className="text-slate-500">OPA</dt>
+              <dt className="text-ink-3">OPA</dt>
               <dd>
                 <Badge
                   text={platform?.opa?.configured ? (platform.opa.enforce ? 'enforce' : 'advisory') : 'off'}
@@ -295,16 +295,16 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Remote backup</dt>
-              <dd className="text-slate-200">{integrations.backup_remote_configured ? 'configured' : 'not set'}</dd>
+              <dt className="text-ink-3">Remote backup</dt>
+              <dd className="text-ink">{integrations.backup_remote_configured ? 'configured' : 'not set'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Audit webhook</dt>
-              <dd className="text-slate-200">{integrations.audit_webhook_configured ? 'configured' : 'not set'}</dd>
+              <dt className="text-ink-3">Audit webhook</dt>
+              <dd className="text-ink">{integrations.audit_webhook_configured ? 'configured' : 'not set'}</dd>
             </div>
           </dl>
           {!platform?.opa?.configured && (
-            <Link to={viewToPath('policy')} className="mt-4 inline-flex text-xs text-aether hover:underline">
+            <Link to={viewToPath('policy')} className="mt-4 inline-flex text-xs text-brand hover:underline">
               Configure policy engine →
             </Link>
           )}
@@ -314,7 +314,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                 ? pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })
                 : viewToPath('audit')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
             data-testid="platform-audit-link"
           >
             Audit trail →
@@ -325,7 +325,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                 ? pathWithQuery(viewToPath('backups'), { workload: focusedWorkload })
                 : viewToPath('backups')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
             data-testid="platform-backups-link"
           >
             Backups →
@@ -336,7 +336,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                 ? pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })
                 : viewToPath('confidential')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
             data-testid="platform-confidential-link"
           >
             Confidential computing →
@@ -347,7 +347,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                 ? pathWithQuery(viewToPath('health'), { workload: focusedWorkload })
                 : viewToPath('health')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
             data-testid="platform-health-link"
           >
             Health monitor →
@@ -358,15 +358,15 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                 ? pathWithQuery(viewToPath('events'), { workload: focusedWorkload })
                 : viewToPath('events')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-aether hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
             data-testid="platform-events-link"
           >
             Events feed →
           </Link>
-          <p className="mt-4 text-xs text-slate-500">
-            Env: <code className="text-slate-400">AETHER_BACKUP_REMOTE_URL</code>,{' '}
-            <code className="text-slate-400">AETHER_AUDIT_WEBHOOK_URL</code>,{' '}
-            <code className="text-slate-400">AETHER_OPA_URL</code>
+          <p className="mt-4 text-xs text-ink-3">
+            Env: <code className="text-ink-2">AETHER_BACKUP_REMOTE_URL</code>,{' '}
+            <code className="text-ink-2">AETHER_AUDIT_WEBHOOK_URL</code>,{' '}
+            <code className="text-ink-2">AETHER_OPA_URL</code>
           </p>
         </div>
         </div>
@@ -381,7 +381,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
       <div className="glass-panel-card">
         <div className="flex items-center gap-3 mb-4">
           <Network className="text-purple-400" size={20} />
-          <h2 className="text-lg font-semibold text-slate-100">Kubernetes / Cilium</h2>
+          <h2 className="text-lg font-semibold text-ink">Kubernetes / Cilium</h2>
           {cilium && (
             <Badge
               text={cilium.cni === 'cilium' ? 'Cilium' : cilium.cni}
@@ -392,23 +392,23 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
         {cilium ? (
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-slate-500">Cluster</dt>
-              <dd className="text-slate-200 font-mono text-xs">{cilium.cluster}</dd>
+              <dt className="text-ink-3">Cluster</dt>
+              <dd className="text-ink font-mono text-xs">{cilium.cluster}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Egress mode</dt>
+              <dt className="text-ink-3">Egress mode</dt>
               <dd><Badge text={cilium.egress_mode} variant={cilium.egress_mode === 'strict' ? 'yellow' : 'blue'} /></dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Cilium agent</dt>
+              <dt className="text-ink-3">Cilium agent</dt>
               <dd><Badge text={cilium.cilium_daemonset_ready ? 'ready' : 'not ready'} variant={cilium.cilium_daemonset_ready ? 'green' : 'red'} /></dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">metrics-server</dt>
+              <dt className="text-ink-3">metrics-server</dt>
               <dd><Badge text={cilium.metrics_server ? 'available' : 'missing'} variant={cilium.metrics_server ? 'green' : 'muted'} /></dd>
             </div>
             <div className="flex justify-between items-center">
-              <dt className="text-slate-500">Connectivity check</dt>
+              <dt className="text-ink-3">Connectivity check</dt>
               <dd className="flex items-center gap-2">
                 <Badge
                   text={cilium.connectivity_check ?? 'unknown'}
@@ -425,7 +425,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                     type="button"
                     onClick={() => void runConnectivityProbe()}
                     disabled={probeLoading}
-                    className="text-xs text-aether hover:underline disabled:opacity-50"
+                    className="text-xs text-brand hover:underline disabled:opacity-50"
                     data-testid="platform-cilium-probe-btn"
                   >
                     {probeLoading ? 'Running…' : 'Run check'}
@@ -435,22 +435,22 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
             </div>
             {cilium.last_checked_at && (
               <div className="flex justify-between">
-                <dt className="text-slate-500">Last checked</dt>
-                <dd className="text-slate-400 text-xs font-mono">{cilium.last_checked_at}</dd>
+                <dt className="text-ink-3">Last checked</dt>
+                <dd className="text-ink-2 text-xs font-mono">{cilium.last_checked_at}</dd>
               </div>
             )}
             {cilium.connectivity_detail && (
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-500 shrink-0">Detail</dt>
-                <dd className="text-slate-400 text-xs text-right">{cilium.connectivity_detail}</dd>
+                <dt className="text-ink-3 shrink-0">Detail</dt>
+                <dd className="text-ink-2 text-xs text-right">{cilium.connectivity_detail}</dd>
               </div>
             )}
             <div>
-              <dt className="text-slate-500 mb-2">Bootstrap policies</dt>
+              <dt className="text-ink-3 mb-2">Bootstrap policies</dt>
               <dd className="space-y-1">
                 {cilium.managed_policies.map((policy) => (
                   <div key={policy.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
-                    <span className="font-mono text-xs text-slate-300">{policy.name}</span>
+                    <span className="font-mono text-xs text-ink-2">{policy.name}</span>
                     <Badge text={policy.exists ? 'applied' : 'missing'} variant={policy.exists ? 'green' : 'red'} />
                   </div>
                 ))}
@@ -459,7 +459,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
             {cilium.cluster && (
               <Link
                 to={pathWithQuery(viewToPath('clusters'), { cluster: cilium.cluster, tab: 'network' })}
-                className="inline-flex text-xs text-aether hover:underline"
+                className="inline-flex text-xs text-brand hover:underline"
                 data-testid="platform-cilium-cluster-link"
               >
                 Browse network policies in cluster browser →
@@ -467,11 +467,11 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
             )}
           </dl>
         ) : (
-          <p className="text-sm text-slate-500">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>
+          <p className="text-sm text-ink-3">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>
         )}
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-4 text-xs text-ink-3">
           Browse Cilium policies on the Cluster Browser <strong>Network</strong> tab. Hubble UI is auto-discovered when installed, or set{' '}
-          <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code>.
+          <code className="text-ink-2">AETHER_HUBBLE_UI_URL</code>.
         </p>
       </div>
       </section>
@@ -485,7 +485,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
       <div className="glass-panel-card" data-testid="platform-observability-panel">
         <div className="flex items-center gap-3 mb-4">
           <Database className="text-blue-400" size={20} />
-          <h2 className="text-lg font-semibold text-slate-100">Observability links</h2>
+          <h2 className="text-lg font-semibold text-ink">Observability links</h2>
         </div>
         <div className="flex flex-wrap gap-3">
           {integrations.grafana_url ? (
@@ -494,7 +494,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                 href={integrations.grafana_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
+                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
               >
                 Grafana <ExternalLink size={14} />
               </a>
@@ -503,25 +503,25 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
                   href={grafanaDashboardUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-aether/40 bg-aether/10 px-4 py-2 text-sm text-aether hover:bg-aether/20"
+                  className="inline-flex items-center gap-2 rounded-xl border border-brand/40 bg-brand/10 px-4 py-2 text-sm text-brand hover:bg-brand/20"
                 >
                   Open Aether dashboard <ExternalLink size={14} />
                 </a>
               ) : integrations.prometheus_url ? (
-                <span className="text-sm text-slate-500 self-center">
+                <span className="text-sm text-ink-3 self-center">
                   Set <code>AETHER_GRAFANA_DASHBOARD_UID</code> and run <code>scripts/import-grafana-dashboard.sh</code>
                 </span>
               ) : null}
             </>
           ) : (
-            <span className="text-sm text-slate-500">Set <code>AETHER_GRAFANA_URL</code> for Grafana link</span>
+            <span className="text-sm text-ink-3">Set <code>AETHER_GRAFANA_URL</code> for Grafana link</span>
           )}
           {integrations.prometheus_url ? (
             <a
               href={integrations.prometheus_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
             >
               Prometheus <ExternalLink size={14} />
             </a>
@@ -529,7 +529,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
             <a
               href="/metrics"
               data-testid="platform-metrics-link"
-              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
             >
               In-app metrics <ExternalLink size={14} />
             </a>
@@ -555,17 +555,17 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
             </a>
           )}
           {!integrations.hubble_ui_url && (
-            <span className="text-sm text-slate-500 self-center">
-              Set <code className="text-slate-400">AETHER_HUBBLE_UI_URL</code> for Hubble
+            <span className="text-sm text-ink-3 self-center">
+              Set <code className="text-ink-2">AETHER_HUBBLE_UI_URL</code> for Hubble
             </span>
           )}
         </div>
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-4 text-xs text-ink-3">
           Multi-cluster inventory: open{' '}
-          <a href="/fleet" className="text-aether hover:underline">
+          <a href="/fleet" className="text-brand hover:underline">
             Fleet Overview
           </a>
-          . Set <code className="text-slate-400">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.
+          . Set <code className="text-ink-2">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.
         </p>
       </div>
       </section>

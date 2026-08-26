@@ -175,7 +175,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="envs-editor-link"
           >
             Editor →
@@ -183,7 +183,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="envs-drift-link"
           >
             Drift →
@@ -191,7 +191,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="envs-secrets-link"
           >
             Secrets →
@@ -199,7 +199,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="envs-compose-link"
           >
             Compose →
@@ -207,7 +207,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="envs-policy-link"
           >
             Policy →
@@ -221,7 +221,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="envs-context-editor-link"
               >
                 Editor →
@@ -229,7 +229,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="envs-context-drift-link"
               >
                 Drift →
@@ -237,7 +237,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="envs-context-secrets-link"
               >
                 Secrets →
@@ -245,7 +245,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('compose'), { workload: search.trim() })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="envs-context-compose-link"
               >
                 Compose →
@@ -253,7 +253,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-                className="text-aether hover:underline"
+                className="text-brand hover:underline"
                 data-testid="envs-context-policy-link"
               >
                 Policy →
@@ -284,7 +284,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <section className="overview-section-shell mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="glass-panel-card">
-          <h3 className="text-sm font-semibold text-slate-200 mb-3">Promote workload</h3>
+          <h3 className="text-sm font-semibold text-ink mb-3">Promote workload</h3>
           <form onSubmit={(e) => void handlePromote(e)} className="space-y-3">
             <input
               type="text"
@@ -314,17 +314,17 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="submit"
               disabled={!canMutate || mutating}
               data-testid="envs-promote-submit"
-              className="rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover disabled:opacity-50"
+              className="rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover disabled:opacity-50"
             >
               Promote
             </button>
           </form>
           {promoteResult ? (
-            <p data-testid="envs-promote-result" className="mt-3 text-sm text-slate-400">{promoteResult}</p>
+            <p data-testid="envs-promote-result" className="mt-3 text-sm text-ink-2">{promoteResult}</p>
           ) : null}
         </div>
         <div className="glass-panel-card">
-          <h3 className="text-sm font-semibold text-slate-200 mb-3">Environment parity</h3>
+          <h3 className="text-sm font-semibold text-ink mb-3">Environment parity</h3>
           <form onSubmit={(e) => void handleParity(e)} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -346,16 +346,16 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="submit"
               data-testid="envs-parity-check"
               disabled={mutating}
-              className="rounded-xl border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover disabled:opacity-50"
+              className="rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover disabled:opacity-50"
             >
               Check parity
             </button>
           </form>
           {parityResult && (
             <>
-              <pre data-testid="envs-parity-result" className="mt-3 text-xs text-slate-400 overflow-x-auto max-h-48">{parityResult}</pre>
+              <pre data-testid="envs-parity-result" className="mt-3 text-xs text-ink-2 overflow-x-auto max-h-48">{parityResult}</pre>
               {parityResult.toLowerCase().includes('drift') || parityResult.toLowerCase().includes('mismatch') ? (
-                <Link to={viewToPath('drift')} className="mt-2 inline-flex text-xs text-aether hover:underline" data-testid="envs-drift-link">
+                <Link to={viewToPath('drift')} className="mt-2 inline-flex text-xs text-brand hover:underline" data-testid="envs-drift-link">
                   Open drift detection →
                 </Link>
               ) : null}
@@ -383,10 +383,10 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               onClick={() => setSelectedEnvironment(env)}
               body={
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
                     {Object.keys(env.workloads ?? {}).length} workloads
                   </span>
-                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">
+                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
                     {Object.keys(env.variables ?? {}).length} vars
                   </span>
                 </div>
@@ -395,7 +395,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <button
                   type="button"
                   onClick={() => setSelectedEnvironment(env)}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                 >
                   <Search size={13} />
                   Inspect
@@ -417,52 +417,52 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="space-y-4" data-testid="envs-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="glass-panel-card px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500">Tier</div>
+                <div className="text-xs uppercase tracking-wider text-ink-3">Tier</div>
                 <div className="mt-2">
                   <Badge text={selectedEnvironment.tier} variant={getTierVariant(selectedEnvironment.tier)} />
                 </div>
               </div>
               <div className="glass-panel-card px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500">Workloads</div>
-                <div className="mt-2 text-2xl font-semibold text-slate-100">{Object.keys(selectedEnvironment.workloads).length}</div>
+                <div className="text-xs uppercase tracking-wider text-ink-3">Workloads</div>
+                <div className="mt-2 text-2xl font-semibold text-ink">{Object.keys(selectedEnvironment.workloads).length}</div>
               </div>
               <div className="glass-panel-card px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500">Variables</div>
-                <div className="mt-2 text-2xl font-semibold text-slate-100">{Object.keys(selectedEnvironment.variables).length}</div>
+                <div className="text-xs uppercase tracking-wider text-ink-3">Variables</div>
+                <div className="mt-2 text-2xl font-semibold text-ink">{Object.keys(selectedEnvironment.variables).length}</div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div>
-                <div className="mb-2 text-sm font-medium text-slate-200">Assigned workloads</div>
+                <div className="mb-2 text-sm font-medium text-ink">Assigned workloads</div>
                 {Object.keys(selectedEnvironment.workloads).length === 0 ? (
-                  <p className="text-sm text-slate-500">None</p>
+                  <p className="text-sm text-ink-3">None</p>
                 ) : (
                   <ul className="space-y-1 text-sm">
                     {Object.entries(selectedEnvironment.workloads).map(([name, value]) => (
                       <li key={name} className="flex justify-between gap-2 glass-table-row rounded-lg px-3 py-2">
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: name })}
-                          className="text-slate-200 hover:text-aether"
+                          className="text-ink hover:text-brand"
                         >
                           {name}
                         </Link>
-                        <span className="text-slate-500 truncate">{String(value)}</span>
+                        <span className="text-ink-3 truncate">{String(value)}</span>
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
               <div>
-                <div className="mb-2 text-sm font-medium text-slate-200">Environment variables</div>
+                <div className="mb-2 text-sm font-medium text-ink">Environment variables</div>
                 {Object.keys(selectedEnvironment.variables).length === 0 ? (
-                  <p className="text-sm text-slate-500">None</p>
+                  <p className="text-sm text-ink-3">None</p>
                 ) : (
                   <ul className="space-y-1 text-sm">
                     {Object.entries(selectedEnvironment.variables).map(([name, value]) => (
                       <li key={name} className="flex justify-between gap-2 glass-table-row rounded-lg px-3 py-2">
-                        <span className="text-slate-400 font-mono">{name}</span>
-                        <span className="text-slate-200 truncate">{String(value)}</span>
+                        <span className="text-ink-2 font-mono">{name}</span>
+                        <span className="text-ink truncate">{String(value)}</span>
                       </li>
                     ))}
                   </ul>
@@ -476,7 +476,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create environment">
         <form data-testid="envs-create-modal" onSubmit={(e) => void handleCreate(e)} className="space-y-4">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Name</label>
+            <label className="block text-xs text-ink-3 mb-1">Name</label>
             <input
               type="text"
               value={createName}
@@ -485,7 +485,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Tier</label>
+            <label className="block text-xs text-ink-3 mb-1">Tier</label>
             <select
               value={createTier}
               onChange={(e) => setCreateTier(e.target.value)}

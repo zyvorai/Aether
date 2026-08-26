@@ -36,15 +36,15 @@ export default function SectionHubPage({ title, subtitle, links }: SectionHubPag
             to={viewToPath(link.view)}
             className="group hub-link-card"
           >
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-aether/20 bg-aether/10 text-aether">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-brand/20 bg-brand/10 text-brand">
               {link.icon}
             </div>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-medium text-slate-100 group-hover:text-white">{link.title}</h3>
-                <p className="mt-1 text-sm text-slate-500">{link.description}</p>
+                <h3 className="font-medium text-ink group-hover:text-ink">{link.title}</h3>
+                <p className="mt-1 text-sm text-ink-3">{link.description}</p>
               </div>
-              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-aether" />
+              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-ink-3 transition group-hover:text-brand" />
             </div>
           </Link>
         ))}

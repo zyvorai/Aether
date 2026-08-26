@@ -186,10 +186,10 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
 
       {fleetDrift ? (
         <section className="overview-section-shell mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Tracked</div><div className="text-lg font-semibold text-slate-100">{fleetDrift.total_workloads}</div></div>
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-slate-500">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Tracked</div><div className="text-lg font-semibold text-ink">{fleetDrift.total_workloads}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
+          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
         </section>
       ) : null}
 
@@ -205,7 +205,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
               }),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
         >
           Drift events →
         </button>
@@ -222,7 +222,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="drift-platform-link"
           >
             Platform →
@@ -230,7 +230,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="drift-policy-link"
           >
             Policy →
@@ -238,7 +238,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="drift-context-compose-link"
           >
             Compose →
@@ -246,7 +246,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="drift-context-secrets-link"
           >
             Secrets →
@@ -254,7 +254,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="drift-context-editor-link"
           >
             Editor →
@@ -262,7 +262,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="drift-context-openapi-link"
           >
             OpenAPI →
@@ -270,7 +270,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="drift-context-copilot-link"
           >
             Copilot →
@@ -279,10 +279,10 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
       ) : null}
 
       {bulkScan && !bulkScan.scanning ? (
-        <div data-testid="drift-bulk-summary" className="glass-panel-card mb-6 text-sm text-slate-300">
+        <div data-testid="drift-bulk-summary" className="glass-panel-card mb-6 text-sm text-ink-2">
           Scanned {bulkScan.total} workload(s) — {bulkScan.drifted.length} with drift
           {bulkScan.drifted.length > 0 ? (
-            <span className="ml-2 text-slate-500">({bulkScan.drifted.join(', ')})</span>
+            <span className="ml-2 text-ink-3">({bulkScan.drifted.join(', ')})</span>
           ) : null}
           <button
             type="button"
@@ -293,7 +293,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
                   : viewToPath('gitops'),
               )
             }
-            className="ml-3 text-xs text-aether hover:underline"
+            className="ml-3 text-xs text-brand hover:underline"
             data-testid="drift-bulk-gitops-link"
           >
             GitOps sync →
@@ -308,8 +308,8 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="glass-panel-card">
-            <h2 className="text-lg font-semibold text-slate-100 mb-1">Select workload</h2>
-            <p className="text-sm text-slate-500 mb-4">Click a workload to check for configuration drift</p>
+            <h2 className="text-lg font-semibold text-ink mb-1">Select workload</h2>
+            <p className="text-sm text-ink-3 mb-4">Click a workload to check for configuration drift</p>
             <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto" data-testid="drift-workload-select">
               {filtered.map((w) => (
                 <button
@@ -320,27 +320,27 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
                   data-testid={workloadFocus === w.name ? 'drift-workload-highlight' : undefined}
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 ${
                     driftResult?.workload_name === w.name
-                      ? 'border-aether/50 bg-aether/10 text-aether'
+                      ? 'border-brand/50 bg-brand/10 text-brand'
                       : workloadFocus === w.name
-                        ? 'border-aether/60 ring-1 ring-aether/30 bg-aether/5 text-aether'
+                        ? 'border-brand/60 ring-1 ring-aether/30 bg-brand/5 text-brand'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                          : 'glass-divider glass-panel-card text-slate-200 hover:bg-white/[0.04]'
+                          : 'glass-divider glass-panel-card text-ink hover:bg-white/[0.04]'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}
                 </button>
               ))}
               {filtered.length === 0 && (
-                <p className="text-sm text-slate-500">No workloads match your search.</p>
+                <p className="text-sm text-ink-3">No workloads match your search.</p>
               )}
             </div>
           </div>
 
           <div className="glass-panel-card min-h-[12rem]">
-            <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Drift report</h3>
+            <h3 className="text-sm font-medium text-ink-2 uppercase tracking-wider mb-4">Drift report</h3>
             {!driftResult ? (
-              <p className="text-sm text-slate-500">Select a workload or run a bulk scan to see drift analysis.</p>
+              <p className="text-sm text-ink-3">Select a workload or run a bulk scan to see drift analysis.</p>
             ) : (
               <div className="space-y-4" data-testid="drift-result-panel">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -353,7 +353,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
                     type="button"
                     data-testid="drift-open-workload"
                     onClick={() => openWorkloadDrift(driftResult.workload_name)}
-                    className="text-sm text-aether hover:underline"
+                    className="text-sm text-brand hover:underline"
                   >
                     {driftResult.workload_name} → detail
                   </button>
@@ -361,22 +361,22 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
 
                 {driftResult.drifts.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-slate-300 mb-2">Drifted fields</h4>
+                    <h4 className="text-sm font-medium text-ink-2 mb-2">Drifted fields</h4>
                     <div className="space-y-2 max-h-64 overflow-auto">
                       {driftResult.drifts.map((d, i) => (
                         <div key={i} className="glass-panel-card rounded-lg p-3 border glass-divider">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-sm font-medium text-slate-200">{d.field}</span>
+                            <span className="text-sm font-medium text-ink">{d.field}</span>
                             <SeverityBadge severity={d.severity} />
                             <Badge text={d.category} variant="muted" />
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
                             <div>
-                              <span className="text-slate-500">Expected: </span>
+                              <span className="text-ink-3">Expected: </span>
                               <span className="text-emerald-400">{d.expected}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500">Actual: </span>
+                              <span className="text-ink-3">Actual: </span>
                               <span className="text-red-400">{d.actual}</span>
                             </div>
                           </div>
@@ -402,13 +402,13 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
 
                 {driftResult.reconciliation_plan.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-slate-300 mb-2">Reconciliation plan</h4>
+                    <h4 className="text-sm font-medium text-ink-2 mb-2">Reconciliation plan</h4>
                     <div className="space-y-2">
                       {driftResult.reconciliation_plan.map((step, i) => (
                         <div key={i} className="rounded-lg border glass-divider glass-panel-card p-3 text-sm">
-                          <div className="font-medium text-slate-200">{step.action_type}</div>
-                          <p className="text-slate-400 mt-1">{step.description}</p>
-                          <div className="flex gap-3 mt-2 text-xs text-slate-500">
+                          <div className="font-medium text-ink">{step.action_type}</div>
+                          <p className="text-ink-2 mt-1">{step.description}</p>
+                          <div className="flex gap-3 mt-2 text-xs text-ink-3">
                             <span>Restart: {step.requires_restart ? 'yes' : 'no'}</span>
                             <span>Risk: {step.risk}</span>
                           </div>

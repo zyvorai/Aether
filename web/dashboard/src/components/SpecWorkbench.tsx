@@ -32,9 +32,9 @@ export default function SpecWorkbench({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="dash-card">
-        <h2 className={`text-lg font-semibold mb-1 ${'text-slate-100'}`}>{title}</h2>
+        <h2 className={`text-lg font-semibold mb-1 ${'text-ink'}`}>{title}</h2>
         {description && (
-          <p className={`text-sm mb-4 ${'text-slate-500'}`}>{description}</p>
+          <p className={`text-sm mb-4 ${'text-ink-3'}`}>{description}</p>
         )}
         <YamlInput
           buttonText={buttonText}
@@ -46,11 +46,11 @@ export default function SpecWorkbench({
         {sidePanel}
       </div>
       <div className="dash-card min-h-[12rem]">
-        <h3 className={`text-sm font-medium uppercase tracking-wider mb-4 ${'text-slate-400'}`}>
+        <h3 className={`text-sm font-medium uppercase tracking-wider mb-4 ${'text-ink-2'}`}>
           Results
         </h3>
         {result ?? (
-          <p className={`text-sm ${'text-slate-500'}`}>
+          <p className={`text-sm ${'text-ink-3'}`}>
             Submit a spec to see validation and analysis output here.
           </p>
         )}

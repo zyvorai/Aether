@@ -149,13 +149,13 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
     <div className="mb-6 glass-context-banner" data-testid="health-hub-context">
       Orchestrator
       {' · '}
-      <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="health-context-fleet-link">
+      <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="health-context-fleet-link">
         Fleet →
       </Link>
       {' · '}
       <Link
         to={viewToPath('intelligence')}
-        className="text-aether hover:underline"
+        className="text-brand hover:underline"
         data-testid="health-context-intelligence-hub-link"
       >
         Intelligence →
@@ -163,13 +163,13 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
       {' · '}
       <Link
         to={`${viewToPath('fleet')}?tab=edge`}
-        className="text-aether hover:underline"
+        className="text-brand hover:underline"
         data-testid="health-context-edge-link"
       >
         Edge →
       </Link>
       {' · '}
-      <Link to={viewToPath('settings')} className="text-aether hover:underline" data-testid="health-context-settings-link">
+      <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="health-context-settings-link">
         Identity & SSO →
       </Link>
     </div>
@@ -213,7 +213,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: workloadParam.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="health-platform-link"
             >
               Platform →
@@ -221,7 +221,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadParam.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="health-openapi-link"
             >
               OpenAPI →
@@ -229,7 +229,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: workloadParam.trim(), q: `Why is ${workloadParam.trim()} unhealthy?` })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="health-copilot-link"
             >
               Copilot →
@@ -237,7 +237,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadParam.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="health-context-policy-link"
             >
               Policy →
@@ -245,7 +245,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadParam.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="health-context-secrets-link"
             >
               Secrets →
@@ -253,7 +253,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: workloadParam.trim(), tab: 'predictions' })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="health-context-intelligence-link"
             >
               Intelligence →
@@ -320,7 +320,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
               type="button"
               data-testid="health-clear-filter"
               onClick={() => setStatusFilter('all')}
-              className="rounded-lg border glass-divider px-3 py-2 text-xs text-slate-400 hover:text-aether"
+              className="rounded-lg border glass-divider px-3 py-2 text-xs text-ink-2 hover:text-brand"
             >
               Clear filter
             </button>
@@ -353,7 +353,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
                     <div className="flex flex-wrap items-center gap-1.5">
                       <RuntimeBadge runtime={w.runtime} />
                       <Badge text={w.circuit ?? 'unknown'} variant={getCircuitVariant(w.circuit ?? 'unknown')} />
-                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">{w.restart_count} restarts</span>
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{w.restart_count} restarts</span>
                     </div>
                   }
                 />
@@ -363,39 +363,39 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
 
           {selected && (
             <div className="glass-panel-card" data-testid="health-detail-panel">
-              <h3 className="text-lg font-semibold text-slate-100 mb-4">
+              <h3 className="text-lg font-semibold text-ink mb-4">
                 Health detail:{' '}
                 <button
                   type="button"
                   onClick={() =>
                     navigate(pathWithQuery(viewToPath('workloads'), { workload: selected.workload.name }))
                   }
-                  className="text-aether hover:underline"
+                  className="text-brand hover:underline"
                 >
                   {selected.workload.name}
                 </button>
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div className="glass-panel-card py-3">
-                  <div className="text-xs text-slate-500 mb-1">Total checks</div>
-                  <div className="text-lg font-semibold text-slate-100">{selected.history.total_checks}</div>
+                  <div className="text-xs text-ink-3 mb-1">Total checks</div>
+                  <div className="text-lg font-semibold text-ink">{selected.history.total_checks}</div>
                 </div>
                 <div className="glass-panel-card py-3">
-                  <div className="text-xs text-slate-500 mb-1">Ready checks</div>
+                  <div className="text-xs text-ink-3 mb-1">Ready checks</div>
                   <div className="text-lg font-semibold text-emerald-400">{selected.history.ready_checks}</div>
                 </div>
                 <div className="glass-panel-card py-3">
-                  <div className="text-xs text-slate-500 mb-1">Uptime</div>
-                  <div className="text-lg font-semibold text-slate-100">{selected.history.uptime_percent.toFixed(2)}%</div>
+                  <div className="text-xs text-ink-3 mb-1">Uptime</div>
+                  <div className="text-lg font-semibold text-ink">{selected.history.uptime_percent.toFixed(2)}%</div>
                 </div>
                 <div className="glass-panel-card py-3">
-                  <div className="text-xs text-slate-500 mb-1">Last state</div>
-                  <div className="text-lg font-semibold text-slate-100">{selected.history.last_state}</div>
+                  <div className="text-xs text-ink-3 mb-1">Last state</div>
+                  <div className="text-lg font-semibold text-ink">{selected.history.last_state}</div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+              <div className="flex flex-wrap gap-4 text-sm text-ink-2">
                 <span>
-                  Runtime: <span className="text-slate-200">{selected.workload.runtime}</span>
+                  Runtime: <span className="text-ink">{selected.workload.runtime}</span>
                 </span>
                 <span>
                   Circuit: <Badge text={selected.workload.circuit} variant={getCircuitVariant(selected.workload.circuit)} />
@@ -411,7 +411,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
                 )}
                 {canMutate && (
                   <div className="flex flex-wrap items-center gap-2" data-testid="health-rolling-update">
-                    <label className="text-xs text-slate-500" htmlFor="rolling-replicas">
+                    <label className="text-xs text-ink-3" htmlFor="rolling-replicas">
                       Rolling update replicas
                     </label>
                     <input
@@ -433,30 +433,30 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
                     </button>
                   </div>
                 )}
-                {rollingMsg ? <span className="text-xs text-slate-400">{rollingMsg}</span> : null}
+                {rollingMsg ? <span className="text-xs text-ink-2">{rollingMsg}</span> : null}
                 <Link
                   to={pathWithQuery(viewToPath('events'), { workload: selected.workload.name })}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                 >
                   View events →
                 </Link>
                 <Link
                   to={pathWithQuery(viewToPath('gitops'), { workload: selected.workload.name })}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="health-gitops-link"
                 >
                   GitOps →
                 </Link>
                 <Link
                   to={pathWithQuery(viewToPath('drift'), { workload: selected.workload.name })}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="health-drift-link"
                 >
                   Drift →
                 </Link>
                 <Link
                   to={pathWithQuery(viewToPath('alerts'), { workload: selected.workload.name })}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="health-alerts-link"
                 >
                   Alert rules →
@@ -466,23 +466,23 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
                     workload: selected.workload.name,
                     tab: 'trust',
                   })}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="health-trust-link"
                 >
                   Trust & attestation →
                 </Link>
                 <Link
                   to={viewToPath('sla')}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="health-sla-link"
                 >
                   SLA compliance →
                 </Link>
                 <span>
-                  Last restart count: <span className="text-slate-200">{selected.history.last_restart_count}</span>
+                  Last restart count: <span className="text-ink">{selected.history.last_restart_count}</span>
                 </span>
                 <span>
-                  Current restarts: <span className="text-slate-200">{selected.workload.restart_count}</span>
+                  Current restarts: <span className="text-ink">{selected.workload.restart_count}</span>
                 </span>
               </div>
             </div>

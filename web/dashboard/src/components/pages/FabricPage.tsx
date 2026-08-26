@@ -28,7 +28,7 @@ export default function FabricPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fabric-context-fleet-link"
           >
             Fleet →
@@ -36,7 +36,7 @@ export default function FabricPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('migrations'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fabric-context-migrations-link"
           >
             Migrations →
@@ -44,7 +44,7 @@ export default function FabricPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workload.trim(), q: `Fabric analysis for ${workload.trim()}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="fabric-context-zyra-link"
           >
             Zyra →

@@ -280,7 +280,7 @@ function Dropdown({
                 }}
                 className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${dropdownItemClass(currentView === item.view)}`}
               >
-                <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
+                <span className={currentView === item.view ? 'text-brand' : 'text-ink-3'}>
                   {item.icon}
                 </span>
                 {item.label}
@@ -289,7 +289,7 @@ function Dropdown({
             {setup.length > 0 ? (
               <>
                 <div className="mx-3 my-1 glass-divider-t/60/80" />
-                <p className="px-4 py-1 text-[10px] uppercase tracking-wider text-slate-500">Setup required</p>
+                <p className="px-4 py-1 text-[10px] uppercase tracking-wider text-ink-3">Setup required</p>
                 {setup.map((item) => (
                   <button
                     key={`setup-${item.view}`}
@@ -302,11 +302,11 @@ function Dropdown({
                     }}
                     className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm opacity-50 transition-colors hover:opacity-80 ${dropdownItemClass(false)}`}
                   >
-                    <span className="text-slate-500">{item.icon}</span>
+                    <span className="text-ink-3">{item.icon}</span>
                     <span className="flex flex-col items-start gap-0.5 text-left">
                       <span>{item.label}</span>
                       {item.visibility.setupHint ? (
-                        <span className="text-[10px] leading-tight text-slate-500">{item.visibility.setupHint}</span>
+                        <span className="text-[10px] leading-tight text-ink-3">{item.visibility.setupHint}</span>
                       ) : null}
                     </span>
                   </button>
@@ -369,19 +369,19 @@ function AccountMenu({
           role="menu"
         >
           <div className="px-3 py-2 glass-table-row">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{authModeLabel}</div>
-            <div className="mt-0.5 truncate font-mono text-sm text-slate-200" title={bearerPreview}>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-ink-3">{authModeLabel}</div>
+            <div className="mt-0.5 truncate font-mono text-sm text-ink" title={bearerPreview}>
               {bearerPreview}
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-sm text-slate-300">{username}</span>
-              <span className="rounded-full border border-aether/30 bg-aether/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-aether">
+              <span className="text-sm text-ink-2">{username}</span>
+              <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
                 {role}
               </span>
             </div>
             {clusterCtx ? (
-              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
-                <Container className="h-3 w-3 shrink-0 text-aether/80" />
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-2">
+                <Container className="h-3 w-3 shrink-0 text-brand/80" />
                 <span className="truncate" title={clusterCtx}>
                   {clusterCtx}
                 </span>
@@ -639,15 +639,15 @@ export default function Navbar({
               onClick={() => onNavigate('overview')}
               className="group flex min-w-0 items-center gap-2 transition-opacity hover:opacity-90"
             >
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-aether/25 bg-gradient-to-br from-aether/15 to-aether-ai/10 shadow-[0_0_0_1px_rgba(59,130,246,0.08)] transition group-hover:border-aether/40 sm:h-10 sm:w-10">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-brand/25 bg-gradient-to-br from-aether/15 to-aether-ai/10 shadow-[0_0_0_1px_rgba(59,130,246,0.08)] transition group-hover:border-brand/40 sm:h-10 sm:w-10">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-aether/10" />
-                <Hexagon className="h-5 w-5 text-aether" />
+                <Hexagon className="h-5 w-5 text-brand" />
               </div>
               <div className="min-w-0 text-left">
                 <span className="block truncate bg-gradient-to-r from-white to-slate-400 bg-clip-text text-base font-semibold tracking-tight text-transparent sm:text-lg">
                   Aether
                 </span>
-                <span className="hidden 2xl:block text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                <span className="hidden 2xl:block text-[10px] uppercase tracking-[0.2em] text-ink-3">
                   Universal Runtime Control Plane
                 </span>
               </div>
@@ -656,7 +656,7 @@ export default function Navbar({
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
             {!isMacOSShell() ? (
-              <label className="hidden xl:flex items-center gap-1.5 shrink-0 text-xs text-slate-500" title="Classic CloudOS navigation (AI OS is default)">
+              <label className="hidden xl:flex items-center gap-1.5 shrink-0 text-xs text-ink-3" title="Classic CloudOS navigation (AI OS is default)">
                 <input
                   type="checkbox"
                   checked={!proView}
@@ -713,7 +713,7 @@ export default function Navbar({
                     >
                       <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
                       Keyboard shortcuts
-                      <kbd className="ml-auto rounded glass-inset-surface px-1 py-0.5 font-mono text-[10px] text-slate-500">?</kbd>
+                      <kbd className="ml-auto rounded glass-inset-surface px-1 py-0.5 font-mono text-[10px] text-ink-3">?</kbd>
                     </button>
                     <button
                       type="button"
@@ -770,7 +770,7 @@ export default function Navbar({
               className={`inline-block h-2 w-2 rounded-full sm:hidden ${sseConnected ? 'bg-emerald-400 platform-pulse' : 'bg-red-400'}`}
               title={sseConnected ? 'SSE Connected' : 'SSE Disconnected'}
             />
-            <span className="hidden text-xs text-slate-500 md:inline">{relativeTime}</span>
+            <span className="hidden text-xs text-ink-3 md:inline">{relativeTime}</span>
             <button
               type="button"
               onClick={handleRefreshClick}
@@ -822,11 +822,11 @@ export default function Navbar({
             aria-label="Navigation menu"
           >
             <div className="flex shrink-0 items-center justify-between glass-divider-b px-4 py-3">
-              <span className="text-sm font-semibold text-slate-200">Menu</span>
+              <span className="text-sm font-semibold text-ink">Menu</span>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-xl p-2 text-slate-400 glass-nav-item hover:text-slate-100"
+                className="rounded-xl p-2 text-ink-2 glass-nav-item hover:text-ink"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" />
@@ -843,7 +843,7 @@ export default function Navbar({
                   setMobileOpen(false);
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border ${
-                  'border-aether/30 bg-aether/10 text-aether hover:bg-aether/15'
+                  'border-brand/30 bg-brand/10 text-brand hover:bg-brand/15'
                 }`}
               >
                 <Command className="w-4 h-4" />
@@ -854,7 +854,7 @@ export default function Navbar({
 
             {recentNavItems.length > 0 ? (
               <div>
-                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3">
                   Recently visited
                 </div>
                 <div className="space-y-0.5">
@@ -863,9 +863,9 @@ export default function Navbar({
                       key={item.view}
                       type="button"
                       onClick={() => handleMobileNavigate(item.view)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 transition-colors hover:text-slate-100 glass-nav-item"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-ink-2 transition-colors hover:text-ink glass-nav-item"
                     >
-                      <Clock className="w-4 h-4 text-slate-500" />
+                      <Clock className="w-4 h-4 text-ink-3" />
                       {item.label}
                     </button>
                   ))}
@@ -874,19 +874,19 @@ export default function Navbar({
             ) : null}
 
             <div className="glass-panel-card rounded-2xl px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{authModeLabel}</div>
-              <div className="mt-1 text-sm font-medium font-mono tracking-tight text-slate-200">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-ink-3">{authModeLabel}</div>
+              <div className="mt-1 text-sm font-medium font-mono tracking-tight text-ink">
                 {bearerPreview}
               </div>
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-sm text-slate-300">{username}</span>
-                <span className="rounded-full border border-aether/30 bg-aether/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-aether">
+                <span className="text-sm text-ink-2">{username}</span>
+                <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
                   {role}
                 </span>
               </div>
               {clusterCtx ? (
-                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
-                  <Container className="h-3 w-3 shrink-0 text-aether/80" />
+                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-2">
+                  <Container className="h-3 w-3 shrink-0 text-brand/80" />
                   <span className="truncate" title={clusterCtx}>
                     {clusterCtx}
                   </span>
@@ -897,7 +897,7 @@ export default function Navbar({
             {filteredMobileNavGroups.map((group) => (
               group.items.length === 0 ? null : (
               <div key={group.label}>
-                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3">
                   {group.label}
                 </div>
                 <div className="space-y-0.5">
@@ -908,11 +908,11 @@ export default function Navbar({
                       onClick={() => handleMobileNavigate(item.view)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                         currentView === item.view
-                          ? 'text-aether bg-aether/10'
-                          : 'text-slate-400 hover:text-slate-100 glass-nav-item'
+                          ? 'text-brand bg-brand/10'
+                          : 'text-ink-2 hover:text-ink glass-nav-item'
                       }`}
                     >
-                      <span className={currentView === item.view ? 'text-aether' : 'text-slate-500'}>
+                      <span className={currentView === item.view ? 'text-brand' : 'text-ink-3'}>
                         {item.icon}
                       </span>
                       {item.label}
@@ -925,7 +925,7 @@ export default function Navbar({
 
             {onOpenHelp ? (
               <div>
-                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Help</div>
+                <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3">Help</div>
                 <div className="space-y-0.5">
                   <button
                     type="button"
@@ -934,7 +934,7 @@ export default function Navbar({
                       setMobileOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 glass-nav-item'
+                      'text-ink-2 hover:text-ink glass-nav-item'
                     }`}
                   >
                     <Keyboard className="w-4 h-4" />
@@ -947,7 +947,7 @@ export default function Navbar({
                       setMobileOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 glass-nav-item'
+                      'text-ink-2 hover:text-ink glass-nav-item'
                     }`}
                   >
                     <Info className="w-4 h-4" />
@@ -959,7 +959,7 @@ export default function Navbar({
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 glass-nav-item'
+                      'text-ink-2 hover:text-ink glass-nav-item'
                     }`}
                   >
                     <BookOpen className="w-4 h-4" />
@@ -971,7 +971,7 @@ export default function Navbar({
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      'text-slate-400 hover:text-slate-100 glass-nav-item'
+                      'text-ink-2 hover:text-ink glass-nav-item'
                     }`}
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -979,7 +979,7 @@ export default function Navbar({
                   </a>
                   <div
                     className={`px-4 py-2 text-[11px] ${
-                      'text-slate-500'
+                      'text-ink-3'
                     }`}
                   >
                     <a
@@ -1012,7 +1012,7 @@ export default function Navbar({
                   setMobileOpen(false);
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-colors ${
-                  'text-slate-400 hover:text-slate-100 glass-nav-item border glass-divider'
+                  'text-ink-2 hover:text-ink glass-nav-item border glass-divider'
                 }`}
               >
                 <LogOut className="w-4 h-4" />

@@ -48,7 +48,7 @@ export default function AutonomousSrePanel() {
           <button
             type="button"
             onClick={() => void copyRunbook()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
           >
             <Copy className="h-3.5 w-3.5" />
             {copied ? 'Copied' : 'Copy markdown'}
@@ -56,7 +56,7 @@ export default function AutonomousSrePanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -71,12 +71,12 @@ export default function AutonomousSrePanel() {
             {report.sections.map((section) => (
               <div key={section.title} className="glass-panel-card p-4">
                 <div className="mb-3 flex items-center gap-2">
-                  <span className="font-medium text-white">{section.title}</span>
+                  <span className="font-medium text-ink">{section.title}</span>
                   <SeverityBadge severity={section.severity} />
                 </div>
                 <ul className="space-y-2">
                   {section.items.map((item) => (
-                    <li key={item} className="text-sm text-slate-400">
+                    <li key={item} className="text-sm text-ink-2">
                       {item}
                     </li>
                   ))}
@@ -85,14 +85,14 @@ export default function AutonomousSrePanel() {
             ))}
           </div>
           <details className="mt-6">
-            <summary className="cursor-pointer text-sm text-aether">View full markdown</summary>
-            <pre className="mt-3 max-h-64 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-slate-300">
+            <summary className="cursor-pointer text-sm text-brand">View full markdown</summary>
+            <pre className="mt-3 max-h-64 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-ink-2">
               {report.runbook_markdown}
             </pre>
           </details>
         </>
       ) : loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-ink-3">
           <Loader2 className="h-4 w-4 animate-spin" />
           Generating runbook…
         </div>

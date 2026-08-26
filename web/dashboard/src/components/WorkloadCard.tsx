@@ -75,8 +75,8 @@ export default function WorkloadCard({
         data-testid={`workload-card-${shortName}`}
         className={`group w-full rounded-xl border px-3 py-2.5 text-left transition ${
           selected
-            ? 'border-aether/50 bg-aether/10 shadow-[0_0_0_1px_rgba(211,84,0,0.25)]'
-            : 'glass-divider glass-inset-surface hover:border-aether/30 hover:bg-white/[0.03]'
+            ? 'border-brand/50 bg-brand/10 shadow-[0_0_0_1px_rgba(211,84,0,0.25)]'
+            : 'glass-divider glass-inset-surface hover:border-brand/30 hover:bg-white/[0.03]'
         }`}
       >
         <div className="flex items-start gap-2">
@@ -88,12 +88,12 @@ export default function WorkloadCard({
             } ${running ? 'platform-pulse' : ''}`}
           />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-slate-100">{shortName}</div>
-            <div className="mt-0.5 truncate text-[11px] text-slate-500">
+            <div className="truncate text-sm font-medium text-ink">{shortName}</div>
+            <div className="mt-0.5 truncate text-[11px] text-ink-3">
               {[workload.kind, locationLabel || null].filter(Boolean).join(' · ') || workload.runtime}
             </div>
           </div>
-          {pinned ? <Star size={12} className="mt-0.5 shrink-0 fill-current text-aether" /> : null}
+          {pinned ? <Star size={12} className="mt-0.5 shrink-0 fill-current text-brand" /> : null}
         </div>
       </button>
     );
@@ -105,18 +105,18 @@ export default function WorkloadCard({
       style={{ animationDelay: `${delayMs}ms` }}
       className={`workload-card-rise group relative overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-0.5 ${
         selected
-          ? 'border-aether/45 bg-gradient-to-br from-aether/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
-          : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-aether/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
+          ? 'border-brand/45 bg-gradient-to-br from-aether/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
+          : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-brand/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
       }`}
     >
       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${statusAccent(workload.status)}`} aria-hidden />
-      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-aether/12 blur-3xl transition duration-500 group-hover:bg-aether/22 group-hover:scale-110" aria-hidden />
+      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-brand/12 blur-3xl transition duration-500 group-hover:bg-brand/22 group-hover:scale-110" aria-hidden />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-60" aria-hidden />
 
       <div className="relative flex h-full flex-col p-4">
         <div className="mb-3 flex items-start gap-3">
           <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent">
-            <KindIcon size={18} className="text-slate-300 transition group-hover:text-aether" />
+            <KindIcon size={18} className="text-ink-2 transition group-hover:text-brand" />
             {running ? (
               <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] bg-emerald-400 platform-pulse" />
             ) : null}
@@ -124,17 +124,17 @@ export default function WorkloadCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <button type="button" onClick={() => onOpen('overview')} className="min-w-0 flex-1 text-left">
-                <h3 className="truncate text-base font-semibold tracking-tight text-white transition group-hover:text-aether">
+                <h3 className="truncate text-base font-semibold tracking-tight text-ink transition group-hover:text-brand">
                   {shortName}
                 </h3>
-                <p className="mt-0.5 truncate text-[11px] text-slate-500" title={workload.name}>
+                <p className="mt-0.5 truncate text-[11px] text-ink-3" title={workload.name}>
                   {[workload.kind, locationLabel || null].filter(Boolean).join(' · ') || 'Aether managed'}
                 </p>
               </button>
               <button
                 type="button"
                 onClick={onTogglePin}
-                className={`mt-0.5 shrink-0 transition ${pinned ? 'text-aether' : 'text-slate-600 hover:text-slate-300'}`}
+                className={`mt-0.5 shrink-0 transition ${pinned ? 'text-brand' : 'text-ink-3 hover:text-ink-2'}`}
                 title={pinned ? 'Unpin' : 'Pin'}
                 aria-label={pinned ? `Unpin ${shortName}` : `Pin ${shortName}`}
               >
@@ -158,10 +158,10 @@ export default function WorkloadCard({
               {discovered ? 'discovered' : 'managed'}
             </span>
           </div>
-          <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-slate-300" title={workload.image}>
+          <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2" title={workload.image}>
             {workload.image || '—'}
           </code>
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px] text-ink-3">
             {workload.created_at ? formatRelativeTime(workload.created_at) : '—'}
           </div>
         </button>
@@ -170,7 +170,7 @@ export default function WorkloadCard({
           <button
             type="button"
             onClick={() => onOpen('overview')}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
             title="Info"
             data-testid={`workload-card-info-${shortName}`}
           >
@@ -181,7 +181,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('logs')}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-sky-500/15 hover:text-sky-200"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-sky-500/15 hover:text-sky-200"
               title="Logs"
               data-testid={`workload-card-logs-${shortName}`}
             >
@@ -193,7 +193,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('overview', true)}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-emerald-500/15 hover:text-emerald-200"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-emerald-500/15 hover:text-emerald-200"
               title="Exec into pod"
               data-testid={`workload-card-shell-${shortName}`}
             >
@@ -204,7 +204,7 @@ export default function WorkloadCard({
             <button
               type="button"
               disabled
-              className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600"
+              className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-3"
               title="Exec requires Operator or Admin role"
               data-testid={`workload-card-shell-denied-${shortName}`}
             >

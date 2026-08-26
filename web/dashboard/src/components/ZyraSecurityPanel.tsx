@@ -82,14 +82,14 @@ export default function SecurityCopilotPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
         </div>}
     >{!report?.suggestions.length ? (
-        <p className="text-sm text-slate-500">No policy suggestions — threat scan is clean.</p>
+        <p className="text-sm text-ink-3">No policy suggestions — threat scan is clean.</p>
       ) : (
         <ul className="space-y-4">
           {report.suggestions.map((item) => (
@@ -99,21 +99,21 @@ export default function SecurityCopilotPanel() {
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-white">{item.title}</span>
+                  <span className="font-medium text-ink">{item.title}</span>
                   <Badge text={item.workload} variant="muted" />
                   <SeverityBadge severity={item.severity} />
                 </div>
                 <button
                   type="button"
                   onClick={() => void copyYaml(item.workload, item.policy_yaml)}
-                  className="inline-flex items-center gap-1 rounded-lg border glass-divider px-2 py-1 text-xs text-slate-300 hover:border-aether/40"
+                  className="inline-flex items-center gap-1 rounded-lg border glass-divider px-2 py-1 text-xs text-ink-2 hover:border-brand/40"
                 >
                   <Copy className="h-3 w-3" />
                   {copied === item.workload ? 'Copied' : 'Copy YAML'}
                 </button>
               </div>
-              <p className="mb-3 text-sm text-slate-400">{item.rationale}</p>
-              <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-slate-300">
+              <p className="mb-3 text-sm text-ink-2">{item.rationale}</p>
+              <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-ink-2">
                 {item.policy_yaml}
               </pre>
             </li>

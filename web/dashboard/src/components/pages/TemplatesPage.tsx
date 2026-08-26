@@ -152,7 +152,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="templates-editor-link"
             >
               Editor →
@@ -160,7 +160,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="templates-context-gitops-link"
             >
               GitOps →
@@ -168,7 +168,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="templates-secrets-link"
             >
               Secrets →
@@ -176,7 +176,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="templates-context-drift-link"
             >
               Drift →
@@ -184,7 +184,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('compose'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="templates-context-compose-link"
             >
               Compose →
@@ -192,7 +192,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="templates-context-policy-link"
             >
               Policy →
@@ -200,7 +200,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: search.trim(), tab: 'predictions' })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="templates-context-intelligence-link"
             >
               Intelligence →
@@ -218,7 +218,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
               pathWithQuery(viewToPath('workloads'), search.trim() ? { validate: '1', workload: search.trim() } : { validate: '1' }),
             )
           }
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="templates-policy-link"
         >
           Policy validate →
@@ -226,7 +226,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
         <button
           type="button"
           onClick={() => navigate(pathWithQuery(viewToPath('gitops'), search.trim() ? { workload: search.trim() } : {}))}
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="templates-gitops-link"
         >
           GitOps sync →
@@ -234,7 +234,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
         <button
           type="button"
           onClick={() => navigate(pathWithQuery(viewToPath('compose'), search.trim() ? { workload: search.trim() } : {}))}
-          className="text-xs text-aether hover:underline"
+          className="text-xs text-brand hover:underline"
           data-testid="templates-compose-link"
         >
           Compose import →
@@ -265,10 +265,10 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
               onClick={() => void handleGenerate(t.name)}
               body={
                 <>
-                  <p className="line-clamp-2 min-h-[2.5rem] text-[12px] leading-relaxed text-slate-400">{t.description}</p>
+                  <p className="line-clamp-2 min-h-[2.5rem] text-[12px] leading-relaxed text-ink-2">{t.description}</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">CPU {t.default_cpu}</span>
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-slate-300">Mem {t.default_memory}</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">CPU {t.default_cpu}</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">Mem {t.default_memory}</span>
                   </div>
                 </>
               }
@@ -278,7 +278,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
                     type="button"
                     onClick={() => void handleGenerate(t.name)}
                     disabled={generateLoading === t.name}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-aether/15 hover:text-aether disabled:opacity-50"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-brand/15 hover:text-brand disabled:opacity-50"
                   >
                     <Wand2 size={13} />
                     {generateLoading === t.name ? '…' : 'Generate'}
@@ -286,7 +286,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
                   <button
                     type="button"
                     onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', template: t.name }))}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                   >
                     <FileCode2 size={13} />
                     Use
@@ -294,7 +294,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
                   <button
                     type="button"
                     onClick={() => setConfigureTemplate(t.name)}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
                   >
                     <Settings2 size={13} />
                     Config
@@ -321,8 +321,8 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4 glass-panel-card px-4 py-3">
             <div>
-              <div className="text-sm font-medium text-slate-100">Generated workload spec</div>
-              <div className="text-xs text-slate-500">Preview and deploy the generated template.</div>
+              <div className="text-sm font-medium text-ink">Generated workload spec</div>
+              <div className="text-xs text-ink-3">Preview and deploy the generated template.</div>
             </div>
             <button
               type="button"
@@ -342,7 +342,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
                   const name = workloadNameFromSpec(generatedSpec);
                   navigate(pathWithQuery(viewToPath('editor'), name ? { workload: name } : {}));
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border glass-divider px-4 py-2 text-sm text-slate-200 glass-inset-hover shrink-0"
+                className="inline-flex items-center gap-2 rounded-lg border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover shrink-0"
               >
                 <FileCode2 size={14} />
                 Open in editor
@@ -350,14 +350,14 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
             ) : null}
           </div>
           <div className="glass-panel-card p-4">
-            <h4 className="text-xs uppercase tracking-wider text-slate-500 mb-2">Preview</h4>
+            <h4 className="text-xs uppercase tracking-wider text-ink-3 mb-2">Preview</h4>
             <pre className="text-xs text-emerald-300 font-mono whitespace-pre-wrap overflow-auto max-h-48">
               {specPreview(generatedSpec)}
             </pre>
           </div>
           <details className="text-sm">
-            <summary className="cursor-pointer text-slate-400 hover:text-slate-300">Full JSON</summary>
-            <pre className="mt-2 text-xs text-slate-400 font-mono overflow-auto max-h-48">{generateResult ?? ''}</pre>
+            <summary className="cursor-pointer text-ink-2 hover:text-ink-2">Full JSON</summary>
+            <pre className="mt-2 text-xs text-ink-2 font-mono overflow-auto max-h-48">{generateResult ?? ''}</pre>
           </details>
         </div>
       </Modal>
@@ -390,7 +390,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
           ))}
         </div>
         <div className="mt-4 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfigureTemplate(null)} className="px-4 py-2 rounded-lg text-sm text-slate-300 glass-inset-hover">
+          <button type="button" onClick={() => setConfigureTemplate(null)} className="px-4 py-2 rounded-lg text-sm text-ink-2 glass-inset-hover">
             Cancel
           </button>
           <button

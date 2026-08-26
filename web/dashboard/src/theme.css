@@ -24,6 +24,7 @@
   --ink-2: #4a4a4e;
   --ink-3: #86868b;
   --brand: #d35400;
+  --brand-rgb: 211 84 0;
   --brand-ink: #ffffff;
   --brand-wash: rgba(211, 84, 0, 0.1);
   --red: #d70015;
@@ -52,6 +53,7 @@
     --ink-2: #c7c7cc;
     --ink-3: #8e8e93;
     --brand: #ff9f0a;
+    --brand-rgb: 255 159 10;
     --brand-ink: #1c1c1e;
     --brand-wash: rgba(255, 159, 10, 0.14);
     --red: #ff453a;
@@ -78,6 +80,7 @@
   --ink-2: #c7c7cc;
   --ink-3: #8e8e93;
   --brand: #ff9f0a;
+  --brand-rgb: 255 159 10;
   --brand-ink: #1c1c1e;
   --brand-wash: rgba(255, 159, 10, 0.14);
   --red: #ff453a;

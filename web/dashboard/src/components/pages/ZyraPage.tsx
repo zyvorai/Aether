@@ -173,7 +173,7 @@ export default function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: workloadFocus, tab: 'predictions' })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="zyra-context-intelligence-link"
             >
               Intelligence →
@@ -181,7 +181,7 @@ export default function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('fabric'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="zyra-context-fabric-link"
             >
               Fabric →
@@ -189,7 +189,7 @@ export default function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="zyra-editor-link"
             >
               Editor →
@@ -197,7 +197,7 @@ export default function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="zyra-context-openapi-link"
             >
               OpenAPI →
@@ -205,7 +205,7 @@ export default function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="zyra-context-policy-link"
             >
               Policy →
@@ -213,7 +213,7 @@ export default function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-              className="text-aether hover:underline"
+              className="text-brand hover:underline"
               data-testid="zyra-context-secrets-link"
             >
               Secrets →
@@ -228,7 +228,7 @@ export default function ZyraPage() {
             <Bot className="h-4 w-4 text-aether-ai" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-white">AI Ops Zyra</h2>
+            <h2 className="text-sm font-semibold text-ink">AI Ops Zyra</h2>
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
               Infrastructure agent
             </p>
@@ -242,17 +242,17 @@ export default function ZyraPage() {
                 setSessionId(null);
                 setPending([]);
               }}
-              className="rounded-lg border glass-divider px-2 py-1 text-xs text-slate-400 transition hover:border-aether/30 hover:text-slate-200"
+              className="rounded-lg border glass-divider px-2 py-1 text-xs text-ink-2 transition hover:border-brand/30 hover:text-ink"
             >
               Clear chat
             </button>
           )}
           {messages.length === 0 && (
-            <span className="text-xs text-slate-500">Natural language control plane</span>
+            <span className="text-xs text-ink-3">Natural language control plane</span>
           )}
           <Link
             to={viewToPath('intelligence')}
-            className="text-xs text-aether hover:underline"
+            className="text-xs text-brand hover:underline"
             data-testid="zyra-intelligence-link"
           >
             Intelligence reports →
@@ -263,7 +263,7 @@ export default function ZyraPage() {
                 ? pathWithQuery(viewToPath('health'), { workload: workloadFocus })
                 : viewToPath('health')
             }
-            className="text-xs text-aether hover:underline ml-3"
+            className="text-xs text-brand hover:underline ml-3"
             data-testid="zyra-health-link"
           >
             Health monitor →
@@ -272,21 +272,21 @@ export default function ZyraPage() {
             <>
               <Link
                 to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
-                className="text-xs text-aether hover:underline ml-3"
+                className="text-xs text-brand hover:underline ml-3"
                 data-testid="zyra-trust-link"
               >
                 Trust tab →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('alerts'), { workload: workloadFocus })}
-                className="text-xs text-aether hover:underline ml-3"
+                className="text-xs text-brand hover:underline ml-3"
                 data-testid="zyra-alerts-link"
               >
                 Alert rules →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('events'), { workload: workloadFocus })}
-                className="text-xs text-aether hover:underline ml-3"
+                className="text-xs text-brand hover:underline ml-3"
                 data-testid="zyra-events-link"
               >
                 Events →
@@ -299,7 +299,7 @@ export default function ZyraPage() {
           {messages.length === 0 && (
             <div className="rounded-2xl border border-aether-ai/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-sm">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-aether-ai/80" aria-hidden />
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-ink-2">
                 Ask about health, drift, costs, migrations, or cluster state.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2" data-testid="copilot-suggestions">
@@ -328,7 +328,7 @@ export default function ZyraPage() {
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                 msg.role === 'user'
                   ? 'ml-auto border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
-                  : 'border glass-divider glass-inset-surface text-slate-200'
+                  : 'border glass-divider glass-inset-surface text-ink'
               }`}
             >
               {msg.content}
@@ -351,7 +351,7 @@ export default function ZyraPage() {
                 ) : null}
               </div>
               {pending.map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs text-slate-300">
+                <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs text-ink-2">
                   <span>{a.description}</span>
                   <button
                     type="button"
@@ -366,7 +366,7 @@ export default function ZyraPage() {
           )}
 
           {loading && (
-            <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="flex items-center gap-2 text-xs text-ink-3">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-aether-ai" />
               Zyra is thinking…
             </div>
@@ -390,7 +390,7 @@ export default function ZyraPage() {
             placeholder="Ask Aether anything…"
             aria-label="Message Zyra"
             data-testid="copilot-input"
-            className="glass-input min-w-0 flex-1 text-slate-100 outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
+            className="glass-input min-w-0 flex-1 text-ink outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
           <button

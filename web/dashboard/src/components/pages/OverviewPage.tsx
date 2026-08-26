@@ -166,7 +166,7 @@ function OverviewFleetSnapshot({
 
         <div className="glass-metric-card glass-metric-accent-purple">
           <div className="glass-metric-shine" aria-hidden />
-          <div className="relative mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div className="relative mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-3">
             <Boxes className="h-3.5 w-3.5" />
             Control Surface
           </div>
@@ -180,10 +180,10 @@ function OverviewFleetSnapshot({
                 key={item.label}
                 className="rounded-xl border glass-divider glass-panel-card p-3"
               >
-                <div className={`text-lg font-semibold ${controlEmpty ? 'text-slate-500' : 'text-white'}`}>
+                <div className={`text-lg font-semibold ${controlEmpty ? 'text-ink-3' : 'text-ink'}`}>
                   {item.value}
                 </div>
-                <div className="text-[11px] text-slate-500">{item.label}</div>
+                <div className="text-[11px] text-ink-3">{item.label}</div>
               </div>
             ))}
           </div>
@@ -402,7 +402,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
             <button
               type="button"
               onClick={() => void load()}
-              className="inline-flex items-center gap-2 rounded-xl bg-aether px-4 py-2 text-sm font-medium text-white hover:bg-aether/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
               Retry
@@ -664,7 +664,7 @@ function LegacyOverviewDetails({
           <h2 className="section-title">Platform inventory &amp; events</h2>
           <p className="section-subtitle">Legacy metrics, clusters, health, and quick links — drill down from Command Center</p>
         </div>
-        {open ? <ChevronDown className="h-5 w-5 text-slate-500" /> : <ChevronRight className="h-5 w-5 text-slate-500" />}
+        {open ? <ChevronDown className="h-5 w-5 text-ink-3" /> : <ChevronRight className="h-5 w-5 text-ink-3" />}
       </button>
 
       {open ? (
@@ -693,7 +693,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-platform-link"
           >
             Platform →
@@ -701,7 +701,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-clusters-link"
           >
             Clusters →
@@ -709,7 +709,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-rbac-link"
           >
             RBAC →
@@ -717,7 +717,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Summarize ${focusedWorkload}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-copilot-link"
           >
             Copilot →
@@ -725,7 +725,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-openapi-link"
           >
             OpenAPI →
@@ -733,7 +733,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: focusedWorkload, tab: 'predictions' })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-intelligence-link"
           >
             Intelligence →
@@ -741,7 +741,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-policy-link"
           >
             Policy →
@@ -749,7 +749,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-secrets-link"
           >
             Secrets →
@@ -757,7 +757,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-editor-link"
           >
             Editor →
@@ -765,7 +765,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-deps-link"
           >
             Dependencies →
@@ -773,7 +773,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-compose-link"
           >
             Compose →
@@ -781,7 +781,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: focusedWorkload })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="overview-fleet-link"
           >
             Fleet →
@@ -800,7 +800,7 @@ function LegacyOverviewDetails({
           <button
             type="button"
             onClick={() => onNavigate('platform')}
-            className="mt-3 text-sm font-medium text-aether hover:text-blue-300 transition-colors"
+            className="mt-3 text-sm font-medium text-brand hover:text-blue-300 transition-colors"
           >
             Open Platform &amp; HA →
           </button>
@@ -908,7 +908,7 @@ function LegacyOverviewDetails({
               title="Cluster data unavailable"
               description="Could not load cluster summary from the API."
               action={
-                <button type="button" onClick={() => void load()} className="text-sm text-aether hover:underline">
+                <button type="button" onClick={() => void load()} className="text-sm text-brand hover:underline">
                   Retry
                 </button>
               }
@@ -942,8 +942,8 @@ function LegacyOverviewDetails({
                   {clusterSummary.clusters.slice(0, 6).map((cluster) => (
                     <div key={cluster.name} className="flex items-center justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
                       <div>
-                        <div className="text-slate-200 font-medium">{cluster.name}</div>
-                        <div className="text-slate-500 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
+                        <div className="text-ink font-medium">{cluster.name}</div>
+                        <div className="text-ink-3 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
                       </div>
                       <div className={cluster.reachable ? 'text-emerald-400' : 'text-amber-400'}>
                         {cluster.reachable ? 'reachable' : 'offline'}
@@ -962,7 +962,7 @@ function LegacyOverviewDetails({
             <button
               type="button"
               onClick={() => goFiltered('events')}
-              className="text-sm text-aether hover:text-aether-light transition-colors"
+              className="text-sm text-brand hover:text-aether-light transition-colors"
             >
               View all
             </button>
@@ -973,7 +973,7 @@ function LegacyOverviewDetails({
               title="Events unavailable"
               description="Could not load events from the API."
               action={
-                <button type="button" onClick={() => void load()} className="text-sm text-aether hover:underline">
+                <button type="button" onClick={() => void load()} className="text-sm text-brand hover:underline">
                   Retry
                 </button>
               }
@@ -990,14 +990,14 @@ function LegacyOverviewDetails({
                 >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-slate-200 truncate">{ev.title}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{ev.message}</div>
-                    <div className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-medium text-ink truncate">{ev.title}</div>
+                    <div className="text-xs text-ink-3 mt-0.5">{ev.message}</div>
+                    <div className="text-xs text-ink-3 mt-1 flex flex-wrap items-center gap-2">
                       {formatTimestamp(ev.timestamp)}
                       {ev.workload ? (
                         <button
                           type="button"
-                          className="text-aether hover:underline"
+                          className="text-brand hover:underline"
                           onClick={() => goFiltered('events', { workload: ev.workload! })}
                         >
                           {ev.workload}
@@ -1017,7 +1017,7 @@ function LegacyOverviewDetails({
             <button
               type="button"
               onClick={() => onNavigate('health')}
-              className="text-sm text-aether hover:text-aether-light transition-colors"
+              className="text-sm text-brand hover:text-aether-light transition-colors"
             >
               View all
             </button>
@@ -1028,7 +1028,7 @@ function LegacyOverviewDetails({
               title="Health data unavailable"
               description="Could not load health summary from the API."
               action={
-                <button type="button" onClick={() => void load()} className="text-sm text-aether hover:underline">
+                <button type="button" onClick={() => void load()} className="text-sm text-brand hover:underline">
                   Retry
                 </button>
               }

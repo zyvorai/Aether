@@ -36,7 +36,7 @@ export default function MultiCloudPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -50,7 +50,7 @@ export default function MultiCloudPanel() {
               text={report.federation_enabled ? 'Federation active' : 'Single cluster'}
               variant={report.federation_enabled ? 'green' : 'muted'}
             />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-3">
               {report.reachable_clusters}/{report.clusters.length} clusters reachable · {report.fleet_workloads} workloads
             </span>
           </div>
@@ -59,11 +59,11 @@ export default function MultiCloudPanel() {
             {report.clusters.slice(0, 6).map((cluster) => (
               <div key={cluster.cluster} className="glass-panel-card p-4">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-white">{cluster.cluster}</span>
+                  <span className="font-medium text-ink">{cluster.cluster}</span>
                   <Badge text={cluster.reachable ? 'up' : 'down'} variant={cluster.reachable ? 'green' : 'red'} />
                 </div>
-                <p className="mt-2 text-xs text-slate-500">{cluster.server ?? 'local context'}</p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+                <p className="mt-2 text-xs text-ink-3">{cluster.server ?? 'local context'}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-ink-2">
                   <span>Score {formatPercent(cluster.score, 0)}</span>
                   {cluster.anomaly_count > 0 ? <span className="text-amber-300">{cluster.anomaly_count} anomalies</span> : null}
                 </div>
@@ -73,14 +73,14 @@ export default function MultiCloudPanel() {
 
           <ul className="space-y-2">
             {report.recommended_actions.map((line) => (
-              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-slate-300">
+              <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
                 {line}
               </li>
             ))}
           </ul>
         </>
       ) : loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-ink-3">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading multi-cloud posture…
         </div>

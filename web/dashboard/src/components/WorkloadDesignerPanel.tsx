@@ -94,7 +94,7 @@ export default function WorkloadDesignerPanel() {
       testId="workload-designer-panel"
       title="AI Workload Designer"
       subtitle="Describe the outcome — Aether generates workload spec, scaling, storage, and monitoring hooks."
-      icon={<Wand2 className="h-5 w-5 text-aether" />}
+      icon={<Wand2 className="h-5 w-5 text-brand" />}
     >
       <textarea
           value={prompt}
@@ -115,7 +115,7 @@ export default function WorkloadDesignerPanel() {
               key={sample}
               type="button"
               onClick={() => setPrompt(sample)}
-              className="rounded-full border glass-divider px-3 py-1 text-xs text-slate-400 hover:border-aether/30 hover:text-slate-200"
+              className="rounded-full border glass-divider px-3 py-1 text-xs text-ink-2 hover:border-brand/30 hover:text-ink"
             >
               {sample}
             </button>
@@ -126,7 +126,7 @@ export default function WorkloadDesignerPanel() {
           type="button"
           disabled={!prompt.trim()}
           onClick={() => setSpec(generateSpec(prompt))}
-          className="mt-4 rounded-xl bg-aether px-4 py-2.5 text-sm font-medium text-white hover:bg-aether/90 disabled:opacity-50"
+          className="mt-4 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-50"
           data-testid="workload-designer-generate"
         >
           Generate spec
@@ -134,7 +134,7 @@ export default function WorkloadDesignerPanel() {
 
         {spec ? (
           <>
-            <pre className="glass-code-block-body mt-6 max-h-96 text-xs text-slate-300">
+            <pre className="glass-code-block-body mt-6 max-h-96 text-xs text-ink-2">
               {spec}
             </pre>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -149,7 +149,7 @@ export default function WorkloadDesignerPanel() {
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('editor'), { workload: name }))}
-                className="rounded-xl border glass-divider px-4 py-2.5 text-sm text-slate-300 hover:border-aether/40"
+                className="rounded-xl border glass-divider px-4 py-2.5 text-sm text-ink-2 hover:border-brand/40"
               >
                 Open in editor
               </button>

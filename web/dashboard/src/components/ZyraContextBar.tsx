@@ -40,18 +40,18 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
 
   return (
     <div
-      className="border-b border-aether/20 bg-aether/[0.06] px-4 py-2 backdrop-blur-md lg:px-6"
+      className="border-b border-brand/20 bg-brand/[0.06] px-4 py-2 backdrop-blur-md lg:px-6"
       data-testid="zyra-context-bar"
     >
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Sparkles className="h-4 w-4 shrink-0 text-aether" aria-hidden />
+          <Sparkles className="h-4 w-4 shrink-0 text-brand" aria-hidden />
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-aether/90">Zyra</p>
-            <p className="truncate text-sm text-slate-200">{insights.summary}</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-brand/90">Zyra</p>
+            <p className="truncate text-sm text-ink">{insights.summary}</p>
           </div>
           {workload.trim() ? (
-            <span className="hidden rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-400 sm:inline">
+            <span className="hidden rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-ink-2 sm:inline">
               Workload: {workload.trim()}
             </span>
           ) : null}
@@ -62,7 +62,7 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
               key={action}
               type="button"
               onClick={() => onAskZyra?.(action)}
-              className="rounded-lg border border-aether/25 bg-aether/10 px-2.5 py-1 text-xs text-aether hover:border-aether/40"
+              className="rounded-lg border border-brand/25 bg-brand/10 px-2.5 py-1 text-xs text-brand hover:border-brand/40"
             >
               {action}
             </button>
@@ -70,7 +70,7 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
           <button
             type="button"
             onClick={() => onAskZyra?.('Summarize fleet health and recommend next actions')}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-xs text-slate-300 hover:border-aether/30 hover:text-white"
+            className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-xs text-ink-2 hover:border-brand/30 hover:text-ink"
             data-testid="zyra-context-explain"
           >
             <Zap className="h-3 w-3" />

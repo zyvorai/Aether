@@ -31,7 +31,7 @@ export default function LabsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fabric'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="labs-context-fabric-link"
           >
             Fabric →
@@ -39,7 +39,7 @@ export default function LabsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="labs-context-compose-link"
           >
             Compose →
@@ -47,7 +47,7 @@ export default function LabsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('helm'), { workload: workload.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="labs-context-helm-link"
           >
             Helm →

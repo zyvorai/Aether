@@ -65,7 +65,7 @@ export default function GlassSection({
             <div className="min-w-0">
               {label ? <p className={`section-label ${labelClass[accent]}`}>{label}</p> : null}
               {title ? (
-                <h2 className={variant === 'hero' ? 'mt-2 text-2xl font-semibold text-white sm:text-3xl' : 'section-title'}>
+                <h2 className={variant === 'hero' ? 'mt-2 text-2xl font-semibold text-ink sm:text-3xl' : 'section-title'}>
                   {title}
                 </h2>
               ) : null}

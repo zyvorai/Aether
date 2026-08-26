@@ -154,23 +154,23 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
       <div className="mb-6 glass-context-banner" data-testid="intelligence-hub-context">
         Intelligence
         {' · '}
-        <Link to={viewToPath('health')} className="text-aether hover:underline" data-testid="intelligence-context-orchestrator-link">
+        <Link to={viewToPath('health')} className="text-brand hover:underline" data-testid="intelligence-context-orchestrator-link">
           Orchestrator →
         </Link>
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-aether hover:underline" data-testid="intelligence-context-fleet-link">
+        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="intelligence-context-fleet-link">
           Fleet →
         </Link>
         {' · '}
         <Link
           to={`${viewToPath('fleet')}?tab=edge`}
-          className="text-aether hover:underline"
+          className="text-brand hover:underline"
           data-testid="intelligence-context-edge-link"
         >
           Edge →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-aether hover:underline" data-testid="intelligence-context-hosted-link">
+        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="intelligence-context-hosted-link">
           Hosted SaaS →
         </Link>
       </div>
@@ -192,7 +192,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="intelligence-ai-link"
           >
             AI engine →
@@ -200,7 +200,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Risk summary for ${workloadFocus}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="intelligence-copilot-link"
           >
             Copilot →
@@ -208,7 +208,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('cost'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="intelligence-context-cost-link"
           >
             Cost →
@@ -216,7 +216,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="intelligence-context-platform-link"
           >
             Platform →
@@ -224,7 +224,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="intelligence-context-gitops-link"
           >
             GitOps →
@@ -232,7 +232,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="intelligence-context-drift-link"
           >
             Drift →
@@ -301,14 +301,14 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {predictions ? (
             <>
               <div className="glass-panel-card flex flex-wrap items-center gap-4">
-                <Brain className="text-aether shrink-0" size={22} />
+                <Brain className="text-brand shrink-0" size={22} />
                 <div>
-                  <p className="text-sm text-slate-400">Fleet risk score</p>
-                  <p className="text-2xl font-semibold text-slate-100">
+                  <p className="text-sm text-ink-2">Fleet risk score</p>
+                  <p className="text-2xl font-semibold text-ink">
                     {formatPercent(predictions.fleet_risk_score, 1)}
                   </p>
                 </div>
-                <p className="text-xs text-slate-500 ml-auto">Generated {formatTimestamp(predictions.generated_at)}</p>
+                <p className="text-xs text-ink-3 ml-auto">Generated {formatTimestamp(predictions.generated_at)}</p>
               </div>
               {predictions.predictions.length === 0 ? (
                 <EmptyState icon={<Inbox size={40} />} title="No predictions" description="No workloads in state store yet." />
@@ -319,7 +319,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                       key={row.workload}
                       className={`glass-panel-card ${
                         workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
-                          ? 'ring-1 ring-aether/40 border-aether/30'
+                          ? 'ring-1 ring-aether/40 border-brand/30'
                           : ''
                       }`}
                       data-testid={
@@ -331,29 +331,29 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
-                          className="font-medium text-slate-100 hover:text-aether"
+                          className="font-medium text-ink hover:text-brand"
                         >
                           {row.workload}
                         </Link>
                         <Link
                           to={pathWithQuery(viewToPath('events'), { workload: row.workload })}
-                          className="text-xs text-slate-500 hover:text-aether"
+                          className="text-xs text-ink-3 hover:text-brand"
                         >
                           Events →
                         </Link>
                         <Badge text={row.risk_level} variant={riskVariant(row.risk_level)} />
                       </div>
-                      <p className="text-xs text-slate-500 mb-3">Risk score {formatPercent(row.risk_score, 1)}</p>
+                      <p className="text-xs text-ink-3 mb-3">Risk score {formatPercent(row.risk_score, 1)}</p>
                       {row.predictions.length > 0 && (
                         <ul className="space-y-2 text-sm">
                           {row.predictions.map((sig, i) => (
                             <li key={`${sig.kind}-${i}`} className="rounded-lg border glass-divider px-3 py-2">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-slate-200">{sig.kind}</span>
-                                <span className="text-xs text-slate-500">{sig.horizon}</span>
+                                <span className="text-ink">{sig.kind}</span>
+                                <span className="text-xs text-ink-3">{sig.horizon}</span>
                               </div>
-                              <p className="text-xs text-slate-400 mt-1">{sig.reason}</p>
-                              <p className="text-xs text-aether mt-1">{formatPercent(sig.probability, 0)} probability</p>
+                              <p className="text-xs text-ink-2 mt-1">{sig.reason}</p>
+                              <p className="text-xs text-brand mt-1">{formatPercent(sig.probability, 0)} probability</p>
                             </li>
                           ))}
                         </ul>
@@ -364,7 +364,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
               )}
             </>
           ) : (
-            <p className="text-sm text-slate-500">Predictions unavailable.</p>
+            <p className="text-sm text-ink-3">Predictions unavailable.</p>
           )}
         </div>
       )}
@@ -377,7 +377,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                 key={`${t.workload}-${t.detected_at}`}
                 className={`glass-panel-card ${
                   workloadFocus && workloadMatchesFocus(t.workload, workloadFocus)
-                    ? 'ring-1 ring-aether/40 border-aether/30'
+                    ? 'ring-1 ring-aether/40 border-brand/30'
                     : ''
                 }`}
                 data-testid={
@@ -389,7 +389,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: t.workload })}
-                    className="font-medium text-slate-100 hover:text-aether"
+                    className="font-medium text-ink hover:text-brand"
                   >
                     {t.workload}
                   </Link>
@@ -401,14 +401,14 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                         ? pathWithQuery(viewToPath('alerts'), { workload: t.workload })
                         : viewToPath('alerts')
                     }
-                    className="text-xs text-aether hover:underline ml-auto"
+                    className="text-xs text-brand hover:underline ml-auto"
                     data-testid="intelligence-alerts-link"
                   >
                     Alerts →
                   </Link>
                 </div>
-                <p className="text-sm text-slate-300">{t.reason}</p>
-                <p className="text-xs text-slate-500 mt-2">Score {t.score.toFixed(2)} · {formatTimestamp(t.detected_at)}</p>
+                <p className="text-sm text-ink-2">{t.reason}</p>
+                <p className="text-xs text-ink-3 mt-2">Score {t.score.toFixed(2)} · {formatTimestamp(t.detected_at)}</p>
               </div>
             ))
           ) : (
@@ -422,7 +422,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {cost ? (
             <>
               <div className="glass-panel-card">
-                <p className="text-sm text-slate-400">Total potential savings</p>
+                <p className="text-sm text-ink-2">Total potential savings</p>
                 <p className="text-2xl font-semibold text-emerald-400">
                   {cost.total_potential_savings_pct.toFixed(1)}%
                 </p>
@@ -435,7 +435,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                     key={rec.workload}
                     className={`glass-panel-card ${
                       workloadFocus && workloadMatchesFocus(rec.workload, workloadFocus)
-                        ? 'ring-1 ring-aether/40 border-aether/30'
+                        ? 'ring-1 ring-aether/40 border-brand/30'
                         : ''
                     }`}
                     data-testid={
@@ -447,24 +447,24 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Link
                         to={pathWithQuery(viewToPath('workloads'), { workload: rec.workload })}
-                        className="font-medium text-slate-100 hover:text-aether"
+                        className="font-medium text-ink hover:text-brand"
                       >
                         {rec.workload}
                       </Link>
                       <Badge text={`${rec.savings_pct.toFixed(0)}% savings`} variant="green" />
                       <Badge text={rec.risk} variant={riskVariant(rec.risk)} />
                     </div>
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-ink-2">
                       {rec.current_runtime} → {rec.suggested_runtime}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">{rec.reason}</p>
+                    <p className="text-xs text-ink-2 mt-1">{rec.reason}</p>
                     <p className="text-xs text-emerald-400 mt-2">{formatUSD(rec.savings_monthly_usd)}/mo estimated</p>
                   </div>
                 ))
               )}
             </>
           ) : (
-            <p className="text-sm text-slate-500">Cost optimization unavailable.</p>
+            <p className="text-sm text-ink-3">Cost optimization unavailable.</p>
           )}
         </div>
       )}
@@ -478,7 +478,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                   ? pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })
                   : viewToPath('ai')
               }
-              className="text-xs text-aether hover:underline"
+              className="text-xs text-brand hover:underline"
               data-testid="intelligence-tab-ai-link"
             >
               AI engine →
@@ -490,7 +490,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                 key={row.workload}
                 className={`glass-panel-card ${
                   workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
-                    ? 'ring-1 ring-aether/40 border-aether/30'
+                    ? 'ring-1 ring-aether/40 border-brand/30'
                     : ''
                 }`}
                 data-testid={
@@ -502,19 +502,19 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
-                    className="font-medium text-slate-100 hover:text-aether"
+                    className="font-medium text-ink hover:text-brand"
                   >
                     {row.workload}
                   </Link>
                   {row.auto_eligible && <Badge text="auto-eligible" variant="green" />}
                   <Badge text={`${row.improvement_pct.toFixed(0)}% improvement`} variant="blue" />
                 </div>
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-ink-2">
                   {row.current_runtime} → {row.recommended_runtime}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Confidence {formatPercent(row.confidence, 0)}</p>
+                <p className="text-xs text-ink-3 mt-1">Confidence {formatPercent(row.confidence, 0)}</p>
                 {row.reasons.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                  <ul className="mt-2 space-y-1 text-xs text-ink-2">
                     {row.reasons.map((r) => (
                       <li key={r}>• {r}</li>
                     ))}
@@ -537,14 +537,14 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                   ? pathWithQuery(viewToPath('scheduler'), { workload: workloadFocus })
                   : viewToPath('scheduler')
               }
-              className="text-xs text-aether hover:underline"
+              className="text-xs text-brand hover:underline"
               data-testid="intelligence-tab-scheduler-link"
             >
               Placement scheduler →
             </Link>
           </div>
           <div className="glass-panel-card space-y-3">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-ink-2">
               POST workload YAML to rank clusters and runtimes for global placement.
             </p>
             <textarea
@@ -569,25 +569,25 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
               {placeResults.map((rec, i) => (
                 <div key={`${rec.cluster ?? 'local'}-${rec.runtime}-${i}`} className="glass-panel-card">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="font-medium text-slate-100">{rec.cluster ?? 'default cluster'}</span>
+                    <span className="font-medium text-ink">{rec.cluster ?? 'default cluster'}</span>
                     <Badge text={rec.runtime} variant="blue" />
                     <Badge text={`score ${rec.score.toFixed(2)}`} variant={i === 0 ? 'green' : 'muted'} />
                     {rec.cluster && (
                       <Link
                         to={pathWithQuery(viewToPath('fleet'), { cluster: rec.cluster })}
-                        className="text-xs text-aether hover:underline ml-auto"
+                        className="text-xs text-brand hover:underline ml-auto"
                       >
                         Fleet →
                       </Link>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-400 mb-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-ink-2 mb-2">
                     <span>Latency {rec.latency_score.toFixed(2)}</span>
                     <span>Cost {rec.cost_score.toFixed(2)}</span>
                     <span>GPU {rec.gpu_available ? 'available' : 'none'}</span>
                   </div>
                   {rec.reasons.length > 0 && (
-                    <ul className="text-xs text-slate-500 space-y-1">
+                    <ul className="text-xs text-ink-3 space-y-1">
                       {rec.reasons.map((r) => (
                         <li key={r}>• {r}</li>
                       ))}

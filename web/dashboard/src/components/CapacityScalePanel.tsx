@@ -65,14 +65,14 @@ export default function CapacityScalePanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
         </div>}
     >{!report?.suggestions.length ? (
-        <p className="text-sm text-slate-500">No scaling suggestions — capacity headroom looks adequate.</p>
+        <p className="text-sm text-ink-3">No scaling suggestions — capacity headroom looks adequate.</p>
       ) : (
         <ul className="space-y-2">
           {report.suggestions.slice(0, 6).map((s) => (
@@ -81,14 +81,14 @@ export default function CapacityScalePanel() {
               className="rounded-lg border glass-divider px-3 py-2 text-sm"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-white">{s.workload}</span>
+                <span className="font-medium text-ink">{s.workload}</span>
                 <Badge text={s.kind.toUpperCase()} variant="muted" />
                 {s.auto_safe ? <Badge text="auto-safe" variant="green" /> : null}
               </div>
-              <p className="mt-1 text-slate-400">
+              <p className="mt-1 text-ink-2">
                 {s.resource}: {s.current} → {s.suggested}
               </p>
-              <p className="mt-1 text-xs text-slate-500">{s.reason}</p>
+              <p className="mt-1 text-xs text-ink-3">{s.reason}</p>
             </li>
           ))}
         </ul>

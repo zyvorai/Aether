@@ -32,8 +32,8 @@ function toast(message: string, type: 'success' | 'error') {
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2 glass-divider-b last:border-0">
-      <span className="text-xs font-medium uppercase tracking-wider text-slate-500 shrink-0">{label}</span>
-      <span className="text-sm text-slate-200 text-right">{value}</span>
+      <span className="text-xs font-medium uppercase tracking-wider text-ink-3 shrink-0">{label}</span>
+      <span className="text-sm text-ink text-right">{value}</span>
     </div>
   );
 }
@@ -71,7 +71,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
   const isRecommended = score.runtime === recommended;
 
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-aether/40 bg-aether/5' : 'glass-divider glass-panel-card'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-brand/40 bg-brand/5' : 'glass-divider glass-panel-card'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended && <Badge text="Recommended" variant="accent" />}
@@ -84,7 +84,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
         <BarChart label="Availability" percent={score.availability_score * 100} />
       </div>
       {score.reasons.length > 0 && (
-        <ul className="mt-3 space-y-1 text-xs text-slate-400">
+        <ul className="mt-3 space-y-1 text-xs text-ink-2">
           {score.reasons.map((r, i) => (
             <li key={i} className="flex gap-2">
               <span className="text-emerald-400 shrink-0">+</span>
@@ -124,7 +124,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
       </dl>
       {advice.forecast && (
         <div className="rounded-xl border glass-divider glass-panel-card p-3">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Forecast</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3 mb-2">Forecast</h4>
           <dl className="space-y-0">
             <DetailRow label="Trend" value={advice.forecast.trend} />
             <DetailRow label="Predicted" value={advice.forecast.predicted_value.toFixed(2)} />
@@ -138,7 +138,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
       )}
       {advice.cost_impact && (
         <div className="rounded-xl border glass-divider glass-panel-card p-3">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Cost impact</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3 mb-2">Cost impact</h4>
           <dl className="space-y-0">
             <DetailRow label="Current hourly" value={formatUSD(advice.cost_impact.current_hourly)} />
             <DetailRow label="Projected hourly" value={formatUSD(advice.cost_impact.projected_hourly)} />
@@ -200,20 +200,20 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
       </dl>
       {data.recommendations && data.recommendations.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Recommendations</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3">Recommendations</h4>
           {data.recommendations.map((rec, i) => (
             <div key={i} className="rounded-lg border glass-divider glass-panel-card p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Badge text={rec.priority} variant={rec.priority === 'Critical' ? 'red' : 'blue'} />
-                <span className="font-medium text-slate-200">{rec.title}</span>
+                <span className="font-medium text-ink">{rec.title}</span>
               </div>
-              <p className="text-slate-400 text-xs">{rec.description}</p>
+              <p className="text-ink-2 text-xs">{rec.description}</p>
               <p className="text-emerald-400 text-xs mt-1">Est. savings: {rec.estimated_savings_pct.toFixed(0)}%</p>
             </div>
           ))}
         </div>
       )}
-      <Link to={scoringHref} className="inline-flex text-xs text-aether hover:underline">
+      <Link to={scoringHref} className="inline-flex text-xs text-brand hover:underline">
         Open scoring for {data.name} →
       </Link>
     </div>
@@ -237,7 +237,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
       </dl>
       {data.patterns && data.patterns.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Top patterns</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3">Top patterns</h4>
           {data.patterns.slice(0, 5).map((p, i) => (
             <DetailRow key={i} label={`${p.severity} (${p.count})`} value={<span className="font-mono text-xs">{p.pattern}</span>} />
           ))}
@@ -245,7 +245,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
       )}
       {data.anomalies && data.anomalies.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500">Anomalies</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3">Anomalies</h4>
           {data.anomalies.map((a, i) => (
             <div key={i} className="text-sm text-amber-400/90">{a.description}</div>
           ))}
@@ -253,7 +253,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
       )}
       <Link
         to={pathWithQuery(viewToPath('workloads'), { workload: workloadName, tab: 'logs' })}
-        className="inline-flex text-xs text-aether hover:underline"
+        className="inline-flex text-xs text-brand hover:underline"
       >
         View logs for {workloadName} →
       </Link>
@@ -430,7 +430,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'predictions' })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="ai-context-intelligence-link"
           >
             Intelligence →
@@ -438,7 +438,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadQuery.trim(), q: `Analyze ${workloadQuery.trim()}` })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="ai-context-copilot-link"
           >
             Copilot →
@@ -446,7 +446,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="ai-context-editor-link"
           >
             Editor →
@@ -454,7 +454,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="ai-context-policy-link"
           >
             Policy →
@@ -462,7 +462,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
-            className="text-aether hover:underline"
+            className="text-brand hover:underline"
             data-testid="ai-context-secrets-link"
           >
             Secrets →
@@ -477,20 +477,20 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass-panel-card py-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">Workloads</div>
-            <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length}</div>
+            <div className="text-xs text-ink-3 uppercase tracking-wider">Workloads</div>
+            <div className="text-2xl font-semibold text-ink mt-1">{workloads.length}</div>
           </div>
           <div className="glass-panel-card py-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">Running</div>
-            <div className="text-2xl font-semibold text-slate-100 mt-1">{runningCount}</div>
+            <div className="text-xs text-ink-3 uppercase tracking-wider">Running</div>
+            <div className="text-2xl font-semibold text-ink mt-1">{runningCount}</div>
           </div>
           <div className="glass-panel-card py-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">Stopped / other</div>
-            <div className="text-2xl font-semibold text-slate-100 mt-1">{workloads.length - runningCount}</div>
+            <div className="text-xs text-ink-3 uppercase tracking-wider">Stopped / other</div>
+            <div className="text-2xl font-semibold text-ink mt-1">{workloads.length - runningCount}</div>
           </div>
           <div className="glass-panel-card py-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">Last recommendation</div>
-            <div className="text-2xl font-semibold text-slate-100 mt-1 truncate">
+            <div className="text-xs text-ink-3 uppercase tracking-wider">Last recommendation</div>
+            <div className="text-2xl font-semibold text-ink mt-1 truncate">
               {recommendation?.recommended ?? '—'}
             </div>
           </div>
@@ -528,15 +528,15 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-min">
           <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-aether/10 rounded-xl">
-                <Zap className="text-aether" size={20} />
+              <div className="p-2 bg-brand/10 rounded-xl">
+                <Zap className="text-brand" size={20} />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-slate-100">AI Recommendation</h3>
-                <p className="text-xs text-slate-500">Get intelligent runtime suggestions</p>
+                <h3 className="font-semibold text-lg text-ink">AI Recommendation</h3>
+                <p className="text-xs text-ink-3">Get intelligent runtime suggestions</p>
                 <Link
                   to={viewToPath('intelligence')}
-                  className="text-xs text-aether hover:underline"
+                  className="text-xs text-brand hover:underline"
                   data-testid="ai-intelligence-link"
                 >
                   Intelligence reports →
@@ -562,8 +562,8 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <TrendingUp className="text-blue-400" size={20} />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-slate-100">Scaling Advice</h3>
-                <p className="text-xs text-slate-500">Horizontal scaling recommendations</p>
+                <h3 className="font-semibold text-lg text-ink">Scaling Advice</h3>
+                <p className="text-xs text-ink-3">Horizontal scaling recommendations</p>
               </div>
             </div>
             <button
@@ -591,7 +591,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <Target className="text-purple-400" size={20} />
-              <h3 className="font-semibold text-slate-100">Intent Optimizer</h3>
+              <h3 className="font-semibold text-ink">Intent Optimizer</h3>
             </div>
             <WorkloadSelect
               workloads={workloads}
@@ -618,7 +618,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <Cpu className="text-emerald-400" size={20} />
-              <h3 className="font-semibold text-slate-100">Resource Right-Sizer</h3>
+              <h3 className="font-semibold text-ink">Resource Right-Sizer</h3>
             </div>
             <WorkloadSelect
               workloads={workloads}
@@ -645,7 +645,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="glass-panel-card">
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="text-orange-400" size={20} />
-              <h3 className="font-semibold text-slate-100">Cost vs Performance</h3>
+              <h3 className="font-semibold text-ink">Cost vs Performance</h3>
             </div>
             <WorkloadSelect
               workloads={workloads}
@@ -670,7 +670,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
                 {selectedWorkload && (
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: selectedWorkload, tab: 'scoring' })}
-                    className="mt-3 inline-flex text-xs text-aether hover:underline"
+                    className="mt-3 inline-flex text-xs text-brand hover:underline"
                   >
                     Open scoring for {selectedWorkload} →
                   </Link>
@@ -687,7 +687,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass-panel-card" data-testid="ai-analyze-panel">
           <div className="flex items-center gap-3 mb-6">
             <Cpu className="text-cyan-400" size={22} />
-            <h3 className="font-semibold text-xl text-slate-100">Workload Profiler & Analysis</h3>
+            <h3 className="font-semibold text-xl text-ink">Workload Profiler & Analysis</h3>
           </div>
 
           {workloads.length === 0 ? (
@@ -700,7 +700,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {workloads.slice(0, 12).map((w) => (
                 <div key={w.name} className="flex gap-2 rounded-xl border glass-divider glass-panel-card p-3">
-                  <span className="flex-1 truncate text-sm text-slate-300 self-center font-mono">{w.name}</span>
+                  <span className="flex-1 truncate text-sm text-ink-2 self-center font-mono">{w.name}</span>
                   <button
                     type="button"
                     onClick={() => void handleProfile(w.name)}

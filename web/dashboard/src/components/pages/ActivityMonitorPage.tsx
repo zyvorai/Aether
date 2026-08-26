@@ -149,7 +149,7 @@ export default function ActivityMonitorPage() {
 
       <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-xs text-slate-400">
+          <label className="flex items-center gap-2 text-xs text-ink-2">
             <input
               type="checkbox"
               checked={liveEnabled}
@@ -162,14 +162,14 @@ export default function ActivityMonitorPage() {
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide ${
               sseConnected && liveEnabled
                 ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                : 'glass-inset-surface text-slate-500 border glass-divider'
+                : 'glass-inset-surface text-ink-3 border glass-divider'
             }`}
           >
             <Radio size={12} className={sseConnected && liveEnabled ? 'animate-pulse' : ''} />
             {liveEnabled ? (sseConnected ? 'SSE live' : 'Polling 30s') : 'Paused'}
           </span>
           {lastUpdated && (
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-ink-3">
               Updated {lastUpdated.toLocaleTimeString()}
             </span>
           )}
@@ -222,15 +222,15 @@ export default function ActivityMonitorPage() {
       <div className="glass-panel-card">
         {tab === 'cpu' && (
           <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">Top CPU pods</h3>
+            <h3 className="text-sm font-semibold text-ink-2 mb-4">Top CPU pods</h3>
             {topCpu.length === 0 ? (
-              <p className="text-sm text-slate-500">No metrics available. Connect a cluster with metrics-server.</p>
+              <p className="text-sm text-ink-3">No metrics available. Connect a cluster with metrics-server.</p>
             ) : (
               <div className="space-y-2">
                 {topCpu.map((p) => (
                   <div key={p.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
-                    <span className="text-sm text-slate-200 font-mono">{p.name}</span>
-                    <span className="text-sm text-aether">{p.cpu}</span>
+                    <span className="text-sm text-ink font-mono">{p.name}</span>
+                    <span className="text-sm text-brand">{p.cpu}</span>
                   </div>
                 ))}
               </div>
@@ -240,15 +240,15 @@ export default function ActivityMonitorPage() {
 
         {tab === 'memory' && (
           <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">Top memory pods</h3>
+            <h3 className="text-sm font-semibold text-ink-2 mb-4">Top memory pods</h3>
             {topMemory.length === 0 ? (
-              <p className="text-sm text-slate-500">No metrics available.</p>
+              <p className="text-sm text-ink-3">No metrics available.</p>
             ) : (
               <div className="space-y-2">
                 {topMemory.map((p) => (
                   <div key={p.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
-                    <span className="text-sm text-slate-200 font-mono">{p.name}</span>
-                    <span className="text-sm text-aether">{p.memory}</span>
+                    <span className="text-sm text-ink font-mono">{p.name}</span>
+                    <span className="text-sm text-brand">{p.memory}</span>
                   </div>
                 ))}
               </div>
@@ -258,7 +258,7 @@ export default function ActivityMonitorPage() {
 
         {tab === 'restarts' && (
           <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">Applications needing attention</h3>
+            <h3 className="text-sm font-semibold text-ink-2 mb-4">Applications needing attention</h3>
             {failingApps.length === 0 ? (
               <p className="text-sm text-emerald-400">No failing applications detected.</p>
             ) : (
@@ -270,7 +270,7 @@ export default function ActivityMonitorPage() {
                     onClick={() => navigate(pathWithQuery(viewToPath('applications'), { workload: app.name }))}
                     className="w-full text-left flex items-center justify-between rounded-lg border border-red-500/20 bg-red-950/15 px-3 py-2 hover:border-red-500/40"
                   >
-                    <span className="text-sm text-slate-200">{app.name}</span>
+                    <span className="text-sm text-ink">{app.name}</span>
                     <span className="text-xs text-red-300">{app.status}</span>
                   </button>
                 ))}
@@ -281,15 +281,15 @@ export default function ActivityMonitorPage() {
 
         {tab === 'errors' && (
           <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">Recent warnings & errors</h3>
+            <h3 className="text-sm font-semibold text-ink-2 mb-4">Recent warnings & errors</h3>
             {warningEvents.length === 0 ? (
-              <p className="text-sm text-slate-500">No recent warning events.</p>
+              <p className="text-sm text-ink-3">No recent warning events.</p>
             ) : (
               <div className="space-y-2">
                 {warningEvents.map((ev, i) => (
                   <div key={`${ev.timestamp}-${i}`} className="rounded-lg border glass-divider px-3 py-2">
-                    <p className="text-sm text-slate-200">{ev.message}</p>
-                    <p className="text-xs text-slate-500 mt-1">{ev.workload ?? 'platform'} · {ev.category}</p>
+                    <p className="text-sm text-ink">{ev.message}</p>
+                    <p className="text-xs text-ink-3 mt-1">{ev.workload ?? 'platform'} · {ev.category}</p>
                   </div>
                 ))}
               </div>
@@ -299,7 +299,7 @@ export default function ActivityMonitorPage() {
       </div>
 
       {clusterSummary && (
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-4 text-xs text-ink-3">
           {clusterSummary.cluster_count} cluster(s) · {clusterSummary.workload_count} discovered workloads
         </p>
       )}

@@ -19,7 +19,7 @@ export default {
         ink: 'var(--ink)',
         'ink-2': 'var(--ink-2)',
         'ink-3': 'var(--ink-3)',
-        brand: 'var(--brand)',
+        brand: 'rgb(var(--brand-rgb) / <alpha-value>)',
         'brand-ink': 'var(--brand-ink)',
         'brand-wash': 'var(--brand-wash)',
         danger: 'var(--red)',

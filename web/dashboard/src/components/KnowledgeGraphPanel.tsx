@@ -84,7 +84,7 @@ export default function KnowledgeGraphPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-slate-300 hover:border-aether/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -104,7 +104,7 @@ export default function KnowledgeGraphPanel() {
                 )
               }
               className={`rounded-full border px-3 py-1 text-xs ${
-                active ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'glass-divider text-slate-400'
+                active ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'glass-divider text-ink-2'
               }`}
             >
               {kind}
@@ -114,7 +114,7 @@ export default function KnowledgeGraphPanel() {
         <button
           type="button"
           onClick={() => setZoom((z) => Math.min(2.5, z + 0.2))}
-          className="rounded-full border glass-divider px-3 py-1 text-xs text-slate-400"
+          className="rounded-full border glass-divider px-3 py-1 text-xs text-ink-2"
           data-testid="graph-zoom-in"
         >
           Zoom +
@@ -122,7 +122,7 @@ export default function KnowledgeGraphPanel() {
         <button
           type="button"
           onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
-          className="rounded-full border glass-divider px-3 py-1 text-xs text-slate-400"
+          className="rounded-full border glass-divider px-3 py-1 text-xs text-ink-2"
         >
           Zoom −
         </button>
@@ -131,15 +131,15 @@ export default function KnowledgeGraphPanel() {
       {graph ? (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-5">
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-white">{graph.stats.workloads}</div><div className="text-xs text-slate-500">Workloads</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-white">{graph.stats.dependencies}</div><div className="text-xs text-slate-500">Dependencies</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-white">{graph.stats.threats}</div><div className="text-xs text-slate-500">Threats</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-white">{graph.stats.drifted}</div><div className="text-xs text-slate-500">Drifted</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-white">{graph.stats.clusters}</div><div className="text-xs text-slate-500">Clusters</div></div>
+            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.workloads}</div><div className="text-xs text-ink-3">Workloads</div></div>
+            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.dependencies}</div><div className="text-xs text-ink-3">Dependencies</div></div>
+            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.threats}</div><div className="text-xs text-ink-3">Threats</div></div>
+            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.drifted}</div><div className="text-xs text-ink-3">Drifted</div></div>
+            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.clusters}</div><div className="text-xs text-ink-3">Clusters</div></div>
           </div>
 
           {graph.nodes.length === 0 ? (
-            <p className="text-sm text-slate-500">Deploy workloads to populate the knowledge graph.</p>
+            <p className="text-sm text-ink-3">Deploy workloads to populate the knowledge graph.</p>
           ) : (
             <div
               className="glass-code-block overflow-auto"
@@ -199,7 +199,7 @@ export default function KnowledgeGraphPanel() {
           )}
         </>
       ) : loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-ink-3">
           <Loader2 className="h-4 w-4 animate-spin" />
           Building knowledge graph…
         </div>
