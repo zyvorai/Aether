@@ -25,9 +25,9 @@ Makefile targets: `make confidential-validate`, `make confidential-fabric-e2e`, 
 ### API-only smoke
 
 ```bash
-export AETHER_API=http://212.8.252.194:30090
+export AETHER_API=http://<ephemeral-ip>:30090
 export AETHER_API_KEY=your-key
-export RAGNAROK_API=http://212.8.252.194:30062   # optional
+export RAGNAROK_API=http://<ephemeral-ip>:30062   # optional
 
 ./scripts/confidential-fabric-e2e.sh
 ```

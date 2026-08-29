@@ -6,16 +6,16 @@ End-to-end validation for the universal runtime control plane API, React dashboa
 
 ```bash
 # Live E2E orchestrator — all live tiers + full Playwright (1–3+ hours)
-./scripts/api-live-test.sh 212.8.252.194 sus
+./scripts/api-live-test.sh <ephemeral-ip> operator
 
 # Quick live preset (~5 min): API walkthrough + smoke only
-AETHER_LIVE_TIERS=quick ./scripts/api-live-test.sh 212.8.252.194 sus
+AETHER_LIVE_TIERS=quick ./scripts/api-live-test.sh <ephemeral-ip> operator
 
 # Makefile remote shortcut
 make api-live-test-remote
 
 # Mixed orchestrator (dry-run + smoke; no full API walkthrough)
-./scripts/test-all-features-remote.sh 212.8.252.194 sus
+./scripts/test-all-features-remote.sh <ephemeral-ip> operator
 
 # Smoke only (~2 min)
 AETHER_TEST_TIERS=smoke ./scripts/test-all-features-remote.sh HOST USER
@@ -135,7 +135,7 @@ Remote Playwright:
 
 ```bash
 export AETHER_E2E_SKIP_SERVER=1
-export AETHER_E2E_BASE_URL=http://212.8.252.194:30090
+export AETHER_E2E_BASE_URL=http://<ephemeral-ip>:30090
 cd web/dashboard && npm run test:e2e
 ```
 

@@ -268,7 +268,7 @@ _Slot Aether into your platform — GPU, storage, GitOps, packaging, plugins, ed
 - **GitOps Reconcile** — Bind a Git repo and branch, sync manually or auto-reconcile on a poller in serve mode. — _Declarative, Git-sourced fleet state with drift correction._
   - **How:** Web UI: GitOps page (bind repo/branch, sync or auto-reconcile while `aether serve` runs).
 - **Helm & Package Deploy** — Export any workload as a Helm chart, or install via Docker images and deb/rpm packages. — _Deliver Aether-managed workloads through your existing pipeline._
-  - **How:** CLI/Web UI: export a workload as a Helm chart; distribute Aether itself via `ghcr.io/ssahani/aether` Docker image or deb/rpm packages.
+  - **How:** CLI/Web UI: export a workload as a Helm chart; distribute Aether itself via `ghcr.io/zyvorai/aether` Docker image or deb/rpm packages.
 - **Plugin System** — Discover and register runtime plugins from manifests to extend Aether beyond the built-in adapters. — _Add new runtimes and behaviors without forking the core._
   - **How:** CLI: `aether plugin discover`, `aether plugin register ./manifest.json`, `aether plugin list`; REST: `POST /api/plugins/discover`.
 - **Webhooks & Notifications** — Route severity-filtered notifications to webhook channels with a retry queue and test/flush controls. — _Wire fleet events into Slack, PagerDuty, or any endpoint._

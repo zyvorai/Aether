@@ -15,7 +15,7 @@ CI builds the embedded dashboard, validates example specs, runs Playwright smoke
 - **Remote reference verify** — `make remote-reference-verify` (SSH k8s live lab + post-deploy)
 - **Post-deploy auth bootstrap** — mock IdP SAML session for verify scripts
 - **Kind port-forward E2E** — `cluster-exec-terminal.spec.ts`
-- **Remote reference deploy** — `212.8.252.194:30090` with 54/54 post-deploy checks
+- **Remote reference deploy** — `<ephemeral-ip>:30090` with 54/54 post-deploy checks
 
 ## Remaining / optional
 
@@ -73,7 +73,7 @@ Remote verify:
 
 ```bash
 make remote-reference-verify
-AETHER_API=http://212.8.252.194:30090 make post-deploy-verify
+AETHER_API=http://<ephemeral-ip>:30090 make post-deploy-verify
 make api-live-test-remote   # full live E2E (API + Playwright; 1–3+ hours)
 AETHER_LIVE_TIERS=quick make api-live-test-remote   # API walkthrough + smoke (~5 min)
 ```
