@@ -3,13 +3,11 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { LayoutGrid } from 'lucide-react';
-import { useClassicNav } from '../hooks/useProView';
 import { isMacOSShell } from '../utils/macosBridge';
 import Badge from './Badge';
 import GlassSection from './GlassSection';
 
 export default function NavPreferencesPanel() {
-  const [classicNav, setClassicNav] = useClassicNav();
   const inShell = isMacOSShell();
 
   return (
@@ -17,35 +15,21 @@ export default function NavPreferencesPanel() {
       accent="blue"
       testId="nav-preferences-panel"
       title="Navigation"
-      subtitle="AI Infrastructure OS is the default experience. Switch to Classic CloudOS when you need legacy table-first flows."
-      icon={<LayoutGrid className="h-5 w-5 text-sky-400" />}
+      subtitle="Aurora-style global navigation with flyouts for Intelligence, Operations, and Resources."
+      icon={<LayoutGrid className="h-5 w-5 text-primary" />}
       actions={
         inShell ? (
-          <Badge text="macOS shell — AI OS locked" variant="green" />
+          <Badge text="macOS shell" variant="green" />
         ) : (
-          <Badge text={classicNav ? 'Classic CloudOS' : 'AI Infrastructure OS'} variant={classicNav ? 'muted' : 'green'} />
+          <Badge text="Global nav" variant="green" />
         )
       }
     >
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border glass-divider px-4 py-3">
-        <input
-          type="checkbox"
-          checked={classicNav}
-          disabled={inShell}
-          onChange={(e) => setClassicNav(e.target.checked)}
-          className="mt-1 accent-aether"
-          aria-label="Use Classic CloudOS navigation"
-          data-testid="classic-nav-toggle"
-        />
-        <span>
-          <span className="block text-sm font-medium text-ink">Classic CloudOS navigation</span>
-          <span className="mt-1 block text-xs text-ink-3">
-            {inShell
-              ? 'The macOS app always uses the 12-section AI OS layout.'
-              : 'Reloads the dashboard with legacy Pro/CloudOS navigation and table-first pages.'}
-          </span>
-        </span>
-      </label>
+      <p className="text-sm text-muted">
+        {inShell
+          ? 'The macOS app uses the same sticky global navigation as the web dashboard.'
+          : 'Use the top bar and flyout menus to reach every dashboard view. Command palette (⌘K) provides quick jumps.'}
+      </p>
     </GlassSection>
   );
 }

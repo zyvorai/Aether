@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -22,6 +23,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageTabs from '../PageTabs';
+import { SectionHeader } from '../layout/SectionHeader';
 import WorkloadSelect from '../WorkloadSelect';
 import type { WorkloadResponse, ScoringResult, ScalingAdvice, RuntimeScore } from '../../types/api';
 
@@ -71,7 +73,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
   const isRecommended = score.runtime === recommended;
 
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-brand/40 bg-brand/5' : 'glass-divider glass-panel-card'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-brand/40 bg-brand/5' : 'glass-divider glass'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended && <Badge text="Recommended" variant="accent" />}
@@ -123,7 +125,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
         <DetailRow label="Reason" value={advice.reason} />
       </dl>
       {advice.forecast && (
-        <div className="rounded-xl border glass-divider glass-panel-card p-3">
+        <div className="rounded-xl border glass-divider glass p-3">
           <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3 mb-2">Forecast</h4>
           <dl className="space-y-0">
             <DetailRow label="Trend" value={advice.forecast.trend} />
@@ -137,7 +139,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
         </div>
       )}
       {advice.cost_impact && (
-        <div className="rounded-xl border glass-divider glass-panel-card p-3">
+        <div className="rounded-xl border glass-divider glass p-3">
           <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3 mb-2">Cost impact</h4>
           <dl className="space-y-0">
             <DetailRow label="Current hourly" value={formatUSD(advice.cost_impact.current_hourly)} />
@@ -202,7 +204,7 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
         <div className="space-y-2">
           <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3">Recommendations</h4>
           {data.recommendations.map((rec, i) => (
-            <div key={i} className="rounded-lg border glass-divider glass-panel-card p-3 text-sm">
+            <div key={i} className="rounded-lg border glass-divider glass p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Badge text={rec.priority} variant={rec.priority === 'Critical' ? 'red' : 'blue'} />
                 <span className="font-medium text-ink">{rec.title}</span>
@@ -271,7 +273,7 @@ const STUDIO_TABS = [
   { id: 'analyze' as const, label: 'Analysis', icon: <Cpu size={16} /> },
 ];
 
-export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
+function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [workloadsLoading, setWorkloadsLoading] = useState(true);
@@ -469,26 +471,26 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           </Link>
         </WorkloadContextBanner>
       ) : null}
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
-        <div className="overview-section-header">
-          <p className="section-label">AI Engine</p>
-          <h2 className="section-title">Runtime intelligence</h2>
-          <p className="section-subtitle">Workloads, recommendations, and optimization signals</p>
-        </div>
+      <section className="glass mb-6 p-6 sm:p-8">
+        <SectionHeader
+          label="AI Engine"
+          title="Runtime intelligence"
+          description="Workloads, recommendations, and optimization signals"
+        />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="glass-panel-card py-4">
+          <div className="glass py-4">
             <div className="text-xs text-ink-3 uppercase tracking-wider">Workloads</div>
             <div className="text-2xl font-semibold text-ink mt-1">{workloads.length}</div>
           </div>
-          <div className="glass-panel-card py-4">
+          <div className="glass py-4">
             <div className="text-xs text-ink-3 uppercase tracking-wider">Running</div>
             <div className="text-2xl font-semibold text-ink mt-1">{runningCount}</div>
           </div>
-          <div className="glass-panel-card py-4">
+          <div className="glass py-4">
             <div className="text-xs text-ink-3 uppercase tracking-wider">Stopped / other</div>
             <div className="text-2xl font-semibold text-ink mt-1">{workloads.length - runningCount}</div>
           </div>
-          <div className="glass-panel-card py-4">
+          <div className="glass py-4">
             <div className="text-xs text-ink-3 uppercase tracking-wider">Last recommendation</div>
             <div className="text-2xl font-semibold text-ink mt-1 truncate">
               {recommendation?.recommended ?? '—'}
@@ -502,31 +504,31 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
       </div>
 
       {activeTab === 'intent' && (
-        <section className="overview-section-shell space-y-8 p-6 sm:p-8 mb-8">
+        <section className="glass space-y-8 p-6 sm:p-8 mb-8">
           <IntentStudioPanel />
           <IntentPlatformPanel />
         </section>
       )}
       {activeTab === 'pipeline' && (
-        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+        <section className="glass p-6 sm:p-8 mb-8">
           <IntentPipelinePanel />
         </section>
       )}
       {activeTab === 'advisor' && (
-        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+        <section className="glass p-6 sm:p-8 mb-8">
           <RuntimeAdvisorPanel />
         </section>
       )}
       {activeTab === 'designer' && (
-        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+        <section className="glass p-6 sm:p-8 mb-8">
           <WorkloadDesignerPanel />
         </section>
       )}
 
       {activeTab === 'recommend' && (
-        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+        <section className="glass p-6 sm:p-8 mb-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-min">
-          <div className="glass-panel-card">
+          <div className="glass">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-brand/10 rounded-xl">
                 <Zap className="text-brand" size={20} />
@@ -556,7 +558,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
             )}
           </div>
 
-          <div className="glass-panel-card">
+          <div className="glass">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-blue-500/10 rounded-xl">
                 <TrendingUp className="text-blue-400" size={20} />
@@ -586,9 +588,9 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
       )}
 
       {activeTab === 'optimize' && (
-        <section className="overview-section-shell p-6 sm:p-8 mb-8">
+        <section className="glass p-6 sm:p-8 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="ai-optimize-panel">
-          <div className="glass-panel-card">
+          <div className="glass">
             <div className="flex items-center gap-3 mb-4">
               <Target className="text-purple-400" size={20} />
               <h3 className="font-semibold text-ink">Intent Optimizer</h3>
@@ -615,7 +617,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
             )}
           </div>
 
-          <div className="glass-panel-card">
+          <div className="glass">
             <div className="flex items-center gap-3 mb-4">
               <Cpu className="text-emerald-400" size={20} />
               <h3 className="font-semibold text-ink">Resource Right-Sizer</h3>
@@ -642,9 +644,9 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
             )}
           </div>
 
-          <div className="glass-panel-card">
+          <div className="glass">
             <div className="flex items-center gap-3 mb-4">
-              <TrendingUp className="text-orange-400" size={20} />
+              <TrendingUp className="text-primary" size={20} />
               <h3 className="font-semibold text-ink">Cost vs Performance</h3>
             </div>
             <WorkloadSelect
@@ -657,7 +659,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="button"
               onClick={() => void handleTradeoff()}
               disabled={tradeoffLoading || !selectedWorkload}
-              className="w-full py-3 bg-orange-600 hover:bg-orange-500 rounded-xl font-medium disabled:opacity-60 text-white"
+              className="btn-primary w-full rounded-xl py-3 font-medium disabled:opacity-60"
             >
               {tradeoffLoading ? 'Comparing…' : 'Compare Tradeoff'}
             </button>
@@ -683,8 +685,8 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
       )}
 
       {activeTab === 'analyze' && (
-        <section className="overview-section-shell p-6 sm:p-8 mb-8">
-        <div className="glass-panel-card" data-testid="ai-analyze-panel">
+        <section className="glass p-6 sm:p-8 mb-8">
+        <div className="glass" data-testid="ai-analyze-panel">
           <div className="flex items-center gap-3 mb-6">
             <Cpu className="text-cyan-400" size={22} />
             <h3 className="font-semibold text-xl text-ink">Workload Profiler & Analysis</h3>
@@ -699,7 +701,7 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {workloads.slice(0, 12).map((w) => (
-                <div key={w.name} className="flex gap-2 rounded-xl border glass-divider glass-panel-card p-3">
+                <div key={w.name} className="flex gap-2 rounded-xl border glass-divider glass p-3">
                   <span className="flex-1 truncate text-sm text-ink-2 self-center font-mono">{w.name}</span>
                   <button
                     type="button"
@@ -745,3 +747,5 @@ export default function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
     </div>
   );
 }
+
+export default withAuroraPage('ai', AIPage);

@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -19,7 +20,7 @@ import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { Event, EventSummary } from '../../types/api';
 
-export default function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [events, setEvents] = useState<Event[]>([]);
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,7 +171,7 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <section className="glass mb-6 p-6 sm:p-8">
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <button type="button" onClick={() => setCategory('all')} className="text-left">
             <StatCard title="Total" value={summary.total_events} color="blue" />
@@ -309,10 +310,10 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
       ) : filtered.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting search or severity filter" />
       ) : (
-        <div className="glass-panel-card" data-testid="events-list">
+        <div className="glass" data-testid="events-list">
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filtered.map((ev, i) => (
-              <div key={`${ev.timestamp}-${i}`} className="glass-panel-card flex items-start gap-3 p-4">
+              <div key={`${ev.timestamp}-${i}`} className="glass flex items-start gap-3 p-4">
                 <div className="flex flex-col gap-1.5 shrink-0">
                   <SeverityBadge severity={ev.severity} />
                   <Badge text={ev.category} variant="muted" />
@@ -350,3 +351,5 @@ export default function EventsPage({ refreshKey }: { refreshKey?: number } = {})
     </div>
   );
 }
+
+export default withAuroraPage('events', EventsPage);

@@ -91,15 +91,15 @@ export default function MacOSPlatformPanel() {
           </button>
         </div>}
     ><div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="glass-metric-card" data-testid="tray-sparkline-panel">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4" data-testid="tray-sparkline-panel">
           <div className="font-mono text-2xl text-emerald-300">{sparkline?.sparkline ?? '▁▁▁▁'}</div>
           <div className="text-xs text-ink-3">Tray sparkline · {sparkline?.fleet_health_pct.toFixed(0) ?? 0}%</div>
         </div>
-        <div className="glass-metric-card" data-testid="dock-badge-panel">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4" data-testid="dock-badge-panel">
           <div className="text-2xl font-semibold text-ink">{dock?.issue_count ?? 0}</div>
           <div className="text-xs text-ink-3">Dock badge issues</div>
         </div>
-        <div className="glass-metric-card" data-testid="offline-cache-panel">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4" data-testid="offline-cache-panel">
           <div className="flex items-center gap-2 text-sm text-ink-2">
             <WifiOff className="h-4 w-4" />
             {offline?.cached ? 'Briefing cached' : 'No offline cache'}

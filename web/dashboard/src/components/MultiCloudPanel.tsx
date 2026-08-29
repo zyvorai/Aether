@@ -57,7 +57,7 @@ export default function MultiCloudPanel() {
 
           <div className="mb-6 grid gap-3 sm:grid-cols-3">
             {report.clusters.slice(0, 6).map((cluster) => (
-              <div key={cluster.cluster} className="glass-panel-card p-4">
+              <div key={cluster.cluster} className="glass p-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-ink">{cluster.cluster}</span>
                   <Badge text={cluster.reachable ? 'up' : 'down'} variant={cluster.reachable ? 'green' : 'red'} />

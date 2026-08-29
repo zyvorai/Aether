@@ -6,34 +6,22 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 
 export type AppTheme = 'light' | 'dark' | 'system';
 
-/** iPhone 17 categorical accent choice — independent of light/dark. 'orange'
- * (Cosmic Orange, the default Zyvor brand) needs no data-accent override;
- * the others map to the [data-accent="..."] blocks in theme.css. */
-export type AccentColor = 'orange' | 'deepblue' | 'sage' | 'mistblue' | 'lavender';
-
-export const ACCENT_OPTIONS: { value: AccentColor; label: string; swatchClass: string }[] = [
-  { value: 'orange', label: 'Cosmic Orange', swatchClass: 'bg-brand' },
-  { value: 'deepblue', label: 'Deep Blue', swatchClass: 'bg-deepblue' },
-  { value: 'sage', label: 'Sage', swatchClass: 'bg-sage' },
-  { value: 'mistblue', label: 'Mist Blue', swatchClass: 'bg-mistblue' },
-  { value: 'lavender', label: 'Lavender', swatchClass: 'bg-lavender' },
-];
-
 interface ThemeContextType {
   theme: AppTheme;
   resolvedTheme: 'light' | 'dark';
   setTheme: (t: AppTheme) => void;
   toggleDarkLight: () => void;
-  accent: AccentColor;
-  setAccent: (a: AccentColor) => void;
+  /** @deprecated Accent picker removed — Apple blue only. Kept for compile safety. */
+  accent: 'blue';
+  setAccent: (a: 'blue') => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'system',
-  resolvedTheme: 'dark',
+  theme: 'light',
+  resolvedTheme: 'light',
   setTheme: () => {},
   toggleDarkLight: () => {},
-  accent: 'orange',
+  accent: 'blue',
   setAccent: () => {},
 });
 
@@ -41,12 +29,7 @@ function parseStoredTheme(raw: string | null): AppTheme {
   if (raw === 'steel') return 'dark';
   if (raw === 'aurora') return 'light';
   if (raw === 'light' || raw === 'dark' || raw === 'system') return raw;
-  return 'system';
-}
-
-function parseStoredAccent(raw: string | null): AccentColor {
-  if (raw === 'deepblue' || raw === 'sage' || raw === 'mistblue' || raw === 'lavender' || raw === 'orange') return raw;
-  return 'orange';
+  return 'light';
 }
 
 function getSystemPrefersDark(): boolean {
@@ -57,32 +40,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<AppTheme>(() =>
     parseStoredTheme(typeof localStorage !== 'undefined' ? localStorage.getItem('aether-theme') : null),
   );
-  const [accent, setAccentState] = useState<AccentColor>(() =>
-    parseStoredAccent(typeof localStorage !== 'undefined' ? localStorage.getItem('aether-accent') : null),
-  );
   const [systemPrefersDark, setSystemPrefersDark] = useState(getSystemPrefersDark);
 
   const setTheme = useCallback((t: AppTheme) => {
     setThemeState(t);
   }, []);
 
-  const setAccent = useCallback((a: AccentColor) => {
-    setAccentState(a);
+  const setAccent = useCallback((_a: 'blue') => {
+    /* no-op — brand is fixed Apple blue */
   }, []);
 
   useEffect(() => {
     localStorage.setItem('aether-theme', theme);
     const root = document.documentElement;
+    root.removeAttribute('data-accent');
+    const resolved = theme === 'system' ? (getSystemPrefersDark() ? 'dark' : 'light') : theme;
     if (theme === 'system') root.removeAttribute('data-theme');
     else root.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
-    localStorage.setItem('aether-accent', accent);
-    const root = document.documentElement;
-    if (accent === 'orange') root.removeAttribute('data-accent');
-    else root.setAttribute('data-accent', accent);
-  }, [accent]);
+    root.classList.toggle('dark-theme', resolved === 'dark');
+    root.classList.toggle('light-theme', resolved === 'light');
+  }, [theme, systemPrefersDark]);
 
   useEffect(() => {
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
@@ -101,7 +78,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleDarkLight, accent, setAccent }}>
+    <ThemeContext.Provider
+      value={{ theme, resolvedTheme, setTheme, toggleDarkLight, accent: 'blue', setAccent }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -110,3 +89,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme() {
   return useContext(ThemeContext);
 }
+
+/** @deprecated Removed with Aurora UX — kept so old imports compile until cleaned. */
+export const ACCENT_OPTIONS: { value: 'blue'; label: string; swatchClass: string }[] = [
+  { value: 'blue', label: 'Apple Blue', swatchClass: 'bg-brand' },
+];
+
+export type AccentColor = 'blue';

@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -15,6 +16,7 @@ import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { ObservabilitySummary } from '../../types/api';
+import { SectionHeader } from '../layout/SectionHeader';
 
 interface ChargebackReport {
   totalMonthlyUsd: number;
@@ -25,7 +27,7 @@ interface ChargebackReport {
   lines: { workload: string; owner: string; project: string; monthlyUsd: number }[];
 }
 
-export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState('');
   const [summary, setSummary] = useState<ObservabilitySummary | null>(null);
@@ -214,15 +216,15 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
       ) : null}
 
       {summary && (
-        <section className="overview-section-shell mb-6 p-6 sm:p-8">
-          <div className="overview-section-header">
-            <p className="section-label">Observability</p>
-            <h2 className="section-title">Platform metrics</h2>
-            <p className="section-subtitle">API traffic, migrations, and cluster resource signals</p>
-          </div>
+        <section className="glass mb-6 p-6 sm:p-8">
+          <SectionHeader
+            label="Observability"
+            title="Platform metrics"
+            description="API traffic, migrations, and cluster resource signals"
+          />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard title="API requests" value={Math.round(summary.api_http_requests_total)} color="blue" />
-          <StatCard title="Migrations" value={Math.round(summary.migrations_total)} color="orange" />
+          <StatCard title="Migrations" value={Math.round(summary.migrations_total)} color="primary" />
           <StatCard title="Rollbacks" value={Math.round(summary.migration_rollbacks_total)} color="red" />
           <StatCard
             title="Cluster CPU"
@@ -232,7 +234,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-panel-card">
+          <div className="glass">
             <h2 className="panel-title mb-3">Workloads by runtime</h2>
             {runtimeEntries.length > 0 ? (
               <dl className="space-y-2 text-sm">
@@ -247,7 +249,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
               <p className="text-sm text-ink-3">No running workload gauges reported yet.</p>
             )}
           </div>
-          <div className="glass-panel-card">
+          <div className="glass">
             <h2 className="panel-title mb-3">Cluster & Cilium</h2>
             {summary.cluster_metrics ? (
               <dl className="space-y-2 text-sm mb-4">
@@ -306,7 +308,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
       )}
 
       {chargeback && (
-        <div className="glass-panel-card mb-6" data-testid="metrics-chargeback-panel">
+        <div className="glass mb-6" data-testid="metrics-chargeback-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="text-lg font-semibold text-ink">Chargeback (showback)</h2>
             <div className="flex items-center gap-3">
@@ -409,7 +411,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
       )}
 
       {(grafanaUrl || prometheusUrl) && (
-        <div className="glass-panel-card mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
+        <div className="glass mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
           <p className="text-sm text-ink-2">External observability stack linked to this API.</p>
           <div className="flex flex-wrap gap-3">
             {grafanaUrl && (
@@ -437,7 +439,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
       )}
 
       {summary?.prometheus_configured && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-ink mb-3">Prometheus query explorer</h2>
           <p className="text-sm text-ink-3 mb-4">Instant queries via the whitelisted API proxy.</p>
           <form onSubmit={(e) => void runPromQuery(e)} className="flex flex-wrap gap-3 mb-4" data-testid="metrics-prometheus-query">
@@ -462,7 +464,7 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
         </div>
       )}
 
-      <div className="glass-panel-card">
+      <div className="glass">
         <div className="flex items-center justify-between mb-4">
           <h2 className="panel-title">Prometheus metrics</h2>
           <span className="text-xs text-ink-3">{lineCount} metric lines</span>
@@ -490,3 +492,5 @@ export default function MetricsPage({ refreshKey }: { refreshKey?: number } = {}
     </div>
   );
 }
+
+export default withAuroraPage('metrics', MetricsPage);

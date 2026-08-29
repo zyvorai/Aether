@@ -10,6 +10,7 @@ import {
   isOnboardingComplete,
   isOnboardingDismissed,
 } from '../utils/onboardingState';
+import { SectionHeader } from './layout/SectionHeader';
 
 interface OnboardingStep {
   id: string;
@@ -93,16 +94,14 @@ export default function OnboardingStrip({
   if (dismissed) return null;
 
   return (
-    <section className="overview-section-shell onboarding-strip-gradient mb-6 p-5 sm:p-6">
+    <section className="glass onboarding-strip-gradient mb-6 p-5 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="section-label">Onboarding</p>
-          <h3 className="section-title text-base">Getting started</h3>
-          <p className="section-subtitle text-xs">
-            {completed}/{steps.length} steps complete — follow the checklist to stand up your first workload.
-          </p>
-        </div>
-        <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
+        <SectionHeader
+          label="Onboarding"
+          title="Getting started"
+          description={`${completed}/${steps.length} steps complete — follow the checklist to stand up your first workload.`}
+        />
+        <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
           New platform
         </span>
       </div>
@@ -112,7 +111,7 @@ export default function OnboardingStrip({
             <button
               type="button"
               onClick={step.onClick}
-              className={`glass-metric-card flex w-full items-start gap-3 text-left ${
+              className={`tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 flex w-full items-start gap-3 text-left ${
                 step.done
                   ? 'border-emerald-500/30 !bg-emerald-500/[0.06]'
                   : ''

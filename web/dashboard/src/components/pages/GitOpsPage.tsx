@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link, useNavigate } from 'react-router';
 import { GitBranch, ExternalLink } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
@@ -86,7 +87,7 @@ function formatSyncResult(raw: string | null): {
 
 const GITOPS_SYNC_STORAGE_KEY = 'aether-gitops-last-sync';
 
-export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload', '');
   const workloadFocus = workloadQuery.trim();
@@ -361,9 +362,9 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
+      <section className="glass mb-6 space-y-6 p-6 sm:p-8">
 
-      <div className="glass-panel-card" data-testid="gitops-status-panel">
+      <div className="glass" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
           <GitBranch className="w-5 h-5 text-brand" />
           <h2 className="text-lg font-semibold text-ink">GitOps reconciliation</h2>
@@ -483,7 +484,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
       </div>
 
       {syncResult && (
-        <div className="glass-panel-card" data-testid="gitops-sync-result">
+        <div className="glass" data-testid="gitops-sync-result">
           <h3 className="text-sm font-semibold text-ink mb-3">Last sync result</h3>
           <p className="text-sm text-ink-2 mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (
@@ -640,7 +641,7 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
           detected YAML changes. Review the diff preview below before syncing.
         </p>
         <div
-          className="mb-4 rounded-xl border glass-divider glass-panel-card p-3"
+          className="mb-4 rounded-xl border glass-divider glass p-3"
           data-testid="gitops-diff-preview"
         >
           {previewLoading ? (
@@ -712,3 +713,5 @@ export default function GitOpsPage({ refreshKey }: { refreshKey?: number } = {})
     </div>
   );
 }
+
+export default withAuroraPage('gitops', GitOpsPage);

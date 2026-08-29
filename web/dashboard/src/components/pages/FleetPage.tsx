@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -44,7 +45,7 @@ interface ServerPayload {
   integrations?: Integrations;
 }
 
-export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
+function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -385,7 +386,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
       </div>
 
       {activeTab === 'edge' ? (
-        <div className="glass-panel-card mb-6" data-testid="fleet-edge-panel">
+        <div className="glass mb-6" data-testid="fleet-edge-panel">
           <h2 className="text-lg font-semibold text-ink mb-4">Edge sites</h2>
           {edgeAgents.length === 0 ? (
             <p className="text-sm text-ink-3">No edge agents registered. Run <code className="text-ink-2">aether edge-agent</code> at remote sites.</p>
@@ -406,7 +407,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
       ) : null}
 
       {activeTab === 'placement' ? (
-        <div className="glass-panel-card mb-6" data-testid="fleet-placement-panel">
+        <div className="glass mb-6" data-testid="fleet-placement-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-ink">Federation placement</h2>
             <button
@@ -468,7 +469,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
 
       {activeTab === 'overview' ? (
       <>
-      <div className="overview-section-shell mb-8 grid grid-cols-1 gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4 sm:p-8">
+      <div className="glass mb-8 grid grid-cols-1 gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4 sm:p-8">
         <StatCard title="Clusters" value={summary?.cluster_count ?? 0} color="blue" icon={<Globe size={16} />} compact isEmpty={(summary?.cluster_count ?? 0) === 0} />
         <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left" data-testid="fleet-healthy-stat">
           <StatCard title="Healthy" value={summary?.healthy_clusters ?? 0} color="green" icon={<Shield size={16} />} compact isEmpty={(summary?.healthy_clusters ?? 0) === 0} />
@@ -496,7 +497,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
         </div>
       )}
 
-      <div className="glass-panel-card mb-6">
+      <div className="glass mb-6">
         <h2 className="panel-title mb-4">Registered clusters</h2>
         {clusters.length === 0 ? (
           <p className="text-sm text-ink-3">
@@ -537,7 +538,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
         </p>
       </div>
 
-      <div className="glass-panel-card mb-6">
+      <div className="glass mb-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="panel-title">Hubble flow links</h2>
@@ -595,7 +596,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
                     )}
                   </button>
                   {expanded && (
-                    <div className="glass-divider-t px-4 py-3 glass-panel-card">
+                    <div className="glass-divider-t px-4 py-3 glass">
                       {loadingPods ? (
                         <p className="text-xs text-ink-3">Loading pods…</p>
                       ) : pods.length === 0 ? (
@@ -638,7 +639,7 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
         )}
       </div>
 
-      <div className="glass-panel-card">
+      <div className="glass">
         <h2 className="panel-title mb-4">Network observability</h2>
         <p className="text-sm text-ink-3 mb-4">
           Deep Hubble flow queries and PacketWolf east-west verification are integrated via env URLs on the control plane.
@@ -719,3 +720,5 @@ export default function FleetPage({ refreshKey }: { refreshKey?: number } = {}) 
     </div>
   );
 }
+
+export default withAuroraPage('fleet', FleetPage);

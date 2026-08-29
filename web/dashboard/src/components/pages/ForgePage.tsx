@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -18,7 +19,7 @@ function num(v: unknown): string {
   return typeof v === 'number' ? String(v) : v == null ? '—' : String(v);
 }
 
-export default function ForgePage({ refreshKey }: { refreshKey?: number } = {}) {
+function ForgePage({ refreshKey }: { refreshKey?: number } = {}) {
   const [stats, setStats] = useState<ForgeStats | null>(null);
   const [nodes, setNodes] = useState<ForgeNode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +56,7 @@ export default function ForgePage({ refreshKey }: { refreshKey?: number } = {}) 
 
   return (
     <div className="overflow-x-hidden">
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
         <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
         {notConfigured ? (
@@ -116,3 +117,5 @@ export default function ForgePage({ refreshKey }: { refreshKey?: number } = {}) 
     </div>
   );
 }
+
+export default withAuroraPage('forge', ForgePage);

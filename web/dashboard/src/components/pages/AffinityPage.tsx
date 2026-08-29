@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link, useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -27,7 +28,7 @@ const WORKLOAD_CLASSES = [
   'worker',
 ];
 
-export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
+function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [affinityData, setAffinityData] = useState<Record<string, AffinityScore[]>>({});
   const [loading, setLoading] = useState(true);
@@ -175,7 +176,7 @@ export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="flex gap-2 mb-6" data-testid="affinity-tabs">
         {(['recommend', 'matrix', 'stats'] as const).map((t) => (
           <button
@@ -190,7 +191,7 @@ export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {
       </div>
 
       {tab === 'matrix' && (
-        <div className="glass-panel-card overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
+        <div className="glass overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-ink">Runtime compatibility matrix</h2>
             <Link to={viewToPath('scheduler')} className="text-xs text-brand hover:underline" data-testid="affinity-scheduler-link">
@@ -228,7 +229,7 @@ export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {
       )}
 
       {tab === 'stats' && stats && (
-        <div className="glass-panel-card mb-6" data-testid="affinity-stats-panel">
+        <div className="glass mb-6" data-testid="affinity-stats-panel">
           <div className="mb-3 flex flex-wrap gap-2">
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { tab: 'place' })}
@@ -251,7 +252,7 @@ export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {
               return (
               <div
                 key={cls}
-                className={`glass-panel-card ${
+                className={`glass ${
                   classMatchesWorkload(cls) ? 'ring-1 ring-aether/40 border-brand/30' : ''
                 }`}
                 data-testid={classMatchesWorkload(cls) ? 'affinity-workload-highlight' : undefined}
@@ -302,3 +303,5 @@ export default function AffinityPage({ refreshKey }: { refreshKey?: number } = {
     </div>
   );
 }
+
+export default withAuroraPage('affinity', AffinityPage);

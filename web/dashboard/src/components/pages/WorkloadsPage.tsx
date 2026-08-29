@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -74,7 +75,7 @@ function openDeployModal(
   setDeployModal(true);
 }
 
-export default function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKey }: WorkloadsPageProps) {
+function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKey }: WorkloadsPageProps) {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
@@ -736,32 +737,6 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
 
   return (
     <div className="overflow-x-hidden">
-      <section className="workloads-masthead mb-5 px-5 py-5 sm:px-6 sm:py-6" data-testid="workloads-masthead">
-        <div className="relative z-[1] flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand platform-pulse" />
-              Runtime inventory
-            </div>
-            <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-3xl">Workloads</h2>
-            <p className="mt-1.5 max-w-xl text-sm text-ink-3">
-              The list is home. Open a row to inspect it beside the list — everything else lives behind ⌘K.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-[11px]">
-            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-300">
-              {runningCount} running
-            </span>
-            <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-sky-300">
-              {clusterDiscoveredCount} discovered
-            </span>
-            <span className="rounded-full border border-violet-500/25 bg-violet-500/10 px-3 py-1 text-violet-200">
-              {aetherManagedCount} managed
-            </span>
-          </div>
-        </div>
-      </section>
-
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -1302,7 +1277,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
         </div>
 
         {migrateAdvice && migrateTarget && (
-          <div className="glass-panel-card p-4 space-y-3">
+          <div className="glass p-4 space-y-3">
             <h4 className="text-sm font-semibold text-ink">
               Advice: {migrateAdvice.source_runtime} → {migrateAdvice.target_runtime}
             </h4>
@@ -1337,7 +1312,7 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
                       value={s}
                       checked={migrateStrategy === s}
                       onChange={() => setMigrateStrategy(s)}
-                      className="accent-aether"
+                      className="accent-primary"
                     />
                     {s}
                   </label>
@@ -1489,3 +1464,5 @@ export default function WorkloadsPage({ initialSelectedName, onClearInitialSelec
     </div>
   );
 }
+
+export default withAuroraPage('workloads', WorkloadsPage);

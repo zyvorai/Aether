@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
 import { Link } from 'react-router';
@@ -17,11 +18,11 @@ const TOC = [
   { id: 'fabric-unified', label: 'Unified fabric' },
 ];
 
-export default function FabricPage() {
+function FabricPage() {
   const [workload] = useQueryParam('workload');
 
   return (
-    <section className="hub-page-shell">
+    <section className="glass">
       {workload.trim() ? (
         <WorkloadContextBanner testId="fabric-workload-context" workload={workload} description="Fabric context">
           <WorkloadScopedCrossLinks workload={workload} prefix="fabric" showMetrics showDrift />
@@ -59,3 +60,5 @@ export default function FabricPage() {
     </section>
   );
 }
+
+export default withAuroraPage('fabric', FabricPage);

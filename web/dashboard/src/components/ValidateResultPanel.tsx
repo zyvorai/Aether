@@ -14,7 +14,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
   if (!validate && !policy) return null;
 
   return (
-    <div className="glass-panel-card mt-3 space-y-3 shrink-0 p-4" data-testid="validate-result-panel">
+    <div className="glass mt-3 space-y-3 shrink-0 p-4" data-testid="validate-result-panel">
       {validate ? (
         <div>
           <Badge

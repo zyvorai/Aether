@@ -144,7 +144,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
         : 'No logs available yet. Press Refresh to reload, or enable Previous for the last terminated instance.');
 
   return (
-    <div className="glass-panel-card p-4" data-testid="log-viewer">
+    <div className="glass p-4" data-testid="log-viewer">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           type="text"

@@ -3,51 +3,134 @@
 /* https://zyvor.dev · info@zyvor.dev */
 
 /*
-  Design tokens aligned to the real Zyvor design system
-  (zyvor-web/design-reference/v3-latest/zyvor.css — "Light theme ·
-  Apple-anatomy navigation · Zyvor orange accent"). Neutrals (canvas/
-  surface/hairline/ink/slate/muted), the orange tiers (zy-500/600/700/
-  tint), and the 44px sticky translucent nav spec are taken directly
-  from that reference rather than approximated. Light values are the
-  reference's own; dark values are derived (the reference is light-only)
-  using the more vivid zy-500 tier for --brand, which already has good
-  contrast on a near-black canvas.
+  Aurora Apple.com visual system + Apple blue accent.
+  Source: Aurora apps/web/globals.css + zyvor-web layout tokens
+  Light-first. Dark via html.dark-theme or data-theme="dark".
 */
 
 :root {
-  --canvas: #ffffff;
-  --page: #ffffff;
-  --sunken: #f5f6f8;
-  --raised: #ffffff;
-  --hover: rgba(20, 22, 26, 0.05);
-  --selected: #fff1e9;
-  --rule: #e3e6ea;
-  --rule-strong: rgba(20, 22, 26, 0.16);
-  --ink: #14161a;
-  --ink-2: #5b6472;
-  --ink-3: #6e7684;
-  --brand: #cc420a;
-  --brand-rgb: 204 66 10;
-  --brand-ink: #ffffff;
-  --brand-wash: #fff1e9;
-  --red: #c7361f;
-  --amber: #9a6a00;
-  --green: #5e7a4e;
-  --scrim: rgba(20, 22, 26, 0.35);
-  --glass: rgba(255, 255, 255, 0.72);
-  --shadow: 0 8px 24px rgba(20, 22, 26, 0.08), 0 2px 6px rgba(20, 22, 26, 0.04);
-  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Aurora Apple neutrals */
+  --background: #ffffff;
+  --surface: #f5f5f7;
+  --surface-elevated: #ffffff;
+  --foreground: #1d1d1f;
+  --muted-foreground: #6e6e73;
+  /* Apple.com blue */
+  --primary: #0071e3;
+  --primary-hover: #0077ed;
+  --primary-foreground: #ffffff;
+  --border: #d2d2d7;
+  --ring: #0071e3;
+  --success: #248a3d;
+  --warning: #bf4800;
+  --danger: #d70015;
+  --accent-fill: #0071e3;
+  --accent-tint: #e8f1fd;
+  --accent-blue: #0071e3;
+  --accent-pink: #e11d48;
+  --accent-teal: #0d9488;
+  --accent-purple: #7c3aed;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-accent: 0 4px 14px rgba(0, 113, 227, 0.2);
+  --nav-bg: rgba(255, 255, 255, 0.72);
+  --nav-bg-open: rgba(255, 255, 255, 0.96);
+  --nav-border: rgba(0, 0, 0, 0.08);
+  --nav-hover-bg: rgba(0, 0, 0, 0.04);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 980px;
+  --section-gap: 1.5rem;
+  --content-max-width: 72rem;
+  --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 1.0625rem;
+  --font-size-lg: 1.1875rem;
+  --font-size-xl: 1.3125rem;
+  --font-size-2xl: 1.75rem;
+  --font-size-3xl: 2rem;
+  --font-size-display: 2.5rem;
+  --leading-tight: 1.1;
+  --leading-normal: 1.47;
+  --leading-relaxed: 1.47;
+  --tracking-eyebrow: 0.02em;
+  --bg-primary: var(--background);
+  --bg-secondary: var(--surface);
+  --bg-card: var(--surface-elevated);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --accent: var(--primary);
+  --accent-hover: var(--primary-hover);
+  --radius-liquid: 18px;
+  --radius-liquid-lg: 20px;
+  --glass-bg: #ffffff;
+  --glass-bg-elevated: #ffffff;
+  --glass-bg-strong: #fbfbfd;
+  --glass-border: #d2d2d7;
+  --glass-border-strong: #86868b;
+  --glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --glass-highlight: transparent;
   --nav-h: 44px;
+  --hs-nav-h: 44px;
+  --hs-max-width: 1180px;
+  --hs-gutter: 22px;
+  --hs-s1: 4px;
+  --hs-s2: 8px;
+  --hs-s3: 12px;
+  --hs-s4: 16px;
+  --hs-s5: 22px;
+  --hs-s6: 32px;
+  --hs-s7: 44px;
+  --hs-s8: 64px;
+  --hs-s9: 88px;
+  --hs-s10: 120px;
+  --hs-radius-sm: 8px;
+  --hs-radius-md: 12px;
+  --hs-radius-pill: 980px;
+  --hs-e2: 0 6px 20px rgba(0, 0, 0, 0.08);
+  --hs-fast: 0.16s;
+  --hs-font-mono: "SF Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --hs-accent: var(--primary);
+  --hs-accent-deep: var(--primary-hover);
+  --hs-text-heading: var(--foreground);
+  --hs-text-muted: var(--muted-foreground);
+  --hs-text-subtle: #86868b;
+  --hs-border: var(--border);
+  --hs-surface: var(--surface-elevated);
+  --hs-surface-2: var(--surface);
+  --hs-err: var(--danger);
+  --hs-deep: #1d1d1f;
+  --hs-deep-mint: #5be8a8;
+  --hs-bg-alt: #f5f5f7;
 
-  /* iPhone 17 categorical palette — for non-semantic, non-brand accents only
-     (runtime badges, nav-group dots, cluster/namespace chips). Cosmic Orange
-     is already --brand; Silver/White/Space Black are skipped as accents
-     since they duplicate the ink/canvas neutrals. Same value in both themes
-     — these sit on small washed/translucent surfaces, not full pages, so
-     they don't need per-theme tuning. Sage/Mist Blue/Lavender/Light Gold are
-     deepened from Apple's pale physical-finish hexes (#A9B689/#96AED1/
-     #DFCEEA/#FFFCF5) for badge-text contrast; Deep Blue is used as-is. */
+  /* Backward-compat aliases used across existing dashboard classes */
+  --canvas: var(--background);
+  --page: var(--background);
+  --sunken: var(--surface);
+  --raised: var(--surface-elevated);
+  --hover: var(--nav-hover-bg);
+  --selected: var(--accent-tint);
+  --rule: var(--border);
+  --rule-strong: var(--glass-border-strong);
+  --ink: var(--foreground);
+  --ink-2: var(--muted-foreground);
+  --ink-3: #86868b;
+  --brand: #0071e3;
+  --brand-rgb: 0 113 227;
+  --brand-ink: #ffffff;
+  --brand-wash: #e8f1fd;
+  --red: var(--danger);
+  --amber: var(--warning);
+  --green: var(--success);
+  --scrim: rgba(0, 0, 0, 0.4);
+  --glass: var(--nav-bg);
+  --shadow: var(--shadow-card);
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Categorical accents (badges only — not brand) */
   --iphone-deep-blue: #32374a;
   --iphone-deep-blue-rgb: 50 55 74;
   --iphone-sage: #7a9068;
@@ -62,69 +145,54 @@
   color-scheme: light;
 }
 
-/* System preference, only when the user hasn't explicitly picked light */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --canvas: #000000;
-    --page: #1c1c1e;
-    --sunken: #131316;
-    --raised: #1c1c1e;
-    --hover: rgba(255, 255, 255, 0.06);
-    --selected: rgba(255, 90, 21, 0.16);
-    --rule: rgba(255, 255, 255, 0.1);
-    --rule-strong: rgba(255, 255, 255, 0.16);
-    --ink: #f5f5f7;
-    --ink-2: #c7c7cc;
-    --ink-3: #8e8e93;
-    --brand: #ff5a15;
-    --brand-rgb: 255 90 21;
-    --brand-ink: #ffffff;
-    --brand-wash: rgba(255, 90, 21, 0.16);
-    --red: #ff6b4a;
-    --amber: #e0a815;
-    --green: #8fb37a;
-    --scrim: rgba(0, 0, 0, 0.55);
-    --glass: rgba(28, 28, 30, 0.72);
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    --nav-h: 44px;
-    color-scheme: dark;
-  }
-}
-
-/* Explicit manual toggle to dark, regardless of OS preference */
+html.dark-theme,
 :root[data-theme='dark'] {
-  --canvas: #000000;
-  --page: #1c1c1e;
-  --sunken: #131316;
-  --raised: #1c1c1e;
-  --hover: rgba(255, 255, 255, 0.06);
-  --selected: rgba(255, 90, 21, 0.16);
-  --rule: rgba(255, 255, 255, 0.1);
-  --rule-strong: rgba(255, 255, 255, 0.16);
-  --ink: #f5f5f7;
-  --ink-2: #c7c7cc;
+  --background: #000000;
+  --surface: #1d1d1f;
+  --surface-elevated: #2c2c2e;
+  --foreground: #f5f5f7;
+  --muted-foreground: #a1a1a6;
+  --primary: #0a84ff;
+  --primary-hover: #409cff;
+  --primary-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.12);
+  --ring: #0a84ff;
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --danger: #ff453a;
+  --accent-fill: #0a84ff;
+  --accent-tint: rgba(10, 132, 255, 0.16);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-accent: 0 4px 14px rgba(10, 132, 255, 0.25);
+  --nav-bg: rgba(29, 29, 31, 0.72);
+  --nav-bg-open: rgba(29, 29, 31, 0.96);
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --nav-hover-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg: #1d1d1f;
+  --glass-bg-elevated: #2c2c2e;
+  --glass-bg-strong: #1d1d1f;
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.22);
+  --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --hs-text-subtle: #a1a1a6;
+  --hs-bg-alt: #1d1d1f;
+  --hs-e2: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --brand: #0a84ff;
+  --brand-rgb: 10 132 255;
+  --brand-wash: rgba(10, 132, 255, 0.16);
+  --selected: rgba(10, 132, 255, 0.16);
   --ink-3: #8e8e93;
-  --brand: #ff5a15;
-  --brand-rgb: 255 90 21;
-  --brand-ink: #ffffff;
-  --brand-wash: rgba(255, 90, 21, 0.16);
-  --red: #ff6b4a;
-  --amber: #e0a815;
-  --green: #8fb37a;
   --scrim: rgba(0, 0, 0, 0.55);
-  --glass: rgba(28, 28, 30, 0.72);
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  --nav-h: 44px;
+  --glass: var(--nav-bg);
+  --shadow: var(--shadow-card);
   color-scheme: dark;
 }
 
-/* Accent override — chosen via the picker in Navbar.tsx, applied as
-   data-accent on <html> alongside data-theme. Declared last so it wins
-   the cascade over both theme blocks above regardless of light/dark. */
-[data-accent='deepblue'] { --brand: #32374a; --brand-rgb: 50 55 74; --brand-ink: #ffffff; --brand-wash: rgba(50, 55, 74, 0.14); --selected: rgba(50, 55, 74, 0.12); }
-[data-accent='sage'] { --brand: #7a9068; --brand-rgb: 122 144 104; --brand-ink: #ffffff; --brand-wash: rgba(122, 144, 104, 0.14); --selected: rgba(122, 144, 104, 0.12); }
-[data-accent='mistblue'] { --brand: #6b8fb5; --brand-rgb: 107 143 181; --brand-ink: #ffffff; --brand-wash: rgba(107, 143, 181, 0.14); --selected: rgba(107, 143, 181, 0.12); }
-[data-accent='lavender'] { --brand: #9b7fb0; --brand-rgb: 155 127 176; --brand-ink: #ffffff; --brand-wash: rgba(155, 127, 176, 0.14); --selected: rgba(155, 127, 176, 0.12); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not(.light-theme) {
+    /* applied when ThemeContext sets html.dark-theme — see ThemeContext */
+  }
+}
 
 .data-row {
   height: 34px;
@@ -132,7 +200,11 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-ac-slide,
-  .animate-ac-lift {
+  .animate-ac-lift,
+  .animate-fade-up,
+  .animate-slide-in,
+  .animate-glass-in,
+  .animate-fade-in {
     animation: none !important;
   }
 }

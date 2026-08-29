@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -40,7 +41,7 @@ const SUGGESTIONS = [
   'Generate a security hardening plan',
 ];
 
-export default function ZyraPage() {
+function ZyraPage() {
   const [workloadParam] = useQueryParam('workload', '');
   const [qParam, setQParam] = useQueryParam('q', '');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -221,10 +222,10 @@ export default function ZyraPage() {
           </>
         ) : null}
       </WorkloadContextBanner>
-      <section className="overview-section-shell mb-6 flex min-h-0 flex-1 flex-col p-4 sm:p-6">
+      <section className="glass mb-6 flex min-h-0 flex-1 flex-col p-4 sm:p-6">
       <div className="zyra-rail-glass relative flex flex-1 flex-col overflow-hidden rounded-[28px] border">
         <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/30 bg-gradient-to-br from-primary/20 to-primary/80/20">
             <Bot className="h-4 w-4 text-aether-ai" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
@@ -297,7 +298,7 @@ export default function ZyraPage() {
 
         <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite" aria-relevant="additions">
           {messages.length === 0 && (
-            <div className="rounded-2xl border border-aether-ai/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-sm">
+            <div className="rounded-2xl border border-primary/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-sm">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-aether-ai/80" aria-hidden />
               <p className="text-sm text-ink-2">
                 Ask about health, drift, costs, migrations, or cluster state.
@@ -327,7 +328,7 @@ export default function ZyraPage() {
               key={`${msg.role}-${i}`}
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                 msg.role === 'user'
-                  ? 'ml-auto border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
+                  ? 'ml-auto border border-primary/20 bg-gradient-to-br from-primary/20 to-primary/80/15 text-violet-50'
                   : 'border glass-divider glass-inset-surface text-ink'
               }`}
             >
@@ -390,14 +391,14 @@ export default function ZyraPage() {
             placeholder="Ask Aether anything…"
             aria-label="Message Zyra"
             data-testid="copilot-input"
-            className="glass-input min-w-0 flex-1 text-ink outline-none transition focus:border-aether-ai/45 focus:ring-1 focus:ring-aether-ai/20"
+            className="glass-input min-w-0 flex-1 text-ink outline-none transition focus:border-primary/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
           <button
             type="submit"
             data-testid="zyra-send-button"
             disabled={loading || !input.trim()}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-aether to-aether-ai px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-aether-ai/20 transition hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary/90 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-50"
           >
             <Send className="h-4 w-4" aria-hidden />
             Send
@@ -411,3 +412,5 @@ export default function ZyraPage() {
     </div>
   );
 }
+
+export default withAuroraPage('zyra', ZyraPage);

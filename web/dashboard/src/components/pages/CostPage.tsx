@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -28,7 +29,7 @@ interface ChargebackReport {
   lines: { workload: string; owner: string; project: string; monthlyUsd: number }[];
 }
 
-export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
+function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload');
   const [estimates, setEstimates] = useState<CostEstimate[]>([]);
@@ -77,7 +78,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
             className={`rounded-xl border p-4 ${
               est.provider === cheapest
                 ? 'border-emerald-500/30 bg-emerald-500/5'
-                : 'glass-divider glass-panel-card'
+                : 'glass-divider glass'
             }`}
           >
             <div className="flex items-center justify-between gap-2 mb-3">
@@ -203,7 +204,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
+      <section className="glass mb-6 space-y-6 p-6 sm:p-8">
       {chargebackLoading ? null : chargebackError ? (
         <PanelLoadError
           title="Fleet chargeback unavailable"
@@ -211,7 +212,7 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           onRetry={() => void reloadChargeback()}
         />
       ) : chargeback ? (
-        <div className="glass-panel-card" data-testid="cost-fleet-chargeback">
+        <div className="glass" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <h2 className="text-lg font-semibold text-ink">Fleet chargeback</h2>
             <button
@@ -284,3 +285,5 @@ export default function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
     </div>
   );
 }
+
+export default withAuroraPage('cost', CostPage);

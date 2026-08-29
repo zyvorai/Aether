@@ -3,8 +3,9 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useMemo, useState, useEffect } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { useNavigate, Link } from 'react-router';
-import { Save, FileText, Eye, CheckCircle, Pencil } from 'lucide-react';
+import { Save, Eye, CheckCircle, Pencil } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
@@ -87,7 +88,7 @@ const defaultForm: EditorForm = {
   ...defaultConfidentialFormState,
 };
 
-export default function EditorPage() {
+function EditorPage() {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const [workloadQuery] = useQueryParam('workload', '');
@@ -280,13 +281,10 @@ export default function EditorPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <FileText className="w-6 h-6 text-brand" />
           <div>
-            <h2 className="text-lg font-semibold text-ink">Visual workload editor</h2>
-            <p className="text-sm text-ink-3">Design workloads without writing YAML by hand</p>
             <Link to={viewToPath('templates')} className="text-xs text-brand hover:underline" data-testid="editor-templates-link">
               Browse templates →
             </Link>
@@ -333,7 +331,7 @@ export default function EditorPage() {
       </div>
 
       <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-        <div className="glass-panel-card space-y-6">
+        <div className="glass space-y-6">
           <div>
             <h3 className="text-sm font-medium text-ink-2 mb-3">Basic information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -422,7 +420,7 @@ export default function EditorPage() {
                   type="checkbox"
                   checked={form.networkDenyAllIngress}
                   onChange={(e) => handleChange('networkDenyAllIngress', e.target.checked)}
-                  className="accent-aether"
+                  className="accent-primary"
                 />
                 Deny all ingress (network policy)
               </label>
@@ -431,7 +429,7 @@ export default function EditorPage() {
                   type="checkbox"
                   checked={form.showAdvancedK8s}
                   onChange={(e) => handleChange('showAdvancedK8s', e.target.checked)}
-                  className="accent-aether"
+                  className="accent-primary"
                 />
                 Advanced Kubernetes options
               </label>
@@ -466,7 +464,7 @@ export default function EditorPage() {
                       type="checkbox"
                       checked={form.k8sVpaEnabled}
                       onChange={(e) => handleChange('k8sVpaEnabled', e.target.checked)}
-                      className="accent-aether"
+                      className="accent-primary"
                     />
                     Vertical Pod Autoscaler (VPA)
                   </label>
@@ -475,7 +473,7 @@ export default function EditorPage() {
                       type="checkbox"
                       checked={form.k8sKedaEnabled}
                       onChange={(e) => handleChange('k8sKedaEnabled', e.target.checked)}
-                      className="accent-aether"
+                      className="accent-primary"
                     />
                     KEDA ScaledObject
                   </label>
@@ -484,7 +482,7 @@ export default function EditorPage() {
                       type="checkbox"
                       checked={form.k8sCertManagerEnabled}
                       onChange={(e) => handleChange('k8sCertManagerEnabled', e.target.checked)}
-                      className="accent-aether"
+                      className="accent-primary"
                     />
                     cert-manager Certificate (requires Ingress host)
                   </label>
@@ -493,7 +491,7 @@ export default function EditorPage() {
                       type="checkbox"
                       checked={form.k8sGatewayEnabled}
                       onChange={(e) => handleChange('k8sGatewayEnabled', e.target.checked)}
-                      className="accent-aether"
+                      className="accent-primary"
                     />
                     Gateway API HTTPRoute
                   </label>
@@ -518,7 +516,7 @@ export default function EditorPage() {
                           type="checkbox"
                           checked={form.k8sGatewayProvision}
                           onChange={(e) => handleChange('k8sGatewayProvision', e.target.checked)}
-                          className="accent-aether"
+                          className="accent-primary"
                         />
                         Provision Gateway CR
                       </label>
@@ -536,7 +534,7 @@ export default function EditorPage() {
                 type="checkbox"
                 checked={form.scalingEnabled}
                 onChange={(e) => handleChange('scalingEnabled', e.target.checked)}
-                className="accent-aether"
+                className="accent-primary"
               />
               Enable HPA-style scaling block
             </label>
@@ -567,7 +565,7 @@ export default function EditorPage() {
                 type="checkbox"
                 checked={form.ingressEnabled}
                 onChange={(e) => handleChange('ingressEnabled', e.target.checked)}
-                className="accent-aether"
+                className="accent-primary"
               />
               Expose via Ingress
             </label>
@@ -654,7 +652,7 @@ export default function EditorPage() {
               type="checkbox"
               checked={form.healthCheck}
               onChange={(e) => handleChange('healthCheck', e.target.checked)}
-              className="accent-aether"
+              className="accent-primary"
             />
             Enable HTTP health check
           </label>
@@ -721,7 +719,7 @@ export default function EditorPage() {
         </div>
 
         {showPreview && (
-          <div className="glass-panel-card flex min-h-0 flex-col">
+          <div className="glass flex min-h-0 flex-col">
             <div className="mb-3 flex items-center gap-2 text-sm text-ink-2">
               <Eye className="h-4 w-4" /> Live YAML preview
             </div>
@@ -744,3 +742,5 @@ export default function EditorPage() {
     </div>
   );
 }
+
+export default withAuroraPage('editor', EditorPage);

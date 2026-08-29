@@ -156,7 +156,7 @@ export default function MigrationPlannerPanel() {
           </div>
 
           {selected ? (
-            <div className="glass-panel-card p-4 text-sm">
+            <div className="glass p-4 text-sm">
               <div className="text-ink-2">Current runtime</div>
               <div className="mt-1 font-medium capitalize text-ink">{selected.runtime}</div>
             </div>
@@ -176,7 +176,7 @@ export default function MigrationPlannerPanel() {
                   className={`rounded-xl border px-3 py-2.5 text-sm font-medium capitalize transition ${
                     target === rt
                       ? 'border-brand/50 bg-brand/10 text-brand'
-                      : 'glass-divider glass-panel-card text-ink-2 hover:border-brand/30'
+                      : 'glass-divider glass text-ink-2 hover:border-brand/30'
                   } disabled:opacity-40`}
                   data-testid={`migration-target-${rt}`}
                 >
@@ -198,29 +198,29 @@ export default function MigrationPlannerPanel() {
         {plan ? (
           <div className="space-y-4" data-testid="migration-plan-result">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="glass-metric-card">
+              <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
                 <div className="text-[10px] uppercase tracking-wider text-ink-3">Recommended strategy</div>
                 <div className="mt-2 text-lg font-semibold capitalize text-ink">
                   {String(plan.advice.recommended_strategy).replace(/-/g, ' ')}
                 </div>
               </div>
-              <div className="glass-metric-card">
+              <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
                 <div className="text-[10px] uppercase tracking-wider text-ink-3">Predicted downtime</div>
                 <div className="mt-2 text-lg font-semibold text-ink">
                   {plan.advice.estimated_downtime_secs}s
                 </div>
               </div>
-              <div className="glass-metric-card">
+              <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
                 <div className="text-[10px] uppercase tracking-wider text-ink-3">Confidence</div>
                 <div className="mt-2 text-lg font-semibold text-emerald-300">{confidence}%</div>
               </div>
-              <div className="glass-metric-card">
+              <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
                 <div className="text-[10px] uppercase tracking-wider text-ink-3">Cost impact</div>
                 <div className="mt-2 text-lg font-semibold text-ink">{formatUSD(plan.cost_impact_usd)}/mo</div>
               </div>
             </div>
 
-            <div className="glass-panel-card p-4">
+            <div className="glass p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
                 <Shield className="h-4 w-4 text-brand" />
                 Risk analysis

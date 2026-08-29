@@ -3,32 +3,25 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import type { ReactNode } from 'react';
+import { cn } from '../lib/cn';
 
 interface StatCardProps {
   title: string;
   value: string | number;
-  color: 'orange' | 'green' | 'red' | 'blue' | 'purple' | 'yellow';
+  color: 'primary' | 'green' | 'red' | 'blue' | 'purple' | 'yellow' | 'orange';
   icon?: ReactNode;
   isEmpty?: boolean;
   compact?: boolean;
 }
 
-const colorMap: Record<StatCardProps['color'], string> = {
-  orange: 'stat-card-orange',
-  green: 'stat-card-green',
-  red: 'stat-card-red',
-  blue: 'stat-card-blue',
-  purple: 'stat-card-purple',
-  yellow: 'stat-card-yellow',
-};
-
-const borderMap: Record<StatCardProps['color'], string> = {
-  orange: 'border-orange-500/20',
-  green: 'border-emerald-500/20',
-  red: 'border-red-500/20',
-  blue: 'border-blue-500/20',
-  purple: 'border-purple-500/20',
-  yellow: 'border-amber-500/20',
+const accentMap: Record<StatCardProps['color'], string> = {
+  primary: 'text-primary',
+  orange: 'text-primary',
+  green: 'text-emerald-500',
+  red: 'text-red-500',
+  blue: 'text-sky-500',
+  purple: 'text-violet-500',
+  yellow: 'text-amber-500',
 };
 
 export default function StatCard({ title, value, color, icon, isEmpty, compact }: StatCardProps) {
@@ -37,22 +30,19 @@ export default function StatCard({ title, value, color, icon, isEmpty, compact }
 
   return (
     <div
-      className={`${colorMap[color]} ${borderMap[color]} glass-metric-card interactive-lift group relative overflow-hidden transition-all duration-200 ${compact ? 'stat-card-compact p-4' : 'p-5'} ${empty ? 'stat-card-empty' : ''}`}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-70" />
-      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-opacity group-hover:opacity-100" />
-      {icon && (
-        <div className="absolute right-4 top-4 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-ink-2 transition-colors group-hover:text-ink">
-          {icon}
-        </div>
+      className={cn(
+        'tahoe-stat-tile relative rounded-[var(--radius-md)] border border-border bg-surface p-4 transition hover:border-brand/30 hover:shadow-card',
+        compact && 'p-3',
+        empty && 'opacity-70',
       )}
-      <p className="relative mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-2">
-        {title}
-      </p>
-      <p className={`relative font-semibold tracking-tight ${empty ? 'text-ink-3' : 'text-ink'} ${compact ? 'stat-value text-2xl' : 'text-3xl'}`}>
+    >
+      {icon ? (
+        <div className={cn('absolute right-3 top-3 opacity-80', accentMap[color])}>{icon}</div>
+      ) : null}
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">{title}</p>
+      <p className={cn('tahoe-stat-value', compact ? 'text-2xl' : 'text-3xl', empty ? 'text-muted' : 'text-foreground')}>
         {value}
       </p>
-      {!compact ? <div className="premium-divider relative mt-4 opacity-70" /> : null}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -89,7 +90,7 @@ function manifestContainerNames(manifest: Record<string, unknown>): string[] {
   ) as string[];
 }
 
-export default function ClustersPage() {
+function ClustersPage() {
   const navigate = useNavigate();
   const panelClass = '';
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
@@ -857,7 +858,7 @@ export default function ClustersPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Clusters" value={summary.cluster_count} color="blue" />
         <button
@@ -874,7 +875,7 @@ export default function ClustersPage() {
         >
           <StatCard title="Reachable" value={summary.healthy_clusters} color="green" />
         </button>
-        <StatCard title="Namespaces" value={namespaces.length} color="orange" />
+        <StatCard title="Namespaces" value={namespaces.length} color="primary" />
         <StatCard title={pageTab === 'network' ? 'Policies' : `${kind}s`} value={resources.length} color="purple" />
       </div>
       </section>
@@ -909,16 +910,16 @@ export default function ClustersPage() {
 
       {metricsSummary && (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <div className="glass-panel-card p-4">
+          <div className="glass p-4">
             <div className="text-xs uppercase tracking-wider text-ink-3">Metrics Scope</div>
             <div className="mt-2 text-lg font-semibold text-ink">{metricsSummary.scope}</div>
           </div>
-          <div className="glass-panel-card p-4">
+          <div className="glass p-4">
             <div className="text-xs uppercase tracking-wider text-ink-3">CPU</div>
             <div className="mt-2 text-lg font-semibold text-ink">{metricsSummary.total_cpu_millicores}m</div>
             <div className="mt-1 text-xs text-ink-3">{metricsSummary.pod_count} pods measured</div>
           </div>
-          <div className="glass-panel-card p-4">
+          <div className="glass p-4">
             <div className="text-xs uppercase tracking-wider text-ink-3">Memory</div>
             <div className="mt-2 text-lg font-semibold text-ink">{metricsSummary.total_memory_mib} Mi</div>
             <div className="mt-1 text-xs text-ink-3">From `kubectl top pod`</div>
@@ -927,7 +928,7 @@ export default function ClustersPage() {
       )}
 
       {authStatus && (
-        <div className="glass-panel-card px-4 py-3 text-sm text-ink-2">
+        <div className="glass px-4 py-3 text-sm text-ink-2">
           Cluster role: <span className="text-ink">{authStatus.role}</span>
           <span className="text-ink-3"> · </span>
           Signed in as <span className="text-ink">{authStatus.username}</span>
@@ -1844,3 +1845,5 @@ export default function ClustersPage() {
     </div>
   );
 }
+
+export default withAuroraPage('clusters', ClustersPage);

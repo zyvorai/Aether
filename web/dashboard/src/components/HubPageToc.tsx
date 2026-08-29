@@ -17,7 +17,7 @@ export default function HubPageToc({ items }: HubPageTocProps) {
   return (
     <nav
       aria-label="On this page"
-      className="glass-toolbar sticky top-0 z-10 mb-6 flex flex-wrap gap-2"
+      className="glass-toolbar sticky top-0 z-10 flex flex-wrap gap-2"
     >
       <span className="text-xs font-medium uppercase tracking-wider text-ink-3">On this page</span>
       {items.map((item) => (

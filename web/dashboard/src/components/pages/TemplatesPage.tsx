@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link, useNavigate } from 'react-router';
 import { Rocket, Wand2, Inbox, Settings2, FileCode2 } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
@@ -30,7 +31,7 @@ function specPreview(spec: Record<string, unknown> | null): string {
   return workloadJsonToYaml(spec);
 }
 
-export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
+function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,7 +210,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
         ) : null}
       </SearchQueryContextBanner>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
@@ -319,7 +320,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
         title={`Generated: ${generateName}`}
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 glass-panel-card px-4 py-3">
+          <div className="flex items-center justify-between gap-4 glass px-4 py-3">
             <div>
               <div className="text-sm font-medium text-ink">Generated workload spec</div>
               <div className="text-xs text-ink-3">Preview and deploy the generated template.</div>
@@ -349,7 +350,7 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
               </button>
             ) : null}
           </div>
-          <div className="glass-panel-card p-4">
+          <div className="glass p-4">
             <h4 className="text-xs uppercase tracking-wider text-ink-3 mb-2">Preview</h4>
             <pre className="text-xs text-emerald-300 font-mono whitespace-pre-wrap overflow-auto max-h-48">
               {specPreview(generatedSpec)}
@@ -409,3 +410,5 @@ export default function TemplatesPage({ refreshKey }: { refreshKey?: number } = 
     </div>
   );
 }
+
+export default withAuroraPage('templates', TemplatesPage);

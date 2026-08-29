@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -69,7 +70,7 @@ function GraphVisual({
           {edges.map((edge, i) => (
             <li
               key={`${edge.from}-${edge.to}-${i}`}
-              className="glass-panel-card flex items-center gap-2 text-sm px-4 py-2"
+              className="glass flex items-center gap-2 text-sm px-4 py-2"
             >
               <span className="font-medium text-ink"><WorkloadNodeLink name={edge.from} /></span>
               <ArrowRight size={14} className="text-brand shrink-0" />
@@ -99,7 +100,7 @@ function GraphVisual({
         {graph.startup_order.map((name, i) => (
           <div key={name} className="flex items-center gap-3">
             {i > 0 && <ArrowRight size={14} className="text-ink-3 shrink-0 -ml-1" />}
-            <div className="glass-panel-card flex items-center gap-3 flex-1 px-4 py-2">
+            <div className="glass flex items-center gap-3 flex-1 px-4 py-2">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
                 {i + 1}
               </span>
@@ -119,7 +120,7 @@ function GraphVisual({
   return <p className="text-sm text-ink-3">No graph nodes to display.</p>;
 }
 
-export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload', '');
   const highlightWorkload = workloadQuery.trim() || undefined;
@@ -282,7 +283,7 @@ export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
-      <div className="glass-panel-card mb-6">
+      <div className="glass mb-6">
         <h2 className="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
           <Plus size={20} className="text-emerald-400" />
           Add dependency
@@ -324,13 +325,13 @@ export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <EmptyState icon={<Inbox size={48} />} title="No dependency data" description="No dependency graph available" />
       ) : (
         <>
-          <section className="overview-section-shell mb-6 p-6 sm:p-8">
+          <section className="glass mb-6 p-6 sm:p-8">
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-testid="deps-stats-panel">
             <StatCard title="Workloads" value={graph.stats.total_workloads} color="blue" />
             <StatCard title="Edges" value={graph.stats.total_edges} color="purple" />
             <StatCard title="Root" value={graph.stats.root_workloads} color="green" />
             <StatCard title="Leaf" value={graph.stats.leaf_workloads} color="yellow" />
-            <StatCard title="Max depth" value={graph.stats.max_depth} color="orange" />
+            <StatCard title="Max depth" value={graph.stats.max_depth} color="primary" />
             <StatCard
               title="Cycles"
               value={graph.stats.has_cycles ? 'Yes' : 'No'}
@@ -340,7 +341,7 @@ export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="glass-panel-card lg:col-span-2" data-testid="deps-graph-panel">
+            <div className="glass lg:col-span-2" data-testid="deps-graph-panel">
               <h2 className="text-lg font-semibold text-ink mb-4">Dependency graph</h2>
               {(graph.edges?.length ?? 0) > 0 && (graph.nodes?.length ?? 0) > 0 ? (
                 <DependencyGraphVisual
@@ -361,7 +362,7 @@ export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
               )}
             </div>
 
-            <div className="glass-panel-card" data-testid="deps-issues-panel">
+            <div className="glass" data-testid="deps-issues-panel">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="text-lg font-semibold text-ink">Issues</h2>
                 <button
@@ -395,3 +396,5 @@ export default function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
     </div>
   );
 }
+
+export default withAuroraPage('deps', DepsPage);

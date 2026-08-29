@@ -6,6 +6,7 @@ import { AlertTriangle, Boxes, Layers, Rocket, Server, Shield } from 'lucide-rea
 import type { AppView, ClusterSummary, WorkloadResponse } from '../types/api';
 import { isK8sApplication, healthTone } from '../utils/k8sUx';
 import StatCard from './StatCard';
+import { SectionHeader } from './layout/SectionHeader';
 
 interface K8sControlCenterProps {
   username: string;
@@ -37,23 +38,21 @@ export default function K8sControlCenter({
   ];
 
   return (
-    <section className="overview-section-shell mb-8 p-6 sm:p-8" data-testid="k8s-control-center">
-      <div className="overview-section-header mb-6">
-        <p className="section-label">Kubernetes</p>
-        <h2 className="section-title">
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},{' '}
-          {greeting}
-        </h2>
-        <p className="section-subtitle">
-          {failing === 0 && warnings === 0
+    <section className="glass mb-8 p-6 sm:p-8" data-testid="k8s-control-center">
+      <SectionHeader
+        className="mb-6"
+        label="Kubernetes"
+        title={`Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, ${greeting}`}
+        description={
+          failing === 0 && warnings === 0
             ? 'Production Kubernetes looks healthy.'
-            : `${failing + warnings} application${failing + warnings === 1 ? '' : 's'} need attention.`}
-        </p>
-      </div>
+            : `${failing + warnings} application${failing + warnings === 1 ? '' : 's'} need attention.`
+        }
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard title="Clusters" value={clusters} color="blue" icon={<Server size={16} />} compact isEmpty={clusters === 0} />
-        <StatCard title="Applications" value={apps.length} color="orange" icon={<Boxes size={16} />} compact isEmpty={apps.length === 0} />
+        <StatCard title="Applications" value={apps.length} color="primary" icon={<Boxes size={16} />} compact isEmpty={apps.length === 0} />
         <StatCard title="Healthy" value={healthy} color="green" icon={<Shield size={16} />} compact isEmpty={healthy === 0} />
         <StatCard title="Needs fix" value={failing + warnings} color="yellow" icon={<AlertTriangle size={16} />} compact isEmpty={failing + warnings === 0} />
       </div>

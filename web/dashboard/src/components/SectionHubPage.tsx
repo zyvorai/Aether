@@ -7,6 +7,7 @@ import { ArrowRight } from 'lucide-react';
 import type { AppView } from '../types/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { Link } from 'react-router';
+import { Card, CardBody, CardHeader } from './ui/Card';
 
 export interface HubLink {
   view: AppView;
@@ -23,32 +24,34 @@ interface SectionHubPageProps {
 
 export default function SectionHubPage({ title, subtitle, links }: SectionHubPageProps) {
   return (
-    <section className="overview-section-shell p-6 sm:p-8">
-      <div className="overview-section-header">
-        <p className="section-label">Tools</p>
-        <h2 className="section-title">{title}</h2>
-        <p className="section-subtitle max-w-2xl">{subtitle}</p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {links.map((link) => (
-          <Link
-            key={link.view}
-            to={viewToPath(link.view)}
-            className="group hub-link-card"
-          >
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-brand/20 bg-brand/10 text-brand">
-              {link.icon}
-            </div>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-medium text-ink group-hover:text-ink">{link.title}</h3>
-                <p className="mt-1 text-sm text-ink-3">{link.description}</p>
+    <Card className="mb-6">
+      <CardHeader>
+        <p className="text-xs font-normal uppercase tracking-wide text-muted">Tools</p>
+        <h2 className="mt-1 text-lg font-semibold text-foreground">{title}</h2>
+        <p className="mt-1 max-w-2xl text-sm text-muted">{subtitle}</p>
+      </CardHeader>
+      <CardBody>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {links.map((link) => (
+            <Link
+              key={link.view}
+              to={viewToPath(link.view)}
+              className="group glass glass-hover-lift block rounded-[var(--radius-liquid)] p-4 no-underline"
+            >
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-brand/20 bg-brand-wash text-brand">
+                {link.icon}
               </div>
-              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-ink-3 transition group-hover:text-brand" />
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-medium text-foreground">{link.title}</h3>
+                  <p className="mt-1 text-sm text-muted">{link.description}</p>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted transition group-hover:text-brand" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </CardBody>
+    </Card>
   );
 }

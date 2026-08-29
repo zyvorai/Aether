@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -24,9 +25,9 @@ const TOC = [
   { id: 'obs-tools', label: 'Tools' },
 ];
 
-export default function ObservabilityPage() {
+function ObservabilityPage() {
   return (
-    <section className="hub-page-shell">
+    <section className="glass">
       <HubPageToc items={TOC} />
       <div id="obs-root-cause"><FleetRootCausePanel /></div>
       <div id="obs-capacity-forecast"><CapacityForecastPanel /></div>
@@ -82,3 +83,5 @@ export default function ObservabilityPage() {
     </section>
   );
 }
+
+export default withAuroraPage('observability', ObservabilityPage);

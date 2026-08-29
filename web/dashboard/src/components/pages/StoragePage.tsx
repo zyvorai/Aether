@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -41,7 +42,7 @@ function stateTone(state: string): EntityStatusTone {
   return 'muted';
 }
 
-export default function StoragePage({ refreshKey }: { refreshKey?: number } = {}) {
+function StoragePage({ refreshKey }: { refreshKey?: number } = {}) {
   const [volumes, setVolumes] = useState<StorageVolume[]>([]);
   const [status, setStatus] = useState<StorageStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +81,7 @@ export default function StoragePage({ refreshKey }: { refreshKey?: number } = {}
 
   return (
     <div className="overflow-x-hidden">
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
         <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
         {notConfigured ? (
@@ -148,3 +149,5 @@ export default function StoragePage({ refreshKey }: { refreshKey?: number } = {}
     </div>
   );
 }
+
+export default withAuroraPage('storage', StoragePage);

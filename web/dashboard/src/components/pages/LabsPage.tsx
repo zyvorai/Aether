@@ -1,6 +1,7 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
 import { Link } from 'react-router';
+import { withAuroraPage } from '../layout/AuroraPage';
 import KnowledgeGraphPanel from '../KnowledgeGraphPanel';
 import GraphPlatformPanel from '../GraphPlatformPanel';
 import LabsGraduationPanel from '../LabsGraduationPanel';
@@ -20,11 +21,11 @@ const TOC = [
   { id: 'labs-tools', label: 'Tools' },
 ];
 
-export default function LabsPage() {
+function LabsPage() {
   const [workload] = useQueryParam('workload');
 
   return (
-    <section className="hub-page-shell">
+    <section className="glass">
       {workload.trim() ? (
         <WorkloadContextBanner testId="labs-workload-context" workload={workload} description="Labs context">
           <WorkloadScopedCrossLinks workload={workload} prefix="labs" showGitops />
@@ -100,3 +101,5 @@ export default function LabsPage() {
     </section>
   );
 }
+
+export default withAuroraPage('labs', LabsPage);

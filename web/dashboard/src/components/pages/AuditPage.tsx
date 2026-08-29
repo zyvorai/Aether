@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -20,7 +21,7 @@ import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { AuditResponse, AuditVerifyResponse } from '../../types/api';
 
-export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
+function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [audit, setAudit] = useState<AuditResponse | null>(null);
   const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -255,7 +256,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
         </Link>
       </div>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="text-left">
           <StatCard title="Total events" value={audit.summary.total_events} color="blue" />
@@ -277,7 +278,7 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
       </section>
 
       {verify && (
-        <div className="glass-panel-card mb-6" data-testid="audit-verify-panel">
+        <div className="glass mb-6" data-testid="audit-verify-panel">
           <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">Integrity verification</div>
           <div className="flex items-center gap-3 flex-wrap">
             <Badge text={verify.integrity} variant={verify.integrity === 'VERIFIED' ? 'green' : 'red'} />
@@ -314,11 +315,11 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
       ) : filteredEvents.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting your search" />
       ) : (
-        <div className="glass-panel-card">
+        <div className="glass">
           <h2 className="text-lg font-semibold text-ink mb-4">Recent events</h2>
           <div className="space-y-3 max-h-[600px] overflow-auto">
             {filteredEvents.map((ev) => (
-              <div key={ev.id} className="glass-panel-card flex items-start gap-3 p-4">
+              <div key={ev.id} className="glass flex items-start gap-3 p-4">
                 <Badge text={ev.result} variant={ev.result.toLowerCase() === 'success' ? 'green' : 'red'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -345,3 +346,5 @@ export default function AuditPage({ refreshKey }: { refreshKey?: number } = {}) 
     </div>
   );
 }
+
+export default withAuroraPage('audit', AuditPage);

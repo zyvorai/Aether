@@ -126,15 +126,15 @@ export default function SelfHealingPanel() {
       }
     >
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-ink">{preview?.would_execute.length ?? 0}</div>
           <div className="text-xs text-ink-3">Would execute</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-amber-200">{preview?.would_skip.length ?? 0}</div>
           <div className="text-xs text-ink-3">Blocked by policy</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-ink">{remediation?.actions.length ?? 0}</div>
           <div className="text-xs text-ink-3">Remediation actions queued</div>
         </div>

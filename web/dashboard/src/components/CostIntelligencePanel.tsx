@@ -113,18 +113,18 @@ export default function CostIntelligencePanel() {
           </button>
         </div>}
     ><div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <DollarSign className="mb-2 h-4 w-4 text-emerald-400" />
           <div className="text-2xl font-semibold text-emerald-300">{formatUSD(totalSavings)}</div>
           <div className="text-xs text-ink-3">Potential savings / mo</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-ink">
             {(report?.total_potential_savings_pct ?? 0).toFixed(1)}%
           </div>
           <div className="text-xs text-ink-3">Fleet savings potential</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-ink">{report?.recommendations.length ?? 0}</div>
           <div className="text-xs text-ink-3">Optimization opportunities</div>
         </div>
@@ -137,7 +137,7 @@ export default function CostIntelligencePanel() {
           {report.recommendations.slice(0, 5).map((rec) => (
             <li
               key={rec.workload}
-              className="flex flex-wrap items-start justify-between gap-3 glass-panel-card px-4 py-3"
+              className="flex flex-wrap items-start justify-between gap-3 glass px-4 py-3"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">

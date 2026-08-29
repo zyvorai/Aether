@@ -69,7 +69,7 @@ export default function AutonomousSrePanel() {
           </p>
           <div className="grid gap-4 lg:grid-cols-2">
             {report.sections.map((section) => (
-              <div key={section.title} className="glass-panel-card p-4">
+              <div key={section.title} className="glass p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="font-medium text-ink">{section.title}</span>
                   <SeverityBadge severity={section.severity} />

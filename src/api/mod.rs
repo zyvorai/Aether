@@ -239,6 +239,8 @@ async fn auth_middleware(
         || path == "/api/auth/saml/logout"
         || path == "/api/auth/ldap/login"
         || path == "/api/auth/ldap/logout"
+        || path == "/api/auth/login"
+        || path == "/api/auth/logout"
         || path == "/api/hosted/billing/stripe/webhook"
         || path.starts_with("/api/mock-idp/")
         || (*req.method() == Method::GET && !path.starts_with("/api"));
@@ -252,7 +254,8 @@ async fn auth_middleware(
     let oidc_enabled = app_state.oidc.is_some();
     let saml_enabled = app_state.saml.is_some();
     let ldap_enabled = app_state.ldap.is_some();
-    let session_auth_enabled = oidc_enabled || saml_enabled || ldap_enabled;
+    let local_auth_enabled = app_state.local_auth.is_some();
+    let session_auth_enabled = oidc_enabled || saml_enabled || ldap_enabled || local_auth_enabled;
 
     // Extract Bearer token before acquiring lock
     let header_token = req
@@ -353,6 +356,16 @@ async fn auth_middleware(
         }
         if let Some(ldap) = app_state.ldap.as_ref() {
             if let Some((role, _username)) = ldap.verify_session_cookie(req.headers()) {
+                if !crate::rbac::check_permission(&role, &http_method, path) {
+                    return Err(StatusCode::FORBIDDEN);
+                }
+                ensure_mutation_confirm(req.method(), path, req.headers())?;
+                let tenant = resolve_tenant_id(req.headers(), None);
+                return authorized_next(req, next, tenant).await;
+            }
+        }
+        if let Some(local) = app_state.local_auth.as_ref() {
+            if let Some((role, _username)) = local.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
@@ -914,6 +927,13 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let oidc = crate::oidc::OidcRuntime::new(shared_cache.clone())?;
     let saml = crate::saml::SamlRuntime::new(shared_cache.clone())?;
     let ldap = crate::ldap::LdapRuntime::new()?;
+    let local_auth = crate::local_auth::LocalAuthRuntime::from_env().map(Arc::new);
+    if let Some(ref la) = local_auth {
+        tracing::info!(
+            user = %la.username(),
+            "local demo auth enabled (default password Admin@321 — change in production)"
+        );
+    }
 
     let app_state = AppState {
         state: Arc::new(RwLock::new(state_store)),
@@ -924,6 +944,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         oidc,
         saml,
         ldap,
+        local_auth,
         tls_active: tls_enabled,
         state_path,
         workload_state_pg: workload_state_pg.clone(),
@@ -1051,6 +1072,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/auth/saml/logout", get(api_saml_logout))
         .route("/api/auth/ldap/login", post(api_ldap_login))
         .route("/api/auth/ldap/logout", get(api_ldap_logout))
+        .route("/api/auth/login", post(api_local_login))
+        .route("/api/auth/logout", get(api_local_logout))
         .route("/api/system/ready", get(api_system_ready))
         .route("/api/workloads", get(list_workloads))
         .route("/api/workloads", post(create_workload))

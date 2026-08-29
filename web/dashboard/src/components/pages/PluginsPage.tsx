@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -20,7 +21,7 @@ import Modal from '../Modal';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { PluginInfo } from '../../types/api';
 
-export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,7 +181,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
         ) : null}
       </SearchQueryContextBanner>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -229,7 +230,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
       </div>
 
       {discoverSummary && (
-        <div data-testid="plugins-discover-summary" className="glass-panel-card mb-6 text-sm text-ink-2">
+        <div data-testid="plugins-discover-summary" className="glass mb-6 text-sm text-ink-2">
           {discoverSummary}
           <button
             type="button"
@@ -242,7 +243,7 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
       )}
 
       {canMutate && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h3 className="text-sm font-semibold text-ink mb-2">Register plugin manifest</h3>
           <form onSubmit={(e) => void handleRegister(e)} className="space-y-3" data-testid="plugins-register-form">
             <textarea
@@ -325,15 +326,15 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
         {selectedPlugin && (
           <div className="space-y-4" data-testid="plugins-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="glass-panel-card px-4 py-3">
+              <div className="glass px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-ink-3">Runtime</div>
                 <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.runtime_kind}</div>
               </div>
-              <div className="glass-panel-card px-4 py-3">
+              <div className="glass px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-ink-3">Version</div>
                 <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.version}</div>
               </div>
-              <div className="glass-panel-card px-4 py-3">
+              <div className="glass px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-ink-3">Capabilities</div>
                 <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.capabilities.length}</div>
               </div>
@@ -355,3 +356,5 @@ export default function PluginsPage({ refreshKey }: { refreshKey?: number } = {}
     </div>
   );
 }
+
+export default withAuroraPage('plugins', PluginsPage);

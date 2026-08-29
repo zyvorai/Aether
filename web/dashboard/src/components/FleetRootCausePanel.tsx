@@ -73,7 +73,7 @@ export default function FleetRootCausePanel() {
           {report.diagnoses.map((row) => (
             <article
               key={row.workload}
-              className="glass-panel-card p-4"
+              className="glass p-4"
               data-testid={`root-cause-${row.workload}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">

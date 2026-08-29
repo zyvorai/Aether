@@ -145,7 +145,7 @@ function TwinSnapshotCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'glass-divider glass-panel-card'}`}
+      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'glass-divider glass'}`}
     >
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-3">{title}</p>
       <dl className="grid grid-cols-2 gap-3 text-sm">
@@ -176,7 +176,7 @@ function TwinSnapshotCard({
 
 function DeltaCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="glass-panel-card px-3 py-2">
+    <div className="glass px-3 py-2">
       <div className="text-xs text-ink-3">{label}</div>
       <div className="text-lg font-semibold text-ink">{value}</div>
     </div>

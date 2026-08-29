@@ -126,7 +126,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
       )}
 
       {plan && !loading && (
-        <div className="rounded-xl glass-panel-card p-4 space-y-3">
+        <div className="rounded-xl glass p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               text={plan.recommended_strategy.replace(/([A-Z])/g, '-$1').toLowerCase()}

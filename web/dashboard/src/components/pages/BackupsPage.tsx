@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -23,7 +24,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,7 +190,7 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
         ) : null}
       </SearchQueryContextBanner>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
@@ -345,3 +346,5 @@ export default function BackupsPage({ refreshKey }: { refreshKey?: number } = {}
     </div>
   );
 }
+
+export default withAuroraPage('backups', BackupsPage);

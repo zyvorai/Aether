@@ -84,15 +84,15 @@ export default function AutonomousPlacementPanel() {
           </button>
         </div>}
     ><div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-ink">{status?.workloads.length ?? 0}</div>
           <div className="text-xs text-ink-3">Tracked workloads</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-emerald-300">{candidates.length}</div>
           <div className="text-xs text-ink-3">Migration candidates</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-violet-300">
             {status?.workloads.filter((w) => w.auto_eligible).length ?? 0}
           </div>
@@ -107,7 +107,7 @@ export default function AutonomousPlacementPanel() {
           {candidates.slice(0, 8).map((row) => (
             <li
               key={row.workload}
-              className="flex flex-wrap items-start justify-between gap-3 glass-panel-card px-4 py-3"
+              className="flex flex-wrap items-start justify-between gap-3 glass px-4 py-3"
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2">

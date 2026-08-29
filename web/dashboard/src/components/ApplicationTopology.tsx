@@ -11,7 +11,7 @@ interface ApplicationTopologyProps {
 
 function Node({ label, sub }: { label: string; sub?: string }) {
   return (
-    <div className="glass-panel-card px-4 py-3 text-center min-w-[140px]">
+    <div className="glass px-4 py-3 text-center min-w-[140px]">
       <div className="text-sm font-medium text-ink">{label}</div>
       {sub && <div className="text-xs text-ink-3 mt-1">{sub}</div>}
     </div>

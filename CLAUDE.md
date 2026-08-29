@@ -99,4 +99,4 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 ## Default Ports
 
 - API server: `5090` (configurable via `--port`)
-- Brand color: Zyvor orange `#cc420a` light / `#ff5a15` dark (per `zyvor-web/design-reference/v3-latest/zyvor.css` — the real Zyvor design system, not an approximation)
+- Brand color: Apple blue `#0071e3` light / `#0a84ff` dark (Aurora `globals.css` — product console; zyvor-web orange is marketing-only)

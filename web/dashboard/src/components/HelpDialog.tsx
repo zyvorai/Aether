@@ -44,7 +44,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
     >
       <div className="glass-modal-backdrop fixed inset-0" aria-hidden />
       <div
-        className="glass-modal-panel relative w-full max-w-lg overflow-hidden shadow-2xl"
+        className="glass rounded-[var(--radius-xl)] relative w-full max-w-lg overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between glass-divider-b/40 px-5 py-4">

@@ -105,7 +105,7 @@ export default function WorkloadCard({
       style={{ animationDelay: `${delayMs}ms` }}
       className={`workload-card-rise group relative overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-0.5 ${
         selected
-          ? 'border-brand/45 bg-gradient-to-br from-aether/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
+          ? 'border-brand/45 bg-gradient-to-br from-primary/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
           : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-brand/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
       }`}
     >

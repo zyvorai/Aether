@@ -4,28 +4,36 @@
 
 import { expect, type Page } from '@playwright/test';
 
+/** Sign in with the seeded demo user (admin / Admin@321) when the login gate is shown. */
 export async function ensureAuthenticated(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('zyvor-classic-nav', '1');
-    localStorage.setItem('zyvor-pro-view', '0');
-  });
   await page.setViewportSize({ width: 1280, height: 1400 });
   await page.goto('/');
 
-  const helpMenu = page.getByRole('button', { name: 'Help menu' });
-  if (await helpMenu.isVisible({ timeout: 5000 }).catch(() => false)) {
+  const globalNav = page.getByTestId('global-nav');
+  if (await globalNav.isVisible({ timeout: 5000 }).catch(() => false)) {
     return;
   }
 
+  const loginGate = page.getByTestId('login-gate');
+  if (await loginGate.isVisible({ timeout: 8000 }).catch(() => false)) {
+    const user = loginGate.locator('input[name="username"], input[autocomplete="username"]').first();
+    const pass = loginGate.locator('input[name="password"], input[type="password"]').first();
+    if (await user.isVisible().catch(() => false)) {
+      await user.fill('admin');
+    }
+    if (await pass.isVisible().catch(() => false)) {
+      await pass.fill('Admin@321');
+    }
+    await loginGate.getByRole('button', { name: /sign in|log in|continue/i }).first().click();
+    await expect(globalNav).toBeVisible({ timeout: 20_000 });
+    return;
+  }
+
+  // Legacy continue / SAML paths
   const continueBtn = page.getByRole('button', { name: /continue to dashboard/i });
-  if (await continueBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+  if (await continueBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     await continueBtn.click();
   }
 
-  const samlBtn = page.getByRole('button', { name: /sign in with saml/i });
-  if (await samlBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await samlBtn.click();
-  }
-
-  await expect(helpMenu).toBeVisible({ timeout: 20_000 });
+  await expect(globalNav).toBeVisible({ timeout: 20_000 });
 }

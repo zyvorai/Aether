@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -8,7 +9,6 @@ import { Grid3X3, LayoutList, Plus, Search } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { restartWorkload } from '../../utils/workloadActions';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
-import { useProView } from '../../hooks/useProView';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { isK8sApplication, workspaceLabel } from '../../utils/k8sUx';
@@ -23,11 +23,10 @@ import { useAuth } from '../../contexts/AuthContext';
 
 type ViewMode = 'grid' | 'list';
 
-export default function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const { workspace, setWorkspace } = useWorkspace();
-  const [proView, setProView] = useProView();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -127,18 +126,9 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
           description="Application context"
         />
       ) : null}
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="space-y-6">
       <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-ink-2">
-            <input
-              type="checkbox"
-              checked={proView}
-              onChange={(e) => setProView(e.target.checked)}
-              className="accent-aether"
-            />
-            Pro view
-          </label>
           <button
             type="button"
             onClick={() => navigate(pathWithQuery(viewToPath('editor'), { deploy: '1' }))}
@@ -222,7 +212,7 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
           ))}
         </div>
       ) : (
-        <div className="glass-panel-card overflow-hidden">
+        <div className="glass overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-ink-3 glass-divider-b">
@@ -270,3 +260,5 @@ export default function ApplicationsPage({ refreshKey }: { refreshKey?: number }
     </div>
   );
 }
+
+export default withAuroraPage('applications', ApplicationsPage);

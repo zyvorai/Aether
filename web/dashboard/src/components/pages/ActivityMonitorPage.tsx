@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -31,7 +32,7 @@ function parseMemoryMi(mem: string): number {
   return Number.parseInt(mem, 10) || 0;
 }
 
-export default function ActivityMonitorPage() {
+function ActivityMonitorPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<MonitorTab>('cpu');
   const [initialLoading, setInitialLoading] = useState(true);
@@ -154,7 +155,7 @@ export default function ActivityMonitorPage() {
               type="checkbox"
               checked={liveEnabled}
               onChange={(e) => setLiveEnabled(e.target.checked)}
-              className="accent-aether"
+              className="accent-primary"
             />
             Live refresh
           </label>
@@ -191,10 +192,10 @@ export default function ActivityMonitorPage() {
         </div>
       </div>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Pods" value={metrics?.pod_count ?? 0} color="blue" icon={<Activity size={18} />} />
-        <StatCard title="Applications" value={k8sApps.length} color="orange" icon={<Zap size={18} />} />
+        <StatCard title="Applications" value={k8sApps.length} color="primary" icon={<Zap size={18} />} />
         <StatCard title="Failing apps" value={failingApps.length} color="red" icon={<AlertTriangle size={18} />} />
         <StatCard
           title="Cluster CPU"
@@ -219,7 +220,7 @@ export default function ActivityMonitorPage() {
         ))}
       </div>
 
-      <div className="glass-panel-card">
+      <div className="glass">
         {tab === 'cpu' && (
           <div>
             <h3 className="text-sm font-semibold text-ink-2 mb-4">Top CPU pods</h3>
@@ -306,3 +307,5 @@ export default function ActivityMonitorPage() {
     </div>
   );
 }
+
+export default withAuroraPage('activity', ActivityMonitorPage);

@@ -1,6 +1,6 @@
 # Aether customer PDFs
 
-Generated: 2026-08-26
+Generated: 2026-08-29
 
 Rebuild: `node scripts/customer-docs/build-customer-pdfs.mjs`
 

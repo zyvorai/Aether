@@ -28,7 +28,7 @@ export default function CommandCenterIntentSla({ refreshKey = 0 }: CommandCenter
 
   return (
     <section
-      className="command-center-shell mb-8 border-red-500/20 p-6 sm:p-8"
+      className="glass mb-8 border-red-500/20 p-6 sm:p-8"
       data-testid="command-center-intent-sla"
     >
       <div className="mb-4 flex items-center gap-3">

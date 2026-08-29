@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link, useNavigate } from 'react-router';
 import { AlertTriangle, Brain, DollarSign, Inbox, MapPin, Sparkles, TrendingUp } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -64,7 +65,7 @@ function workloadMatchesFocus(rowWorkload: string, focus: string): boolean {
   return rowWorkload.endsWith(`/${needle}`) || rowWorkload.split('/').includes(needle);
 }
 
-export default function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
+function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [tabParam, setTabParam] = useQueryParam('tab', 'predictions');
   const [workloadQuery] = useQueryParam('workload', '');
@@ -240,7 +241,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <GlassSection
         variant="hero"
         accent="purple"
@@ -300,7 +301,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
         <div className="space-y-4 mt-4" data-testid="intelligence-predictions-panel">
           {predictions ? (
             <>
-              <div className="glass-panel-card flex flex-wrap items-center gap-4">
+              <div className="glass flex flex-wrap items-center gap-4">
                 <Brain className="text-brand shrink-0" size={22} />
                 <div>
                   <p className="text-sm text-ink-2">Fleet risk score</p>
@@ -317,7 +318,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                   {predictions.predictions.map((row) => (
                     <div
                       key={row.workload}
-                      className={`glass-panel-card ${
+                      className={`glass ${
                         workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
                           ? 'ring-1 ring-aether/40 border-brand/30'
                           : ''
@@ -375,7 +376,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
             threats.threats.map((t) => (
               <div
                 key={`${t.workload}-${t.detected_at}`}
-                className={`glass-panel-card ${
+                className={`glass ${
                   workloadFocus && workloadMatchesFocus(t.workload, workloadFocus)
                     ? 'ring-1 ring-aether/40 border-brand/30'
                     : ''
@@ -421,7 +422,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
         <div className="space-y-4 mt-4">
           {cost ? (
             <>
-              <div className="glass-panel-card">
+              <div className="glass">
                 <p className="text-sm text-ink-2">Total potential savings</p>
                 <p className="text-2xl font-semibold text-emerald-400">
                   {cost.total_potential_savings_pct.toFixed(1)}%
@@ -433,7 +434,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
                 cost.recommendations.map((rec) => (
                   <div
                     key={rec.workload}
-                    className={`glass-panel-card ${
+                    className={`glass ${
                       workloadFocus && workloadMatchesFocus(rec.workload, workloadFocus)
                         ? 'ring-1 ring-aether/40 border-brand/30'
                         : ''
@@ -488,7 +489,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
             evolution.workloads.map((row) => (
               <div
                 key={row.workload}
-                className={`glass-panel-card ${
+                className={`glass ${
                   workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
                     ? 'ring-1 ring-aether/40 border-brand/30'
                     : ''
@@ -543,7 +544,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
               Placement scheduler →
             </Link>
           </div>
-          <div className="glass-panel-card space-y-3">
+          <div className="glass space-y-3">
             <p className="text-sm text-ink-2">
               POST workload YAML to rank clusters and runtimes for global placement.
             </p>
@@ -567,7 +568,7 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
           {placeResults && placeResults.length > 0 && (
             <div className="space-y-3">
               {placeResults.map((rec, i) => (
-                <div key={`${rec.cluster ?? 'local'}-${rec.runtime}-${i}`} className="glass-panel-card">
+                <div key={`${rec.cluster ?? 'local'}-${rec.runtime}-${i}`} className="glass">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="font-medium text-ink">{rec.cluster ?? 'default cluster'}</span>
                     <Badge text={rec.runtime} variant="blue" />
@@ -603,3 +604,5 @@ export default function IntelligencePage({ refreshKey }: { refreshKey?: number }
     </div>
   );
 }
+
+export default withAuroraPage('intelligence', IntelligencePage);

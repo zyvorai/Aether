@@ -71,7 +71,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
         </div>
       </div>
 
-      <div className={`rounded-xl border p-4 space-y-3 ${'glass-panel-card'}`}>
+      <div className={`rounded-xl border p-4 space-y-3 ${'glass'}`}>
         <p className="leading-relaxed">
           Part of the{' '}
           <a

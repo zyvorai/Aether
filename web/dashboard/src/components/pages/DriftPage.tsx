@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -26,7 +27,7 @@ interface BulkScanState {
   drifted: string[];
 }
 
-export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
+function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,11 +186,11 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
       />
 
       {fleetDrift ? (
-        <section className="overview-section-shell mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Tracked</div><div className="text-lg font-semibold text-ink">{fleetDrift.total_workloads}</div></div>
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
-          <div className="glass-panel-card py-3 px-4"><div className="text-xs text-ink-3">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
+        <section className="glass mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
+          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Tracked</div><div className="text-lg font-semibold text-ink">{fleetDrift.total_workloads}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
         </section>
       ) : null}
 
@@ -279,7 +280,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
       ) : null}
 
       {bulkScan && !bulkScan.scanning ? (
-        <div data-testid="drift-bulk-summary" className="glass-panel-card mb-6 text-sm text-ink-2">
+        <div data-testid="drift-bulk-summary" className="glass mb-6 text-sm text-ink-2">
           Scanned {bulkScan.total} workload(s) — {bulkScan.drifted.length} with drift
           {bulkScan.drifted.length > 0 ? (
             <span className="ml-2 text-ink-3">({bulkScan.drifted.join(', ')})</span>
@@ -307,7 +308,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
         <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to check for drift" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-panel-card">
+          <div className="glass">
             <h2 className="text-lg font-semibold text-ink mb-1">Select workload</h2>
             <p className="text-sm text-ink-3 mb-4">Click a workload to check for configuration drift</p>
             <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto" data-testid="drift-workload-select">
@@ -325,7 +326,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
                         ? 'border-brand/60 ring-1 ring-aether/30 bg-brand/5 text-brand'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                          : 'glass-divider glass-panel-card text-ink hover:bg-white/[0.04]'
+                          : 'glass-divider glass text-ink hover:bg-white/[0.04]'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}
@@ -337,7 +338,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
             </div>
           </div>
 
-          <div className="glass-panel-card min-h-[12rem]">
+          <div className="glass min-h-[12rem]">
             <h3 className="text-sm font-medium text-ink-2 uppercase tracking-wider mb-4">Drift report</h3>
             {!driftResult ? (
               <p className="text-sm text-ink-3">Select a workload or run a bulk scan to see drift analysis.</p>
@@ -364,7 +365,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
                     <h4 className="text-sm font-medium text-ink-2 mb-2">Drifted fields</h4>
                     <div className="space-y-2 max-h-64 overflow-auto">
                       {driftResult.drifts.map((d, i) => (
-                        <div key={i} className="glass-panel-card rounded-lg p-3 border glass-divider">
+                        <div key={i} className="glass rounded-lg p-3 border glass-divider">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-sm font-medium text-ink">{d.field}</span>
                             <SeverityBadge severity={d.severity} />
@@ -405,7 +406,7 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
                     <h4 className="text-sm font-medium text-ink-2 mb-2">Reconciliation plan</h4>
                     <div className="space-y-2">
                       {driftResult.reconciliation_plan.map((step, i) => (
-                        <div key={i} className="rounded-lg border glass-divider glass-panel-card p-3 text-sm">
+                        <div key={i} className="rounded-lg border glass-divider glass p-3 text-sm">
                           <div className="font-medium text-ink">{step.action_type}</div>
                           <p className="text-ink-2 mt-1">{step.description}</p>
                           <div className="flex gap-3 mt-2 text-xs text-ink-3">
@@ -425,3 +426,5 @@ export default function DriftPage({ refreshKey }: { refreshKey?: number } = {}) 
     </div>
   );
 }
+
+export default withAuroraPage('drift', DriftPage);

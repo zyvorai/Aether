@@ -384,7 +384,8 @@ function AetherDashboard() {
     setIsAuthenticated(false);
     setUsername('');
     if (mode === 'cookie') {
-      window.location.assign('/api/auth/oidc/logout');
+      // Prefer local demo logout; OIDC/SAML/LDAP also clear aether_session via their handlers.
+      window.location.assign('/api/auth/logout');
       return;
     }
     navigate('/', { replace: true });

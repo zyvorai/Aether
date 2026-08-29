@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Bot, Plus, Trash2, Zap } from 'lucide-react';
 import { apiDelete, apiFetchSettled, apiPost } from '../../utils/api';
 import { useApiPage } from '../../hooks/useApiPage';
@@ -71,7 +72,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
+function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [draft, setDraft] = useState<ZyraProviderConfig>({ ...EMPTY, id: `provider-${Date.now()}` });
   const [apiKey, setApiKey] = useState('');
   const [tab, setTab] = useState<'providers' | 'local'>('providers');
@@ -132,7 +133,7 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
       onRetry={() => void reload()}
       errorTitle="AI providers unavailable"
     >
-      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8" data-testid="ai-providers-page">
+      <section className="glass mb-6 space-y-6 p-6 sm:p-8" data-testid="ai-providers-page">
         <PageTabs
           tabs={[
             { id: 'providers', label: 'Providers' },
@@ -269,3 +270,5 @@ export default function AiProvidersPage({ refreshKey }: { refreshKey?: number } 
     </PageFrame>
   );
 }
+
+export default withAuroraPage('ai-providers', AiProvidersPage);

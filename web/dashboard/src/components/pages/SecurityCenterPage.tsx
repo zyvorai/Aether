@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -18,7 +19,7 @@ import SecurityCopilotPanel from '../SecurityCopilotPanel';
 import SecurityPlatformPanel from '../SecurityPlatformPanel';
 import type { SecretSummary, ThreatReport, SbomMetadata, SignedImageManifest, RemediationPlan } from '../../types/api';
 
-export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
+function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const [loading, setLoading] = useState(true);
@@ -175,24 +176,24 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
 
       <SecurityPlatformPanel />
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="High risk items" value={highRiskCount} color="red" icon={<AlertTriangle size={18} />} />
         <StatCard title="Threats" value={threats?.threats.length ?? 0} color="yellow" icon={<Shield size={18} />} />
         <StatCard title="Secrets" value={secrets.length} color="blue" icon={<KeyRound size={18} />} />
-        <StatCard title="Need rotation" value={rotationNeeded.length} color="orange" icon={<Lock size={18} />} />
+        <StatCard title="Need rotation" value={rotationNeeded.length} color="primary" icon={<Lock size={18} />} />
       </div>
       </section>
 
       {hardening && (
-        <div className="glass-panel-card mb-6 border border-violet-500/20">
+        <div className="glass mb-6 border border-violet-500/20">
           <h3 className="text-sm font-semibold text-violet-200 mb-2">AI Hardening Plan</h3>
           <pre className="text-sm text-ink-2 whitespace-pre-wrap font-sans">{hardening}</pre>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="glass-panel-card" data-testid="security-sbom-card">
+        <div className="glass" data-testid="security-sbom-card">
           <h3 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
             <FileCheck size={18} className="text-brand" /> SBOM
           </h3>
@@ -207,7 +208,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
             <p className="text-sm text-ink-3">SBOM not generated yet. Run <code className="text-ink-2">aether sbom export</code>.</p>
           )}
         </div>
-        <div className="glass-panel-card" data-testid="security-images-card">
+        <div className="glass" data-testid="security-images-card">
           <h3 className="text-lg font-semibold text-ink mb-3">Signed images</h3>
           {signedImages.length === 0 ? (
             <p className="text-sm text-ink-3">No signed VM images in catalog.</p>
@@ -225,7 +226,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
       </div>
 
       {packetwolfStatus?.configured ? (
-        <div className="glass-panel-card mb-6" data-testid="security-packetwolf-card">
+        <div className="glass mb-6" data-testid="security-packetwolf-card">
           <h3 className="text-lg font-semibold text-ink mb-2">PacketWolf</h3>
           <p className="text-sm text-ink-2">
             Bridge {packetwolfStatus.reachable ? 'reachable' : 'unreachable'} — verify egress from Fleet expanded apps.
@@ -233,7 +234,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
         </div>
       ) : null}
 
-      <div className="glass-panel-card mb-6" data-testid="security-remediation-card">
+      <div className="glass mb-6" data-testid="security-remediation-card">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h3 className="text-lg font-semibold text-ink">Anomaly remediation</h3>
           <div className="flex gap-2">
@@ -273,7 +274,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-panel-card">
+        <div className="glass">
           <h3 className="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
             <Shield size={18} className="text-brand" /> Threat scan
           </h3>
@@ -301,7 +302,7 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
           )}
         </div>
 
-        <div className="glass-panel-card">
+        <div className="glass">
           <h3 className="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
             <FileCheck size={18} className="text-brand" /> Policy &amp; secrets
           </h3>
@@ -343,3 +344,5 @@ export default function SecurityCenterPage({ refreshKey }: { refreshKey?: number
     </div>
   );
 }
+
+export default withAuroraPage('security', SecurityCenterPage);

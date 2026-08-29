@@ -51,7 +51,7 @@ function severityTone(severity: string): string {
   const s = severity.toLowerCase();
   if (s === 'critical' || s === 'high') return 'border-red-500/30 bg-red-500/10 text-red-200';
   if (s === 'medium') return 'border-amber-500/30 bg-amber-500/10 text-amber-200';
-  return 'glass-panel-card text-ink-2';
+  return 'glass text-ink-2';
 }
 
 function contextualSubtitle(issueCount: number, fleetHealth: number): string {
@@ -101,7 +101,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
 
   if (loading && !briefing) {
     return (
-      <div className="command-center-shell mb-8 animate-pulse p-6 sm:p-8">
+      <div className="glass mb-8 animate-pulse p-6 sm:p-8">
         <div className="h-8 w-48 rounded-lg glass-inset-surface" />
         <div className="mt-2 h-4 w-72 rounded-lg glass-inset-surface" />
         <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -123,7 +123,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
   const migrationsEmpty = briefing.migration_opportunities === 0;
 
   return (
-    <section className="command-center-shell mb-8 p-6 sm:p-8" data-testid="command-center-briefing">
+    <section className="glass mb-8 p-6 sm:p-8" data-testid="command-center-briefing">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           {!fleetEmpty ? (
             <div className="relative mt-4 h-1.5 glass-progress-track">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-aether to-aether-ai transition-all"
+                className="h-full rounded-full bg-brand transition-all"
                 style={{ width: `${Math.min(100, Math.max(4, briefing.fleet_health_pct))}%` }}
               />
             </div>

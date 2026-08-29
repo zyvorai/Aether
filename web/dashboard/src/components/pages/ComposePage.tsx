@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -63,7 +64,7 @@ interface ComposeDeployResult {
   count: number;
 }
 
-export default function ComposePage() {
+function ComposePage() {
   const { canMutate } = useAuth();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -224,10 +225,9 @@ export default function ComposePage() {
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
+      <section className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-ink">Compose import</h2>
-        <p className="text-sm text-ink-3 mt-1">
+        <p className="text-sm text-ink-3">
           Validate dependency order and deploy a stack. Use <code className="text-brand/90">spec_yaml</code> for inline
           workloads or <code className="text-brand/90">spec</code> for file paths on the server.
         </p>
@@ -333,3 +333,5 @@ export default function ComposePage() {
     </div>
   );
 }
+
+export default withAuroraPage('compose', ComposePage);

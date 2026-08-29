@@ -7,8 +7,6 @@ export type { Page, Locator, APIRequestContext } from '@playwright/test';
 export const test = base.extend({
   page: async ({ page }, use) => {
     await page.addInitScript(() => {
-      localStorage.setItem('zyvor-classic-nav', '1');
-      localStorage.setItem('zyvor-pro-view', '0');
       const hideDock = () => {
         document.querySelectorAll('[data-testid="agent-status-dock"]').forEach((el) => {
           (el as HTMLElement).style.display = 'none';

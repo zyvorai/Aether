@@ -34,22 +34,22 @@ export default function EventCorrelationPanel({ events, resourceName }: Props) {
   return (
     <div className="space-y-4" data-testid="event-correlation-panel">
       <div className="grid grid-cols-3 gap-3 text-sm">
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-xs uppercase text-ink-3">Total</div>
           <div className="font-semibold text-ink">{events.length}</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-xs uppercase text-ink-3">Warnings</div>
           <div className="font-semibold text-amber-400">{summary.warnings}</div>
         </div>
-        <div className="glass-metric-card">
+        <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-xs uppercase text-ink-3">Normal</div>
           <div className="font-semibold text-emerald-400">{summary.normal}</div>
         </div>
       </div>
 
       {summary.topReasons.length > 0 ? (
-        <div className="glass-panel-card p-4">
+        <div className="glass p-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Top reasons</p>
           <ul className="space-y-1 text-sm">
             {summary.topReasons.map(([reason, count]) => (

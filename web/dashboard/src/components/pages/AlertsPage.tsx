@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link } from 'react-router';
 import { BellRing, Radio, Send, Plus, Trash2, Webhook } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -34,7 +35,7 @@ function ruleMatchesWorkload(
   );
 }
 
-export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [workloadQuery] = useQueryParam('workload', '');
   const [status, setStatus] = useState<AlertsStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -271,9 +272,9 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
         ) : null}
       </div>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-panel-card">
+        <div className="glass">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <Radio className="text-brand" size={20} />
@@ -351,7 +352,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
               {channels.map((ch) => (
                 <li
                   key={ch.name}
-                  className="glass-panel-card px-4 py-3"
+                  className="glass px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-ink">{ch.name}</span>
@@ -379,7 +380,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
           )}
         </div>
 
-        <div className="glass-panel-card" data-testid="alerts-rules-panel">
+        <div className="glass" data-testid="alerts-rules-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <BellRing className="text-amber-400" size={20} />
@@ -400,7 +401,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
               {rules.map((rule) => (
                 <li
                   key={rule.name}
-                  className="glass-panel-card px-4 py-3"
+                  className="glass px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-medium text-ink">{rule.name}</span>
@@ -429,7 +430,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
         </div>
       </div>
 
-      <div className="glass-panel-card mt-6">
+      <div className="glass mt-6">
         <div className="flex items-center gap-3 mb-4">
           <Send className="text-blue-400" size={20} />
           <h2 className="text-lg font-semibold text-ink">Test webhook</h2>
@@ -461,7 +462,7 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
         </div>
       </div>
 
-      <div className="glass-panel-card mt-6" data-testid="alerts-webhook-queue">
+      <div className="glass mt-6" data-testid="alerts-webhook-queue">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-ink">Webhook retry queue</h2>
           <button
@@ -501,3 +502,5 @@ export default function AlertsPage({ refreshKey }: { refreshKey?: number } = {})
     </div>
   );
 }
+
+export default withAuroraPage('alerts', AlertsPage);

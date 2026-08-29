@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -20,6 +21,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { HealthSummary, ManagedWorkload, HealthHistorySummary } from '../../types/api';
+import { SectionHeader } from '../layout/SectionHeader';
 
 function getHealthVariant(health: string): 'green' | 'yellow' | 'red' | 'muted' {
   const h = health.toLowerCase();
@@ -45,7 +47,7 @@ function getHealthTone(health: string): EntityStatusTone {
   return 'muted';
 }
 
-export default function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
+function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<HealthSummary | null>(null);
   const [workloads, setWorkloads] = useState<ManagedWorkload[]>([]);
@@ -262,12 +264,12 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <section className="overview-section-shell mb-6 p-6 sm:p-8">
-          <div className="overview-section-header">
-            <p className="section-label">Health</p>
-            <h2 className="section-title">Fleet status</h2>
-            <p className="section-subtitle">Orchestrator health checks and circuit breaker state</p>
-          </div>
+        <section className="glass mb-6 p-6 sm:p-8">
+          <SectionHeader
+            label="Health"
+            title="Fleet status"
+            description="Orchestrator health checks and circuit breaker state"
+          />
         <StatRibbon
           columns={5}
           items={[
@@ -362,7 +364,7 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
           )}
 
           {selected && (
-            <div className="glass-panel-card" data-testid="health-detail-panel">
+            <div className="glass" data-testid="health-detail-panel">
               <h3 className="text-lg font-semibold text-ink mb-4">
                 Health detail:{' '}
                 <button
@@ -376,19 +378,19 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
                 </button>
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="glass-panel-card py-3">
+                <div className="glass py-3">
                   <div className="text-xs text-ink-3 mb-1">Total checks</div>
                   <div className="text-lg font-semibold text-ink">{selected.history.total_checks}</div>
                 </div>
-                <div className="glass-panel-card py-3">
+                <div className="glass py-3">
                   <div className="text-xs text-ink-3 mb-1">Ready checks</div>
                   <div className="text-lg font-semibold text-emerald-400">{selected.history.ready_checks}</div>
                 </div>
-                <div className="glass-panel-card py-3">
+                <div className="glass py-3">
                   <div className="text-xs text-ink-3 mb-1">Uptime</div>
                   <div className="text-lg font-semibold text-ink">{selected.history.uptime_percent.toFixed(2)}%</div>
                 </div>
-                <div className="glass-panel-card py-3">
+                <div className="glass py-3">
                   <div className="text-xs text-ink-3 mb-1">Last state</div>
                   <div className="text-lg font-semibold text-ink">{selected.history.last_state}</div>
                 </div>
@@ -492,3 +494,5 @@ export default function HealthPage({ refreshKey }: { refreshKey?: number } = {})
     </div>
   );
 }
+
+export default withAuroraPage('health', HealthPage);

@@ -79,7 +79,7 @@ export default function AgentStatusDock() {
       ? 'border-red-500/30 bg-red-500/[0.08]'
       : status === 'active'
         ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
-        : 'glass-divider glass-panel-card';
+        : 'glass-divider glass';
 
   return (
     <div
@@ -90,12 +90,12 @@ export default function AgentStatusDock() {
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="glass-dropdown-surface mb-2 ml-auto block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-ink-2 transition hover:border-brand/30 hover:text-blue-200"
+        className="glass border border-border shadow-card mb-2 ml-auto block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-ink-2 transition hover:border-brand/30 hover:text-blue-200"
       >
         {collapsed ? 'Show agents' : 'Hide agents'}
       </button>
       {!collapsed ? (
-        <div className="overview-section-shell grid max-h-[60vh] max-w-sm grid-cols-2 gap-2 overflow-y-auto p-3">
+        <div className="glass grid max-h-[60vh] max-w-sm grid-cols-2 gap-2 overflow-y-auto p-3">
           {agents.map((agent) => {
             const Icon = agent.icon;
             return (

@@ -43,6 +43,7 @@ pub mod intelligence;
 pub mod inventory;
 pub mod kubecluster;
 pub mod ldap;
+pub mod local_auth;
 pub mod legacy_workload_yaml;
 pub mod maintenance;
 pub mod metrics;

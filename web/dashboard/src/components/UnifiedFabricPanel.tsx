@@ -27,7 +27,7 @@ export default function UnifiedFabricPanel() {
   const clusterCount = report?.nodes.filter((n) => n.kind === 'cluster').length ?? 0;
 
   return (
-    <section className="command-center-shell mb-8 p-6 sm:p-8" data-testid="unified-fabric-panel">
+    <section className="glass mb-8 p-6 sm:p-8" data-testid="unified-fabric-panel">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Box className="h-5 w-5 text-aether-ai" />
@@ -48,7 +48,7 @@ export default function UnifiedFabricPanel() {
       </div>
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {(report?.nodes ?? []).slice(0, 12).map((n) => (
-          <li key={n.id} className="rounded-xl border glass-divider glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
+          <li key={n.id} className="rounded-xl border glass-divider glass px-3 py-2 text-sm backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <Badge text={n.kind} variant="muted" />
               <span className="font-medium text-ink">{n.label}</span>

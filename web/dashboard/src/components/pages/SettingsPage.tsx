@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import AutonomousModePanel from '../AutonomousModePanel';
+import { withAuroraPage } from '../layout/AuroraPage';
 import IdentitySsoPanel from '../IdentitySsoPanel';
 import MacOSPlatformPanel from '../MacOSPlatformPanel';
 import NavPreferencesPanel from '../NavPreferencesPanel';
@@ -29,9 +30,9 @@ const TOC = [
   { id: 'settings-tools', label: 'Tools' },
 ];
 
-export default function SettingsPage() {
+function SettingsPage() {
   return (
-    <section className="hub-page-shell">
+    <section className="glass">
       <div className="mb-6 glass-context-banner" data-testid="settings-hub-context">
         Settings hub
         {' · '}
@@ -115,3 +116,5 @@ export default function SettingsPage() {
     </section>
   );
 }
+
+export default withAuroraPage('settings', SettingsPage);

@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link } from 'react-router';
 import { Inbox, Layers, Search } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -43,7 +44,7 @@ function getTierTone(tier: string): EntityStatusTone {
   return 'muted';
 }
 
-export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -281,9 +282,9 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
         }
       />
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="glass-panel-card">
+        <div className="glass">
           <h3 className="text-sm font-semibold text-ink mb-3">Promote workload</h3>
           <form onSubmit={(e) => void handlePromote(e)} className="space-y-3">
             <input
@@ -323,7 +324,7 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
             <p data-testid="envs-promote-result" className="mt-3 text-sm text-ink-2">{promoteResult}</p>
           ) : null}
         </div>
-        <div className="glass-panel-card">
+        <div className="glass">
           <h3 className="text-sm font-semibold text-ink mb-3">Environment parity</h3>
           <form onSubmit={(e) => void handleParity(e)} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -416,17 +417,17 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
         {selectedEnvironment && (
           <div className="space-y-4" data-testid="envs-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="glass-panel-card px-4 py-3">
+              <div className="glass px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-ink-3">Tier</div>
                 <div className="mt-2">
                   <Badge text={selectedEnvironment.tier} variant={getTierVariant(selectedEnvironment.tier)} />
                 </div>
               </div>
-              <div className="glass-panel-card px-4 py-3">
+              <div className="glass px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-ink-3">Workloads</div>
                 <div className="mt-2 text-2xl font-semibold text-ink">{Object.keys(selectedEnvironment.workloads).length}</div>
               </div>
-              <div className="glass-panel-card px-4 py-3">
+              <div className="glass px-4 py-3">
                 <div className="text-xs uppercase tracking-wider text-ink-3">Variables</div>
                 <div className="mt-2 text-2xl font-semibold text-ink">{Object.keys(selectedEnvironment.variables).length}</div>
               </div>
@@ -508,3 +509,5 @@ export default function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
     </div>
   );
 }
+
+export default withAuroraPage('envs', EnvsPage);

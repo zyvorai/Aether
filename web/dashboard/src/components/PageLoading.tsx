@@ -20,7 +20,7 @@ export default function PageLoading({ rows = 4, variant = 'skeleton', label, cla
   }
 
   return (
-    <div className="overview-section-shell space-y-4 p-6">
+    <div className="glass space-y-4 p-6">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="skeleton h-20 rounded-xl" />
       ))}

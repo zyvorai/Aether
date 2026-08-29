@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -36,6 +37,7 @@ import CommandCenterIntentSla from '../CommandCenterIntentSla';
 import CommandCenterNextActions from '../CommandCenterNextActions';
 import CommandMetricCard from '../CommandMetricCard';
 import StatCard from '../StatCard';
+import { SectionHeader } from '../layout/SectionHeader';
 import { SeverityBadge } from '../Badge';
 import OnboardingStrip from '../OnboardingStrip';
 import EmptyState from '../EmptyState';
@@ -123,12 +125,12 @@ function OverviewFleetSnapshot({
   const controlEmpty = pluginsCount === 0 && environmentsCount === 0 && apiKeysCount === 0;
 
   return (
-    <section className="overview-section-shell mb-8 p-6 sm:p-8">
-      <div className="overview-section-header">
-        <p className="section-label">Fleet</p>
-        <h2 className="section-title">Snapshot</h2>
-        <p className="section-subtitle">Runtime fabric, signal quality, and control surface at a glance</p>
-      </div>
+    <section className="space-y-6">
+      <SectionHeader
+        label="Fleet"
+        title="Snapshot"
+        description="Runtime fabric, signal quality, and control surface at a glance"
+      />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <CommandMetricCard
           label="Runtime Fabric"
@@ -157,37 +159,37 @@ function OverviewFleetSnapshot({
           {!signalEmpty ? (
             <div className="relative mt-4 h-1.5 glass-progress-track">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-aether"
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-primary"
                 style={{ width: `${Math.min(100, Math.max(8, (healthy / Math.max(1, healthy + degraded)) * 100))}%` }}
               />
             </div>
           ) : null}
         </CommandMetricCard>
 
-        <div className="glass-metric-card glass-metric-accent-purple">
-          <div className="glass-metric-shine" aria-hidden />
-          <div className="relative mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-3">
-            <Boxes className="h-3.5 w-3.5" />
-            Control Surface
-          </div>
-          <div className="relative grid grid-cols-3 gap-3 text-center">
+        <CommandMetricCard
+          label="Control Surface"
+          value={pluginsCount + environmentsCount + apiKeysCount}
+          icon={<Boxes className="h-3.5 w-3.5" />}
+          accent={controlEmpty ? 'muted' : 'purple'}
+          hint={`${pluginsCount} plugins · ${environmentsCount} envs · ${apiKeysCount} keys`}
+          isEmpty={controlEmpty}
+          onClick={() => onNavigate('plugins')}
+        >
+          <div className="relative mt-4 grid grid-cols-3 gap-2 text-center">
             {[
               { label: 'Plugins', value: pluginsCount },
               { label: 'Envs', value: environmentsCount },
               { label: 'Keys', value: apiKeysCount },
             ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-xl border glass-divider glass-panel-card p-3"
-              >
-                <div className={`text-lg font-semibold ${controlEmpty ? 'text-ink-3' : 'text-ink'}`}>
+              <div key={item.label} className="rounded-lg border border-border bg-surface-raised px-2 py-2">
+                <div className={`text-base font-semibold ${controlEmpty ? 'text-muted' : 'text-foreground'}`}>
                   {item.value}
                 </div>
-                <div className="text-[11px] text-ink-3">{item.label}</div>
+                <div className="text-[10px] text-muted">{item.label}</div>
               </div>
             ))}
           </div>
-        </div>
+        </CommandMetricCard>
       </div>
     </section>
   );
@@ -195,14 +197,12 @@ function OverviewFleetSnapshot({
 
 function OverviewQuickAccess({ links }: { links: QuickLink[] }) {
   return (
-    <section className="overview-section-shell mb-8 p-6 sm:p-8">
-      <div className="overview-section-header flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="section-label">Navigation</p>
-          <h2 className="section-title">Quick access</h2>
-          <p className="section-subtitle">Jump to platform tools and intelligence views</p>
-        </div>
-      </div>
+    <section className="space-y-6">
+      <SectionHeader
+        label="Navigation"
+        title="Quick access"
+        description="Jump to platform tools and intelligence views"
+      />
       <div className="flex flex-wrap gap-2">
         {links.map((link) => (
           <button
@@ -220,7 +220,7 @@ function OverviewQuickAccess({ links }: { links: QuickLink[] }) {
   );
 }
 
-export default function OverviewPage({ username = '', onNavigate, sseConnected = false, refreshKey = 0 }: OverviewPageProps) {
+function OverviewPage({ username = '', onNavigate, sseConnected = false, refreshKey = 0 }: OverviewPageProps) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -362,7 +362,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
   if (loading && !hasLoadedOnce) {
     return (
       <div className="space-y-8">
-        <div className="command-center-shell animate-pulse p-8">
+        <div className="animate-pulse">
           <div className="h-8 w-48 rounded-lg glass-inset-surface" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -370,7 +370,7 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
             ))}
           </div>
         </div>
-        <div className="overview-section-shell p-6">
+        <div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 xl:grid-cols-5">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="skeleton h-24 rounded-2xl" />
@@ -378,8 +378,8 @@ export default function OverviewPage({ username = '', onNavigate, sseConnected =
           </div>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="glass-panel-card skeleton h-48" />
-          <div className="glass-panel-card skeleton h-48" />
+          <div className="glass skeleton h-48" />
+          <div className="glass skeleton h-48" />
         </div>
       </div>
     );
@@ -651,7 +651,7 @@ function LegacyOverviewDetails({
   }
 
   return (
-    <section className="overview-section-shell mb-8 p-6 sm:p-8" data-testid="overview-legacy-details-section">
+    <section className="space-y-6" data-testid="overview-legacy-details-section">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -659,11 +659,12 @@ function LegacyOverviewDetails({
         aria-expanded={open}
         data-testid="overview-legacy-details-toggle"
       >
-        <div>
-          <p className="section-label">Details</p>
-          <h2 className="section-title">Platform inventory &amp; events</h2>
-          <p className="section-subtitle">Legacy metrics, clusters, health, and quick links — drill down from Command Center</p>
-        </div>
+        <SectionHeader
+          className="mb-0 flex-1"
+          label="Details"
+          title="Platform inventory & events"
+          description="Legacy metrics, clusters, health, and quick links — drill down from Command Center"
+        />
         {open ? <ChevronDown className="h-5 w-5 text-ink-3" /> : <ChevronRight className="h-5 w-5 text-ink-3" />}
       </button>
 
@@ -847,15 +848,15 @@ function LegacyOverviewDetails({
         onNavigate={onNavigate}
       />
 
-      <section className="overview-section-shell mb-8 p-6 sm:p-8">
-        <div className="overview-section-header">
-          <p className="section-label">Operations</p>
-          <h2 className="section-title">Metrics</h2>
-          <p className="section-subtitle">Platform inventory and health signals</p>
-        </div>
+      <section className="space-y-6">
+        <SectionHeader
+          label="Operations"
+          title="Metrics"
+          description="Platform inventory and health signals"
+        />
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
           <button type="button" onClick={() => goFiltered('workloads', { source: 'aether' })} className="text-left" data-testid="overview-aether-stat">
-            <StatCard title="Aether workloads" value={aetherManagedCount} color="orange" icon={<LayoutDashboard size={16} />} compact isEmpty={aetherManagedCount === 0} />
+            <StatCard title="Aether workloads" value={aetherManagedCount} color="primary" icon={<LayoutDashboard size={16} />} compact isEmpty={aetherManagedCount === 0} />
           </button>
           <button type="button" onClick={() => onNavigate('clusters')} className="text-left" data-testid="overview-clusters-stat">
             <StatCard title="Clusters" value={clusterSummary?.cluster_count ?? 0} color="blue" icon={<Activity size={16} />} compact isEmpty={(clusterSummary?.cluster_count ?? 0) === 0} />
@@ -900,7 +901,7 @@ function LegacyOverviewDetails({
       <OverviewQuickAccess links={quickLinks} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="glass-panel-card">
+        <div className="glass">
           <h2 className="panel-title mb-4">Clusters</h2>
           {failedEndpoints.includes('clusters') ? (
             <EmptyState
@@ -935,12 +936,12 @@ function LegacyOverviewDetails({
               <div className="grid grid-cols-3 gap-3">
                 <StatCard title="Clusters" value={clusterSummary.cluster_count} color="blue" compact isEmpty={clusterSummary.cluster_count === 0} />
                 <StatCard title="Reachable" value={clusterSummary.healthy_clusters} color="green" compact isEmpty={clusterSummary.healthy_clusters === 0} />
-                <StatCard title="K8s Workloads" value={clusterSummary.workload_count} color="orange" compact isEmpty={clusterSummary.workload_count === 0} />
+                <StatCard title="K8s Workloads" value={clusterSummary.workload_count} color="primary" compact isEmpty={clusterSummary.workload_count === 0} />
               </div>
               {clusterSummary.clusters.length > 0 && (
                 <div className="space-y-2">
                   {clusterSummary.clusters.slice(0, 6).map((cluster) => (
-                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2 text-sm backdrop-blur-sm">
+                    <div key={cluster.name} className="flex items-center justify-between rounded-xl border glass-divider glass px-3 py-2 text-sm backdrop-blur-sm">
                       <div>
                         <div className="text-ink font-medium">{cluster.name}</div>
                         <div className="text-ink-3 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
@@ -956,7 +957,7 @@ function LegacyOverviewDetails({
           )}
         </div>
 
-        <div className="glass-panel-card">
+        <div className="glass">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="panel-title">Events</h2>
             <button
@@ -986,7 +987,7 @@ function LegacyOverviewDetails({
                 <div
                   key={i}
                   data-testid={`overview-recent-event-${i}`}
-                  className="flex items-start gap-3 rounded-xl border glass-divider/50 glass-panel-card p-3 backdrop-blur-sm"
+                  className="flex items-start gap-3 rounded-xl border glass-divider/50 glass p-3 backdrop-blur-sm"
                 >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">
@@ -1011,7 +1012,7 @@ function LegacyOverviewDetails({
           )}
         </div>
 
-        <div className="glass-panel-card">
+        <div className="glass">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="panel-title">Health</h2>
             <button
@@ -1046,7 +1047,7 @@ function LegacyOverviewDetails({
                 <StatCard title="Unhealthy" value={healthSummary.unhealthy} color="red" compact isEmpty={healthSummary.unhealthy === 0} />
               </button>
               <StatCard title="Unknown" value={healthSummary.unknown} color="blue" compact isEmpty={healthSummary.unknown === 0} />
-              <StatCard title="Circuits Open" value={healthSummary.circuits_open} color="orange" compact isEmpty={healthSummary.circuits_open === 0} />
+              <StatCard title="Circuits Open" value={healthSummary.circuits_open} color="primary" compact isEmpty={healthSummary.circuits_open === 0} />
             </div>
           ) : (
             <EmptyState icon={<Activity size={48} />} title="No health data" description="Health monitoring is not active" />
@@ -1058,3 +1059,5 @@ function LegacyOverviewDetails({
     </section>
   );
 }
+
+export default withAuroraPage('overview', OverviewPage);

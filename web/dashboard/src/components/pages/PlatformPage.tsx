@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link } from 'react-router';
 import { Server, Shield, Database, ExternalLink, Network } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -17,6 +18,7 @@ import Badge from '../Badge';
 import PlatformRecommendations from '../PlatformRecommendations';
 import EcosystemPlatformPanel from '../EcosystemPlatformPanel';
 import ProductionTrustPanel from '../ProductionTrustPanel';
+import { SectionHeader } from '../layout/SectionHeader';
 import type { CiliumStatusResponse, PlatformRecommendation } from '../../types/api';
 
 interface Integrations {
@@ -38,7 +40,7 @@ interface ServerPayload {
   opa?: { configured?: boolean; enforce?: boolean };
 }
 
-export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
+function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
   const { capabilities, ready, refreshPlatform } = useServerCapabilities();
@@ -241,14 +243,14 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
       <ProductionTrustPanel />
       <EcosystemPlatformPanel />
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
-        <div className="overview-section-header">
-          <p className="section-label">Platform</p>
-          <h2 className="section-title">Runtime & policy</h2>
-          <p className="section-subtitle">API server, HA mode, OPA, and integration status</p>
-        </div>
+      <section className="glass mb-6 p-6 sm:p-8">
+        <SectionHeader
+          label="Platform"
+          title="Runtime & policy"
+          description="API server, HA mode, OPA, and integration status"
+        />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-panel-card" data-testid="platform-runtime-panel">
+        <div className="glass" data-testid="platform-runtime-panel">
           <div className="flex items-center gap-3 mb-4">
             <Server className="text-brand" size={20} />
             <h2 className="text-lg font-semibold text-ink">Runtime</h2>
@@ -279,7 +281,7 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
           </dl>
         </div>
 
-        <div className="glass-panel-card">
+        <div className="glass">
           <div className="flex items-center gap-3 mb-4">
             <Shield className="text-emerald-400" size={20} />
             <h2 className="text-lg font-semibold text-ink">Policy & integrations</h2>
@@ -372,13 +374,13 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
         </div>
       </section>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
-        <div className="overview-section-header">
-          <p className="section-label">Network</p>
-          <h2 className="section-title">Kubernetes / Cilium</h2>
-          <p className="section-subtitle">CNI status, connectivity checks, and bootstrap policies</p>
-        </div>
-      <div className="glass-panel-card">
+      <section className="glass mb-6 p-6 sm:p-8">
+        <SectionHeader
+          label="Network"
+          title="Kubernetes / Cilium"
+          description="CNI status, connectivity checks, and bootstrap policies"
+        />
+      <div className="glass">
         <div className="flex items-center gap-3 mb-4">
           <Network className="text-purple-400" size={20} />
           <h2 className="text-lg font-semibold text-ink">Kubernetes / Cilium</h2>
@@ -476,13 +478,13 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
       </div>
       </section>
 
-      <section className="overview-section-shell p-6 sm:p-8">
-        <div className="overview-section-header">
-          <p className="section-label">Observability</p>
-          <h2 className="section-title">External links</h2>
-          <p className="section-subtitle">Grafana, Prometheus, Hubble, and PacketWolf integrations</p>
-        </div>
-      <div className="glass-panel-card" data-testid="platform-observability-panel">
+      <section className="glass p-6 sm:p-8">
+        <SectionHeader
+          label="Observability"
+          title="External links"
+          description="Grafana, Prometheus, Hubble, and PacketWolf integrations"
+        />
+      <div className="glass" data-testid="platform-observability-panel">
         <div className="flex items-center gap-3 mb-4">
           <Database className="text-blue-400" size={20} />
           <h2 className="text-lg font-semibold text-ink">Observability links</h2>
@@ -572,3 +574,5 @@ export default function PlatformPage({ refreshKey }: { refreshKey?: number } = {
     </div>
   );
 }
+
+export default withAuroraPage('platform', PlatformPage);

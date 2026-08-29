@@ -538,6 +538,7 @@ pub(crate) async fn api_auth_me(
             && app_state.oidc.is_none()
             && app_state.saml.is_none()
             && app_state.ldap.is_none()
+            && app_state.local_auth.is_none()
         {
             return ok_json(AuthStatusResponse {
                 authenticated: true,
@@ -569,6 +570,16 @@ pub(crate) async fn api_auth_me(
 
     if let Some(ldap) = app_state.ldap.as_ref() {
         if let Some((role, username)) = ldap.verify_session_cookie(&headers) {
+            return ok_json(AuthStatusResponse {
+                authenticated: true,
+                username,
+                role: role.to_string(),
+            });
+        }
+    }
+
+    if let Some(local) = app_state.local_auth.as_ref() {
+        if let Some((role, username)) = local.verify_session_cookie(&headers) {
             return ok_json(AuthStatusResponse {
                 authenticated: true,
                 username,
@@ -716,6 +727,84 @@ pub(crate) async fn api_ldap_logout(
         res.headers_mut().insert(
             header::SET_COOKIE,
             crate::ldap::LdapRuntime::clear_session_cookie(app_state.tls_active),
+        );
+    }
+    res
+}
+
+#[derive(Deserialize)]
+pub(crate) struct LocalLoginRequest {
+    username: String,
+    password: String,
+}
+
+/// POST /api/auth/login — demo / bootstrap username+password (default admin / Admin@321).
+pub(crate) async fn api_local_login(
+    AxumState(app_state): AxumState<AppState>,
+    Json(req): Json<LocalLoginRequest>,
+) -> impl IntoResponse {
+    let Some(local) = app_state.local_auth.as_ref() else {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<serde_json::Value>::error(
+                "local demo auth is disabled".to_string(),
+            )),
+        )
+            .into_response();
+    };
+    if !local.authenticate(&req.username, &req.password) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(ApiResponse::<serde_json::Value>::error(
+                "invalid username or password".to_string(),
+            )),
+        )
+            .into_response();
+    }
+
+    let mut body = serde_json::json!({
+        "username": local.username(),
+        "role": "admin",
+    });
+
+    match local.session_cookie_for(app_state.tls_active) {
+        Ok(Some(cookie)) => {
+            body["auth_mode"] = serde_json::json!("cookie");
+            let mut res = Json(ApiResponse::success(body)).into_response();
+            res.headers_mut().insert(
+                header::SET_COOKIE,
+                HeaderValue::from_str(&cookie)
+                    .unwrap_or_else(|_| HeaderValue::from_static("aether_session=; Max-Age=0")),
+            );
+            res
+        }
+        Ok(None) => {
+            let mut store = app_state.rbac.write().await;
+            let token = local.mint_bearer_key(&mut store);
+            if let Err(e) = store.save(&crate::rbac::RbacStore::default_path()) {
+                tracing::warn!(error = %e, "failed to persist demo session key");
+            }
+            body["auth_mode"] = serde_json::json!("bearer");
+            body["access_token"] = serde_json::json!(token);
+            Json(ApiResponse::success(body)).into_response()
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<serde_json::Value>::error(e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
+/// GET /api/auth/logout — clear local demo session cookie.
+pub(crate) async fn api_local_logout(
+    AxumState(app_state): AxumState<AppState>,
+) -> impl IntoResponse {
+    let mut res = axum::response::Redirect::to("/").into_response();
+    if app_state.local_auth.is_some() {
+        res.headers_mut().insert(
+            header::SET_COOKIE,
+            crate::local_auth::LocalAuthRuntime::clear_session_cookie(app_state.tls_active),
         );
     }
     res
@@ -4860,11 +4949,22 @@ pub(crate) async fn api_auth_providers() -> impl IntoResponse {
         .ok()
         .filter(|s| !s.is_empty());
     let mut methods = vec!["bearer", "legacy_env"];
+    let local_auth_enabled = crate::local_auth::LocalAuthRuntime::from_env().is_some();
     if oidc_ready || saml_ready || ldap_ready {
         methods.push("oidc_session_cookie");
     }
+    if local_auth_enabled {
+        methods.push("password");
+    }
     ok_json(serde_json::json!({
         "methods": methods,
+        "local": {
+            "enabled": local_auth_enabled,
+            "login_url": "/api/auth/login",
+            "logout_url": "/api/auth/logout",
+            "default_username": crate::local_auth::DEFAULT_DEMO_USER,
+            "note": "Demo bootstrap: username admin / password Admin@321. Disable with AETHER_DEMO_AUTH=0. Override via AETHER_DEMO_USER / AETHER_DEMO_PASSWORD."
+        },
         "oidc": {
             "enabled": oidc_ready,
             "issuer": issuer,

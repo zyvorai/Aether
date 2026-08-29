@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
@@ -17,7 +18,7 @@ import StatCard from '../StatCard';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { WorkloadResponse, SlaTarget } from '../../types/api';
 
-export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
+function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [slaData, setSlaData] = useState<Record<string, SlaTarget | null>>({});
   const [loading, setLoading] = useState(true);
@@ -169,7 +170,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
       />
 
       {canMutate && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h3 className="text-sm font-semibold text-ink mb-3">Add SLA target</h3>
           <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3" data-testid="sla-add-form">
             <input
@@ -209,7 +210,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
       )}
 
       {workloads.length > 0 && (
-        <section className="overview-section-shell mb-6 p-6 sm:p-8">
+        <section className="glass mb-6 p-6 sm:p-8">
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard title="With SLA" value={slaConfiguredCount} color="green" />
           <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="text-left" data-testid="sla-breach-stat">
@@ -228,7 +229,7 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
           {filtered.map((w) => {
             const sla = slaData[w.name];
             return (
-              <div key={w.name} className="glass-panel-card">
+              <div key={w.name} className="glass">
                 <h2 className="text-lg font-semibold text-ink mb-4">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name })}
@@ -303,3 +304,5 @@ export default function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
     </div>
   );
 }
+
+export default withAuroraPage('sla', SLAPage);

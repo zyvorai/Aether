@@ -9,10 +9,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const authFile = path.join(__dirname, '../playwright/.auth/user.json');
 
 async function bootstrapAuth(page: import('@playwright/test').Page, baseURL: string) {
-  await page.addInitScript(() => {
-    localStorage.setItem('zyvor-classic-nav', '1');
-    localStorage.setItem('zyvor-pro-view', '0');
-  });
   const apiKey = process.env.AETHER_E2E_API_KEY?.trim() ?? process.env.AETHER_API_KEY?.trim();
   const tokenUrl = apiKey ? `${baseURL}/?token=${encodeURIComponent(apiKey)}` : `${baseURL}/`;
   await page.goto(tokenUrl, { waitUntil: 'domcontentloaded' });

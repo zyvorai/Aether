@@ -133,7 +133,7 @@ export default function LabsGraduationPanel() {
             {overview.features.map((f) => (
               <li
                 key={f.phase}
-                className="flex items-center justify-between rounded-xl border glass-divider glass-panel-card px-3 py-2"
+                className="flex items-center justify-between rounded-xl border glass-divider glass px-3 py-2"
               >
                 <span className="text-ink">
                   Phase {f.phase}: {f.name}
@@ -151,7 +151,7 @@ export default function LabsGraduationPanel() {
             Generate Terraform v2
           </button>
           {terraform ? (
-            <pre className="glass-panel-card overflow-x-auto p-3 text-xs text-ink-2 font-mono max-h-48">
+            <pre className="glass overflow-x-auto p-3 text-xs text-ink-2 font-mono max-h-48">
               {terraform.hcl.slice(0, 400)}…
             </pre>
           ) : (

@@ -147,7 +147,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          className="rounded-xl border border-aether-ai/30 bg-aether-ai/10 p-2 text-[#c084fc] transition hover:bg-aether-ai/20"
+          className="rounded-xl border border-primary/30 bg-aether-ai/10 p-2 text-[#c084fc] transition hover:bg-aether-ai/20"
           title="Open Ask Aether"
           aria-label="Open Ask Aether"
         >
@@ -163,7 +163,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
       data-testid="copilot-rail"
     >
       <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-aether-ai/30 bg-gradient-to-br from-aether/20 to-aether-ai/20">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/30 bg-gradient-to-br from-primary/20 to-primary/80/20">
           <Sparkles className="h-4 w-4 text-[#c084fc]" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
@@ -229,7 +229,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
       <div className="relative z-[1] flex-1 space-y-2 overflow-y-auto p-3">
         {messages.length === 0 ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-aether-ai/15 glass-inset-surface px-3 py-3 backdrop-blur-sm">
+            <div className="rounded-2xl border border-primary/15 glass-inset-surface px-3 py-3 backdrop-blur-sm">
               <p className="text-xs leading-relaxed text-ink-2">
                 Not a chatbot — an infrastructure co-pilot. Ask about health, cost, migrations, security, or
                 capacity.
@@ -261,7 +261,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
             key={`${msg.role}-${i}`}
             className={`max-w-full rounded-2xl px-3 py-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
               msg.role === 'user'
-                ? 'ml-6 border border-aether-ai/20 bg-gradient-to-br from-aether/20 to-aether-ai/15 text-violet-50'
+                ? 'ml-6 border border-primary/20 bg-gradient-to-br from-primary/20 to-primary/80/15 text-violet-50'
                 : 'mr-2 border glass-divider glass-inset-surface text-ink'
             }`}
           >
@@ -316,7 +316,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="rounded-xl bg-gradient-to-br from-aether to-aether-ai p-2.5 text-white shadow-lg shadow-aether-ai/20 transition hover:opacity-90 disabled:opacity-40"
+          className="rounded-xl bg-gradient-to-br from-primary to-primary/90 p-2.5 text-white shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-40"
           aria-label="Send"
         >
           <Send className="h-4 w-4" />
@@ -332,7 +332,7 @@ export function ZyraRailToggle({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-aether-ai/40 bg-gradient-to-r from-aether to-aether-ai px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-aether-ai/25 backdrop-blur-xl xl:hidden"
+      className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-primary/40 bg-gradient-to-r from-primary to-primary/90 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/25 backdrop-blur-xl xl:hidden"
       data-testid="zyra-rail-mobile-toggle"
     >
       <Bot className="h-4 w-4" />

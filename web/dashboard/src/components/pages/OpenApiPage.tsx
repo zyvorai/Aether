@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { BookOpen, Copy } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { copyToClipboard } from '../../utils/clipboard';
@@ -20,7 +21,7 @@ interface OpenApiDoc {
   paths?: Record<string, Record<string, { summary?: string; description?: string }>>;
 }
 
-export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
+function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [doc, setDoc] = useState<OpenApiDoc | null>(null);
   const [loading, setLoading] = useState(true);
@@ -195,8 +196,8 @@ export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
-      <div className="glass-panel-card mb-6">
+      <section className="glass mb-6 p-6 sm:p-8">
+      <div className="glass mb-6">
         <div className="flex items-center gap-3 mb-2">
           <BookOpen className="w-5 h-5 text-brand" />
           <h2 className="text-lg font-semibold text-ink">
@@ -220,7 +221,7 @@ export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}
         </button>
       </div>
 
-      <div className="glass-panel-card overflow-hidden mb-6" data-testid="openapi-routes-list">
+      <div className="glass overflow-hidden mb-6" data-testid="openapi-routes-list">
         <h3 className="text-sm font-semibold text-ink mb-4 px-1">Notable routes ({paths.length})</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -297,7 +298,7 @@ export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}
       </div>
 
       {doc && (
-        <div className="glass-panel-card">
+        <div className="glass">
           <h3 className="text-sm font-semibold text-ink mb-3">Full OpenAPI JSON</h3>
           <CodeBlock title="openapi.json">{JSON.stringify(doc, null, 2)}</CodeBlock>
         </div>
@@ -306,3 +307,5 @@ export default function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}
     </div>
   );
 }
+
+export default withAuroraPage('openapi', OpenApiPage);

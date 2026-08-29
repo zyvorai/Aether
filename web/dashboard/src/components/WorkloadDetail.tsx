@@ -39,6 +39,7 @@ import AiTroubleshootPanel from './AiTroubleshootPanel';
 import Badge, { SeverityBadge } from './Badge';
 import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
 import Modal from './Modal';
+import { Card } from './ui/Card';
 import type {
   ClusterHealthSummary,
   ClusterPortForwardSession,
@@ -884,7 +885,7 @@ export default function WorkloadDetail({
 
   return (
     <>
-    <div className="glass-panel-card animate-ac-slide mt-4 overflow-hidden p-0">
+    <Card className="animate-ac-slide mt-4 overflow-hidden p-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 glass-divider-b glass-inset-surface">
         <div className="flex items-center gap-3">
@@ -2000,13 +2001,13 @@ export default function WorkloadDetail({
           </div>
         )}
       </div>
-    </div>
+    </Card>
 
       {/* Exec Modal - xterm WebSocket terminal */}
       {shellOpen && (
         <div className={`fixed inset-0 flex items-center justify-center z-[60] ${shellFullscreen ? 'p-0' : ''}`}>
           <div className="glass-modal-backdrop absolute inset-0" aria-hidden />
-          <div className={`glass-modal-panel relative overflow-hidden transition-all ${shellFullscreen ? 'h-full w-full max-w-none rounded-none' : 'mx-4 w-full max-w-4xl'}`}>
+          <div className={`glass rounded-[var(--radius-xl)] relative overflow-hidden transition-all ${shellFullscreen ? 'h-full w-full max-w-none rounded-none' : 'mx-4 w-full max-w-4xl'}`}>
             <div className="flex items-center justify-between glass-divider-b glass-inset-surface px-5 py-3">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="font-medium" data-testid="workload-shell-title">

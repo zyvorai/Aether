@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Database, Download, Package, Search, Shield, Wrench } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
@@ -26,7 +27,7 @@ const CATEGORY_ICONS: Record<string, typeof Database> = {
   Networking: Package,
 };
 
-export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
+function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
   const { canMutate } = useAuth();
   const [charts, setCharts] = useState<HelmCatalogChart[]>([]);
   const [clusters, setClusters] = useState<ClusterSummary | null>(null);
@@ -130,13 +131,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
     <div data-testid="helm-catalog-page">
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
-        <div className="overview-section-header mb-6">
-          <p className="section-label">Platform</p>
-          <h2 className="section-title">Helm App Store</h2>
-          <p className="section-subtitle">Install curated charts with a guided wizard — no raw values.yaml required.</p>
-        </div>
-
+      <section>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
@@ -168,7 +163,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
           return (
             <article
               key={chart.id}
-              className="glass-panel-card p-5 hover:border-brand/40 transition-colors"
+              className="glass p-5 hover:border-brand/40 transition-colors"
             >
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-brand/10 p-3 text-brand">
@@ -245,7 +240,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
                         type="checkbox"
                         checked={formValues[field.key] === true}
                         onChange={(e) => setField(field.key, e.target.checked)}
-                        className="mt-2 accent-aether"
+                        className="mt-2 accent-primary"
                       />
                     ) : field.type === 'select' && field.options ? (
                       <select
@@ -278,7 +273,7 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
                   type="checkbox"
                   checked={showAdvancedYaml}
                   onChange={(e) => setShowAdvancedYaml(e.target.checked)}
-                  className="accent-aether"
+                  className="accent-primary"
                 />
                 Edit raw values.yaml
               </label>
@@ -322,3 +317,5 @@ export default function HelmCatalogPage({ refreshKey }: { refreshKey?: number } 
     </div>
   );
 }
+
+export default withAuroraPage('helm', HelmCatalogPage);

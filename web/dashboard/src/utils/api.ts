@@ -111,6 +111,12 @@ export interface AuthProvidersOidc {
 export interface AuthProvidersPayload {
   methods: string[];
   oidc: AuthProvidersOidc;
+  local?: {
+    enabled: boolean;
+    login_url?: string;
+    default_username?: string;
+    note?: string;
+  };
   saml?: {
     enabled: boolean;
     login_url?: string;
@@ -294,6 +300,36 @@ export async function apiTryAuth(token: string): Promise<AuthTryResult> {
     }
     const json: ApiResponse<unknown> = await res.json();
     return json.success === true ? { ok: true } : { ok: false, reason: 'rejected' };
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+}
+
+export interface LocalLoginResult {
+  username: string;
+  role: string;
+  auth_mode: 'bearer' | 'cookie';
+  access_token?: string;
+}
+
+export async function apiLocalLogin(
+  username: string,
+  password: string,
+): Promise<{ ok: true; data: LocalLoginResult } | { ok: false; reason: 'network' | 'unauthorized' | 'rejected' }> {
+  try {
+    const res = await fetch(`${BASE}/auth/login`, withCreds({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    }));
+    const json: ApiResponse<LocalLoginResult> = await res.json();
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, reason: 'unauthorized' };
+    }
+    if (json.success && json.data) {
+      return { ok: true, data: json.data };
+    }
+    return { ok: false, reason: 'rejected' };
   } catch {
     return { ok: false, reason: 'network' };
   }

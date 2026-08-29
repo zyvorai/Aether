@@ -248,7 +248,7 @@ export default function RuntimeFabricGraph({
         <span className="ml-auto text-xs text-ink-3">{graph.nodes.length} nodes · live</span>
       </div>
 
-      <div className="glass-panel-card overflow-hidden rounded-[24px]">
+      <div className="glass overflow-hidden rounded-[24px]">
         <svg
           viewBox={`${-pan.x} ${-pan.y} ${layout.width / zoom} ${layout.height / zoom}`}
           className="w-full min-h-[360px] fabric-graph-svg"
@@ -332,7 +332,7 @@ export default function RuntimeFabricGraph({
       </div>
 
       {selectedNode?.workload && onQuickAction ? (
-        <div className="flex flex-wrap gap-2 rounded-2xl border glass-divider glass-panel-card p-3" data-testid="fabric-node-actions">
+        <div className="flex flex-wrap gap-2 rounded-2xl border glass-divider glass p-3" data-testid="fabric-node-actions">
           <span className="w-full text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-3">
             Quick actions · {selectedNode.workload}
           </span>

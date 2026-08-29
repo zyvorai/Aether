@@ -131,11 +131,11 @@ export default function KnowledgeGraphPanel() {
       {graph ? (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-5">
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.workloads}</div><div className="text-xs text-ink-3">Workloads</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.dependencies}</div><div className="text-xs text-ink-3">Dependencies</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.threats}</div><div className="text-xs text-ink-3">Threats</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.drifted}</div><div className="text-xs text-ink-3">Drifted</div></div>
-            <div className="glass-metric-card"><div className="text-xl font-semibold text-ink">{graph.stats.clusters}</div><div className="text-xs text-ink-3">Clusters</div></div>
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4"><div className="text-xl font-semibold text-ink">{graph.stats.workloads}</div><div className="text-xs text-ink-3">Workloads</div></div>
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4"><div className="text-xl font-semibold text-ink">{graph.stats.dependencies}</div><div className="text-xs text-ink-3">Dependencies</div></div>
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4"><div className="text-xl font-semibold text-ink">{graph.stats.threats}</div><div className="text-xs text-ink-3">Threats</div></div>
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4"><div className="text-xl font-semibold text-ink">{graph.stats.drifted}</div><div className="text-xs text-ink-3">Drifted</div></div>
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4"><div className="text-xl font-semibold text-ink">{graph.stats.clusters}</div><div className="text-xs text-ink-3">Clusters</div></div>
           </div>
 
           {graph.nodes.length === 0 ? (

@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -25,7 +26,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
+function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,7 +237,7 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
         ) : null}
       </SearchQueryContextBanner>
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -413,3 +414,5 @@ export default function SecretsPage({ refreshKey }: { refreshKey?: number } = {}
     </div>
   );
 }
+
+export default withAuroraPage('secrets', SecretsPage);

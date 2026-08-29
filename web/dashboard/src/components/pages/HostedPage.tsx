@@ -1,6 +1,7 @@
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
 import { useCallback, useEffect, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link } from 'react-router';
 import { Building2, CreditCard, Globe2, KeyRound, Rocket, Users } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
@@ -14,6 +15,7 @@ import PageLoadError from '../PageLoadError';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import type { BillingSummary, FederationPlan, HostedFederationStatus, HostedTenant } from '../../types/api';
+import { SectionHeader } from '../layout/SectionHeader';
 
 interface UpgradesStatus {
   current_version: string;
@@ -27,7 +29,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
+function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [tenants, setTenants] = useState<HostedTenant[]>([]);
   const [billing, setBilling] = useState<BillingSummary | null>(null);
   const [upgrades, setUpgrades] = useState<UpgradesStatus | null>(null);
@@ -177,30 +179,30 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
       </div>
 
       {federation && (
-        <section className="overview-section-shell mb-6 p-6 sm:p-8" data-testid="hosted-federation-panel">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="section-label">Managed federation</p>
-              <h2 className="section-title flex items-center gap-2">
-                <Globe2 size={18} className="text-brand" />
+        <section className="glass mb-6 p-6 sm:p-8" data-testid="hosted-federation-panel">
+          <SectionHeader
+            label="Managed federation"
+            title={
+              <>
+                <Globe2 size={18} className="inline text-primary mr-2" />
                 {federation.federation_enabled ? 'Federation active' : 'Single-cluster mode'}
-              </h2>
-              <p className="section-subtitle">
-                {federation.tenant_count} tenant(s) · {federation.policy.clusters.length} configured cluster(s)
-              </p>
-            </div>
-            {tenants[0] && federation.federation_enabled ? (
-              <button
-                type="button"
-                data-testid="hosted-federation-plan-button"
-                disabled={planningFederation}
-                onClick={() => void handleFederationPlan(tenants[0])}
-                className="btn-secondary disabled:opacity-50"
-              >
-                {planningFederation ? 'Planning…' : 'Plan tenant placement'}
-              </button>
-            ) : null}
-          </div>
+              </>
+            }
+            description={`${federation.tenant_count} tenant(s) · ${federation.policy.clusters.length} configured cluster(s)`}
+            action={
+              tenants[0] && federation.federation_enabled ? (
+                <button
+                  type="button"
+                  data-testid="hosted-federation-plan-button"
+                  disabled={planningFederation}
+                  onClick={() => void handleFederationPlan(tenants[0])}
+                  className="btn-secondary disabled:opacity-50"
+                >
+                  {planningFederation ? 'Planning…' : 'Plan tenant placement'}
+                </button>
+              ) : undefined
+            }
+          />
           {federation.policy.clusters.length > 0 ? (
             <div className="mt-4 flex flex-wrap gap-2">
               {federation.policy.clusters.map((cluster) => (
@@ -225,29 +227,29 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
 
       {upgrades && (
-        <section className="overview-section-shell mb-6 p-6 sm:p-8" data-testid="hosted-upgrades-panel">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="section-label">Managed upgrades</p>
-              <h2 className="section-title">Version {upgrades.current_version}</h2>
-              <p className="section-subtitle">{upgrades.notes}</p>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-ink-2">
-              <Rocket size={16} className="text-brand" />
-              Channel: {upgrades.channel}
-              {upgrades.upgrade_available ? (
-                <Badge variant="yellow" text="Upgrade available" />
-              ) : (
-                <Badge variant="green" text="Up to date" />
-              )}
-            </div>
-          </div>
+        <section className="glass mb-6 p-6 sm:p-8" data-testid="hosted-upgrades-panel">
+          <SectionHeader
+            label="Managed upgrades"
+            title={`Version ${upgrades.current_version}`}
+            description={upgrades.notes}
+            action={
+              <div className="flex items-center gap-2 text-sm text-muted">
+                <Rocket size={16} className="text-primary" />
+                Channel: {upgrades.channel}
+                {upgrades.upgrade_available ? (
+                  <Badge variant="yellow" text="Upgrade available" />
+                ) : (
+                  <Badge variant="green" text="Up to date" />
+                )}
+              </div>
+            }
+          />
         </section>
       )}
 
       {billing && (
-        <section className="overview-section-shell mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8" data-testid="hosted-billing-panel">
-          <div className="glass-panel-card py-3 px-4">
+        <section className="glass mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8" data-testid="hosted-billing-panel">
+          <div className="glass py-3 px-4">
             <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
               <Users size={16} /> Tenants
             </div>
@@ -256,13 +258,13 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
                 keeps this stat consistent with the Tenants list rendered below. */}
             <div className="text-2xl font-semibold text-ink">{tenants.length}</div>
           </div>
-          <div className="glass-panel-card py-3 px-4">
+          <div className="glass py-3 px-4">
             <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
               <Building2 size={16} /> Workloads
             </div>
             <div className="text-2xl font-semibold text-ink">{billing.total_workloads}</div>
           </div>
-          <div className="glass-panel-card py-3 px-4">
+          <div className="glass py-3 px-4">
             <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
               <CreditCard size={16} /> Period
             </div>
@@ -271,7 +273,7 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
         </section>
       )}
 
-      <div className="glass-panel-card mb-6">
+      <div className="glass mb-6">
         <h3 className="font-medium mb-3 flex items-center gap-2">
           <KeyRound size={18} /> Create tenant
         </h3>
@@ -391,3 +393,5 @@ export default function HostedPage({ refreshKey }: { refreshKey?: number } = {})
     </div>
   );
 }
+
+export default withAuroraPage('hosted', HostedPage);

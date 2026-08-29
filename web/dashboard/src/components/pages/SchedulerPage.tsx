@@ -3,6 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link, useNavigate } from 'react-router';
 import { Inbox, MapPin } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
@@ -21,7 +22,7 @@ import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { RuntimeUtilization, OptimizeSuggestion } from '../../types/api';
 
-export default function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
+function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload');
   const [utilization, setUtilization] = useState<RuntimeUtilization[]>([]);
@@ -132,7 +133,7 @@ export default function SchedulerPage({ refreshKey }: { refreshKey?: number } = 
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
+      <section className="glass mb-6 space-y-6 p-6 sm:p-8">
       <PageToolbar onRefresh={() => void handleRefresh()} refreshing={refreshing} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-testid="scheduler-utilization-panel">
@@ -140,7 +141,7 @@ export default function SchedulerPage({ refreshKey }: { refreshKey?: number } = 
           <EmptyState icon={<Inbox size={48} />} title="No utilization data" description="No runtimes are reporting utilization" />
         ) : (
           utilization.map((rt) => (
-            <div key={rt.runtime} className="glass-panel-card">
+            <div key={rt.runtime} className="glass">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-ink capitalize">{rt.runtime}</h2>
                 <div className="flex items-center gap-2">
@@ -205,7 +206,7 @@ export default function SchedulerPage({ refreshKey }: { refreshKey?: number } = 
         )}
       </div>
 
-      <div className="glass-panel-card" data-testid="scheduler-suggestions">
+      <div className="glass" data-testid="scheduler-suggestions">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-ink">Optimization Suggestions</h2>
           <div className="flex items-center gap-2">
@@ -231,7 +232,7 @@ export default function SchedulerPage({ refreshKey }: { refreshKey?: number } = 
         ) : (
           <div className="space-y-3">
             {suggestions.map((s, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 glass-panel-card rounded-lg">
+              <div key={i} className="flex items-start gap-3 p-3 glass rounded-lg">
                 <Badge text={s.category} variant="blue" />
                 <div className="flex-1">
                   <div className="text-sm text-ink">{s.message}</div>
@@ -250,3 +251,5 @@ export default function SchedulerPage({ refreshKey }: { refreshKey?: number } = 
     </div>
   );
 }
+
+export default withAuroraPage('scheduler', SchedulerPage);

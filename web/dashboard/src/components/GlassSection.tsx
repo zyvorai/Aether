@@ -3,6 +3,8 @@
 // https://zyvor.dev · info@zyvor.dev
 
 import type { ReactNode } from 'react';
+import { Card, CardBody, CardHeader } from './ui/Card';
+import { cn } from '../lib/cn';
 
 type GlassAccent = 'blue' | 'purple' | 'red' | 'neutral';
 type GlassVariant = 'hero' | 'section' | 'panel';
@@ -20,19 +22,14 @@ interface GlassSectionProps {
   children: ReactNode;
 }
 
-const shellClass: Record<GlassVariant, string> = {
-  hero: 'command-center-shell',
-  section: 'overview-section-shell',
-  panel: 'glass-panel-card',
-};
-
 const labelClass: Record<GlassAccent, string> = {
-  blue: '',
-  purple: 'section-label-purple',
-  red: 'section-label-red',
-  neutral: 'section-label-neutral',
+  blue: 'text-ink-3',
+  purple: 'text-ink-3',
+  red: 'text-danger',
+  neutral: 'text-ink-3',
 };
 
+/** Aurora flat section — legacy name kept for panel call sites. */
 export default function GlassSection({
   label,
   title,
@@ -46,36 +43,38 @@ export default function GlassSection({
   children,
 }: GlassSectionProps) {
   const hasHeader = label || title || subtitle || actions || icon;
-  const padding = variant === 'panel' ? '' : 'p-6 sm:p-8';
-  const margin = variant === 'panel' ? '' : 'mb-8';
+  const margin = variant === 'panel' ? '' : 'mb-6';
 
   return (
-    <section
-      className={`${shellClass[variant]} ${padding} ${margin} ${className}`.trim()}
+    <Card
+      className={cn(margin, variant === 'hero' && 'glass-strong', className)}
+      elevated={variant !== 'panel'}
       data-testid={testId}
     >
       {hasHeader ? (
-        <div className={`overview-section-header flex flex-wrap items-start justify-between gap-3 ${variant === 'panel' ? 'mb-4' : 'mb-5'}`}>
+        <CardHeader className="flex flex-wrap items-start justify-between gap-3 border-border">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             {icon ? (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-brand">
                 {icon}
               </div>
             ) : null}
             <div className="min-w-0">
-              {label ? <p className={`section-label ${labelClass[accent]}`}>{label}</p> : null}
+              {label ? (
+                <p className={cn('text-xs font-normal uppercase tracking-wide', labelClass[accent])}>{label}</p>
+              ) : null}
               {title ? (
-                <h2 className={variant === 'hero' ? 'mt-2 text-2xl font-semibold text-ink sm:text-3xl' : 'section-title'}>
+                <h2 className={cn('font-semibold text-foreground', variant === 'hero' ? 'mt-1 text-2xl sm:text-3xl' : 'mt-0.5 text-lg')}>
                   {title}
                 </h2>
               ) : null}
-              {subtitle ? <p className="section-subtitle max-w-2xl">{subtitle}</p> : null}
+              {subtitle ? <p className="mt-1 max-w-2xl text-sm text-muted">{subtitle}</p> : null}
             </div>
           </div>
           {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
-        </div>
+        </CardHeader>
       ) : null}
-      {children}
-    </section>
+      <CardBody className={variant === 'panel' && !hasHeader ? 'p-0' : undefined}>{children}</CardBody>
+    </Card>
   );
 }

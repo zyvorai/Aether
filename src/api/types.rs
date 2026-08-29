@@ -70,6 +70,8 @@ pub(crate) struct AppState {
     pub(crate) oidc: Option<Arc<crate::oidc::OidcRuntime>>,
     pub(crate) saml: Option<Arc<crate::saml::SamlRuntime>>,
     pub(crate) ldap: Option<Arc<crate::ldap::LdapRuntime>>,
+    /// Demo / bootstrap local password auth (default admin / Admin@321).
+    pub(crate) local_auth: Option<Arc<crate::local_auth::LocalAuthRuntime>>,
     /// True when the API is serving HTTPS (used for Secure session cookies).
     pub(crate) tls_active: bool,
     /// Path to the workload state JSON file (mirrored when Postgres is enabled).

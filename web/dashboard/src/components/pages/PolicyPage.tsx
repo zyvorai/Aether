@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -20,7 +21,7 @@ interface ServerOpaStatus {
   opa?: { configured?: boolean };
 }
 
-export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
+function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -193,7 +194,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
+      <section className="glass mb-6 space-y-6 p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
@@ -241,7 +242,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
       {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
         <div
           data-testid="policy-opa-setup-banner"
-          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border glass-divider/80 glass-panel-card/60 px-4 py-3 text-sm text-ink-2"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border glass-divider/80 glass/60 px-4 py-3 text-sm text-ink-2"
         >
           <span>OPA is not configured — built-in policy check works below; enable OPA admission on Platform &amp; HA.</span>
           <button
@@ -263,7 +264,7 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
       ) : null}
 
       {opaConfigured && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-ink mb-2 flex items-center gap-2">
             <ShieldCheck size={20} className="text-brand" />
             OPA admission (live)
@@ -322,3 +323,5 @@ export default function PolicyPage({ refreshKey }: { refreshKey?: number } = {})
     </div>
   );
 }
+
+export default withAuroraPage('policy', PolicyPage);

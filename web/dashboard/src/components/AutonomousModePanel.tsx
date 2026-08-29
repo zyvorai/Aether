@@ -64,23 +64,23 @@ export default function AutonomousModePanel() {
           </div>
 
           <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="glass-metric-card">
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <ShieldCheck className="mb-2 h-4 w-4 text-emerald-400" />
               <Badge text={policy?.auto_restart ? 'On' : 'Off'} variant={tierVariant(!!policy?.auto_restart)} />
               <div className="mt-2 text-xs text-ink-3">Auto restart</div>
             </div>
-            <div className="glass-metric-card">
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <Badge
                 text={policy?.auto_reconcile_drift ? 'On' : 'Off'}
                 variant={tierVariant(!!policy?.auto_reconcile_drift)}
               />
               <div className="mt-2 text-xs text-ink-3">Drift reconcile</div>
             </div>
-            <div className="glass-metric-card">
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <div className="text-sm font-medium text-ink">{policy?.auto_migrate ?? 'recommend'}</div>
               <div className="mt-2 text-xs text-ink-3">Migration agent</div>
             </div>
-            <div className="glass-metric-card">
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <div className="text-sm font-medium text-ink">{policy?.auto_evolve ?? 'recommend'}</div>
               <div className="mt-2 text-xs text-ink-3">Evolution agent</div>
             </div>

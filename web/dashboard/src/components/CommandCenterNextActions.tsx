@@ -114,7 +114,7 @@ export default function CommandCenterNextActions({
   if (loading && !report) {
     return (
       <div
-        className="command-center-shell mb-8 animate-pulse p-6 sm:p-8"
+        className="glass mb-8 animate-pulse p-6 sm:p-8"
         data-testid="command-center-next-actions"
       >
         <div className="h-6 w-40 rounded-lg glass-inset-surface" />
@@ -130,7 +130,7 @@ export default function CommandCenterNextActions({
   const actions = report?.actions ?? [];
 
   return (
-    <section className="command-center-shell mb-8 p-6 sm:p-8" data-testid="command-center-next-actions">
+    <section className="glass mb-8 p-6 sm:p-8" data-testid="command-center-next-actions">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand/25 bg-brand/10">

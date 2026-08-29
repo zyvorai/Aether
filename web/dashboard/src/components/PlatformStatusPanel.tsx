@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react';
 import { Database, Radio, Server, Shield, Wifi, WifiOff } from 'lucide-react';
 import type { PlatformInfo, SystemReadyStatus } from '../types/api';
+import { SectionHeader } from './layout/SectionHeader';
 
 interface PlatformStatusPanelProps {
   platform: PlatformInfo | null;
@@ -79,7 +80,7 @@ function StatusTile({
 export default function PlatformStatusPanel({ platform, ready, sseConnected, loading }: PlatformStatusPanelProps) {
   if (loading) {
     return (
-      <section className="overview-section-shell mb-8 p-6 sm:p-8">
+      <section className="glass mb-8 p-6 sm:p-8">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="skeleton h-28 rounded-2xl" />
@@ -91,7 +92,7 @@ export default function PlatformStatusPanel({ platform, ready, sseConnected, loa
 
   if (!platform) {
     return (
-      <section className="overview-section-shell mb-8 p-6 text-sm text-ink-2">
+      <section className="glass mb-8 p-6 text-sm text-ink-2">
         <p className="font-medium text-ink-2">Platform status unavailable</p>
         <p className="mt-1 text-xs leading-relaxed">
           Could not load <code className="text-ink-2">/api/server</code>. Check that the API is running and your
@@ -129,26 +130,24 @@ export default function PlatformStatusPanel({ platform, ready, sseConnected, loa
       : 'Local JSON on this node';
 
   return (
-    <section className="overview-section-shell mb-8 p-6 sm:p-8">
-      <div className="overview-section-header mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="section-label">Platform</p>
-          <h2 className="section-title">Status</h2>
-          <p className="section-subtitle">
-            v{platform.version}
-            {platform.tls ? ' · TLS' : ''}
-          </p>
-        </div>
-        <div
-          className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
-            systemReady
-              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-              : 'border-red-500/30 bg-red-500/10 text-red-300'
-          }`}
-        >
-          {systemReady ? 'Ready' : 'Degraded'}
-        </div>
-      </div>
+    <section className="glass mb-8 p-6 sm:p-8">
+      <SectionHeader
+        className="mb-5"
+        label="Platform"
+        title="Status"
+        description={`v${platform.version}${platform.tls ? ' · TLS' : ''}`}
+        action={
+          <div
+            className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+              systemReady
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                : 'border-red-500/30 bg-red-500/10 text-red-300'
+            }`}
+          >
+            {systemReady ? 'Ready' : 'Degraded'}
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatusTile

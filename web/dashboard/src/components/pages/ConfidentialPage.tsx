@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -58,7 +59,7 @@ const CLI_IMAGE_COMMANDS = [
   'aether confidential image verify-digest <launch-digest>',
 ];
 
-export default function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
+function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -302,10 +303,10 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 p-6 sm:p-8">
+      <section className="glass mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div
-          className="glass-panel-card lg:col-span-2"
+          className="glass lg:col-span-2"
           data-testid={integration?.mode === 'composite' ? 'confidential-composite-banner' : undefined}
         >
           <div className="flex items-start justify-between gap-4 mb-4">
@@ -347,7 +348,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           )}
         </div>
 
-        <div className="glass-panel-card">
+        <div className="glass">
           <h2 className="text-sm font-medium uppercase tracking-wider text-ink-2 mb-3">Host TEE</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -367,7 +368,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
       </div>
 
       {sovereign && (sovereign.offline_attestation || sovereign.region_lock) && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-ink mb-2">Sovereign mode</h2>
           <div className="flex flex-wrap gap-3 text-sm text-ink-2">
             {sovereign.offline_attestation && (
@@ -389,7 +390,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
       )}
 
       {kata && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-ink mb-2">Kata / Confidential Containers</h2>
           <div className="flex flex-wrap gap-2 mb-3">
             <Badge text={kata.hypervisor} variant="muted" />
@@ -407,7 +408,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
       )}
 
       {fleetTrust.length > 0 && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-ink mb-2">Fleet trust scores</h2>
           <p className="text-sm text-ink-3 mb-4">
             Composite trust from attestation, network policy, and firmware exposure across confidential workloads.
@@ -428,7 +429,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                     }),
                   )
                 }
-                className={`text-left rounded-lg border glass-panel-card p-3 hover:border-brand/40 transition-colors ${
+                className={`text-left rounded-lg border glass p-3 hover:border-brand/40 transition-colors ${
                   focused ? 'border-brand/50 ring-1 ring-aether/30' : 'glass-divider'
                 }`}
               >
@@ -449,14 +450,14 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
       )}
 
       {intel && intel.workloads.length > 0 && (
-        <div className="glass-panel-card mb-6">
+        <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-ink mb-2">AI confidential intelligence</h2>
           <p className="text-sm text-ink-3 mb-3">
             Fleet trust avg {Math.round(intel.fleet_trust_avg * 100)}% · {intel.critical_count} high-risk workload(s)
           </p>
           <div className="space-y-2 max-h-48 overflow-auto">
             {intel.workloads.map((row) => (
-              <div key={row.workload} className="text-sm p-2 rounded border glass-divider glass-panel-card">
+              <div key={row.workload} className="text-sm p-2 rounded border glass-divider glass">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
@@ -479,7 +480,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
         </div>
       )}
 
-      <div className="glass-panel-card mb-6" data-testid="confidential-migration-wizard">
+      <div className="glass mb-6" data-testid="confidential-migration-wizard">
         <h2 className="text-lg font-semibold text-ink mb-2 flex items-center gap-2">
           <Terminal className="w-5 h-5" />
           Encrypted migration (Phase 6)
@@ -492,7 +493,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-        <div className="glass-panel-card" data-testid="confidential-fleet-panel">
+        <div className="glass" data-testid="confidential-fleet-panel">
           <h2 className="text-lg font-semibold text-ink mb-1 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
             Confidential workloads
@@ -543,7 +544,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
                       }),
                     )
                   }
-                  className={`w-full text-left p-3 rounded-lg border glass-panel-card transition-colors ${
+                  className={`w-full text-left p-3 rounded-lg border glass transition-colors ${
                     workloadQuery.trim() === row.workload
                       ? 'border-brand/60 ring-1 ring-aether/30'
                       : 'glass-divider hover:border-brand/40'
@@ -592,7 +593,7 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
           )}
         </div>
 
-        <div className="glass-panel-card space-y-5">
+        <div className="glass space-y-5">
           <div>
             <h2 className="text-lg font-semibold text-ink mb-1">Measured images</h2>
             <p className="text-sm text-ink-3 mb-4">
@@ -754,3 +755,5 @@ export default function ConfidentialPage({ refreshKey }: { refreshKey?: number }
     </div>
   );
 }
+
+export default withAuroraPage('confidential', ConfidentialPage);

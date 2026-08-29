@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
 import { Link } from 'react-router';
@@ -20,7 +21,7 @@ const TOC = [
   { id: 'mig-tools', label: 'Tools' },
 ];
 
-export default function MigrationsPage() {
+function MigrationsPage() {
   const [workload] = useQueryParam('workload');
 
   const hubBanner = (
@@ -46,7 +47,7 @@ export default function MigrationsPage() {
   );
 
   return (
-    <section className="hub-page-shell">
+    <section className="glass">
       {hubBanner}
       {workload.trim() ? (
         <WorkloadContextBanner testId="migrations-workload-context" workload={workload} description="Migration context">
@@ -111,3 +112,5 @@ export default function MigrationsPage() {
     </section>
   );
 }
+
+export default withAuroraPage('migrations', MigrationsPage);

@@ -168,16 +168,16 @@ export default function IntentPipelinePanel() {
       {report ? (
         <div className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="glass-metric-card">
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <Sparkles className="mb-2 h-4 w-4 text-violet-400" />
               <div className="text-lg font-semibold text-ink">{report.recommended_runtime}</div>
               <div className="text-xs text-ink-3">Recommended runtime</div>
             </div>
-            <div className="glass-metric-card">
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <div className="text-lg font-semibold text-ink">{formatPercent(report.confidence, 0)}</div>
               <div className="text-xs text-ink-3">Confidence</div>
             </div>
-            <div className="glass-metric-card">
+            <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <div className="text-lg font-semibold text-ink">{report.placement[0]?.cluster ?? 'local'}</div>
               <div className="text-xs text-ink-3">Top cluster</div>
             </div>
@@ -187,7 +187,7 @@ export default function IntentPipelinePanel() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-3">Pipeline steps</p>
             <ol className="space-y-3">
               {report.steps.map((step) => (
-                <li key={step.phase} className="glass-panel-card px-4 py-3">
+                <li key={step.phase} className="glass px-4 py-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-ink">
                     <span className="rounded glass-inset-surface px-2 py-0.5 text-[10px] uppercase text-ink-2">{step.phase}</span>
                     {step.title}

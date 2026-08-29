@@ -1,3 +1,4 @@
+import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -25,7 +26,7 @@ function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
 
-export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
+function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
   const { canAdmin } = useAuth();
   const [keys, setKeys] = useState<ApiKeySummary[]>([]);
   const [name, setName] = useState('');
@@ -191,9 +192,9 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="overview-section-shell mb-6 space-y-6 p-6 sm:p-8">
+      <section className="glass mb-6 space-y-6 p-6 sm:p-8">
 
-      <div className="glass-panel-card mb-6">
+      <div className="glass mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Shield className="w-5 h-5 text-brand" />
           <h2 className="text-lg font-semibold text-ink">Create RBAC API key</h2>
@@ -322,3 +323,5 @@ export default function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
     </div>
   );
 }
+
+export default withAuroraPage('rbac', RbacPage);

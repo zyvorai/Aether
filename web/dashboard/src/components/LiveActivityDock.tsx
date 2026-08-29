@@ -79,7 +79,7 @@ export default function LiveActivityDock() {
       {activities.map((activity) => (
         <div
           key={activity.id}
-          className="overview-section-shell animate-fade-in overflow-hidden p-4 shadow-2xl"
+          className="glass animate-fade-in overflow-hidden p-4 shadow-2xl"
           data-testid={`live-activity-${activity.kind}`}
         >
           <div className="mb-2 flex items-start justify-between gap-2">
@@ -110,7 +110,7 @@ export default function LiveActivityDock() {
                   ? 'bg-red-500'
                   : activity.phase === 'completed'
                     ? 'bg-emerald-400'
-                    : 'bg-gradient-to-r from-aether to-aether-ai'
+                    : 'bg-brand'
               }`}
               style={{ width: `${Math.min(100, Math.max(4, activity.percent))}%` }}
             />
