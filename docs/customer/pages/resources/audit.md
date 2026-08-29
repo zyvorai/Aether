@@ -15,7 +15,7 @@ Tamper-evident audit log
 - Route / id: `/audit`
 - Nav: **Resources → Audit Trail** (sidebar, command palette, or desktop nav)
 
-## What you can do
+## Operate from the console (UX)
 
 1. Open `/audit` and wait for live data from Aether.
 2. Use filters and search when the page provides them.

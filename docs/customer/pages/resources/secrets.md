@@ -15,7 +15,7 @@ Encrypted secrets management
 - Route / id: `/secrets`
 - Nav: **Resources → Secrets** (sidebar, command palette, or desktop nav)
 
-## What you can do
+## Operate from the console (UX)
 
 1. Open `/secrets` and wait for live data from Aether.
 2. Use filters and search when the page provides them.

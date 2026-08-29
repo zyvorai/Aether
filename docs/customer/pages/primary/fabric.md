@@ -15,7 +15,7 @@ Live Application → Runtime → Cluster → Node topology
 - Route / id: `/fabric`
 - Nav: **Primary → Runtime Fabric** (sidebar, command palette, or desktop nav)
 
-## What you can do
+## Operate from the console (UX)
 
 1. Open `/fabric` and wait for live data from Aether.
 2. Use filters and search when the page provides them.

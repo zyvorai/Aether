@@ -15,7 +15,7 @@ Tenants, API keys, metering, and Stripe billing
 - Route / id: `/hosted`
 - Nav: **Resources → Hosted SaaS** (sidebar, command palette, or desktop nav)
 
-## What you can do
+## Operate from the console (UX)
 
 1. Open `/hosted` and wait for live data from Aether.
 2. Use filters and search when the page provides them.

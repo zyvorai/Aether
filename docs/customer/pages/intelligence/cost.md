@@ -15,7 +15,7 @@ Resource cost projections across runtimes
 - Route / id: `/cost`
 - Nav: **Intelligence → Cost Estimation** (sidebar, command palette, or desktop nav)
 
-## What you can do
+## Operate from the console (UX)
 
 1. Open `/cost` and wait for live data from Aether.
 2. Use filters and search when the page provides them.

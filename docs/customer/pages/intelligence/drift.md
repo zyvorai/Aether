@@ -15,7 +15,7 @@ Configuration drift & desired-state reconciliation
 - Route / id: `/drift`
 - Nav: **Intelligence → Drift Detection** (sidebar, command palette, or desktop nav)
 
-## What you can do
+## Operate from the console (UX)
 
 1. Open `/drift` and wait for live data from Aether.
 2. Use filters and search when the page provides them.

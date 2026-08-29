@@ -15,7 +15,7 @@ Health, metrics, events, and correlated diagnostics
 - Route / id: `/observability`
 - Nav: **Operations → Observability** (sidebar, command palette, or desktop nav)
 
-## What you can do
+## Operate from the console (UX)
 
 1. Open `/observability` and wait for live data from Aether.
 2. Use filters and search when the page provides them.
