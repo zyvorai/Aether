@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react';
 import { RefreshCw, Search } from 'lucide-react';
 import { useBufferedValue } from '../hooks/useBufferedValue';
+import { Button } from './ui/Button';
 
 interface PageToolbarProps {
   search?: string;
@@ -51,16 +52,18 @@ export default function PageToolbar({
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {onRefresh && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             data-testid={refreshTestId}
             onClick={onRefresh}
             disabled={refreshing}
-            className="interactive-lift inline-flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/10 px-3 py-2.5 text-sm font-medium text-brand transition hover:bg-brand/15 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+            className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         )}
         {actions}
       </div>

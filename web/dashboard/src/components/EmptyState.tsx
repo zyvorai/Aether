@@ -14,15 +14,12 @@ interface EmptyStateProps {
 export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
     <div className="glass-empty-state">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.08),transparent_42%)]" />
-      <div className="relative mb-4 rounded-2xl border glass-divider glass p-4 text-ink-3 shadow-inner">
-        {icon}
-      </div>
-      <h3 className="relative text-lg font-semibold text-ink">{title}</h3>
+      <div className="mb-3 text-ink-3">{icon}</div>
+      <h3 className="text-lg font-semibold text-ink">{title}</h3>
       {description && (
-        <p className="relative mt-2 max-w-md text-sm leading-relaxed text-ink-3">{description}</p>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-3">{description}</p>
       )}
-      {action && <div className="relative mt-5">{action}</div>}
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
