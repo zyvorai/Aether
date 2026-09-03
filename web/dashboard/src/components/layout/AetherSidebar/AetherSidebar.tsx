@@ -78,13 +78,13 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={() => onNavigate(item.view)}
       className={cn(
-        'flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+        'flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
         active ? 'bg-brand-wash text-brand' : 'text-ink-2 hover:bg-hover hover:text-ink',
         rail ? 'w-full justify-center px-1.5 py-1.5' : 'w-full',
         className,
       )}
     >
-      <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} aria-hidden />
+      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.6} aria-hidden />
       {rail ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
     </button>
   );
@@ -151,10 +151,10 @@ function SidebarSectionBlock({
                 onMouseEnter={clearCloseTimer}
                 onMouseLeave={scheduleClose}
                 style={{ position: 'fixed', top: flyoutPos.top, left: flyoutPos.left }}
-                className="glass z-[70] min-w-[200px] max-h-[min(70vh,420px)] overflow-y-auto py-2"
+                className="z-[70] min-w-[190px] max-h-[min(70vh,420px)] overflow-y-auto rounded-lg border border-border bg-raised py-1.5 shadow-lg"
               >
-                <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-3">{section.label}</p>
-                <ul className="px-1.5">
+                <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-ink-3">{section.label}</p>
+                <ul className="px-1">
                   {section.items.map((item) => (
                     <li key={item.view}>
                       <SidebarLink item={item} active={item.view === currentView} rail={false} onNavigate={onNavigate} />
@@ -170,18 +170,18 @@ function SidebarSectionBlock({
   }
 
   return (
-    <div className="mb-3">
+    <div className="mb-2">
       <button
         type="button"
         aria-expanded={expanded}
         onClick={onToggleExpanded}
-        className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-ink-3 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-medium uppercase tracking-wide text-ink-3 hover:text-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
       >
-        <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', expanded ? '' : '-rotate-90')} aria-hidden />
+        <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', expanded ? '' : '-rotate-90')} aria-hidden />
         <span className="truncate">{section.label}</span>
       </button>
       {expanded ? (
-        <ul className="space-y-0.5">
+        <ul className="space-y-px">
           {section.items.map((item) => (
             <li key={item.view}>
               <SidebarLink item={item} active={item.view === currentView} rail={false} onNavigate={onNavigate} />
@@ -249,22 +249,22 @@ export default function AetherSidebar({
   return (
     <aside
       className={cn(
-        'glass flex flex-shrink-0 flex-col border-r',
+        'flex flex-shrink-0 flex-col bg-canvas border-r border-border',
         mobile ? 'h-full w-72' : `hidden lg:flex ${widthClass}`,
       )}
       aria-label="Aether navigation"
     >
       {!rail ? (
-        <div className="px-3 pb-2 pt-3">
+        <div className="px-2.5 pb-1.5 pt-2.5">
           <label className="relative block">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-3" aria-hidden />
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-ink-3" aria-hidden />
             <input
               type="search"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Filter navigation…"
+              placeholder="Filter"
               aria-label="Filter navigation"
-              className="w-full min-w-0 rounded-xl border border-border bg-raised py-2 pl-8 pr-8 text-sm text-ink placeholder:text-ink-3 focus:border-brand/40 focus:outline-none focus:ring-1 focus:ring-brand/30"
+              className="w-full min-w-0 rounded-md bg-hover py-1.5 pl-7 pr-7 text-[13px] text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-brand/30"
             />
             {filter ? (
               <button
@@ -273,15 +273,15 @@ export default function AetherSidebar({
                 aria-label="Clear filter"
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-2 hover:text-ink"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3 w-3" />
               </button>
             ) : null}
           </label>
         </div>
       ) : null}
 
-      <nav className={cn('flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-2', rail ? 'py-1.5' : 'py-3')} aria-label="Primary">
-        <ul className={cn('mb-2', rail ? 'space-y-0' : 'space-y-0.5')}>
+      <nav className={cn('flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-2', rail ? 'py-1.5' : 'py-2')} aria-label="Primary">
+        <ul className={cn('mb-2', rail ? 'space-y-0' : 'space-y-px')}>
           {filteredPrimary.map((item) => (
             <li key={item.view}>
               <SidebarLink item={item} active={item.view === currentView} rail={rail} onNavigate={handleNavigate} />
@@ -305,15 +305,15 @@ export default function AetherSidebar({
       </nav>
 
       {!mobile ? (
-        <div className="border-t border-border p-2">
+        <div className="border-t border-border p-1.5">
           <button
             type="button"
             onClick={() => onCollapsedChange(!collapsed)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs text-ink-2 hover:bg-hover hover:text-ink transition-colors"
+            className="flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] text-ink-3 hover:bg-hover hover:text-ink-2 transition-colors"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <><ChevronLeft className="h-4 w-4" /><span>Collapse</span></>}
+            {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <><ChevronLeft className="h-3.5 w-3.5" /><span>Collapse</span></>}
           </button>
         </div>
       ) : null}
